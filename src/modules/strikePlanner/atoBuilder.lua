@@ -71,12 +71,12 @@ end
 
 ---Collect the aircraft already committed by active ATO waves
 ---Counts them so a new wave cannot book the same airframes twice.
----@param saveData SBJ__SaveData The persistent save data containing ATO wave information
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@return table<string, integer> # Map of reservation key to reserved aircraft count
-local function collectReservedAircraft(saveData)
+local function collectReservedAircraft(plannerState)
   local reservedAircraftMap = {}
 
-  for _, wave in pairs(saveData.c.air.airTaskingOrder) do
+  for _, wave in pairs(plannerState.air.airTaskingOrder) do
     if wave.isActivated and not wave.hasLaunched then
       addWaveAircraft(wave, reservedAircraftMap)
     end
@@ -275,17 +275,17 @@ end
 ---Build executable package templates from evaluated targets and aircraft validation
 ---Mutates copied package templates with target lists and resolved baseGUID values.
 ---@param config SBJ__Config Global configuration
----@param saveData SBJ__SaveData Persistent save data containing ATO and target information
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
 ---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
 ---@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
 ---@return SBJ__PackageTemplate[] validPackages Array of validated packages with assigned targets
 ---@return table<string, any> fields Package counters for the operation row
 ---@return SBJ__LogResult[] details One row per package rejected by validation
-local function buildExecutablePackages(config, saveData, waveTemplate, targetsByPackageIndex, freeAircraftCache)
+local function buildExecutablePackages(config, plannerState, waveTemplate, targetsByPackageIndex, freeAircraftCache)
   local validPackages = {}
   local context = {
-    reservedAircraft = collectReservedAircraft(saveData),
+    reservedAircraft = collectReservedAircraft(plannerState),
     freeAircraftCache = freeAircraftCache,
     minimumStrengthRatio = config.c.air.minimumStrengthRatio
   }
@@ -377,7 +377,7 @@ end
 ---Create actual ATO wave from template and evaluation results
 ---Constructs executable packages, calculates timing, and inserts the wave.
 ---@param config SBJ__Config Global configuration
----@param saveData SBJ__SaveData Persistent save data for ATO insertion
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param waveTemplate SBJ__WaveTemplate Template defining ATO wave and package configurations
 ---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
 ---@param reconType string Reconnaissance type identifier used for wave naming
@@ -385,14 +385,14 @@ end
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
 local function createAndInsertATOWaveFromTemplate(
     config,
-    saveData,
+    plannerState,
     waveTemplate,
     targetsByPackageIndex,
     reconType,
     freeAircraftCache)
   local validPackages, fields, details = buildExecutablePackages(
     config,
-    saveData,
+    plannerState,
     waveTemplate,
     targetsByPackageIndex,
     freeAircraftCache
@@ -411,7 +411,7 @@ local function createAndInsertATOWaveFromTemplate(
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
   local wave
-  local waveName = DynamicPlan.insert(saveData, "air", waveTemplate.name, reconType, function(planName)
+  local waveName = DynamicPlan.insert(plannerState, "air", waveTemplate.name, reconType, function(planName)
     wave = buildATOWave(waveTemplate, planName, validPackages)
     return wave
   end)
@@ -425,18 +425,18 @@ end
 
 ---Process single air operation: evaluate targets, validate packages, insert ATO wave
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data containing ATO and target information
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Air operation paired with its parent batch
 ---@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
-local function processAirOperation(config, saveData, contacts, batchedOp, freeAircraftCache)
+local function processAirOperation(config, plannerState, contacts, batchedOp, freeAircraftCache)
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
   local targetsByPackageIndex, qualifiedCount = DynamicPlan.evaluateTargets(
     config,
-    saveData,
+    plannerState,
     contacts,
     "air",
     operation.template
@@ -456,7 +456,7 @@ local function processAirOperation(config, saveData, contacts, batchedOp, freeAi
   local waveTemplate = Utils.deepCopy(operation.template)
   return createAndInsertATOWaveFromTemplate(
     config,
-    saveData,
+    plannerState,
     waveTemplate,
     targetsByPackageIndex,
     operationBatch.type,
@@ -473,11 +473,11 @@ end
 ---wave can be inserted right now. Retryable operations stay pending inside the
 ---window; expiry drops them.
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data with dynamic operations configuration
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@return boolean # True if any air operation was processed and executed, false if disabled or none ready
-function AtoBuilder.build(config, saveData, contacts)
-  if not saveData.c.dynamicOperations.enabled then
+function AtoBuilder.build(config, plannerState, contacts)
+  if not plannerState.dynamicOperations.enabled then
     return false
   end
 
@@ -485,12 +485,12 @@ function AtoBuilder.build(config, saveData, contacts)
   -- table would keep counting aircraft destroyed or committed since an earlier tick.
   local freeAircraftCache = {}
 
-  local result = OperationBatch.run(saveData.c.dynamicOperations.reconTriggeredOperationBatches, "air", {
+  local result = OperationBatch.run(plannerState.dynamicOperations.reconTriggeredOperationBatches, "air", {
     currentTime = GameApi.ScenEdit_CurrentTime(),
     windowSec = config.c.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,
     tryInsert = function(batchedOp)
-      return processAirOperation(config, saveData, contacts, batchedOp, freeAircraftCache)
+      return processAirOperation(config, plannerState, contacts, batchedOp, freeAircraftCache)
     end
   })
 

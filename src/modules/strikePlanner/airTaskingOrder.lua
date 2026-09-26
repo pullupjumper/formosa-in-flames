@@ -434,10 +434,10 @@ end
 
 ---Schedule reconnaissance UAV if configured in package
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param packageData SBJ__Package Package data with optional reconUAV
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
-local function scheduleReconUAV(config, saveData, packageData)
+local function scheduleReconUAV(config, plannerState, packageData)
   if not packageData.reconUAV then
     return
   end
@@ -446,7 +446,7 @@ local function scheduleReconUAV(config, saveData, packageData)
   local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
       flightTime
   local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
-  return Recon.addEntry(saveData.c.recon, packageData.reconUAV, takeoffTimeStr)
+  return Recon.addEntry(plannerState.recon, packageData.reconUAV, takeoffTimeStr)
 end
 
 -- ============================================================================
@@ -528,13 +528,13 @@ end
 
 ---Apply schedules and build a successful package launch result
 ---@param config SBJ__Config Global configuration
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param packageData SBJ__Package Package data
 ---@param createdMissionMap table<string, CMO__Mission> Created missions
 ---@return SBJ__LogResult # Successful launch row
-local function completePackageLaunch(config, saveData, packageData, createdMissionMap)
+local function completePackageLaunch(config, plannerState, packageData, createdMissionMap)
   setPackageMissionSchedules(packageData, createdMissionMap)
-  local reconUAVEntry = scheduleReconUAV(config, saveData, packageData)
+  local reconUAVEntry = scheduleReconUAV(config, plannerState, packageData)
 
   ---@type SBJ__LogResult
   local launchResult = {
@@ -556,11 +556,11 @@ end
 ---Processes a single strike package through its complete lifecycle
 ---Returns structured status for centralized logging in the public API
 ---@param config SBJ__Config The global configuration table
----@param saveData SBJ__SaveData The persistent save data containing ATO state
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param packageData SBJ__Package The strike package data to process
 ---@return boolean launched Whether package was successfully launched
 ---@return SBJ__LogResult|nil result Processed package row, or nil when nothing should be logged
-local function processPackage(config, saveData, packageData)
+local function processPackage(config, plannerState, packageData)
   local validationResult = validatePackageTargets(packageData)
   if validationResult then
     return false, validationResult
@@ -578,7 +578,7 @@ local function processPackage(config, saveData, packageData)
     return false, failureResult
   end
 
-  local launchResult = completePackageLaunch(config, saveData, packageData, createdMissionMap)
+  local launchResult = completePackageLaunch(config, plannerState, packageData, createdMissionMap)
   return true, launchResult
 end
 
@@ -601,17 +601,17 @@ end
 ---Process packages in a wave, launching at most one per tick
 ---Returns processed package results for centralized logging in the public API
 ---@param config SBJ__Config The global configuration table
----@param saveData SBJ__SaveData The persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param waveName string The wave identifier used for logging
 ---@param waveData SBJ__Wave The wave containing strike packages
 ---@return SBJ__LogResult[] # Processed package rows from this wave
-local function processWave(config, saveData, waveName, waveData)
+local function processWave(config, plannerState, waveName, waveData)
   ---@type SBJ__LogResult[]
   local processedResults = {}
 
   for _, packageData in ipairs(waveData.packages) do
     if not packageData.hasLaunched then
-      local launched, packageResult = processPackage(config, saveData, packageData)
+      local launched, packageResult = processPackage(config, plannerState, packageData)
 
       if launched then
         packageData.hasLaunched = true
@@ -638,13 +638,13 @@ end
 ---The main entry point for air strikes
 ---Iterates through ATO waves and packages, processing each strike package sequentially
 ---@param config SBJ__Config The global configuration table
----@param saveData SBJ__SaveData The persistent save data containing ATO waves and packages
-function AirTaskingOrder.process(config, saveData)
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+function AirTaskingOrder.process(config, plannerState)
   local report = LogFormat.report(constants.TAGS.AIR, LOG_SCOPE, LOG_ACTION)
 
-  for waveName, waveData in pairs(saveData.c.air.airTaskingOrder) do
+  for waveName, waveData in pairs(plannerState.air.airTaskingOrder) do
     if waveData.isActivated and not waveData.hasLaunched then
-      report.addAll(processWave(config, saveData, waveName, waveData))
+      report.addAll(processWave(config, plannerState, waveName, waveData))
 
       if isWaveFinished(waveData) then
         waveData.hasLaunched = true

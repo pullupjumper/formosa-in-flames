@@ -129,21 +129,19 @@ describe("AtoBuilder", function()
     return { type = "air", executed = false }
   end
 
-  ---Create the full saveData structure AtoBuilder reads
+  ---Create the strike planner state AtoBuilder reads
   ---@param operationBatches table[] Recon-triggered operation batches
   ---@param overrides? table Optional airTaskingOrder, targetlist or generatedOperations
   ---@return table
-  local function makeSaveData(operationBatches, overrides)
+  local function makePlannerState(operationBatches, overrides)
     overrides = overrides or {}
     return {
-      c = {
-        air = { airTaskingOrder = overrides.airTaskingOrder or {} },
-        targetlist = overrides.targetlist or {},
-        dynamicOperations = {
-          enabled = true,
-          reconTriggeredOperationBatches = operationBatches,
-          generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
-        }
+      air = { airTaskingOrder = overrides.airTaskingOrder or {} },
+      targetlist = overrides.targetlist or {},
+      dynamicOperations = {
+        enabled = true,
+        reconTriggeredOperationBatches = operationBatches,
+        generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
       }
     }
   end
@@ -250,7 +248,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ timeToReady = 10, striker = makeStriker({ unitCount = 2 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry }, {
+    local plannerState = makePlannerState({ reconEntry }, {
       targetlist = {
         { name = "HSINCHU/Radar", subType = "Radar", guid = "TGT-1" }
       }
@@ -261,14 +259,14 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
     -- Naming and registration happen together: the generated name is registered and executed
-    assert.is_true(saveData.c.dynamicOperations.generatedOperations.air["STRIKE/AB/1/DYN-SAT-01"])
+    assert.is_true(plannerState.dynamicOperations.generatedOperations.air["STRIKE/AB/1/DYN-SAT-01"])
     assert.is_true(operation.executed)
     assert.is_true(reconEntry.executed)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/AB/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/AB/1/DYN-SAT-01"]
     assert.is_table(wave)
     assert.is_true(wave.isActivated)
     assert.is_false(wave.hasLaunched)
@@ -283,16 +281,16 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ timeToReady = 8 }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
 
-    AtoBuilder.build(makeConfig(), saveData, {})
+    AtoBuilder.build(makeConfig(), plannerState, {})
 
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"]
 
     -- Verify wave structure
     assert.are.equal("STRIKE/1/DYN-SAT-01", wave.name)
@@ -337,17 +335,17 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(2000)
     attachOperation(reconEntry, operation)
     stubTargets({ "SHIP-1", "SHIP-2" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    assert.is_table(saveData.c.air.airTaskingOrder["ANTISHIP/1/DYN-AIRCRAFT-01"])
+    assert.is_table(plannerState.air.airTaskingOrder["ANTISHIP/1/DYN-AIRCRAFT-01"])
   end)
 
   -- ============================================================================
@@ -373,7 +371,7 @@ describe("AtoBuilder", function()
       }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -390,10 +388,10 @@ describe("AtoBuilder", function()
       ["BASE-2"] = { "AC-1", "AC-2", "AC-3", "AC-4" }
     })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"]
     assert.is_table(wave)
     -- Only package 1 should be in the wave (package 2 failed target validation)
     assert.are.equal(1, #wave.packages)
@@ -416,7 +414,7 @@ describe("AtoBuilder", function()
       }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").invokes(function(datetime)
@@ -435,10 +433,10 @@ describe("AtoBuilder", function()
     end))
     stubBases({ ["BASE-2"] = { "AC-1", "AC-2" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"]
     assert.are.equal(1, #wave.packages)
     assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
     assert.is_string(wave.packages[1].striker.startTime)
@@ -470,16 +468,16 @@ describe("AtoBuilder", function()
         }
       }
     })
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
-    assert.is_nil(saveData.c.air.airTaskingOrder["STRIKE/TANKER/INVALID-COUNT"])
+    assert.is_nil(plannerState.air.airTaskingOrder["STRIKE/TANKER/INVALID-COUNT"])
   end)
 
   -- Negative: tanker mission names must be unique
@@ -504,13 +502,13 @@ describe("AtoBuilder", function()
         }
       }
     })
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
   end)
@@ -524,7 +522,7 @@ describe("AtoBuilder", function()
     local reconEntry = makeReconEntry({ delay = 500 })
     local operation = makeAirOperation()
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(2000))
     -- parseDatetimeToTimestamp returns 1000, plus delay 500 = window opens at 1500
@@ -533,7 +531,7 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
     assert.is_true(operation.executed)
@@ -545,42 +543,36 @@ describe("AtoBuilder", function()
 
   -- Negative: dynamicOperations disabled
   it("should return false when dynamicOperations is disabled", function()
-    local saveData = {
-      c = {
-        dynamicOperations = { enabled = false }
-      }
+    local plannerState = {
+      dynamicOperations = { enabled = false }
     }
-    assert.is_false(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.build(makeConfig(), plannerState, {}))
   end)
 
   -- Negative: reconTriggeredOperationBatches empty
   it("should return false when reconTriggeredOperationBatches is empty", function()
-    local saveData = {
-      c = {
-        dynamicOperations = { enabled = true, reconTriggeredOperationBatches = {} }
-      }
+    local plannerState = {
+      dynamicOperations = { enabled = true, reconTriggeredOperationBatches = {} }
     }
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
 
-    assert.is_false(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.build(makeConfig(), plannerState, {}))
   end)
 
   -- Negative: no air operations pending
   it("should return false when no air operations are pending", function()
     local groundOperation = { type = "ground", executed = false, template = { name = "GND/1" } }
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconTriggeredOperationBatches = {
-            { time = "2026-02-14 00:00:00", delay = 0, operations = { groundOperation } }
-          }
+    local plannerState = {
+      dynamicOperations = {
+        enabled = true,
+        reconTriggeredOperationBatches = {
+          { time = "2026-02-14 00:00:00", delay = 0, operations = { groundOperation } }
         }
       }
     }
     stubClock(1000)
 
-    assert.is_false(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.build(makeConfig(), plannerState, {}))
     -- The ground operation is not ours to touch
     assert.is_false(groundOperation.executed)
     assert.stub(logStub).was_not.called()
@@ -594,12 +586,10 @@ describe("AtoBuilder", function()
   it("should return false when trigger time has not been reached", function()
     local reconEntry = makeReconEntry({ time = "2026-02-14 12:00:00", delay = 600 })
     local operation = { type = "air", executed = false, template = { name = "STRIKE/1" } }
-    local saveData = {
-      c = {
-        dynamicOperations = {
-          enabled = true,
-          reconTriggeredOperationBatches = { reconEntry }
-        }
+    local plannerState = {
+      dynamicOperations = {
+        enabled = true,
+        reconTriggeredOperationBatches = { reconEntry }
       }
     }
 
@@ -608,7 +598,7 @@ describe("AtoBuilder", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(50))
     attachOperation(reconEntry, operation)
 
-    assert.is_false(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.build(makeConfig(), plannerState, {}))
     assert.is_false(operation.executed)
     -- Pre-trigger is a silent skip: the operation stays queued for a later tick
     assert.are.equal(1, #reconEntry.operations)
@@ -631,19 +621,19 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
     -- Returns only 1 target but minTargetCount = 5
     stubTargets({ "TGT-1" })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- No valid packages => no ATO wave inserted, nothing named or registered
     assert.is_false(result)
-    assert.is_nil(next(saveData.c.air.airTaskingOrder))
-    assert.is_nil(next(saveData.c.dynamicOperations.generatedOperations.air))
+    assert.is_nil(next(plannerState.air.airTaskingOrder))
+    assert.is_nil(next(plannerState.dynamicOperations.generatedOperations.air))
   end)
 
   -- Negative: insufficient aircraft at base
@@ -658,7 +648,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -666,7 +656,7 @@ describe("AtoBuilder", function()
     -- Base has only 1 aircraft; package requires 4 (below the half-strength threshold of 2)
     stubBases({ ["BASE-1"] = { "AC-1" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
   end)
@@ -682,7 +672,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ target = makeTarget({ minTargetCount = 3 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -690,10 +680,10 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1", "TGT-2", "TGT-3" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    assert.are.equal(1, #saveData.c.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"].packages)
+    assert.are.equal(1, #plannerState.air.airTaskingOrder["STRIKE/1/DYN-SAT-01"].packages)
   end)
 
   -- Boundary: target count one below minTargetCount
@@ -703,14 +693,14 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ target = makeTarget({ minTargetCount = 3 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
     -- Only 2 targets, minTargetCount = 3
     stubTargets({ "TGT-1", "TGT-2" })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
   end)
@@ -726,7 +716,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry }, {
+    local plannerState = makePlannerState({ reconEntry }, {
       airTaskingOrder = {
         -- Existing wave already holding 3 aircraft of the same type at BASE-1
         ["EXISTING-WAVE"] = {
@@ -748,7 +738,7 @@ describe("AtoBuilder", function()
     -- Base has 4 free, 3 reserved, needs 4 => 4-3=1 < the half-strength threshold of 2
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- 4 available - 3 assigned = 1, below half-strength threshold (2) => fail
     assert.is_false(result)
@@ -761,7 +751,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 3 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry }, {
+    local plannerState = makePlannerState({ reconEntry }, {
       airTaskingOrder = {
         -- Launched wave should NOT be counted
         ["LAUNCHED-WAVE"] = {
@@ -788,7 +778,7 @@ describe("AtoBuilder", function()
     -- Base has 4 aircraft available
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- Launched waves not counted: 4 available - 0 assigned >= 3 required => pass
     assert.is_true(result)
@@ -801,7 +791,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -814,7 +804,7 @@ describe("AtoBuilder", function()
       return nil
     end)
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- Only 1 available (AC-1), requires 4 => 1 < half-strength threshold (2) => fail
     assert.is_false(result)
@@ -831,7 +821,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 2 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -843,7 +833,7 @@ describe("AtoBuilder", function()
       embarkedUnits = nil
     }))
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
   end)
@@ -855,7 +845,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ baseGUID = "INVALID-BASE", unitCount = 2 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -863,7 +853,7 @@ describe("AtoBuilder", function()
     -- Base not found
     trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
   end)
@@ -873,12 +863,12 @@ describe("AtoBuilder", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({ packages = {} })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- No valid packages (empty) => no wave inserted
     assert.is_false(result)
@@ -896,12 +886,12 @@ describe("AtoBuilder", function()
       packages = { { striker = makeStriker(), target = { contactAge = 300, minTargetCount = 1 } } }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- Fixed path with no objs => empty targets => insufficient
     assert.is_false(result)
@@ -923,12 +913,12 @@ describe("AtoBuilder", function()
       } }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(2000)
     attachOperation(reconEntry, operation)
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- Unknown filter => no targets found => package invalid => false
     assert.is_false(result)
@@ -949,7 +939,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -960,10 +950,10 @@ describe("AtoBuilder", function()
       ["BASE-2"] = { "AC-3", "AC-4", "AC-5", "AC-6" }
     })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/FALLBACK/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/FALLBACK/1/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal(1, #wave.packages)
     -- Resolved baseGUID must be a single string pointing at BASE-2
@@ -980,7 +970,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -992,7 +982,7 @@ describe("AtoBuilder", function()
       ["BASE-3"] = { "AC-3" }
     })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
     -- The rejected package is a detail row, so the rollup counts only the operation
@@ -1014,7 +1004,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1031,10 +1021,10 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/FALLBACK/3/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/FALLBACK/3/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-1", wave.packages[1].escort.baseGUID)
@@ -1058,7 +1048,7 @@ describe("AtoBuilder", function()
       }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
@@ -1070,10 +1060,10 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/TRANSACTION/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/TRANSACTION/1/DYN-SAT-01"]
     assert.are.equal(1, #wave.packages)
     assert.are.equal("SECOND", wave.packages[1].target.list[1])
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
@@ -1095,7 +1085,7 @@ describe("AtoBuilder", function()
       }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1106,10 +1096,10 @@ describe("AtoBuilder", function()
       ["BASE-2"] = { "AC-5", "AC-6", "AC-7", "AC-8" }
     })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/FALLBACK/4/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/FALLBACK/4/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal(2, #wave.packages)
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
@@ -1126,7 +1116,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1145,10 +1135,10 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/FALLBACK/TANKER/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/FALLBACK/TANKER/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-2", wave.packages[1].tanker.baseGUID)
@@ -1164,7 +1154,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1182,10 +1172,10 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/FALLBACK/JAMMER/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/FALLBACK/JAMMER/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-2", wave.packages[1].jammer.baseGUID)
@@ -1203,7 +1193,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1211,10 +1201,10 @@ describe("AtoBuilder", function()
     -- BASE-1 has exactly 2 of dbid 100 = half of the required 4 -> accepted at half strength
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/PARTIAL/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/PARTIAL/1/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     -- Current behavior: unitCount is NOT rewritten, so it stays at the requested 4
@@ -1229,7 +1219,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
     local config = makeConfig()
     config.c.air.minimumStrengthRatio = 1
 
@@ -1239,8 +1229,8 @@ describe("AtoBuilder", function()
     -- 2 of the required 4: enough under the default 0.5, not enough at 1
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
 
-    assert.is_false(AtoBuilder.build(config, saveData, {}))
-    assert.is_nil(next(saveData.c.air.airTaskingOrder))
+    assert.is_false(AtoBuilder.build(config, plannerState, {}))
+    assert.is_nil(next(plannerState.air.airTaskingOrder))
   end)
 
   -- Positive: lowering the ratio lets a thinner base through
@@ -1251,7 +1241,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
     local config = makeConfig()
     config.c.air.minimumStrengthRatio = 0.25
 
@@ -1261,8 +1251,8 @@ describe("AtoBuilder", function()
     -- 1 of the required 4 is below the default 0.5 but clears 0.25
     stubBases({ ["BASE-1"] = { "AC-1" } })
 
-    assert.is_true(AtoBuilder.build(config, saveData, {}))
-    assert.are.equal("BASE-1", saveData.c.air.airTaskingOrder["STRIKE/PARTIAL/5/DYN-SAT-01"].packages[1].striker.baseGUID)
+    assert.is_true(AtoBuilder.build(config, plannerState, {}))
+    assert.are.equal("BASE-1", plannerState.air.airTaskingOrder["STRIKE/PARTIAL/5/DYN-SAT-01"].packages[1].striker.baseGUID)
   end)
 
   -- ============================================================================
@@ -1280,7 +1270,7 @@ describe("AtoBuilder", function()
     })
     local templatePackage = operation.template.packages[1]
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1291,9 +1281,9 @@ describe("AtoBuilder", function()
       ["BASE-2"] = { "AC-2", "AC-3", "AC-4", "AC-5" }
     })
 
-    assert.is_true(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.build(makeConfig(), plannerState, {}))
 
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/TEMPLATE/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/TEMPLATE/1/DYN-SAT-01"]
     assert.are.equal("BASE-2", wave.packages[1].striker.baseGUID)
     -- The next wave off this template must still start from the authored base and
     -- an empty target list
@@ -1308,7 +1298,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ target = makeTarget({ minTargetCount = 5 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
     -- Built before deepCopy is stubbed; makeConfig deep-copies the real config
     local config = makeConfig()
 
@@ -1317,7 +1307,7 @@ describe("AtoBuilder", function()
     stubTargets({ "TGT-1" })
     local deepCopyStub = trackStub(stub(Utils, "deepCopy").invokes(function(value) return value end))
 
-    assert.is_false(AtoBuilder.build(config, saveData, {}))
+    assert.is_false(AtoBuilder.build(config, plannerState, {}))
 
     -- The wave template copy sits behind the target gate; nothing else on this path
     -- copies, so any call at all means it moved back in front of it
@@ -1345,14 +1335,14 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
     stubTargets({ "TGT-1" })
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2" } })
 
-    assert.is_true(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.build(makeConfig(), plannerState, {}))
 
     assert.is_true(hasLogCall(TIMING_LOG_SCOPE, "role=striker"))
     -- PackageTiming never schedules reconUAV, so a row for it could only read unknown
@@ -1368,7 +1358,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 3 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1376,10 +1366,10 @@ describe("AtoBuilder", function()
     -- required=3 -> threshold is 1.5; 1 available is below it (would wrongly pass if the threshold were floored to 1)
     stubBases({ ["BASE-1"] = { "AC-1" } })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_false(result)
-    assert.is_nil(next(saveData.c.air.airTaskingOrder))
+    assert.is_nil(next(plannerState.air.airTaskingOrder))
   end)
 
   -- Positive: a package accepted at half strength still reserves its base, forcing the next package to fall back
@@ -1398,7 +1388,7 @@ describe("AtoBuilder", function()
       }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1410,10 +1400,10 @@ describe("AtoBuilder", function()
       ["BASE-2"] = { "AC-4", "AC-5", "AC-6", "AC-7" }
     })
 
-    local result = AtoBuilder.build(makeConfig(), saveData, {})
+    local result = AtoBuilder.build(makeConfig(), plannerState, {})
 
     assert.is_true(result)
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/PARTIAL/3/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/PARTIAL/3/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal(2, #wave.packages)
     -- Package 1 reserved BASE-1 at half strength; package 2 must fall back to BASE-2
@@ -1436,7 +1426,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1450,9 +1440,9 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    assert.is_true(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.build(makeConfig(), plannerState, {}))
 
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/AIRFRAME/1/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/AIRFRAME/1/DYN-SAT-01"]
     assert.is_table(wave)
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-1", wave.packages[1].tanker.baseGUID)
@@ -1469,7 +1459,7 @@ describe("AtoBuilder", function()
       }) }
     })
 
-    local saveData = makeSaveData({ reconEntry }, {
+    local plannerState = makePlannerState({ reconEntry }, {
       airTaskingOrder = {
         -- An active wave already holds 3 of the 4 strikers at BASE-1
         ["EXISTING-WAVE"] = {
@@ -1495,9 +1485,9 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    assert.is_true(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.build(makeConfig(), plannerState, {}))
 
-    local wave = saveData.c.air.airTaskingOrder["STRIKE/AIRFRAME/2/DYN-SAT-01"]
+    local wave = plannerState.air.airTaskingOrder["STRIKE/AIRFRAME/2/DYN-SAT-01"]
     assert.are.equal("BASE-1", wave.packages[1].striker.baseGUID)
     assert.are.equal("BASE-1", wave.packages[1].tanker.baseGUID)
   end)
@@ -1525,7 +1515,7 @@ describe("AtoBuilder", function()
       }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1540,7 +1530,7 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "Tool_Range").returns(200))
     trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 50 } } }))
 
-    assert.is_true(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.build(makeConfig(), plannerState, {}))
 
     assert.are.equal(1, countBaseReads(getUnitStub, "BASE-1"))
   end)
@@ -1553,7 +1543,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1561,8 +1551,8 @@ describe("AtoBuilder", function()
     -- Short of aircraft, so the operation stays queued and the second tick reprocesses it
     local getUnitStub = stubBases({ ["BASE-1"] = { "AC-1" } })
 
-    AtoBuilder.build(makeConfig(), saveData, {})
-    AtoBuilder.build(makeConfig(), saveData, {})
+    AtoBuilder.build(makeConfig(), plannerState, {})
+    AtoBuilder.build(makeConfig(), plannerState, {})
 
     -- A cache that outlived the pass would still read 1; aircraft destroyed between
     -- ticks would then never be noticed.
@@ -1581,7 +1571,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1589,7 +1579,7 @@ describe("AtoBuilder", function()
     -- Only 1 of the 4 required aircraft is free, below the half-strength threshold
     stubBases({ ["BASE-1"] = { "AC-1" } })
 
-    assert.is_false(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.build(makeConfig(), plannerState, {}))
 
     assert.are.equal(1, #reconEntry.operations)
     assert.is_false(operation.executed)
@@ -1604,7 +1594,7 @@ describe("AtoBuilder", function()
       packages = { makeStrikePackage({ striker = makeStriker({ unitCount = 4 }) }) }
     })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1616,16 +1606,16 @@ describe("AtoBuilder", function()
       return { dbid = 100, mission = nil }
     end))
     -- Tick 1: not enough aircraft, operation stays queued
-    assert.is_false(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_false(AtoBuilder.build(makeConfig(), plannerState, {}))
     assert.is_false(operation.executed)
 
     -- Tick 2: the rest of the squadron is back on the ramp
     getUnitStub:revert()
     stubBases({ ["BASE-1"] = { "AC-1", "AC-2", "AC-3", "AC-4" } })
 
-    assert.is_true(AtoBuilder.build(makeConfig(), saveData, {}))
+    assert.is_true(AtoBuilder.build(makeConfig(), plannerState, {}))
     assert.is_true(operation.executed)
-    assert.is_table(saveData.c.air.airTaskingOrder["STRIKE/WINDOW/2/DYN-SAT-01"])
+    assert.is_table(plannerState.air.airTaskingOrder["STRIKE/WINDOW/2/DYN-SAT-01"])
   end)
 
   -- Negative: the window closes on an operation that never found its packages
@@ -1633,7 +1623,7 @@ describe("AtoBuilder", function()
     local reconEntry = makeReconEntry()
     local operation = makeAirOperation({ name = "STRIKE/WINDOW/3" })
 
-    local saveData = makeSaveData({ reconEntry })
+    local plannerState = makePlannerState({ reconEntry })
     local config = makeConfig()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime")
@@ -1641,9 +1631,9 @@ describe("AtoBuilder", function()
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     attachOperation(reconEntry, operation)
 
-    assert.is_false(AtoBuilder.build(config, saveData, {}))
+    assert.is_false(AtoBuilder.build(config, plannerState, {}))
 
-    assert.is_nil(next(saveData.c.air.airTaskingOrder))
+    assert.is_nil(next(plannerState.air.airTaskingOrder))
     assert.is_false(operation.executed)
     -- Dropped from the batch, which also closes the emptied batch
     assert.are.equal(0, #reconEntry.operations)

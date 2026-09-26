@@ -108,12 +108,12 @@ end
 -- ============================================================================
 
 ---Collect firing unit names already committed to active FSEMs
----@param saveData SBJ__SaveData Persistent save data containing the fire support plan
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@return table<string, boolean> # Map of committed firing unit name to true
-local function collectAssignedFiringUnitNames(saveData)
+local function collectAssignedFiringUnitNames(plannerState)
   local assignedFiringUnitNameSet = {}
 
-  for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
+  for _, matrix in pairs(plannerState.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
@@ -173,18 +173,18 @@ local function validateFiringUnitStatus(firingUnitCtx, passCtx)
 end
 
 ---Select the firing units of a task template that are free and ready to fire
----@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param taskTemplate SBJ__FireSupportTaskTemplate FST template definition
 ---@param firingUnitStatusCounter SBJ__FiringUnitStatusResult Validation outcome counter; mutated
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FiringUnit[] # Firing units ready for assignment
-local function filterAvailableFiringUnits(saveData, taskTemplate, firingUnitStatusCounter, passCtx)
+local function filterAvailableFiringUnits(plannerState, taskTemplate, firingUnitStatusCounter, passCtx)
   local availableFiringUnits = {}
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
     -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil context and
     -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
-    local firingUnitCtx = MissileSystem.getFiringUnitContext(saveData.c.ground, taskTemplate.missileSystem, firingUnit.name)
+    local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, taskTemplate.missileSystem, firingUnit.name)
     local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
 
     if firingUnitCtx then
@@ -223,7 +223,7 @@ local function setFiringUnitsAssigned(assignedFiringUnitNameSet, availableFiring
 end
 
 ---Build executable FSTs from evaluated targets and available firing units
----@param saveData SBJ__SaveData Persistent save data containing firing unit contexts
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param matrixStartTime integer Matrix base start time in unix timestamp
@@ -231,7 +231,7 @@ end
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
 ---@return SBJ__FiringUnitStatusResult firingUnitStatusCounter Firing unit validation counts
 ---@return number firingUnitBlockedTaskCount Tasks dropped because no firing unit was available
-local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex, matrixStartTime, passCtx)
+local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskIndex, matrixStartTime, passCtx)
   local fireSupportTasks = {}
   local firingUnitStatusCounter = createFiringUnitStatusCounter()
   local firingUnitBlockedTaskCount = 0
@@ -243,7 +243,7 @@ local function buildExecutableTasks(saveData, matrixTemplate, targetsByTaskIndex
     if targets then
       slotIndex = slotIndex + 1
       local availableFiringUnits = filterAvailableFiringUnits(
-        saveData,
+        plannerState,
         taskTemplate,
         firingUnitStatusCounter,
         passCtx
@@ -294,7 +294,7 @@ local function buildMatrix(matrixTemplate, matrixName, fireSupportTasks, created
 end
 
 ---Build an FSEM from the template and insert it into the fire support plan
----@param saveData SBJ__SaveData Persistent save data for FSP insertion
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
@@ -302,7 +302,7 @@ end
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
 local function createAndInsertMatrixFromTemplate(
-    saveData,
+    plannerState,
     matrixTemplate,
     targetsByTaskIndex,
     reconType,
@@ -310,7 +310,7 @@ local function createAndInsertMatrixFromTemplate(
     passCtx
 )
   local fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount = buildExecutableTasks(
-    saveData,
+    plannerState,
     matrixTemplate,
     targetsByTaskIndex,
     currentTime,
@@ -330,7 +330,7 @@ local function createAndInsertMatrixFromTemplate(
 
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
-  DynamicPlan.insert(saveData, "ground", matrixTemplate.name, reconType, function(planName)
+  DynamicPlan.insert(plannerState, "ground", matrixTemplate.name, reconType, function(planName)
     return buildMatrix(matrixTemplate, planName, fireSupportTasks, currentTime)
   end)
   return { success = true, tag = "OK", fields = statusFields }
@@ -338,19 +338,19 @@ end
 
 ---Evaluate one ground operation and insert its FSEM when targets and firing units allow
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
 ---@param currentTime integer Current game time in unix timestamp
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passCtx)
+local function processGroundOperation(config, plannerState, contacts, batchedOp, currentTime, passCtx)
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
 
   local targetsByTaskIndex, targetQualifiedTaskCount = DynamicPlan.evaluateTargets(
     config,
-    saveData,
+    plannerState,
     contacts,
     "ground",
     operation.template
@@ -368,7 +368,7 @@ local function processGroundOperation(config, saveData, contacts, batchedOp, cur
 
   local matrixTemplate = Utils.deepCopy(operation.template)
   return createAndInsertMatrixFromTemplate(
-    saveData,
+    plannerState,
     matrixTemplate,
     targetsByTaskIndex,
     reconType,
@@ -394,19 +394,19 @@ end
 ---Retire active matrices that exceeded the stale timeout
 ---Marking them finished releases their firing units to the assignable pool and stops
 ---FireSupportPlan.strike from commanding them, avoiding double command.
----@param saveData SBJ__SaveData Persistent save data with FSP structure
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param currentTime integer Current unix timestamp
 ---@param staleAfterSec number Stale timeout in seconds
 ---@param opReport SBJ__LogReport Report collector receiving one WARN row per retired matrix
-local function retireStaleMatrices(saveData, currentTime, staleAfterSec, opReport)
-  for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
+local function retireStaleMatrices(plannerState, currentTime, staleAfterSec, opReport)
+  for _, matrix in pairs(plannerState.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated and isMatrixStale(matrix, currentTime, staleAfterSec) then
       matrix.isFinished = true
 
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
           -- Only units that left their hide area need to go back; RELOAD already ends in HA.
-          MissileSystem.markForStow(saveData.c.ground, task.missileSystem, task.firingUnits, { onlyDeployed = true })
+          MissileSystem.markForStow(plannerState.ground, task.missileSystem, task.firingUnits, { onlyDeployed = true })
         end
       end
 
@@ -427,11 +427,11 @@ end
 ---Retirement runs on every enabled tick. OperationBatch drives the observation window;
 ---this module only answers whether an FSEM can be inserted right now.
 ---@param config SBJ__Config Global configuration with battery and weapon system parameters
----@param saveData SBJ__SaveData Persistent save data with dynamic operations and FSP structure
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Sensor contacts from event script for target filtering
 ---@return boolean # True if any ground operation was processed and executed, false if disabled or none ready
-function FsemBuilder.build(config, saveData, contacts)
-  if not saveData.c.dynamicOperations.enabled then
+function FsemBuilder.build(config, plannerState, contacts)
+  if not plannerState.dynamicOperations.enabled then
     return false
   end
 
@@ -442,7 +442,7 @@ function FsemBuilder.build(config, saveData, contacts)
   -- targets are already gone never fires, so no task is ever marked finished and nothing
   -- else releases its firing units; gating retirement on "another operation is waiting"
   -- would leave those brigades deployed indefinitely on every quiet tick.
-  retireStaleMatrices(saveData, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
+  retireStaleMatrices(plannerState, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
 
   -- Must stay a local: both caches only hold still within one pass. Promoting them to
   -- module scope would let them survive across ticks (the module table becomes a global
@@ -451,15 +451,15 @@ function FsemBuilder.build(config, saveData, contacts)
   ---@type SBJ__FsemPassContext
   local passCtx = {
     firingUnitCache = {},
-    assignedFiringUnitNames = collectAssignedFiringUnitNames(saveData)
+    assignedFiringUnitNames = collectAssignedFiringUnitNames(plannerState)
   }
 
-  local result = OperationBatch.run(saveData.c.dynamicOperations.reconTriggeredOperationBatches, "ground", {
+  local result = OperationBatch.run(plannerState.dynamicOperations.reconTriggeredOperationBatches, "ground", {
     currentTime = currentTime,
     windowSec = config.c.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,
     tryInsert = function(batchedOp)
-      return processGroundOperation(config, saveData, contacts, batchedOp, currentTime, passCtx)
+      return processGroundOperation(config, plannerState, contacts, batchedOp, currentTime, passCtx)
     end
   })
 

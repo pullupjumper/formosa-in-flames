@@ -1151,7 +1151,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Built once per pass by buildFilterParams and shared by every filter function
 ---@class SBJ__FilterParams: table
 ---@field config? SBJ__Config Configuration data
----@field saveData? SBJ__SaveData Saved data; read by findRadioDirection for SIGINT transmissions
+---@field transmissions? table<string, SBJ__RadioTransmissionContext> SIGINT transmissions read by findRadioDirection
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
 
@@ -1311,7 +1311,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field templateSource string Key under config.c holding the templates ("packageTemplates" or "fireSupportTaskTemplates")
 ---@field templateField string Array field inside an operation template ("packages" or "fireSupportTasks")
 ---@field registryKey string Key under generatedOperations that tracks names of this type
----@field resolvePlan fun(saveData: SBJ__SaveData): table<string, any> The plan table generated operations are inserted into
+---@field resolvePlan fun(plannerState: SBJ__StrikePlannerState): table<string, any> The plan table generated operations are inserted into
 ---@field resolveDefaultInterval fun(config: SBJ__Config): number Strike interval used when a template carries none
 
 ---Outcome of turning one recon-triggered operation into an inserted ATO wave or FSEM
@@ -1486,6 +1486,18 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__CommsJammingContext: table
 ---@field enabled boolean Whether communications jamming system is activated
 ---@field jammers table<string, SBJ__AircraftContext> Jamming aircraft indexed by GUID
+
+---State slices the China strike planner reads and mutates in one tick
+---@class SBJ__StrikePlannerState: table
+---@field targetlist SBJ__TargetEntry[] Persisted fixed-target list, refilled in place at init
+---@field transmissions table<string, SBJ__RadioTransmissionContext> China SIGINT transmissions read by radio-direction targeting
+---@field recon SBJ__ReconContext China recon context
+---@field dynamicOperations SBJ__DynamicOperationsContext Recon-triggered batches and generated operation names
+---@field air SBJ__AirOperationsContext China air operations, including the ATO
+---@field ground SBJ__StrikingGroundForceContext China ground forces, including the FSP
+---@field lacm SBJ__LACMContext CSG land-attack cruise missile state
+---@field slcm SBJ__SLCMContext Submarine-launched cruise missile state
+---@field fireSupportOnHold boolean Landing ops hold on SRBM fire support, read at slice time
 
 ---State slices landing operations read and mutate: own amphibious state, recon queue, SRBM inventory
 ---@class SBJ__LandingOpsState: table

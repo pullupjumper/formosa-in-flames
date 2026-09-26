@@ -97,7 +97,7 @@ runInit(function(state)
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, PersistentState.landingOps(state))
   CommsJamming.initTargetAircraftContexts(state.t.air.landBased, config.c.commsJamming.aircraftDefaults)
-  StrikePlanner.init(config, state)
+  StrikePlanner.init(config, PersistentState.strikePlanner(state))
   RunwayRepairment.initRunways(config, state)
 
   local taiwanIads = PersistentState.iads(state, constants.SIDES.PLAYER)

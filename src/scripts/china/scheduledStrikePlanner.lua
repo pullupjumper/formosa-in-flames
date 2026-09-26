@@ -12,5 +12,5 @@ if not contacts then
 end
 
 PersistentState.update(function(saveData)
-  StrikePlanner.process(config, saveData, contacts)
+  StrikePlanner.process(config, PersistentState.strikePlanner(saveData), contacts)
 end)

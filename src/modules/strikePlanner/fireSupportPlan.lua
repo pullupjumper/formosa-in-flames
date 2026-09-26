@@ -12,14 +12,14 @@ local FireSupportPlan = {}
 -- ============================================================================
 
 ---Send single firing unit to its firing point and check if it is in position
----@param saveData SBJ__SaveData Saved game state
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param task SBJ__FireSupportTask Fire Support Task containing missile system info
 ---@param firingUnit SBJ__FiringUnit Firing unit to deploy
 ---@return boolean inPosition Whether the unit is at firing point
 ---@return boolean unitMissing Whether the unit no longer exists in game or has no runtime context
-local function deploySingleFiringUnit(saveData, task, firingUnit)
+local function deploySingleFiringUnit(plannerState, task, firingUnit)
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
-  local firingUnitCtx = MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystem, firingUnit.name)
+  local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, task.missileSystem, firingUnit.name)
   if not actualUnit or not firingUnitCtx then
     return false, true
   end
@@ -30,12 +30,12 @@ end
 ---Deploy all firing units in a task and check if all are in position
 ---Destroyed units are removed from the task; a task emptied this way is closed
 ---so it never blocks the rest of the matrix waiting for a unit that cannot arrive.
----@param saveData SBJ__SaveData Saved game state
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param task SBJ__FireSupportTask Fire Support Task containing firing units
 ---@return boolean allInPosition Whether all surviving firing units are at firing point
 ---@return string[] notReadyNames Unit names not yet at firing point
 ---@return string[] removedNames Destroyed unit names removed from the task
-local function deployTaskFiringUnits(saveData, task)
+local function deployTaskFiringUnits(plannerState, task)
   local allInPosition = true
   local notReadyNames = {}
   local removedNames = {}
@@ -44,7 +44,7 @@ local function deployTaskFiringUnits(saveData, task)
   -- inserted at the head to preserve the original firing unit order in logs.
   for i = #task.firingUnits, 1, -1 do
     local firingUnit = task.firingUnits[i]
-    local inPosition, unitMissing = deploySingleFiringUnit(saveData, task, firingUnit)
+    local inPosition, unitMissing = deploySingleFiringUnit(plannerState, task, firingUnit)
 
     if unitMissing then
       table.remove(task.firingUnits, i)
@@ -70,10 +70,10 @@ end
 
 ---Execute all Fire Support Tasks within a FSEM
 ---Launches attacks when start time reached and minimum target count met, marks tasks as finished
----@param saveData SBJ__SaveData Saved game state
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix containing tasks to execute
 ---@return {taskName: string, fired: integer}[] # Strike result records per task
-local function startFireSupportTasks(saveData, matrix)
+local function startFireSupportTasks(plannerState, matrix)
   local strikeResults = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
@@ -85,7 +85,7 @@ local function startFireSupportTasks(saveData, matrix)
       })
 
       if fired > 0 then
-        MissileSystem.markForStow(saveData.c.ground, task.missileSystem, task.firingUnits)
+        MissileSystem.markForStow(plannerState.ground, task.missileSystem, task.firingUnits)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,
@@ -119,19 +119,19 @@ end
 ---Process active matrix deployment phase
 ---Deploys firing units to firing points, tracks position status,
 ---and aggregates destroyed units removed from tasks for logging
----@param saveData SBJ__SaveData Saved game state
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param matrix SBJ__FireSupportExecutionMatrix Fire Support Execution Matrix to process
 ---@return boolean allInPosition Whether all firing units across all tasks are in position
 ---@return {taskName: string, notReadyNames: string[]}[] pendingTasks Tasks with not-ready unit names
 ---@return {taskName: string, removedNames: string[], taskClosed: boolean}[] cleanedTasks Tasks that lost destroyed units
-local function processActiveMatrix(saveData, matrix)
+local function processActiveMatrix(plannerState, matrix)
   local allInPosition = true
   local pendingTasks = {}
   local cleanedTasks = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
     if not task.isFinished and GameUtils.isAfterStartTime(task.startTime) then
-      local taskReady, notReadyNames, removedNames = deployTaskFiringUnits(saveData, task)
+      local taskReady, notReadyNames, removedNames = deployTaskFiringUnits(plannerState, task)
 
       if #removedNames > 0 then
         table.insert(cleanedTasks, {
@@ -163,17 +163,17 @@ end
 
 ---Execute Fire Support Plan strikes for all active FSEMs
 ---Deploys firing units, removes destroyed ones, executes strikes when ready, marks FSEMs finished
----@param saveData SBJ__SaveData Saved game state containing FSEMs
-function FireSupportPlan.process(saveData)
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+function FireSupportPlan.process(plannerState)
   local report = LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")
 
-  for _, matrix in pairs(saveData.c.ground.fireSupportPlan) do
+  for _, matrix in pairs(plannerState.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
-      local allInPosition, pendingTasks, cleanedTasks = processActiveMatrix(saveData, matrix)
+      local allInPosition, pendingTasks, cleanedTasks = processActiveMatrix(plannerState, matrix)
 
       local strikeResults = {}
       if allInPosition then
-        strikeResults = startFireSupportTasks(saveData, matrix)
+        strikeResults = startFireSupportTasks(plannerState, matrix)
       end
 
       if isMatrixFinished(matrix) then

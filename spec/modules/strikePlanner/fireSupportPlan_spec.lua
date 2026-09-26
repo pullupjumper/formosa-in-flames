@@ -40,8 +40,8 @@ describe("FireSupportPlan", function()
   -- ============================================================================
 
   ---@param overrides? table
-  ---@return table saveData
-  local function makeSaveData(overrides)
+  ---@return table plannerState
+  local function makePlannerState(overrides)
     overrides = overrides or {}
     local task = {
       name = overrides.taskName or "FST-ALPHA",
@@ -67,16 +67,14 @@ describe("FireSupportPlan", function()
     }
 
     return {
-      c = {
-        ground = {
-          fireSupportPlan = { [matrix.name] = matrix },
-          srbm = {
-            firingUnits = {
-              ["Battery-1"] = {
-                state = overrides.firingUnitState or constants.MISSILE_SYSTEM_STATE.HIDE,
-                ammoThreshold = 40,
-                weaponDBID = 3104
-              }
+      ground = {
+        fireSupportPlan = { [matrix.name] = matrix },
+        srbm = {
+          firingUnits = {
+            ["Battery-1"] = {
+              state = overrides.firingUnitState or constants.MISSILE_SYSTEM_STATE.HIDE,
+              ammoThreshold = 40,
+              weaponDBID = 3104
             }
           }
         }
@@ -91,11 +89,11 @@ describe("FireSupportPlan", function()
   describe("matrix filtering", function()
     -- Negative: finished matrix skipped
     it("should skip finished matrices", function()
-      local saveData = makeSaveData({ matrixFinished = true })
+      local plannerState = makePlannerState({ matrixFinished = true })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -103,11 +101,11 @@ describe("FireSupportPlan", function()
 
     -- Negative: non-activated matrix skipped
     it("should skip non-activated matrices", function()
-      local saveData = makeSaveData({ isActivated = false })
+      local plannerState = makePlannerState({ isActivated = false })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -115,11 +113,11 @@ describe("FireSupportPlan", function()
 
     -- Boundary: empty plan
     it("should handle empty fireSupportPlan without errors", function()
-      local saveData = { c = { ground = { fireSupportPlan = {} } } }
+      local plannerState = { ground = { fireSupportPlan = {} } }
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.are.same({}, saveData.c.ground.fireSupportPlan)
+      assert.are.same({}, plannerState.ground.fireSupportPlan)
     end)
   end)
 
@@ -130,11 +128,11 @@ describe("FireSupportPlan", function()
   describe("task processing", function()
     -- Negative: finished task skipped
     it("should skip finished tasks", function()
-      local saveData = makeSaveData({ taskFinished = true })
+      local plannerState = makePlannerState({ taskFinished = true })
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -142,11 +140,11 @@ describe("FireSupportPlan", function()
 
     -- Negative: start time not reached
     it("should skip tasks whose start time has not been reached", function()
-      local saveData = makeSaveData({})
+      local plannerState = makePlannerState({})
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubGetUnit).was_not.called()
     end)
@@ -159,44 +157,44 @@ describe("FireSupportPlan", function()
   describe("firing unit deployment", function()
     -- Positive: each live unit is handed to missileSystem with its runtime context
     it("should send each firing unit to its firing point through MissileSystem", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
       local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubSend).was.called(1)
-      assert.stub(stubSend).was.called_with(saveData.c.ground.srbm.firingUnits["Battery-1"], mockUnit)
+      assert.stub(stubSend).was.called_with(plannerState.ground.srbm.firingUnits["Battery-1"], mockUnit)
     end)
 
     -- Positive: all units at firing point
     it("should set allFiringUnitsInPosition to true when all units are at STATIC state", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.allFiringUnitsInPosition)
     end)
 
     -- Boundary: destroyed unit is removed and the emptied task closes (dead unit cleanup)
     it("should remove destroyed unit, close emptied task and finish matrix", function()
-      local saveData = makeSaveData({})
+      local plannerState = makePlannerState({})
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
       assert.are.equal(0, #task.firingUnits)
       assert.is_true(task.isFinished)
@@ -207,15 +205,15 @@ describe("FireSupportPlan", function()
 
     -- Boundary: a unit without runtime context is dropped like a destroyed one
     it("should remove a firing unit that has no runtime context", function()
-      local saveData = makeSaveData({})
-      saveData.c.ground.srbm.firingUnits["Battery-1"] = nil
+      local plannerState = makePlannerState({})
+      plannerState.ground.srbm.firingUnits["Battery-1"] = nil
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "UNIT-1", name = "Battery-1" }))
       local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local task = saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
+      local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.are.equal(0, #task.firingUnits)
       assert.is_true(task.isFinished)
       assert.stub(stubSend).was_not.called()
@@ -223,24 +221,24 @@ describe("FireSupportPlan", function()
 
     -- Negative: not at STATIC state
     it("should set allFiringUnitsInPosition to false when unit is not at STATIC state", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
     end)
 
     -- Boundary: mixed states across multiple units
     it("should set allFiringUnitsInPosition to false when any unit is not at STATIC state", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -254,9 +252,9 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
     end)
   end)
@@ -268,10 +266,10 @@ describe("FireSupportPlan", function()
   describe("dead unit cleanup", function()
     -- Positive: destroyed unit removed while the survivor fires
     it("should remove destroyed unit and let surviving unit fire", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -284,9 +282,9 @@ describe("FireSupportPlan", function()
       end))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
       assert.are.same({ { name = "Battery-2" } }, task.firingUnits)
       assert.is_true(matrix.allFiringUnitsInPosition)
@@ -297,8 +295,8 @@ describe("FireSupportPlan", function()
 
     -- Positive: emptied task no longer blocks sibling task strikes in the same matrix
     it("should not block sibling task strike when another task loses all units", function()
-      local saveData = makeSaveData({})
-      table.insert(saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
+      local plannerState = makePlannerState({})
+      table.insert(plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
         name = "FST-BETA",
         missileSystem = "SRBM",
         isFinished = false,
@@ -312,7 +310,7 @@ describe("FireSupportPlan", function()
           ammoPerTarget = 1
         }
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -325,9 +323,9 @@ describe("FireSupportPlan", function()
       end))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(1))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.fireSupportTasks[1].isFinished)
       assert.is_true(matrix.fireSupportTasks[2].isFinished)
       assert.stub(stubAttack).was.called(1)
@@ -343,30 +341,30 @@ describe("FireSupportPlan", function()
   describe("strike execution", function()
     -- Positive: attack succeeds and marks task finished
     it("should call attackContacts and mark task finished when result > 0", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubAttack).was.called(1)
       assert.are.same({ "TGT-1", "TGT-2" }, stubAttack.calls[1].vals[1].contacts)
       assert.are.equal(2, stubAttack.calls[1].vals[1].qty)
 
-      local task = saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
+      local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.is_true(task.isFinished)
     end)
 
     -- Positive: firingUnits forwarded to attackContacts
     it("should pass firingUnits to attackContacts", function()
       local firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
         firingUnits = firingUnits
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -376,7 +374,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubAttack).was.called(1)
       assert.are.same(firingUnits, stubAttack.calls[1].vals[1].firingUnits)
@@ -384,21 +382,21 @@ describe("FireSupportPlan", function()
 
     -- Negative: attack returns 0
     it("should not mark task finished when attackContacts returns 0", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local task = saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
+      local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.is_false(task.isFinished)
     end)
 
     -- Positive: target threshold is handled before FSP execution
     it("should pass existing targets to attackContacts without checking minTargetCount", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
         targetList = {},
         minTargetCount = 2
@@ -408,7 +406,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubAttack).was.called_with({
         contacts = {},
@@ -419,7 +417,7 @@ describe("FireSupportPlan", function()
 
     -- Negative: units not in position blocks all strikes
     it("should not execute strikes when firing units are not all in position", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -427,7 +425,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(stubAttack).was_not.called()
     end)
@@ -440,25 +438,25 @@ describe("FireSupportPlan", function()
   describe("stow window trigger", function()
     -- Positive: non-SAM strike stamps stowStartTime on firing units
     it("should set stowStartTime on firing units after non-SAM strike succeeds", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
       currentTimeStub.returns(5000)
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.are.equal(5000, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(5000, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Negative: SAM strike does not stamp stowStartTime
     it("should not set stowStartTime when missile system is SAM", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         missileSystem = "SAM",
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC
       })
-      saveData.c.ground.sam = {
+      plannerState.ground.sam = {
         firingUnits = {
           ["Battery-1"] = {
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -473,47 +471,47 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.is_nil(saveData.c.ground.sam.firingUnits["Battery-1"].stowStartTime)
+      assert.is_nil(plannerState.ground.sam.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Negative: zero-result strike leaves stowStartTime untouched
     it("should not set stowStartTime when attackContacts returns 0", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
       currentTimeStub.returns(5000)
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.is_nil(saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.is_nil(plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Boundary: existing stowStartTime is preserved
     it("should not overwrite existing stowStartTime when strike succeeds", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
-      saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime = 1000
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime = 1000
       currentTimeStub.returns(5000)
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.are.equal(1000, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(1000, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Boundary: every firing unit in a multi-unit task gets stowStartTime
     it("should set stowStartTime on every firing unit in a multi-unit task", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -528,10 +526,10 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.are.equal(7777, saveData.c.ground.srbm.firingUnits["Battery-1"].stowStartTime)
-      assert.are.equal(7777, saveData.c.ground.srbm.firingUnits["Battery-2"].stowStartTime)
+      assert.are.equal(7777, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(7777, plannerState.ground.srbm.firingUnits["Battery-2"].stowStartTime)
     end)
   end)
 
@@ -542,7 +540,7 @@ describe("FireSupportPlan", function()
   describe("matrix completion", function()
     -- Positive: all tasks finished
     it("should mark matrix as finished when all tasks are finished", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
@@ -550,26 +548,26 @@ describe("FireSupportPlan", function()
         return #opts.contacts > 0 and 2 or 0
       end))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.isFinished)
     end)
 
     -- Positive: tasks pre-finished before strike
     it("should mark matrix finished when tasks were already finished before strike", function()
-      local saveData = makeSaveData({ taskFinished = true })
+      local plannerState = makePlannerState({ taskFinished = true })
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.isFinished)
     end)
 
     -- Negative: some tasks not finished
     it("should not mark matrix as finished when some tasks are not finished", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
-      table.insert(saveData.c.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      table.insert(plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
         name = "FST-BETA",
         missileSystem = "SRBM",
         isFinished = false,
@@ -590,9 +588,9 @@ describe("FireSupportPlan", function()
         return #opts.contacts > 0 and 2 or 0
       end))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      local matrix = saveData.c.ground.fireSupportPlan["FSEM-1"]
+      local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.isFinished)
     end)
   end)
@@ -604,8 +602,8 @@ describe("FireSupportPlan", function()
   describe("multiple matrices", function()
     -- Positive: independent processing
     it("should process multiple matrices independently", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
-      saveData.c.ground.fireSupportPlan["FSEM-2"] = {
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      plannerState.ground.fireSupportPlan["FSEM-2"] = {
         name = "FSEM-2",
         isActivated = false,
         isFinished = false,
@@ -632,10 +630,10 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
-      assert.is_true(saveData.c.ground.fireSupportPlan["FSEM-1"].isFinished)
-      assert.is_false(saveData.c.ground.fireSupportPlan["FSEM-2"].isFinished)
+      assert.is_true(plannerState.ground.fireSupportPlan["FSEM-1"].isFinished)
+      assert.is_false(plannerState.ground.fireSupportPlan["FSEM-2"].isFinished)
     end)
   end)
 
@@ -646,13 +644,13 @@ describe("FireSupportPlan", function()
   describe("logging", function()
     -- Positive: strike results logged
     it("should log strike results when attacks are executed", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was.called(1)
       assert.are.equal("ground", logStub.calls[1].vals[1])
@@ -664,14 +662,14 @@ describe("FireSupportPlan", function()
 
     -- Positive: pending units logged
     it("should log pending info when firing units are not in position", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -684,9 +682,9 @@ describe("FireSupportPlan", function()
 
     -- Positive: completion logged without strike info
     it("should log completion without strike info when tasks were pre-finished", function()
-      local saveData = makeSaveData({ taskFinished = true })
+      local plannerState = makePlannerState({ taskFinished = true })
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -697,34 +695,34 @@ describe("FireSupportPlan", function()
 
     -- Negative: no log on empty plan
     it("should not log when no active matrices exist", function()
-      local saveData = { c = { ground = { fireSupportPlan = {} } } }
+      local plannerState = { ground = { fireSupportPlan = {} } }
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was_not.called()
     end)
 
     -- Negative: no log when attack returns zero
     it("should not log when attack returns zero and units are in position", function()
-      local saveData = makeSaveData({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
+      local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was_not.called()
     end)
 
     -- Positive: WARN dead_unit_cleanup carries removed unit names and closed-task flag
     it("should log WARN dead_unit_cleanup with removed unit names and taskClosed", function()
-      local saveData = makeSaveData({})
+      local plannerState = makePlannerState({})
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -736,10 +734,10 @@ describe("FireSupportPlan", function()
 
     -- Positive: taskClosed=false when survivors keep the task open after cleanup
     it("should log taskClosed=false when surviving units remain after cleanup", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -752,7 +750,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -763,10 +761,10 @@ describe("FireSupportPlan", function()
 
     -- Regression: surviving multi-unit not-ready names keep the original order
     it("should keep notReadyNames in original unit order for surviving units", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      saveData.c.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.HIDE,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -778,7 +776,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
 
-      FireSupportPlan.process(saveData)
+      FireSupportPlan.process(plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]

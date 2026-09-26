@@ -57,7 +57,7 @@ end
 ---Ground force (missile system) slice for a side
 ---@param state SBJ__SaveData
 ---@param sideName string China or Taiwan
----@return SBJ__GroundForceContext
+---@return SBJ__GroundForceContext|SBJ__StrikingGroundForceContext
 function PersistentState.groundForces(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].ground
 end
@@ -125,6 +125,25 @@ function PersistentState.landingOps(state)
     amphibOps = state.c.amphibOps,
     recon = state.c.recon,
     ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
+  }
+end
+
+---Slices the China strike planner reads and mutates: targets, recon, dynamic operations,
+---ATO, FSP, cruise missile salvos, and the landing ops fire-support hold
+---@param state SBJ__SaveData
+---@return SBJ__StrikePlannerState
+function PersistentState.strikePlanner(state)
+  local china = state.c
+  return {
+    targetlist = china.targetlist,
+    transmissions = PersistentState.sigint(state, constants.SIDES.ENEMY).transmissions,
+    recon = china.recon,
+    dynamicOperations = china.dynamicOperations,
+    air = china.air,
+    ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
+    lacm = china.surface.lacm,
+    slcm = china.subSurface.slcm,
+    fireSupportOnHold = china.amphibOps.fireSupportOnHold == true,
   }
 end
 

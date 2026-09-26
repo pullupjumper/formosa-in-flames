@@ -2,21 +2,19 @@
 local OperationType = require("src.modules.strikePlanner.operationType")
 
 describe("OperationType", function()
-  ---Create the minimal saveData shape both plan tables live in
+  ---Create the minimal plannerState shape both plan tables live in
   ---@return table
-  local function makeSaveData()
+  local function makePlannerState()
     return {
-      c = {
-        air = { airTaskingOrder = { AIR_WAVE = {} } },
-        ground = { fireSupportPlan = { GND_MATRIX = {} } }
-      }
+      air = { airTaskingOrder = { AIR_WAVE = {} } },
+      ground = { fireSupportPlan = { GND_MATRIX = {} } }
     }
   end
 
   -- Positive: the air descriptor points at package templates and the ATO
   it("should describe air operations", function()
     local descriptor = OperationType.resolve("air")
-    local saveData = makeSaveData()
+    local plannerState = makePlannerState()
     local config = { strikeInterval = 900 }
 
     assert(descriptor ~= nil)
@@ -24,14 +22,14 @@ describe("OperationType", function()
     assert.are.equal("packageTemplates", descriptor.templateSource)
     assert.are.equal("packages", descriptor.templateField)
     assert.are.equal("air", descriptor.registryKey)
-    assert.are.equal(saveData.c.air.airTaskingOrder, descriptor.resolvePlan(saveData))
+    assert.are.equal(plannerState.air.airTaskingOrder, descriptor.resolvePlan(plannerState))
     assert.are.equal(900, descriptor.resolveDefaultInterval(config))
   end)
 
   -- Positive: the ground descriptor points at fire support task templates and the FSP
   it("should describe ground operations", function()
     local descriptor = OperationType.resolve("ground")
-    local saveData = makeSaveData()
+    local plannerState = makePlannerState()
     local config = { strikeInterval = 900 }
 
     assert(descriptor ~= nil)
@@ -39,7 +37,7 @@ describe("OperationType", function()
     assert.are.equal("fireSupportTaskTemplates", descriptor.templateSource)
     assert.are.equal("fireSupportTasks", descriptor.templateField)
     assert.are.equal("ground", descriptor.registryKey)
-    assert.are.equal(saveData.c.ground.fireSupportPlan, descriptor.resolvePlan(saveData))
+    assert.are.equal(plannerState.ground.fireSupportPlan, descriptor.resolvePlan(plannerState))
     -- Ground dynamic FSP is TOT-oriented, so the interval is always zero
     assert.are.equal(0, descriptor.resolveDefaultInterval(config))
   end)

@@ -245,6 +245,53 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
+  -- strikePlanner
+  -- ============================================================================
+
+  describe("strikePlanner", function()
+    local function makeChinaState(fireSupportOnHold)
+      return {
+        c = {
+          targetlist = {},
+          sigint = { transmissions = {} },
+          recon = {},
+          dynamicOperations = {},
+          air = {},
+          ground = {},
+          surface = { lacm = {} },
+          subSurface = { slcm = {} },
+          amphibOps = { fireSupportOnHold = fireSupportOnHold },
+        },
+        t = { ground = {} },
+      }
+    end
+
+    -- Positive: slices are the live China tables, so planner mutations land in saved state
+    it("should expose China planner slices by reference", function()
+      local state = makeChinaState(true)
+
+      local plannerState = PersistentState.strikePlanner(state)
+
+      assert.are.equal(state.c.targetlist, plannerState.targetlist)
+      assert.are.equal(state.c.sigint.transmissions, plannerState.transmissions)
+      assert.are.equal(state.c.recon, plannerState.recon)
+      assert.are.equal(state.c.dynamicOperations, plannerState.dynamicOperations)
+      assert.are.equal(state.c.air, plannerState.air)
+      assert.are.equal(state.c.ground, plannerState.ground)
+      assert.are.equal(state.c.surface.lacm, plannerState.lacm)
+      assert.are.equal(state.c.subSurface.slcm, plannerState.slcm)
+      assert.is_true(plannerState.fireSupportOnHold)
+    end)
+
+    -- Edge: an unset landing ops hold reads as false, not nil
+    it("should report fireSupportOnHold as false when landing ops never set it", function()
+      local plannerState = PersistentState.strikePlanner(makeChinaState(nil))
+
+      assert.is_false(plannerState.fireSupportOnHold)
+    end)
+  end)
+
+  -- ============================================================================
   -- read
   -- ============================================================================
 

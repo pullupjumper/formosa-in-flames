@@ -119,19 +119,15 @@ describe("TargetingProcess", function()
     return config
   end
 
-  ---Create a saveData structure
+  ---Create a strike planner state structure
   ---@param overrides? table
   ---@return table
-  local function makeSaveData(overrides)
+  local function makePlannerState(overrides)
     overrides = overrides or {}
     return {
-      c = {
-        targetlist = overrides.targetlist or {},
-        sigint = {
-          transmissions = overrides.transmissions or {},
-        },
-        recon = overrides.recon or { enabled = true, queue = {} },
-      },
+      targetlist = overrides.targetlist or {},
+      transmissions = overrides.transmissions or {},
+      recon = overrides.recon or { enabled = true, queue = {} },
     }
   end
 
@@ -163,7 +159,7 @@ describe("TargetingProcess", function()
 
   ---Run one dynamic filter through processTargets
   ---@param filterName string Filter name as used in targetConfig.filterNames
-  ---@param params table Filter inputs: contacts, task, and optional config / saveData
+  ---@param params table Filter inputs: contacts, task, and optional config / plannerState (defaults to an empty one)
   ---@return string[] targets
   ---@return SBJ__TrackingRequestEntry[] trackingRequests
   local function runFilter(filterName, params)
@@ -173,7 +169,8 @@ describe("TargetingProcess", function()
       contactAge = params.task.target.contactAge,
       minTargetCount = params.task.target.minTargetCount,
     }
-    return TargetingProcess.processTargets(params.config, params.saveData, params.contacts, targetConfig, false)
+    local plannerState = params.plannerState or makePlannerState()
+    return TargetingProcess.processTargets(params.config, plannerState, params.contacts, targetConfig, false)
   end
 
   ---Run fixed-target BDA over the given contact GUIDs through processTargets
@@ -193,7 +190,7 @@ describe("TargetingProcess", function()
       minTargetCount = 1,
     }
     return TargetingProcess.processTargets(
-      makeConfig(), makeSaveData({ targetlist = targetlist }), {}, targetConfig, isFirstWave
+      makeConfig(), makePlannerState({ targetlist = targetlist }), {}, targetConfig, isFirstWave
     )
   end
 
@@ -228,17 +225,43 @@ describe("TargetingProcess", function()
         longitude = 120.91,
       })
       local contacts = { baseContact, runwayContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(2))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("Airfield", saveData.c.targetlist[1].category)
-      assert.are.equal("runway-001", saveData.c.targetlist[1].guid)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("Airfield", targetlist[1].category)
+      assert.are.equal("runway-001", targetlist[1].guid)
+    end)
+
+    -- Positive: the persisted list is refilled in place, dropping stale entries
+    it("should replace stale entries in the same targetlist table", function()
+      local radarContact = makeContact({
+        guid = "radar-fresh",
+        type_description = "Radar Station",
+      })
+      local targetlist = {
+        makeTargetEntry({ guid = "stale-001" }),
+        makeTargetEntry({ guid = "stale-002" }),
+        makeTargetEntry({ guid = "stale-003" }),
+      }
+      local plannerState = makePlannerState({ targetlist = targetlist })
+      local scanConfig = makeScanConfig()
+
+      trackStub(stub(GameApi, "ScenEdit_GetContacts").returns({ radarContact }))
+
+      TargetingProcess.findTargets("China", scanConfig, plannerState.targetlist)
+
+      assert.are.equal(targetlist, plannerState.targetlist)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("radar-fresh", targetlist[1].guid)
+      assert.are.equal("ISR", targetlist[1].category)
+      assert.is_nil(targetlist[2])
+      assert.is_nil(targetlist[3])
     end)
 
     -- Positive: categorizes pier contact near port
@@ -256,17 +279,17 @@ describe("TargetingProcess", function()
         longitude = 121.71,
       })
       local contacts = { portContact, pierContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(1))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("Port", saveData.c.targetlist[1].category)
-      assert.are.equal("pier-001", saveData.c.targetlist[1].guid)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("Port", targetlist[1].category)
+      assert.are.equal("pier-001", targetlist[1].guid)
     end)
 
     -- Positive: categorizes standalone radar target
@@ -276,15 +299,15 @@ describe("TargetingProcess", function()
         type_description = "Radar Station",
       })
       local contacts = { radarContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("ISR", saveData.c.targetlist[1].category)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("ISR", targetlist[1].category)
     end)
 
     -- Positive: categorizes SAM target
@@ -294,15 +317,15 @@ describe("TargetingProcess", function()
         type_description = "Sky Bow III",
       })
       local contacts = { samContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("SAM", saveData.c.targetlist[1].category)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("SAM", targetlist[1].category)
     end)
 
     -- Positive: categorizes ASM target
@@ -312,15 +335,15 @@ describe("TargetingProcess", function()
         type_description = "Hsiung Feng III",
       })
       local contacts = { asmContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("ASM", saveData.c.targetlist[1].category)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("ASM", targetlist[1].category)
     end)
 
     -- Positive: categorizes C2 target
@@ -330,15 +353,15 @@ describe("TargetingProcess", function()
         type_description = "Hengshan Command Center",
       })
       local contacts = { c2Contact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("C2", saveData.c.targetlist[1].category)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("C2", targetlist[1].category)
     end)
 
     -- Positive: categorizes shelter near airbase
@@ -356,29 +379,32 @@ describe("TargetingProcess", function()
         longitude = 121.21,
       })
       local contacts = { baseContact, shelterContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(1))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(1, #saveData.c.targetlist)
-      assert.are.equal("Airfield", saveData.c.targetlist[1].category)
-      assert.is_true(string.find(saveData.c.targetlist[1].name, "Taoyuan") ~= nil)
+      assert.are.equal(1, #targetlist)
+      assert.are.equal("Airfield", targetlist[1].category)
+      assert.is_true(string.find(targetlist[1].name, "Taoyuan") ~= nil)
     end)
 
     -- Negative: no contacts returned
-    it("should set empty targetlist when no contacts returned", function()
-      local saveData = makeSaveData()
+    it("should clear the passed targetlist in place when no contacts returned", function()
+      local targetlist = { makeTargetEntry({ guid = "stale-001" }), makeTargetEntry({ guid = "stale-002" }) }
+      local plannerState = makePlannerState({ targetlist = targetlist })
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(nil))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, plannerState.targetlist)
 
-      assert.are.equal(0, #saveData.c.targetlist)
+      assert.are.equal(targetlist, plannerState.targetlist)
+      assert.are.equal(0, #targetlist)
+      assert.is_nil(targetlist[1])
       assert.stub(warnStub).was.called(1)
     end)
 
@@ -397,44 +423,44 @@ describe("TargetingProcess", function()
         longitude = 122.0,
       })
       local contacts = { baseContact, runwayContact }
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "Tool_Range").returns(100))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(0, #saveData.c.targetlist)
+      assert.are.equal(0, #targetlist)
     end)
 
     -- Negative: unrecognized contact description
-    it("should skip contacts that do not match any pattern", function()
+    it("should skip contacts that do not match any pattern and drop stale entries", function()
       local unknownContact = makeContact({
         guid = "unknown-001",
         type_description = "Unknown Facility",
       })
       local contacts = { unknownContact }
-      local saveData = makeSaveData()
+      local targetlist = { makeTargetEntry({ guid = "stale-001" }) }
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(0, #saveData.c.targetlist)
+      assert.are.equal(0, #targetlist)
     end)
 
     -- Boundary: empty contacts list
     it("should produce empty targetlist for empty contacts array", function()
-      local saveData = makeSaveData()
+      local targetlist = {}
       local scanConfig = makeScanConfig()
 
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns({}))
 
-      TargetingProcess.findTargets("China", scanConfig, saveData)
+      TargetingProcess.findTargets("China", scanConfig, targetlist)
 
-      assert.are.equal(0, #saveData.c.targetlist)
+      assert.are.equal(0, #targetlist)
     end)
   end)
 
@@ -1073,7 +1099,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
       local config = makeConfig({ maxRange = 50, maxCount = 3 })
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         transmissions = {
           ["tm-001"] = {
             latitude = 25.0,
@@ -1091,14 +1117,14 @@ describe("TargetingProcess", function()
         contacts = { contact },
         task = task,
         config = config,
-        saveData = saveData,
+        plannerState = plannerState,
       })
 
       assert.is_not_nil(result)
       assert.are.equal(1, #result)
     end)
 
-    -- Negative: no config or saveData
+    -- Negative: no config or transmissions
     it("should return empty table when config is nil", function()
       local contact = makeContact({ guid = "c-001", typed = 8, inArea = function() return true end })
       local task = makeTask({ areas = { { "area-1" } } })
@@ -1107,21 +1133,23 @@ describe("TargetingProcess", function()
         contacts = { contact },
         task = task,
         config = nil,
-        saveData = makeSaveData(),
+        plannerState = makePlannerState(),
       })
 
       assert.are.equal(0, #result)
     end)
 
-    it("should return empty table when saveData is nil", function()
+    it("should return empty table when transmissions is nil", function()
       local contact = makeContact({ guid = "c-002", typed = 8, inArea = function() return true end })
       local task = makeTask({ areas = { { "area-1" } } })
+      local plannerState = makePlannerState()
+      plannerState.transmissions = nil
 
       local result = runFilter("findRadioDirection", {
         contacts = { contact },
         task = task,
         config = makeConfig(),
-        saveData = nil,
+        plannerState = plannerState,
       })
 
       assert.are.equal(0, #result)
@@ -1137,7 +1165,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
       local config = makeConfig({ maxRange = 50, maxCount = 3 })
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         transmissions = {
           ["tm-003"] = {
             latitude = 25.0,
@@ -1155,7 +1183,7 @@ describe("TargetingProcess", function()
         contacts = { contact },
         task = task,
         config = config,
-        saveData = saveData,
+        plannerState = plannerState,
       })
 
       assert.are.equal(0, #result)
@@ -1171,7 +1199,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
       local config = makeConfig({ maxRange = 50, maxCount = 3 })
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         transmissions = {
           ["tm-004"] = {
             latitude = 25.0,
@@ -1189,7 +1217,7 @@ describe("TargetingProcess", function()
         contacts = { contact },
         task = task,
         config = config,
-        saveData = saveData,
+        plannerState = plannerState,
       })
 
       assert.are.equal(0, #result)
@@ -1205,7 +1233,7 @@ describe("TargetingProcess", function()
       })
       local task = makeTask({ contactAge = 300, areas = { { "area-1" } } })
       local config = makeConfig({ maxRange = 50, maxCount = 3 })
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         transmissions = {
           ["tm-old-001"] = {
             latitude = 25.0,
@@ -1223,7 +1251,7 @@ describe("TargetingProcess", function()
         contacts = { contact },
         task = task,
         config = config,
-        saveData = saveData,
+        plannerState = plannerState,
       })
 
       assert.are.equal(0, #result)
@@ -1266,7 +1294,7 @@ describe("TargetingProcess", function()
         lastDetections = { { age = 100 } },
         inArea = function() return true end,
       })
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         transmissions = {
           ["tm-001"] = { latitude = 25.0, longitude = 121.0, currentDetectionLevel = 5, type = "mobile" },
         },
@@ -1278,7 +1306,7 @@ describe("TargetingProcess", function()
         contacts = { contact },
         task = makeTask(),
         config = makeConfig(),
-        saveData = saveData,
+        plannerState = plannerState,
       })
 
       assert.are.equal(1, #requests)
@@ -1326,18 +1354,18 @@ describe("TargetingProcess", function()
     it("should not touch the recon queue or sweep the side", function()
       local vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide"))
       local trackTargetStub = trackStub(stub(Recon, "trackTarget"))
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
 
-      runFilter("findNavalTargets", { contacts = { makeShip("ship-001") }, task = makeTask(), saveData = saveData })
+      runFilter("findNavalTargets", { contacts = { makeShip("ship-001") }, task = makeTask(), plannerState = plannerState })
 
       assert.stub(vpGetSideStub).was_not.called()
       assert.stub(trackTargetStub).was_not.called()
-      assert.are.equal(0, #saveData.c.recon.queue)
+      assert.are.equal(0, #plannerState.recon.queue)
     end)
 
     -- Boundary: fixed targets never ask for tracking
     it("should return no tracking requests for fixed targets", function()
-      local _, requests = TargetingProcess.processTargets(makeConfig(), makeSaveData(), {}, {
+      local _, requests = TargetingProcess.processTargets(makeConfig(), makePlannerState(), {}, {
         objs = { { baseName = "Hsinchu", subTypes = { "Runway" } } },
         contactAge = 300,
         minTargetCount = 1,
@@ -1673,7 +1701,7 @@ describe("TargetingProcess", function()
         inArea = function() return true end,
       })
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
       local targetConfig = {
         filterNames = { "findInfantry" },
         areas = { { "area-1" } },
@@ -1681,14 +1709,14 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, saveData, { contact }, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contact }, targetConfig, false)
 
       assert.are.equal(1, #result)
     end)
 
     -- Positive: routes to fixed processing when no filterNames
     it("should use fixed processing when filterNames are absent", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         targetlist = {
           makeTargetEntry({ name = "Hsinchu/Runway (3000m)", subType = "Runway (3000m)", guid = "proc-001" }),
         },
@@ -1713,7 +1741,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, saveData, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
 
       assert.are.equal(1, #result)
     end)
@@ -1721,14 +1749,14 @@ describe("TargetingProcess", function()
     -- Negative: nil targetConfig
     it("should return empty when targetConfig is nil", function()
       local targetTemplate = {}
-      local result = TargetingProcess.processTargets(makeConfig(), makeSaveData(), {}, targetTemplate, false)
+      local result = TargetingProcess.processTargets(makeConfig(), makePlannerState(), {}, targetTemplate, false)
 
       assert.are.equal(0, #result)
     end)
 
     -- Boundary: empty filterNames falls through to fixed processing
     it("should use fixed processing when filterNames is empty table", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         targetlist = {
           makeTargetEntry({ name = "Hsinchu/Runway (3000m)", subType = "Runway (3000m)", guid = "proc-002" }),
         },
@@ -1754,7 +1782,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, saveData, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
 
       assert.are.equal(1, #result)
     end)
@@ -1775,7 +1803,7 @@ describe("TargetingProcess", function()
         inArea = function() return true end,
       })
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
       local targetConfig = {
         filterNames = { "findInfantry", "findC2" },
         areas = { { "area-1" } },
@@ -1784,7 +1812,7 @@ describe("TargetingProcess", function()
       }
 
       local result = TargetingProcess.processTargets(
-        config, saveData, { infantryContact, c2Contact }, targetConfig, false
+        config, plannerState, { infantryContact, c2Contact }, targetConfig, false
       )
 
       assert.are.equal(2, #result)
@@ -1793,14 +1821,14 @@ describe("TargetingProcess", function()
     -- Negative: unknown dynamic filter function
     it("should warn and skip unknown dynamic filter function names", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
       local targetConfig = {
         filterNames = { "nonExistentFilter" },
         areas = { { "area-1" } },
         contactAge = 300,
       }
 
-      local result = TargetingProcess.processTargets(config, saveData, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
 
       assert.are.equal(0, #result)
       assert.stub(warnStub).was.called(1)
@@ -1809,13 +1837,13 @@ describe("TargetingProcess", function()
     -- Negative: fixed target objs is nil
     it("should return empty when fixed target objs is nil", function()
       local config = makeConfig()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
       local targetConfig = {
         objs = nil,
         contactAge = 300,
       }
 
-      local result = TargetingProcess.processTargets(config, saveData, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
 
       assert.are.equal(0, #result)
     end)
@@ -1823,7 +1851,7 @@ describe("TargetingProcess", function()
     -- Negative: no matching fixed targets
     it("should return empty when no fixed targets match query", function()
       local config = makeConfig()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         targetlist = {
           makeTargetEntry({ name = "Hsinchu/Shelter", subType = "Shelter", guid = "shelter-001" }),
         },
@@ -1834,7 +1862,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, saveData, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
 
       assert.are.equal(0, #result)
     end)

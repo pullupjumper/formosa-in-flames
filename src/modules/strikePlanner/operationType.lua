@@ -8,14 +8,14 @@ local DESCRIPTORS = {
     templateSource = "packageTemplates",
     templateField = "packages",
     registryKey = "air",
-    resolvePlan = function(saveData) return saveData.c.air.airTaskingOrder end,
+    resolvePlan = function(plannerState) return plannerState.air.airTaskingOrder end,
     resolveDefaultInterval = function(config) return config.strikeInterval end,
   },
   ground = {
     templateSource = "fireSupportTaskTemplates",
     templateField = "fireSupportTasks",
     registryKey = "ground",
-    resolvePlan = function(saveData) return saveData.c.ground.fireSupportPlan end,
+    resolvePlan = function(plannerState) return plannerState.ground.fireSupportPlan end,
     resolveDefaultInterval = function() return 0 end,
   }
 }

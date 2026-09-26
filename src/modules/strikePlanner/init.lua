@@ -19,50 +19,50 @@ local WZ8_RECON_CHANCE = 0.5
 ---Initialize the strike planner state at scenario start
 ---Builds the persistent target list first, then the recon queue when recon is enabled.
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
-function StrikePlanner.init(config, saveData)
-  TargetingProcess.findTargets(constants.SIDES.ENEMY, config.targetScanning, saveData)
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+function StrikePlanner.init(config, plannerState)
+  TargetingProcess.findTargets(constants.SIDES.ENEMY, config.targetScanning, plannerState.targetlist)
 
-  if saveData.c.recon.enabled then
-    Recon.initQueue(config.c.recon, saveData.c.recon)
+  if plannerState.recon.enabled then
+    Recon.initQueue(config.c.recon, plannerState.recon)
   end
 end
 
 ---Insert dynamic FSEM and ATO operations built from current contacts
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
-local function processDynamicOperations(config, saveData, contacts)
-  if not saveData.c.dynamicOperations.enabled then return end
+local function processDynamicOperations(config, plannerState, contacts)
+  if not plannerState.dynamicOperations.enabled then return end
 
-  FsemBuilder.build(config, saveData, contacts)
-  AtoBuilder.build(config, saveData, contacts)
+  FsemBuilder.build(config, plannerState, contacts)
+  AtoBuilder.build(config, plannerState, contacts)
 end
 
 ---Advance the recon queue and occasionally schedule an extra WZ-8 island sortie
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
-local function processRecon(config, saveData)
-  if not saveData.c.recon.enabled then return end
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+local function processRecon(config, plannerState)
+  if not plannerState.recon.enabled then return end
 
   Recon.processQueue({
     config = config,
-    reconCtx = saveData.c.recon,
-    reconTriggeredOperationBatches = saveData.c.dynamicOperations.reconTriggeredOperationBatches,
-    lacmCtx = saveData.c.surface.lacm,
-    fireSupportOnHold = saveData.c.amphibOps.fireSupportOnHold == true
+    reconCtx = plannerState.recon,
+    reconTriggeredOperationBatches = plannerState.dynamicOperations.reconTriggeredOperationBatches,
+    lacmCtx = plannerState.lacm,
+    fireSupportOnHold = plannerState.fireSupportOnHold
   })
 
   if math.random() > WZ8_RECON_CHANCE then
-    Recon.addEntry(saveData.c.recon, config.c.recon.template.WZ8_RECON_ISLAND)
+    Recon.addEntry(plannerState.recon, config.c.recon.template.WZ8_RECON_ISLAND)
   end
 end
 
 ---Fire the one-shot LACM salvo from the CSG Type 055s once its start time passes
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
-local function launchLACMSalvo(config, saveData)
-  local lacmCtx = saveData.c.surface.lacm
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+local function launchLACMSalvo(config, plannerState)
+  local lacmCtx = plannerState.lacm
 
   -- lacm.enabled is sticky once the CSG reaches station, so hasLaunched is what
   -- keeps the salvo one-shot. Strike scheduling reads enabled to tell whether the
@@ -93,9 +93,9 @@ end
 
 ---Surface the SLCM submarines to launch depth and fire the one-shot salvo
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
-local function launchSLCMSalvo(config, saveData)
-  local slcmCtx = saveData.c.subSurface.slcm
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+local function launchSLCMSalvo(config, plannerState)
+  local slcmCtx = plannerState.slcm
 
   if not slcmCtx.enabled or not GameUtils.isAfterStartTime(config.c.triggers.launchSLCM.startTime) then
     return
@@ -126,14 +126,14 @@ end
 
 ---Advance active FSPs and ATO waves, including any inserted earlier this tick
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
-local function processActivePlans(config, saveData)
-  if saveData.c.ground.enabled then
-    FireSupportPlan.process(saveData)
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
+local function processActivePlans(config, plannerState)
+  if plannerState.ground.enabled then
+    FireSupportPlan.process(plannerState)
   end
 
-  if saveData.c.air.enabled then
-    AirTaskingOrder.process(config, saveData)
+  if plannerState.air.enabled then
+    AirTaskingOrder.process(config, plannerState)
   end
 end
 
@@ -141,14 +141,14 @@ end
 ---Order matters: dynamic plans are inserted before recon settles its queue, and
 ---execution runs last so plans inserted this tick can start in the same tick.
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
-function StrikePlanner.process(config, saveData, contacts)
-  processDynamicOperations(config, saveData, contacts)
-  processRecon(config, saveData)
-  launchLACMSalvo(config, saveData)
-  launchSLCMSalvo(config, saveData)
-  processActivePlans(config, saveData)
+function StrikePlanner.process(config, plannerState, contacts)
+  processDynamicOperations(config, plannerState, contacts)
+  processRecon(config, plannerState)
+  launchLACMSalvo(config, plannerState)
+  launchSLCMSalvo(config, plannerState)
+  processActivePlans(config, plannerState)
 end
 
 return StrikePlanner

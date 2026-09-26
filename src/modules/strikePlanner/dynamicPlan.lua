@@ -21,11 +21,10 @@ local function resolveDescriptor(operationType)
   return descriptor
 end
 
----Ensure generatedOperations table exists in saveData
----@param saveData SBJ__SaveData Game save data
-local function ensureGeneratedOperations(saveData)
-  if not saveData.c.dynamicOperations.generatedOperations then
-    saveData.c.dynamicOperations.generatedOperations = { air = {}, ground = {} }
+---Ensure generatedOperations table exists; saves from before it was seeded lack it
+local function ensureGeneratedOperations(plannerState)
+  if not plannerState.dynamicOperations.generatedOperations then
+    plannerState.dynamicOperations.generatedOperations = { air = {}, ground = {} }
   end
 end
 
@@ -68,13 +67,13 @@ end
 ---An entry qualifies when it finds at least its minTargetCount targets.
 ---Recon tracking is requested for every entry that raised it, qualified or not.
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param operationType SBJ__OperationType Operation type the template belongs to
 ---@param template SBJ__WaveTemplate|SBJ__FireSupportExecutionMatrixTemplate Template whose entries are evaluated
 ---@return table<integer, string[]> targetsByIndex Evaluated targets keyed by entry index, qualified entries only
 ---@return integer qualifiedCount Number of entries with enough targets
-function DynamicPlan.evaluateTargets(config, saveData, contacts, operationType, template)
+function DynamicPlan.evaluateTargets(config, plannerState, contacts, operationType, template)
   local descriptor = resolveDescriptor(operationType)
   local targetsByIndex = {}
   local qualifiedCount = 0
@@ -84,7 +83,7 @@ function DynamicPlan.evaluateTargets(config, saveData, contacts, operationType, 
     ---@cast entryTemplate SBJ__FireSupportTaskTemplate|SBJ__PackageTemplate
     local targets, requests = TargetingProcess.processTargets(
       config,
-      saveData,
+      plannerState,
       contacts,
       entryTemplate.target,
       template.isFirstWave
@@ -100,7 +99,7 @@ function DynamicPlan.evaluateTargets(config, saveData, contacts, operationType, 
   end
 
   if #trackingRequests > 0 then
-    Recon.trackTargets(saveData.c.recon, trackingRequests)
+    Recon.trackTargets(plannerState.recon, trackingRequests)
   end
 
   return targetsByIndex, qualifiedCount
@@ -109,18 +108,18 @@ end
 ---Name, insert and register a generated plan in one step
 ---buildPlan receives the unique name and returns the wave or matrix to store under it.
 ---The name is registered in the same call, so a generated name can never go unregistered.
----@param saveData SBJ__SaveData Persistent save data holding the plan table and the name registry
+---@param plannerState SBJ__StrikePlannerState Strike planner state holding the plan tables and the name registry
 ---@param operationType SBJ__OperationType Operation type deciding which plan table and registry are used
 ---@param templateName string Full operation template name, wave-stage number included
 ---@param reconType string Reconnaissance source that triggered the operation
 ---@param buildPlan fun(planName: string): table Builds the plan entry for the generated name
 ---@return string # The generated plan name
-function DynamicPlan.insert(saveData, operationType, templateName, reconType, buildPlan)
+function DynamicPlan.insert(plannerState, operationType, templateName, reconType, buildPlan)
   local descriptor = resolveDescriptor(operationType)
-  ensureGeneratedOperations(saveData)
+  ensureGeneratedOperations(plannerState)
 
-  local registrySet = saveData.c.dynamicOperations.generatedOperations[descriptor.registryKey]
-  local plan = descriptor.resolvePlan(saveData)
+  local registrySet = plannerState.dynamicOperations.generatedOperations[descriptor.registryKey]
+  local plan = descriptor.resolvePlan(plannerState)
   local planName = buildUniqueOperationName(templateName, reconType, registrySet, plan)
 
   plan[planName] = buildPlan(planName)

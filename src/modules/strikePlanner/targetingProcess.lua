@@ -96,6 +96,14 @@ local function isNearby(location, guid, threshold)
   return distance <= threshold
 end
 
+---Empty an array in place so holders of the same table see the change
+---@param list any[] Array to clear
+local function clearList(list)
+  for i = #list, 1, -1 do
+    list[i] = nil
+  end
+end
+
 ---Initialize location map for bases or ports from contacts
 ---@param contacts CMO__Contact[] Array of contacts
 ---@param locationNames string[] Array of location names to find
@@ -203,16 +211,16 @@ end
 -- ============================================================================
 
 ---Scan and categorize contacts into a target list
----Results are directly assigned to saveData.c.targetlist
+---Results replace the contents of targetlist in place so the persisted table stays the same
 ---@param sideName string Side name to get contacts from (e.g., 'China')
 ---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, taiwanAirBases, taiwanPorts, and targetCategories
----@param saveData SBJ__SaveData Persistent save data
-function TargetingProcess.findTargets(sideName, scanConfig, saveData)
+---@param targetlist SBJ__TargetEntry[] Persisted target list, cleared and refilled
+function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
   local contacts = GameApi.ScenEdit_GetContacts(sideName)
 
   if not contacts then
     Logger.warn(LogFormat.line("WARN", { side = sideName, reason = "contacts_unavailable" }))
-    saveData.c.targetlist = {}
+    clearList(targetlist)
     return
   end
 
@@ -221,8 +229,7 @@ function TargetingProcess.findTargets(sideName, scanConfig, saveData)
   -- Initialize location maps for bases and ports
   local baseLocationMap = buildLocationMap(contacts, scanConfig.taiwanAirBases)
   local portLocationMap = buildLocationMap(contacts, scanConfig.taiwanPorts)
-  local targetlist = {}
-  ---@cast targetlist SBJ__TargetEntry[]
+  clearList(targetlist)
 
   -- Single pass through contacts to categorize all targets
   for _, contact in ipairs(contacts) do
@@ -253,7 +260,6 @@ function TargetingProcess.findTargets(sideName, scanConfig, saveData)
     ::continue::
   end
 
-  saveData.c.targetlist = targetlist
   Logger.log(constants.TAGS.TARGETING_PROCESS, LogFormat.line("OK", {
     side = sideName,
     action = "scan_targets",
@@ -378,17 +384,17 @@ end
 ---Filter targets that are within range of SIGINT-detected radio sources
 ---Cross-references contacts with SIGINT transmissions
 ---@param config SBJ__Config Global configuration with SIGINT parameters
----@param saveData SBJ__SaveData Persistent save data containing SIGINT transmission records
+---@param transmissions table<string, SBJ__RadioTransmissionContext> SIGINT transmission records
 ---@param contacts string[] Array of contact GUIDs to evaluate
 ---@return string[] # Array of contact GUIDs near radio sources
-local function filterTargetsWithinRangeOfRadioSource(config, saveData, contacts)
+local function filterTargetsWithinRangeOfRadioSource(config, transmissions, contacts)
   local targets = {}
 
   for _, guid in ipairs(contacts) do
     local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
 
     if contact then
-      for _, tm in pairs(saveData.c.sigint.transmissions) do
+      for _, tm in pairs(transmissions) do
         local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
         if distance and isWithinRange(config, distance, tm) then
@@ -403,24 +409,24 @@ end
 
 ---Find targets by radio direction (SIGINT-based targeting)
 ---Combines mobile targets and C2 units, filters by proximity to radio transmissions
----@param params SBJ__FilterParams Filter parameters with contacts, task, config, and saveData
+---@param params SBJ__FilterParams Filter parameters with contacts, task, config, and transmissions
 ---@return string[] # Array of target GUIDs near radio sources
 local function findRadioDirection(params)
   local contacts = params.contacts
-  local saveData = params.saveData
+  local transmissions = params.transmissions
   local task = params.task
   local config = params.config
   local targets = {}
   local mobileTargets = findGroundTargets({ contacts = contacts, task = task })
   local c2Targets = findC2({ contacts = contacts, task = task })
 
-  if not config or not saveData then
+  if not config or not transmissions then
     return {}
   end
 
   Utils.addAll(targets, mobileTargets)
   Utils.addAll(targets, c2Targets)
-  local radioSource = filterTargetsWithinRangeOfRadioSource(config, saveData, targets)
+  local radioSource = filterTargetsWithinRangeOfRadioSource(config, transmissions, targets)
   return radioSource
 end
 
@@ -555,11 +561,11 @@ end
 
 ---Build filter parameters for dynamic target filtering
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames, areas, contactAge, minTargetCount
 ---@return SBJ__FilterParams # Filter parameters for filter functions
-local function buildFilterParams(config, saveData, contacts, targetConfig)
+local function buildFilterParams(config, plannerState, contacts, targetConfig)
   ---@type SBJ__FilterParams
   local params = {
     contacts = contacts,
@@ -572,7 +578,7 @@ local function buildFilterParams(config, saveData, contacts, targetConfig)
       }
     },
     config = config,
-    saveData = saveData,
+    transmissions = plannerState.transmissions,
   }
 
   return params
@@ -580,12 +586,12 @@ end
 
 ---Process dynamic targets using filter functions
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration with filterNames
 ---@return string[] strikeTargets Array of target GUIDs matching the filter criteria
 ---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the results call for
-local function processDynamicTargets(config, saveData, contacts, targetConfig)
+local function processDynamicTargets(config, plannerState, contacts, targetConfig)
   local filterNames = targetConfig.filterNames
   if not filterNames or #filterNames == 0 then
     return {}, {}
@@ -593,7 +599,7 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
 
   local strikeTargets = {}
   local trackingRequests = {}
-  local filterParams = buildFilterParams(config, saveData, contacts, targetConfig)
+  local filterParams = buildFilterParams(config, plannerState, contacts, targetConfig)
 
   for _, filterName in ipairs(filterNames) do
     local targetingFunction = FILTERS[filterName]
@@ -615,17 +621,17 @@ local function processDynamicTargets(config, saveData, contacts, targetConfig)
 end
 
 ---Process fixed targets using BDA assessment
----@param saveData SBJ__SaveData Persistent save data containing target list
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param targetConfig SBJ__TargetTemplate Target configuration with objs, contactAge, minTargetCount
 ---@param isFirstWave boolean Whether this is the first wave
 ---@return string[] # Array of target GUIDs that passed BDA assessment
-local function processFixedTargets(saveData, targetConfig, isFirstWave)
+local function processFixedTargets(plannerState, targetConfig, isFirstWave)
   if not targetConfig.objs then
     return {}
   end
 
   local filteredTargets = TargetingProcess.filterTargetsByTypeAndBase(
-    saveData.c.targetlist,
+    plannerState.targetlist,
     targetConfig.objs
   )
   if not filteredTargets or #filteredTargets == 0 then
@@ -650,22 +656,22 @@ end
 ---Process targets by routing to dynamic or fixed target processing
 ---Never touches the recon queue; the caller hands trackingRequests to Recon.trackTargets.
 ---@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param contacts CMO__Contact[] Available sensor contacts
 ---@param targetConfig SBJ__TargetTemplate Target configuration (from taskTemplate.target or packageData.target)
 ---@param isFirstWave boolean Whether this is the first wave
 ---@return string[] targets Array of target GUIDs
 ---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the targets call for; always empty for fixed targets
-function TargetingProcess.processTargets(config, saveData, contacts, targetConfig, isFirstWave)
+function TargetingProcess.processTargets(config, plannerState, contacts, targetConfig, isFirstWave)
   if not targetConfig then
     return {}, {}
   end
 
   if type(targetConfig.filterNames) == "table" and #targetConfig.filterNames > 0 then
-    return processDynamicTargets(config, saveData, contacts, targetConfig)
+    return processDynamicTargets(config, plannerState, contacts, targetConfig)
   end
 
-  return processFixedTargets(saveData, targetConfig, isFirstWave), {}
+  return processFixedTargets(plannerState, targetConfig, isFirstWave), {}
 end
 
 return TargetingProcess

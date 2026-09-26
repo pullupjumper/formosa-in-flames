@@ -25,19 +25,17 @@ describe("DynamicPlan", function()
     activeStubs = {}
   end)
 
-  ---Create minimal saveData with both plan tables and the name registry
+  ---Create minimal plannerState with both plan tables and the name registry
   ---@param overrides? table
   ---@return table
-  local function makeSaveData(overrides)
+  local function makePlannerState(overrides)
     overrides = overrides or {}
     return {
-      c = {
-        air = { airTaskingOrder = overrides.airTaskingOrder or {} },
-        ground = { fireSupportPlan = overrides.fireSupportPlan or {} },
-        recon = { enabled = true, queue = {} },
-        dynamicOperations = {
-          generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
-        }
+      air = { airTaskingOrder = overrides.airTaskingOrder or {} },
+      ground = { fireSupportPlan = overrides.fireSupportPlan or {} },
+      recon = { enabled = true, queue = {} },
+      dynamicOperations = {
+        generatedOperations = overrides.generatedOperations or { air = {}, ground = {} }
       }
     }
   end
@@ -78,7 +76,7 @@ describe("DynamicPlan", function()
       local config = {}
       stubTargets({ FIRST = { "T1" }, SECOND = { "T2", "T3" }, THIRD = { "T4", "T5" } })
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makePlannerState(), {}, "air", template)
 
       assert.are.equal(2, qualifiedCount)
       assert.are.same({ "T1" }, targetsByIndex[1])
@@ -99,7 +97,7 @@ describe("DynamicPlan", function()
       local config = {}
       stubTargets({ FIRST = { "T1" }, SECOND = { "T2" } })
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "ground", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makePlannerState(), {}, "ground", template)
 
       assert.are.equal(1, qualifiedCount)
       assert.is_nil(targetsByIndex[1])
@@ -110,15 +108,15 @@ describe("DynamicPlan", function()
     it("should pass the entry target config and the template first-wave flag through", function()
       local target = makeTarget("ONLY", 1)
       local template = { name = "AIR/STRIKE/AB/W/2", isFirstWave = false, packages = { { target = target } } }
-      local config, saveData, contacts = { c = {} }, makeSaveData(), { "CONTACT" }
+      local config, plannerState, contacts = { c = {} }, makePlannerState(), { "CONTACT" }
       local processTargetsStub = stubTargets({ ONLY = { "T1" } })
 
-      DynamicPlan.evaluateTargets(config, saveData, contacts, "air", template)
+      DynamicPlan.evaluateTargets(config, plannerState, contacts, "air", template)
 
       local callArgs = processTargetsStub.calls[1].refs
       assert(callArgs)
       assert.are.equal(config, callArgs[1])
-      assert.are.equal(saveData, callArgs[2])
+      assert.are.equal(plannerState, callArgs[2])
       assert.are.equal(contacts, callArgs[3])
       assert.are.equal(target, callArgs[4])
       assert.is_false(callArgs[5])
@@ -134,7 +132,7 @@ describe("DynamicPlan", function()
       local config = {}
       stubTargets({ EXACT = { "T1", "T2" }, SHORT = { "T3" } })
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makePlannerState(), {}, "air", template)
 
       assert.are.equal(1, qualifiedCount)
       assert.is_table(targetsByIndex[1])
@@ -147,7 +145,7 @@ describe("DynamicPlan", function()
       local config = {}
       stubTargets({})
 
-      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
+      local targetsByIndex, qualifiedCount = DynamicPlan.evaluateTargets(config, makePlannerState(), {}, "air", template)
 
       assert.are.equal(0, qualifiedCount)
       assert.is_nil(next(targetsByIndex))
@@ -159,7 +157,7 @@ describe("DynamicPlan", function()
       local config = {}
 
       assert.has_error(function()
-        DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "naval", template)
+        DynamicPlan.evaluateTargets(config, makePlannerState(), {}, "naval", template)
       end)
     end)
 
@@ -171,7 +169,7 @@ describe("DynamicPlan", function()
         packages = { { target = makeTarget("SHORT", 5) }, { target = makeTarget("ENOUGH", 1) } }
       }
       local config = {}
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
       local requestsByTag = {
         SHORT = { { platformDBID = 1, target = { guid = "S1" } } },
         ENOUGH = { { platformDBID = 2, target = { guid = "E1" } } },
@@ -182,13 +180,13 @@ describe("DynamicPlan", function()
       end))
       local trackTargetsStub = trackStub(stub(Recon, "trackTargets"))
 
-      local _, qualifiedCount = DynamicPlan.evaluateTargets(config, saveData, {}, "air", template)
+      local _, qualifiedCount = DynamicPlan.evaluateTargets(config, plannerState, {}, "air", template)
 
       assert.are.equal(1, qualifiedCount)
       assert.stub(trackTargetsStub).was.called(1)
       local callArgs = trackTargetsStub.calls[1].refs
       assert(callArgs)
-      assert.are.equal(saveData.c.recon, callArgs[1])
+      assert.are.equal(plannerState.recon, callArgs[1])
       assert.are.same({ requestsByTag.SHORT[1], requestsByTag.ENOUGH[1] }, callArgs[2])
     end)
 
@@ -199,7 +197,7 @@ describe("DynamicPlan", function()
       stubTargets({ ONLY = { "T1" } })
       local trackTargetsStub = trackStub(stub(Recon, "trackTargets"))
 
-      DynamicPlan.evaluateTargets(config, makeSaveData(), {}, "air", template)
+      DynamicPlan.evaluateTargets(config, makePlannerState(), {}, "air", template)
 
       assert.stub(trackTargetsStub).was_not.called()
     end)
@@ -219,34 +217,34 @@ describe("DynamicPlan", function()
 
     -- Positive: naming, writing and registering happen in one call
     it("should name, write and register an air wave in one call", function()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
 
-      local planName = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", planName)
-      assert.are.equal(planName, saveData.c.air.airTaskingOrder[planName].name)
-      assert.is_true(saveData.c.air.airTaskingOrder[planName].built)
-      assert.is_true(saveData.c.dynamicOperations.generatedOperations.air[planName])
+      assert.are.equal(planName, plannerState.air.airTaskingOrder[planName].name)
+      assert.is_true(plannerState.air.airTaskingOrder[planName].built)
+      assert.is_true(plannerState.dynamicOperations.generatedOperations.air[planName])
       -- The ground side is untouched
-      assert.is_nil(next(saveData.c.ground.fireSupportPlan))
-      assert.is_nil(next(saveData.c.dynamicOperations.generatedOperations.ground))
+      assert.is_nil(next(plannerState.ground.fireSupportPlan))
+      assert.is_nil(next(plannerState.dynamicOperations.generatedOperations.ground))
     end)
 
     -- Positive: ground plans go to the fire support plan and the ground registry
     it("should name, write and register a ground matrix in one call", function()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
 
-      local planName = DynamicPlan.insert(saveData, "ground", "GND/STRIKE/INFRA/ALL/1", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(plannerState, "ground", "GND/STRIKE/INFRA/ALL/1", "satellite", buildPlan)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", planName)
-      assert.are.equal(planName, saveData.c.ground.fireSupportPlan[planName].name)
-      assert.is_true(saveData.c.dynamicOperations.generatedOperations.ground[planName])
-      assert.is_nil(next(saveData.c.air.airTaskingOrder))
+      assert.are.equal(planName, plannerState.ground.fireSupportPlan[planName].name)
+      assert.is_true(plannerState.dynamicOperations.generatedOperations.ground[planName])
+      assert.is_nil(next(plannerState.air.airTaskingOrder))
     end)
 
     -- Positive: the template wave-stage number is preserved as the prefix
     it("should keep the template wave-stage number recoverable from the generated name", function()
-      local planName = DynamicPlan.insert(makeSaveData(), "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(makePlannerState(), "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
 
       assert.are.equal("2", planName:match("^AIR/STRIKE/AB/W/(%d+)/DYN"))
     end)
@@ -254,31 +252,31 @@ describe("DynamicPlan", function()
     -- Positive: unmapped recon sources pass through as uppercase
     it("should pass through UAV and SIGINT sources as uppercase in the name", function()
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-UAV-01",
-        DynamicPlan.insert(makeSaveData(), "air", "AIR/STRIKE/AB/W/2", "UAV", buildPlan))
+        DynamicPlan.insert(makePlannerState(), "air", "AIR/STRIKE/AB/W/2", "UAV", buildPlan))
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SIGINT-01",
-        DynamicPlan.insert(makeSaveData(), "ground", "GND/STRIKE/INFRA/ALL/1", "SIGINT", buildPlan))
+        DynamicPlan.insert(makePlannerState(), "ground", "GND/STRIKE/INFRA/ALL/1", "SIGINT", buildPlan))
     end)
 
     -- Positive: repeated inserts walk the sequence forward
     it("should advance the sequence on each insert of the same template", function()
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
 
-      local first = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
-      local second = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local first = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local second = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", first)
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", second)
-      assert.is_table(saveData.c.air.airTaskingOrder[first])
-      assert.is_table(saveData.c.air.airTaskingOrder[second])
+      assert.is_table(plannerState.air.airTaskingOrder[first])
+      assert.is_table(plannerState.air.airTaskingOrder[second])
     end)
 
     -- Negative: names already in the registry are skipped
     it("should skip names already in the registry", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         generatedOperations = { air = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = true }, ground = {} }
       })
 
-      local planName = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", planName)
     end)
@@ -286,44 +284,44 @@ describe("DynamicPlan", function()
     -- Negative: names already in the plan table are skipped, so a static entry is never overwritten
     it("should skip names already in the plan table", function()
       local existing = { name = "existing" }
-      local saveData = makeSaveData({ fireSupportPlan = { ["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"] = existing } })
+      local plannerState = makePlannerState({ fireSupportPlan = { ["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"] = existing } })
 
-      local planName = DynamicPlan.insert(saveData, "ground", "GND/STRIKE/INFRA/ALL/1", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(plannerState, "ground", "GND/STRIKE/INFRA/ALL/1", "satellite", buildPlan)
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-02", planName)
-      assert.are.equal(existing, saveData.c.ground.fireSupportPlan["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"])
+      assert.are.equal(existing, plannerState.ground.fireSupportPlan["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"])
     end)
 
     -- Negative: both sources are consulted
     it("should skip names in both the registry and the plan table", function()
-      local saveData = makeSaveData({
+      local plannerState = makePlannerState({
         generatedOperations = { air = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = true }, ground = {} },
         airTaskingOrder = { ["AIR/STRIKE/AB/W/2/DYN-SAT-02"] = { name = "existing" } }
       })
 
-      local planName = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-03", planName)
     end)
 
     -- Boundary: a save without the registry gets one
     it("should initialize generatedOperations when missing", function()
-      local saveData = makeSaveData()
-      saveData.c.dynamicOperations.generatedOperations = nil
+      local plannerState = makePlannerState()
+      plannerState.dynamicOperations.generatedOperations = nil
 
-      local planName = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
+      local planName = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", buildPlan)
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", planName)
-      assert.is_true(saveData.c.dynamicOperations.generatedOperations.air[planName])
-      assert.is_table(saveData.c.dynamicOperations.generatedOperations.ground)
+      assert.is_true(plannerState.dynamicOperations.generatedOperations.air[planName])
+      assert.is_table(plannerState.dynamicOperations.generatedOperations.ground)
     end)
 
     -- Positive: buildPlan sees the final name, so the stored entry can carry it
     it("should hand buildPlan the same name it returns", function()
       local receivedName
-      local saveData = makeSaveData()
+      local plannerState = makePlannerState()
 
-      local planName = DynamicPlan.insert(saveData, "air", "AIR/STRIKE/AB/W/2", "satellite", function(name)
+      local planName = DynamicPlan.insert(plannerState, "air", "AIR/STRIKE/AB/W/2", "satellite", function(name)
         receivedName = name
         return { name = name }
       end)
@@ -334,7 +332,7 @@ describe("DynamicPlan", function()
     -- Negative: unknown type
     it("should error on an unknown operation type", function()
       assert.has_error(function()
-        DynamicPlan.insert(makeSaveData(), "naval", "SEA/STRIKE/PORT/1", "satellite", buildPlan)
+        DynamicPlan.insert(makePlannerState(), "naval", "SEA/STRIKE/PORT/1", "satellite", buildPlan)
       end)
     end)
   end)
