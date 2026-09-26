@@ -1139,8 +1139,9 @@ describe("Sigint", function()
     -- Negative: a disabled side does nothing
     it("should skip collection when SIGINT is disabled", function()
       local collectStub = trackStub(stub(Sigint, "collectSigint"))
+      local sideConfig = {}
 
-      Sigint.processSide({}, makeSaveData(false), constants.SIDES.ENEMY)
+      Sigint.processSide(sideConfig, makeSaveData(false), constants.SIDES.ENEMY)
 
       assert.stub(collectStub).was_not.called()
     end)
