@@ -910,6 +910,18 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field operationalArea SBJ__OperationalArea New operational area for the firing unit and its resupply unit
 
+---One firing unit row in the status UI battery table, built by MissileSystem.buildBatteryStatusRows
+---@class SBJ__BatteryStatusRow: table
+---@field name string Firing unit name
+---@field missileSystem string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field firingUnitState string Firing unit state label
+---@field resupplyUnitState string Paired resupply unit state label
+---@field missilesInAmmoVehicles number Missiles carried by the resupply unit
+---@field missilesInAHA number Missiles left in the paired ammo holding area
+---@field firingUnitReloadTime number Minutes elapsed in the firing unit's reload, 0 when not reloading
+---@field resupplyUnitReloadTime number Minutes elapsed in the resupply unit's reload, 0 when not reloading
+---@field defaultReloadTime number Configured reload time in minutes
+
 ---Weapon status tracking for ammunition count
 ---@class SBJ__WeaponStatus: table
 ---@field wpnCurrent number Current available ammunition count

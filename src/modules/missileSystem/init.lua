@@ -12,6 +12,7 @@ local Cycle = require("src.modules.missileSystem.cycle")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Deployment = require("src.modules.missileSystem.deployment")
 local Context = require("src.modules.missileSystem.context")
+local StatusView = require("src.modules.missileSystem.statusView")
 
 local MissileSystem = {}
 
@@ -243,6 +244,21 @@ function MissileSystem.deploySide(config, saveData, sideName)
 
   Deployment.addMissileSystems(groundForceCfg, sideName)
   Context.initMissileSystemContexts(groundForceCfg, PersistentState.groundForces(saveData, sideName))
+end
+
+---Build a side's battery status rows for the status UI, grouped by resupply unit name
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data
+---@param sideName string Side name (China or Taiwan)
+---@param systemTypes string[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
+---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
+function MissileSystem.buildBatteryStatusRows(config, saveData, sideName, systemTypes)
+  return StatusView.buildBatteryStatusRows(
+    PersistentState.groundForces(saveData, sideName),
+    config[GameUtils.getCachedSideConfig(sideName).field].ground,
+    systemTypes,
+    GameApi.ScenEdit_CurrentTime()
+  )
 end
 
 ---Seed the default per-system state (name, enabled, empty unit maps) from configuration

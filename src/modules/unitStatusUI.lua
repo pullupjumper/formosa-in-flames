@@ -11,26 +11,6 @@ local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
----Calculate elapsed reload time in minutes since reload started
----@param ctx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with reload start time
----@return number # Elapsed time in minutes (rounded to 2 decimal places)
-local function calculateReloadTime(ctx)
-  return math.floor(((GameApi.ScenEdit_CurrentTime() - ctx.reloadStartTime) / 60) * 100 + 0.5) / 100
-end
-
----Convert missile system state enum to display string
----@param state missileSystemState Missile system state enum value
----@return string # Human-readable state string (STATIC/REPOSITIONING/HIDE/RELOAD/UNKNOWN)
-local function getState(state)
-  local stateMap = {
-    [constants.MISSILE_SYSTEM_STATE.STATIC] = "STATIC",
-    [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = "REPOSITIONING",
-    [constants.MISSILE_SYSTEM_STATE.HIDE] = "HIDE",
-    [constants.MISSILE_SYSTEM_STATE.RELOAD] = "RELOAD",
-  }
-  return stateMap[state] or "UNKNOWN"
-end
-
 ---Resolve a SAM system config key to its platform DBID
 ---@param name string SAM system config key ('pac23', 'skybow3', 'tc2')
 ---@return integer # Platform DBID, or 0 when the key is unknown
@@ -254,88 +234,6 @@ function UnitStatusUI.buildWcsSettingTable()
       end
     end
   end
-end
-
----Create JSON string for artillery battery status data
----@param config SBJ__Config Configuration table
----@param saveData SBJ__SaveData Saved game data
----@param sideName string Side name ('China' or 'Taiwan')
----@param ... string Weapon system type list
----@return string # JSON formatted artillery battery status data
-local function createBatteryDataString(config, saveData, sideName, ...)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local field = sideConfig.field
-  local groundCtx = PersistentState.groundForces(saveData, sideName)
-  local missileSystems = { ... }
-  ---@cast missileSystems SBJ__MissileSystemContext[]
-  local rows = {}
-
-  for _, missileSystem in pairs(missileSystems) do
-    local resupplyUnitCtxs = groundCtx[missileSystem] and groundCtx[missileSystem].resupplyUnits
-
-    if resupplyUnitCtxs then
-      for key, _ in pairs(resupplyUnitCtxs) do
-        rows[key] = {}
-      end
-    end
-  end
-
-  for _, missileSystem in pairs(missileSystems) do
-    local missileSystemCtx = groundCtx[missileSystem]
-    local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
-
-    if missileSystemCtx and firingUnitCtxs then
-      for _, firingUnitCtx in pairs(firingUnitCtxs) do
-        local name = firingUnitCtx.name
-        local status = getState(firingUnitCtx.state)
-        local resupplyUnitCtx = missileSystemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
-        local missilesInAmmoVehicles = resupplyUnitCtx.wpnCurrent
-        local resupplyUnitStatus = getState(resupplyUnitCtx.state)
-        local reloadTime = config[field].ground[missileSystem].reloadTime / 60
-        local missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent
-        local firingUnitReloadTime = nil
-        local resupplyUnitReloadTime = nil
-
-        if firingUnitCtx.reloadStartTime ~= nil then
-          firingUnitReloadTime = calculateReloadTime(firingUnitCtx)
-
-          if firingUnitReloadTime < 0 then
-            firingUnitReloadTime = 0
-          end
-        end
-
-        if firingUnitCtx.reloadStartTime == nil then
-          firingUnitReloadTime = 0
-        end
-
-        if resupplyUnitCtx.reloadStartTime ~= nil then
-          resupplyUnitReloadTime = calculateReloadTime(resupplyUnitCtx)
-
-          if resupplyUnitReloadTime < 0 then
-            resupplyUnitReloadTime = 0
-          end
-        end
-
-        if resupplyUnitCtx.reloadStartTime == nil then
-          resupplyUnitReloadTime = 0
-        end
-
-        table.insert(rows[firingUnitCtx.resupplyUnit], {
-          name = name,
-          missileSystem = missileSystem,
-          firingUnitState = status,
-          resupplyUnitState = resupplyUnitStatus,
-          missilesInAmmoVehicles = missilesInAmmoVehicles,
-          missilesInAHA = missilesInAHA,
-          firingUnitReloadTime = firingUnitReloadTime,
-          resupplyUnitReloadTime = resupplyUnitReloadTime,
-          defaultReloadTime = reloadTime
-        })
-      end
-    end
-  end
-
-  return gKH.json.stringify(rows)
 end
 
 ---Create JSON string for base ammunition inventory data
@@ -605,15 +503,14 @@ function UnitStatusUI.createUI(config, sideName)
   PersistentState.read(function(saveData)
     if sideName == constants.SIDES.ENEMY then
       local signalDataString = createSignalDataString(saveData, sideName)
-      local batteryDataString = createBatteryDataString(
-        config, saveData, sideName,
+      local batteryDataString = gKH.json.stringify(MissileSystem.buildBatteryStatusRows(config, saveData, sideName, {
         constants.MISSILE_SYSTEM_TYPES.SRBM,
         constants.MISSILE_SYSTEM_TYPES.MLRS,
         constants.MISSILE_SYSTEM_TYPES.GLCM,
         constants.MISSILE_SYSTEM_TYPES.ASCM,
         constants.MISSILE_SYSTEM_TYPES.MRBM,
         constants.MISSILE_SYSTEM_TYPES.SAM
-      )
+      }))
       local magazineDataString = createMagazineDataString(config, sideName)
       local c2NodeDataString = createC2NodeDataString(saveData, sideName, "c2")
       local landingUnitsData = UnitStatusUI.countUnitsInEachArea(config)
@@ -632,14 +529,13 @@ function UnitStatusUI.createUI(config, sideName)
       local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
     else
       local signalDataString = createSignalDataString(saveData, "US")
-      local batteryDataString = createBatteryDataString(
-        config, saveData, sideName,
+      local batteryDataString = gKH.json.stringify(MissileSystem.buildBatteryStatusRows(config, saveData, sideName, {
         constants.MISSILE_SYSTEM_TYPES.SRBM,
         constants.MISSILE_SYSTEM_TYPES.MLRS,
         constants.MISSILE_SYSTEM_TYPES.GLCM,
         constants.MISSILE_SYSTEM_TYPES.ASCM,
         constants.MISSILE_SYSTEM_TYPES.SAM
-      )
+      }))
       local magazineDataString = createMagazineDataString(config, sideName)
       local c2NodeDataString = createC2NodeDataString(saveData, sideName, "rocc", "taaoc")
 
