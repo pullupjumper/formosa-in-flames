@@ -7,7 +7,7 @@ local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics"
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local MissileSystem = require("src.modules.missileSystem.init")
-local Recon = require("src.modules.strikePlanner.recon")
+local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
 
 local Coordinator = {}
@@ -42,7 +42,7 @@ local function processTaoyuanTemporarySetup(config, landingState, zone, currentT
   end
 
   AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-  Recon.addEntry(landingState.recon, config.c.recon.template.GJ11_RECON)
+  StrikePlanner.addReconEntry(landingState.recon, config.c.recon.template.GJ11_RECON)
 end
 
 ---Process a single operational zone through all amphibious phases
@@ -129,27 +129,6 @@ local function processCargoRetransfer(config, landingState, currentTime, filtere
   end
 end
 
----Process all landing operation phases for the current event tick
----@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
----@param contacts CMO__Contact[] Contact list from the game
----@param currentTime number Current scenario time in seconds
----@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-function Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
-  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
-    local operation = findOperationByName(config.c.amphibOps.operations, zone.name)
-
-    if operation then
-      processZone(config, landingState, zone, operation, contacts, currentTime, filteredShips)
-    else
-      Logger.error(LogFormat.line("ERROR", { zone = zone.name, reason = "operation_not_found" }))
-    end
-  end
-
-  processCargoRetransfer(config, landingState, currentTime, filteredShips)
-  Coordinator.evaluateFireSupportGate(config, landingState)
-end
-
 ---Check whether all configured operational zones have reached staging waters
 ---@param config SBJ__Config Global configuration table
 ---@param amphibOps SBJ__AmphibOpsContext Amphibious operations context
@@ -170,7 +149,7 @@ end
 ---is monotonic, so the release latches naturally).
 ---@param config SBJ__Config Global configuration table
 ---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
-function Coordinator.evaluateFireSupportGate(config, landingState)
+local function evaluateFireSupportGate(config, landingState)
   local amphib = landingState.amphibOps
   local arrived = hasAllZonesArrived(config, amphib)
 
@@ -201,6 +180,27 @@ function Coordinator.evaluateFireSupportGate(config, landingState)
       depot = report.ammo.percentage
     }))
   end
+end
+
+---Process all landing operation phases for the current event tick
+---@param config SBJ__Config Global configuration table
+---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+---@param contacts CMO__Contact[] Contact list from the game
+---@param currentTime number Current scenario time in seconds
+---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
+function Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
+  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+    local operation = findOperationByName(config.c.amphibOps.operations, zone.name)
+
+    if operation then
+      processZone(config, landingState, zone, operation, contacts, currentTime, filteredShips)
+    else
+      Logger.error(LogFormat.line("ERROR", { zone = zone.name, reason = "operation_not_found" }))
+    end
+  end
+
+  processCargoRetransfer(config, landingState, currentTime, filteredShips)
+  evaluateFireSupportGate(config, landingState)
 end
 
 return Coordinator

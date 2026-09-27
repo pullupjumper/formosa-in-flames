@@ -151,4 +151,29 @@ function StrikePlanner.process(config, plannerState, contacts)
   processActivePlans(config, plannerState)
 end
 
+---Release a WZ-8 from an H-6N flying a recon entry and hand the entry over to it
+---@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
+---@param h6n CMO__Unit The H-6N bomber unit to launch from
+---@return CMO__Unit|nil # The launched WZ-8, or nil when no entry is flying this H-6N or the launch failed
+function StrikePlanner.launchWZ8(reconCtx, h6n)
+  return Recon.launchWZ8(reconCtx, h6n)
+end
+
+---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
+---@param reconCtx SBJ__ReconContext Reconnaissance context (queue mutated on success)
+---@param entryTemplate SBJ__ReconUAVTemplate UAV entry template to instantiate
+---@param startTime string|nil Timestamp or datetime string for the start time of the entry
+---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
+function StrikePlanner.addReconEntry(reconCtx, entryTemplate, startTime)
+  return Recon.addEntry(reconCtx, entryTemplate, startTime)
+end
+
+---Filter targets by type and base name
+---@param targetlist SBJ__TargetEntry[] Array of target objects with name, subType, and guid properties
+---@param queryParams SBJ__TargetQueryEntry[] Array of query parameters with baseName (optional) and subTypes (array)
+---@return string[] # Array of target GUIDs matching query criteria
+function StrikePlanner.filterTargetsByTypeAndBase(targetlist, queryParams)
+  return TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
+end
+
 return StrikePlanner

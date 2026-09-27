@@ -85,7 +85,7 @@ flowchart TD
 
 除了 `SETTLE` 之外的每個出口都只回傳結果列、不改變 entry 狀態，因此下個 tick 會從同一階段重新判斷。三種類型都以 `reconObjectiveId` 索引後續打擊映射。
 
-`Recon.trackTarget` 可以把已結算的 entry 清掉 `isFinished` 拉回追蹤模式，那是 `processQueue` 之外的外部觸發，不在上述兩圖的流程內。
+`trackTarget`（經 `Recon.trackTargets`）可以把已結算的 entry 清掉 `isFinished` 拉回追蹤模式，那是 `processQueue` 之外的外部觸發，不在上述兩圖的流程內。
 
 ---
 
@@ -98,7 +98,7 @@ flowchart TD
 | `isFinished` | 這筆偵察目前是否已結算 | **會**，`assignTrackingMission` 重新指派追蹤時清為 `false` |
 | `hasScheduledOperations` | 是否已觸發過後續作戰排程 | 否，設起後恆為 `true` |
 
-`isFinished` 單獨無法把關：`Recon.trackTarget` 會把已結算的 entry 拉回追蹤模式，之後若接觸遺失就再次結算。只看 `isFinished` 的話，**每次接觸遺失都會再排一波打擊、把 `/N` 波次計數往前推**，且可隨目標輪替無限重複。
+`isFinished` 單獨無法把關：私有函式 `trackTarget` 會把已結算的 entry 拉回追蹤模式，之後若接觸遺失就再次結算。只看 `isFinished` 的話，**每次接觸遺失都會再排一波打擊、把 `/N` 波次計數往前推**，且可隨目標輪替無限重複。
 
 任務失敗時不設 `hasScheduledOperations`，讓日後重新啟用並成功結算時仍能正常排程。
 
@@ -112,7 +112,7 @@ flowchart TD
 
 ## 目標追蹤
 
-`Recon.trackTarget` 指派空中 UAV 追蹤特定目標（用於飛彈中途導引）：先確認目標未被追蹤（`Recon.isTargetAlreadyTracked`），找出 1,000nm 內最近的**閒置**空中同型機（`findClosestUAV`），在佇列中找到它的 entry（`findQueueEntryByUnitGUID`），然後指派（`assignTrackingMission`）。
+私有函式 `trackTarget` 指派空中 UAV 追蹤特定目標（用於飛彈中途導引），唯一呼叫端是 `Recon.trackTargets`，由它先確認目標未被追蹤（私有 `isTargetAlreadyTracked`）。`trackTarget` 本身找出 1,000nm 內最近的**閒置**空中同型機（`findClosestUAV`），在佇列中找到它的 entry（`findQueueEntryByUnitGUID`），然後指派（`assignTrackingMission`）。
 
 > `isTargetAlreadyTracked` 必須排除 `isFinished == true` 的 entry。已結算的 entry 會被 `processUAVEntry` 直接跳過，若它殘留的 `trackingTargetGUID` 仍算數，該目標會被永久誤判為「已被追蹤」，再也不會指派新的 UAV。
 
@@ -128,7 +128,7 @@ flowchart TD
 
 ## WZ-8 發射
 
-`Recon.launchWZ8(reconCtx, h6n)` 由事件腳本 `src/scripts/china/launchWZ8.lua` 呼叫。它先在佇列裡找「正在由這架 H-6N 執行、尚未結算」的 UAV entry，找不到就什麼都不做。
+`Recon.launchWZ8(reconCtx, h6n)` 由事件腳本 `src/scripts/china/launchWZ8.lua` 經門面 `StrikePlanner.launchWZ8` 呼叫。它先在佇列裡找「正在由這架 H-6N 執行、尚未結算」的 UAV entry，找不到就什麼都不做。
 
 找到後由私有函式 `createWZ8` 發射超高速偵察無人機：生成後掛載雷達感測器、指定歸屬基地、開啟 EMCON，全部成功才寫入 `constants.COURSES.WZ8` 並讓 H-6N `RTB(true)`。
 
@@ -231,11 +231,9 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `processQueue(processingCtx)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
-| `launchWZ8(reconCtx, h6n)` | 從執行中 entry 的 H-6N 發射 WZ-8 並把 entry 交接給它；沒有對應 entry 或發射失敗回傳 `nil`（建立後的任一步驟失敗會刪除該架無人機） |
-| `trackTarget(reconCtx, sideUnits, uavDBID, target)` | 指派最近的閒置空中 UAV 追蹤目標；目標已被未結算的 entry 追蹤時直接回傳 `true` |
-| `trackTargets(reconCtx, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標跳過，側別飛機最多列舉一次 |
-| `isTargetAlreadyTracked(queue, targetGUID)` | 該目標是否已有未結算的 UAV entry 在追蹤；供呼叫端在昂貴的側別飛機列舉前先行短路 |
-| `addEntry(reconCtx, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil` |
+| `launchWZ8(reconCtx, h6n)` | 從執行中 entry 的 H-6N 發射 WZ-8 並把 entry 交接給它；沒有對應 entry 或發射失敗回傳 `nil`（建立後的任一步驟失敗會刪除該架無人機）；套件外經門面 `StrikePlanner.launchWZ8` 呼叫 |
+| `trackTargets(reconCtx, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標（私有 `isTargetAlreadyTracked`）跳過，側別飛機最多列舉一次，再交給私有 `trackTarget` 指派 |
+| `addEntry(reconCtx, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil`；套件外經門面 `StrikePlanner.addReconEntry` 呼叫 |
 | `initQueue(reconConfig, reconCtx)` | 把 `config.c.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
 
 `processingCtx`（`SBJ__ReconQueueProcessingContext`）欄位：

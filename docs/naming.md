@@ -48,7 +48,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `try` | `pcall` 包裝 | `tryAddUnit`、`tryCall` |
 
 - **領域動詞**：直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。現有：`move`、`launch`、`attack`、`assign`、`transfer`、`retransfer`、`offload`、`load`、`reload`、`repair`、`hide`、`stow`、`retire`、`abort`、`abandon`、`deploy`、`drop`（CMO 的 drop contact）、`collect`（只限 `collectSigint`）、`recover`、`activate`、`disable`、`neutralize`、`strike`、`track`、`pair`、`strip`、`complete`、`settle`。一個動作只用一個字，不要 `launch` 和 `create` 混用。
-- **工具類保留**：`deepCopy`、`roundToNearestMinutes`、`compareFieldKeys`、`forEach*`、`deg` / `rad` / `atan`、`LogFormat.line` / `fields` / `merge` / `report`、`Logger.log` / `error` / `warn`。
+- **工具類保留**：`deepCopy`、`compareFieldKeys`、`forEach*`、`deg` / `rad` / `atan`、`LogFormat.line` / `fields` / `merge` / `report`、`Logger.log` / `error` / `warn`。
 - `check*` 只給「有副作用又回報結果」的函式，並在註解寫清楚回傳值。純布林用 `is` / `has`。
 - `validate*` 一律回 `SBJ__LogResult`（`{ tag, fields }`），不混用 `boolean` 或 `ok, err`。
 - 每個函式都要有 LuaLS 註解（`---@param`、`---@return`）。

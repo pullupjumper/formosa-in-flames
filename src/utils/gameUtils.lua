@@ -45,7 +45,7 @@ end
 ---@param lat2 number|string Second point latitude (degrees)
 ---@param lon2 number|string Second point longitude (degrees)
 ---@return number # Distance in nautical miles
-function GameUtils.calculateDistance(lat1, lon1, lat2, lon2)
+local function calculateDistance(lat1, lon1, lat2, lon2)
   -- Earth radius in nautical miles
   local R = 3440.065
 
@@ -86,7 +86,7 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
     local point1 = waypoints[i]
     local point2 = waypoints[i + 1]
 
-    local distance = GameUtils.calculateDistance(
+    local distance = calculateDistance(
       point1.latitude,
       point1.longitude,
       point2.latitude,
@@ -108,7 +108,7 @@ end
 ---@param xLongitude number|string Center point longitude
 ---@param maxRadius number Maximum radius for random positioning (nautical miles)
 ---@return CMO__Location|nil # Random position within the circle, or nil if generation fails
-function GameUtils.calculateCircularRandomPosition(xLatitude, xLongitude, maxRadius)
+local function calculateCircularRandomPosition(xLatitude, xLongitude, maxRadius)
   local randomisationCircle = GameApi.World_GetCircleFromPoint({
     latitude = xLatitude,
     longitude = xLongitude,
@@ -377,7 +377,7 @@ function GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID,
   attempt = attempt or 1
   maxAttempts = maxAttempts or 50
 
-  local point = GameUtils.calculateCircularRandomPosition(latitude, longitude, randomRadius)
+  local point = calculateCircularRandomPosition(latitude, longitude, randomRadius)
   local unit
 
   if point then
@@ -433,7 +433,7 @@ function GameUtils.createRandomUnits(descriptor)
 
   for i = 1, descriptor.count do
     local dbid = descriptor.dbids[math.random(#descriptor.dbids)]
-    local point = GameUtils.calculateCircularRandomPosition(
+    local point = calculateCircularRandomPosition(
       descriptor.centerPoint.latitude,
       descriptor.centerPoint.longitude,
       descriptor.randomRadius

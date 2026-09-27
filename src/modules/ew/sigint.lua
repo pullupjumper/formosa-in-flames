@@ -74,7 +74,7 @@ end
 ---@param distance number Distance in nautical miles
 ---@param config SBJ__SIGINTConfig|nil Detection configuration
 ---@return number # Value between 0 and 1
-function Sigint.calculateDetectionProbability(distance, config)
+local function calculateDetectionProbability(distance, config)
   config = config or {}
   local threshold = config.detectionThreshold or 60
   local maxRange = config.maxDetectionRange or { 300, 340 }
@@ -202,7 +202,7 @@ local function rollDetection(sigintCtx, enemyGUID, isEmitting, config)
       goto continue
     end
 
-    local detectionProbability = Sigint.calculateDetectionProbability(distance, config)
+    local detectionProbability = calculateDetectionProbability(distance, config)
 
     if math.random() < detectionProbability and isEmitting then
       local deviation = calculateSignalDeviation(distance, config)
@@ -376,7 +376,7 @@ end
 ---@param sigintConfig SBJ__SIGINTConfig SIGINT-specific configuration
 ---@param emitterGroups table<string, SBJ__FiringUnitContext|SBJ__C2Context>[] Unit context groups to monitor
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
-function Sigint.collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, emitterGroups)
+local function collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, emitterGroups)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local enemySide = sideConfig.enemySide
 
@@ -454,8 +454,14 @@ function Sigint.processSide(config, saveData, sideName)
   end
 
   local sigintConfig = config[GameUtils.getCachedSideConfig(sideName).field].sigint
-  Sigint.collectSigint(config, sigintCtx, sideName, true, sigintConfig,
-    PersistentState.sigintEmitters(saveData, sideName))
+  collectSigint(
+    config,
+    sigintCtx,
+    sideName,
+    true,
+    sigintConfig,
+    PersistentState.sigintEmitters(saveData, sideName)
+  )
 end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations

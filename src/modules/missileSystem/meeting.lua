@@ -22,7 +22,7 @@ end
 ---@param state integer Unit state
 ---@param isAuto boolean Whether in automatic mode
 ---@return boolean # Whether the state allows meeting
-function Meeting.isValidStateForMeeting(state, isAuto)
+local function isValidStateForMeeting(state, isAuto)
   if not isAuto then
     return true
   end
@@ -76,7 +76,7 @@ function Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
   end
 
   local triggeringCtx = (unit.name == firingUnitCtx.name) and firingUnitCtx or resupplyUnitCtx
-  if not Meeting.isValidStateForMeeting(triggeringCtx.state, isAuto) then
+  if not isValidStateForMeeting(triggeringCtx.state, isAuto) then
     return false, nil
   end
 
@@ -107,7 +107,7 @@ end
 ---@return SBJ__ResupplyUnitContext|nil resupplyUnitCtx The matched resupply unit context
 function Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
-  if not resupplyUnitCtx or not Meeting.isValidStateForMeeting(resupplyUnitCtx.state, isAuto) then
+  if not resupplyUnitCtx or not isValidStateForMeeting(resupplyUnitCtx.state, isAuto) then
     return false, nil
   end
 

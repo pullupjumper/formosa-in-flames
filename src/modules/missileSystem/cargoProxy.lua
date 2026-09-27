@@ -1,0 +1,188 @@
+local GameApi = require("src.utils.gameApi")
+local LogFormat = require("src.utils.logFormat")
+local constants = require("src.core.constants")
+
+local CargoProxy = {}
+
+local CARGO_ENTRY = {
+  TYPE = 3,
+  QUANTITY = 1,
+}
+
+local WEAPON_CLEAR_AMOUNT = 999
+
+---Normalize weapon DBID input to a set for fast lookup
+---@param weaponDBID number|number[]|nil Weapon DBID(s) to normalize
+---@return table<number, boolean> # Set of weapon DBIDs
+local function normalizeWeaponDBIDs(weaponDBID)
+  if not weaponDBID then return {} end
+  local weaponDBIDSet = {}
+  if type(weaponDBID) == "table" then
+    for _, id in pairs(weaponDBID) do weaponDBIDSet[id] = true end
+  else
+    weaponDBIDSet[weaponDBID] = true
+  end
+  return weaponDBIDSet
+end
+
+---Create a cargo proxy unit on a base ship for a given unit DBID
+---@param base CMO__Unit Base ship to load cargo onto
+---@param unitDbid number Database ID of the unit to add as cargo
+---@param idx integer Index position in the cargo list
+---@param sideName string Side name
+---@return CMO__Unit|nil # Cargo proxy unit, or nil if creation failed
+local function createCargoProxy(base, unitDbid, idx, sideName)
+  GameApi.ScenEdit_UpdateUnitCargo({
+    guid = base.guid,
+    mode = "add_cargo",
+    cargo = { { CARGO_ENTRY.QUANTITY, unitDbid, CARGO_ENTRY.TYPE } }
+  })
+
+  if not base.cargo or not base.cargo[1] or not base.cargo[1].cargo then
+    return nil
+  end
+
+  local cargoEntry = base.cargo[1].cargo[idx]
+  if not cargoEntry then return nil end
+
+  return GameApi.ScenEdit_GetUnit(cargoEntry.guid, sideName)
+end
+
+---Clear all magazines and remove all mounts from a cargo proxy unit
+---@param cargo CMO__Unit Cargo proxy unit to strip
+---@param sideName string Side name
+local function stripCargoProxyMounts(cargo, sideName)
+  GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = cargo.guid })
+
+  for _, mount in ipairs(cargo.mounts) do
+    GameApi.ScenEdit_UpdateUnit({
+      guid = cargo.guid,
+      mode = "remove_mount",
+      dbid = mount.mount_dbid,
+      mountid = mount.mount_guid
+    })
+  end
+end
+
+---Clone mount points from source unit to cargo proxy and tally tracked weapons
+---@param sourceUnit CMO__Unit Source unit with mounts to clone
+---@param cargo CMO__Unit Cargo proxy unit to receive mounts
+---@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
+---@return table<number, number> # Weapon DBID to current count mapping
+local function cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
+  local weaponCountMap = {}
+
+  for _, mount in ipairs(sourceUnit.mounts) do
+    GameApi.ScenEdit_UpdateUnit({
+      guid = cargo.guid,
+      mode = "add_mount",
+      dbid = mount.mount_dbid,
+      arc_mount = constants.SENSOR_ARCS
+    })
+
+    if #mount.mount_weapons > 0 and next(weaponDBIDSet) then
+      for _, wpn in ipairs(mount.mount_weapons) do
+        if weaponDBIDSet[wpn.wpn_dbid] then
+          weaponCountMap[wpn.wpn_dbid] = (weaponCountMap[wpn.wpn_dbid] or 0) + wpn.wpn_current
+        end
+      end
+    end
+  end
+
+  return weaponCountMap
+end
+
+---Synchronize weapon reload counts on a cargo proxy unit
+---Clears all tracked weapon reloads then sets them to actual counts
+---@param cargo CMO__Unit Cargo proxy unit
+---@param sideName string Side name
+---@param weaponCountMap table<number, number> Actual weapon counts (DBID to count)
+local function updateWeaponReloads(cargo, sideName, weaponCountMap)
+  for _, mount in ipairs(cargo.mounts) do
+    for _, wpn in ipairs(mount.mount_weapons) do
+      if wpn.wpn_default > 0 then
+        GameApi.ScenEdit_AddReloadsToUnit({
+          side = sideName,
+          guid = cargo.guid,
+          wpn_dbid = wpn.wpn_dbid,
+          number = WEAPON_CLEAR_AMOUNT,
+          remove = true
+        })
+      end
+    end
+  end
+
+  for wpnDBID, count in pairs(weaponCountMap) do
+    GameApi.ScenEdit_AddReloadsToUnit({
+      side = sideName,
+      guid = cargo.guid,
+      wpn_dbid = wpnDBID,
+      number = count
+    })
+  end
+end
+
+---Convert a single group member unit to a cargo proxy on a base ship
+---Creates cargo proxy, resets loadout, clones mounts and weapons, then removes original
+---@param base CMO__Unit Base ship to load cargo onto
+---@param sourceUnit CMO__Unit Source unit to convert
+---@param idx integer Index in group unit list
+---@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
+---@param sideName string Side name
+---@return SBJ__LogResult # Deferred log result describing the outcome
+local function normalizeGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
+  local cargo = createCargoProxy(base, sourceUnit.dbid, idx, sideName)
+  if not cargo then
+    return {
+      tag = "FAIL",
+      fields = {
+        unit = sourceUnit.name or sourceUnit.guid,
+        index = idx,
+        reason = "cargo_proxy_creation_failed"
+      }
+    }
+  end
+
+  stripCargoProxyMounts(cargo, sideName)
+  local weaponCountMap = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
+  updateWeaponReloads(cargo, sideName, weaponCountMap)
+
+  if sourceUnit.group then
+    cargo.group = sourceUnit.group.name
+  end
+  cargo.name = sourceUnit.name
+
+  GameApi.ScenEdit_DeleteUnit({ guid = sourceUnit.guid })
+
+  return { tag = "OK", fields = { unit = sourceUnit.name or sourceUnit.guid, index = idx } }
+end
+
+---Simulate loading ground units onto a ship by creating cargo proxies
+---Resolves unit group, clones weapon loadouts to cargo proxies, and removes originals
+---@param base CMO__Unit Base ship to load cargo onto
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with name and optional weapon DBID
+---@param sideName string Side name
+function CargoProxy.loadCargo(base, unitCtx, sideName)
+  local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.name, sideName)
+  if not actualUnit then return end
+
+  local group = actualUnit.group and actualUnit.group.unitlist or { actualUnit.guid }
+  local weaponDBIDSet = normalizeWeaponDBIDs(unitCtx.weaponDBID)
+  local report = LogFormat.report(
+    constants.TAGS.MISSILE_SYSTEM, "ship=" .. (base.name or base.guid), "Load cargo")
+
+  for idx, guid in ipairs(group) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+
+    if not unit then
+      report.add("SKIP", { guid = guid, index = idx, reason = "unit_not_found" })
+    else
+      local result = normalizeGroupMember(base, unit, idx, weaponDBIDSet, sideName)
+      report.add(result.tag, result.fields)
+    end
+  end
+
+  report.emit()
+end
+
+return CargoProxy

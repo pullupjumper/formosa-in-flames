@@ -71,6 +71,18 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 | [atoBuilder](atoBuilder.md) | `atoBuilder.lua` | 動態 ATO Wave 生成（目標評估、資源驗證、時序計算） |
 | [packageTiming](packageTiming.md) | `packageTiming.lua` | Package 時序計算（飛行時間、加油機受油協調、時程平移） |
 
+### 門面 API（`init.lua`）
+
+套件外的程式碼（事件腳本、其他模組）只 `require("src.modules.strikePlanner.init")`，不直接 require 套件內部模組。除了 `init` / `process` 兩個協調入口，其餘都是純轉發：
+
+| 函式 | 轉發至 | 外部呼叫端 |
+|---|---|---|
+| `init(config, plannerState)` | —（自身協調） | `src/core/init.lua` 開局初始化 |
+| `process(config, plannerState, contacts)` | —（自身協調） | `src/scripts/china/scheduledStrikePlanner.lua` |
+| `launchWZ8(reconCtx, h6n)` | [`Recon.launchWZ8`](recon.md) | `src/scripts/china/launchWZ8.lua` |
+| `addReconEntry(reconCtx, entryTemplate, startTime?)` | [`Recon.addEntry`](recon.md) | [landingOps/coordinator](../landingOps/coordinator.md) Taoyuan 特例 |
+| `filterTargetsByTypeAndBase(targetlist, queryParams)` | [`TargetingProcess.filterTargetsByTypeAndBase`](targetingProcess.md) | `src/modules/runwayRepairment.lua` |
+
 ---
 
 ## 系統架構圖

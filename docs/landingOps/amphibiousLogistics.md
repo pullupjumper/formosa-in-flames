@@ -64,36 +64,14 @@ flowchart TD
 
 ### 貨物轉移細節
 
-`transferCargo` 函數將母艦貨物分配至搭載平台：
+私有函式 `transferCargo` 將母艦貨物分配至搭載平台（由 `processShipTransfers` 與 `transferAndAssignTransportAircraft` 呼叫）：
 
 1. 取得母艦的搭載單元清單（`embarkedUnits`）
 2. 依平台 DBID 與掛載 ID（`loadoutdbid`）匹配目標載具
-3. 對每個匹配的載具執行 `updateCargo`：從母艦刪除貨物、在載具上建立對應貨物
+3. 對每個匹配的載具執行私有函式 `updateCargo`：從母艦刪除貨物、在載具上建立對應貨物
 4. 支援共用貨物清單（所有載具相同）與個別貨物清單（依索引分配）
 
-### 建築物 / Cargo Proxy 裝載流程
-
-`loadCargo` 主要供其他模組將地面單位轉為 cargo proxy 使用，目前 `missileSystem.hideUnit` 會用它把 TEL / 補給車載入建築物。
-
-流程如下：
-
-1. 依 `unitCtx.name` 取得來源單位，並展開 group member 清單
-2. 透過 `createCargoProxy` 在目標載具或建築物上建立對應 cargo proxy
-3. 對 cargo proxy 執行 `stripCargoProxyMounts`：清空彈匣並移除原有 mounts
-4. 將來源單位的 mounts 複製到 cargo proxy，並根據 `unitCtx.weaponDBID` 統計需要保留的武器數量
-5. 執行 `updateWeaponReloads`：先清除 cargo proxy 現有 mount weapon 的 reload，再依統計結果回填實際彈量
-6. 複製群組名稱與單位名稱後，刪除原始來源單位
-
-### 武器同步規則
-
-`loadCargo` 的武器同步分成兩個步驟：
-
-| 步驟 | 行為 |
-|---|---|
-| 清除既有 reload | 掃描 cargo proxy 目前 `mounts[].mount_weapons[]`，若 `wpn_default > 0` 則以 `remove = true` 清除 reload |
-| 回填目標 reload | 僅針對 `unitCtx.weaponDBID` 指定的武器，依來源單位實際 `wpn_current` 回填數量 |
-
-這表示 `weaponDBID` 控制的是「哪些武器要保留並回填」，而不是「哪些武器要先被清除」。
+> 把地面單位轉成 cargo proxy 載入建築物的 `loadCargo` 已移至 [missileSystem/cargoProxy](../missileSystem/cargoProxy.md)（`CargoProxy.loadCargo`），唯一使用者是 missileSystem 的隱蔽流程。
 
 ---
 
@@ -132,21 +110,18 @@ flowchart TD
 | `transferAndAssign(zone, unitsInAnchorageArea)` | 執行貨物轉移並指派登陸載具至任務 |
 | `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
 | `retransferCargos(zone, units)` | 第二波作戰的貨物重新裝載 |
-| `updateCargo(fromUnit, toUnit, cargoItem)` | 單筆貨物從來源轉移至目標 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
-| `transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)` | 依平台規格轉移貨物至搭載單位 |
-| `loadCargo(base, unitCtx, sideName)` | 將地面單位轉為 cargo proxy 並載入目標載具或建築物 |
 
 ---
 
 ## 日誌輸出
 
-五個公開函式各自對應一份 `LogFormat.report`，scope 依對象而異（`zone=` / `ship=` / `transportAircraft`）。
+`createCargoMissions`、`transferAndAssign`、`transferAndAssignTransportAircraft`、`retransferCargos` 四個公開函式各自對應一份 `LogFormat.report`，scope 依對象而異（`zone=` / `transportAircraft`）。
 
 ```
-[amphibiousLogistics] ship="Type 075 #1": Load cargo | total=2 ok=1 skip=1
-  [OK]   unit="PHL-16 #1" index=1
-  [SKIP] guid=U-4471 index=2 reason=unit_not_found
+[amphibiousLogistics] zone=Taoyuan: Retransfer cargos | total=2 ok=1 skip=1
+  [OK]   ship="Type 075 #1" dbid=...
+  [SKIP] guid=U-4471 reason=unit_not_found
 ```
 
 `createSingleCargoMission` 的三個失敗點原本一律收斂成 `false` 且不輸出任何日誌，現在各自帶具體 `reason`，並把已建立的任務留在 info log：

@@ -112,8 +112,8 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    START["collectSigint()"]
-    ARGS["接收 varargs<br>多個 unitContext 群組"]
+    START["Sigint.processSide()"]
+    ARGS["collectSigint()<br>走訪 emitter 群組"]
     RESOLVE["resolveUnit()"]
     SKIP{"random() ≤ 30%?"}
     EMIT["isUnitEmitting()<br>判斷是否發射訊號"]
@@ -175,9 +175,10 @@ SIGINT 的 `transmissions` 資料被 `targetingProcess.lua` 的 `findRadioDirect
 
 | 函數 | 說明 |
 |---|---|
-| `collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, ...)` | 主入口：接收多個 unitContext 群組，執行偵測、更新 transmission |
+| `processSide(config, saveData, sideName)` | 主入口（`collectSigint.lua` 每 5 分鐘對 China / US 各呼叫一次）：該側 `sigint.enabled` 為 false 時直接返回；否則取該側 `sigint` 設定與 `PersistentState.sigintEmitters` 的 emitter 群組，交給私有 `collectSigint` 執行偵測、更新 transmission |
 | `initReconAircraftContexts(sigintCtx, sideName, aircraftDefaults)` | 初始化偵察機 Context（掃描 RC-135V / Y-9DZ） |
-| `calculateDetectionProbability(distance, config)` | 偵測機率計算（@internal，公開供測試使用） |
+
+`collectSigint` 與 `calculateDetectionProbability` 皆為私有函式（`local function`），測試經 `processSide` 驗證偵測結果，不再直接呼叫。
 
 ---
 

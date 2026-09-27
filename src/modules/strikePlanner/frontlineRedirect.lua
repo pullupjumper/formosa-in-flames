@@ -12,7 +12,7 @@ local FrontlineRedirect = {}
 ---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list (not mutated)
 ---@param rules SBJ__StrikeMappingRewriteRule[] Rewrite rules
 ---@return SBJ__ReconStrikeMapping[] # Copy with names rewritten where applicable
-function FrontlineRedirect.buildRewrittenMappings(strikeMappings, rules)
+local function buildRewrittenMappings(strikeMappings, rules)
   local result = Utils.deepCopy(strikeMappings)
 
   for _, mapping in ipairs(result) do
@@ -35,7 +35,7 @@ function FrontlineRedirect.updateMappings(config, reconCtx, strikeMappings)
   if reconCtx.frontlineRedirected and
       config.c.recon.frontlineRedirect and
       config.c.recon.frontlineRedirect.mappings then
-    return FrontlineRedirect.buildRewrittenMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
+    return buildRewrittenMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
   end
 
   return strikeMappings

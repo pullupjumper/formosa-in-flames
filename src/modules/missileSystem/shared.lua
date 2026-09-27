@@ -43,7 +43,7 @@ end
 ---Set unit movement and weapon control status
 ---@param unit CMO__Unit Target unit
 ---@param opts SBJ__SetUnitPropertiesOpts|nil Optional property overrides
-function Shared.setUnitProperties(unit, opts)
+local function setUnitProperties(unit, opts)
   if not unit then return end
   local params = opts or {}
 
@@ -83,7 +83,7 @@ function Shared.setGroupUnitProperties(firingUnit, propsBuilder)
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
     if unit then
-      Shared.setUnitProperties(unit, propsBuilder(unit))
+      setUnitProperties(unit, propsBuilder(unit))
     end
   end
 end

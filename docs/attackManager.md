@@ -13,8 +13,8 @@
 
 模組核心流程分為兩層：
 
-1. `attackContacts(opts)`：多目標迭代入口，維持 `firingUnitIdx / shooterIdx` 跨目標輪轉。
-2. `attackContact(...)`：單目標分配引擎，針對單位或群組逐次嘗試發射直到滿足條件或達到嘗試上限。
+1. `attackContacts(opts)`：唯一的公開入口，多目標迭代，維持 `firingUnitIdx / shooterIdx` 跨目標輪轉。
+2. `attackContact(...)`（私有）：單目標分配引擎，針對單位或群組逐次嘗試發射直到滿足條件或達到嘗試上限。
 
 交戰檢核集中於 `canUnitFire`，會依序檢查 Doctrine（Hold Fire）、可用彈量、掛載分配上限與目標既有分配量，避免不必要發射。
 
@@ -106,8 +106,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `attackContact(contactGUID, ammoToAllocate, firingUnits, firingUnitIdx, shooterIdx, weaponDBID, sideName)` | 單一目標 GUID、需求彈量、發射單元清單與輪轉索引 | `{ firingUnitIdx, shooterIdx, ammoAllocated }` | 針對單一目標執行分配與攻擊，並回傳下一輪索引 |
-| `attackContacts(opts)` | `opts.contacts`, `opts.qty`, `opts.firingUnits`, `opts.weaponDBID`, `opts.sideName` | `integer` | 迭代多目標，累計總發射量；`sideName` 預設 `constants.SIDES.ENEMY` |
+| `attackContacts(opts)` | `opts.contacts`, `opts.qty`, `opts.firingUnits`, `opts.weaponDBID`, `opts.sideName` | `integer` | 迭代多目標（逐一交給私有 `attackContact`，並承接它回傳的下一輪索引），累計總發射量；`sideName` 預設 `constants.SIDES.ENEMY` |
 
 ---
 

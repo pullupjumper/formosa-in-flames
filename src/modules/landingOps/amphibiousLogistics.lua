@@ -14,16 +14,9 @@ local MISSION_TYPE = {
 }
 
 
-local CARGO_ENTRY = {
-  TYPE = 3,
-  QUANTITY = 1,
-}
-
 ---Zone config keys whose missions are created as cargo transport missions.
 ---@type string[]
 local CARGO_MISSION_PLATFORMS = { "boat", "transportHelicopter" }
-
-local WEAPON_CLEAR_AMOUNT = 999
 
 ---@type table<number, boolean>
 local AMPHIBIOUS_SHIP_DBIDS = {
@@ -93,7 +86,7 @@ end
 ---@param fromUnit CMO__Unit|nil Source unit (typically the mother ship)
 ---@param toUnit CMO__Unit Destination unit (aircraft or boat to receive cargo)
 ---@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
-function AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
+local function updateCargo(fromUnit, toUnit, cargoItem)
   if fromUnit == nil or
       fromUnit.cargo == nil or
       fromUnit.cargo[1] == nil or
@@ -160,7 +153,7 @@ end
 ---@param platformDBID number Database ID of the platform to receive cargo
 ---@param loadoutDBID number Loadout ID for aircraft filtering (ignored for boats)
 ---@param cargoItems table<integer, SBJ__CargoDescriptor[]> Cargo items to transfer (single list or per-unit)
-function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)
+local function transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
   if not base then return end
 
@@ -172,7 +165,7 @@ function AmphibiousLogistics.transferCargo(fromUnit, platformType, platformDBID,
     if unit and isPlatformMatch(unit, platformType, platformDBID, loadoutDBID) then
       local items = cargoItems[idx] or cargoItems[1]
       for _, item in ipairs(items) do
-        AmphibiousLogistics.updateCargo(base, unit, item)
+        updateCargo(base, unit, item)
       end
     end
   end
@@ -205,7 +198,7 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
   for _, transfer in ipairs(spec.transfers) do
     local cfg = zone[transfer.configKey]
     local manifest = cfg.transferManifest[spec.manifestKey][transfer.loadoutIdx]
-    AmphibiousLogistics.transferCargo(shipGuid, transfer.platform, cfg.dbid, manifest.loadoutId, manifest.cargoItems)
+    transferCargo(shipGuid, transfer.platform, cfg.dbid, manifest.loadoutId, manifest.cargoItems)
   end
 end
 
@@ -221,156 +214,6 @@ local function processShipAssignments(shipGuid, shipDbid, zone)
     local cfg = zone[assignment.configKey]
     AssignMission.assignEmbarkedUnitsToMissions(shipGuid, assignment.platform, cfg.dbid, cfg.missions)
   end
-end
-
--- ============================================================================
--- Unit-to-Cargo Conversion
--- ============================================================================
-
----Normalize weapon DBID input to a set for fast lookup
----@param weaponDBID number|number[]|nil Weapon DBID(s) to normalize
----@return table<number, boolean> # Set of weapon DBIDs
-local function normalizeWeaponDBIDs(weaponDBID)
-  if not weaponDBID then return {} end
-  local weaponDBIDSet = {}
-  if type(weaponDBID) == "table" then
-    for _, id in pairs(weaponDBID) do weaponDBIDSet[id] = true end
-  else
-    weaponDBIDSet[weaponDBID] = true
-  end
-  return weaponDBIDSet
-end
-
----Create a cargo proxy unit on a base ship for a given unit DBID
----@param base CMO__Unit Base ship to load cargo onto
----@param unitDbid number Database ID of the unit to add as cargo
----@param idx integer Index position in the cargo list
----@param sideName string Side name
----@return CMO__Unit|nil # Cargo proxy unit, or nil if creation failed
-local function createCargoProxy(base, unitDbid, idx, sideName)
-  GameApi.ScenEdit_UpdateUnitCargo({
-    guid = base.guid,
-    mode = "add_cargo",
-    cargo = { { CARGO_ENTRY.QUANTITY, unitDbid, CARGO_ENTRY.TYPE } }
-  })
-
-  if not base.cargo or not base.cargo[1] or not base.cargo[1].cargo then
-    return nil
-  end
-
-  local cargoEntry = base.cargo[1].cargo[idx]
-  if not cargoEntry then return nil end
-
-  return GameApi.ScenEdit_GetUnit(cargoEntry.guid, sideName)
-end
-
----Clear all magazines and remove all mounts from a cargo proxy unit
----@param cargo CMO__Unit Cargo proxy unit to strip
----@param sideName string Side name
-local function stripCargoProxyMounts(cargo, sideName)
-  GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = cargo.guid })
-
-  for _, mount in ipairs(cargo.mounts) do
-    GameApi.ScenEdit_UpdateUnit({
-      guid = cargo.guid,
-      mode = "remove_mount",
-      dbid = mount.mount_dbid,
-      mountid = mount.mount_guid
-    })
-  end
-end
-
----Clone mount points from source unit to cargo proxy and tally tracked weapons
----@param sourceUnit CMO__Unit Source unit with mounts to clone
----@param cargo CMO__Unit Cargo proxy unit to receive mounts
----@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
----@return table<number, number> # Weapon DBID to current count mapping
-local function cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
-  local weaponCountMap = {}
-
-  for _, mount in ipairs(sourceUnit.mounts) do
-    GameApi.ScenEdit_UpdateUnit({
-      guid = cargo.guid,
-      mode = "add_mount",
-      dbid = mount.mount_dbid,
-      arc_mount = constants.SENSOR_ARCS
-    })
-
-    if #mount.mount_weapons > 0 and next(weaponDBIDSet) then
-      for _, wpn in ipairs(mount.mount_weapons) do
-        if weaponDBIDSet[wpn.wpn_dbid] then
-          weaponCountMap[wpn.wpn_dbid] = (weaponCountMap[wpn.wpn_dbid] or 0) + wpn.wpn_current
-        end
-      end
-    end
-  end
-
-  return weaponCountMap
-end
-
----Synchronize weapon reload counts on a cargo proxy unit
----Clears all tracked weapon reloads then sets them to actual counts
----@param cargo CMO__Unit Cargo proxy unit
----@param sideName string Side name
----@param weaponCountMap table<number, number> Actual weapon counts (DBID to count)
-local function updateWeaponReloads(cargo, sideName, weaponCountMap)
-  for _, mount in ipairs(cargo.mounts) do
-    for _, wpn in ipairs(mount.mount_weapons) do
-      if wpn.wpn_default > 0 then
-        GameApi.ScenEdit_AddReloadsToUnit({
-          side = sideName,
-          guid = cargo.guid,
-          wpn_dbid = wpn.wpn_dbid,
-          number = WEAPON_CLEAR_AMOUNT,
-          remove = true
-        })
-      end
-    end
-  end
-
-  for wpnDBID, count in pairs(weaponCountMap) do
-    GameApi.ScenEdit_AddReloadsToUnit({
-      side = sideName,
-      guid = cargo.guid,
-      wpn_dbid = wpnDBID,
-      number = count
-    })
-  end
-end
-
----Convert a single group member unit to a cargo proxy on a base ship
----Creates cargo proxy, resets loadout, clones mounts and weapons, then removes original
----@param base CMO__Unit Base ship to load cargo onto
----@param sourceUnit CMO__Unit Source unit to convert
----@param idx integer Index in group unit list
----@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
----@param sideName string Side name
----@return SBJ__LogResult # Deferred log result describing the outcome
-local function normalizeGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
-  local cargo = createCargoProxy(base, sourceUnit.dbid, idx, sideName)
-  if not cargo then
-    return {
-      tag = "FAIL",
-      fields = {
-        unit = sourceUnit.name or sourceUnit.guid,
-        index = idx,
-        reason = "cargo_proxy_creation_failed"
-      }
-    }
-  end
-
-  stripCargoProxyMounts(cargo, sideName)
-  local weaponCountMap = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
-  updateWeaponReloads(cargo, sideName, weaponCountMap)
-
-  if sourceUnit.group then
-    cargo.group = sourceUnit.group.name
-  end
-  cargo.name = sourceUnit.name
-
-  GameApi.ScenEdit_DeleteUnit({ guid = sourceUnit.guid })
-
-  return { tag = "OK", fields = { unit = sourceUnit.name or sourceUnit.guid, index = idx } }
 end
 
 -- ============================================================================
@@ -501,7 +344,7 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer and assign")
 
   for _, item in ipairs(transportAircraft) do
-    AmphibiousLogistics.transferCargo(
+    transferCargo(
       item.guid,
       constants.PLATFORM_TYPES.AIRCRAFT,
       item.dbid,
@@ -520,34 +363,6 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
   report.emit()
 
   return true
-end
-
----Simulate loading ground units onto a ship by creating cargo proxies
----Resolves unit group, clones weapon loadouts to cargo proxies, and removes originals
----@param base CMO__Unit Base ship to load cargo onto
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with name and optional weapon DBID
----@param sideName string Side name
-function AmphibiousLogistics.loadCargo(base, unitCtx, sideName)
-  local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.name, sideName)
-  if not actualUnit then return end
-
-  local group = actualUnit.group and actualUnit.group.unitlist or { actualUnit.guid }
-  local weaponDBIDSet = normalizeWeaponDBIDs(unitCtx.weaponDBID)
-  local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_LOGISTICS, "ship=" .. (base.name or base.guid), "Load cargo")
-
-  for idx, guid in ipairs(group) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-
-    if not unit then
-      report.add("SKIP", { guid = guid, index = idx, reason = "unit_not_found" })
-    else
-      local result = normalizeGroupMember(base, unit, idx, weaponDBIDSet, sideName)
-      report.add(result.tag, result.fields)
-    end
-  end
-
-  report.emit()
 end
 
 ---Re-transfer cargo to embarked units for second wave operations

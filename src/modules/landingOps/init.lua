@@ -174,4 +174,11 @@ function LandingOps.neutralizeAirlandingZone(amphibOpsConfig, ship, contacts)
   return true
 end
 
+---Count landed China units by type in each operational zone's CAS area
+---@param config SBJ__Config Configuration table
+---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
+function LandingOps.countUnitsInEachArea(config)
+  return AmphibiousAssault.countUnitsInEachArea(config)
+end
+
 return LandingOps

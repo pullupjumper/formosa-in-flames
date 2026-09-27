@@ -10,7 +10,7 @@
 
 ## 概觀
 
-`movement.lua` 把路徑移動與武器管制設定集中處理，避免各流程重複拼接 `ScenEdit_SetUnit` / Doctrine 參數。所有移動最終都透過 `moveUnitToPosition` 執行。
+`movement.lua` 把路徑移動與武器管制設定集中處理，避免各流程重複拼接 `ScenEdit_SetUnit` / Doctrine 參數。所有移動最終都透過私有函式 `moveUnitToPosition` 執行。
 
 當狀態改變時，會同步更新 `unitCtx.state` 與 `reloadStartTime`，確保 `cycle.lua` 可用同一套條件運算。
 
@@ -48,7 +48,6 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `moveUnitToPosition` | `opts` | `boolean, table?` | 共用移動執行器 |
 | `moveToReloadPoint` | `unitCtx, unit` | `boolean, table?` | 移動至 RL |
 | `moveToHideArea` | `firingUnitCtx, firingUnit` | `boolean, table?` | 移動至 HA |
 | `moveToAmmoHoldingArea` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 移動至 AHA |
@@ -68,7 +67,7 @@ flowchart LR
 | `invalid_position_data` | `position`、`index`、`area` | 抽中的位置缺少 `course` |
 | `no_ha_defined` | `area` | `operationalArea.HA` 未定義 |
 
-欄位不含 `unit`：六個呼叫端都已自行標上 `unit=`，識別欄位歸呼叫端、失敗原因歸 producer。
+這些 reason 由私有的 `moveUnitToPosition` 產生、經各 `moveTo*` 原樣回傳。欄位不含 `unit`：六個呼叫端都已自行標上 `unit=`，識別欄位歸呼叫端、失敗原因歸 producer。
 
 ---
 

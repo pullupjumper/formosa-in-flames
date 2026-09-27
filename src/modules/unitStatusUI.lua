@@ -5,7 +5,7 @@ local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local MissileSystem = require("src.modules.missileSystem.init")
-local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local LandingOps = require("src.modules.landingOps.init")
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local gKH = require("src.core.gKH_State_Standalone")
 local PersistentState = require("src.core.persistentState")
@@ -277,7 +277,7 @@ function UnitStatusUI.createUI(config, sideName)
   PersistentState.read(function(saveData)
     local batteryRows = MissileSystem.buildBatteryStatusRows(config, saveData, sideName, view.systemTypes)
     local landingUnitsString = view.showsLandedUnits
-        and gKH.json.stringify(AmphibiousAssault.countUnitsInEachArea(config))
+        and gKH.json.stringify(LandingOps.countUnitsInEachArea(config))
         or "{}"
 
     local msg = string.format(

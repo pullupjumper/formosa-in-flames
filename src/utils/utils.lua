@@ -197,32 +197,6 @@ function Utils.deepCopy(original)
   return copy
 end
 
----Round timestamp to nearest minutes interval
----@param timestamp number The timestamp to round
----@param minutes number The minute interval to round to (e.g., 5 for 5-minute intervals)
----@return number # The rounded timestamp
-function Utils.roundToNearestMinutes(timestamp, minutes)
-  local secondsInInterval = minutes * 60
-  return math.ceil(timestamp / secondsInInterval) * secondsInInterval
-end
-
----Format datetime string to separated date and time components
----@param datetimeStr string The datetime string in the format "YYYY-MM-DD HH:MM:SS"
----@return {date: string, time: string} # Object with date in "YYYY/MM/DD" format and time in "HH:MM:SS" format
-function Utils.formatDateTime(datetimeStr)
-  local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
-  local year, month, day, hour, min, sec = datetimeStr:match(pattern)
-
-  if not (year and month and day and hour and min and sec) then
-    error("Invalid datetime format: " .. tostring(datetimeStr))
-  end
-
-  return {
-    date = string.format("%s/%s/%s", year, month, day),
-    time = string.format("%s:%s:%s", hour, min, sec)
-  }
-end
-
 ---Check if point is within polygon using ray casting algorithm
 ---@param point CMO__Location Point to check
 ---@param polygon CMO__Location[] Polygon vertices

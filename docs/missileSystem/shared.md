@@ -25,7 +25,7 @@ flowchart LR
     A[normalizeWeaponDBIDs] --> B[ammo/deployment]
     C[getGroupUnits] --> D[setGroupUnitProperties]
     E[buildModeProperties] --> D
-    D --> F[setUnitProperties]
+    D --> F[setUnitProperties 私有]
     F --> G[ScenEdit_SetUnit]
     F --> H[ScenEdit_SetDoctrine]
 ```
@@ -39,8 +39,7 @@ flowchart LR
 | `normalizeWeaponDBIDs` | `weaponDBID` | `number[]` | weaponDBID 單值/陣列一致化 |
 | `isSAM` | `dbid` | `boolean` | 判斷平台是否屬於 SAM |
 | `getGroupUnits` | `unit` | `string[]` | 取得group內所有 GUID |
-| `setUnitProperties` | `params` | `nil` | 設定單位速度、移動路徑、Doctrine |
-| `setGroupUnitProperties` | `firingUnit, propsBuilder` | `nil` | 對group每個單位套用屬性 |
+| `setGroupUnitProperties` | `firingUnit, propsBuilder` | `nil` | 對group每個單位套用屬性（逐一交給私有 `setUnitProperties` 設定速度、路徑與 Doctrine） |
 | `buildModeProperties` | `isAuto, wcs` | `SBJ__SetUnitPropertiesOpts` | 建立 mode 專用屬性 |
 
 ---

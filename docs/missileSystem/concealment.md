@@ -10,7 +10,7 @@ MASK 區建築隱蔽控制模組。
 
 ## 概觀
 
-`concealment.lua` 透過 `unitsInArea` 於 `operationalArea.mask.area` 搜尋可用建築物，並配合 `AmphibiousLogistics.loadCargo` 將機動車組載入建築，模擬進掩體、建築隱蔽。
+`concealment.lua` 透過 `unitsInArea` 於 `operationalArea.mask.area` 搜尋可用建築物，並配合 [`CargoProxy.loadCargo`](cargoProxy.md) 將機動車組轉成 cargo proxy 載入建築，模擬進掩體、建築隱蔽。
 
 當機動車組需要再次機動時，`moveFromHideArea` 會掃描 mask 內建築 cargo，找到對應 GUID 後卸載。
 
@@ -20,6 +20,8 @@ MASK 區建築隱蔽控制模組。
 
 ## 主要機制
 
+以下三個 helper 都是私有函式（`local function`），只經 `hideUnit` / `moveFromHideArea` 使用：
+
 - `findBuildingsInMaskArea`: 只篩選己方 `BUILDING_SURFACE` 且 `PLATFORMS.BUILDING`。
 - `getRandomBuilding`: 只從未占用建築中隨機挑選。
 - `isHideSiteOccupied`: 支援「檢查任意占用」與「檢查指定 GUID 占用」。
@@ -28,7 +30,7 @@ MASK 區建築隱蔽控制模組。
 flowchart TD
     A[hideUnit] --> B[findBuildingsInMaskArea]
     B --> C[getRandomBuilding]
-    C --> D[AmphibiousLogistics.loadCargo]
+    C --> D[CargoProxy.loadCargo]
 
     E[moveFromHideArea] --> F[findBuildingsInMaskArea]
     F --> G[isHideSiteOccupied by GUID]
@@ -41,11 +43,8 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `isHideSiteOccupied` | `building, unitGUID?` | `boolean` | 判斷建築是否已有載貨或指定機動車組 |
-| `findBuildingsInMaskArea` | `unitCtx, sideName` | `CMO__Unit[]|nil` | 取得 mask 區建築清單 |
-| `getRandomBuilding` | `buildings` | `CMO__Unit|nil` | 隨機挑未占用建築 |
 | `moveFromHideArea` | `unitCtx, unit` | `boolean, table?` | 卸載離開建築 |
-| `hideUnit` | `unitCtx, unit` | `boolean, table?` | 載入建築隱蔽 |
+| `hideUnit` | `unitCtx, unit` | `boolean, table?` | 挑選未占用建築並經 `CargoProxy.loadCargo` 載入隱蔽 |
 
 失敗時第二個回傳值是 log 欄位表而非散文訊息，呼叫端直接併進自己的 row：
 
@@ -60,6 +59,7 @@ flowchart TD
 
 ## 相關模組
 
+- [cargoProxy](cargoProxy.md) — `hideUnit` 把機動車組轉成 cargo proxy 的實作
 - [shared](shared.md)
 - [init](init.md)
 - [cycle](cycle.md)

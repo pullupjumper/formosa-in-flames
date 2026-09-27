@@ -25,7 +25,7 @@ end
 ---@param weaponDBID number|number[] Weapon database ID(s)
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@return integer # Total ammunition consumed
-function Ammo.reloadUnit(unit, weaponDBID, resupplyUnitCtx)
+local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   if not unit then return 0 end
   local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
   local totalLoaded = 0
@@ -59,7 +59,7 @@ function Ammo.reloadFiringUnit(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideN
   local totalLoaded = 0
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
-    totalLoaded = totalLoaded + Ammo.reloadUnit(unit, weaponDBID, resupplyUnitCtx)
+    totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   end
 
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC

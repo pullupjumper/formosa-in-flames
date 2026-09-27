@@ -1042,7 +1042,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field event CMO__Event Event payload from CMO
 ---@field isAuto boolean Whether the flow runs in automatic mode
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
----@field behavior? SBJ__MoveToPositionOpts Behavior switches for side-specific differences
+---@field behavior SBJ__MoveToPositionOpts Behavior switches for side-specific differences
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table

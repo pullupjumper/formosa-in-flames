@@ -2,7 +2,7 @@
 local stub = require("luassert.stub")
 local Concealment = require("src.modules.missileSystem.concealment")
 local GameApi = require("src.utils.gameApi")
-local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local CargoProxy = require("src.modules.missileSystem.cargoProxy")
 local Logger = require("src.utils.logger")
 
 describe("MissileSystem Concealment", function()
@@ -108,7 +108,7 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide({ { guid = "B1" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
       trackStub(math, "random").returns(1)
-      local stubLoadCargo = trackStub(AmphibiousLogistics, "loadCargo")
+      local stubLoadCargo = trackStub(CargoProxy, "loadCargo")
 
       local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
 
@@ -131,7 +131,7 @@ describe("MissileSystem Concealment", function()
       }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding2)
       trackStub(math, "random").returns(2)
-      local stubLoadCargo = trackStub(AmphibiousLogistics, "loadCargo")
+      local stubLoadCargo = trackStub(CargoProxy, "loadCargo")
 
       Concealment.hideUnit(unitCtx, unit)
 

@@ -168,7 +168,7 @@ flowchart TB
 
 - 機動車組移動與射擊管制命令（移動、武器管制）
 - 彈藥庫存變化（機動發射車/彈藥補給車/彈藥儲備點）
-- 利用 CMO `cargo` 裝載/卸載機制，模擬機動車組進入掩體或建築進行隱藏
+- 利用 CMO `cargo` 裝載/卸載機制，模擬機動車組進入掩體或建築進行隱藏（`cargoProxy` 負責把地面單位轉成建築上的 cargo proxy）
 - 事件trigger 與 zone 移除與創建結果（由玩家手動部署單位部署陣地）
 
 ---
@@ -180,7 +180,7 @@ flowchart TB
 | `scheduledReloadHideCheck.lua` | 提供定時檢查，驅動再裝填、機動流程 |
 | `moveToPosition.lua` | 機動車組進入陣地後，立即更新對應狀態與武器管制 |
 | `strikePlanner/fireSupportPlan.lua` | FSP 射擊後寫入 `firingUnitCtx.stowStartTime`，觸發 stow 等待視窗 |
-| `addMissileSystems.lua` | 創建飛彈系統單位與 context，常用於測試/重部署 |
+| `addMissileSystems.lua`（special action） | 經 `MissileSystem.deploySide` 創建飛彈系統單位與 context，常用於測試/重部署 |
 | `destroyUnits.lua` / `taiwaneseAssetIsDestroy.lua` | 彈藥車與彈藥庫戰損同步反映到庫存與後續火力支援能力 |
 | `unitStatusUI.lua` | 將狀態與作戰區域可視化，利於除錯與調校 |
 
@@ -194,6 +194,7 @@ flowchart TB
 - [meeting](meeting.md)
 - [ammo](ammo.md)
 - [concealment](concealment.md)
+- [cargoProxy](cargoProxy.md)
 - [deployment](deployment.md)
 - [context](context.md)
 - [triggers](triggers.md)

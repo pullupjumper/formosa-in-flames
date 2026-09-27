@@ -34,6 +34,19 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
 | [secondWaveUnloading](secondWaveUnloading.md) | `secondWaveUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載 |
 
+### 門面 API（`init.lua`）
+
+套件外的程式碼（事件腳本、`unitStatusUI` 等模組）只 `require("src.modules.landingOps.init")`，不直接 require 套件內部模組：
+
+| 函式 | 說明 | 外部呼叫端 |
+|---|---|---|
+| `init(amphibOpsConfig, landingState)` | 開局初始化兩棲作戰狀態 | `src/core/init.lua` |
+| `process(config, landingState, contacts, currentTime, filteredShips)` | 轉交 [`Coordinator.process`](coordinator.md) | `landingCheck.lua` |
+| `launchACV(amphibOpsConfig, ship)` | ACV 釋放 | `launchACV.lua` |
+| `offloadVehicles(amphibOpsConfig, landingState, ship)` | 重裝備下卸 | `offloadVehicles.lua` |
+| `neutralizeAirlandingZone(amphibOpsConfig, ship, contacts)` | SAG 壓制空/機降區 | `neutralizeAirlandingZone.lua` |
+| `countUnitsInEachArea(config)` | 純轉發 [`AmphibiousAssault.countUnitsInEachArea`](amphibiousAssault.md) | `src/modules/unitStatusUI.lua` |
+
 ---
 
 ## 系統架構圖
@@ -48,7 +61,7 @@ flowchart TB
 
     subgraph 編排層["coordinator.lua"]
         COORD["Coordinator.process()"]
-        GATE["Coordinator.evaluateFireSupportGate()"]
+        GATE["evaluateFireSupportGate()<br>（私有，process 末尾）"]
     end
 
     subgraph 階段一["艦隊移動"]
@@ -82,7 +95,7 @@ flowchart TB
     AA_COURSE --> AA_ACV
     AA_COURSE --> SW_START --> SW_OFFLOAD
     COORD --> GATE
-    COORD -.->|Taoyuan：Recon.addEntry 排 GJ-11| RECON["strikePlanner/recon"]
+    COORD -.->|Taoyuan：StrikePlanner.addReconEntry 排 GJ-11| RECON["strikePlanner/recon"]
     GATE -.->|fireSupportOnHold：跳過 STRIKE/INFRA/*| RECON
 
     style TRIGGER fill:#137cbd
@@ -156,10 +169,11 @@ flowchart BT
         ASSIGN["assignMission"]
         MISSILE["missileSystem"]
         UI["unitStatusUI"]
-        RECON["strikePlanner/recon"]
+        SP["strikePlanner（門面）"]
     end
 
     subgraph Landing Operations
+        INIT["init（門面）"]
         COORD["coordinator"]
         SM["shipMovement"]
         AL["amphibiousLogistics"]
@@ -167,7 +181,9 @@ flowchart BT
         SW["secondWaveUnloading"]
     end
 
-    COORD --> SM & AL & AA & SW & MISSILE & UI & RECON & UTILS & GAMEUTILS & CONSTANTS & LOGGER
+    UI --> INIT
+    INIT --> COORD & SM & AA & SW
+    COORD --> SM & AL & AA & SW & MISSILE & SP & UTILS & GAMEUTILS & CONSTANTS & LOGGER
     SM --> UTILS & GAMEAPI & GAMEUTILS & CONSTANTS & LOGGER
     AL --> GAMEAPI & ASSIGN & CONSTANTS & LOGGER
     AA --> GAMEAPI & GAMEUTILS & AL & CONSTANTS & LOGGER
@@ -230,7 +246,7 @@ flowchart BT
 | `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` | 空/機降區壓制腳本（SAG 進入區域觸發） |
 | `src/modules/assignMission.lua` | 任務指派模組 |
 | `src/modules/strikePlanner/attackManager.lua` | 打擊管理（SAG 艦砲射擊） |
-| `src/modules/unitStatusUI.lua` | 單位狀態監控（灘頭陣地建立判定） |
+| `src/modules/unitStatusUI.lua` | 單位狀態面板；經門面 `LandingOps.countUnitsInEachArea` 顯示各區登陸單位數 |
 | `src/core/config.lua` | 運行期配置 |
 | `src/core/constants.lua` | 不可變常數 |
 | `src/core/saveData.lua` | 持久化狀態管理 |

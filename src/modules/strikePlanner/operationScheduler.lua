@@ -40,7 +40,7 @@ end
 ---@param config SBJ__Config Configuration data
 ---@return SBJ__Operation nextOperation Operation for the next wave
 ---@return string status "FOUND_NEXT"|"REUSED_CURRENT"|"PARSE_ERROR"|"UNKNOWN_TYPE"
-function OperationScheduler.buildNextOperation(operation, config)
+local function buildNextOperation(operation, config)
   local templateName = operation.template.name
   local baseName, currentWaveNumber = templateName:match("^(.+/)(%d+)$")
 
@@ -179,7 +179,7 @@ local function buildNextWaveOperation(strikeMapping, processingCtx)
     }
   end
 
-  local nextOperation, status = OperationScheduler.buildNextOperation(
+  local nextOperation, status = buildNextOperation(
     previousOperation,
     processingCtx.config
   )

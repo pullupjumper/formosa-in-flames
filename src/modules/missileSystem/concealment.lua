@@ -1,7 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Shared = require("src.modules.missileSystem.shared")
-local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local CargoProxy = require("src.modules.missileSystem.cargoProxy")
 
 local Concealment = {}
 
@@ -9,7 +9,7 @@ local Concealment = {}
 ---@param building CMO__Unit Building to check for cargo
 ---@param unitGUID? string GUID of the unit to find in cargo
 ---@return boolean # Whether the unit is loaded in the building
-function Concealment.isHideSiteOccupied(building, unitGUID)
+local function isHideSiteOccupied(building, unitGUID)
   if not building.cargo or not building.cargo[1] or not building.cargo[1].cargo then
     return false
   end
@@ -31,7 +31,7 @@ end
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
 ---@param sideName string Side name
 ---@return CMO__Unit[]|nil # Array of building units or nil
-function Concealment.findBuildingsInMaskArea(unitCtx, sideName)
+local function findBuildingsInMaskArea(unitCtx, sideName)
   local side = GameApi.VP_GetSide({ name = sideName })
   if not side or not side.unitsInArea or not unitCtx.operationalArea.mask or not unitCtx.operationalArea.mask.area then
     return nil
@@ -51,12 +51,12 @@ end
 ---Select a random unoccupied building from the list
 ---@param buildings CMO__SideUnit[]
 ---@return CMO__Unit|nil # Random building from the list that is not occupied by a hide site
-function Concealment.getRandomBuilding(buildings)
+local function getRandomBuilding(buildings)
   local buildingsWithoutOccupied = {}
 
   for _, item in ipairs(buildings) do
     local building = GameApi.ScenEdit_GetUnit(item.guid)
-    if building and not Concealment.isHideSiteOccupied(building) then
+    if building and not isHideSiteOccupied(building) then
       table.insert(buildingsWithoutOccupied, building)
     end
   end
@@ -74,7 +74,7 @@ end
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.moveFromHideArea(unitCtx, unit)
   local group = Shared.getGroupUnits(unit)
-  local buildings = Concealment.findBuildingsInMaskArea(unitCtx, unit.side)
+  local buildings = findBuildingsInMaskArea(unitCtx, unit.side)
 
   if not buildings then
     return false, { reason = "no_buildings_in_mask", area = unitCtx.operationalArea.name }
@@ -85,7 +85,7 @@ function Concealment.moveFromHideArea(unitCtx, unit)
 
     if building then
       for _, firingUnitGUID in ipairs(group) do
-        if Concealment.isHideSiteOccupied(building, firingUnitGUID) then
+        if isHideSiteOccupied(building, firingUnitGUID) then
           GameApi.ScenEdit_UnloadCargo(building.guid, { firingUnitGUID })
         end
       end
@@ -103,19 +103,19 @@ end
 ---@return boolean success Whether hide was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.hideUnit(unitCtx, unit)
-  local buildings = Concealment.findBuildingsInMaskArea(unitCtx, unit.side)
+  local buildings = findBuildingsInMaskArea(unitCtx, unit.side)
 
   if not buildings then
     return false, { reason = "no_buildings_in_mask", area = unitCtx.operationalArea.name }
   end
 
-  local building = Concealment.getRandomBuilding(buildings)
+  local building = getRandomBuilding(buildings)
 
   if not building then
     return false, { reason = "no_available_building", area = unitCtx.operationalArea.name }
   end
 
-  AmphibiousLogistics.loadCargo(building, unitCtx, unit.side)
+  CargoProxy.loadCargo(building, unitCtx, unit.side)
   return true, nil
 end
 

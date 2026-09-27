@@ -1,5 +1,5 @@
 local PersistentState = require("src.core.persistentState")
-local Recon = require("src.modules.strikePlanner.recon")
+local StrikePlanner = require("src.modules.strikePlanner.init")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local unit = GameApi.ScenEdit_UnitX()
@@ -10,5 +10,5 @@ if not unit then
 end
 
 PersistentState.update(function(saveData)
-  Recon.launchWZ8(PersistentState.recon(saveData), unit)
+  StrikePlanner.launchWZ8(PersistentState.recon(saveData), unit)
 end)

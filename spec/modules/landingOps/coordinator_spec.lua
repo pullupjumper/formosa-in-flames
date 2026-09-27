@@ -8,8 +8,9 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local MissileSystem = require("src.modules.missileSystem.init")
+local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
-local GameApi = require("src.utils.gameApi")
 
 describe("LandingOps Coordinator", function()
   ---@type luassert.spy[]
@@ -223,6 +224,7 @@ describe("LandingOps Coordinator", function()
     local stubCountUnitsInEachArea
     local stubStartSecondWaveUnloading
     local stubRetransferCargos
+    local stubAddReconEntry
 
     before_each(function()
       stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToStagingArea").returns(false))
@@ -240,6 +242,7 @@ describe("LandingOps Coordinator", function()
       stubCountUnitsInEachArea = trackStub(stub(AmphibiousAssault, "countUnitsInEachArea").returns({}))
       stubStartSecondWaveUnloading = trackStub(stub(SecondWaveUnloading, "startSecondWaveUnloading").returns(true))
       stubRetransferCargos = trackStub(stub(AmphibiousLogistics, "retransferCargos").returns(true))
+      stubAddReconEntry = trackStub(stub(StrikePlanner, "addReconEntry"))
     end)
 
     -- Positive: advances moving zones into arrival waiting state
@@ -260,24 +263,21 @@ describe("LandingOps Coordinator", function()
     end)
 
     -- Positive: performs arrival logistics and Taoyuan temporary setup
-    it("should enqueue Taoyuan temporary tasks after arrival logistics succeeds", function()
+    it("should queue the GJ-11 recon entry after Taoyuan arrival logistics succeeds", function()
       local config = makeConfig()
       local landingState = makeLandingState()
-      local deepCopySpy = trackStub(spy.on(Utils, "deepCopy"))
 
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetCount.returns(2)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
+      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.are.equal(1000, landingState.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
-      assert.are.equal(2, #landingState.recon.queue)
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubTransferTransportAircraft).was.called(1)
-      assert.spy(deepCopySpy).was.called()
+      assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.c.recon.template.GJ11_RECON)
     end)
 
     -- Negative: non-Taoyuan zones skip transport-aircraft transfer and recon insertion
@@ -295,26 +295,7 @@ describe("LandingOps Coordinator", function()
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Tainan.phase)
       assert.stub(stubTransferTransportAircraft).was_not.called()
-      -- Only the pre-existing satellite remains; no recon UAV inserted
-      assert.are.equal(1, #landingState.recon.queue)
-    end)
-
-    -- Boundary: Taoyuan arrives but the recon queue has no satellite gap, so no UAV is queued
-    it("should advance Taoyuan without queueing a recon UAV when no satellite gap exists", function()
-      local config = makeConfig()
-      local landingState = makeLandingState()
-      -- Drop the satellite pass so Recon.addEntry has no window to anchor.
-      landingState.recon.queue = {}
-
-      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
-      stubGetCount.returns(2)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-
-      Coordinator.process(config, landingState, makeContacts(), 1000, makeFilteredShips())
-
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubTransferTransportAircraft).was.called(1)
-      assert.are.equal(0, #landingState.recon.queue)
+      assert.stub(stubAddReconEntry).was_not.called()
     end)
 
     -- Positive: advances assault phase when launch conditions are met
@@ -408,127 +389,129 @@ describe("LandingOps Coordinator", function()
       assert.are.equal(7300, landingState.amphibOps.zoneStates.Taoyuan.airlandingMissionStartTime)
       assert.stub(stubRetransferCargos).was.called(1)
     end)
-  end)
 
-  -- ============================================================================
-  -- evaluateFireSupportGate
-  -- ============================================================================
+    -- ============================================================================
+    -- process: fire support gate
+    -- ============================================================================
 
-  describe("evaluateFireSupportGate", function()
-    local MissileSystem = require("src.modules.missileSystem.init")
-
-    ---@param totalPercentage number
-    ---@return SBJ__AmmoInventoryResult
-    local function makeReport(totalPercentage)
-      return {
-        firing   = { current = 0, max = 0, percentage = 0 },
-        resupply = { current = 0, max = 0, percentage = 0 },
-        ammo     = { current = 0, max = 0, percentage = 0 },
-        total    = { current = 0, max = 0, percentage = totalPercentage },
-      }
-    end
-
-    ---@param overrides? table
-    local function makeGateConfig(overrides)
-      local cfg = makeConfig()
-      cfg.c.amphibOps.fireSupportHoldThreshold = 50
-      if overrides then
-        for k, v in pairs(overrides) do cfg.c.amphibOps[k] = v end
+    -- Zone phases below stay put under the default stubs (not past start time, no arrivals,
+    -- enemy contacts above threshold, no beachhead), so only the gate changes state.
+    describe("fire support gate", function()
+      ---@param totalPercentage number
+      ---@return SBJ__AmmoInventoryResult
+      local function makeReport(totalPercentage)
+        return {
+          firing   = { current = 0, max = 0, percentage = 0 },
+          resupply = { current = 0, max = 0, percentage = 0 },
+          ammo     = { current = 0, max = 0, percentage = 0 },
+          total    = { current = 0, max = 0, percentage = totalPercentage },
+        }
       end
-      return cfg
-    end
 
-    ---@param overrides? table
-    local function makeGateLandingState(overrides)
-      local landingState = makeLandingState()
-      landingState.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } }
-      if overrides then
-        for k, v in pairs(overrides) do landingState.amphibOps[k] = v end
+      ---@param overrides? table
+      local function makeGateConfig(overrides)
+        local cfg = makeConfig()
+        cfg.c.amphibOps.fireSupportHoldThreshold = 50
+        if overrides then
+          for k, v in pairs(overrides) do cfg.c.amphibOps[k] = v end
+        end
+        return cfg
       end
-      return landingState
-    end
 
-    -- Positive: HOLD activates when ammo low and at least one zone has not arrived
-    it("should set fireSupportOnHold true when ammo below threshold and zones not all arrived", function()
-      local cfg = makeGateConfig()
-      local landingState = makeGateLandingState()
-      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-      trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
+      ---@param overrides? table
+      local function makeGateLandingState(overrides)
+        local landingState = makeLandingState()
+        landingState.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } }
+        if overrides then
+          for k, v in pairs(overrides) do landingState.amphibOps[k] = v end
+        end
+        return landingState
+      end
 
-      Coordinator.evaluateFireSupportGate(cfg, landingState)
+      -- Positive: HOLD activates when ammo low and at least one zone has not arrived
+      it("should set fireSupportOnHold true when ammo below threshold and zones not all arrived", function()
+        local cfg = makeGateConfig()
+        local landingState = makeGateLandingState()
+        landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+        trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
 
-      assert.is_true(landingState.amphibOps.fireSupportOnHold)
-    end)
+        Coordinator.process(cfg, landingState, makeContacts(), 1000, makeFilteredShips())
 
-    -- Negative: HOLD does not activate when ammo above threshold
-    it("should not set fireSupportOnHold when ammo at or above threshold", function()
-      local cfg = makeGateConfig()
-      local landingState = makeGateLandingState()
-      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-      trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(50)))
-
-      Coordinator.evaluateFireSupportGate(cfg, landingState)
-
-      assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
-    end)
-
-    -- Positive: RESUME releases hold once all zones reach WAITING_ASSAULT or later
-    it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
-      local cfg = makeGateConfig()
-      cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-      local landingState = makeGateLandingState()
-      landingState.amphibOps.fireSupportOnHold = true
-      landingState.amphibOps.zoneStates = {
-        Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
-        Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE }),
-      }
-
-      Coordinator.evaluateFireSupportGate(cfg, landingState)
-
-      assert.is_false(landingState.amphibOps.fireSupportOnHold)
-    end)
-
-    -- Negative: RESUME requires ALL zones; one straggler keeps hold engaged
-    it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
-      local cfg = makeGateConfig()
-      cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-      local landingState = makeGateLandingState()
-      landingState.amphibOps.fireSupportOnHold = true
-      landingState.amphibOps.zoneStates = {
-        Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
-        Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
-      }
-      trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
-
-      Coordinator.evaluateFireSupportGate(cfg, landingState)
-
-      assert.is_true(landingState.amphibOps.fireSupportOnHold)
-    end)
-
-    -- Boundary: gate must not query SRBM ammo while already on hold (saves a game-state read)
-    it("should not call getAmmoInventory when already on hold", function()
-      local cfg = makeGateConfig()
-      local landingState = makeGateLandingState()
-      landingState.amphibOps.fireSupportOnHold = true
-      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-      local invStub = trackStub(stub(MissileSystem, "getAmmoInventory"))
-
-      Coordinator.evaluateFireSupportGate(cfg, landingState)
-
-      assert.stub(invStub).was_not.called()
-    end)
-
-    -- Boundary: defensive guard when SRBM context is absent (e.g., a landing state without ground forces)
-    it("should not error when ground.srbm context is missing", function()
-      local cfg = makeGateConfig()
-      local landingState = makeGateLandingState()
-      landingState.ground = nil
-      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-
-      assert.has_no.errors(function()
-        Coordinator.evaluateFireSupportGate(cfg, landingState)
+        assert.is_true(landingState.amphibOps.fireSupportOnHold)
       end)
-      assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
+
+      -- Negative: HOLD does not activate when ammo above threshold
+      it("should not set fireSupportOnHold when ammo at or above threshold", function()
+        local cfg = makeGateConfig()
+        local landingState = makeGateLandingState()
+        landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+        trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(50)))
+
+        Coordinator.process(cfg, landingState, makeContacts(), 1000, makeFilteredShips())
+
+        assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
+      end)
+
+      -- Positive: RESUME releases hold once all zones reach WAITING_ASSAULT or later
+      it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
+        local cfg = makeGateConfig()
+        cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
+        cfg.c.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
+        local landingState = makeGateLandingState()
+        landingState.amphibOps.fireSupportOnHold = true
+        landingState.amphibOps.zoneStates = {
+          Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
+          Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE }),
+        }
+
+        Coordinator.process(cfg, landingState, makeContacts(), 1000, makeFilteredShips())
+
+        assert.is_false(landingState.amphibOps.fireSupportOnHold)
+      end)
+
+      -- Negative: RESUME requires ALL zones; one straggler keeps hold engaged
+      it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
+        local cfg = makeGateConfig()
+        cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
+        cfg.c.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
+        local landingState = makeGateLandingState()
+        landingState.amphibOps.fireSupportOnHold = true
+        landingState.amphibOps.zoneStates = {
+          Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
+          Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
+        }
+        trackStub(stub(MissileSystem, "getAmmoInventory").returns(makeReport(40)))
+
+        Coordinator.process(cfg, landingState, makeContacts(), 1000, makeFilteredShips())
+
+        assert.is_true(landingState.amphibOps.fireSupportOnHold)
+      end)
+
+      -- Boundary: gate must not query SRBM ammo while already on hold (saves a game-state read)
+      it("should not call getAmmoInventory when already on hold", function()
+        local cfg = makeGateConfig()
+        local landingState = makeGateLandingState()
+        landingState.amphibOps.fireSupportOnHold = true
+        landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+        local invStub = trackStub(stub(MissileSystem, "getAmmoInventory"))
+
+        Coordinator.process(cfg, landingState, makeContacts(), 1000, makeFilteredShips())
+
+        assert.stub(invStub).was_not.called()
+      end)
+
+      -- Boundary: defensive guard when SRBM context is absent (e.g., a landing state without ground forces)
+      it("should not error when ground.srbm context is missing", function()
+        local cfg = makeGateConfig()
+        local landingState = makeGateLandingState()
+        landingState.ground = nil
+        landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
+
+        assert.has_no.errors(function()
+          Coordinator.process(cfg, landingState, makeContacts(), 1000, makeFilteredShips())
+        end)
+        assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
+      end)
     end)
   end)
 end)

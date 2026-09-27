@@ -76,7 +76,7 @@ end
 ---Returns whether the given DBID corresponds to a radar unit
 ---@param dbid number The DBID to check
 ---@return boolean Whether the DBID corresponds to a radar unit
-function IntegratedAirDefenseSystem.isPLARadar(dbid)
+local function isPLARadar(dbid)
   return PLA_RADAR_DBIDS[dbid]
 end
 
@@ -186,7 +186,7 @@ function IntegratedAirDefenseSystem.activateNearestRadar(config, sideUnits, dest
     end
 
     local distance = GameApi.Tool_Range({ latitude = latitude, longitude = longitude }, actualUnit.guid)
-    if IntegratedAirDefenseSystem.isPLARadar(actualUnit.dbid) then
+    if isPLARadar(actualUnit.dbid) then
       if distance < temp.distance then
         temp.unit = actualUnit
         temp.distance = distance
@@ -315,7 +315,7 @@ function IntegratedAirDefenseSystem.initC2FacilitiesContext(iadsConfig, iadsCtx)
           end
 
           -- Radar systems
-          if IntegratedAirDefenseSystem.isPLARadar(actualUnit.dbid) then
+          if isPLARadar(actualUnit.dbid) then
             iadsCtx.c2[c2GUID].radar[actualUnit.guid] = {
               name = actualUnit.name,
               guid = actualUnit.guid,

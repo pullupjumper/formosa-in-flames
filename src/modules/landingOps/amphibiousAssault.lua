@@ -61,21 +61,6 @@ local function isLST(unit)
   return not NON_LST_NAMES[unit.name]
 end
 
----Count enemy ground force contacts in the specified area
----Only counts contacts of type FACILITY_MOBILE to assess landing zone threat level
----@param contacts CMO__Contact[] Contact list from the side
----@param area CMO__ReferencePoint[] Reference points defining the area
----@return integer # Number of enemy ground units in the area
-local function countGroundContacts(contacts, area)
-  local count = 0
-  for _, contact in ipairs(contacts) do
-    if contact:inArea(area) and contact.typed == constants.CONTACT_TYPES.FACILITY_MOBILE then
-      count = count + 1
-    end
-  end
-  return count
-end
-
 -- ============================================================================
 -- Mission Configuration
 -- ============================================================================
@@ -353,7 +338,13 @@ end
 ---@param area CMO__ReferencePoint[] Reference points defining the air landing zone
 ---@return integer # Number of enemy ground units in the area
 function AmphibiousAssault.countContactsInArea(contacts, area)
-  return countGroundContacts(contacts, area)
+  local count = 0
+  for _, contact in ipairs(contacts) do
+    if contact:inArea(area) and contact.typed == constants.CONTACT_TYPES.FACILITY_MOBILE then
+      count = count + 1
+    end
+  end
+  return count
 end
 
 ---Count landed China units by type in each operational zone's CAS area

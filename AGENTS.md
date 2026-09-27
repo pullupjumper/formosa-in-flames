@@ -41,6 +41,7 @@ The project uses a **modular event-driven architecture** centered around `src/co
 - **Naming**: Follow `docs/naming.md` for file, module, function, variable, parameter, type, and config key naming.
 - **Config vs Constants**: Use `config.*` for gameplay values that may need adjustment; use `constants.*` for immutable identifiers (DBIDs, GUIDs, area definitions).
 - **No Hardcoding**: Never hardcode DBIDs, GUIDs, or coordinates directly in logic.
+- **Package Facades**: A module folder with an `init.lua` (`missileSystem/`, `strikePlanner/`, `landingOps/`) is a package. Code outside the folder requires only its `init.lua`; files inside the folder call each other directly, never through their own facade. `spec/moduleBoundary_spec.lua` enforces this. Facade functions that only forward are fine at the boundary; prefer ones that also hide internals (e.g. take `sideName` and resolve config/state themselves).
 
 ### Module Organization
 

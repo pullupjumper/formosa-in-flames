@@ -100,14 +100,14 @@ describe("AttackManager", function()
   end
 
   -- ============================================================================
-  -- attackContact
+  -- attackContacts
   -- ============================================================================
 
-  describe("attackContact", function()
-    -- Positive: allocates ammo from a single unit and advances index
+  describe("attackContacts", function()
+    -- Positive: allocates ammo from a single unit on the requested side
     it("should attack contact with single unit and allocate requested ammo", function()
       local contact = makeContact()
-      local unit = makeUnit({ name = "Shooter A", guid = "UNIT-A" })
+      local unit = makeUnit({ name = "Shooter A", guid = "UNIT-A", side = constants.SIDES.PLAYER })
       local firingUnits = { { name = "Shooter A", weaponDBID = 1001 } }
 
       local stubGetContact = trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
@@ -120,18 +120,55 @@ describe("AttackManager", function()
       trackStub(stub(GameApi, "ScenEdit_WeaponAllocation").returns({}))
       local stubAttack = trackStub(stub(GameApi, "ScenEdit_AttackContact").returns(true))
 
-      local result = AttackManager.attackContact(contact.guid, 3, firingUnits, 1, 1, nil, constants.SIDES.ENEMY)
+      local result = AttackManager.attackContacts({
+        contacts = { contact.guid },
+        qty = 3,
+        firingUnits = firingUnits,
+        sideName = constants.SIDES.PLAYER,
+      })
 
-      assert.are.equal(3, result.ammoAllocated)
-      assert.are.equal(1, result.firingUnitIdx)
-      assert.are.equal(1, result.shooterIdx)
-      assert.stub(stubGetContact).was.called_with(constants.SIDES.ENEMY, contact.guid)
+      assert.are.equal(3, result)
+      assert.stub(stubGetContact).was.called_with(constants.SIDES.PLAYER, contact.guid)
       assert.stub(stubAttack).was.called_with("UNIT-A", contact.guid, {
         mode = "1",
         qty = 3,
         mount = 2001,
         weapon = 1001,
       })
+    end)
+
+    -- Positive: the next contact continues from the firing unit after the previous shooter
+    it("should sum ammo across contacts and rotate to the next firing unit per contact", function()
+      local unitA = makeUnit({ name = "Shooter A", guid = "UNIT-A" })
+      local unitB = makeUnit({ name = "Shooter B", guid = "UNIT-B" })
+      local firingUnits = {
+        { name = "Shooter A", weaponDBID = 1001 },
+        { name = "Shooter B", weaponDBID = 1001 },
+      }
+
+      trackStub(stub(GameApi, "ScenEdit_GetContact").invokes(function(_, guid)
+        return makeContact({ guid = guid })
+      end))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
+        if id == "Shooter A" then return unitA end
+        if id == "Shooter B" then return unitB end
+        return nil
+      end))
+      trackStub(stub(GameUtils, "getWeaponInfo").returns(makeWeaponInfo({ availableWeapons = 2 })))
+      trackStub(stub(GameApi, "ScenEdit_GetDoctrine").returns(makeDoctrine()))
+      trackStub(stub(GameApi, "ScenEdit_WeaponAllocation").returns({}))
+      local stubAttack = trackStub(stub(GameApi, "ScenEdit_AttackContact").returns(true))
+
+      local result = AttackManager.attackContacts({
+        contacts = { "C-1", "C-2" },
+        qty = 2,
+        firingUnits = firingUnits,
+      })
+
+      assert.are.equal(4, result)
+      assert.stub(stubAttack).was.called(2)
+      assert.stub(stubAttack).was.called_with("UNIT-A", "C-1", match._)
+      assert.stub(stubAttack).was.called_with("UNIT-B", "C-2", match._)
     end)
 
     -- Negative: skips attack when doctrine is hold fire
@@ -146,9 +183,13 @@ describe("AttackManager", function()
       trackStub(stub(GameApi, "ScenEdit_GetDoctrine").returns(makeDoctrine({ weapon_control_status_land = 2 })))
       local stubAttack = trackStub(stub(GameApi, "ScenEdit_AttackContact").returns(true))
 
-      local result = AttackManager.attackContact(contact.guid, 2, firingUnits, 1, 1, nil, constants.SIDES.ENEMY)
+      local result = AttackManager.attackContacts({
+        contacts = { contact.guid },
+        qty = 2,
+        firingUnits = firingUnits,
+      })
 
-      assert.are.equal(0, result.ammoAllocated)
+      assert.are.equal(0, result)
       assert.stub(stubAttack).was_not.called()
     end)
 
@@ -165,9 +206,13 @@ describe("AttackManager", function()
       trackStub(stub(GameApi, "ScenEdit_WeaponAllocation").returns({}))
       local stubAttack = trackStub(stub(GameApi, "ScenEdit_AttackContact").returns(true))
 
-      local result = AttackManager.attackContact(contact.guid, 5, firingUnits, 1, 1, nil, constants.SIDES.ENEMY)
+      local result = AttackManager.attackContacts({
+        contacts = { contact.guid },
+        qty = 5,
+        firingUnits = firingUnits,
+      })
 
-      assert.are.equal(6, result.ammoAllocated)
+      assert.are.equal(6, result)
       assert.stub(stubAttack).was.called(3)
       assert.stub(stubAttack).was.called_with("UNIT-C", contact.guid, {
         mode = "1",
@@ -183,32 +228,39 @@ describe("AttackManager", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(nil))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local result = AttackManager.attackContact("CONTACT-MISSING", 3, firingUnits, 1, 1, nil, constants.SIDES.ENEMY)
+      local result = AttackManager.attackContacts({
+        contacts = { "CONTACT-MISSING" },
+        qty = 3,
+        firingUnits = firingUnits,
+      })
 
-      assert.are.equal(0, result.ammoAllocated)
+      assert.are.equal(0, result)
       assert.stub(stubGetUnit).was_not.called()
     end)
 
-    -- Positive: processes grouped units by shooter index and advances to next firing unit
-    it("should process unit group using shooterIdx and advance after last group member", function()
-      local contact = makeContact({ guid = "CONTACT-GRP" })
+    -- Positive: grouped units fire by shooter index across contacts, then advance to the next firing unit
+    it("should continue group shooters across contacts and advance after last group member", function()
       local groupHost = makeUnit({
         name = "Battery A",
         guid = "BATTERY-A",
         group = { unitlist = { "G-1", "G-2" } },
       })
-      local groupMember1 = makeUnit({ guid = "G-1", side = constants.SIDES.ENEMY })
-      local groupMember2 = makeUnit({ guid = "G-2", side = constants.SIDES.ENEMY })
+      local groupMember1 = makeUnit({ guid = "G-1" })
+      local groupMember2 = makeUnit({ guid = "G-2" })
+      local singleB = makeUnit({ name = "Shooter B", guid = "UNIT-B" })
       local firingUnits = {
         { name = "Battery A", weaponDBID = 1001 },
-        { name = "Battery B", weaponDBID = 1001 },
+        { name = "Shooter B", weaponDBID = 1001 },
       }
 
-      trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
+      trackStub(stub(GameApi, "ScenEdit_GetContact").invokes(function(_, guid)
+        return makeContact({ guid = guid })
+      end))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "Battery A" then return groupHost end
         if id == "G-1" then return groupMember1 end
         if id == "G-2" then return groupMember2 end
+        if id == "Shooter B" then return singleB end
         return nil
       end))
       trackStub(stub(GameUtils, "getWeaponInfo").returns(makeWeaponInfo({ availableWeapons = 2 })))
@@ -216,71 +268,39 @@ describe("AttackManager", function()
       trackStub(stub(GameApi, "ScenEdit_WeaponAllocation").returns({}))
       local stubAttack = trackStub(stub(GameApi, "ScenEdit_AttackContact").returns(true))
 
-      local result = AttackManager.attackContact(contact.guid, 2, firingUnits, 1, 2, nil, constants.SIDES.ENEMY)
+      local result = AttackManager.attackContacts({
+        contacts = { "C-1", "C-2", "C-3" },
+        qty = 2,
+        firingUnits = firingUnits,
+      })
 
-      assert.are.equal(2, result.ammoAllocated)
-      assert.are.equal(2, result.firingUnitIdx)
-      assert.are.equal(1, result.shooterIdx)
-      assert.stub(stubAttack).was.called_with("G-2", contact.guid, {
+      assert.are.equal(6, result)
+      assert.stub(stubAttack).was.called_with("G-1", "C-1", match._)
+      assert.stub(stubAttack).was.called_with("G-2", "C-2", {
         mode = "1",
         qty = 2,
         mount = 2001,
         weapon = 1001,
       })
-    end)
-  end)
-
-  -- ============================================================================
-  -- attackContacts
-  -- ============================================================================
-
-  describe("attackContacts", function()
-    -- Positive: aggregates ammo from each contact attack
-    it("should sum allocated ammo from multiple contacts", function()
-      local stubAttackContact = trackStub(stub(AttackManager, "attackContact").invokes(
-        function(contactGUID, qty, firingUnits, firingUnitIdx, shooterIdx, weaponDBID, sideName)
-          if contactGUID == "C-1" and qty == 2 and sideName == constants.SIDES.ENEMY then
-            return { firingUnitIdx = 1, shooterIdx = 1, ammoAllocated = 2 }
-          end
-          if contactGUID == "C-2" and qty == 2 and sideName == constants.SIDES.ENEMY then
-            return { firingUnitIdx = 1, shooterIdx = 1, ammoAllocated = 1 }
-          end
-          return { firingUnitIdx = firingUnitIdx, shooterIdx = shooterIdx, ammoAllocated = 0 }
-        end
-      ))
-
-      local result = AttackManager.attackContacts({
-        contacts = { "C-1", "C-2" },
-        qty = 2,
-        firingUnits = { { name = "U1", weaponDBID = 1001 } },
-      })
-
-      assert.are.equal(3, result)
-      assert.stub(stubAttackContact).was.called(2)
+      assert.stub(stubAttack).was.called_with("UNIT-B", "C-3", match._)
     end)
 
     -- Boundary: defaults sideName to ENEMY when omitted
     it("should default sideName to enemy", function()
-      local stubAttackContact = trackStub(stub(AttackManager, "attackContact").returns({
-        firingUnitIdx = 1,
-        shooterIdx = 1,
-        ammoAllocated = 1,
-      }))
+      local stubGetContact = trackStub(stub(GameApi, "ScenEdit_GetContact").returns(nil))
 
-      local result = AttackManager.attackContacts({
+      AttackManager.attackContacts({
         contacts = { "C-3" },
         qty = 1,
         firingUnits = { { name = "U1", weaponDBID = 1001 } },
       })
 
-      assert.are.equal(1, result)
-      assert.stub(stubAttackContact).was.called_with("C-3", 1, { { name = "U1", weaponDBID = 1001 } }, 1, 1, nil,
-        constants.SIDES.ENEMY)
+      assert.stub(stubGetContact).was.called_with(constants.SIDES.ENEMY, "C-3")
     end)
 
     -- Negative: returns zero when no contacts are provided
     it("should return zero when contacts are empty", function()
-      local stubAttackContact = trackStub(stub(AttackManager, "attackContact"))
+      local stubGetContact = trackStub(stub(GameApi, "ScenEdit_GetContact"))
 
       local result = AttackManager.attackContacts({
         contacts = {},
@@ -289,7 +309,7 @@ describe("AttackManager", function()
       })
 
       assert.are.equal(0, result)
-      assert.stub(stubAttackContact).was_not.called()
+      assert.stub(stubGetContact).was_not.called()
     end)
   end)
 end)

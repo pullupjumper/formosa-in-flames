@@ -11,7 +11,7 @@ local Movement = {}
 ---@param params SBJ__MoveToPositionParams Movement options
 ---@return boolean success Whether the move was successful
 ---@return table<string, any>? errorFields Log fields describing the failure
-function Movement.moveUnitToPosition(params)
+local function moveUnitToPosition(params)
   local posCount = Utils.getCount(params.positions)
   if posCount == 0 then
     return false, {
@@ -60,7 +60,7 @@ end
 ---@return table<string, any>? errorFields
 function Movement.moveToReloadPoint(unitCtx, unit, positions)
   unitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  return Movement.moveUnitToPosition({
+  return moveUnitToPosition({
     unitName = unitCtx.name,
     battery = unit,
     positions = positions or unitCtx.operationalArea.RL,
@@ -84,7 +84,7 @@ function Movement.moveToHideArea(firingUnitCtx, firingUnit)
   end
 
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  return Movement.moveUnitToPosition({
+  return moveUnitToPosition({
     unitName = firingUnitCtx.name,
     battery = firingUnit,
     positions = firingUnitCtx.operationalArea.HA,
@@ -101,7 +101,7 @@ end
 ---@return table<string, any>? errorFields
 function Movement.moveToAmmoHoldingArea(resupplyUnitCtx, resupplyUnit)
   resupplyUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  return Movement.moveUnitToPosition({
+  return moveUnitToPosition({
     unitName = resupplyUnitCtx.name,
     battery = resupplyUnit,
     positions = resupplyUnitCtx.operationalArea.AHA,
@@ -117,7 +117,7 @@ end
 ---@return table<string, any>? errorFields
 function Movement.moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
   resupplyUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  return Movement.moveUnitToPosition({
+  return moveUnitToPosition({
     unitName = resupplyUnitCtx.name,
     battery = resupplyUnit,
     positions = resupplyUnitCtx.operationalArea.RL,
@@ -134,7 +134,7 @@ end
 ---@return table<string, any>? errorFields
 function Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  return Movement.moveUnitToPosition({
+  return moveUnitToPosition({
     unitName = firingUnitCtx.name,
     battery = firingUnit,
     positions = firingUnitCtx.operationalArea.FP,

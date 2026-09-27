@@ -99,7 +99,7 @@ end
 ---@return boolean inPosition Whether the unit is at its firing point
 function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
   if firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE and
-      not MissileSystem.isLowAmmo(firingUnitCtx, firingUnit) then
+      not Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
     Concealment.moveFromHideArea(firingUnitCtx, firingUnit)
     commandMoveToFiringPoint(firingUnitCtx, firingUnit)
   end
@@ -251,13 +251,6 @@ function MissileSystem.buildSetupMenuRows(config, sideName)
   return SetupLayout.buildSetupMenuRows(config[GameUtils.getCachedSideConfig(sideName).field].ground, sideName)
 end
 
----Add missile system units to the game
----@param groundForceCfg SBJ__GroundForceConfig Ground force context
----@param sideName string Side name
-function MissileSystem.addMissileSystems(groundForceCfg, sideName)
-  Deployment.addMissileSystems(groundForceCfg, sideName)
-end
-
 ---Add a side's missile system units and build their runtime contexts from config
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
@@ -284,34 +277,26 @@ function MissileSystem.buildBatteryStatusRows(config, saveData, sideName, system
   )
 end
 
----Seed the default per-system state (name, enabled, empty unit maps) from configuration
----@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
----@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
-function MissileSystem.seedGroundForceState(groundForceCfg, groundForceCtx)
-  Context.seedGroundForceState(groundForceCfg, groundForceCtx)
+---Seed a side's default per-system state (name, enabled, empty unit maps) from configuration
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is seeded in place
+---@param sideName string Side name (China or Taiwan)
+function MissileSystem.seedGroundForceState(config, saveData, sideName)
+  Context.seedGroundForceState(
+    config[GameUtils.getCachedSideConfig(sideName).field].ground,
+    PersistentState.groundForces(saveData, sideName)
+  )
 end
 
----Initialize missile system runtime contexts from configuration
----@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
----@param groundForceCtx SBJ__GroundForceContext Ground force runtime context
-function MissileSystem.initMissileSystemContexts(groundForceCfg, groundForceCtx)
-  Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
-end
-
----Normalize behavior options with default values
----@param behavior SBJ__MoveToPositionOpts|nil Optional behavior configuration
----@param unitSide string Unit side name used as default lookup side
----@return SBJ__MoveToPositionOpts # Resolved behavior object
-local function resolveBehavior(behavior, unitSide)
-  if behavior then
-    return behavior
-  end
-
-  return {
-    hideOnEnterHA = false,
-    hideResupplyOnRLNoMeeting = false,
-    firingUnitLookupSide = unitSide
-  }
+---Initialize a side's missile system runtime contexts from configuration
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
+---@param sideName string Side name (China or Taiwan)
+function MissileSystem.initMissileSystemContexts(config, saveData, sideName)
+  Context.initMissileSystemContexts(
+    config[GameUtils.getCachedSideConfig(sideName).field].ground,
+    PersistentState.groundForces(saveData, sideName)
+  )
 end
 
 ---Iterate through enabled missile systems only
@@ -523,10 +508,10 @@ local POSITION_HANDLERS = {
 
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
 ---@param params SBJ__MoveToPositionEventParams Unit-enter-area event handling options
-function MissileSystem.processMoveToPositionEvent(params)
+local function processMoveToPositionEvent(params)
   local unit = params.unit
   local isAuto = params.isAuto
-  local behavior = resolveBehavior(params.behavior, unit.side)
+  local behavior = params.behavior
   local positionType = resolvePositionType(params.event)
   local handler = POSITION_HANDLERS[positionType]
 
@@ -560,7 +545,7 @@ end
 function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
   local policy = config[GameUtils.getCachedSideConfig(unit.side).field].missileSystemPolicy
 
-  MissileSystem.processMoveToPositionEvent({
+  processMoveToPositionEvent({
     groundCtx = PersistentState.groundForces(saveData, unit.side),
     unit = unit,
     event = event,

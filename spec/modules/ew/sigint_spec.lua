@@ -5,6 +5,7 @@ local GameUtils = require("src.utils.gameUtils")
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
+local PersistentState = require("src.core.persistentState")
 
 describe("Sigint", function()
   ---@type luassert.spy[]
@@ -164,94 +165,103 @@ describe("Sigint", function()
   end
 
   -- ============================================================================
-  -- Sigint.calculateDetectionProbability
+  -- Sigint.processSide
   -- ============================================================================
 
-  describe("calculateDetectionProbability", function()
-    -- Positive: returns 1.0 when distance is within threshold
-    it("should return 1.0 when distance is within detection threshold", function()
-      local cfg = { detectionThreshold = 60 }
-      local prob = Sigint.calculateDetectionProbability(30, cfg)
-      assert.are.equal(1.0, prob)
-    end)
-
-    -- Positive: returns 1.0 when distance equals threshold exactly
-    it("should return 1.0 when distance equals detection threshold", function()
-      local cfg = { detectionThreshold = 60 }
-      local prob = Sigint.calculateDetectionProbability(60, cfg)
-      assert.are.equal(1.0, prob)
-    end)
-
-    -- Positive: returns value between 0 and 1 for mid-range distance
-    it("should return probability between 0 and 1 for mid-range distance", function()
-      local cfg = {
-        detectionThreshold = 60,
-        maxDetectionRange = { 500, 500 },
-        formulaConstants = { decayRate = -1 / 450, power = 0.8 },
-      }
-      local prob = Sigint.calculateDetectionProbability(150, cfg)
-      assert.is_true(prob > 0 and prob < 1)
-    end)
-
-    -- Positive: uses default values when config is nil
-    it("should use default values when config is nil", function()
-      local prob = Sigint.calculateDetectionProbability(30, nil)
-      assert.are.equal(1.0, prob)
-    end)
-
-    -- Negative: returns 0.0 when distance exceeds max detection range
-    it("should return 0.0 when distance exceeds max detection range", function()
-      local cfg = {
-        detectionThreshold = 60,
-        maxDetectionRange = { 100, 100 },
-      }
-      local prob = Sigint.calculateDetectionProbability(200, cfg)
-      assert.are.equal(0.0, prob)
-    end)
-
-    -- Boundary: returns 0.0 when distance is at max range boundary
-    it("should return 0.0 when distance equals max detection range", function()
-      local cfg = {
-        detectionThreshold = 60,
-        maxDetectionRange = { 200, 200 },
-      }
-      local prob = Sigint.calculateDetectionProbability(200, cfg)
-      assert.are.equal(0.0, prob)
-    end)
-
-    -- Boundary: returns value at distance 0
-    it("should return 1.0 when distance is zero", function()
-      local cfg = { detectionThreshold = 60 }
-      local prob = Sigint.calculateDetectionProbability(0, cfg)
-      assert.are.equal(1.0, prob)
-    end)
-
-    -- Positive: probability decreases as distance increases
-    it("should decrease probability as distance increases", function()
-      local cfg = {
-        detectionThreshold = 60,
-        maxDetectionRange = { 500, 500 },
-        formulaConstants = { decayRate = -1 / 450, power = 0.8 },
-      }
-      local probClose = Sigint.calculateDetectionProbability(100, cfg)
-      local probFar = Sigint.calculateDetectionProbability(250, cfg)
-      assert.is_true(probClose > probFar)
-    end)
-  end)
-
-  -- ============================================================================
-  -- Sigint.handleSigint
-  -- ============================================================================
-
-  describe("handleSigint", function()
+  describe("processSide", function()
     local cfg
     local sigintCtx
-    local sigintConfig
+    local saveData
+
+    -- ------------------------------------------------------------------------
+    -- Shared builders
+    -- ------------------------------------------------------------------------
+
+    ---Create an existing transmission record with sensible defaults
+    ---@param overrides? table
+    ---@return table
+    local function makeTransmission(overrides)
+      local transmission = {
+        name = "ROCC Alpha",
+        guid = "C2-001",
+        msg = "ROCC detected",
+        type = "C2",
+        latitude = 25.0,
+        longitude = 121.0,
+        contacts = {},
+        currentDetectionLevel = 0,
+        autodetectable = false,
+        firstDetected = 1000,
+        lastDetected = 1000,
+        detectionCount = 0,
+        confidence = 0.5,
+      }
+      if overrides then
+        for k, v in pairs(overrides) do transmission[k] = v end
+      end
+      return transmission
+    end
+
+    ---Resolve units by guid or name; RECON-001 is the collecting aircraft
+    ---@param units table[] Target units
+    ---@param reconCondition? string Recon aircraft condition (default Airborne)
+    ---@return luassert.spy
+    local function stubUnits(units, reconCondition)
+      local byKey = {
+        ["RECON-001"] = makeUnit({ guid = "RECON-001", name = "RC-135V", condition = reconCondition or "Airborne" }),
+      }
+      for _, u in ipairs(units) do
+        byKey[u.guid] = u
+        byKey[u.name] = u
+      end
+      return trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
+        return byKey[guidOrName]
+      end)
+    end
+
+    ---math.random() returns 0 (never skip, always pass the roll); math.random(a, b) returns a
+    local function stubLowRandom()
+      trackStub(stub(math, "random")).invokes(function(a, b)
+        if a == nil and b == nil then return 0.0 end
+        if a and b then return a end
+        return 0
+      end)
+    end
+
+    ---Stub the recon-to-target range and the clock
+    ---@param distance number|fun(enemyGuid: string): number
+    local function stubRange(distance)
+      local rangeStub = trackStub(stub(GameApi, "Tool_Range"))
+      if type(distance) == "function" then
+        rangeStub.invokes(distance)
+      else
+        rangeStub.returns(distance)
+      end
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(1000)
+    end
+
+    ---Stub the triangulated fix position and the map notification
+    ---@param pos? table
+    ---@return luassert.spy barkStub
+    local function stubFix(pos)
+      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns(pos or { latitude = 25.01, longitude = 121.01 })
+      return trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
+    end
+
+    ---Run China's SIGINT collection over one emitter group
+    ---@param unitContexts table
+    ---@return luassert.spy emittersStub
+    local function runChina(unitContexts)
+      local emittersStub = trackStub(stub(PersistentState, "sigintEmitters")).returns({ unitContexts })
+      Sigint.processSide(cfg, saveData, "China")
+      return emittersStub
+    end
 
     before_each(function()
       cfg = makeConfig()
+      cfg.c.sigint = makeSigintConfig()
       sigintCtx = makeSigintContext()
-      sigintConfig = makeSigintConfig()
+      saveData = { c = { sigint = sigintCtx } }
 
       trackStub(stub(GameUtils, "getCachedSideConfig")).returns({
         field = "c",
@@ -260,890 +270,395 @@ describe("Sigint", function()
       })
     end)
 
-    -- Positive: should detect C2 platform unit (always emitting)
-    it("should detect C2 platform unit that is always emitting", function()
-      local c2Unit = makeUnit({
-        guid = "C2-UNIT-001",
-        name = "C2 Platform",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-UNIT-001"] = makeC2Ctx({
-          guid = "C2-UNIT-001",
-          name = "ROCC Alpha",
-        }),
-      }
+    -- ------------------------------------------------------------------------
+    -- Side gating
+    -- ------------------------------------------------------------------------
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if guidOrName == "C2-UNIT-001" or guidOrName == "RECON-001" then
-          if guidOrName == "RECON-001" then
-            return makeUnit({ guid = "RECON-001", name = "RC-135V", condition = "Airborne" })
-          end
-          return c2Unit
-        end
-        return nil
+    describe("side gating", function()
+      -- Positive: an enabled side collects the emitters of its own save data
+      it("should collect the side's emitters when SIGINT is enabled", function()
+        stubUnits({})
+
+        local emittersStub = runChina({})
+
+        assert.stub(emittersStub).was.called_with(saveData, "China")
       end)
 
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({
-        latitude = 25.01,
-        longitude = 121.01,
-      })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(1000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
+      -- Negative: a disabled side does nothing
+      it("should skip collection when SIGINT is disabled", function()
+        sigintCtx.enabled = false
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-      assert.is_true(results["C2-UNIT-001"].isDetected)
-      assert.are.equal(25.01, results["C2-UNIT-001"].latitude)
-      assert.are.equal(121.01, results["C2-UNIT-001"].longitude)
+        local emittersStub = runChina({})
+
+        assert.stub(emittersStub).was_not.called()
+      end)
     end)
 
-    -- Positive: should detect bunker sector control station (always emitting)
-    it("should detect bunker sector control station that is always emitting", function()
-      local bunkerUnit = makeUnit({
-        guid = "BUNKER-001",
-        name = "Sector Control Station",
-        dbid = constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION,
-      })
-      local unitContexts = {
-        ["BUNKER-001"] = makeC2Ctx({
-          guid = "BUNKER-001",
-          name = "TAAOC Bravo",
-        }),
-      }
+    -- ------------------------------------------------------------------------
+    -- Emission and detection
+    -- ------------------------------------------------------------------------
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "BUNKER-001" then return bunkerUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
+    describe("emission and detection", function()
+      -- Positive: should detect C2 platform unit (always emitting)
+      it("should record a C2 platform unit at the triangulated fix", function()
+        stubUnits({ makeUnit({ guid = "C2-UNIT-001", dbid = constants.PLATFORMS.C2 }) })
+        stubRange(50)
+        stubFix({ latitude = 25.01, longitude = 121.01 })
+        stubLowRandom()
+
+        runChina({ ["C2-UNIT-001"] = makeC2Ctx({ guid = "C2-UNIT-001" }) })
+
+        local transmission = sigintCtx.transmissions["C2-UNIT-001"]
+        assert.are.equal(25.01, transmission.latitude)
+        assert.are.equal(121.01, transmission.longitude)
       end)
 
-      trackStub(stub(GameApi, "Tool_Range")).returns(40)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.02, longitude = 121.02 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(2000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
+      -- Positive: should detect bunker sector control station (always emitting)
+      it("should record a bunker sector control station that is always emitting", function()
+        stubUnits({ makeUnit({ guid = "BUNKER-001", dbid = constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION }) })
+        stubRange(40)
+        stubFix()
+        stubLowRandom()
+
+        runChina({ ["BUNKER-001"] = makeC2Ctx({ guid = "BUNKER-001", name = "TAAOC Bravo" }) })
+
+        assert.is_not_nil(sigintCtx.transmissions["BUNKER-001"])
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-      assert.is_true(results["BUNKER-001"].isDetected)
+      -- Positive: should detect C2 facility unit defined in c2FacilityDBIDs
+      it("should record a C2 facility unit defined in iads c2FacilityDBIDs", function()
+        stubUnits({ makeUnit({ guid = "C2F-001", dbid = 3730 }) })
+        stubRange(30)
+        stubFix()
+        stubLowRandom()
+
+        runChina({ ["C2F-001"] = makeC2Ctx({ guid = "C2F-001", name = "ROCC Bravo" }) })
+
+        assert.is_not_nil(sigintCtx.transmissions["C2F-001"])
+      end)
+
+      -- Positive: should detect mobile unit that is leaving restricted area
+      it("should record a mobile unit that is leaving its restricted launch area", function()
+        stubUnits({ makeUnit({ guid = "TEL-001", name = "TEL Battery Alpha" }) })
+        trackStub(stub(GameUtils, "isInArea")).returns(false)
+        stubRange(50)
+        stubFix()
+        stubLowRandom()
+
+        runChina({ ["TEL-001"] = makeFiringUnitCtx({ guid = "TEL-001", name = "TEL Battery Alpha" }) })
+
+        assert.is_not_nil(sigintCtx.transmissions["TEL-001"])
+      end)
+
+      -- Positive: firing units are resolved by name on the enemy side
+      it("should look up firing unit by name and enemy side when weaponDBID is present", function()
+        local getUnitStub = stubUnits({ makeUnit({ guid = "FU-LOOKUP-001", name = "TEL Lookup" }) })
+        trackStub(stub(GameUtils, "isInArea")).returns(false)
+        stubRange(50)
+        stubFix()
+        stubLowRandom()
+
+        runChina({ ["FU-LOOKUP-001"] = makeFiringUnitCtx({ guid = "FU-LOOKUP-001", name = "TEL Lookup" }) })
+
+        assert.stub(getUnitStub).was.called_with("TEL Lookup", "Taiwan")
+      end)
+
+      -- Positive: a detection is announced on the map with the context message
+      it("should show a map notification at the fix with the unit's message", function()
+        stubUnits({ makeUnit({ guid = "C2-SHOW-001", dbid = constants.PLATFORMS.C2 }) })
+        stubRange(50)
+        local barkStub = stubFix({ latitude = 25.6, longitude = 121.6 })
+        stubLowRandom()
+
+        runChina({ ["C2-SHOW-001"] = makeC2Ctx({ guid = "C2-SHOW-001", msg = "ROCC detected" }) })
+
+        assert.stub(barkStub).was.called_with(121.6, 25.6, "ROCC detected", 255, 255, 255, true, true, 4, 16)
+      end)
+
+      -- Negative: should not detect mobile unit with no course
+      it("should not record a mobile unit with no course set", function()
+        stubUnits({ makeUnit({ guid = "TEL-002", name = "TEL Battery Bravo", speed = 0, course = {} }) })
+        stubRange(50)
+        stubLowRandom()
+
+        runChina({ ["TEL-002"] = makeFiringUnitCtx({ guid = "TEL-002", name = "TEL Battery Bravo" }) })
+
+        assert.is_nil(sigintCtx.transmissions["TEL-002"])
+      end)
+
+      -- Negative: should not detect mobile unit with speed 0
+      it("should not record a mobile unit with zero speed", function()
+        stubUnits({ makeUnit({ guid = "TEL-STOP-001", name = "TEL Stopped", speed = 0 }) })
+        stubRange(50)
+        stubLowRandom()
+
+        runChina({ ["TEL-STOP-001"] = makeFiringUnitCtx({ guid = "TEL-STOP-001", name = "TEL Stopped" }) })
+
+        assert.is_nil(sigintCtx.transmissions["TEL-STOP-001"])
+      end)
+
+      -- Negative: should not detect mobile unit with no RL area defined
+      it("should not record a mobile unit with no RL area defined", function()
+        stubUnits({ makeUnit({ guid = "TEL-NORL-001", name = "TEL NoRL" }) })
+        stubRange(50)
+        stubLowRandom()
+
+        runChina({
+          ["TEL-NORL-001"] = makeFiringUnitCtx({
+            guid = "TEL-NORL-001",
+            name = "TEL NoRL",
+            operationalArea = { RL = { { area = {} } }, FP = {}, HA = {}, AHA = {} },
+          }),
+        })
+
+        assert.is_nil(sigintCtx.transmissions["TEL-NORL-001"])
+      end)
+
+      -- Negative: should not detect mobile unit that is within restricted area
+      it("should not record a mobile unit that stays within its restricted area", function()
+        stubUnits({ makeUnit({ guid = "TEL-003", name = "TEL Battery Charlie" }) })
+        trackStub(stub(GameUtils, "isInArea")).returns(true)
+        stubRange(50)
+        stubLowRandom()
+
+        runChina({ ["TEL-003"] = makeFiringUnitCtx({ guid = "TEL-003", name = "TEL Battery Charlie" }) })
+
+        assert.is_nil(sigintCtx.transmissions["TEL-003"])
+      end)
+
+      -- Negative: should skip unit when actual unit is not found
+      it("should not range or record a unit that cannot be found", function()
+        stubUnits({})
+        local rangeStub = trackStub(stub(GameApi, "Tool_Range"))
+        stubLowRandom()
+
+        runChina({ ["MISSING-001"] = makeFiringUnitCtx({ guid = "MISSING-001", name = "Missing Unit" }) })
+
+        assert.stub(rangeStub).was_not.called()
+        assert.are.same({}, sigintCtx.transmissions)
+      end)
+
+      -- Negative: should not detect when recon aircraft is not airborne
+      it("should not record when the recon aircraft is not airborne", function()
+        stubUnits({ makeUnit({ guid = "C2-UNIT-002", dbid = constants.PLATFORMS.C2 }) }, "On Ground")
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(1000)
+        stubLowRandom()
+
+        runChina({ ["C2-UNIT-002"] = makeC2Ctx({ guid = "C2-UNIT-002" }) })
+
+        assert.is_nil(sigintCtx.transmissions["C2-UNIT-002"])
+      end)
     end)
 
-    -- Positive: should detect C2 facility unit defined in c2FacilityDBIDs
-    it("should detect C2 facility unit defined in iads c2FacilityDBIDs", function()
-      local c2FacilityUnit = makeUnit({
-        guid = "C2F-001",
-        name = "C2 Facility",
-        dbid = 3730,
-      })
-      local unitContexts = {
-        ["C2F-001"] = makeC2Ctx({
-          guid = "C2F-001",
-          name = "ROCC Bravo",
-        }),
-      }
+    -- ------------------------------------------------------------------------
+    -- Detection probability
+    -- ------------------------------------------------------------------------
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2F-001" then return c2FacilityUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
+    describe("detection probability", function()
+      ---Run one always-emitting C2 target at the given distance and return its recorded confidence
+      ---@param distance number
+      ---@return number|nil confidence Nil when the target was not detected
+      local function detectC2At(distance)
+        stubUnits({ makeUnit({ guid = "C2-PROB-001", dbid = constants.PLATFORMS.C2 }) })
+        stubRange(distance)
+        stubFix()
+        stubLowRandom()
+
+        runChina({ ["C2-PROB-001"] = makeC2Ctx({ guid = "C2-PROB-001" }) })
+
+        local transmission = sigintCtx.transmissions["C2-PROB-001"]
+        return transmission and transmission.confidence
+      end
+
+      -- Positive: certain detection inside the threshold
+      it("should detect with confidence 1.0 when distance is within detection threshold", function()
+        assert.are.equal(1.0, detectC2At(30))
       end)
 
-      trackStub(stub(GameApi, "Tool_Range")).returns(30)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.03, longitude = 121.03 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(3000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
+      -- Positive: exponential decay between threshold and max range
+      it("should detect with decayed confidence for mid-range distance", function()
+        cfg.c.sigint.maxDetectionRange = { 500, 500 }
+
+        assert.are.equal(math.exp((-1 / 450) * (150 ^ 0.8)), detectC2At(150))
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-      assert.is_true(results["C2F-001"].isDetected)
+      -- Positive: farther targets get lower confidence
+      it("should give a farther target lower confidence than a closer one", function()
+        cfg.c.sigint.maxDetectionRange = { 500, 500 }
+        stubUnits({
+          makeUnit({ guid = "C2-NEAR", dbid = constants.PLATFORMS.C2 }),
+          makeUnit({ guid = "C2-FAR", dbid = constants.PLATFORMS.C2 }),
+        })
+        stubRange(function(enemyGuid) return enemyGuid == "C2-NEAR" and 100 or 250 end)
+        stubFix()
+        stubLowRandom()
+
+        runChina({
+          ["C2-NEAR"] = makeC2Ctx({ guid = "C2-NEAR" }),
+          ["C2-FAR"] = makeC2Ctx({ guid = "C2-FAR" }),
+        })
+
+        assert.is_true(sigintCtx.transmissions["C2-NEAR"].confidence > sigintCtx.transmissions["C2-FAR"].confidence)
+      end)
+
+      -- Positive: missing thresholds fall back to the built-in defaults
+      it("should use default threshold when SIGINT config omits it", function()
+        cfg.c.sigint = { maxCount = 3, detectionSkipProbability = -1 }
+
+        assert.are.equal(1.0, detectC2At(30))
+      end)
+
+      -- Negative: no detection beyond max range
+      it("should not detect when distance exceeds max detection range", function()
+        cfg.c.sigint.maxDetectionRange = { 100, 100 }
+
+        assert.is_nil(detectC2At(200))
+      end)
+
+      -- Boundary: threshold distance is still certain
+      it("should detect with confidence 1.0 when distance equals detection threshold", function()
+        assert.are.equal(1.0, detectC2At(60))
+      end)
+
+      -- Boundary: zero distance is certain
+      it("should detect with confidence 1.0 when distance is zero", function()
+        assert.are.equal(1.0, detectC2At(0))
+      end)
+
+      -- Boundary: max range itself is out of reach
+      it("should not detect when distance equals max detection range", function()
+        cfg.c.sigint.maxDetectionRange = { 200, 200 }
+
+        assert.is_nil(detectC2At(200))
+      end)
     end)
 
-    -- Positive: should detect mobile unit that is leaving restricted area
-    it("should detect mobile unit that is leaving restricted launch area", function()
-      local mobileUnit = makeUnit({
-        guid = "TEL-001",
-        name = "TEL Battery Alpha",
-        dbid = 1000,
-        speed = 30,
-        course = { { latitude = 24.0, longitude = 120.0 } },
-      })
-      local unitContexts = {
-        ["TEL-001"] = makeFiringUnitCtx({
-          guid = "TEL-001",
-          name = "TEL Battery Alpha",
-        }),
-      }
+    -- ------------------------------------------------------------------------
+    -- Transmission records
+    -- ------------------------------------------------------------------------
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if side == "Taiwan" then return mobileUnit end
-        if guidOrName == "TEL-001" then return mobileUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
+    describe("transmission records", function()
+      ---Stub a detectable C2 unit and a hit, returning the ScenEdit_SetUnit stub
+      ---@param unit table
+      ---@return luassert.spy setUnitStub
+      local function stubC2Hit(unit)
+        stubUnits({ unit })
+        stubRange(50)
+        stubFix()
+        stubLowRandom()
+        return trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+      end
+
+      -- Positive: should create transmission record on first detection
+      it("should create transmission record on first detection", function()
+        stubC2Hit(makeUnit({ guid = "C2-REC-001", dbid = constants.PLATFORMS.C2 }))
+
+        runChina({ ["C2-REC-001"] = makeC2Ctx({ guid = "C2-REC-001", name = "ROCC Test" }) })
+
+        local transmission = sigintCtx.transmissions["C2-REC-001"]
+        assert.are.equal("ROCC Test", transmission.name)
+        assert.are.equal("C2", transmission.type)
+        assert.are.equal(1, transmission.currentDetectionLevel)
+        assert.are.equal(1, transmission.detectionCount)
       end)
 
-      trackStub(stub(GameUtils, "isInArea")).returns(false)
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.05, longitude = 121.05 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(4000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
+      -- Positive: should increment detection level on repeated detection
+      it("should increment detection level on repeated detection", function()
+        stubC2Hit(makeUnit({ guid = "C2-INC-001", dbid = constants.PLATFORMS.C2 }))
+        sigintCtx.transmissions["C2-INC-001"] = makeTransmission({
+          guid = "C2-INC-001", currentDetectionLevel = 2, detectionCount = 2,
+        })
+
+        runChina({ ["C2-INC-001"] = makeC2Ctx({ guid = "C2-INC-001" }) })
+
+        local transmission = sigintCtx.transmissions["C2-INC-001"]
+        assert.are.equal(3, transmission.currentDetectionLevel)
+        assert.are.equal(3, transmission.detectionCount)
       end)
 
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-      assert.is_true(results["TEL-001"].isDetected)
-    end)
+      -- Positive: should set autodetectable when detection level exceeds maxCount
+      it("should set autodetectable when detection level exceeds maxCount", function()
+        local setUnitStub = stubC2Hit(makeUnit({ guid = "C2-AUTO-001", dbid = constants.PLATFORMS.C2 }))
+        sigintCtx.transmissions["C2-AUTO-001"] = makeTransmission({
+          guid = "C2-AUTO-001", currentDetectionLevel = 3, detectionCount = 3,
+        })
 
-    -- Negative: should not detect mobile unit with no course
-    it("should not detect mobile unit with no course set", function()
-      local stoppedUnit = makeUnit({
-        guid = "TEL-002",
-        name = "TEL Battery Bravo",
-        dbid = 1000,
-        speed = 0,
-        course = {},
-      })
-      local unitContexts = {
-        ["TEL-002"] = makeFiringUnitCtx({
-          guid = "TEL-002",
-          name = "TEL Battery Bravo",
-        }),
-      }
+        runChina({ ["C2-AUTO-001"] = makeC2Ctx({ guid = "C2-AUTO-001" }) })
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if side == "Taiwan" then return stoppedUnit end
-        if guidOrName == "TEL-002" then return stoppedUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
+        assert.is_true(sigintCtx.transmissions["C2-AUTO-001"].autodetectable)
+        assert.stub(setUnitStub).was.called_with({ guid = "C2-AUTO-001", autodetectable = true })
       end)
 
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(5000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-      assert.is_false(results["TEL-002"].isDetected)
-    end)
-
-    -- Negative: should not detect mobile unit that is within restricted area
-    it("should not detect mobile unit that is within restricted area", function()
-      local mobileUnit = makeUnit({
-        guid = "TEL-003",
-        name = "TEL Battery Charlie",
-        dbid = 1000,
-        speed = 30,
-        course = { { latitude = 24.5, longitude = 120.5 } },
-      })
-      local unitContexts = {
-        ["TEL-003"] = makeFiringUnitCtx({
-          guid = "TEL-003",
-          name = "TEL Battery Charlie",
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if side == "Taiwan" then return mobileUnit end
-        if guidOrName == "TEL-003" then return mobileUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameUtils, "isInArea")).returns(true)
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(6000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-      assert.is_false(results["TEL-003"].isDetected)
-    end)
-
-    -- Negative: should skip unit when actual unit is not found
-    it("should skip unit when actual unit cannot be found", function()
-      local unitContexts = {
-        ["MISSING-001"] = makeFiringUnitCtx({ guid = "MISSING-001", name = "Missing Unit" }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).returns(nil)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(7000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-      assert.is_nil(results["MISSING-001"])
-    end)
-
-    -- Negative: should not detect when recon aircraft is not airborne
-    it("should not detect when recon aircraft is not airborne", function()
-      local targetUnit = makeUnit({
-        guid = "C2-UNIT-002",
-        name = "C2 Target",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-UNIT-002"] = makeC2Ctx({ guid = "C2-UNIT-002" }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-UNIT-002" then return targetUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "On Ground" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(8000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-      assert.is_false(results["C2-UNIT-002"].isDetected)
-    end)
-
-    -- Positive: should update transmission data on detection
-    it("should create transmission record on first detection", function()
-      local c2Unit = makeUnit({
-        guid = "C2-REC-001",
-        name = "ROCC Test",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-REC-001"] = makeC2Ctx({
-          guid = "C2-REC-001",
-          name = "ROCC Test",
-          msg = "ROCC detected",
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-REC-001" then return c2Unit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.1, longitude = 121.1 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(9000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      local transmission = sigintCtx.transmissions["C2-REC-001"]
-      assert.is_not_nil(transmission)
-      assert.are.equal("ROCC Test", transmission.name)
-      assert.are.equal("C2", transmission.type)
-      assert.are.equal(1, transmission.currentDetectionLevel)
-      assert.are.equal(1, transmission.detectionCount)
-    end)
-
-    -- Positive: should increment detection level on repeated detection
-    it("should increment detection level on repeated detection", function()
-      local c2Unit = makeUnit({
-        guid = "C2-INC-001",
-        name = "ROCC Increment",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-INC-001"] = makeC2Ctx({
-          guid = "C2-INC-001",
-          name = "ROCC Increment",
-          msg = "ROCC detected",
-        }),
-      }
-
-      sigintCtx.transmissions["C2-INC-001"] = {
-        name = "ROCC Increment",
-        guid = "C2-INC-001",
-        msg = "ROCC detected",
-        type = "C2",
-        latitude = 25.0,
-        longitude = 121.0,
-        contacts = {},
-        currentDetectionLevel = 2,
-        autodetectable = false,
-        firstDetected = 1000,
-        lastDetected = 1000,
-        detectionCount = 2,
-        confidence = 0.5,
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-INC-001" then return c2Unit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.2, longitude = 121.2 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(10000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      local transmission = sigintCtx.transmissions["C2-INC-001"]
-      assert.are.equal(3, transmission.currentDetectionLevel)
-      assert.are.equal(3, transmission.detectionCount)
-    end)
-
-    -- Positive: should set autodetectable when detection level exceeds maxCount
-    it("should set autodetectable when detection level exceeds maxCount", function()
-      local c2Unit = makeUnit({
-        guid = "C2-AUTO-001",
-        name = "ROCC Auto",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-AUTO-001"] = makeC2Ctx({
-          guid = "C2-AUTO-001",
-          name = "ROCC Auto",
-          msg = "ROCC detected",
-        }),
-      }
-      local setUnitStub = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-
-      sigintCtx.transmissions["C2-AUTO-001"] = {
-        name = "ROCC Auto",
-        guid = "C2-AUTO-001",
-        msg = "ROCC detected",
-        type = "C2",
-        latitude = 25.0,
-        longitude = 121.0,
-        contacts = {},
-        currentDetectionLevel = 3,
-        autodetectable = false,
-        firstDetected = 1000,
-        lastDetected = 1000,
-        detectionCount = 3,
-        confidence = 0.8,
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-AUTO-001" then return c2Unit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.3, longitude = 121.3 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(11000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      local transmission = sigintCtx.transmissions["C2-AUTO-001"]
-      assert.is_true(transmission.autodetectable)
-      assert.stub(setUnitStub).was.called()
-    end)
-
-    -- Positive: should update group members' autodetectable when unit has group
-    it("should update group members autodetectable state when unit has group", function()
-      local groupUnit = makeUnit({
-        guid = "C2-GRP-001",
-        name = "ROCC Group",
-        dbid = constants.PLATFORMS.C2,
-        group = {
-          unitlist = { "MEMBER-A", "MEMBER-B" },
-        },
-      })
-      local unitContexts = {
-        ["C2-GRP-001"] = makeC2Ctx({
+      -- Positive: should update group members' autodetectable when unit has group
+      it("should update group members autodetectable state when unit has group", function()
+        local setUnitStub = stubC2Hit(makeUnit({
           guid = "C2-GRP-001",
-          name = "ROCC Group",
-          msg = "ROCC detected",
-        }),
-      }
-      local setUnitStub = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+          dbid = constants.PLATFORMS.C2,
+          group = { unitlist = { "MEMBER-A", "MEMBER-B" } },
+        }))
+        sigintCtx.transmissions["C2-GRP-001"] = makeTransmission({
+          guid = "C2-GRP-001", currentDetectionLevel = 3, detectionCount = 3,
+        })
 
-      sigintCtx.transmissions["C2-GRP-001"] = {
-        name = "ROCC Group",
-        guid = "C2-GRP-001",
-        msg = "ROCC detected",
-        type = "C2",
-        latitude = 25.0,
-        longitude = 121.0,
-        contacts = {},
-        currentDetectionLevel = 3,
-        autodetectable = false,
-        firstDetected = 1000,
-        lastDetected = 1000,
-        detectionCount = 3,
-        confidence = 0.8,
-      }
+        runChina({ ["C2-GRP-001"] = makeC2Ctx({ guid = "C2-GRP-001" }) })
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-GRP-001" then return groupUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
+        assert.stub(setUnitStub).was.called(2)
+        assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-A", autodetectable = true })
+        assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-B", autodetectable = true })
       end)
 
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.4, longitude = 121.4 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(12000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
+      -- Positive: TAAOC names are C2 nodes
+      it("should classify TAAOC unit as C2 type in transmission record", function()
+        stubC2Hit(makeUnit({ guid = "TAAOC-001", dbid = constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION }))
+
+        runChina({ ["TAAOC-001"] = makeC2Ctx({ guid = "TAAOC-001", name = "TAAOC Echo" }) })
+
+        assert.are.equal("C2", sigintCtx.transmissions["TAAOC-001"].type)
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
+      -- Positive: everything else is a mobile emitter
+      it("should classify non-C2 unit as mobile type in transmission record", function()
+        stubUnits({ makeUnit({ guid = "MOB-TYPE-001", name = "TEL Mobile Type" }) })
+        trackStub(stub(GameUtils, "isInArea")).returns(false)
+        stubRange(50)
+        stubFix()
+        stubLowRandom()
 
-      assert.stub(setUnitStub).was.called(2)
-      assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-A", autodetectable = true })
-      assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-B", autodetectable = true })
-    end)
+        runChina({ ["MOB-TYPE-001"] = makeFiringUnitCtx({ guid = "MOB-TYPE-001", name = "TEL Mobile Type" }) })
 
-    -- Positive: should decrement detection level when unit is not detected
-    it("should decrement detection level when unit is not detected", function()
-      local c2Unit = makeUnit({
-        guid = "C2-DEC-001",
-        name = "ROCC Dec",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-DEC-001"] = makeC2Ctx({
-          guid = "C2-DEC-001",
-          name = "ROCC Dec",
-        }),
-      }
-
-      sigintCtx.transmissions["C2-DEC-001"] = {
-        name = "ROCC Dec",
-        guid = "C2-DEC-001",
-        msg = "ROCC detected",
-        type = "C2",
-        latitude = 25.0,
-        longitude = 121.0,
-        contacts = {},
-        currentDetectionLevel = 3,
-        autodetectable = false,
-        firstDetected = 1000,
-        lastDetected = 1000,
-        detectionCount = 3,
-        confidence = 0.8,
-      }
-
-      -- No recon aircraft => no detection possible
-      sigintCtx.reconAircraft = {}
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-DEC-001" then return c2Unit end
-        return nil
+        assert.are.equal("mobile", sigintCtx.transmissions["MOB-TYPE-001"].type)
       end)
 
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(13000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
+      -- Positive: should decrement detection level when unit is not detected
+      it("should decrement detection level when unit is not detected", function()
+        stubUnits({ makeUnit({ guid = "C2-DEC-001", dbid = constants.PLATFORMS.C2 }) })
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(1000)
+        stubLowRandom()
+        sigintCtx.transmissions["C2-DEC-001"] = makeTransmission({ guid = "C2-DEC-001", currentDetectionLevel = 3 })
+        -- No recon aircraft means no detection is possible
+        sigintCtx.reconAircraft = {}
+
+        runChina({ ["C2-DEC-001"] = makeC2Ctx({ guid = "C2-DEC-001" }) })
+
+        assert.are.equal(2, sigintCtx.transmissions["C2-DEC-001"].currentDetectionLevel)
       end)
 
-      Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
+      -- Positive: should reset autodetectable to false when undetected and was autodetectable
+      it("should reset autodetectable to false when undetected", function()
+        stubUnits({ makeUnit({ guid = "C2-RESET-001", dbid = constants.PLATFORMS.C2 }) })
+        trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(1000)
+        stubLowRandom()
+        local setUnitStub = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+        sigintCtx.transmissions["C2-RESET-001"] = makeTransmission({
+          guid = "C2-RESET-001", currentDetectionLevel = 4, autodetectable = true,
+        })
+        sigintCtx.reconAircraft = {}
 
-      local transmission = sigintCtx.transmissions["C2-DEC-001"]
-      assert.are.equal(2, transmission.currentDetectionLevel)
-    end)
+        runChina({ ["C2-RESET-001"] = makeC2Ctx({ guid = "C2-RESET-001" }) })
 
-    -- Positive: should reset autodetectable to false when undetected and was autodetectable
-    it("should reset autodetectable to false when undetected", function()
-      local c2Unit = makeUnit({
-        guid = "C2-RESET-001",
-        name = "ROCC Reset",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-RESET-001"] = makeC2Ctx({
-          guid = "C2-RESET-001",
-          name = "ROCC Reset",
-        }),
-      }
-      local setUnitStub = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
-
-      sigintCtx.transmissions["C2-RESET-001"] = {
-        name = "ROCC Reset",
-        guid = "C2-RESET-001",
-        msg = "ROCC detected",
-        type = "C2",
-        latitude = 25.0,
-        longitude = 121.0,
-        contacts = {},
-        currentDetectionLevel = 4,
-        autodetectable = true,
-        firstDetected = 1000,
-        lastDetected = 1000,
-        detectionCount = 5,
-        confidence = 0.9,
-      }
-
-      sigintCtx.reconAircraft = {}
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-RESET-001" then return c2Unit end
-        return nil
+        assert.is_false(sigintCtx.transmissions["C2-RESET-001"].autodetectable)
+        assert.stub(setUnitStub).was.called_with({ guid = "C2-RESET-001", autodetectable = false })
       end)
-
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(14000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-
-      local transmission = sigintCtx.transmissions["C2-RESET-001"]
-      assert.is_false(transmission.autodetectable)
-      assert.stub(setUnitStub).was.called_with({ guid = "C2-RESET-001", autodetectable = false })
-    end)
-
-    -- Positive: should look up firing unit by name and enemy side
-    it("should look up firing unit by name and enemy side when weaponDBID is present", function()
-      local firingUnit = makeUnit({
-        guid = "FU-LOOKUP-001",
-        name = "TEL Lookup",
-        dbid = 1000,
-        speed = 30,
-        course = { { latitude = 24.0, longitude = 120.0 } },
-      })
-      local unitContexts = {
-        ["FU-LOOKUP-001"] = makeFiringUnitCtx({
-          guid = "FU-LOOKUP-001",
-          name = "TEL Lookup",
-          weaponDBID = 3177,
-        }),
-      }
-
-      local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if guidOrName == "TEL Lookup" and side == "Taiwan" then return firingUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        if guidOrName == "FU-LOOKUP-001" then return firingUnit end
-        return nil
-      end)
-
-      trackStub(stub(GameUtils, "isInArea")).returns(false)
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.5, longitude = 121.5 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(15000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      assert.stub(getUnitStub).was.called_with("TEL Lookup", "Taiwan")
-    end)
-
-    -- Negative: should not detect mobile unit with speed 0
-    it("should not detect mobile unit with zero speed", function()
-      local stationaryUnit = makeUnit({
-        guid = "TEL-STOP-001",
-        name = "TEL Stopped",
-        dbid = 1000,
-        speed = 0,
-        course = { { latitude = 24.0, longitude = 120.0 } },
-      })
-      local unitContexts = {
-        ["TEL-STOP-001"] = makeFiringUnitCtx({
-          guid = "TEL-STOP-001",
-          name = "TEL Stopped",
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if side == "Taiwan" then return stationaryUnit end
-        if guidOrName == "TEL-STOP-001" then return stationaryUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(16000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-      assert.is_false(results["TEL-STOP-001"].isDetected)
-    end)
-
-    -- Negative: should not detect mobile unit with no RL area defined
-    it("should not detect mobile unit with no RL area defined", function()
-      local mobileUnit = makeUnit({
-        guid = "TEL-NORL-001",
-        name = "TEL NoRL",
-        dbid = 1000,
-        speed = 30,
-        course = { { latitude = 24.0, longitude = 120.0 } },
-      })
-      local unitContexts = {
-        ["TEL-NORL-001"] = makeFiringUnitCtx({
-          guid = "TEL-NORL-001",
-          name = "TEL NoRL",
-          operationalArea = {
-            RL = { { area = {} } },
-            FP = {},
-            HA = {},
-            AHA = {},
-          },
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if side == "Taiwan" then return mobileUnit end
-        if guidOrName == "TEL-NORL-001" then return mobileUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(17000)
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, { unitContexts })
-      assert.is_false(results["TEL-NORL-001"].isDetected)
-    end)
-
-    -- Positive: should show notification with confidence when showConfidence is true
-    it("should show notification with confidence when showConfidence is true", function()
-      local c2Unit = makeUnit({
-        guid = "C2-SHOW-001",
-        name = "C2 ShowConf",
-        dbid = constants.PLATFORMS.C2,
-      })
-      local unitContexts = {
-        ["C2-SHOW-001"] = makeC2Ctx({
-          guid = "C2-SHOW-001",
-          name = "ROCC ShowConf",
-          msg = "ROCC detected",
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "C2-SHOW-001" then return c2Unit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.6, longitude = 121.6 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(18000)
-      local barkStub = trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      -- We need to test getSigint with showConfidence. Since getSigint is local,
-      -- we test through handleSigint. The data parameter is nil in handleSigint,
-      -- so showConfidence defaults to false. We verify the notification doesn't contain confidence.
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      assert.stub(barkStub).was.called()
-    end)
-
-    -- Positive: should classify TAAOC unit as C2 type in transmission record
-    it("should classify TAAOC unit as C2 type in transmission record", function()
-      local taaocUnit = makeUnit({
-        guid = "TAAOC-001",
-        name = "TAAOC Echo",
-        dbid = constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION,
-      })
-      local unitContexts = {
-        ["TAAOC-001"] = makeC2Ctx({
-          guid = "TAAOC-001",
-          name = "TAAOC Echo",
-          msg = "TAAOC detected",
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName)
-        if guidOrName == "TAAOC-001" then return taaocUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.7, longitude = 121.7 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(19000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      local transmission = sigintCtx.transmissions["TAAOC-001"]
-      assert.are.equal("C2", transmission.type)
-    end)
-
-    -- Positive: should classify non-C2 unit as mobile type in transmission record
-    it("should classify non-C2 unit as mobile type in transmission record", function()
-      local mobileUnit = makeUnit({
-        guid = "MOB-TYPE-001",
-        name = "TEL Mobile Type",
-        dbid = 1000,
-        speed = 30,
-        course = { { latitude = 24.0, longitude = 120.0 } },
-      })
-      local unitContexts = {
-        ["MOB-TYPE-001"] = makeFiringUnitCtx({
-          guid = "MOB-TYPE-001",
-          name = "TEL Mobile Type",
-          msg = "TEL detected",
-        }),
-      }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit")).invokes(function(guidOrName, side)
-        if side == "Taiwan" then return mobileUnit end
-        if guidOrName == "MOB-TYPE-001" then return mobileUnit end
-        if guidOrName == "RECON-001" then
-          return makeUnit({ guid = "RECON-001", condition = "Airborne" })
-        end
-        return nil
-      end)
-
-      trackStub(stub(GameUtils, "isInArea")).returns(false)
-      trackStub(stub(GameApi, "Tool_Range")).returns(50)
-      trackStub(stub(GameApi, "World_GetPointFromBearing")).returns({ latitude = 25.8, longitude = 121.8 })
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(20000)
-      trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
-      trackStub(stub(math, "random")).invokes(function(a, b)
-        if a == nil and b == nil then return 0.0 end
-        if a and b then return a end
-        return 0
-      end)
-
-      Sigint.collectSigint(cfg, sigintCtx, "China", true, sigintConfig, { unitContexts })
-
-      local transmission = sigintCtx.transmissions["MOB-TYPE-001"]
-      assert.are.equal("mobile", transmission.type)
-    end)
-
-    -- Positive: should return empty results when unitContexts is empty
-    it("should return empty results when unitContexts is empty", function()
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(21000)
-
-      local results = Sigint.collectSigint(cfg, sigintCtx, "China", false, sigintConfig, {})
-      assert.are.same({}, results)
-    end)
-  end)
-
-  -- ============================================================================
-  -- Sigint.processSide
-  -- ============================================================================
-
-  describe("processSide", function()
-    local PersistentState = require("src.core.persistentState")
-
-    ---@return table saveData
-    local function makeSaveData(enabled)
-      return { u = { sigint = { enabled = enabled } }, c = { sigint = { enabled = enabled } } }
-    end
-
-    -- Positive: an enabled side collects with its own SIGINT slice, config and emitters
-    it("should collect with the side's slice, config and emitters", function()
-      local saveData = makeSaveData(true)
-      local emitters = { { id = "emitters" } }
-      local sideConfig = { u = { sigint = { id = "u-sigint" } } }
-      trackStub(stub(PersistentState, "sigintEmitters")).returns(emitters)
-      local collectStub = trackStub(stub(Sigint, "collectSigint"))
-
-      Sigint.processSide(sideConfig, saveData, "US")
-
-      assert.stub(collectStub).was.called_with(sideConfig, saveData.u.sigint, "US", true, sideConfig.u.sigint, emitters)
-    end)
-
-    -- Negative: a disabled side does nothing
-    it("should skip collection when SIGINT is disabled", function()
-      local collectStub = trackStub(stub(Sigint, "collectSigint"))
-      local sideConfig = {}
-
-      Sigint.processSide(sideConfig, makeSaveData(false), constants.SIDES.ENEMY)
-
-      assert.stub(collectStub).was_not.called()
     end)
   end)
 

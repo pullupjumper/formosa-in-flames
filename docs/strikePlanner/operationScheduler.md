@@ -149,18 +149,17 @@ flowchart TD
   [SKIP] operation=GND/STRIKE/C2/N/2 type=ground reason=already_pending
 ```
 
-沒有任何 mapping 產生結果時，report 補上一筆 `[SKIP] reason=no_operations_to_schedule`，避免整批靜默。`NEXT_OPERATION_STATUS` 的值是 `buildNextOperation` 公開契約的一部分（大寫），寫進 log 時以 `string.lower()` 轉成 token。
+沒有任何 mapping 產生結果時，report 補上一筆 `[SKIP] reason=no_operations_to_schedule`，避免整批靜默。`NEXT_OPERATION_STATUS` 的值是 `buildNextOperation` 回傳契約的一部分（大寫），寫進 log 時以 `string.lower()` 轉成 token。
 
 ---
 
 ## Public API
 
-只有 `schedule` 有跨模組呼叫端（`recon.lua`）。`buildNextOperation` 掛在模組表上，一是供單元測試直接驗證，二是讓內部呼叫點可被 stub。batch 查詢（`isScheduled`、`isPending`、`findLatestExecuted`、`findMostRecentSnapshot`）住在 [operationBatch](operationBatch.md)。
+模組表上只剩 `schedule`，唯一的跨模組呼叫端是 `recon.lua`。`buildNextOperation` 已改為私有函式（`local function`），測試改經 `schedule` 這個真實入口驗證推導結果，不再直接呼叫或 stub 它；其狀態契約見上方「為什麼推導不出下一波時不排程」。batch 查詢（`isScheduled`、`isPending`、`findLatestExecuted`、`findMostRecentSnapshot`）住在 [operationBatch](operationBatch.md)。
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `schedule(processingCtx, reconEntry)` | `SBJ__ReconQueueProcessingContext`, `SBJ__ReconQueueEntry` | 無 | 依完成偵察 entry 建立後續作戰，必要時新增批次並輸出 log |
-| `buildNextOperation(operation, config)` | `SBJ__Operation`, `SBJ__Config` | `SBJ__Operation, string` | 遞增波次號生成下一波；查無下一波模板則沿用當前模板。狀態見上方「為什麼推導不出下一波時不排程」 |
 
 `processingCtx` 欄位：
 

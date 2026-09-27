@@ -600,6 +600,29 @@ function UnitGenerator.addSubmarines(config, sideName)
   return true
 end
 
+---Remove base magazines
+---@param baseGUID string Base GUID
+---@return boolean # Whether successful
+local function removeMagazinesByBaseGUID(baseGUID)
+  local base = GameApi.ScenEdit_GetUnit(baseGUID)
+
+  if base then
+    for _, magazine in ipairs(base.magazines) do
+      for _, wpn in ipairs(magazine.mag_weapons) do
+        GameApi.ScenEdit_AddWeaponToUnitMagazine({
+          side = base.side,
+          guid = baseGUID,
+          wpn_dbid = wpn.wpn_dbid,
+          number = 1000,
+          remove = true
+        })
+      end
+    end
+  end
+
+  return true
+end
+
 ---Add aircraft to airbases with specified loadouts and embarked units
 ---@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configuration list
 ---@return boolean # Whether aircraft addition was successful
@@ -622,7 +645,7 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
     end
 
     if descriptor.loadouts then
-      UnitGenerator.removeMagazinesByBaseGUID(descriptor.baseGUID)
+      removeMagazinesByBaseGUID(descriptor.baseGUID)
 
       for _, loadout in ipairs(descriptor.loadouts) do
         GameApi.ScenEdit_FillMagsForLoadout({
@@ -635,29 +658,6 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
   end
 
   Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully added aircraft"))
-  return true
-end
-
----Remove base magazines
----@param baseGUID string Base GUID
----@return boolean # Whether successful
-function UnitGenerator.removeMagazinesByBaseGUID(baseGUID)
-  local base = GameApi.ScenEdit_GetUnit(baseGUID)
-
-  if base then
-    for _, magazine in ipairs(base.magazines) do
-      for _, wpn in ipairs(magazine.mag_weapons) do
-        GameApi.ScenEdit_AddWeaponToUnitMagazine({
-          side = base.side,
-          guid = baseGUID,
-          wpn_dbid = wpn.wpn_dbid,
-          number = 1000,
-          remove = true
-        })
-      end
-    end
-  end
-
   return true
 end
 

@@ -361,7 +361,7 @@ end
 ---@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
 ---@param targetGUID string Target contact GUID to check
 ---@return boolean # True if target is already being tracked by an active UAV
-function Recon.isTargetAlreadyTracked(queue, targetGUID)
+local function isTargetAlreadyTracked(queue, targetGUID)
   for _, entry in ipairs(queue) do
     if entry.type == ENTRY_TYPE.UAV and
         entry.trackingTargetGUID == targetGUID and
@@ -479,16 +479,13 @@ end
 
 ---Assign UAV to track a specific target contact
 ---Finds available UAV of specified type and assigns it to shadow the target
+---Callers must skip targets that are already tracked (see isTargetAlreadyTracked).
 ---@param reconCtx SBJ__ReconContext Reconnaissance context for tracking UAV assignments
 ---@param sideUnits CMO__SideUnit[] Side units collection to search for available UAVs
 ---@param uavDBID number UAV platform database ID to filter by
 ---@param target CMO__Contact Target contact to track
 ---@return boolean # True if UAV was assigned to track target, false otherwise
-function Recon.trackTarget(reconCtx, sideUnits, uavDBID, target)
-  if Recon.isTargetAlreadyTracked(reconCtx.queue, target.guid) then
-    return true
-  end
-
+local function trackTarget(reconCtx, sideUnits, uavDBID, target)
   local uav = findClosestUAV(reconCtx.queue, sideUnits, uavDBID, target)
   if not uav then
     Logger.log(constants.TAGS.RECON, LogFormat.line("SKIP", {
@@ -532,7 +529,7 @@ end
 function Recon.trackTargets(reconCtx, requests)
   local aircraft
   for _, request in ipairs(requests) do
-    if not Recon.isTargetAlreadyTracked(reconCtx.queue, request.target.guid) then
+    if not isTargetAlreadyTracked(reconCtx.queue, request.target.guid) then
       if aircraft == nil then
         local side = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY })
         aircraft = side and side:unitsBy(constants.UNIT_TYPES.AIRCRAFT) or false
@@ -541,7 +538,7 @@ function Recon.trackTargets(reconCtx, requests)
         return
       end
 
-      Recon.trackTarget(reconCtx, aircraft, request.platformDBID, request.target)
+      trackTarget(reconCtx, aircraft, request.platformDBID, request.target)
     end
   end
 end

@@ -188,7 +188,7 @@ end
 ---@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
 ---@param sideName string The side to use for the attack, default is 'China'
 ---@return {firingUnitIdx: integer, shooterIdx: integer, ammoAllocated: integer} # Results including next indices and number of weapons launched
-function AttackManager.attackContact(contactGUID, ammoToAllocate, firingUnits, firingUnitIdx, shooterIdx, weaponDBID,
+local function attackContact(contactGUID, ammoToAllocate, firingUnits, firingUnitIdx, shooterIdx, weaponDBID,
                                      sideName)
   -- Initialize variables
   local totalAmmoAllocated = 0
@@ -276,7 +276,7 @@ function AttackManager.attackContacts(params)
   local sideName = params.sideName or constants.SIDES.ENEMY
 
   for _, contact in ipairs(contacts) do
-    result = AttackManager.attackContact(contact, qty, firingUnits, result.firingUnitIdx, result.shooterIdx, weaponDBID,
+    result = attackContact(contact, qty, firingUnits, result.firingUnitIdx, result.shooterIdx, weaponDBID,
       sideName)
     totalAmmoAllocated = totalAmmoAllocated + result.ammoAllocated
   end

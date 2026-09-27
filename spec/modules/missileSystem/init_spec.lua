@@ -10,6 +10,7 @@ local Deployment = require("src.modules.missileSystem.deployment")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Context = require("src.modules.missileSystem.context")
 local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
@@ -313,47 +314,42 @@ describe("MissileSystem", function()
 
   describe("processUnitEntersArea", function()
     -- Positive: side comes from the triggering unit, switches come from that side's policy
-    it("should build move-to-position params from the unit side's policy", function()
+    it("should run a China unit against the China slice, contacts and policy", function()
       local config, saveData = makeSides()
-      local contacts = { { actualunitid = "x" } }
-      local event = { triggers = {} }
-      local unit = { name = "FU1", side = constants.SIDES.ENEMY }
-      local getContactsStub = trackStub(GameApi, "ScenEdit_GetContacts").returns(contacts)
-      local handleStub = trackStub(MissileSystem, "processMoveToPositionEvent")
+      local unit = { name = "FU1", guid = "guid-fu1", side = constants.SIDES.ENEMY }
+      local event = { triggers = { { UnitEntersArea = { Description = "(China) Arrive in HA - 1 - AreaA" } } } }
+      local firingUnitCtx = { name = "FU1" }
+      saveData.c.ground = {
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = {} }
+      }
+      local contact = { actualunitid = unit.guid, DropContact = function() end }
+      local dropContactStub = trackStub(contact, "DropContact")
+      local getContactsStub = trackStub(GameApi, "ScenEdit_GetContacts").returns({ contact })
+      local setStateToHideStub = trackStub(Movement, "setStateToHide")
+      trackStub(Concealment, "hideUnit").returns(true)
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)
 
       assert.stub(getContactsStub).was.called_with(constants.SIDES.ENEMY)
-      assert.stub(handleStub).was.called_with({
-        groundCtx = saveData.c.ground,
-        unit = unit,
-        event = event,
-        isAuto = true,
-        contacts = contacts,
-        behavior = {
-          hideOnEnterHA = true,
-          hideResupplyOnRLNoMeeting = true,
-          firingUnitLookupSide = constants.SIDES.ENEMY
-        }
-      })
+      assert.stub(dropContactStub).was.called(1)
+      assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, true)
     end)
 
     -- Positive: a Taiwan unit gets the manual policy and the Taiwan slice
     it("should use the Taiwan slice and manual policy for a Taiwan unit", function()
       local config, saveData = makeSides()
-      local unit = { name = "FU1", side = constants.SIDES.PLAYER }
-      local event = {}
+      local unit = { name = "RS1", guid = "guid-rs1", side = constants.SIDES.PLAYER }
+      local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in AHA - 1 - AreaA" } } } }
+
+      local systemCtx = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
+      saveData.t.ground = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemCtx }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
-      local handleStub = trackStub(MissileSystem, "processMoveToPositionEvent")
+      trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
+      local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)
 
-      local params = handleStub.calls[1].vals[1]
-      assert.are.same(saveData.t.ground, params.groundCtx)
-      assert.is_false(params.isAuto)
-      assert.is_false(params.behavior.hideOnEnterHA)
-      assert.is_false(params.behavior.hideResupplyOnRLNoMeeting)
-      assert.are.equal(constants.SIDES.PLAYER, params.behavior.firingUnitLookupSide)
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
     end)
   end)
 
@@ -518,14 +514,41 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- processMoveToPositionEvent
+  -- processUnitEntersArea: position handlers
   -- ============================================================================
 
-  describe("processMoveToPositionEvent", function()
+  describe("processUnitEntersArea position handlers", function()
     local SYSTEM_KEY = constants.MISSILE_SYSTEM_TYPES.SRBM
+
+    ---@type luassert.spy
+    local getContactsStub
+
+    before_each(function()
+      getContactsStub = trackStub(GameApi, "ScenEdit_GetContacts")
+    end)
 
     local function groundCtxWith(systemCtx)
       return { [SYSTEM_KEY] = systemCtx }
+    end
+
+    ---Fire UnitEntersArea for the unit's side, with that side's slice and policy built from params
+    ---@param params {groundCtx: table, unit: table, event: table, contacts?: table, policy?: table}
+    local function enterArea(params)
+      local field = GameUtils.getCachedSideConfig(params.unit.side).field
+      local policy = { isAuto = true, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
+      local config = { [field] = { missileSystemPolicy = policy } }
+      local saveData = { [field] = { ground = params.groundCtx } }
+      for k, v in pairs(params.policy or {}) do
+        policy[k] = v
+      end
+      getContactsStub.returns(params.contacts)
+
+      MissileSystem.processUnitEntersArea(
+        config,
+        saveData,
+        params.unit,
+        params.event
+      )
     end
 
     -- Real trigger descriptions look like "(Side) Arrive in TYPE - idx - areaName"
@@ -555,12 +578,10 @@ describe("MissileSystem", function()
       trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setWCSToFreeStub).was.called(1)
@@ -587,12 +608,10 @@ describe("MissileSystem", function()
       trackStub(Movement, "isRepositioning").returns(false)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setWCSToFreeStub).was_not.called()
@@ -613,11 +632,10 @@ describe("MissileSystem", function()
       local dropContactStub = trackStub(contact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP"),
-        isAuto = true,
         contacts = { contact }
       })
 
@@ -640,16 +658,14 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
-        isAuto = false,
-        contacts = nil,
-        behavior = {
+        policy = {
+          isAuto = false,
           hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = false,
-          firingUnitLookupSide = unit.side
+          hideResupplyOnRLNoMeeting = false
         }
       })
 
@@ -674,16 +690,14 @@ describe("MissileSystem", function()
       local otherDropContactStub = trackStub(otherContact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
-        isAuto = true,
         contacts = { matchingContact, otherContact },
-        behavior = {
+        policy = {
           hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = false,
-          firingUnitLookupSide = unit.side
+          hideResupplyOnRLNoMeeting = false
         }
       })
 
@@ -705,16 +719,13 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = true,
-          hideResupplyOnRLNoMeeting = false,
-          firingUnitLookupSide = unit.side
+          hideResupplyOnRLNoMeeting = false
         }
       })
 
@@ -746,16 +757,13 @@ describe("MissileSystem", function()
       trackStub(Concealment, "hideUnit")
           .returns(false, { reason = "no_buildings_in_mask", area = "OPAREA-1" })
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = true,
-          hideResupplyOnRLNoMeeting = false,
-          firingUnitLookupSide = unit.side
+          hideResupplyOnRLNoMeeting = false
         }
       })
 
@@ -782,16 +790,13 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("HA"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = true,
-          hideResupplyOnRLNoMeeting = false,
-          firingUnitLookupSide = unit.side
+          hideResupplyOnRLNoMeeting = false
         }
       })
 
@@ -816,12 +821,10 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setReloadStartTimeStub).was.called(1)
@@ -851,12 +854,10 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setReloadStartTimeStub).was_not.called()
@@ -883,16 +884,13 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = true,
-          firingUnitLookupSide = "China"
+          hideResupplyOnRLNoMeeting = true
         }
       })
 
@@ -929,16 +927,13 @@ describe("MissileSystem", function()
       trackStub(Ammo, "isLowAmmo").returns(true)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = true,
-          firingUnitLookupSide = "China"
+          hideResupplyOnRLNoMeeting = true
         }
       })
 
@@ -964,16 +959,13 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = true,
-          firingUnitLookupSide = "China"
+          hideResupplyOnRLNoMeeting = true
         }
       })
 
@@ -997,16 +989,13 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil,
-        behavior = {
+        policy = {
           hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = true,
-          firingUnitLookupSide = "China"
+          hideResupplyOnRLNoMeeting = true
         }
       })
 
@@ -1032,12 +1021,10 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("AHA"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setReloadStartTimeStub).was.called(1)
@@ -1065,12 +1052,10 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("AHA"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setReloadStartTimeStub).was_not.called()
@@ -1097,11 +1082,10 @@ describe("MissileSystem", function()
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEventRaw("(China) Arrive in MASK - 1 - AreaA"),
-        isAuto = true,
         contacts = { contact }
       })
 
@@ -1135,12 +1119,10 @@ describe("MissileSystem", function()
       }
 
       for _, description in ipairs(bogus) do
-        MissileSystem.processMoveToPositionEvent({
+        enterArea({
           groundCtx = groundCtxWith(systemCtx),
           unit = unit,
           event = enterEventRaw(description),
-          isAuto = true,
-          contacts = nil
         })
       end
 
@@ -1165,12 +1147,10 @@ describe("MissileSystem", function()
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
 
       -- areaName "HALLWAY-RL-FP" contains HA/RL/FP substrings; pos type must still be FP
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("FP", "HALLWAY-RL-FP"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(setWCSToFreeStub).was.called(1)
@@ -1178,8 +1158,8 @@ describe("MissileSystem", function()
       assert.stub(setStateToHideStub).was_not.called()
     end)
 
-    -- Boundary: behavior=nil defaults to no-hide on RL no-meeting
-    it("should not hide on RL no-meeting when behavior is nil (defaults applied)", function()
+    -- Boundary: with a paired firing unit that has ammo, the policy switch alone keeps the resupply unit out
+    it("should not hide on RL no-meeting when hideResupplyOnRLNoMeeting is off", function()
       local unit = { name = "RS1", guid = "guid-rs1", side = "China" }
       local resupplyUnitCtx = { name = "RS1", firingUnit = "FU1" }
       local firingUnitCtx = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
@@ -1195,13 +1175,11 @@ describe("MissileSystem", function()
       trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(systemCtx),
         unit = unit,
         event = enterEvent("RL"),
-        isAuto = true,
-        contacts = nil,
-        behavior = nil
+        policy = { hideResupplyOnRLNoMeeting = false }
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
@@ -1222,12 +1200,10 @@ describe("MissileSystem", function()
       local isRepositioningStub = trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
-      MissileSystem.processMoveToPositionEvent({
+      enterArea({
         groundCtx = groundCtxWith(disabledCtx),
         unit = unit,
         event = enterEvent("FP"),
-        isAuto = true,
-        contacts = nil
       })
 
       assert.stub(isRepositioningStub).was_not.called()

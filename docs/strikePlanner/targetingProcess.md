@@ -104,7 +104,7 @@ targetingProcess 只**提出**追蹤請求，不碰 recon queue。動態篩選�
 | `findNavalTargets` | WZ-8 | 從 contacts 陣列中查找 |
 | `findRadioDirection` | BZK-005 | 透過 `ScenEdit_GetContact` 取得 |
 
-[dynamicPlan](dynamicPlan.md) 的 `evaluateTargets` 收齊整個樣板所有 entry 的請求（**未達 `minTargetCount` 的 entry 也算**），最後呼叫一次 `Recon.trackTargets`。「先問 `isTargetAlreadyTracked` → 才 `VP_GetSide` + `unitsBy`」的順序與成本考量現在住在 [recon](recon.md)。
+[dynamicPlan](dynamicPlan.md) 的 `evaluateTargets` 收齊整個樣板所有 entry 的請求（**未達 `minTargetCount` 的 entry 也算**），最後呼叫一次 `Recon.trackTargets`。「先問（recon 私有的）`isTargetAlreadyTracked` → 才 `VP_GetSide` + `unitsBy`」的順序與成本考量現在住在 [recon](recon.md)。
 
 ---
 
@@ -113,7 +113,7 @@ targetingProcess 只**提出**追蹤請求，不碰 recon queue。動態篩選�
 | 函數 | 說明 |
 |---|---|
 | `findTargets(sideName, scanConfig, saveData)` | 掃描所有接觸並分類至目標清單 |
-| `filterTargetsByTypeAndBase(targetlist, queryParams)` | 依基地名稱與子類型查詢目標 |
+| `filterTargetsByTypeAndBase(targetlist, queryParams)` | 依基地名稱與子類型查詢目標；套件外（`runwayRepairment`）經門面 `StrikePlanner.filterTargetsByTypeAndBase` 呼叫 |
 | `processTargets(config, saveData, contacts, targetConfig, isFirstWave)` | 統一入口：路由至動態篩選或固定目標查詢；回傳 `targets, trackingRequests`（固定目標的請求恆為空） |
 
 ---

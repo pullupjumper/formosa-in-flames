@@ -134,12 +134,16 @@ describe("OperationScheduler", function()
   ---@param operationBatches table[] Batches to seed; mutated
   ---@param templateName string Exact template name of the series, e.g. "GND/STRIKE/C2/N/1"
   ---@param operationType string Operation type of that series
+  ---@param templateOverrides? table Extra template fields the next wave may inherit or reuse
   ---@return table # The operation the series will read as its latest executed wave
-  local function addExecutedSeries(operationBatches, templateName, operationType)
+  local function addExecutedSeries(operationBatches, templateName, operationType, templateOverrides)
+    local template = { name = templateName }
+    for k, v in pairs(templateOverrides or {}) do template[k] = v end
+
     local executedOperation = {
       type = operationType,
       executed = true,
-      template = { name = templateName },
+      template = template,
     }
 
     table.insert(operationBatches, {
@@ -250,9 +254,12 @@ describe("OperationScheduler", function()
       local operationBatches = {}
       -- C/1 has already executed, so its mapping advances instead of opening a wave
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/C/1", "ground")
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/C/2" } }, "FOUND_NEXT"
-      ))
+      config.c.fireSupportTaskTemplates.GND_STRIKE_C2_C_2 = { {
+        name = "FST-C2-C-2",
+        firingUnits = {},
+        missileSystem = "",
+        target = { list = {}, contactAge = 0, minTargetCount = 1 },
+      } }
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
@@ -335,9 +342,6 @@ describe("OperationScheduler", function()
       -- The seeded executed wave is load-bearing: without it the mapping falls through to the
       -- first-wave path and stops on a missing template, passing for the wrong reason.
       addExecutedSeries(operationBatches, "AIR/STRIKE/AB/E/1", "air")
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "air", executed = false, template = { name = "AIR/STRIKE/AB/E/1" } }, "REUSED_CURRENT"
-      ))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
@@ -513,9 +517,6 @@ describe("OperationScheduler", function()
         }
       }
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground")
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
-      ))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
@@ -543,10 +544,8 @@ describe("OperationScheduler", function()
         }
       }
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground")
-      -- No /2 template exists, so the scheduler falls back to the already-executed /1
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
-      ))
+      -- Without a /2 template the scheduler falls back to the already-executed /1
+      config.c.fireSupportTaskTemplates.GND_STRIKE_C2_N_2 = nil
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
@@ -573,10 +572,9 @@ describe("OperationScheduler", function()
           operations = { { type = "ground", executed = true, template = { name = "GND/STRIKE/C2/N/1" } } },
         }
       }
-      -- The executed /1 batch above is what the series advances from
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "REUSED_CURRENT"
-      ))
+      -- The executed /1 batch above is what the series advances from; without a /2
+      -- template it can only reuse /1
+      config.c.fireSupportTaskTemplates.GND_STRIKE_C2_N_2 = nil
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
@@ -680,24 +678,43 @@ describe("OperationScheduler", function()
     end)
 
     -- Negative: an underivable next wave must not re-queue the already-executed source
-    it("should warn instead of scheduling when buildNextOperation cannot derive a next wave", function()
+    it("should warn instead of scheduling when the latest wave name cannot be parsed", function()
       local config = makeConfig()
       local operationBatches = {}
+      -- The series lookup accepts any tonumber-able suffix, but the wave parser only
+      -- takes plain digits, so "1.5" wins as latest wave and then fails to parse.
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground")
-      -- PARSE_ERROR hands back a copy of the source operation; scheduling it would duplicate the wave
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/1" } }, "PARSE_ERROR"
-      ))
+      addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1.5", "ground")
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
-      -- Only the seeded batch remains; nothing was scheduled
-      assert.are.equal(1, #operationBatches)
+      -- Only the seeded batches remain; nothing was scheduled
+      assert.are.equal(2, #operationBatches)
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "%[WARN%]"))
       assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "reason=parse_error"))
+      assert.is_false(hasErrorCall("."))
+    end)
+
+    -- Negative: a series whose type OperationType cannot resolve has no next template to look up
+    it("should warn instead of scheduling when the executed series has an unknown type", function()
+      local config = makeConfig()
+      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+        { name = "SEA/STRIKE/PORT/1", type = "naval" },
+      }
+      local operationBatches = {}
+      -- Already scheduled, so the mapping advances instead of failing on the first-wave path
+      addExecutedSeries(operationBatches, "SEA/STRIKE/PORT/1", "naval")
+
+      OperationScheduler.schedule(
+        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+      )
+
+      assert.are.equal(1, #operationBatches)
+      assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "%[WARN%].*reason=unknown_type"))
       assert.is_false(hasErrorCall("."))
     end)
 
@@ -706,9 +723,6 @@ describe("OperationScheduler", function()
       local config = makeConfig()
       local operationBatches = {}
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground")
-      trackStub(stub(OperationScheduler, "buildNextOperation").returns(
-        { type = "ground", executed = false, template = { name = "GND/STRIKE/C2/N/2" } }, "FOUND_NEXT"
-      ))
 
       OperationScheduler.schedule(
         makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
@@ -833,68 +847,48 @@ describe("OperationScheduler", function()
         assert.are.equal("GND/STRIKE/C2/N/3", operationBatches[4].operations[1].template.name)
       end)
     end)
-  end)
-
-  do
-    ---Create a single operation for scheduler helper tests.
-    ---@param overrides? table
-    ---@return table
-    local function makeOperation(overrides)
-      local operation = {
-        type = "air",
-        executed = false,
-        template = { name = "AIR/STRIKE/AB/W/1" }
-      }
-      if overrides then
-        for k, v in pairs(overrides) do operation[k] = v end
-      end
-      return operation
-    end
-
-    ---Create a reconnaissance-triggered operation batch for scheduler helper tests.
-    ---@param overrides? table
-    ---@return table
-    local function makeOperationBatch(overrides)
-      local batch = {
-        time = "2026-02-14 08:00:00",
-        type = "satellite",
-        executed = false,
-        operations = {
-          makeOperation(),
-        }
-      }
-      if overrides then
-        for k, v in pairs(overrides) do batch[k] = v end
-      end
-      return batch
-    end
 
     -- ============================================================================
-    -- buildNextOperation
+    -- Next wave generation
     -- ============================================================================
 
-    describe("buildNextOperation", function()
+    describe("next wave generation", function()
+      ---Schedule one mapping against batches already holding its executed series.
+      ---@param config SBJ__Config
+      ---@param operationBatches table[]
+      ---@param strikeMapping table
+      ---@return table|nil # The operation queued by this pass, or nil when none was
+      local function scheduleNextWave(config, operationBatches, strikeMapping)
+        config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = { strikeMapping }
+        local batchCountBefore = #operationBatches
+
+        OperationScheduler.schedule(
+          makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+          makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
+        )
+
+        if #operationBatches == batchCountBefore then
+          return nil
+        end
+        return operationBatches[#operationBatches].operations[1]
+      end
+
       -- Positive: finds next air template
-      it("should find next air template and increment number", function()
-        local operation = makeOperation({
-          type = "air",
-          template = {
-            name = "AIR/STRIKE/AB/W/1",
-            isFirstWave = true,
-            strikeInterval = 120,
-            packages = { { striker = {} } }
-          }
+      it("should queue the next air wave from its own template", function()
+        local config = makeConfig()
+        local template = { { striker = { baseGUID = "NEW-BASE" } } }
+        config.c.packageTemplates.AIR_STRIKE_AB_W_2 = template
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "AIR/STRIKE/AB/W/1", "air", {
+          isFirstWave = true,
+          strikeInterval = 120,
+          packages = { { striker = {} } }
         })
-        local config = {
-          c = {
-            packageTemplates = {
-              AIR_STRIKE_AB_W_2 = { { striker = { baseGUID = "NEW-BASE" } } }
-            }
-          }
-        }
 
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "AIR/STRIKE/AB/W/1", type = "air" })
 
+        assert(nextOperation ~= nil)
         assert.are.equal("AIR/STRIKE/AB/W/2", nextOperation.template.name)
         assert.are.equal("air", nextOperation.type)
         assert.is_false(nextOperation.executed)
@@ -902,148 +896,113 @@ describe("OperationScheduler", function()
         assert.are.equal(120, nextOperation.template.strikeInterval)
         -- The /2 template must replace the source's packages, not carry them forward
         assert.are.equal("NEW-BASE", nextOperation.template.packages[1].striker.baseGUID)
-        assert.are.equal("FOUND_NEXT", status)
       end)
 
       -- Positive: finds next ground template
-      it("should find next ground template and increment number", function()
-        local operation = makeOperation({
-          type = "ground",
-          template = {
-            name = "INFRASTRUCTURE/1",
-            strikeInterval = 60,
-            fireSupportTasks = { { name = "FST-1" } }
-          }
+      it("should queue the next ground wave from its own template", function()
+        local config = makeConfig()
+        local template = { { name = "FST-2-NEW" } }
+        config.c.fireSupportTaskTemplates.GND_STRIKE_C2_N_2 = template
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground", {
+          strikeInterval = 60,
+          fireSupportTasks = { { name = "FST-1" } }
         })
-        local config = {
-          c = {
-            fireSupportTaskTemplates = {
-              INFRASTRUCTURE_2 = { { name = "FST-2-NEW" } }
-            }
-          }
-        }
 
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "GND/STRIKE/C2/N/1", type = "ground" })
 
-        assert.are.equal("INFRASTRUCTURE/2", nextOperation.template.name)
+        assert(nextOperation ~= nil)
+        assert.are.equal("GND/STRIKE/C2/N/2", nextOperation.template.name)
         assert.are.equal("ground", nextOperation.type)
         assert.is_false(nextOperation.executed)
         assert.is_false(nextOperation.template.isFirstWave)
         assert.are.equal(60, nextOperation.template.strikeInterval)
         assert.are.equal("FST-2-NEW", nextOperation.template.fireSupportTasks[1].name)
-        assert.are.equal("FOUND_NEXT", status)
       end)
 
       -- Positive: handles multi-digit numbers
-      it("should handle multi-digit number increments", function()
-        local operation = makeOperation({
-          type = "air",
-          template = {
-            name = "STRIKE/AB/99",
-            isFirstWave = false,
-            strikeInterval = 0,
-            packages = {}
-          }
-        })
-        local config = {
-          c = { packageTemplates = { STRIKE_AB_100 = { { striker = {} } } } }
-        }
+      it("should increment a multi-digit wave number", function()
+        local config = makeConfig()
+        local template = { { striker = {} } }
+        config.c.packageTemplates.AIR_STRIKE_AB_W_100 = template
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "AIR/STRIKE/AB/W/99", "air", { packages = {} })
 
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "AIR/STRIKE/AB/W/99", type = "air" })
 
-        assert.are.equal("STRIKE/AB/100", nextOperation.template.name)
-        assert.are.equal("FOUND_NEXT", status)
+        assert(nextOperation ~= nil)
+        assert.are.equal("AIR/STRIKE/AB/W/100", nextOperation.template.name)
       end)
 
       -- Negative: reuses current air template when next not found
-      it("should reuse current template when next is not found for air", function()
+      it("should reuse the executed air wave's packages when no next template exists", function()
+        local config = makeConfig()
         local originalPackages = { { striker = { baseGUID = "BASE-1" } } }
-        local operation = makeOperation({
-          type = "air",
-          template = {
-            name = "AIR/STRIKE/AB/W/5",
-            isFirstWave = true,
-            strikeInterval = 90,
-            packages = originalPackages
-          }
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "AIR/STRIKE/AB/W/5", "air", {
+          isFirstWave = true,
+          strikeInterval = 90,
+          packages = originalPackages
         })
-        local config = { c = { packageTemplates = {} } }
 
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "AIR/STRIKE/AB/W/5", type = "air" })
 
+        assert(nextOperation ~= nil)
         assert.are.equal("AIR/STRIKE/AB/W/5", nextOperation.template.name)
         assert.are.equal(originalPackages, nextOperation.template.packages)
-        assert.are.equal("REUSED_CURRENT", status)
+        assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "status=reused_current"))
       end)
 
       -- Negative: reuses current ground template when next not found
-      it("should reuse current template when next is not found for ground", function()
+      it("should reuse the executed ground wave's tasks when no next template exists", function()
+        local config = makeConfig()
         local originalTasks = { { name = "FST-ORIGINAL" } }
-        local operation = makeOperation({
-          type = "ground",
-          template = {
-            name = "ANTISHIP/3",
-            strikeInterval = 0,
-            fireSupportTasks = originalTasks
-          }
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "GND/STRIKE/ANTISHIP/3", "ground", {
+          strikeInterval = 0,
+          fireSupportTasks = originalTasks
         })
-        local config = { c = { fireSupportTaskTemplates = {} } }
 
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "GND/STRIKE/ANTISHIP/3", type = "ground" })
 
-        assert.are.equal("ANTISHIP/3", nextOperation.template.name)
+        assert(nextOperation ~= nil)
+        assert.are.equal("GND/STRIKE/ANTISHIP/3", nextOperation.template.name)
         assert.are.equal(originalTasks, nextOperation.template.fireSupportTasks)
-        assert.are.equal("REUSED_CURRENT", status)
-      end)
-
-      -- Negative: unparseable template name
-      it("should return deep copy when template name is unparseable", function()
-        local operation = makeOperation({
-          type = "air",
-          template = { name = "NO-NUMBER-SUFFIX" }
-        })
-        local config = { c = { packageTemplates = {} } }
-
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
-
-        assert.are.equal("air", nextOperation.type)
-        assert.is_not.equal(operation, nextOperation)
-        assert.are.equal("PARSE_ERROR", status)
-      end)
-
-      -- Negative: unknown operation type
-      it("should return deep copy for unknown operation type", function()
-        local operation = makeOperation({
-          type = "naval",
-          template = { name = "BLOCKADE/1" }
-        })
-        local config = { c = { packageTemplates = {}, fireSupportTaskTemplates = {} } }
-
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
-
-        assert.is_not.equal(operation, nextOperation)
-        assert.are.equal("UNKNOWN_TYPE", status)
       end)
 
       -- Boundary: nil strikeInterval defaults to 0 for ground
-      it("should default ground strikeInterval to 0 when nil in original", function()
-        local operation = makeOperation({
-          type = "ground",
-          template = {
-            name = "INFRASTRUCTURE/1",
-            strikeInterval = nil,
-            fireSupportTasks = {}
-          }
-        })
-        local config = {
-          c = { fireSupportTaskTemplates = { INFRASTRUCTURE_2 = { { name = "FST" } } } }
-        }
+      it("should default a ground wave's strikeInterval to 0 when the executed wave has none", function()
+        local config = makeConfig()
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground", { fireSupportTasks = {} })
 
-        local nextOperation, status = OperationScheduler.buildNextOperation(operation, config)
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "GND/STRIKE/C2/N/1", type = "ground" })
 
+        assert(nextOperation ~= nil)
+        assert.are.equal("GND/STRIKE/C2/N/2", nextOperation.template.name)
         assert.are.equal(0, nextOperation.template.strikeInterval)
-        assert.are.equal("FOUND_NEXT", status)
+      end)
+
+      -- Boundary: nil strikeInterval falls back to the configured interval for air
+      it("should default an air wave's strikeInterval to the configured interval", function()
+        local config = makeConfig()
+        local template = { { striker = {} } }
+        config.strikeInterval = 45
+        config.c.packageTemplates.AIR_STRIKE_AB_W_2 = template
+        local operationBatches = {}
+        addExecutedSeries(operationBatches, "AIR/STRIKE/AB/W/1", "air", { packages = {} })
+
+        local nextOperation = scheduleNextWave(config, operationBatches,
+          { name = "AIR/STRIKE/AB/W/1", type = "air" })
+
+        assert(nextOperation ~= nil)
+        assert.are.equal(45, nextOperation.template.strikeInterval)
       end)
     end)
-  end
+  end)
 end)

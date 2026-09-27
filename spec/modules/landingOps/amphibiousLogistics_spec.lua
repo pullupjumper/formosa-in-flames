@@ -164,7 +164,7 @@ describe("AmphibiousLogistics", function()
         { name = "AirliftMission-1", loadoutId = 40, unitCount = 1, startTime = 0 },
       },
       cargoItemsForTransfer = {
-        [1] = { loadoutId = 40, cargoItems = { [1] = { makeCargoItem({ dbid = 3003 }) } } },
+        [1] = { loadoutId = 40, cargoItems = { [1] = { makeCargoItem() } } },
       },
     }
     if overrides then
@@ -173,119 +173,51 @@ describe("AmphibiousLogistics", function()
     return item
   end
 
-  -- ============================================================================
-  -- updateCargo
-  -- ============================================================================
+  ---Units resolvable through the GameApi.ScenEdit_GetUnit stub installed by cargo transfer blocks
+  ---@type table<string, table>
+  local unitsByGuid
 
-  describe("updateCargo", function()
-    -- Positive: should delete matching cargo from source and create on destination
-    it("should delete matching cargo from source and create on destination", function()
-      local fromUnit = makeUnit()
-      local toUnit = makeUnit({ guid = "UNIT-002" })
-      local cargoItem = makeCargoItem({ num = 2 })
+  ---Make units resolvable by GUID through the GameApi.ScenEdit_GetUnit stub
+  ---@param units table[]
+  local function registerUnits(units)
+    for _, u in ipairs(units) do unitsByGuid[u.guid] = u end
+  end
 
-      local stubDelete = trackStub(stub(fromUnit, "deleteUnitCargo"))
-      local stubCreate = trackStub(stub(toUnit, "createUnitCargo"))
+  ---Install a GameApi.ScenEdit_GetUnit stub that resolves registered units only
+  ---@return luassert.spy
+  local function stubUnitLookup()
+    unitsByGuid = {}
+    return trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+      return unitsByGuid[guid]
+    end))
+  end
 
-      AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
+  ---Create a registered amphibious ship carrying one boat and two transport helicopters
+  ---(loadouts 20 and 21), matching the platforms in makeOperationalZone's manifests.
+  ---The boat keeps makeUnit's default loadout, which differs from the manifest's, because
+  ---boats must receive cargo regardless of loadout.
+  ---@param guid string
+  ---@param dbid number
+  ---@return table ship
+  ---@return {boat: luassert.spy, helo: luassert.spy, heloAlt: luassert.spy} creates createUnitCargo stubs per embarked unit
+  local function makeFleetShip(guid, dbid)
+    local boat = makeUnit({ guid = guid .. "-BOAT", dbid = 3001 })
+    local helo = makeUnit({ guid = guid .. "-HELO20", dbid = 4001, loadoutdbid = 20 })
+    local heloAlt = makeUnit({ guid = guid .. "-HELO21", dbid = 4001, loadoutdbid = 21 })
+    local ship = makeUnit({
+      guid = guid,
+      dbid = dbid,
+      embarkedUnits = { Aircraft = { helo.guid, heloAlt.guid }, Boats = { boat.guid } },
+      inArea = function() return true end,
+    })
+    registerUnits({ ship, boat, helo, heloAlt })
 
-      assert.stub(stubDelete).was.called(2)
-      assert.stub(stubDelete).was.called_with(fromUnit, "C-1")
-      assert.stub(stubDelete).was.called_with(fromUnit, "C-2")
-      assert.stub(stubCreate).was.called(2)
-      assert.stub(stubCreate).was.called_with(toUnit, 1, 1001)
-    end)
-
-    -- Positive: should only transfer up to the requested quantity
-    it("should only transfer up to the requested quantity", function()
-      local fromUnit = makeUnit()
-      local toUnit = makeUnit({ guid = "UNIT-002" })
-      local cargoItem = makeCargoItem({ num = 1 })
-
-      local stubDelete = trackStub(stub(fromUnit, "deleteUnitCargo"))
-      local stubCreate = trackStub(stub(toUnit, "createUnitCargo"))
-
-      AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
-
-      assert.stub(stubDelete).was.called(1)
-      assert.stub(stubCreate).was.called(1)
-    end)
-
-    -- Positive: should skip non-matching cargo elements
-    it("should skip non-matching cargo elements", function()
-      local fromUnit = makeUnit({
-        cargo = {
-          [1] = {
-            cargo = {
-              makeCargoElement({ guid = "C-X", dbid = 9999 }),
-              makeCargoElement({ guid = "C-Y", dbid = 9999 }),
-              makeCargoElement({ guid = "C-Z", dbid = 1001 }),
-            },
-          },
-        },
-      })
-      local toUnit = makeUnit({ guid = "UNIT-002" })
-      local cargoItem = makeCargoItem({ dbid = 1001, num = 1 })
-
-      local stubDelete = trackStub(stub(fromUnit, "deleteUnitCargo"))
-      local stubCreate = trackStub(stub(toUnit, "createUnitCargo"))
-
-      AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
-
-      assert.stub(stubDelete).was.called(1)
-      assert.stub(stubDelete).was.called_with(fromUnit, "C-Z")
-      assert.stub(stubCreate).was.called(1)
-    end)
-
-    -- Negative: should return early when fromUnit is nil
-    it("should return early when fromUnit is nil", function()
-      local toUnit = makeUnit({ guid = "UNIT-002" })
-      local cargoItem = makeCargoItem()
-
-      local stubCreate = trackStub(stub(toUnit, "createUnitCargo"))
-
-      AmphibiousLogistics.updateCargo(nil, toUnit, cargoItem)
-
-      assert.stub(stubCreate).was_not.called()
-    end)
-
-    -- Negative: should return early when fromUnit cargo is nil
-    it("should return early when fromUnit cargo list is nil", function()
-      local fromUnit = makeUnit({ cargo = { [1] = { cargo = nil } } })
-      local toUnit = makeUnit({ guid = "UNIT-002" })
-      local cargoItem = makeCargoItem()
-
-      local stubCreate = trackStub(stub(toUnit, "createUnitCargo"))
-
-      AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
-
-      assert.stub(stubCreate).was_not.called()
-    end)
-
-    -- Boundary: should handle when fewer cargo items exist than requested
-    it("should handle when fewer cargo items exist than requested", function()
-      local fromUnit = makeUnit({
-        cargo = {
-          [1] = {
-            cargo = {
-              makeCargoElement({ guid = "C-ONLY", dbid = 1001 }),
-            },
-          },
-        },
-      })
-      local toUnit = makeUnit({ guid = "UNIT-002" })
-      local cargoItem = makeCargoItem({ num = 5 })
-
-      local stubDelete = trackStub(stub(fromUnit, "deleteUnitCargo"))
-      local stubCreate = trackStub(stub(toUnit, "createUnitCargo"))
-
-      AmphibiousLogistics.updateCargo(fromUnit, toUnit, cargoItem)
-
-      assert.stub(stubDelete).was.called(1)
-      -- Create count matches actual matched cargo (1), not requested num (5)
-      assert.stub(stubCreate).was.called(1)
-    end)
-  end)
+    return ship, {
+      boat = trackStub(stub(boat, "createUnitCargo")),
+      helo = trackStub(stub(helo, "createUnitCargo")),
+      heloAlt = trackStub(stub(heloAlt, "createUnitCargo")),
+    }
+  end
 
   -- ============================================================================
   -- removeCargo
@@ -389,218 +321,6 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
 
       assert.are.equal(1, result)
-    end)
-  end)
-
-  -- ============================================================================
-  -- transferCargo
-  -- ============================================================================
-
-  describe("transferCargo", function()
-    local stubGetUnit, stubUpdateCargo
-
-    before_each(function()
-      stubUpdateCargo = trackStub(stub(AmphibiousLogistics, "updateCargo"))
-    end)
-
-    -- Positive: should transfer cargo to matching Aircraft with single cargo list
-    it("should transfer cargo to matching Aircraft with single cargo list", function()
-      local aircraft = makeUnit({
-        guid = "AC-001",
-        dbid = 4001,
-        loadoutdbid = 20,
-      })
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = { "AC-001" }, Boats = {} },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        if guid == "AC-001" then return aircraft end
-        return nil
-      end))
-
-      local cargoItems = { [1] = { makeCargoItem() } }
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Aircraft", 4001, 20, cargoItems)
-
-      assert.stub(stubUpdateCargo).was.called(1)
-      assert.stub(stubUpdateCargo).was.called_with(base, aircraft, cargoItems[1][1])
-    end)
-
-    -- Positive: should transfer cargo to matching Boats (ignores loadout)
-    it("should transfer cargo to matching Boats", function()
-      local boat = makeUnit({
-        guid = "BOAT-001",
-        dbid = 3001,
-      })
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = {}, Boats = { "BOAT-001" } },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        if guid == "BOAT-001" then return boat end
-        return nil
-      end))
-
-      local cargoItems = { [1] = { makeCargoItem() } }
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Boats", 3001, 0, cargoItems)
-
-      assert.stub(stubUpdateCargo).was.called(1)
-      assert.stub(stubUpdateCargo).was.called_with(base, boat, cargoItems[1][1])
-    end)
-
-    -- Positive: should use per-unit cargo lists when count > 1
-    it("should use per-unit cargo lists when multiple cargo lists are provided", function()
-      local boat1 = makeUnit({ guid = "BOAT-001", dbid = 3001 })
-      local boat2 = makeUnit({ guid = "BOAT-002", dbid = 3001 })
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = {}, Boats = { "BOAT-001", "BOAT-002" } },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        if guid == "BOAT-001" then return boat1 end
-        if guid == "BOAT-002" then return boat2 end
-        return nil
-      end))
-
-      local cargoA = makeCargoItem({ dbid = 1001 })
-      local cargoB = makeCargoItem({ dbid = 2002 })
-      local cargoItems = {
-        [1] = { cargoA },
-        [2] = { cargoB },
-      }
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Boats", 3001, 0, cargoItems)
-
-      assert.stub(stubUpdateCargo).was.called(2)
-      assert.stub(stubUpdateCargo).was.called_with(base, boat1, cargoA)
-      assert.stub(stubUpdateCargo).was.called_with(base, boat2, cargoB)
-    end)
-
-    -- Positive: should use per-unit cargo lists for Aircraft when count > 1
-    it("should use per-unit cargo lists for Aircraft when multiple lists provided", function()
-      local ac1 = makeUnit({ guid = "AC-001", dbid = 4001, loadoutdbid = 20 })
-      local ac2 = makeUnit({ guid = "AC-002", dbid = 4001, loadoutdbid = 20 })
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = { "AC-001", "AC-002" }, Boats = {} },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        if guid == "AC-001" then return ac1 end
-        if guid == "AC-002" then return ac2 end
-        return nil
-      end))
-
-      local cargoA = makeCargoItem({ dbid = 1001 })
-      local cargoB = makeCargoItem({ dbid = 2002 })
-      local cargoItems = {
-        [1] = { cargoA },
-        [2] = { cargoB },
-      }
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Aircraft", 4001, 20, cargoItems)
-
-      assert.stub(stubUpdateCargo).was.called(2)
-      assert.stub(stubUpdateCargo).was.called_with(base, ac1, cargoA)
-      assert.stub(stubUpdateCargo).was.called_with(base, ac2, cargoB)
-    end)
-
-    -- Negative: should return early when base unit is not found
-    it("should return early when base unit is not found", function()
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-
-      AmphibiousLogistics.transferCargo("INVALID", "Boats", 3001, 0, { [1] = { makeCargoItem() } })
-
-      assert.stub(stubUpdateCargo).was_not.called()
-    end)
-
-    -- Negative: should skip Aircraft that do not match DBID
-    it("should skip Aircraft that do not match platform DBID", function()
-      local aircraft = makeUnit({
-        guid = "AC-001",
-        dbid = 9999,
-        loadoutdbid = 20,
-      })
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = { "AC-001" }, Boats = {} },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        if guid == "AC-001" then return aircraft end
-        return nil
-      end))
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Aircraft", 4001, 20, { [1] = { makeCargoItem() } })
-
-      assert.stub(stubUpdateCargo).was_not.called()
-    end)
-
-    -- Negative: should skip Aircraft that do not match loadout
-    it("should skip Aircraft that do not match loadout DBID", function()
-      local aircraft = makeUnit({
-        guid = "AC-001",
-        dbid = 4001,
-        loadoutdbid = 999,
-      })
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = { "AC-001" }, Boats = {} },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        if guid == "AC-001" then return aircraft end
-        return nil
-      end))
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Aircraft", 4001, 20, { [1] = { makeCargoItem() } })
-
-      assert.stub(stubUpdateCargo).was_not.called()
-    end)
-
-    -- Negative: should skip embarked units that return nil from GetUnit
-    it("should skip embarked units that cannot be retrieved", function()
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = {}, Boats = { "GHOST-001" } },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        return nil
-      end))
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Boats", 3001, 0, { [1] = { makeCargoItem() } })
-
-      assert.stub(stubUpdateCargo).was_not.called()
-    end)
-
-    -- Negative: should not transfer when no platforms of specified type exist
-    it("should not transfer when no embarked platforms exist", function()
-      local base = makeUnit({
-        guid = "BASE-001",
-        embarkedUnits = { Aircraft = {}, Boats = {} },
-      })
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BASE-001" then return base end
-        return nil
-      end))
-
-      AmphibiousLogistics.transferCargo("BASE-001", "Boats", 3001, 0, { [1] = { makeCargoItem() } })
-
-      assert.stub(stubUpdateCargo).was_not.called()
     end)
   end)
 
@@ -926,115 +646,93 @@ describe("AmphibiousLogistics", function()
   -- ============================================================================
 
   describe("transferAndAssign", function()
-    local stubTransferCargo, stubAssignMission
+    local stubAssignMission
 
     before_each(function()
-      stubTransferCargo = trackStub(stub(AmphibiousLogistics, "transferCargo"))
+      stubUnitLookup()
       stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
     end)
 
-    -- Positive: should transfer and assign for Type 075 in anchorage area
+    -- Positive: should load boats and both helicopter loadouts on Type 075 ships
     it("should transfer cargo and assign missions for Type 075 ships", function()
-      local unit075 = makeUnit({
-        guid = "SHIP-075",
-        dbid = constants.PLATFORMS.TYPE_075,
-        inArea = function() return true end,
-      })
+      local ship, creates = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { unit075 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { ship })
 
       assert.is_true(result)
-      -- Type 075: 3 transferCargo calls (boats + 2 helo loadouts)
-      assert.stub(stubTransferCargo).was.called(3)
-      -- Type 075: 3 assignMission calls (boats + helo + attack helo)
+      assert.stub(creates.boat).was.called()
+      assert.stub(creates.helo).was.called()
+      assert.stub(creates.heloAlt).was.called()
+      -- boats + transport helo + attack helo
       assert.stub(stubAssignMission).was.called(3)
-      assert.stub(logStub).was.called(1)
+      assert.stub(stubAssignMission).was.called_with(
+        "SHIP-075", "Aircraft", zone.attackHelicopter.dbid, zone.attackHelicopter.missions)
     end)
 
-    -- Positive: should transfer and assign for Type 076 in anchorage area
+    -- Positive: should treat Type 076 ships like Type 075
     it("should transfer cargo and assign missions for Type 076 ships", function()
-      local unit076 = makeUnit({
-        guid = "SHIP-076",
-        dbid = constants.PLATFORMS.TYPE_076,
-        inArea = function() return true end,
-      })
+      local ship, creates = makeFleetShip("SHIP-076", constants.PLATFORMS.TYPE_076)
       local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { unit076 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { ship })
 
       assert.is_true(result)
-      -- Type 076 uses same path as Type 075: 3 transfers
-      assert.stub(stubTransferCargo).was.called(3)
+      assert.stub(creates.heloAlt).was.called()
+      assert.stub(stubAssignMission).was.called(3)
     end)
 
-    -- Positive: should transfer and assign for Type 071 in anchorage area
+    -- Positive: should load boats and one helicopter loadout on Type 071 ships
     it("should transfer cargo and assign missions for Type 071 ships", function()
-      local unit071 = makeUnit({
-        guid = "SHIP-071",
-        dbid = constants.PLATFORMS.TYPE_071,
-        inArea = function() return true end,
-      })
+      local ship, creates = makeFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { unit071 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { ship })
 
       assert.is_true(result)
-      -- Type 071: 2 transferCargo calls (boats + helo)
-      assert.stub(stubTransferCargo).was.called(2)
-      -- Type 071: 2 assignMission calls (boats + helo) - no attack helo
+      assert.stub(creates.boat).was.called()
+      assert.stub(creates.helo).was.called()
+      -- Type 071 manifest has no second helicopter loadout
+      assert.stub(creates.heloAlt).was_not.called()
+      -- boats + transport helo, no attack helo
       assert.stub(stubAssignMission).was.called(2)
     end)
 
     -- Positive: should handle mixed fleet in anchorage
     it("should process both Type 075 and Type 071 ships in same zone", function()
-      local unit075 = makeUnit({
-        guid = "SHIP-075",
-        dbid = constants.PLATFORMS.TYPE_075,
-        inArea = function() return true end,
-      })
-      local unit071 = makeUnit({
-        guid = "SHIP-071",
-        dbid = constants.PLATFORMS.TYPE_071,
-        inArea = function() return true end,
-      })
+      local ship075, creates075 = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
+      local ship071, creates071 = makeFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = makeOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { unit075, unit071 })
+      local result = AmphibiousLogistics.transferAndAssign(zone, { ship075, ship071 })
 
       assert.is_true(result)
-      -- Type 075: 3 transfers + Type 071: 2 transfers = 5
-      assert.stub(stubTransferCargo).was.called(5)
+      assert.stub(creates075.heloAlt).was.called()
+      assert.stub(creates071.boat).was.called()
+      assert.stub(stubAssignMission).was.called(5)
     end)
 
     -- Negative: should skip units not in anchorage area
     it("should skip ships not in anchorage area", function()
-      local unit075 = makeUnit({
-        guid = "SHIP-075",
-        dbid = constants.PLATFORMS.TYPE_075,
-        inArea = function() return false end,
-      })
+      local ship, creates = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
+      ship.inArea = function() return false end
       local zone = makeOperationalZone()
 
-      AmphibiousLogistics.transferAndAssign(zone, { unit075 })
+      AmphibiousLogistics.transferAndAssign(zone, { ship })
 
-      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(creates.boat).was_not.called()
       assert.stub(stubAssignMission).was_not.called()
     end)
 
     -- Negative: should skip non-amphibious unit types
     it("should skip units that are not Type 075/076 or Type 071", function()
-      local otherUnit = makeUnit({
-        guid = "SHIP-OTHER",
-        dbid = constants.PLATFORMS.TYPE_072III,
-        inArea = function() return true end,
-      })
+      local ship, creates = makeFleetShip("SHIP-OTHER", constants.PLATFORMS.TYPE_072III)
       local zone = makeOperationalZone()
 
-      AmphibiousLogistics.transferAndAssign(zone, { otherUnit })
+      AmphibiousLogistics.transferAndAssign(zone, { ship })
 
-      -- No matching transfer spec for TYPE_072III, so no transfers or assignments
-      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(creates.boat).was_not.called()
+      assert.stub(creates.helo).was_not.called()
       assert.stub(stubAssignMission).was_not.called()
     end)
 
@@ -1044,7 +742,6 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.transferAndAssign(zone, {})
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was_not.called()
       assert.stub(stubAssignMission).was_not.called()
     end)
   end)
@@ -1054,27 +751,130 @@ describe("AmphibiousLogistics", function()
   -- ============================================================================
 
   describe("transferAndAssignTransportAircraft", function()
-    local stubTransferCargo, stubAssignMission
+    local stubAssignMission
+
+    ---Create an embarked transport aircraft matching makeTransportAircraftItem's dbid and loadout
+    ---@param overrides? table
+    ---@return table
+    local function makeAircraft(overrides)
+      local aircraft = makeUnit({ guid = "AC-001", dbid = 6001, loadoutdbid = 40 })
+      if overrides then
+        for k, v in pairs(overrides) do aircraft[k] = v end
+      end
+      return aircraft
+    end
+
+    ---Create a registered air base (makeTransportAircraftItem's GUID) embarking the given aircraft
+    ---@param aircraftList table[]
+    ---@param overrides? table
+    ---@return table
+    local function makeAirBase(aircraftList, overrides)
+      local guids = {}
+      for _, aircraft in ipairs(aircraftList) do table.insert(guids, aircraft.guid) end
+
+      local base = makeUnit({ guid = "BASE-001", embarkedUnits = { Aircraft = guids, Boats = {} } })
+      if overrides then
+        for k, v in pairs(overrides) do base[k] = v end
+      end
+
+      registerUnits({ base })
+      registerUnits(aircraftList)
+      return base
+    end
+
+    ---Create a transport aircraft item transferring the given cargo lists
+    ---@param cargoItems table<integer, table[]>
+    ---@return table
+    local function makeItemWithCargo(cargoItems)
+      return makeTransportAircraftItem({
+        cargoItemsForTransfer = { [1] = { loadoutId = 40, cargoItems = cargoItems } },
+      })
+    end
 
     before_each(function()
-      stubTransferCargo = trackStub(stub(AmphibiousLogistics, "transferCargo"))
+      stubUnitLookup()
       stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
     end)
 
-    -- Positive: should transfer cargo and assign missions for transport aircraft
-    it("should transfer cargo and assign missions for transport aircraft", function()
-      local transportAircraft = { makeTransportAircraftItem() }
+    -- Positive: should move matching cargo from the base onto the aircraft and assign it
+    it("should move matching cargo from the base onto a matching aircraft", function()
+      local aircraft = makeAircraft()
+      local base = makeAirBase({ aircraft })
+      local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+      local item = makeTransportAircraftItem()
 
-      local result = AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
+      local result = AmphibiousLogistics.transferAndAssignTransportAircraft({ item })
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was.called(1)
-      assert.stub(stubAssignMission).was.called(1)
+      assert.stub(stubDelete).was.called(2)
+      assert.stub(stubDelete).was.called_with(base, "C-1")
+      assert.stub(stubDelete).was.called_with(base, "C-2")
+      assert.stub(stubCreate).was.called(2)
+      assert.stub(stubCreate).was.called_with(aircraft, 1, 1001)
+      assert.stub(stubAssignMission).was.called_with("BASE-001", "Aircraft", 6001, item.missions)
+    end)
 
-      assert.stub(stubTransferCargo).was.called_with(
-        "BASE-001", "Aircraft", 6001, 40,
-        transportAircraft[1].cargoItemsForTransfer[1].cargoItems
-      )
+    -- Positive: should only transfer up to the requested quantity
+    it("should only transfer up to the requested quantity", function()
+      local aircraft = makeAircraft()
+      local base = makeAirBase({ aircraft })
+      local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({
+        makeItemWithCargo({ [1] = { makeCargoItem({ num = 1 }) } }),
+      })
+
+      assert.stub(stubDelete).was.called(1)
+      assert.stub(stubCreate).was.called(1)
+    end)
+
+    -- Positive: should skip non-matching cargo elements
+    it("should skip non-matching cargo elements", function()
+      local aircraft = makeAircraft()
+      local base = makeAirBase({ aircraft }, {
+        cargo = {
+          [1] = {
+            cargo = {
+              makeCargoElement({ guid = "C-X", dbid = 9999 }),
+              makeCargoElement({ guid = "C-Y", dbid = 9999 }),
+              makeCargoElement({ guid = "C-Z", dbid = 1001 }),
+            },
+          },
+        },
+      })
+      local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({
+        makeItemWithCargo({ [1] = { makeCargoItem({ num = 1 }) } }),
+      })
+
+      assert.stub(stubDelete).was.called(1)
+      assert.stub(stubDelete).was.called_with(base, "C-Z")
+      assert.stub(stubCreate).was.called(1)
+    end)
+
+    -- Positive: should give each aircraft its own cargo list when several are provided
+    it("should use per-unit cargo lists when multiple lists are provided", function()
+      local ac1 = makeAircraft({ guid = "AC-001" })
+      local ac2 = makeAircraft({ guid = "AC-002" })
+      makeAirBase({ ac1, ac2 })
+      local stubCreate1 = trackStub(stub(ac1, "createUnitCargo"))
+      local stubCreate2 = trackStub(stub(ac2, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({
+        makeItemWithCargo({
+          [1] = { makeCargoItem({ dbid = 1001, num = 1 }) },
+          [2] = { makeCargoItem({ dbid = 2002, num = 1 }) },
+        }),
+      })
+
+      assert.stub(stubCreate1).was.called(1)
+      assert.stub(stubCreate1).was.called_with(ac1, 1, 1001)
+      assert.stub(stubCreate2).was.called(1)
+      assert.stub(stubCreate2).was.called_with(ac2, 1, 2002)
     end)
 
     -- Positive: should handle multiple transport aircraft entries
@@ -1087,8 +887,95 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was.called(2)
       assert.stub(stubAssignMission).was.called(2)
+    end)
+
+    -- Negative: should not look for embarked aircraft when the base is not found
+    it("should not transfer cargo when the base unit is not found", function()
+      local aircraft = makeAircraft()
+      registerUnits({ aircraft })
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      local result = AmphibiousLogistics.transferAndAssignTransportAircraft({ makeTransportAircraftItem() })
+
+      assert.is_true(result)
+      assert.stub(stubCreate).was_not.called()
+      assert.stub(stubAssignMission).was.called(1)
+    end)
+
+    -- Negative: should skip aircraft that do not match the platform DBID
+    it("should skip aircraft that do not match platform DBID", function()
+      local aircraft = makeAircraft({ dbid = 9999 })
+      makeAirBase({ aircraft })
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({ makeTransportAircraftItem() })
+
+      assert.stub(stubCreate).was_not.called()
+    end)
+
+    -- Negative: should skip aircraft that do not match the loadout
+    it("should skip aircraft that do not match loadout DBID", function()
+      local aircraft = makeAircraft({ loadoutdbid = 999 })
+      makeAirBase({ aircraft })
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({ makeTransportAircraftItem() })
+
+      assert.stub(stubCreate).was_not.called()
+    end)
+
+    -- Negative: should skip embarked units that cannot be retrieved and keep going
+    it("should skip embarked units that cannot be retrieved", function()
+      local aircraft = makeAircraft({ guid = "AC-002" })
+      makeAirBase({ aircraft })
+      unitsByGuid["BASE-001"].embarkedUnits.Aircraft = { "GHOST-001", "AC-002" }
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({
+        makeItemWithCargo({ [1] = { makeCargoItem({ num = 1 }) } }),
+      })
+
+      -- AC-002 is second in the embarked list, so the shared list (index 1) applies to it
+      assert.stub(stubCreate).was.called(1)
+    end)
+
+    -- Negative: should still assign missions when the base has no embarked aircraft list
+    it("should skip the transfer when the base has no embarked aircraft", function()
+      makeAirBase({}, { embarkedUnits = { Boats = {} } })
+
+      local result = AmphibiousLogistics.transferAndAssignTransportAircraft({ makeTransportAircraftItem() })
+
+      assert.is_true(result)
+      assert.stub(stubAssignMission).was.called(1)
+    end)
+
+    -- Negative: should not create cargo when the base cargo list is missing
+    it("should not transfer when the base cargo list is nil", function()
+      local aircraft = makeAircraft()
+      makeAirBase({ aircraft }, { cargo = { [1] = { cargo = nil } } })
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({ makeTransportAircraftItem() })
+
+      assert.stub(stubCreate).was_not.called()
+    end)
+
+    -- Boundary: should create only as many items as actually matched
+    it("should handle when fewer cargo items exist than requested", function()
+      local aircraft = makeAircraft()
+      local base = makeAirBase({ aircraft }, {
+        cargo = { [1] = { cargo = { makeCargoElement({ guid = "C-ONLY", dbid = 1001 }) } } },
+      })
+      local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
+      local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
+
+      AmphibiousLogistics.transferAndAssignTransportAircraft({
+        makeItemWithCargo({ [1] = { makeCargoItem({ num = 5 }) } }),
+      })
+
+      assert.stub(stubDelete).was.called(1)
+      assert.stub(stubCreate).was.called(1)
     end)
 
     -- Boundary: should return true with empty transport aircraft list
@@ -1096,7 +983,6 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.transferAndAssignTransportAircraft({})
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was_not.called()
       assert.stub(stubAssignMission).was_not.called()
     end)
   end)
@@ -1106,115 +992,91 @@ describe("AmphibiousLogistics", function()
   -- ============================================================================
 
   describe("retransferCargos", function()
-    local stubGetUnit, stubTransferCargo
-
     before_each(function()
-      stubTransferCargo = trackStub(stub(AmphibiousLogistics, "transferCargo"))
+      stubUnitLookup()
     end)
+
+    ---Convert ships to the side unit list shape retransferCargos receives
+    ---@param ships table[]
+    ---@return table[]
+    local function toSideUnits(ships)
+      local units = {}
+      for _, ship in ipairs(ships) do table.insert(units, { guid = ship.guid }) end
+      return units
+    end
 
     -- Positive: should retransfer cargo for Type 075 ships
     it("should retransfer cargo to boats and helicopters on Type 075 ships", function()
-      local unit075 = makeUnit({
-        guid = "SHIP-075",
-        dbid = constants.PLATFORMS.TYPE_075,
-      })
-      local units = { { guid = "SHIP-075" } }
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit075))
-
+      local ship, creates = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.retransferCargos(zone, units)
+
+      local result = AmphibiousLogistics.retransferCargos(zone, toSideUnits({ ship }))
 
       assert.is_true(result)
-      -- Type 075: 3 transferCargo calls (boats + 2 helo loadouts)
-      assert.stub(stubTransferCargo).was.called(3)
-      assert.stub(logStub).was.called(1)
+      assert.stub(creates.boat).was.called()
+      assert.stub(creates.helo).was.called()
+      assert.stub(creates.heloAlt).was.called()
     end)
 
     -- Positive: should retransfer cargo for Type 076 ships
     it("should retransfer cargo to boats and helicopters on Type 076 ships", function()
-      local unit076 = makeUnit({
-        guid = "SHIP-076",
-        dbid = constants.PLATFORMS.TYPE_076,
-      })
-      local units = { { guid = "SHIP-076" } }
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit076))
-
+      local ship, creates = makeFleetShip("SHIP-076", constants.PLATFORMS.TYPE_076)
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.retransferCargos(zone, units)
+
+      local result = AmphibiousLogistics.retransferCargos(zone, toSideUnits({ ship }))
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was.called(3)
+      assert.stub(creates.heloAlt).was.called()
     end)
 
     -- Positive: should retransfer cargo for Type 071 ships
     it("should retransfer cargo to boats and helicopters on Type 071 ships", function()
-      local unit071 = makeUnit({
-        guid = "SHIP-071",
-        dbid = constants.PLATFORMS.TYPE_071,
-      })
-      local units = { { guid = "SHIP-071" } }
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit071))
-
+      local ship, creates = makeFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.retransferCargos(zone, units)
+
+      local result = AmphibiousLogistics.retransferCargos(zone, toSideUnits({ ship }))
 
       assert.is_true(result)
-      -- Type 071: 2 transferCargo calls (boats + helo)
-      assert.stub(stubTransferCargo).was.called(2)
+      assert.stub(creates.boat).was.called()
+      assert.stub(creates.helo).was.called()
+      assert.stub(creates.heloAlt).was_not.called()
     end)
 
     -- Positive: should handle mixed fleet
     it("should retransfer cargo for both Type 075 and Type 071 ships", function()
-      local unit075 = makeUnit({ guid = "SHIP-075", dbid = constants.PLATFORMS.TYPE_075 })
-      local unit071 = makeUnit({ guid = "SHIP-071", dbid = constants.PLATFORMS.TYPE_071 })
-      local units = { { guid = "SHIP-075" }, { guid = "SHIP-071" } }
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "SHIP-075" then return unit075 end
-        if guid == "SHIP-071" then return unit071 end
-        return nil
-      end))
-
+      local ship075, creates075 = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
+      local ship071, creates071 = makeFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.retransferCargos(zone, units)
+
+      local result = AmphibiousLogistics.retransferCargos(zone, toSideUnits({ ship075, ship071 }))
 
       assert.is_true(result)
-      -- Type 075: 3 + Type 071: 2 = 5
-      assert.stub(stubTransferCargo).was.called(5)
+      assert.stub(creates075.heloAlt).was.called()
+      assert.stub(creates071.boat).was.called()
     end)
 
     -- Negative: should skip unretrievable units and continue
     it("should skip unretrievable units and continue", function()
-      local units = { { guid = "GHOST-001" } }
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-
+      local ship, creates = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       local zone = makeOperationalZone()
+      local units = { { guid = "GHOST-001" }, { guid = ship.guid } }
+
       local result = AmphibiousLogistics.retransferCargos(zone, units)
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was_not.called()
-      assert.stub(logStub).was.called(1)
+      assert.stub(creates.boat).was.called()
     end)
 
     -- Negative: should skip non-LHD/LPD ship types
     it("should skip ships that are not Type 075/076/071", function()
-      local otherUnit = makeUnit({
-        guid = "SHIP-OTHER",
-        dbid = constants.PLATFORMS.TYPE_072III,
-      })
-      local units = { { guid = "SHIP-OTHER" } }
-
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(otherUnit))
-
+      local ship, creates = makeFleetShip("SHIP-OTHER", constants.PLATFORMS.TYPE_072III)
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.retransferCargos(zone, units)
+
+      local result = AmphibiousLogistics.retransferCargos(zone, toSideUnits({ ship }))
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was_not.called()
+      assert.stub(creates.boat).was_not.called()
+      assert.stub(creates.helo).was_not.called()
     end)
 
     -- Boundary: should return true for empty units list
@@ -1223,458 +1085,6 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.retransferCargos(zone, {})
 
       assert.is_true(result)
-      assert.stub(stubTransferCargo).was_not.called()
-    end)
-  end)
-
-  -- ============================================================================
-  -- loadCargo
-  -- ============================================================================
-
-  describe("loadCargo", function()
-    local stubGetUnit, stubUpdateCargo, stubClearMags, stubUpdateUnit, stubAddReloads, stubDeleteUnit
-
-    ---Create a mount weapon descriptor
-    ---@param overrides? table
-    ---@return table
-    local function makeMountWeapon(overrides)
-      local wpn = {
-        wpn_dbid = 500,
-        wpn_current = 10,
-      }
-      if overrides then
-        for k, v in pairs(overrides) do wpn[k] = v end
-      end
-      return wpn
-    end
-
-    ---Create a mount descriptor
-    ---@param overrides? table
-    ---@return table
-    local function makeMount(overrides)
-      local mount = {
-        mount_dbid = 100,
-        mount_guid = "MNT-001",
-        mount_weapons = {},
-      }
-      if overrides then
-        for k, v in pairs(overrides) do mount[k] = v end
-      end
-      return mount
-    end
-
-    ---Create a unit with mounts for loadCargo testing
-    ---@param overrides? table
-    ---@return table
-    local function makeLoadCargoUnit(overrides)
-      local unit = {
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        group = nil,
-        mounts = {},
-      }
-      if overrides then
-        for k, v in pairs(overrides) do unit[k] = v end
-      end
-      return unit
-    end
-
-    before_each(function()
-      stubUpdateCargo = trackStub(stub(GameApi, "ScenEdit_UpdateUnitCargo"))
-      stubClearMags = trackStub(stub(GameApi, "ScenEdit_ClearAllMagazines"))
-      stubUpdateUnit = trackStub(stub(GameApi, "ScenEdit_UpdateUnit"))
-      stubAddReloads = trackStub(stub(GameApi, "ScenEdit_AddReloadsToUnit"))
-      stubDeleteUnit = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
-    end)
-
-    -- Positive: should convert single unit (no group) to cargo
-    it("should convert single unit (no group) to cargo", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        mounts = {
-          makeMount({
-            mount_dbid = 100,
-            mount_guid = "MNT-S1",
-            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_current = 10 }) },
-          }),
-        },
-      })
-
-      local cargoProxy = makeLoadCargoUnit({
-        guid = "CARGO-001",
-        name = "CargoProxy",
-        mounts = {
-          makeMount({
-            mount_dbid = 200,
-            mount_guid = "MNT-P1",
-            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_default = 10 }) },
-          }),
-        },
-      })
-
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1", weaponDBID = 500 }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.stub(stubUpdateCargo).was.called(1)
-      assert.stub(stubClearMags).was.called(1)
-      -- 1 remove_mount (proxy's existing mount) + 1 add_mount (source's mount) = 2
-      assert.stub(stubUpdateUnit).was.called(2)
-      -- 1 clear reload + 1 set reload = 2
-      assert.stub(stubAddReloads).was.called(2)
-      assert.stub(stubDeleteUnit).was.called(1)
-      assert.stub(stubDeleteUnit).was.called_with({ guid = "SRC-001" })
-    end)
-
-    -- Positive: should convert group members to cargo
-    it("should convert group members to cargo", function()
-      local groupObj = { name = "Alpha", unitlist = { "MEM-001", "MEM-002" } }
-      local member1 = makeLoadCargoUnit({
-        guid = "MEM-001",
-        name = "Inf-1",
-        dbid = 7001,
-        group = groupObj,
-        mounts = { makeMount({ mount_dbid = 100, mount_guid = "MNT-1", mount_weapons = {} }) },
-      })
-      local member2 = makeLoadCargoUnit({
-        guid = "MEM-002",
-        name = "Inf-2",
-        dbid = 7001,
-        group = groupObj,
-        mounts = { makeMount({ mount_dbid = 101, mount_guid = "MNT-2", mount_weapons = {} }) },
-      })
-      local cargo1 = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
-      local cargo2 = makeLoadCargoUnit({ guid = "CARGO-002", mounts = {} })
-
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = {
-          [1] = {
-            cargo = {
-              [1] = { guid = "CARGO-001" },
-              [2] = { guid = "CARGO-002" },
-            }
-          }
-        },
-      })
-      local unitCtx = { name = "Infantry-1" }
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return member1 end
-        if identifier == "MEM-001" then return member1 end
-        if identifier == "MEM-002" then return member2 end
-        if identifier == "CARGO-001" then return cargo1 end
-        if identifier == "CARGO-002" then return cargo2 end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.stub(stubUpdateCargo).was.called(2)
-      assert.stub(stubDeleteUnit).was.called(2)
-    end)
-
-    -- Negative: should return early when unit not found
-    it("should return early when unit not found", function()
-      local unitCtx = { name = "NonExistent" }
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-
-      AmphibiousLogistics.loadCargo(makeUnit({ guid = "BASE-001" }), unitCtx, "Red")
-
-      assert.stub(stubUpdateCargo).was_not.called()
-      assert.stub(stubDeleteUnit).was_not.called()
-      assert.stub(logStub).was_not.called()
-    end)
-
-    -- Negative: should skip group member when unit not found
-    it("should skip group member when unit not found", function()
-      local member1 = makeLoadCargoUnit({
-        guid = "MEM-001",
-        name = "Inf-1",
-        dbid = 7001,
-        group = { name = "Alpha", unitlist = { "MEM-001", "GHOST-002" } },
-        mounts = {},
-      })
-      local cargo1 = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
-
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1" }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return member1 end
-        if identifier == "MEM-001" then return member1 end
-        if identifier == "CARGO-001" then return cargo1 end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      -- Only 1 cargo addition (for member1, not GHOST-002)
-      assert.stub(stubUpdateCargo).was.called(1)
-      assert.stub(stubDeleteUnit).was.called(1)
-    end)
-
-    -- Negative: should skip when cargo proxy creation fails
-    it("should skip when cargo proxy creation fails", function()
-      local sourceUnit = makeLoadCargoUnit({ guid = "SRC-001", name = "Infantry-1", dbid = 7001, mounts = {} })
-      local base = makeUnit({ guid = "BASE-001", name = "BaseShip", cargo = nil })
-      local unitCtx = { name = "Infantry-1" }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.stub(stubUpdateCargo).was.called(1)
-      assert.stub(stubClearMags).was_not.called()
-      assert.stub(stubDeleteUnit).was_not.called()
-    end)
-
-    -- Positive: should handle weaponDBID as single number
-    it("should handle weaponDBID as single number", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        mounts = {
-          makeMount({
-            mount_dbid = 100,
-            mount_guid = "MNT-1",
-            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_current = 5 }) },
-          }),
-        },
-      })
-      local cargoProxy = makeLoadCargoUnit({
-        guid = "CARGO-001",
-        mounts = {
-          makeMount({
-            mount_dbid = 200,
-            mount_guid = "MNT-P1",
-            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_default = 10 }) },
-          }),
-        },
-      })
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1", weaponDBID = 500 }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      -- 1 clear (remove=true) + 1 set = 2
-      assert.stub(stubAddReloads).was.called(2)
-      assert.stub(stubAddReloads).was.called_with({
-        side = "Red", guid = "CARGO-001", wpn_dbid = 500, number = 999, remove = true
-      })
-      assert.stub(stubAddReloads).was.called_with({
-        side = "Red", guid = "CARGO-001", wpn_dbid = 500, number = 5
-      })
-    end)
-
-    -- Positive: should handle weaponDBID as table of numbers
-    it("should handle weaponDBID as table of numbers", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        mounts = {
-          makeMount({
-            mount_dbid = 100,
-            mount_guid = "MNT-1",
-            mount_weapons = {
-              makeMountWeapon({ wpn_dbid = 500, wpn_current = 5 }),
-              makeMountWeapon({ wpn_dbid = 600, wpn_current = 3 }),
-            },
-          }),
-        },
-      })
-      local cargoProxy = makeLoadCargoUnit({
-        guid = "CARGO-001",
-        mounts = {
-          makeMount({
-            mount_dbid = 200,
-            mount_guid = "MNT-P1",
-            mount_weapons = {
-              makeMountWeapon({ wpn_dbid = 500, wpn_default = 10 }),
-              makeMountWeapon({ wpn_dbid = 600, wpn_default = 10 }),
-            },
-          }),
-        },
-      })
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1", weaponDBID = { 500, 600 } }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      -- 2 clears + 2 sets = 4
-      assert.stub(stubAddReloads).was.called(4)
-    end)
-
-    -- Positive: should skip weapon tally when weaponDBID is nil
-    it("should skip weapon tally when weaponDBID is nil", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        mounts = {
-          makeMount({
-            mount_dbid = 100,
-            mount_guid = "MNT-1",
-            mount_weapons = { makeMountWeapon({ wpn_dbid = 500, wpn_current = 10 }) },
-          }),
-        },
-      })
-      local cargoProxy = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1" }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.stub(stubAddReloads).was_not.called()
-    end)
-
-    -- Positive: should set group name on cargo when source has group
-    it("should set group name on cargo when source has group", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        group = { name = "Alpha", unitlist = { "SRC-001" } },
-        mounts = {},
-      })
-      local cargoProxy = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1" }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.are.equal("Alpha", cargoProxy.group)
-      assert.are.equal("Infantry-1", cargoProxy.name)
-    end)
-
-    -- Negative: should not set group when source has no group
-    it("should not set group when source has no group", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        mounts = {},
-      })
-      local cargoProxy = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1" }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.is_nil(cargoProxy.group)
-      assert.are.equal("Infantry-1", cargoProxy.name)
-    end)
-
-    -- Positive: should log results
-    it("should log results", function()
-      local sourceUnit = makeLoadCargoUnit({
-        guid = "SRC-001",
-        name = "Infantry-1",
-        dbid = 7001,
-        mounts = {},
-      })
-      local cargoProxy = makeLoadCargoUnit({ guid = "CARGO-001", mounts = {} })
-      local base = makeUnit({
-        guid = "BASE-001",
-        name = "BaseShip",
-        cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
-      })
-      local unitCtx = { name = "Infantry-1" }
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
-        if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
-        if identifier == "SRC-001" then return sourceUnit end
-        if identifier == "CARGO-001" then return cargoProxy end
-        return nil
-      end))
-
-      AmphibiousLogistics.loadCargo(base, unitCtx, "Red")
-
-      assert.stub(logStub).was.called(1)
-      local callArgs = logStub.calls[1].vals
-      assert.are.equal("amphibiousLogistics", callArgs[1])
-      assert.truthy(string.find(callArgs[2], "ship=BaseShip: Load cargo | total=1 ok=1"))
-      assert.truthy(string.find(callArgs[2], "%[OK%]"))
     end)
   end)
 end)

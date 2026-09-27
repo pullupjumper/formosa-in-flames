@@ -4,7 +4,6 @@ local config = require("src.core.config")
 local saveData = require("src.core.saveData")
 local constants = require("src.core.constants")
 local StrikePlanner = require("src.modules.strikePlanner.init")
-local UnitGenerator = require("src.modules.unitGenerator")
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local Sigint = require("src.modules.ew.sigint")
@@ -14,8 +13,8 @@ local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 
 if config.isSaved then
-  MissileSystem.seedGroundForceState(config.c.ground, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))
-  MissileSystem.seedGroundForceState(config.t.ground, PersistentState.groundForces(saveData, constants.SIDES.PLAYER))
+  MissileSystem.seedGroundForceState(config, saveData, constants.SIDES.ENEMY)
+  MissileSystem.seedGroundForceState(config, saveData, constants.SIDES.PLAYER)
   PersistentState.reset(saveData)
 end
 
@@ -96,7 +95,8 @@ runInit(function(state)
   initEventActions()
   initSpecialActions()
   LandingOps.init(config.c.amphibOps, PersistentState.landingOps(state))
-  CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER), config.c.commsJamming.aircraftDefaults)
+  CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER),
+    config.c.commsJamming.aircraftDefaults)
   StrikePlanner.init(config, PersistentState.strikePlanner(state))
   RunwayRepairment.initRunways(config, PersistentState.targetlist(state),
     PersistentState.runwayRepair(state, constants.SIDES.PLAYER).runways,
@@ -125,14 +125,12 @@ runInit(function(state)
       config.c.commsJamming.aircraftDefaults)
   end
 
-  local chinaGround = PersistentState.groundForces(state, constants.SIDES.ENEMY)
-  if chinaGround.enabled then
-    MissileSystem.initMissileSystemContexts(config.c.ground, chinaGround)
+  if PersistentState.groundForces(state, constants.SIDES.ENEMY).enabled then
+    MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.ENEMY)
   end
 
-  local taiwanGround = PersistentState.groundForces(state, constants.SIDES.PLAYER)
-  if taiwanGround.enabled then
-    MissileSystem.initMissileSystemContexts(config.t.ground, taiwanGround)
+  if PersistentState.groundForces(state, constants.SIDES.PLAYER).enabled then
+    MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.PLAYER)
   end
 
   if config.isDevMode then

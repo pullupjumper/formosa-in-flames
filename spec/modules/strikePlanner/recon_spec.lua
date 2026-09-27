@@ -844,7 +844,7 @@ describe("Recon", function()
       assert.stub(scheduleStub).was.called(1)
     end)
 
-    -- Negative: trackTarget reactivates a settled entry by clearing isFinished. The follow-on
+    -- Negative: trackTargets reactivates a settled entry by clearing isFinished. The follow-on
     -- wave is already queued by then, so settling again must not schedule a second time --
     -- otherwise every lost contact walks the /N strike counter forward.
     it("should not schedule operations twice when a settled entry is re-tracked", function()
@@ -854,6 +854,9 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(uav))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
+      trackStub(stub(GameApi, "VP_GetSide").returns({
+        unitsBy = function() return { { name = "", guid = "UAV-001" } } end,
+      }))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
       local reconCtx = makeReconContext({ entry })
@@ -865,9 +868,8 @@ describe("Recon", function()
       assert.stub(scheduleStub).was.called(1)
 
       -- targetingProcess hands the still-airborne UAV a contact to shadow
-      local assigned = Recon.trackTarget(reconCtx, { { name = "", guid = "UAV-001" } }, entry.unitDBID,
-        { guid = "CONTACT-001" })
-      assert.is_true(assigned)
+      Recon.trackTargets(reconCtx, { { platformDBID = entry.unitDBID, target = { guid = "CONTACT-001" } } })
+      assert.are.equal("CONTACT-001", entry.trackingTargetGUID)
       assert.is_false(entry.isFinished)
 
       -- Tick 2: the contact is lost, re-settling the entry
@@ -983,47 +985,169 @@ describe("Recon", function()
   end)
 
   -- ============================================================================
-  -- trackTarget
+  -- trackTargets
   -- ============================================================================
 
-  describe("trackTarget", function()
+  describe("trackTargets", function()
     local UAVDBID = constants.PLATFORMS.BZK005
     local target = { guid = "CONTACT-001", latitude = 23.0, longitude = 119.0 }
+    ---@type table[]|nil
+    local aircraft
+    local vpGetSideStub
 
-    -- Positive: return true when UAV already tracking same target
-    it("should return true when UAV already assigned to track same target", function()
-      local entry = makeUAVEntry({
-        hasLaunched = true,
-        unitGUID = "UAV-001",
-        trackingTargetGUID = "CONTACT-001",
-      })
-      local uav = makeUnit({ guid = "UAV-001" })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(uav))
-
-      local reconCtx = makeReconContext({ entry })
-      local result = Recon.trackTarget(reconCtx, {}, UAVDBID, target)
-
-      assert.is_true(result)
+    before_each(function()
+      aircraft = {}
+      vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide").invokes(function()
+        return { unitsBy = function() return aircraft end }
+      end))
     end)
 
-    -- Negative: already tracking but UAV destroyed
-    it("should not return early when tracked UAV is destroyed", function()
+    ---Build a tracking request for a target
+    ---@param requestTarget table
+    ---@param platformDBID? number
+    ---@return SBJ__TrackingRequestEntry
+    local function makeRequest(requestTarget, platformDBID)
+      return { platformDBID = platformDBID or UAVDBID, target = requestTarget }
+    end
+
+    -- ========================================================================
+    -- Request handling
+    -- ========================================================================
+
+    -- Positive: an untracked target gets an airborne UAV of the requested platform
+    it("should assign an airborne UAV of the requested platform to an untracked target", function()
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      aircraft = { { guid = "UAV-001" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Airborne" })))
+      trackStub(stub(GameApi, "Tool_Range").returns(50))
+
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+
+      assert.is_true(queueEntry.isTracking)
+      assert.are.equal("CONTACT-001", queueEntry.trackingTargetGUID)
+    end)
+
+    -- Positive: several requests share one side sweep
+    it("should sweep the side once for several requests", function()
+      local entry1 = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      local entry2 = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-002" })
+      aircraft = { { guid = "UAV-001" }, { guid = "UAV-002" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        return makeUnit({ guid = guid, dbid = UAVDBID, condition = "Airborne" })
+      end))
+      trackStub(stub(GameApi, "Tool_Range").returns(50))
+
+      Recon.trackTargets(makeReconContext({ entry1, entry2 }), {
+        makeRequest({ guid = "CONTACT-001" }),
+        makeRequest({ guid = "CONTACT-002" }),
+      })
+
+      assert.stub(vpGetSideStub).was.called(1)
+      -- The first request commits UAV-001, so the second must fall through to UAV-002
+      assert.are.equal("CONTACT-001", entry1.trackingTargetGUID)
+      assert.are.equal("CONTACT-002", entry2.trackingTargetGUID)
+    end)
+
+    -- Positive: a target already under a UAV's eye short-circuits before the side sweep,
+    -- which is what keeps an operation retrying inside its observation window cheap
+    it("should skip the side sweep when the target is already tracked", function()
+      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001", trackingTargetGUID = "CONTACT-001" })
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
+
+      Recon.trackTargets(makeReconContext({ entry }), { makeRequest(target) })
+
+      assert.stub(vpGetSideStub).was_not.called()
+    end)
+
+    -- Negative: a destroyed tracker no longer holds the target, so the sweep must run
+    it("should sweep the side when the UAV tracking the target is destroyed", function()
       local entry = makeUAVEntry({
         hasLaunched = true,
         unitGUID = "UAV-001",
         trackingTargetGUID = "CONTACT-001",
       })
-
-      -- UAV in queue is destroyed
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local reconCtx = makeReconContext({ entry })
-      local result = Recon.trackTarget(reconCtx, {}, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ entry }), { makeRequest(target) })
 
-      -- No available UAV => false
-      assert.is_false(result)
+      assert.stub(vpGetSideStub).was.called(1)
     end)
+
+    -- Negative: no enemy side
+    it("should not track when VP_GetSide returns nil", function()
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      vpGetSideStub.invokes(function() return nil end)
+
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+
+      assert.is_nil(queueEntry.trackingTargetGUID)
+    end)
+
+    -- Negative: the side has no aircraft
+    it("should not track when the side has no aircraft", function()
+      aircraft = nil
+
+      Recon.trackTargets(makeReconContext({}), { makeRequest({ guid = "CONTACT-001" }), makeRequest({ guid = "CONTACT-002" }) })
+
+      -- A nil aircraft list would reach the UAV search and fail on ipairs
+      assert.stub(vpGetSideStub).was.called(1)
+    end)
+
+    -- Boundary: nothing requested
+    it("should do nothing for an empty request list", function()
+      Recon.trackTargets(makeReconContext({}), {})
+
+      assert.stub(vpGetSideStub).was_not.called()
+    end)
+
+    -- Boundary: a settled entry must not keep claiming its old target
+    it("should reassign a free UAV when the tracking entry is already finished", function()
+      -- Same target GUID and a live unit, but the entry settled: processQueue skips it,
+      -- so treating it as "already tracked" would strand the target permanently
+      local settledEntry = makeUAVEntry({
+        hasLaunched = true,
+        unitGUID = "UAV-OLD",
+        trackingTargetGUID = "CONTACT-001",
+        isTracking = true,
+        isFinished = true,
+      })
+      local freeEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-FREE" })
+      local oldUAV = makeUnit({ guid = "UAV-OLD", dbid = UAVDBID, condition = "Airborne" })
+      local freeUAV = makeUnit({ guid = "UAV-FREE", dbid = UAVDBID, condition = "Airborne" })
+      aircraft = { { name = "", guid = "UAV-FREE" } }
+
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        if guid == "UAV-OLD" then return oldUAV end
+        if guid == "UAV-FREE" then return freeUAV end
+        return nil
+      end))
+      trackStub(stub(GameApi, "Tool_Range").returns(50))
+
+      Recon.trackTargets(makeReconContext({ settledEntry, freeEntry }), { makeRequest(target) })
+
+      assert.are.equal("CONTACT-001", freeEntry.trackingTargetGUID)
+      assert.is_false(freeEntry.isFinished)
+    end)
+
+    -- Boundary: satellite entries in queue should be ignored during tracking lookup
+    it("should ignore satellite entries when looking for tracked UAV", function()
+      -- unitGUID is what makes the entry look "already tracking"; only the type
+      -- check keeps it out, so without it this request would skip the sweep
+      local satEntry = makeSatelliteEntry({
+        trackingTargetGUID = "CONTACT-001",
+        unitGUID = "SAT-001",
+      })
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "SAT-001" })))
+
+      Recon.trackTargets(makeReconContext({ satEntry }), { makeRequest(target) })
+
+      assert.stub(vpGetSideStub).was.called(1)
+    end)
+
+    -- ========================================================================
+    -- UAV selection
+    -- ========================================================================
 
     -- Positive: assign closest available UAV to track target
     it("should assign closest available UAV from units list", function()
@@ -1041,9 +1165,11 @@ describe("Recon", function()
         latitude = 23.5,
         longitude = 119.5,
       })
+      local farEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-FAR" })
       local queueEntry = makeUAVEntry({
-        hasLaunched = true, unitGUID = "UAV-CLOSE",
+        hasLaunched = true, unitGUID = "UAV-CLOSE", isFinished = true,
       })
+      aircraft = { { guid = "UAV-FAR" }, { guid = "UAV-CLOSE" } }
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
         if guid == "UAV-FAR" then return farUAV end
@@ -1055,155 +1181,89 @@ describe("Recon", function()
         return 100                                  -- closeUAV
       end))
 
-      local units = {
-        { guid = "UAV-FAR" },
-        { guid = "UAV-CLOSE" },
-      }
-      local reconCtx = makeReconContext({ queueEntry })
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ farEntry, queueEntry }), { makeRequest(target) })
 
-      assert.is_true(result)
       assert.is_true(queueEntry.isTracking)
       assert.are.equal("CONTACT-001", queueEntry.trackingTargetGUID)
       assert.is_false(queueEntry.isFinished) -- Reactivated
+      assert.is_nil(farEntry.trackingTargetGUID)
     end)
 
     -- Negative: no airborne UAVs
-    it("should return false when no airborne UAVs available", function()
-      local groundedUAV = makeUnit({
-        guid = "UAV-001", dbid = UAVDBID, condition = "Landed",
-      })
+    it("should not assign a UAV that is not airborne", function()
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      aircraft = { { guid = "UAV-001" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Landed" })))
+      trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(groundedUAV))
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
 
-      local units = { { guid = "UAV-001" } }
-      local reconCtx = makeReconContext({})
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
-
-      assert.is_false(result)
+      assert.is_nil(queueEntry.trackingTargetGUID)
+      assert.is_true(hasLogCall("recon", "reason=no_available_uav"))
     end)
 
     -- Negative: UAVs available but wrong DBID
-    it("should return false when available UAVs have wrong DBID", function()
-      local wrongUAV = makeUnit({
-        guid = "UAV-001", dbid = 9999, condition = "Airborne",
-      })
+    it("should not assign a UAV of a different platform", function()
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      aircraft = { { guid = "UAV-001" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-001", dbid = 9999, condition = "Airborne" })))
+      trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(wrongUAV))
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
 
-      local units = { { guid = "UAV-001" } }
-      local reconCtx = makeReconContext({})
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
-
-      assert.is_false(result)
+      assert.is_nil(queueEntry.trackingTargetGUID)
     end)
 
     -- Negative: UAV found but not in recon queue
-    it("should return false when closest UAV is not in recon queue", function()
-      local uav = makeUnit({
-        guid = "UAV-NOTINQUEUE", dbid = UAVDBID, condition = "Airborne",
-      })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(uav))
+    it("should report an error when the closest UAV is not in the recon queue", function()
+      aircraft = { { guid = "UAV-NOTINQUEUE" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-NOTINQUEUE", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      local units = { { guid = "UAV-NOTINQUEUE" } }
-      local reconCtx = makeReconContext({}) -- Empty queue
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({}), { makeRequest(target) })
 
-      assert.is_false(result)
+      assert.is_true(hasErrorCall("reason=uav_not_in_recon_queue"))
     end)
 
     -- Boundary: UAV distance exceeds max threshold (1000)
     it("should not select UAV beyond max distance threshold", function()
-      local farUAV = makeUnit({
-        guid = "UAV-001", dbid = UAVDBID, condition = "Airborne",
-      })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(farUAV))
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      aircraft = { { guid = "UAV-001" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(1500))
 
-      local units = { { guid = "UAV-001" } }
-      local reconCtx = makeReconContext({})
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
 
-      assert.is_false(result)
+      assert.is_nil(queueEntry.trackingTargetGUID)
     end)
 
     -- Boundary: Tool_Range returns nil
     it("should skip UAV when Tool_Range returns nil", function()
-      local uav = makeUnit({
-        guid = "UAV-001", dbid = UAVDBID, condition = "Airborne",
-      })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(uav))
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      aircraft = { { guid = "UAV-001" } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(nil))
 
-      local units = { { guid = "UAV-001" } }
-      local reconCtx = makeReconContext({})
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
 
-      assert.is_false(result)
-    end)
-
-    -- Boundary: a settled entry must not keep claiming its old target
-    it("should reassign a free UAV when the tracking entry is already finished", function()
-      -- Same target GUID and a live unit, but the entry settled: processQueue skips it,
-      -- so treating it as "already tracked" would strand the target permanently
-      local settledEntry = makeUAVEntry({
-        hasLaunched = true,
-        unitGUID = "UAV-OLD",
-        trackingTargetGUID = "CONTACT-001",
-        isTracking = true,
-        isFinished = true,
-      })
-      local freeEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-FREE" })
-      local oldUAV = makeUnit({ guid = "UAV-OLD", dbid = UAVDBID, condition = "Airborne" })
-      local freeUAV = makeUnit({ guid = "UAV-FREE", dbid = UAVDBID, condition = "Airborne" })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "UAV-OLD" then return oldUAV end
-        if guid == "UAV-FREE" then return freeUAV end
-        return nil
-      end))
-      trackStub(stub(GameApi, "Tool_Range").returns(50))
-
-      local reconCtx = makeReconContext({ settledEntry, freeEntry })
-      local result = Recon.trackTarget(reconCtx, { { name = "", guid = "UAV-FREE" } }, UAVDBID, target)
-
-      assert.is_true(result)
-      assert.are.equal("CONTACT-001", freeEntry.trackingTargetGUID)
-      assert.is_false(freeEntry.isFinished)
-    end)
-
-    -- Boundary: satellite entries in queue should be ignored during tracking lookup
-    it("should ignore satellite entries when looking for tracked UAV", function()
-      -- unitGUID is what makes the entry look "already tracking"; only the type
-      -- check keeps it out, so without it this entry would short-circuit to true
-      local satEntry = makeSatelliteEntry({
-        trackingTargetGUID = "CONTACT-001",
-        unitGUID = "SAT-001",
-      })
-      local sat = makeUnit({ guid = "SAT-001" })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sat))
-
-      local reconCtx = makeReconContext({ satEntry })
-      -- No units available
-      local result = Recon.trackTarget(reconCtx, {}, UAVDBID, target)
-
-      assert.is_false(result)
+      assert.is_nil(queueEntry.trackingTargetGUID)
     end)
 
     -- Boundary: GetUnit returns nil for unit in units list
     it("should skip units that return nil from GetUnit", function()
+      local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
+      aircraft = { { guid = "UAV-001" } }
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local units = { { guid = "UAV-001" } }
-      local reconCtx = makeReconContext({})
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
 
-      assert.is_false(result)
+      assert.is_nil(queueEntry.trackingTargetGUID)
+      assert.is_true(hasLogCall("recon", "reason=no_available_uav"))
     end)
 
     -- Negative: a UAV shadowing another target must not be poached, however close it is
@@ -1214,6 +1274,7 @@ describe("Recon", function()
       local freeUAV = makeUnit({
         guid = "UAV-FREE", dbid = UAVDBID, condition = "Airborne", latitude = 28.0, longitude = 122.0,
       })
+      -- Also proves a tracker of a different target does not count as tracking this one
       local busyEntry = makeUAVEntry({
         hasLaunched = true,
         unitGUID = "UAV-BUSY",
@@ -1221,6 +1282,7 @@ describe("Recon", function()
         trackingTargetGUID = "CONTACT-OTHER",
       })
       local freeEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-FREE" })
+      aircraft = { { guid = "UAV-BUSY" }, { guid = "UAV-FREE" } }
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
         if guid == "UAV-BUSY" then return busyUAV end
@@ -1233,39 +1295,35 @@ describe("Recon", function()
         return 100
       end))
 
-      local units = { { guid = "UAV-BUSY" }, { guid = "UAV-FREE" } }
-      local reconCtx = makeReconContext({ busyEntry, freeEntry })
-      local result = Recon.trackTarget(reconCtx, units, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ busyEntry, freeEntry }), { makeRequest(target) })
 
-      assert.is_true(result)
       -- The nearer UAV keeps the target it was already watching
       assert.are.equal("CONTACT-OTHER", busyEntry.trackingTargetGUID)
       assert.are.equal("CONTACT-001", freeEntry.trackingTargetGUID)
     end)
 
     -- Negative: every airborne UAV is committed elsewhere
-    it("should return false when the only airborne UAV is already tracking", function()
-      local busyUAV = makeUnit({ guid = "UAV-BUSY", dbid = UAVDBID, condition = "Airborne" })
+    it("should leave the target unassigned when the only airborne UAV is already tracking", function()
       local busyEntry = makeUAVEntry({
         hasLaunched = true,
         unitGUID = "UAV-BUSY",
         isTracking = true,
         trackingTargetGUID = "CONTACT-OTHER",
       })
+      aircraft = { { name = "", guid = "UAV-BUSY" } }
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(busyUAV))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-BUSY", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      local reconCtx = makeReconContext({ busyEntry })
-      local result = Recon.trackTarget(reconCtx, { { name = "", guid = "UAV-BUSY" } }, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ busyEntry }), { makeRequest(target) })
 
-      assert.is_false(result)
       assert.are.equal("CONTACT-OTHER", busyEntry.trackingTargetGUID)
+      assert.is_true(hasLogCall("recon", "reason=no_available_uav"))
     end)
 
     -- Boundary: a settled entry releases its UAV back into the pool
     it("should reuse a UAV whose tracking entry has finished", function()
-      local settledUAV = makeUnit({ guid = "UAV-SETTLED", dbid = UAVDBID, condition = "Airborne" })
       local settledEntry = makeUAVEntry({
         hasLaunched = true,
         unitGUID = "UAV-SETTLED",
@@ -1273,146 +1331,16 @@ describe("Recon", function()
         trackingTargetGUID = "CONTACT-OTHER",
         isFinished = true,
       })
+      aircraft = { { name = "", guid = "UAV-SETTLED" } }
 
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(settledUAV))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(
+        makeUnit({ guid = "UAV-SETTLED", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      local reconCtx = makeReconContext({ settledEntry })
-      local result = Recon.trackTarget(reconCtx, { { name = "", guid = "UAV-SETTLED" } }, UAVDBID, target)
+      Recon.trackTargets(makeReconContext({ settledEntry }), { makeRequest(target) })
 
-      assert.is_true(result)
       assert.are.equal("CONTACT-001", settledEntry.trackingTargetGUID)
       assert.is_false(settledEntry.isFinished)
-    end)
-  end)
-
-  -- ============================================================================
-  -- trackTargets
-  -- ============================================================================
-
-  describe("trackTargets", function()
-    local aircraft
-    local vpGetSideStub
-    local trackTargetStub
-
-    before_each(function()
-      aircraft = { { guid = "UAV-001" } }
-      vpGetSideStub = trackStub(stub(GameApi, "VP_GetSide").returns({
-        unitsBy = function() return aircraft end,
-      }))
-      trackTargetStub = trackStub(stub(Recon, "trackTarget").returns(true))
-    end)
-
-    ---Build a tracking request for a target GUID
-    ---@param guid string
-    ---@param platformDBID? number
-    ---@return SBJ__TrackingRequestEntry
-    local function makeRequest(guid, platformDBID)
-      return { platformDBID = platformDBID or constants.PLATFORMS.WZ8, target = { guid = guid } }
-    end
-
-    -- Positive: an untracked target is handed to trackTarget with the enemy side's aircraft
-    it("should send the requested platform after an untracked target", function()
-      local reconCtx = makeReconContext({})
-      local request = makeRequest("CONTACT-001", constants.PLATFORMS.BZK005)
-
-      Recon.trackTargets(reconCtx, { request })
-
-      assert.stub(trackTargetStub).was.called(1)
-      assert.stub(trackTargetStub).was.called_with(reconCtx, aircraft, constants.PLATFORMS.BZK005, request.target)
-    end)
-
-    -- Positive: several requests share one side sweep
-    it("should sweep the side once for several requests", function()
-      Recon.trackTargets(makeReconContext({}), { makeRequest("CONTACT-001"), makeRequest("CONTACT-002") })
-
-      assert.stub(vpGetSideStub).was.called(1)
-      assert.stub(trackTargetStub).was.called(2)
-    end)
-
-    -- Positive: a target already under a UAV's eye short-circuits before the side sweep,
-    -- which is what keeps an operation retrying inside its observation window cheap
-    it("should skip the side sweep when the target is already tracked", function()
-      local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001", trackingTargetGUID = "CONTACT-001" })
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
-
-      Recon.trackTargets(makeReconContext({ entry }), { makeRequest("CONTACT-001") })
-
-      assert.stub(vpGetSideStub).was_not.called()
-      assert.stub(trackTargetStub).was_not.called()
-    end)
-
-    -- Negative: no enemy side
-    it("should not track when VP_GetSide returns nil", function()
-      vpGetSideStub.returns(nil)
-
-      Recon.trackTargets(makeReconContext({}), { makeRequest("CONTACT-001") })
-
-      assert.stub(trackTargetStub).was_not.called()
-    end)
-
-    -- Negative: the side has no aircraft
-    it("should not track when the side has no aircraft", function()
-      aircraft = nil
-
-      Recon.trackTargets(makeReconContext({}), { makeRequest("CONTACT-001"), makeRequest("CONTACT-002") })
-
-      assert.stub(vpGetSideStub).was.called(1)
-      assert.stub(trackTargetStub).was_not.called()
-    end)
-
-    -- Boundary: nothing requested
-    it("should do nothing for an empty request list", function()
-      Recon.trackTargets(makeReconContext({}), {})
-
-      assert.stub(vpGetSideStub).was_not.called()
-      assert.stub(trackTargetStub).was_not.called()
-    end)
-  end)
-
-  -- ============================================================================
-  -- isTargetAlreadyTracked
-  -- ============================================================================
-
-  describe("isTargetAlreadyTracked", function()
-    -- Positive: an active UAV shadowing the target
-    it("should report a target watched by an active UAV", function()
-      local entry = makeUAVEntry({
-        hasLaunched = true,
-        unitGUID = "UAV-001",
-        trackingTargetGUID = "CONTACT-001",
-      })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
-
-      assert.is_true(Recon.isTargetAlreadyTracked({ entry }, "CONTACT-001"))
-    end)
-
-    -- Negative: nobody is watching that target
-    it("should report an untracked target", function()
-      local entry = makeUAVEntry({
-        hasLaunched = true,
-        unitGUID = "UAV-001",
-        trackingTargetGUID = "CONTACT-OTHER",
-      })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
-
-      assert.is_false(Recon.isTargetAlreadyTracked({ entry }, "CONTACT-001"))
-    end)
-
-    -- Boundary: a settled entry no longer counts as watching
-    it("should not report a settled entry as tracking", function()
-      local entry = makeUAVEntry({
-        hasLaunched = true,
-        unitGUID = "UAV-001",
-        trackingTargetGUID = "CONTACT-001",
-        isFinished = true,
-      })
-
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
-
-      assert.is_false(Recon.isTargetAlreadyTracked({ entry }, "CONTACT-001"))
     end)
   end)
 
