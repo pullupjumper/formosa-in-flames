@@ -522,30 +522,39 @@ describe("AmphibiousAssault", function()
   end)
 
   -- ============================================================================
-  -- countContactsInArea
+  -- countUnitsInEachArea
   -- ============================================================================
 
   describe("countUnitsInEachArea", function()
-    local function makeUnit(guid, dbid, inZone)
-      return {
-        guid = guid,
-        dbid = dbid,
-        inArea = function(_, area) return inZone == area end
-      }
+    local config = {
+      c = { amphibOps = { operationalZones = { makeZone({ name = "A", casArea = "CAS-A" }), makeZone({ name = "B", casArea = "CAS-B" }) } } }
+    }
+
+    ---Stub China's units; each unit is a makeUnit override table
+    ---@param units table[] Units China owns
+    local function stubChinaUnits(units)
+      local byGuid = {}
+      local sideUnits = {}
+      for _, overrides in ipairs(units) do
+        byGuid[overrides.guid] = makeUnit(overrides)
+        table.insert(sideUnits, { guid = overrides.guid })
+      end
+      trackStub(stub(GameApi, "VP_GetSide").returns({ units = sideUnits }))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return byGuid[guid] end))
     end
 
-    -- Positive: counts landed units per type, per zone
-    it("should count each unit type inside each zone's CAS area", function()
-      local units = {
-        ["U-1"] = makeUnit("U-1", constants.PLATFORMS.ZBD05, "CAS-A"),
-        ["U-2"] = makeUnit("U-2", constants.PLATFORMS.ZBD05, "CAS-A"),
-        ["U-3"] = makeUnit("U-3", constants.PLATFORMS.MC, "CAS-B"),
-      }
-      trackStub(stub(GameApi, "VP_GetSide").returns({ units = { { guid = "U-1" }, { guid = "U-2" }, { guid = "U-3" }, { guid = "GONE" } } }))
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return units[guid] end))
-      local config = {
-        c = { amphibOps = { operationalZones = { { name = "A", casArea = "CAS-A" }, { name = "B", casArea = "CAS-B" } } } }
-      }
+    ---Build an inArea method true only for the given CAS area
+    local function inCasArea(casArea)
+      return function(_, area) return area == casArea end
+    end
+
+    -- Positive: counts each type only in the zone whose CAS area holds the unit
+    it("should count unit types separately for each zone", function()
+      stubChinaUnits({
+        { guid = "U-1", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
+        { guid = "U-2", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
+        { guid = "U-3", dbid = constants.PLATFORMS.MC, inArea = inCasArea("CAS-B") },
+      })
 
       local result = AmphibiousAssault.countUnitsInEachArea(config)
 
@@ -553,9 +562,33 @@ describe("AmphibiousAssault", function()
       assert.are.equal(0, result.A["AirborneCorps"])
       assert.are.equal(1, result.B["AirborneCorps"])
       assert.are.equal(0, result.B["ZBD-05"])
-      assert.are.equal(0, result.B["HMMWV"])
+    end)
+
+    -- Negative: platforms outside the landed unit list are not counted
+    it("should ignore platforms that are not landed unit types", function()
+      stubChinaUnits({ { guid = "U-1", dbid = constants.PLATFORMS.TYPE_071, inArea = inCasArea("CAS-A") } })
+
+      local result = AmphibiousAssault.countUnitsInEachArea(config)
+
+      for _, count in pairs(result.A) do
+        assert.are.equal(0, count)
+      end
+    end)
+
+    -- Boundary: a unit listed on the side but already gone must not break the count
+    it("should skip side units that no longer resolve", function()
+      trackStub(stub(GameApi, "VP_GetSide").returns({ units = { { guid = "GONE" } } }))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+
+      local result = AmphibiousAssault.countUnitsInEachArea(config)
+
+      assert.are.equal(0, result.A["ZBD-05"])
     end)
   end)
+
+  -- ============================================================================
+  -- countContactsInArea
+  -- ============================================================================
 
   describe("countContactsInArea", function()
     local area = { "RP-ZONE-1", "RP-ZONE-2" }

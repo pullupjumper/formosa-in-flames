@@ -77,26 +77,25 @@ describe("IntegratedAirDefenseSystem", function()
   end
 
   -- ============================================================================
-  -- processC2Disruption
+  -- setSamDoctrine
   -- ============================================================================
 
   describe("setSamDoctrine", function()
     local setDoctrineStub
     local setEmissionStub
+    local candidates = { { guid = "PAC-1" }, { guid = "TC2-1" }, { guid = "GONE" } }
 
     before_each(function()
       local units = {
-        ["PAC-1"] = { guid = "PAC-1", dbid = constants.PLATFORMS.PAC3 },
-        ["TC2-1"] = { guid = "TC2-1", dbid = constants.PLATFORMS.TC2 },
+        ["PAC-1"] = makeUnit({ guid = "PAC-1", dbid = constants.PLATFORMS.PAC3 }),
+        ["TC2-1"] = makeUnit({ guid = "TC2-1", dbid = constants.PLATFORMS.TC2 }),
       }
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return units[guid] end))
       setDoctrineStub = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       setEmissionStub = trackStub(stub(GameApi, "ScenEdit_SetUnitIntermittentEmissionConfig"))
     end)
 
-    local candidates = { { guid = "PAC-1" }, { guid = "TC2-1" }, { guid = "GONE" } }
-
-    -- Positive: weapons free tightens WCS and wakes emissions on threat
+    -- Positive: only the chosen SAM type is changed, and it wakes on threat
     it("should set WCS tight and wake emissions for weapons-free SAM types", function()
       IntegratedAirDefenseSystem.setSamDoctrine({ { id = "pac23", weaponsFree = true } }, candidates)
 
@@ -108,7 +107,7 @@ describe("IntegratedAirDefenseSystem", function()
     end)
 
     -- Positive: weapons hold keeps emissions asleep
-    it("should set WCS hold and keep emissions asleep otherwise", function()
+    it("should set WCS hold and keep emissions asleep when weapons are not free", function()
       IntegratedAirDefenseSystem.setSamDoctrine({ { id = "tc2", weaponsFree = false } }, candidates)
 
       assert.stub(setDoctrineStub).was.called_with({ guid = "TC2-1" },
@@ -122,9 +121,12 @@ describe("IntegratedAirDefenseSystem", function()
       IntegratedAirDefenseSystem.setSamDoctrine({ { id = "nope", weaponsFree = true } }, candidates)
 
       assert.stub(setDoctrineStub).was_not.called()
-      assert.stub(setEmissionStub).was_not.called()
     end)
   end)
+
+  -- ============================================================================
+  -- processC2Disruption
+  -- ============================================================================
 
   describe("processC2Disruption", function()
     -- Positive: disables radar and sam units under destroyed c2

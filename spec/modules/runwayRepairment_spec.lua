@@ -99,9 +99,10 @@ describe("RunwayRepairment", function()
     -- Positive: the damaged runway starts its repair clock and the side's repair turns on
     it("should enable repair and stamp the damaged runway's start time", function()
       local repairCtx = { enabled = false, runways = { { guid = "rw-1" }, { guid = "rw-2" } } }
+      local unit = { guid = "rw-1" }
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(3600))
 
-      RunwayRepairment.processRunwayDamage(repairCtx, { guid = "rw-1" })
+      RunwayRepairment.processRunwayDamage(repairCtx, unit)
 
       assert.is_true(repairCtx.enabled)
       assert.are.equal(3600, repairCtx.runways[1].startTime)
@@ -111,9 +112,10 @@ describe("RunwayRepairment", function()
     -- Negative: a runway already under repair keeps its original start time
     it("should not restart the clock of a runway already under repair", function()
       local repairCtx = { enabled = true, runways = { { guid = "rw-1", startTime = 100 } } }
+      local unit = { guid = "rw-1" }
       trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(3600))
 
-      RunwayRepairment.processRunwayDamage(repairCtx, { guid = "rw-1" })
+      RunwayRepairment.processRunwayDamage(repairCtx, unit)
 
       assert.are.equal(100, repairCtx.runways[1].startTime)
     end)

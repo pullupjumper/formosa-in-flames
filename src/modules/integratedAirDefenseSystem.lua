@@ -107,7 +107,7 @@ end
 ---@param units {guid: string}[] Candidate units; only those matching an item's platform are changed
 function IntegratedAirDefenseSystem.setSamDoctrine(doctrineItems, units)
   for _, item in ipairs(doctrineItems) do
-    local dbid = TAIWAN_SAM_DBIDS_BY_MENU_ID[item.id] or 0
+    local dbid = TAIWAN_SAM_DBIDS_BY_MENU_ID[item.id]
     local wcs = item.weaponsFree and constants.WCS.TIGHT or constants.WCS.HOLD
     local emissionFlag = item.weaponsFree and 1 or 0
 

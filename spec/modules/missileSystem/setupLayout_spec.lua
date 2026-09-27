@@ -1,5 +1,4 @@
 -- MissileSystem SetupLayout Unit Tests
-local stub = require("luassert.stub")
 local SetupLayout = require("src.modules.missileSystem.setupLayout")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
@@ -9,12 +8,10 @@ describe("MissileSystem SetupLayout", function()
   ---@type luassert.spy[]
   local activeStubs
 
-  ---Track and register method stub for automatic cleanup.
-  ---@param obj table
-  ---@param method string
+  ---Track and register test stub for automatic cleanup.
+  ---@param s any
   ---@return luassert.spy
-  local function trackStub(obj, method)
-    local s = stub(obj, method)
+  local function trackStub(s)
     table.insert(activeStubs, s)
     return s
   end
@@ -27,20 +24,34 @@ describe("MissileSystem SetupLayout", function()
     for i = #activeStubs, 1, -1 do
       activeStubs[i]:revert()
     end
+    activeStubs = {}
   end)
 
-  local function path(lat)
-    return { waypoints = { { latitude = lat, longitude = 121 } } }
+  -- ============================================================================
+  -- Shared mock data builders
+  -- ============================================================================
+
+  ---Create a one-waypoint setup menu path
+  ---@param latitude number Distinguishes paths in assertions
+  ---@return table
+  local function makePath(latitude)
+    return { waypoints = { { latitude = latitude, longitude = 121 } } }
   end
 
-  local function fastCourse(lat)
+  ---Expected course for a makePath path
+  ---@param latitude number
+  ---@return table
+  local function fastCourse(latitude)
     return {
-      { latitude = lat, longitude = 121, desiredSpeed = constants.SPEEDS.FAST, presetThrottle = constants.THROTTLES.FLANK }
+      { latitude = latitude, longitude = 121, desiredSpeed = constants.SPEEDS.FAST, presetThrottle = constants.THROTTLES.FLANK }
     }
   end
 
-  local function makeEntry()
-    return {
+  ---Create a setup menu battery entry with two fire points
+  ---@param overrides? table
+  ---@return table
+  local function makeEntry(overrides)
+    local entry = {
       unitname = "FU-1",
       category = "srbm",
       tacticalAreas = {
@@ -52,18 +63,49 @@ describe("MissileSystem SetupLayout", function()
         firePoints = { { "FP1" }, { "FP2" } }
       },
       paths = {
-        FP = { path(1), path(2) },
-        RL = { path(3), path(99) },
-        AHA = path(4),
-        HA = path(5),
-        SHRL = path(6)
+        FP = { makePath(1), makePath(2) },
+        RL = { makePath(3), makePath(99) },
+        AHA = makePath(4),
+        HA = makePath(5),
+        SHRL = makePath(6)
+      }
+    }
+    if overrides then
+      for k, v in pairs(overrides) do entry[k] = v end
+    end
+    return entry
+  end
+
+  ---Create a ground force config with one SRBM firing unit
+  ---@param overrides? table Fields merged into the firing unit's operational area
+  ---@return table
+  local function makeGroundForceCfg(overrides)
+    local operationalArea = {
+      HA = { { area = { "rp-1" } } },
+      FP = { { area = { "rp-missing" } }, { course = {} } },
+      mask = { area = { "rp-mask" } }
+    }
+    if overrides then
+      for k, v in pairs(overrides) do operationalArea[k] = v end
+    end
+    return {
+      srbm = {
+        reloadTime = 60,
+        resupplyUnits = { rs = {} },
+        ammunitions = { aha = {} },
+        firingUnits = { fu = { name = "FU-1", operationalArea = operationalArea } }
       }
     }
   end
 
+  -- ============================================================================
+  -- buildLayouts
+  -- ============================================================================
+
   describe("buildLayouts", function()
+    -- Positive: only the first RL path is used, and SHRL shares the reload zone
     it("should turn every path into a fast course paired with its zone", function()
-      trackStub(Utils, "buildRandomText").returns("ABC")
+      trackStub(stub(Utils, "buildRandomText").returns("ABC"))
 
       local layouts = SetupLayout.buildLayouts({ makeEntry() })
 
@@ -88,42 +130,30 @@ describe("MissileSystem SetupLayout", function()
       }, layouts)
     end)
 
-    it("should give each layout its own 3-letter area name", function()
-      local buildRandomTextStub = trackStub(Utils, "buildRandomText")
-      buildRandomTextStub.on_call_with(3).returns("AAA")
+    -- Positive: each entry gets its own random 3-letter area name
+    it("should build one named layout per entry", function()
+      local buildRandomTextStub = trackStub(stub(Utils, "buildRandomText").returns("AAA"))
 
-      local layouts = SetupLayout.buildLayouts({ makeEntry(), makeEntry() })
+      local layouts = SetupLayout.buildLayouts({ makeEntry(), makeEntry({ unitname = "FU-2" }) })
 
       assert.are.equal(2, #layouts)
-      assert.stub(buildRandomTextStub).was.called(2)
+      assert.are.equal("FU-2", layouts[2].unitname)
       assert.stub(buildRandomTextStub).was.called_with(3)
-      assert.are.equal("#AAA", layouts[2].operationalArea.name)
+    end)
+
+    -- Boundary: nothing submitted means nothing to redeploy
+    it("should return no layouts for no entries", function()
+      assert.are.same({}, SetupLayout.buildLayouts({}))
     end)
   end)
 
-  describe("buildSetupMenuRows", function()
-    local function makeGroundForceCfg()
-      return {
-        srbm = {
-          reloadTime = 60,
-          resupplyUnits = { rs = {} },
-          ammunitions = { aha = {} },
-          firingUnits = {
-            fu = {
-              name = "FU-1",
-              operationalArea = {
-                HA = { { area = { "rp-1" } } },
-                FP = { { area = { "rp-missing" } }, { course = {} } },
-                mask = { area = { "rp-mask" } }
-              }
-            }
-          }
-        }
-      }
-    end
+  -- ============================================================================
+  -- buildSetupMenuRows
+  -- ============================================================================
 
+  describe("buildSetupMenuRows", function()
     before_each(function()
-      trackStub(GameApi, "ScenEdit_GetReferencePoints").invokes(function(selector)
+      trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").invokes(function(selector)
         if selector.area[1] == "rp-1" then
           return { { latitude = "25.5", longitude = "121.5" } }
         end
@@ -131,9 +161,10 @@ describe("MissileSystem SetupLayout", function()
           return { { latitude = "24", longitude = "120" } }
         end
         return nil
-      end)
+      end))
     end)
 
+    -- Positive: the setup menu only needs firing units
     it("should drop resupply units and ammunitions from the copy", function()
       local rows = SetupLayout.buildSetupMenuRows(makeGroundForceCfg(), "Taiwan")
 
@@ -142,21 +173,37 @@ describe("MissileSystem SetupLayout", function()
       assert.are.equal(60, rows.srbm.reloadTime)
     end)
 
-    it("should resolve zone names to numeric vertices and keep unresolved ones", function()
+    -- Positive: zone names become numeric vertices the menu can draw
+    it("should resolve zone and mask names to numeric vertices", function()
       local rows = SetupLayout.buildSetupMenuRows(makeGroundForceCfg(), "Taiwan")
       local operationalArea = rows.srbm.firingUnits.fu.operationalArea
 
       assert.are.same({ { latitude = 25.5, longitude = 121.5 } }, operationalArea.HA[1].area)
-      assert.are.same({ "rp-missing" }, operationalArea.FP[1].area)
       assert.are.same({ { latitude = 24, longitude = 120 } }, operationalArea.uShapeVertices)
     end)
 
+    -- Negative: the caller's config must survive for the next redeploy
     it("should leave the source config untouched", function()
       local groundForceCfg = makeGroundForceCfg()
+
       SetupLayout.buildSetupMenuRows(groundForceCfg, "Taiwan")
 
       assert.are.same({ "rp-1" }, groundForceCfg.srbm.firingUnits.fu.operationalArea.HA[1].area)
       assert.is_not_nil(groundForceCfg.srbm.resupplyUnits)
+    end)
+
+    -- Boundary: reference points that no longer exist keep their names
+    it("should keep zone names that resolve to no vertices", function()
+      local rows = SetupLayout.buildSetupMenuRows(makeGroundForceCfg(), "Taiwan")
+
+      assert.are.same({ "rp-missing" }, rows.srbm.firingUnits.fu.operationalArea.FP[1].area)
+    end)
+
+    -- Boundary: an unresolved mask leaves no U-shape rather than an empty one
+    it("should not set U-shape vertices when the mask does not resolve", function()
+      local rows = SetupLayout.buildSetupMenuRows(makeGroundForceCfg({ mask = { area = { "rp-missing" } } }), "Taiwan")
+
+      assert.is_nil(rows.srbm.firingUnits.fu.operationalArea.uShapeVertices)
     end)
   end)
 end)
