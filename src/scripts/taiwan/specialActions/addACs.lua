@@ -5,5 +5,5 @@ local config = require("src.core.config")
 
 PersistentState.update(function(saveData)
   UnitGenerator.addAircraft(config.t.air.landBased.deployedACs)
-  CommsJamming.initTargetAircraftContexts(config, saveData)
+  CommsJamming.updateTargetAircraft(config, saveData)
 end)

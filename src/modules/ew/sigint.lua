@@ -470,7 +470,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data; the side's SIGINT recon aircraft map is filled
 ---@param sideName string Side name to scan for reconnaissance aircraft (China or US)
 ---@return number # Number of reconnaissance aircraft initialized
-function Sigint.initReconAircraftContexts(config, saveData, sideName)
+function Sigint.initSide(config, saveData, sideName)
   local sigintCtx = PersistentState.sigint(saveData, sideName)
   local aircraftDefaults = config.c.commsJamming.aircraftDefaults
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)

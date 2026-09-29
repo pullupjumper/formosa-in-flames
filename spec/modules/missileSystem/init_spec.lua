@@ -298,14 +298,14 @@ describe("MissileSystem", function()
     end)
   end)
 
-  describe("initMissileSystemContexts", function()
+  describe("initSide", function()
     -- Positive: an enabled side builds contexts from its own ground config into its own slice
     it("should init contexts from the side's ground config when the side is enabled", function()
       local config, saveData = makeSides()
       saveData.t.ground.enabled = true
       local contextStub = trackStub(Context, "initMissileSystemContexts")
 
-      MissileSystem.initMissileSystemContexts(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.initSide(config, saveData, constants.SIDES.PLAYER)
 
       assert.stub(contextStub).was.called_with(config.t.ground, saveData.t.ground)
     end)
@@ -315,7 +315,7 @@ describe("MissileSystem", function()
       local config, saveData = makeSides()
       local contextStub = trackStub(Context, "initMissileSystemContexts")
 
-      MissileSystem.initMissileSystemContexts(config, saveData, constants.SIDES.ENEMY)
+      MissileSystem.initSide(config, saveData, constants.SIDES.ENEMY)
 
       assert.stub(contextStub).was_not.called()
     end)

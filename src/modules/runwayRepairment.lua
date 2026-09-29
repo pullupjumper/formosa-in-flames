@@ -10,7 +10,7 @@ local RunwayRepairment = {}
 ---Taiwan runways are found in China's fixed-target list, so that list must be built first.
 ---@param config SBJ__Config Global configuration with runway DBIDs and air base lists
 ---@param saveData SBJ__SaveData Persistent save data; both sides' runway repair lists are filled
-function RunwayRepairment.initRunways(config, saveData)
+function RunwayRepairment.init(config, saveData)
   local taiwanRunways = PersistentState.runwayRepair(saveData, constants.SIDES.PLAYER).runways
   local chinaRunways = PersistentState.runwayRepair(saveData, constants.SIDES.ENEMY).runways
 

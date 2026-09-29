@@ -70,10 +70,10 @@ describe("RunwayRepairment", function()
   end
 
   -- ============================================================================
-  -- initRunways
+  -- init
   -- ============================================================================
 
-  describe("initRunways", function()
+  describe("init", function()
     -- Positive: Taiwan runways come from the target list, China runways from matching facilities
     it("should fill each side's runway list from its own source", function()
       local targetlist = { { guid = "contact-1" } }
@@ -85,7 +85,7 @@ describe("RunwayRepairment", function()
         return { guid = guid, dbid = guid == "fac-1" and 101 or 999 }
       end))
 
-      RunwayRepairment.initRunways(makeConfig(), saveData)
+      RunwayRepairment.init(makeConfig(), saveData)
 
       assert.stub(filterStub).was.called_with(targetlist, { { baseName = "Hsinchu", subTypes = { "Runway" } } })
       assert.are.same({ { guid = "tw-runway-1" } }, saveData.t.repairRunway.runways)
@@ -99,7 +99,7 @@ describe("RunwayRepairment", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns({ actualunitid = "tw-runway-1" }))
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock(nil)))
 
-      RunwayRepairment.initRunways(makeConfig(), saveData)
+      RunwayRepairment.init(makeConfig(), saveData)
 
       assert.are.equal(1, #saveData.t.repairRunway.runways)
       assert.are.same({}, saveData.c.repairRunway.runways)

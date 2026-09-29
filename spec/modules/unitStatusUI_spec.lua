@@ -96,7 +96,7 @@ describe("UnitStatusUI", function()
       removeJammersStub = trackStub(stub(GnssJamming, "removeJammers"))
       addGnssJammerStub = trackStub(stub(GnssJamming, "addGnssJammer"))
       addAircraftStub = trackStub(stub(UnitGenerator, "addAircraft"))
-      initTargetAircraftStub = trackStub(stub(CommsJamming, "initTargetAircraftContexts"))
+      initTargetAircraftStub = trackStub(stub(CommsJamming, "updateTargetAircraft"))
       redeployStub = trackStub(stub(MissileSystem, "redeployFromSetup"))
     end)
 

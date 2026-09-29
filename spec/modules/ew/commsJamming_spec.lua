@@ -1142,10 +1142,10 @@ describe("CommsJamming", function()
   end)
 
   -- ============================================================================
-  -- initCommsJammersContext
+  -- init (jammers)
   -- ============================================================================
 
-  describe("initCommsJammersContext", function()
+  describe("init (jammers)", function()
     local function makeSideMock(units)
       return {
         unitsBy = function(_, unitType)
@@ -1169,7 +1169,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.is_not_nil(saveData.c.commsJamming.jammers["Y9-001"])
       assert.are.equal("Y9-001", saveData.c.commsJamming.jammers["Y9-001"].guid)
@@ -1191,7 +1191,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.is_not_nil(saveData.c.commsJamming.jammers["J15D-001"])
       assert.are.equal("J15D-001", saveData.c.commsJamming.jammers["J15D-001"].guid)
@@ -1209,7 +1209,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.is_not_nil(saveData.c.commsJamming.jammers["J16D-001"])
       assert.are.equal("J16D-001", saveData.c.commsJamming.jammers["J16D-001"].guid)
@@ -1218,11 +1218,11 @@ describe("CommsJamming", function()
     -- Negative: a disabled jamming side registers no jammers
     it("should not scan aircraft when comms jamming is disabled", function()
       local saveData = makeSaveData(makeJammingState(), false)
-      local getSideStub = trackStub(stub(GameApi, "VP_GetSide"))
+      local getSideStub = trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({})))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
-      assert.stub(getSideStub).was_not.called()
+      assert.stub(getSideStub).was_not.called_with({ side = constants.SIDES.ENEMY })
     end)
 
     -- Negative: skips non-EW aircraft
@@ -1237,7 +1237,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.is_nil(saveData.c.commsJamming.jammers["F16-001"])
     end)
@@ -1250,7 +1250,7 @@ describe("CommsJamming", function()
         unitsBy = function() return nil end,
       }))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.are.equal(0, Utils.getCount(saveData.c.commsJamming.jammers))
     end)
@@ -1262,7 +1262,7 @@ describe("CommsJamming", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "GHOST-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.are.equal(0, Utils.getCount(saveData.c.commsJamming.jammers))
     end)
@@ -1293,7 +1293,7 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(config, saveData)
+      CommsJamming.init(config, saveData)
 
       assert.is_not_nil(saveData.c.commsJamming.jammers["Y9-001"])
       assert.is_not_nil(saveData.c.commsJamming.jammers["J15D-001"])
@@ -1303,10 +1303,10 @@ describe("CommsJamming", function()
   end)
 
   -- ============================================================================
-  -- initTargetAircraftContexts
+  -- updateTargetAircraft
   -- ============================================================================
 
-  describe("initTargetAircraftContexts", function()
+  describe("updateTargetAircraft", function()
     local function makeSideMock(units)
       return {
         unitsBy = function()
@@ -1328,7 +1328,7 @@ describe("CommsJamming", function()
         return units[guid]
       end))
 
-      CommsJamming.initTargetAircraftContexts(config, saveData)
+      CommsJamming.updateTargetAircraft(config, saveData)
 
       local landBasedCtx = saveData.t.air.landBased
       assert.stub(getSideStub).was.called_with({ side = constants.SIDES.PLAYER })
@@ -1345,7 +1345,7 @@ describe("CommsJamming", function()
       local saveData = makeSaveData(makeJammingState({ aircraft = { old = {} }, aew = { old = {} } }))
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock(nil)))
 
-      CommsJamming.initTargetAircraftContexts(config, saveData)
+      CommsJamming.updateTargetAircraft(config, saveData)
 
       assert.are.same({}, saveData.t.air.landBased.AEW)
       assert.are.same({}, saveData.t.air.landBased.AC)

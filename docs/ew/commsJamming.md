@@ -135,7 +135,7 @@ saveData.t.iads
 | 函數 | 說明 |
 |---|---|
 | `processCommsJamming(commsJammingConfig, saveData)` | 主入口：執行干擾循環、通訊恢復、飛機品質監控 |
-| `initCommsJammersContext(commsJammingCtx, sideName, aircraftDefaults)` | 初始化干擾機 Context（掃描 Y-9/J-15D/J-16D） |
+| `init(config, saveData)` | 初始化干擾機與台灣目標機 Context（掃描 Y-9/J-15D/J-16D）；目標機另可用 `updateTargetAircraft` 重登 |
 
 ---
 

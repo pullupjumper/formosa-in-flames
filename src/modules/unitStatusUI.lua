@@ -313,7 +313,7 @@ local function applySetupResult(config, saveData, sideName, result)
     UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 
     if sideName == constants.SIDES.PLAYER then
-      CommsJamming.initTargetAircraftContexts(config, saveData)
+      CommsJamming.updateTargetAircraft(config, saveData)
     end
   end
 

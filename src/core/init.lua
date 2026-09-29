@@ -95,19 +95,18 @@ runInit(function(state)
   initEventActions()
   initSpecialActions()
   LandingOps.init(config, state)
-  CommsJamming.initTargetAircraftContexts(config, state)
+  CommsJamming.init(config, state)
   StrikePlanner.init(config, state)
-  RunwayRepairment.initRunways(config, state)
+  RunwayRepairment.init(config, state)
 
   IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.PLAYER)
   IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.ENEMY)
-  CommsJamming.initCommsJammersContext(config, state)
 
-  Sigint.initReconAircraftContexts(config, state, "US")
-  Sigint.initReconAircraftContexts(config, state, constants.SIDES.ENEMY)
+  Sigint.initSide(config, state, "US")
+  Sigint.initSide(config, state, constants.SIDES.ENEMY)
 
-  MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.ENEMY)
-  MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.PLAYER)
+  MissileSystem.initSide(config, state, constants.SIDES.ENEMY)
+  MissileSystem.initSide(config, state, constants.SIDES.PLAYER)
 
   if config.isDevMode then
     Logger.log(constants.TAGS.INIT, "Init data and save.")

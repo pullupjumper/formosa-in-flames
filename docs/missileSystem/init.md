@@ -68,9 +68,9 @@ flowchart TD
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |
 | `buildBatteryStatusRows` | `config, saveData, sideName, systemTypes` | `table<string, SBJ__BatteryStatusRow[]>` | 供狀態 UI 使用，依彈藥補給車名稱分組的電池狀態列 |
 | `seedGroundForceState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.seedGroundForceState` |
-| `initMissileSystemContexts` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.initMissileSystemContexts` |
+| `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.initMissileSystemContexts` |
 
-`seedGroundForceState` / `initMissileSystemContexts` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[context](context.md) 內的同名函式仍維持 `(groundForceCfg, groundForceCtx)`。
+`seedGroundForceState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[context](context.md) 內的同名函式仍維持 `(groundForceCfg, groundForceCtx)`。
 
 > 原本轉發 `Deployment.addMissileSystems` 的門面函式已刪除，外部改用 `deploySide`；`processMoveToPositionEvent` 改為私有，只經 `processUnitEntersArea` 進入。
 

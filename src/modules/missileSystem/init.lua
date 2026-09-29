@@ -294,7 +294,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
 ---@param sideName string Side name (China or Taiwan)
-function MissileSystem.initMissileSystemContexts(config, saveData, sideName)
+function MissileSystem.initSide(config, saveData, sideName)
   local groundForceCtx = PersistentState.groundForces(saveData, sideName)
   if not groundForceCtx.enabled then
     return

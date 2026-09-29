@@ -42,7 +42,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `ensure` | 沒有就建，有就不動 | `ensureLoadoutStartTime` |
 | `process` | 子系統每輪的主入口或狀態分支 | `processMoveToPositionEvent`、`MissileSystem.process` |
 | `start` | 立刻啟動一段流程，不等排程 | `startReloadMovement`、`startLaunchPhase` |
-| `init` | 一次性初始化 | `initQueue` |
+| `init` / `initSide` | 一次性初始化。`init(config, saveData)` 給全域，`initSide(config, saveData, sideName)` 每陣營跑一次；不要寫成 `initXxxContext` | `init`、`initSide`、`initQueue` |
 | `schedule` | 排未來事件 | `schedule` |
 | `log` | 寫 log | `logSchedule`、`logBox` |
 | `try` | `pcall` 包裝 | `tryAddUnit`、`tryCall` |
