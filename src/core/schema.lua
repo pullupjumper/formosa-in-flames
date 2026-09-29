@@ -1287,6 +1287,23 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field weaponDBID? number The weapon DBID to use for the attack; nil uses the firing unit's default weapon
 ---@field sideName? string The side to use for the attack (default: constants.SIDES.ENEMY)
 
+---Inputs for attacking one contact
+---@class SBJ__AttackContactParams: table
+---@field ammoToAllocate integer Total ammunition to allocate for this contact
+---@field firingUnits SBJ__FiringUnit[] Firing units to use for the attack
+---@field weaponDBID? number Weapon DBID to use; nil uses the firing unit's default weapon
+
+---Firing unit / shooter rotation carried across contacts
+---@class SBJ__AttackRotationState: table
+---@field firingUnitIdx integer Current firing unit index
+---@field shooterIdx integer Current shooter index within a group
+
+---One receiver role's inputs for tanker arrival timing
+---@class SBJ__ReceiverContext: table
+---@field role string Receiver role name
+---@field receiver SBJ__MissionDeploymentDescriptor Receiver role deployment descriptor
+---@field receiverTiming SBJ__RoleTiming Calculated receiver timing
+
 ---Parameters for generating missile flight paths
 ---@class SBJ__GenerateMissilePathsParams: table
 ---@field targetLat number Target latitude

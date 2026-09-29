@@ -180,16 +180,18 @@ local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
 end
 
 ---Attack a single contact with weapon allocation from firing units
+---Advances `state` in place so the next contact continues the rotation.
+---@param sideName string The side to use for the attack
 ---@param contactGUID string The target contact to attack
----@param ammoToAllocate integer Total amount of ammunition to allocate for this attack
----@param firingUnits SBJ__FiringUnit[] Array of firing units to use for attack
----@param firingUnitIdx integer Starting firing unit index
----@param shooterIdx integer Starting shooter index
----@param weaponDBID number|nil Specific weapon DBID to use, defaults to nil
----@param sideName string The side to use for the attack, default is 'China'
----@return {firingUnitIdx: integer, shooterIdx: integer, ammoAllocated: integer} # Results including next indices and number of weapons launched
-local function attackContact(contactGUID, ammoToAllocate, firingUnits, firingUnitIdx, shooterIdx, weaponDBID,
-                                     sideName)
+---@param params SBJ__AttackContactParams Ammo, firing units and weapon for this attack
+---@param state SBJ__AttackRotationState Firing unit / shooter rotation, updated in place
+---@return integer # Number of weapons launched
+local function attackContact(sideName, contactGUID, params, state)
+  local ammoToAllocate = params.ammoToAllocate
+  local firingUnits = params.firingUnits
+  local weaponDBID = params.weaponDBID
+  local firingUnitIdx = state.firingUnitIdx
+  local shooterIdx = state.shooterIdx
   -- Initialize variables
   local totalAmmoAllocated = 0
   local attemptCount = 0
@@ -199,10 +201,6 @@ local function attackContact(contactGUID, ammoToAllocate, firingUnits, firingUni
   if contact == nil then
     Logger.error("AttackContact: Contact not found with GUID: " .. tostring(contactGUID))
   else
-    -- Set default values if not provided
-    firingUnitIdx = firingUnitIdx or 1
-    shooterIdx = shooterIdx or 1
-
     -- Process each firing unit until we've allocated enough ammo or tried all firing units
     while firingUnitIdx <= #firingUnits and totalAmmoAllocated < ammoToAllocate and attemptCount < maxAttempts do
       local actualUnit = GameApi.ScenEdit_GetUnit(firingUnits[firingUnitIdx].name, sideName)
@@ -263,14 +261,17 @@ local function attackContact(contactGUID, ammoToAllocate, firingUnits, firingUni
     end
   end
 
-  return { firingUnitIdx = firingUnitIdx, shooterIdx = shooterIdx, ammoAllocated = totalAmmoAllocated }
+  state.firingUnitIdx = firingUnitIdx
+  state.shooterIdx = shooterIdx
+
+  return totalAmmoAllocated
 end
 
 ---Attack multiple contacts with weapon allocation from firing units
 ---@param params SBJ__AttackContactsParams Attack parameters
 ---@return integer # Total number of ammunition launched across all contacts
 function AttackManager.attackContacts(params)
-  local result = { firingUnitIdx = 1, shooterIdx = 1, ammoAllocated = 0 }
+  local state = { firingUnitIdx = 1, shooterIdx = 1 }
   local totalAmmoAllocated = 0
   local contacts = params.contacts or {}
   local qty = params.qty or 1
@@ -279,9 +280,8 @@ function AttackManager.attackContacts(params)
   local sideName = params.sideName or constants.SIDES.ENEMY
 
   for _, contact in ipairs(contacts) do
-    result = attackContact(contact, qty, firingUnits, result.firingUnitIdx, result.shooterIdx, weaponDBID,
-      sideName)
-    totalAmmoAllocated = totalAmmoAllocated + result.ammoAllocated
+    totalAmmoAllocated = totalAmmoAllocated
+      + attackContact(sideName, contact, { ammoToAllocate = qty, firingUnits = firingUnits, weaponDBID = weaponDBID }, state)
   end
 
   return totalAmmoAllocated

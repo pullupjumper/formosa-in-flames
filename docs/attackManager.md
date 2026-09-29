@@ -63,7 +63,7 @@
 flowchart TD
     START["attackContacts(opts)"]
     LOOP_CONTACT["逐一處理 contacts"]
-    ONE["attackContact(contactGUID, qty, ...)"]
+    ONE["attackContact(sideName, contactGUID, params, state)"]
     GETC["ScenEdit_GetContact(side, guid)"]
     LOOP_UNIT["while: 尚未達需求且未超過 maxAttempts"]
     CHECK_GROUP{"actualUnit.group ?"}

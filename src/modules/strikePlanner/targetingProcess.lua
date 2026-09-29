@@ -134,28 +134,27 @@ end
 ---@param patterns SBJ__AirfieldPatternConfig Airfield pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findAirfieldTarget(contact, baseLocationMap, threshold, patterns)
-  local description, guid = contact.type_description, contact.guid
   local isAirfieldFacility =
-      string.find(description, patterns.runwayPattern) or
-      string.find(description, patterns.taxiwayPattern) or
-      string.find(description, patterns.shelterPattern) or
-      string.find(description, patterns.hangarPattern) or
-      string.find(description, patterns.tarmacPattern) or
-      string.find(description, patterns.helipadPattern) or
-      string.find(description, patterns.ammoBunkerPattern) or
-      string.find(description, patterns.ammoRevetmentPattern)
+      string.find(contact.type_description, patterns.runwayPattern) or
+      string.find(contact.type_description, patterns.taxiwayPattern) or
+      string.find(contact.type_description, patterns.shelterPattern) or
+      string.find(contact.type_description, patterns.hangarPattern) or
+      string.find(contact.type_description, patterns.tarmacPattern) or
+      string.find(contact.type_description, patterns.helipadPattern) or
+      string.find(contact.type_description, patterns.ammoBunkerPattern) or
+      string.find(contact.type_description, patterns.ammoRevetmentPattern)
 
   if not isAirfieldFacility then
     return nil
   end
 
   for baseName, location in pairs(baseLocationMap) do
-    if isNearby(location, guid, threshold) then
+    if isNearby(location, contact.guid, threshold) then
       return {
-        name = baseName .. "/" .. description,
-        guid = guid,
+        name = baseName .. "/" .. contact.type_description,
+        guid = contact.guid,
         category = TARGET_CATEGORY.AIRFIELD,
-        subType = description,
+        subType = contact.type_description,
       }
     end
   end
@@ -170,15 +169,14 @@ end
 ---@param patterns SBJ__PortPatternConfig Port pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findPortTarget(contact, portLocationMap, threshold, patterns)
-  local description, guid = contact.type_description, contact.guid
-  if string.find(description, patterns.pierPattern) then
+  if string.find(contact.type_description, patterns.pierPattern) then
     for portName, location in pairs(portLocationMap) do
-      if isNearby(location, guid, threshold) then
+      if isNearby(location, contact.guid, threshold) then
         return {
-          name = portName .. "/" .. description,
-          guid = guid,
+          name = portName .. "/" .. contact.type_description,
+          guid = contact.guid,
           category = TARGET_CATEGORY.PORT,
-          subType = description,
+          subType = contact.type_description,
         }
       end
     end

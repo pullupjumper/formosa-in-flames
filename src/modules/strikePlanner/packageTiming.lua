@@ -194,20 +194,14 @@ local function findEarlierArrival(currentArrival, candidateArrival)
 end
 
 ---Calculate one receiver's arrival at a named tanker mission zone
----@param packageData SBJ__PackageTemplate Package containing tanker mission configuration
----@param receiver SBJ__MissionDeploymentDescriptor Receiver role deployment descriptor
----@param receiverTiming SBJ__RoleTiming Calculated receiver timing
----@param role string Receiver role name
----@param tankerMissionName string Referenced tanker mission name
 ---@param timingConfig SBJ__AirTimingConfig Air timing configuration
+---@param packageData SBJ__PackageTemplate Package containing tanker mission configuration
+---@param receiverCtx SBJ__ReceiverContext Receiver role, descriptor and timing
+---@param tankerMissionName string Referenced tanker mission name
 ---@return number|nil # Receiver arrival timestamp, or nil when range data is unavailable
-local function calculateReceiverArrivalAtTankerMission(
-    packageData,
-    receiver,
-    receiverTiming,
-    role,
-    tankerMissionName,
-    timingConfig)
+local function calculateReceiverArrivalAtTankerMission(timingConfig, packageData, receiverCtx, tankerMissionName)
+  local receiver = receiverCtx.receiver
+  local role = receiverCtx.role
   local tankerMissionParams = findTankerMissionParams(packageData, tankerMissionName)
   local tankerZonePoint = tankerMissionParams and getMissionZonePoint(tankerMissionParams)
   if not tankerZonePoint then
@@ -220,7 +214,7 @@ local function calculateReceiverArrivalAtTankerMission(
   end
 
   local transitTime = calculateFlightTimeFromDistance(distance, role, timingConfig)
-  return receiverTiming.startTime + addFlightTimeSafetyMargin(transitTime, timingConfig)
+  return receiverCtx.receiverTiming.startTime + addFlightTimeSafetyMargin(transitTime, timingConfig)
 end
 
 ---Calculate the earliest arrival for one receiver role across referenced tanker missions
@@ -238,16 +232,10 @@ local function calculateEarliestRoleReceiverArrival(packageData, roleTimingMap, 
     return nil
   end
 
+  local receiverCtx = { role = role, receiver = receiver, receiverTiming = receiverTiming }
   local earliestArrival = nil
   for _, tankerMissionName in ipairs(opts.TankerMissionList) do
-    local arrivalTime = calculateReceiverArrivalAtTankerMission(
-      packageData,
-      receiver,
-      receiverTiming,
-      role,
-      tankerMissionName,
-      timingConfig
-    )
+    local arrivalTime = calculateReceiverArrivalAtTankerMission(timingConfig, packageData, receiverCtx, tankerMissionName)
     earliestArrival = findEarlierArrival(earliestArrival, arrivalTime)
   end
 
