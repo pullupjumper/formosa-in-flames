@@ -160,14 +160,13 @@ end
 ---Merge log field tables left to right into a new table
 ---Producers building deferred SBJ__LogResult values need the merged table
 ---rather than the formatted string LogFormat.fields returns.
----@param fields table<string, any>|nil Base field values
----@param extraFields? table<string, any> Additional fields overriding fields
----@param moreFields? table<string, any> Additional fields overriding extraFields
+---@param ... table<string, any>|nil Field tables; later ones override earlier ones
 ---@return table<string, any> # New table holding the merged fields
-function LogFormat.merge(fields, extraFields, moreFields)
+function LogFormat.merge(...)
   local merged = {}
 
-  for _, source in ipairs({ fields or {}, extraFields or {}, moreFields or {} }) do
+  for i = 1, select("#", ...) do
+    local source = select(i, ...) or {}
     for key, value in pairs(source) do
       merged[key] = value
     end
@@ -179,12 +178,10 @@ end
 ---Format key=value fields in canonical order
 ---Tables merge left to right; nil values are omitted because Lua table
 ---constructors cannot hold them.
----@param fields table<string, any> Field values keyed by field name
----@param extraFields? table<string, any> Additional fields overriding fields
----@param moreFields? table<string, any> Additional fields overriding extraFields
+---@param ... table<string, any>|nil Field tables keyed by field name; later ones override earlier ones
 ---@return string # Space separated key=value pairs in canonical order
-function LogFormat.fields(fields, extraFields, moreFields)
-  local merged = LogFormat.merge(fields, extraFields, moreFields)
+function LogFormat.fields(...)
+  local merged = LogFormat.merge(...)
 
   local keys = {}
   for key in pairs(merged) do
@@ -314,11 +311,11 @@ function LogFormat.report(logTag, scope, action)
   end
 
   ---Emit the buffered rows, splitting them across the info and error sinks
-  ---@param actionFields? table<string, any> Batch-level counters appended to the action; use this for totals that are only known after the loop
-  function report.emit(actionFields)
+  ---@param totals? table<string, any> Batch-level counters appended to the action; use this for totals that are only known after the loop
+  function report.emit(totals)
     local fullAction = action
-    if actionFields then
-      fullAction = action .. " " .. LogFormat.fields(actionFields)
+    if totals then
+      fullAction = action .. " " .. LogFormat.fields(totals)
     end
 
     local infoRows, errorRows = {}, {}
