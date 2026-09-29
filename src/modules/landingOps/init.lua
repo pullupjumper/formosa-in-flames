@@ -8,26 +8,36 @@ local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 local Logger = require("src.utils.logger")
+local PersistentState = require("src.core.persistentState")
 
 local LandingOps = {}
 
 ---Initialize landing operations runtime data
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
-function LandingOps.init(amphibOpsConfig, landingState)
-  ShipMovement.calculateDestination(amphibOpsConfig, landingState.amphibOps.calculationResult)
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; China's amphibious calculation result is filled
+function LandingOps.init(config, saveData)
+  ShipMovement.calculateDestination(config.c.amphibOps, PersistentState.landingOps(saveData).amphibOps.calculationResult)
 end
 
 ---Process all landing operation phases for the current event tick
 ---@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
----@param contacts CMO__Contact[] Contact list from the game
----@param currentTime number Current scenario time in seconds
----@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-function LandingOps.process(config, landingState, contacts, currentTime, filteredShips)
+---@param saveData SBJ__SaveData Persistent save data; China's amphibious, recon, and ground slices are mutated
+function LandingOps.process(config, saveData)
+  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
+  if not contacts then
+    Logger.error("contacts is nil")
+    return
+  end
+
+  local filteredShips = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.SHIP)
+  if not filteredShips then
+    Logger.error("filteredShips is nil")
+    return
+  end
+
   local startTime = os.clock()
 
-  Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
+  Coordinator.process(config, PersistentState.landingOps(saveData), contacts, GameApi.ScenEdit_CurrentTime(), filteredShips)
   local endTime = os.clock()
   Logger.log(constants.TAGS.SHIP_MOVEMENT, LogFormat.line("OK", {
     scope = "landingOpsProcess",
@@ -36,15 +46,15 @@ function LandingOps.process(config, landingState, contacts, currentTime, filtere
 end
 
 ---Launch amphibious combat vehicles for a ship when it is in a valid zone
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration
+---@param config SBJ__Config Global configuration table
 ---@param ship CMO__Unit Ship unit from the event context
 ---@return boolean # Whether the launch workflow was handled successfully
-function LandingOps.launchACV(amphibOpsConfig, ship)
+function LandingOps.launchACV(config, ship)
   if not AmphibiousAssault.isFerryOrLST(ship) then
     return false
   end
 
-  local zone = AmphibiousAssault.getShipZone(amphibOpsConfig, ship)
+  local zone = AmphibiousAssault.getShipZone(config.c.amphibOps, ship)
   if not zone then
     return false
   end
@@ -75,12 +85,12 @@ function LandingOps.launchACV(amphibOpsConfig, ship)
 end
 
 ---Handle vehicle offloading workflow for barge and RORO event units
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; China's barge bridges are recorded
 ---@param ship CMO__Unit Ship unit from the event context
 ---@return boolean # Whether the offload workflow was handled successfully
-function LandingOps.offloadVehicles(amphibOpsConfig, landingState, ship)
-  local barges = landingState.amphibOps.barges
+function LandingOps.offloadVehicles(config, saveData, ship)
+  local barges = PersistentState.landingOps(saveData).amphibOps.barges
 
   if ship.name == "Barge" and not SecondWaveUnloading.hasExtendedBridge(barges, ship) then
     ship.course = nil
@@ -108,7 +118,7 @@ function LandingOps.offloadVehicles(amphibOpsConfig, landingState, ship)
       local roro = GameApi.ScenEdit_GetUnit(guid)
 
       if roro then
-        local zone = SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, ship, roro)
+        local zone = SecondWaveUnloading.getBargeROROZone(config.c.amphibOps, ship, roro)
 
         if zone then
           SecondWaveUnloading.offloadVehicles({
@@ -133,17 +143,21 @@ function LandingOps.offloadVehicles(amphibOpsConfig, landingState, ship)
 end
 
 ---Neutralize airlanding zone contacts with SAG surface fire support
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration
+---@param config SBJ__Config Global configuration table
 ---@param ship CMO__Unit Ship unit from the event context
----@param contacts CMO__Contact[] Contact list from the game
 ---@return boolean # Whether the neutralization workflow was handled successfully
-function LandingOps.neutralizeAirlandingZone(amphibOpsConfig, ship, contacts)
+function LandingOps.neutralizeAirlandingZone(config, ship)
   if not ship.group or ship.dbid ~= constants.PLATFORMS.TYPE_052D then
     return false
   end
 
-  local sagConfig = amphibOpsConfig.sag[ship.group.name]
+  local sagConfig = config.c.amphibOps.sag[ship.group.name]
   if not sagConfig then
+    return false
+  end
+
+  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
+  if not contacts then
     return false
   end
 

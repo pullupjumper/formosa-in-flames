@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — formosa-in-flames / src</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); color: #f8fafc; }
+      .mod { border: 1.5px solid #475569; background: #fff; }
+      .lbl { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }
+      .seamline { border-top: 2px dashed #64748b; }
+      .badge { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+      .strong { background: #d1fae5; color: #065f46; }
+      .worth { background: #fef3c7; color: #92400e; }
+      .spec { background: #e2e8f0; color: #334155; }
+      .tag { background: #eef2ff; color: #3730a3; }
+      pre.mermaid { font-size: 12px; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-14">
+
+      <header class="space-y-3">
+        <h1 class="font-serif text-3xl">Architecture review — <span class="font-mono text-2xl">formosa-in-flames / src</span></h1>
+        <p class="text-sm text-slate-500">2026-09-22 · branch <span class="font-mono">refactor/naming-conventions</span> · 熱區：<span class="font-mono">strikePlanner/</span>、<span class="font-mono">core/schema.lua</span>、<span class="font-mono">core/saveData.lua</span></p>
+        <div class="flex flex-wrap gap-4 text-xs text-slate-600 pt-2">
+          <span><span class="inline-block w-4 h-3 mod align-middle mr-1"></span>module</span>
+          <span><span class="inline-block w-6 seamline align-middle mr-1"></span>seam</span>
+          <span><span class="inline-block w-6 border-t-2 border-red-600 align-middle mr-1"></span>leak（越過 seam 直接摸別人的狀態）</span>
+          <span><span class="inline-block w-4 h-3 deep align-middle mr-1"></span>deep module</span>
+        </div>
+        <p class="text-xs text-slate-500">領域詞彙來自 <span class="font-mono">docs/strikePlanner/</span>、<span class="font-mono">docs/missileSystem/</span>（專案沒有 CONTEXT.md、沒有 ADR）。ATO = Air Tasking Order，FSP = Fire Support Plan，FSEM = Fire Support Execution Matrix，Recon queue = 偵察佇列，Operation batch = 偵察觸發的作戰批次，Firing unit = TEL / 發射單位。</p>
+      </header>
+
+      <section id="candidates" class="space-y-12">
+
+        <!-- ============ 1 ============ -->
+        <article id="c1" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">1. 把 Operation batch 的生命週期收進一個 deep module</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge strong">Strong</span><span class="badge tag">in-process</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600 leading-relaxed">
+            strikePlanner/dynamicState.lua:60-171 · atoBuilder.lua:502-570 · fsemBuilder.lua:501-577 · operationScheduler.lua:47-219, 543-561 · recon.lua:203-216
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart TB
+  B[reconTriggeredOperationBatches<br/>裸 table]
+  ATO[atoBuilder<br/>driver loop 副本 A] -.->|read/write| B
+  FSEM[fsemBuilder<br/>driver loop 副本 B] -.->|read/write| B
+  OS[operationScheduler<br/>forEach / findFirst / findLatest] -.->|read/write| B
+  DS[dynamicState<br/>7 個小函式] -.->|read/write| B
+  R[recon.hasScheduledOperations] -.->|read| B
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class ATO,FSEM,OS,R leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <div class="relative h-[300px]">
+                <div class="deep rounded-lg p-4 h-full flex flex-col justify-between">
+                  <div>
+                    <div class="lbl opacity-70">deep module</div>
+                    <div class="font-semibold">Operation batch lifecycle</div>
+                    <div class="text-xs opacity-70 mt-1">schedule · run-with-builder · queries</div>
+                  </div>
+                  <div class="text-xs opacity-60 space-y-1">
+                    <div>· 觀察窗 / 重試 / 放棄 / 過期 policy（只在這裡）</div>
+                    <div>· batch 的 executed 衍生旗標</div>
+                    <div>· isScheduled / isPending / latestExecuted</div>
+                  </div>
+                  <div class="seamline pt-3 mt-3 flex gap-3">
+                    <div class="mod text-slate-900 rounded px-3 py-2 text-xs flex-1">atoBuilder<br/><span class="text-slate-500">adapter：能插 wave 嗎？yes / retry / give up</span></div>
+                    <div class="mod text-slate-900 rounded px-3 py-2 text-xs flex-1">fsemBuilder<br/><span class="text-slate-500">adapter：能插 FSEM 嗎？yes / retry / give up</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>「一個 operation 從 scheduled → 觀察窗 → executed / abandoned / expired」沒有任何 module 擁有它。dynamicState 的 interface 幾乎和 implementation 一樣寬；兩個 builder 各抄一份 driver loop；查詢邏輯又在 operationScheduler。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>一個 module 擁有 batch 陣列與所有 policy。builder 縮成 adapter，只回答「現在能不能插這個 template」，不碰 batch。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：重試 / 過期 bug 修一次（近期 commit 0154900、b4a8d8d、9c5ed63 都在這）</li>
+              <li>leverage：兩個 builder 只剩真正不同的部分</li>
+              <li>測試：fsemBuilder_spec 停止 stub <span class="font-mono">DynamicState.*</span>（目前 34 處）</li>
+              <li>operationScheduler_spec 停止 self-stub 自己的 public 函式</li>
+            </ul></dd></div>
+          </dl>
+          <p class="text-xs text-slate-500">Deletion test：刪掉 dynamicState 會讓約 10 個小迴圈散進三個 caller。複雜度重新出現，所以它有價值，但 policy 本體已經重複兩份。集中起來乾淨通過。</p>
+        </article>
+
+        <!-- ============ 2 ============ -->
+        <article id="c2" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">2. 合併 air / ground 兩條「評估目標 → 命名 → 插入計畫」pipeline</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge strong">Strong</span><span class="badge tag">in-process</span><span class="text-xs text-slate-400 self-center">與 #1 配套</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600">
+            atoBuilder.lua:278-298, 406-446, 459-490 · fsemBuilder.lua:244-266, 339-379, 389-419 · dynamicState.lua:177-212 · operationScheduler.lua:13-24 (OPERATION_TYPE_TRAITS)
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4 space-y-2">
+              <div class="lbl text-slate-500 mb-2">Before · 兩條平行 cross-section</div>
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="space-y-1">
+                  <div class="lbl text-slate-400">air</div>
+                  <div class="h-12 border-l-4 border-slate-400 bg-white pl-2 flex items-center">evaluateTargetsFromTemplate(packages)</div>
+                  <div class="h-12 border-l-4 border-slate-400 bg-white pl-2 flex items-center">buildUniqueAirOperationName</div>
+                  <div class="h-12 border-l-4 border-slate-400 bg-white pl-2 flex items-center">寫入 saveData.c.air.airTaskingOrder</div>
+                  <div class="h-12 border-l-4 border-red-500 bg-white pl-2 flex items-center">addGeneratedOperation("air") ← 字串</div>
+                </div>
+                <div class="space-y-1">
+                  <div class="lbl text-slate-400">ground</div>
+                  <div class="h-12 border-l-4 border-slate-400 bg-white pl-2 flex items-center">evaluateTargetsFromTemplate(fireSupportTasks)</div>
+                  <div class="h-12 border-l-4 border-slate-400 bg-white pl-2 flex items-center">buildUniqueGroundOperationName</div>
+                  <div class="h-12 border-l-4 border-slate-400 bg-white pl-2 flex items-center">寫入 saveData.c.ground.fireSupportPlan</div>
+                  <div class="h-12 border-l-4 border-red-500 bg-white pl-2 flex items-center">addGeneratedOperation("ground") ← 字串</div>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After · 一條 pipeline，兩個 descriptor</div>
+              <div class="deep rounded-lg p-4 h-[250px] flex flex-col justify-between">
+                <div>
+                  <div class="lbl opacity-70">deep module</div>
+                  <div class="font-semibold">Insert dynamic plan</div>
+                  <div class="text-xs opacity-70 mt-1">評估 → 命名 → 寫入 → 註冊，一次呼叫，不可能只做一半</div>
+                </div>
+                <div class="flex gap-3 text-xs">
+                  <div class="mod text-slate-900 rounded px-3 py-2 flex-1">air descriptor<br/><span class="text-slate-500">template 欄位、plan table、registry</span></div>
+                  <div class="mod text-slate-900 rounded px-3 py-2 flex-1">ground descriptor<br/><span class="text-slate-500">同上，放在 OPERATION_TYPE_TRAITS 旁</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>命名用型別專屬函式，註冊卻靠傳 "air"/"ground" 字串；漏掉任一半，名字唯一性就靜靜壞掉。air/ground 分派目前有三種寫法。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>把每型別的差異變成資料（descriptor），交給同一條插入路徑。命名與註冊在同一個呼叫裡完成。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：「生成的名字一定被註冊」這個 invariant 只在一處</li>
+              <li>leverage：一條 pipeline，兩個 caller</li>
+              <li>測試：兩份 builder spec 對命名 / 註冊的 stub 換成一份插入路徑 spec</li>
+            </ul></dd></div>
+          </dl>
+        </article>
+
+        <!-- ============ 3 ============ -->
+        <article id="c3" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">3. 給 saveData 一個 seam：每個 feature 只拿自己的 slice</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge strong">Strong</span><span class="badge tag">local-substitutable</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600 leading-relaxed">
+            core/saveData.lua:1-351 · core/init.lua:106-155 · 24 個 scripts 做 LoadTableFromKey / SaveTableToKey（6 個只 load 不 save）· leaks：ew/commsJamming.lua:166-168, 446, 484-485 · landingOps/coordinator.lua:46, 188 · landingOps/secondWaveUnloading.lua:120-268 · runwayRepairment.lua:19-39 · unitStatusUI.lua:264-345, 727-774
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before · mass diagram</div>
+              <div class="flex items-end gap-6 h-[260px] px-4">
+                <div class="flex-1 flex flex-col justify-end h-full">
+                  <div class="lbl text-slate-500 mb-1">saveData</div>
+                  <div class="border-2 border-red-500 bg-red-50 h-[46%] flex items-center justify-center text-xs text-center px-2">interface = 整棵 SBJ__SaveData 樹<br/>（六層深的路徑）</div>
+                  <div class="mod h-[50%] flex items-center justify-center text-xs">implementation：351 行初始化，把 config 抄進 state 27 次</div>
+                </div>
+                <div class="flex-1 text-xs text-slate-600 space-y-2 pb-2">
+                  <div class="border-l-2 border-red-500 pl-2">commsJamming 讀 saveData.t.iads / AEW</div>
+                  <div class="border-l-2 border-red-500 pl-2">landing coordinator 寫 recon queue</div>
+                  <div class="border-l-2 border-red-500 pl-2">unitStatusUI 重推 missile 狀態版面</div>
+                  <div class="border-l-2 border-red-500 pl-2">6 個 script load 後忘了 save</div>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <div class="flex items-end gap-6 h-[260px] px-4">
+                <div class="flex-1 flex flex-col justify-end h-full">
+                  <div class="lbl text-slate-500 mb-1">persistent state module</div>
+                  <div class="border-2 border-emerald-600 bg-emerald-50 h-[14%] flex items-center justify-center text-xs">load · slice(feature) · save</div>
+                  <div class="deep h-[82%] flex flex-col items-center justify-center text-xs text-center px-3 gap-1">
+                    <div>誰擁有哪個 slice</div>
+                    <div>跨 feature 的具名查詢（例：Taiwan IADS contexts）</div>
+                    <div>load / save 配對保證</div>
+                    <div>config 在用的時候讀，不再開機時抄進 state</div>
+                  </div>
+                </div>
+                <div class="flex-1 text-xs text-slate-600 space-y-2 pb-2">
+                  <div class="border-l-2 border-emerald-600 pl-2">scripts：一個 entry，每個 event</div>
+                  <div class="border-l-2 border-emerald-600 pl-2">modules：收到自己的 context table</div>
+                  <div class="border-l-2 border-emerald-600 pl-2">spec：只 build 自己的 slice</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>saveData 沒有 interface，它的 interface 就是整個形狀。「狀態 X 住哪裡」散在約 30 個呼叫點，任何改名都會波及 module、script、schema、UI。schema.lua 之所以是最熱檔案，就是這個症狀。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>一個 module 負責 load、分發 slice、save。跨 feature 讀取變成具名查詢，不再走路徑。先只做 missileSystem 與 SIGINT 的 slice。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：「feature X 持久化什麼」一個檔案答完</li>
+              <li>leverage：24 個 script 縮成一個呼叫</li>
+              <li>測試：load/save 合約可以測一次；目前是零</li>
+              <li>解鎖 #4、#7</li>
+            </ul></dd></div>
+          </dl>
+          <p class="text-xs text-slate-500">Deletion test：刪掉 saveData.lua，複雜度會以臨時 table 建構的形式在每個 module 重現。它是 load-bearing 的，但是以「資料 schema」的身分，不是 module。depth 不是放錯位置，是根本沒有。</p>
+        </article>
+
+        <!-- ============ 4 ============ -->
+        <article id="c4" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">4. missileSystem：內部很深，前門在漏</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge strong">Strong</span><span class="badge tag">in-process</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600 leading-relaxed">
+            missileSystem/init.lua:59-165 (6 個 one-line re-export) · scripts/china|taiwan/missileSystem/*.lua · scripts/china/ew/collectSigint.lua:16-22 · scripts/us/collectSigint.lua:15-19 · ew/sigint.lua:378 (vararg) · unitStatusUI.lua:735-777 · landingOps/coordinator.lua:188 · strikePlanner/fsemBuilder.lua:137-141, 428-461 · strikePlanner/fireSupportPlan.lua:36-44, 125-134
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart LR
+  MS[(missileSystem<br/>cycle · movement · meeting · concealment)]
+  CTX[groundCtx.system.firingUnits]
+  SIG[sigint<br/>vararg 手動列舉 srbm/glcm/mlrs] -.->|walk| CTX
+  UI[unitStatusUI<br/>自己排 redeploy 順序] -.->|mutate + walk| CTX
+  CO[landing coordinator] -.->|walk| CTX
+  FB[fsemBuilder / fireSupportPlan<br/>直接 set stowStartTime] -.->|write| CTX
+  MS --- CTX
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class SIG,UI,CO,FB leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <pre class="mermaid">
+flowchart LR
+  MS[missileSystem<br/>firingUnitsFor side · redeploy layout<br/>markForStow · isAvailable]
+  SIG[sigint] -->|ask| MS
+  UI[unitStatusUI adapter] -->|ask| MS
+  CO[landing coordinator] -->|ask| MS
+  FB[fsemBuilder / fireSupportPlan] -->|ask| MS
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#0f172a;
+  class MS deep
+              </pre>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>caller 必須知道 firing-unit context 住在哪、系統怎麼列舉、isAuto / side / behavior 要一起傳。SIGINT 的 vararg、UI 裡的 redeploy 順序、strikePlanner 直接寫 stowStartTime，都是 missileSystem 的狀態機被從 seam 外面驅動。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>「某側有哪些 firing unit」「用新版面重佈署」「標記待收納」「是否可派」變成 missileSystem 的行為。消費者問它，不走它的 table。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：FP / HA / RL / AHA 版面與 redeploy 順序只在一處</li>
+              <li>leverage：SIGINT 丟掉 vararg 和對地面部隊版面的耦合</li>
+              <li>測試：UI 的 setup 流程改為透過 missileSystem interface 測</li>
+            </ul></dd></div>
+          </dl>
+          <p class="text-xs text-slate-500">Deletion test：刪 init.lua 的 process / processMoveToPositionEvent 是真 orchestration（集中）；六個 one-line re-export 只是搬家。strikePlanner 那側的 stow 寫入若 missileSystem 已有對應行為，只是 call-site 修正，不算 deepening。</p>
+        </article>
+
+        <!-- ============ 5 ============ -->
+        <article id="c5" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">5. targetingProcess：seam 放錯地方，純 filter 有測，髒的 orchestration 沒有</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge worth">Worth exploring</span><span class="badge tag">in-process</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600">
+            targetingProcess.lua:552-565 (_internal), 598-622 (processDynamicTargets), 530-550 (startReconTracking), 415-416 · recon.lua:342-353, 465-502 · spec 用 _internal.* 66 次
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before</div>
+              <pre class="mermaid">
+sequenceDiagram
+  participant S as spec
+  participant I as _internal (也是 runtime dispatch)
+  participant P as processDynamicTargets
+  participant R as Recon.trackTarget
+  participant Q as saveData.c.recon.queue
+  S->>I: 逐個測 filter（66 次）
+  Note over P,Q: 沒被測的部分
+  P->>I: dispatch
+  P->>R: startReconTracking
+  R->>Q: write（在 query 裡做 mutation）
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <pre class="mermaid">
+sequenceDiagram
+  participant S as spec
+  participant T as targeting（pure）
+  participant R as recon
+  participant Q as recon queue
+  S->>T: processTargets(fixtures)
+  T-->>S: targets + tracking intent（資料）
+  R->>Q: 所有寫入只在 recon
+              </pre>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>filter 被抽成 _internal「方便測」，但真的咬人的 bug（commit bac34ef，UAV 被搶）住在 processDynamicTargets → startReconTracking，那裡在 query 裡對 recon queue 做 mutation。stub _internal 還會改到 production wiring。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>filter 變 private。targeting 回傳「哪些目標、哪些該由哪種 UAV 盯」的資料。所有 recon queue 寫入回到 recon。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：recon queue 的寫入全在 recon</li>
+              <li>leverage：builder 一次拿到目標 + 追蹤意圖</li>
+              <li>測試：_internal 消失，改透過 processTargets</li>
+            </ul></dd></div>
+          </dl>
+        </article>
+
+        <!-- ============ 6 ============ -->
+        <article id="c6" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">6. strikePlanner/init.lua：pass-through，要嘛刪，要嘛變成「跑一個 tick」</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge worth">Worth exploring</span><span class="badge tag">in-process</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600">
+            strikePlanner/init.lua:1-85 (10 個 one-liner) · scripts/china/scheduledStrikePlanner.lua:23-96 · landingOps/coordinator.lua:46 (繞過它直接呼叫 Recon.addEntry)
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before · cross-section</div>
+              <div class="space-y-1 text-xs">
+                <div class="h-10 border-l-4 border-slate-300 bg-white pl-2 flex items-center">scheduledStrikePlanner.lua：手組 ProcessingContext（5 條 saveData 路徑）</div>
+                <div class="h-10 border-l-4 border-slate-300 bg-white pl-2 flex items-center">scheduledStrikePlanner.lua：自己排 5 個 phase 的順序</div>
+                <div class="h-10 border-l-4 border-red-400 bg-white pl-2 flex items-center">init.lua：改名轉發（processDynamicGroundOperations → FsemBuilder.build）</div>
+                <div class="h-10 border-l-4 border-slate-300 bg-white pl-2 flex items-center">FsemBuilder / AtoBuilder / Recon / ATO / FSP</div>
+                <div class="text-slate-500 pt-2">script 零測試。順序（FSEM 退役 → builders → recon → 執行）沒人守。</div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <div class="space-y-1 text-xs">
+                <div class="h-10 border-l-4 border-slate-300 bg-white pl-2 flex items-center">script：load → tick → save</div>
+                <div class="deep h-[150px] rounded pl-3 flex flex-col justify-center gap-1">
+                  <div class="font-semibold text-sm">strikePlanner tick</div>
+                  <div class="opacity-70">組 context · 排 phase 順序 · LACM / SLCM salvo blocks</div>
+                  <div class="opacity-70">唯一知道哪個 saveData.c.* slice 餵哪個 phase 的地方</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>每個函式都只是改名轉發。interface 和它包的東西一樣寬，什麼都沒藏。一個 adapter，假的 seam。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>把 script 裡的 tick orchestration 搬進來，讓它變深；或直接刪掉。不要停在中間。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：phase 順序只在一處</li>
+              <li>測試：tick 可以用 fixture saveData 測；現在是零</li>
+            </ul></dd></div>
+          </dl>
+          <p class="text-xs text-slate-500">Deletion test：刪掉它只改四行 require。複雜度消失。純 pass-through。</p>
+        </article>
+
+        <!-- ============ 7 ============ -->
+        <article id="c7" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">7. 41 個 event script：用複製檔案來表達 seam</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge worth">Worth exploring</span><span class="badge tag">ports &amp; adapters</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600 leading-relaxed">
+            scripts/china/missileSystem/scheduledReloadHideCheck.lua vs scripts/taiwan/… · china/aircraftLanding.lua:1-45 vs taiwan/aircraftLanding.lua:1-6 · china/specialActions/addACs.lua:12-13 vs taiwan/… · core/init.lua:22-101 (手列 23 + 17 個名字)
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before</div>
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="mod rounded p-3 space-y-1"><div class="lbl text-slate-400">china/…</div><div>saveData.c</div><div>isAuto = true</div><div>side = "China"</div><div class="text-red-600">6 個 DBID 檢查</div><div class="text-red-600">init 被註解掉、沒 save</div></div>
+                <div class="mod rounded p-3 space-y-1"><div class="lbl text-slate-400">taiwan/…</div><div>saveData.t</div><div>isAuto = false</div><div>side = "Taiwan"</div><div class="text-red-600">沒有 DBID 檢查</div><div class="text-red-600">有 init、有 save</div></div>
+              </div>
+              <p class="text-xs text-slate-500 mt-3">兩份已經走散。沒人測 script。加一個 event 要改三個地方。</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <div class="space-y-3 text-xs">
+                <div class="mod rounded p-3">script = 一行 adapter：從 ScenEdit_UnitX() / action name 解出 side，呼叫一個 entry</div>
+                <div class="seamline"></div>
+                <div class="deep rounded p-3 space-y-1"><div class="font-semibold">module entry（吃 side）</div><div class="opacity-70">真正的陣營差異（auto / manual、DBID 清單）進 config，依 side 分鍵。GameUtils.getCachedSideConfig 已經走在這條路上。</div></div>
+              </div>
+            </div>
+          </div>
+
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>CMO 每個 event 要一個 script body，專案用複製檔案來回答「哪一側、auto 還是手動、哪個 state slice」。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>script 只剩解 side 加一個呼叫。陣營差異變成 config diff，看得見。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>leverage：一個 entry，不是兩個檔案</li>
+              <li>locality：陣營走散變成 config 差異</li>
+              <li>測試：side-aware entry 可測，script 不可測</li>
+            </ul></dd></div>
+          </dl>
+        </article>
+
+        <!-- ============ 8 ============ -->
+        <article id="c8" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">8. unitStatusUI：UI adapter 裡藏了部署 orchestration 與狀態語意</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge worth">Worth exploring</span><span class="badge tag">in-process</span><span class="text-xs text-slate-400 self-center">依賴 #4</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600">
+            unitStatusUI.lua:16-46 (重推 reload 計時 / 狀態標籤 / SAM DBID，與 missileSystem/shared.lua:6-17 重複), 264-450 (read models), 606-780 (createUI / createSetupMenu 直接叫 GnssJamming / UnitGenerator / MissileSystem)
+          </div>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before</div>
+              <div class="mod rounded p-4 text-xs space-y-2 h-[200px]">
+                <div class="lbl text-slate-400">unitStatusUI.lua · 782 行 · 零測試</div>
+                <div class="border-l-2 border-red-500 pl-2">read model：自己算 reload 剩餘、狀態標籤、SAM 判定</div>
+                <div class="border-l-2 border-red-500 pl-2">write：解析表單 → 自己排 setup 順序</div>
+                <div class="border-l-2 border-slate-300 pl-2">template fill + dialog call（CP950 陷阱在這）</div>
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After</div>
+              <div class="space-y-2 text-xs h-[200px]">
+                <div class="deep rounded p-3">missileSystem 等擁有 entity 的 module 產出 read model、接手「套用 setup」</div>
+                <div class="seamline"></div>
+                <div class="mod rounded p-3 text-slate-500">unitStatusUI = adapter：填模板、叫 dialog。小到不值得測。</div>
+              </div>
+            </div>
+          </div>
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>渲染與「套用玩家設定」兩件事擠在一個沒測試的檔案，而且只能透過 CMO HTML dialog 觸發。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>read model 由擁有資料的 module 產；setup 序列搬到 #4 的 missileSystem 後面。UI 剩 adapter。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1">
+              <li>locality：reload / 狀態語意只在 missileSystem</li>
+              <li>測試：setup 與 read model 變成純 table 測試</li>
+            </ul></dd></div>
+          </dl>
+        </article>
+
+        <!-- ============ 9 ============ -->
+        <article id="c9" class="rounded-xl bg-white border border-slate-200 p-8 space-y-6 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="font-serif text-2xl">9. configCodeGenerator：地面部隊版面存在三份，沒有一份被檢查</h2>
+            <div class="flex gap-2 shrink-0"><span class="badge spec">Speculative</span><span class="badge tag">build-time</span></div>
+          </div>
+          <div class="font-mono text-sm text-slate-600">
+            utils/configCodeGenerator.lua:1-649 (src 內無 caller，REPL 用) · core/config.lua (5997) · core/constants.lua (3127) · core/schema.lua (1585)
+          </div>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">Before</div>
+              <pre class="mermaid">
+flowchart LR
+  G[configCodeGenerator<br/>649 行純函式，零測試] -.手貼.-> C[config / constants]
+  C -.人工同步.-> S[schema SBJ__*]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class G,S leak
+              </pre>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div class="lbl text-slate-500 mb-2">After（二選一）</div>
+              <pre class="mermaid">
+flowchart LR
+  A[選項 A：generator 變 build step<br/>bundler 已經在改寫檔案] --> C[config / constants 不可能 drift]
+  B[選項 B：刪 generator<br/>config 就是 source] --> C
+              </pre>
+            </div>
+          </div>
+          <dl class="grid md:grid-cols-3 gap-6 text-sm">
+            <div><dt class="lbl text-slate-500 mb-1">Problem</dt><dd>純函式抽出來卻沒測；風險在「貼上」與 config / schema drift，兩者都沒人檢查。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Solution</dt><dd>要嘛進 build，要嘛刪。別兩個都留。</dd></div>
+            <div><dt class="lbl text-slate-500 mb-1">Wins</dt><dd><ul class="list-disc pl-4 space-y-1"><li>locality：版面只有一個 source</li><li>非 runtime module，優先度低</li></ul></dd></div>
+          </dl>
+        </article>
+
+      </section>
+
+      <!-- ============ TOP ============ -->
+      <section id="top-recommendation" class="rounded-xl deep p-10 space-y-4">
+        <div class="lbl opacity-70">Top recommendation</div>
+        <h2 class="font-serif text-3xl"><a href="#c1" class="underline decoration-emerald-400 underline-offset-4">#1 Operation batch 生命週期</a>，順手帶 <a href="#c2" class="underline decoration-emerald-400 underline-offset-4">#2</a></h2>
+        <p class="text-sm opacity-90 max-w-3xl">它就在熱區正中央（fsemBuilder、atoBuilder、operationScheduler 是近期改最多的檔案），最近三個 bug commit 都落在這條 policy 上，範圍鎖在 strikePlanner 內部，而且 spec 裡對 DynamicState 的 34 個 stub 會直接消失。#3 的 saveData seam 是更大的一注，解鎖更多，但範圍橫跨全專案；等 #1 做完再開。</p>
+        <p class="text-xs opacity-60">沒有 ADR 衝突：專案目前沒有 docs/adr/。</p>
+      </section>
+
+    </main>
+  </body>
+</html>

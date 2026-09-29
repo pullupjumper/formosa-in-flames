@@ -1,4 +1,5 @@
 local GameApi = require("src.utils.gameApi")
+local PersistentState = require("src.core.persistentState")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
 
@@ -6,18 +7,20 @@ local RunwayRepairment = {}
 
 ---Initialize runway repair targets for both Taiwan and China
 ---Scans contacts and units to populate runway lists for repair tracking
+---Taiwan runways are found in China's fixed-target list, so that list must be built first.
 ---@param config SBJ__Config Global configuration with runway DBIDs and air base lists
----@param targetlist SBJ__TargetEntry[] China fixed-target list to find Taiwan runways in
----@param taiwanRunways SBJ__RunwayEntry[] Taiwan runway repair list to fill
----@param chinaRunways SBJ__RunwayEntry[] China runway repair list to fill
-function RunwayRepairment.initRunways(config, targetlist, taiwanRunways, chinaRunways)
+---@param saveData SBJ__SaveData Persistent save data; both sides' runway repair lists are filled
+function RunwayRepairment.initRunways(config, saveData)
+  local taiwanRunways = PersistentState.runwayRepair(saveData, constants.SIDES.PLAYER).runways
+  local chinaRunways = PersistentState.runwayRepair(saveData, constants.SIDES.ENEMY).runways
+
   -- Initialize Taiwan runways from targetlist
   local taiwanAirBases = {}
   for _, baseName in ipairs(config.repairRunway.airBases) do
     table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.repairRunway.runwaySubTypes })
   end
 
-  local runwayGUIDs = StrikePlanner.filterTargetsByTypeAndBase(targetlist, taiwanAirBases)
+  local runwayGUIDs = StrikePlanner.filterTargetsByTypeAndBase(PersistentState.targetlist(saveData), taiwanAirBases)
 
   for _, guid in ipairs(runwayGUIDs) do
     local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
@@ -46,23 +49,25 @@ function RunwayRepairment.initRunways(config, targetlist, taiwanRunways, chinaRu
 end
 
 ---Handle runway damage events and record repair start time
----@param repairCtx SBJ__RunwayRepairmentContext Runway repair context of the damaged runway's side
+---@param saveData SBJ__SaveData Persistent save data; the damaged runway's side is mutated
 ---@param unit CMO__Unit The damaged runway unit
-function RunwayRepairment.processRunwayDamage(repairCtx, unit)
+function RunwayRepairment.processRunwayDamage(saveData, unit)
+  local repairCtx = PersistentState.runwayRepair(saveData, unit.side)
   repairCtx.enabled = true
 
   for _, runway in ipairs(repairCtx.runways) do
-    if unit and unit.guid == runway.guid and runway.startTime == nil then
+    if unit.guid == runway.guid and runway.startTime == nil then
       runway.startTime = GameApi.ScenEdit_CurrentTime()
     end
   end
 end
 
----Execute scheduled runway repair operations reducing damage incrementally
+---Repair a side's damaged runways by one scheduled increment
 ---@param config SBJ__Config Configuration containing repair rate settings
----@param runways SBJ__RunwayEntry[] Array of runways to repair
-function RunwayRepairment.repairRunway(config, runways)
-  for _, runway in ipairs(runways) do
+---@param saveData SBJ__SaveData Persistent save data
+---@param sideName string Side name (China or Taiwan)
+function RunwayRepairment.repairSide(config, saveData, sideName)
+  for _, runway in ipairs(PersistentState.runwayRepair(saveData, sideName).runways) do
     local actualRunway = GameApi.ScenEdit_GetUnit(runway.guid)
 
     if actualRunway and runway.startTime ~= nil then

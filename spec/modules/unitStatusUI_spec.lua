@@ -48,7 +48,6 @@ describe("UnitStatusUI", function()
     end
     local config = { c = makeSideCfg(), t = makeSideCfg() }
     config.c.amphibOps = { operations = {}, operationalZones = {} }
-    config.c.commsJamming = { aircraftDefaults = { "defaults" } }
     if overrides then
       for k, v in pairs(overrides) do config[k] = v end
     end
@@ -111,7 +110,7 @@ describe("UnitStatusUI", function()
       assert.stub(removeJammersStub).was.called_with({ { name = "J-1" }, { name = "J-2" } }, constants.SIDES.PLAYER)
       assert.stub(addGnssJammerStub).was.called(2)
       assert.stub(addAircraftStub).was.called_with({ { name = "AB-1" } })
-      assert.stub(initTargetAircraftStub).was.called_with(saveData.t.air.landBased, { "defaults" })
+      assert.stub(initTargetAircraftStub).was.called_with(config, saveData)
       assert.stub(redeployStub).was.called_with(config, saveData, constants.SIDES.PLAYER, { { unitname = "FU-1" } })
     end)
 

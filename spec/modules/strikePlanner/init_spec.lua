@@ -9,6 +9,8 @@ local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local Recon = require("src.modules.strikePlanner.recon")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local AttackManager = require("src.modules.attackManager")
+local Logger = require("src.utils.logger")
+local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
 describe("StrikePlanner", function()
@@ -62,6 +64,26 @@ describe("StrikePlanner", function()
         },
       },
     }
+  end
+
+  ---Initialize the planner over save data that resolves to the given planner state
+  ---@param config table
+  ---@param plannerState table
+  local function runInit(config, plannerState)
+    local saveData = {}
+    trackStub(stub(PersistentState, "strikePlanner").returns(plannerState))
+    StrikePlanner.init(config, saveData)
+  end
+
+  ---Run one planner tick over save data that resolves to the given planner state and contacts
+  ---@param config table
+  ---@param plannerState table
+  ---@param contacts table[]|nil
+  local function runProcess(config, plannerState, contacts)
+    local saveData = {}
+    trackStub(stub(PersistentState, "strikePlanner").returns(plannerState))
+    trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
+    StrikePlanner.process(config, saveData)
   end
 
   ---Build a plannerState fixture with every strike planner phase disabled.
@@ -133,7 +155,7 @@ describe("StrikePlanner", function()
       local config = makeConfig()
       local plannerState = makePlannerState()
 
-      StrikePlanner.init(config, plannerState)
+      runInit(config, plannerState)
 
       assert.stub(findTargetsStub).was.called_with(constants.SIDES.ENEMY, config.targetScanning, plannerState.targetlist)
     end)
@@ -143,14 +165,14 @@ describe("StrikePlanner", function()
       local config = makeConfig()
       local plannerState = makePlannerState({ recon = true })
 
-      StrikePlanner.init(config, plannerState)
+      runInit(config, plannerState)
 
       assert.stub(initQueueStub).was.called_with(config.c.recon, plannerState.recon)
     end)
 
     -- Negative: recon disabled leaves the queue untouched.
     it("should skip the recon queue when recon is disabled", function()
-      StrikePlanner.init(makeConfig(), makePlannerState())
+      runInit(makeConfig(), makePlannerState())
 
       assert.stub(initQueueStub).was_not.called()
     end)
@@ -182,15 +204,25 @@ describe("StrikePlanner", function()
         local plannerState = makePlannerState({ dynamicOperations = true })
         local contacts = { { guid = "C-1" } }
 
-        StrikePlanner.process(config, plannerState, contacts)
+        runProcess(config, plannerState, contacts)
 
         assert.stub(fsemBuildStub).was.called_with(config, plannerState, contacts)
         assert.stub(atoBuildStub).was.called_with(config, plannerState, contacts)
       end)
 
+      -- Negative: without contacts the tick stops before any builder runs.
+      it("should skip both builders when contacts are unavailable", function()
+        trackStub(stub(Logger, "error"))
+
+        runProcess(makeConfig(), makePlannerState({ dynamicOperations = true }), nil)
+
+        assert.stub(fsemBuildStub).was_not.called()
+        assert.stub(atoBuildStub).was_not.called()
+      end)
+
       -- Negative: disabled dynamic operations build nothing.
       it("should skip both builders when dynamic operations are disabled", function()
-        StrikePlanner.process(makeConfig(), makePlannerState(), {})
+        runProcess(makeConfig(), makePlannerState(), {})
 
         assert.stub(fsemBuildStub).was_not.called()
         assert.stub(atoBuildStub).was_not.called()
@@ -219,7 +251,7 @@ describe("StrikePlanner", function()
         local plannerState = makePlannerState({ recon = true })
         plannerState.fireSupportOnHold = true
 
-        StrikePlanner.process(config, plannerState, {})
+        runProcess(config, plannerState, {})
 
         assert.stub(processQueueStub).was.called_with({
           config = config,
@@ -236,7 +268,7 @@ describe("StrikePlanner", function()
         local config = makeConfig()
         local plannerState = makePlannerState({ recon = true })
 
-        StrikePlanner.process(config, plannerState, {})
+        runProcess(config, plannerState, {})
 
         assert.stub(addEntryStub).was.called_with(plannerState.recon, config.c.recon.template.WZ8_RECON_ISLAND)
       end)
@@ -245,14 +277,14 @@ describe("StrikePlanner", function()
       it("should not schedule the extra WZ-8 sortie when the roll fails", function()
         trackStub(stub(math, "random").returns(0.1))
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ recon = true }), {})
+        runProcess(makeConfig(), makePlannerState({ recon = true }), {})
 
         assert.stub(addEntryStub).was_not.called()
       end)
 
       -- Negative: disabled recon neither advances the queue nor rolls a sortie.
       it("should skip recon entirely when recon is disabled", function()
-        StrikePlanner.process(makeConfig(), makePlannerState(), {})
+        runProcess(makeConfig(), makePlannerState(), {})
 
         assert.stub(processQueueStub).was_not.called()
       end)
@@ -261,7 +293,7 @@ describe("StrikePlanner", function()
       it("should not schedule the extra WZ-8 sortie when the roll equals the chance", function()
         trackStub(stub(math, "random").returns(0.5))
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ recon = true }), {})
+        runProcess(makeConfig(), makePlannerState({ recon = true }), {})
 
         assert.stub(addEntryStub).was_not.called()
       end)
@@ -273,7 +305,7 @@ describe("StrikePlanner", function()
         local plannerState = makePlannerState({ recon = true })
         plannerState.fireSupportOnHold = false
 
-        StrikePlanner.process(config, plannerState, {})
+        runProcess(config, plannerState, {})
 
         assert.are.equal(false, processQueueStub.calls[1].vals[1].fireSupportOnHold)
       end)
@@ -297,7 +329,7 @@ describe("StrikePlanner", function()
         stubStartTimesPassed({ LACM_START = true })
         local config = makeConfig()
 
-        StrikePlanner.process(config, makePlannerState({ lacm = true }), {})
+        runProcess(config, makePlannerState({ lacm = true }), {})
 
         assert.stub(attackContactsStub).was.called_with({
           contacts = config.c.surface.lacm.targetlist,
@@ -313,7 +345,7 @@ describe("StrikePlanner", function()
         stubStartTimesPassed({ LACM_START = true })
         local plannerState = makePlannerState({ lacm = true })
 
-        StrikePlanner.process(makeConfig(), plannerState, {})
+        runProcess(makeConfig(), plannerState, {})
 
         assert.is_true(plannerState.lacm.hasLaunched)
       end)
@@ -325,7 +357,7 @@ describe("StrikePlanner", function()
         local plannerState = makePlannerState({ lacm = true })
         plannerState.lacm.hasLaunched = true
 
-        StrikePlanner.process(makeConfig(), plannerState, {})
+        runProcess(makeConfig(), plannerState, {})
 
         assert.stub(attackContactsStub).was_not.called()
       end)
@@ -334,7 +366,7 @@ describe("StrikePlanner", function()
       it("should hold the salvo before its start time", function()
         stubStartTimesPassed({})
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ lacm = true }), {})
+        runProcess(makeConfig(), makePlannerState({ lacm = true }), {})
 
         assert.stub(attackContactsStub).was_not.called()
       end)
@@ -347,7 +379,7 @@ describe("StrikePlanner", function()
         })
         stubStartTimesPassed({ LACM_START = true })
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ lacm = true }), {})
+        runProcess(makeConfig(), makePlannerState({ lacm = true }), {})
 
         local firingUnits = attackContactsStub.calls[1].vals[1].firingUnits
         assert.are.same({ { guid = "SHIP-055", weaponDBID = 101 } }, firingUnits)
@@ -372,7 +404,7 @@ describe("StrikePlanner", function()
         stubGetUnit({ ["SUB-1"] = submarine })
         stubStartTimesPassed({ SLCM_START = true })
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ slcm = true }), {})
+        runProcess(makeConfig(), makePlannerState({ slcm = true }), {})
 
         assert.are.same({
           { latitude = 24.0, longitude = 120.0, presetDepth = 2 },
@@ -386,7 +418,7 @@ describe("StrikePlanner", function()
         stubStartTimesPassed({ SLCM_START = true })
         local config = makeConfig()
 
-        StrikePlanner.process(config, makePlannerState({ slcm = true }), {})
+        runProcess(config, makePlannerState({ slcm = true }), {})
 
         assert.stub(attackContactsStub).was.called_with({
           contacts = config.c.subSurface.slcm.targetlist,
@@ -402,7 +434,7 @@ describe("StrikePlanner", function()
         stubStartTimesPassed({ SLCM_START = true })
         local plannerState = makePlannerState({ slcm = true })
 
-        StrikePlanner.process(makeConfig(), plannerState, {})
+        runProcess(makeConfig(), plannerState, {})
 
         assert.is_false(plannerState.slcm.enabled)
       end)
@@ -411,7 +443,7 @@ describe("StrikePlanner", function()
       it("should hold the salvo before its start time", function()
         stubStartTimesPassed({ LACM_START = true })
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ slcm = true }), {})
+        runProcess(makeConfig(), makePlannerState({ slcm = true }), {})
 
         assert.stub(attackContactsStub).was_not.called()
       end)
@@ -421,7 +453,7 @@ describe("StrikePlanner", function()
         stubGetUnit({})
         stubStartTimesPassed({ SLCM_START = true })
 
-        StrikePlanner.process(makeConfig(), makePlannerState({ slcm = true }), {})
+        runProcess(makeConfig(), makePlannerState({ slcm = true }), {})
 
         assert.stub(attackContactsStub).was.called(1)
       end)
@@ -446,7 +478,7 @@ describe("StrikePlanner", function()
       it("should advance fire support plans when ground is enabled", function()
         local plannerState = makePlannerState({ ground = true })
 
-        StrikePlanner.process(makeConfig(), plannerState, {})
+        runProcess(makeConfig(), plannerState, {})
 
         assert.stub(fireSupportProcessStub).was.called_with(plannerState)
       end)
@@ -456,21 +488,21 @@ describe("StrikePlanner", function()
         local config = makeConfig()
         local plannerState = makePlannerState({ air = true })
 
-        StrikePlanner.process(config, plannerState, {})
+        runProcess(config, plannerState, {})
 
         assert.stub(atoProcessStub).was.called_with(config, plannerState)
       end)
 
       -- Negative: ground disabled leaves fire support plans alone.
       it("should skip fire support plans when ground is disabled", function()
-        StrikePlanner.process(makeConfig(), makePlannerState({ air = true }), {})
+        runProcess(makeConfig(), makePlannerState({ air = true }), {})
 
         assert.stub(fireSupportProcessStub).was_not.called()
       end)
 
       -- Negative: air disabled leaves ATO waves alone.
       it("should skip ATO waves when air is disabled", function()
-        StrikePlanner.process(makeConfig(), makePlannerState({ ground = true }), {})
+        runProcess(makeConfig(), makePlannerState({ ground = true }), {})
 
         assert.stub(atoProcessStub).was_not.called()
       end)
@@ -503,7 +535,7 @@ describe("StrikePlanner", function()
           dynamicOperations = true, recon = true, lacm = true, slcm = true, ground = true, air = true,
         })
 
-        StrikePlanner.process(makeConfig(), plannerState, {})
+        runProcess(makeConfig(), plannerState, {})
 
         assert.are.same({ "fsem", "ato", "recon", "wz8", "lacm", "slcm", "fsp", "atoWaves" }, order)
       end)

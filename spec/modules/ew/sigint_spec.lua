@@ -667,6 +667,16 @@ describe("Sigint", function()
   -- ============================================================================
 
   describe("initReconAircraftContexts", function()
+    ---Save data whose given side holds the SIGINT context under test
+    ---@param sideName string Collecting side name
+    ---@param sigintCtx table SIGINT context for that side
+    ---@return table
+    local function makeSaveData(sideName, sigintCtx)
+      local saveData = {}
+      saveData[GameUtils.getCachedSideConfig(sideName).field] = { sigint = sigintCtx }
+      return saveData
+    end
+
     -- Positive: should register RC-135V aircraft as recon aircraft
     it("should register RC-135V aircraft as recon aircraft", function()
       local sigintCtx = makeSigintContext({ reconAircraft = {} })
@@ -689,7 +699,7 @@ describe("Sigint", function()
         return nil
       end)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "US", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("US", sigintCtx), "US")
       assert.are.equal(1, count)
       assert.is_not_nil(sigintCtx.reconAircraft["RC135-001"])
       assert.are.equal("RC135-001", sigintCtx.reconAircraft["RC135-001"].guid)
@@ -718,7 +728,7 @@ describe("Sigint", function()
         return nil
       end)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "China", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("China", sigintCtx), "China")
       assert.are.equal(1, count)
       assert.is_not_nil(sigintCtx.reconAircraft["Y9DZ-001"])
     end)
@@ -752,7 +762,7 @@ describe("Sigint", function()
         return nil
       end)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "China", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("China", sigintCtx), "China")
       assert.are.equal(2, count)
       assert.is_not_nil(sigintCtx.reconAircraft["RC135-002"])
       assert.is_not_nil(sigintCtx.reconAircraft["Y9DZ-002"])
@@ -780,7 +790,7 @@ describe("Sigint", function()
         return nil
       end)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "China", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("China", sigintCtx), "China")
       assert.are.equal(0, count)
       assert.is_nil(sigintCtx.reconAircraft["J20-001"])
     end)
@@ -807,7 +817,7 @@ describe("Sigint", function()
         return nil
       end)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "US", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("US", sigintCtx), "US")
       assert.are.equal(0, count)
     end)
 
@@ -823,7 +833,7 @@ describe("Sigint", function()
 
       trackStub(stub(GameApi, "VP_GetSide")).returns(mockSide)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "US", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("US", sigintCtx), "US")
       assert.are.equal(0, count)
       assert.stub(warnStub).was.called(1)
     end)
@@ -841,7 +851,7 @@ describe("Sigint", function()
       trackStub(stub(GameApi, "VP_GetSide")).returns(mockSide)
       trackStub(stub(GameApi, "ScenEdit_GetUnit")).returns(nil)
 
-      local count = Sigint.initReconAircraftContexts(sigintCtx, "US", config.c.commsJamming.aircraftDefaults)
+      local count = Sigint.initReconAircraftContexts(config, makeSaveData("US", sigintCtx), "US")
       assert.are.equal(0, count)
     end)
 
@@ -869,7 +879,7 @@ describe("Sigint", function()
         return nil
       end)
 
-      Sigint.initReconAircraftContexts(sigintCtx, "US", config.c.commsJamming.aircraftDefaults)
+      Sigint.initReconAircraftContexts(config, makeSaveData("US", sigintCtx), "US")
       assert.are.same(oodaData, sigintCtx.reconAircraft["RC135-OODA"].OODA)
     end)
   end)

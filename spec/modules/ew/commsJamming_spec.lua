@@ -186,6 +186,20 @@ describe("CommsJamming", function()
     }
   end
 
+  ---Wrap comms jamming slices into the save data shape they are read from
+  ---@param jammingState table Slices built by makeJammingState
+  ---@param enabled? boolean Whether China comms jamming is enabled, defaults to true
+  ---@return table
+  local function makeSaveData(jammingState, enabled)
+    return {
+      c = { commsJamming = { enabled = enabled ~= false, jammers = jammingState.jammers } },
+      t = {
+        iads = jammingState.iads,
+        air = { landBased = { AC = jammingState.aircraft, AEW = jammingState.aew } },
+      },
+    }
+  end
+
   ---Create a deterministic math.random stub that dispatches by argument signature
   ---@param noArgReturn? number Value returned for math.random() (no args), defaults to 0.1
   ---@return function
@@ -199,14 +213,34 @@ describe("CommsJamming", function()
   end
 
   -- ============================================================================
-  -- processCommsJamming
+  -- process
   -- ============================================================================
 
-  describe("processCommsJamming", function()
+  describe("process", function()
     local commsJammingConfig
+
+    ---Run one comms jamming tick with the given config section against the given slices
+    ---@param jammingConfig table China commsJamming config section
+    ---@param jammingState table Slices built by makeJammingState
+    local function runCommsJamming(jammingConfig, jammingState)
+      local cfg = { c = { commsJamming = jammingConfig } }
+      CommsJamming.process(cfg, makeSaveData(jammingState))
+    end
 
     before_each(function()
       commsJammingConfig = makeCommsJammingConfig()
+    end)
+
+    -- Negative: a disabled jamming side does nothing at all
+    it("should not touch any unit when comms jamming is disabled", function()
+      local jammingState = makeJammingState({ jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) } })
+      local cfg = { c = { commsJamming = commsJammingConfig } }
+
+      local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
+
+      CommsJamming.process(cfg, makeSaveData(jammingState, false))
+
+      assert.stub(getUnitStub).was_not.called()
     end)
 
     -- ============================================================================
@@ -239,7 +273,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         -- SAM-001 should have been processed by the jammer
         assert.is_true(jammingState.iads.rocc["C2-001"].sam["SAM-001"].isOutOfComms)
@@ -267,7 +301,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -295,7 +329,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
       end)
@@ -311,7 +345,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
       end)
     end)
 
@@ -349,7 +383,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         -- Both should be processed (jammed) since jammer is active
         assert.is_true(samCtx.isOutOfComms)
@@ -380,7 +414,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_true(samCtx.isOutOfComms)
       end)
@@ -406,7 +440,7 @@ describe("CommsJamming", function()
         -- math.random(5, 10) -> 5; outofcomms(2) <= 5 -> increment
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(3, samCtx.outofcomms)
@@ -428,7 +462,7 @@ describe("CommsJamming", function()
         -- math.random(5, 10) -> 5; outofcomms(12) > 5 -> recovery
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(0, samCtx.outofcomms)
@@ -454,7 +488,7 @@ describe("CommsJamming", function()
         local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.stub(stubSetUnit).was.called()
         assert.are.equal(0, samCtx.outofcomms)
@@ -479,7 +513,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(0, samCtx.outofcomms)
         assert.is_false(samCtx.isOutOfComms)
@@ -514,7 +548,7 @@ describe("CommsJamming", function()
         -- math.random() -> 0.1, so threshold = 0.05; effectiveness at 20nm ≈ 0.89 > 0.05
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_true(samCtx.isOutOfComms)
         assert.are.equal(1, samCtx.outofcomms)
@@ -543,7 +577,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         -- Jamming fails: unit resets to not jammed
         assert.is_false(samCtx.isOutOfComms)
@@ -587,7 +621,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, jammingState)
+        runCommsJamming(config, jammingState)
 
         -- Only 2 closest units should be processed (limit = 2)
         local processedCount = 0
@@ -621,7 +655,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -651,7 +685,7 @@ describe("CommsJamming", function()
         -- math.random(min, max) returns min; cooldownTime min = -5
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(-5, samCtx.outofcomms)
@@ -680,7 +714,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(-2, samCtx.outofcomms)
@@ -708,7 +742,7 @@ describe("CommsJamming", function()
         -- Recovery: math.random(5,10)->5, outofcomms(3) <= 5 -> increment (recovery period)
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         -- recoverComms should have incremented but jamming should be skipped
         -- because isOutOfComms is true (set by recoverComms staying in recovery)
@@ -749,7 +783,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, jammingState)
+        runCommsJamming(config, jammingState)
 
         assert.is_true(samCtx.isOutOfComms)
         assert.are.equal(1, samCtx.outofcomms)
@@ -781,7 +815,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, jammingState)
+        runCommsJamming(config, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -812,7 +846,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(config, jammingState)
+        runCommsJamming(config, jammingState)
 
         assert.is_false(samCtx.isOutOfComms)
         assert.are.equal(0, samCtx.outofcomms)
@@ -845,7 +879,7 @@ describe("CommsJamming", function()
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         -- Omnidirectional: should jam (effectiveness > threshold)
-        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), jammingStateOmni)
+        runCommsJamming(makeCommsJammingConfig({ mode = "omnidirectional" }), jammingStateOmni)
         assert.is_true(samCtxOmni.isOutOfComms)
 
         -- Directional with same setup: bearing misaligned -> should NOT jam
@@ -858,7 +892,7 @@ describe("CommsJamming", function()
           },
         })
 
-        CommsJamming.processCommsJamming(makeCommsJammingConfig({ mode = "directional" }), jammingStateDir)
+        runCommsJamming(makeCommsJammingConfig({ mode = "directional" }), jammingStateDir)
         assert.is_false(samCtxDir.isOutOfComms)
       end)
     end)
@@ -885,7 +919,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20), no jammers/AEW/ROCC -> commModifier = -20
         -- commsLevel = commsBase(40) + (-20) = 20 < threshold(30) -> RTB
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(20, aircraftCtx.commsLevel)
         local rtbCalled = false
@@ -915,7 +949,7 @@ describe("CommsJamming", function()
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
         -- commsLevel = 100 + (-20) = 80 > 30 -> no RTB
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(80, aircraftCtx.commsLevel)
         for _, call in ipairs(stubSetUnit.calls) do
@@ -941,7 +975,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         -- commsLevel should remain unchanged
         assert.are.equal(100, aircraftCtx.commsLevel)
@@ -957,7 +991,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(100, aircraftCtx.commsLevel)
       end)
@@ -988,7 +1022,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- commsLevel = commsBase(0) + 379 = 379
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1022,7 +1056,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- commsLevel = commsBase(0) + 379 = 379
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1055,7 +1089,7 @@ describe("CommsJamming", function()
 
         -- getCommsLevel with ROCC has break after first valid: initialComms(-20) + aewSupport.close(400) + variance(-1) = 379
         -- Only one ROCC should contribute, NOT both
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.are.equal(379, aircraftCtx.commsLevel)
       end)
@@ -1082,7 +1116,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
 
         assert.is_true(aircraftCtx.commsLevel < 200)
       end)
@@ -1102,7 +1136,7 @@ describe("CommsJamming", function()
         trackStub(stub(GameApi, "ScenEdit_SetUnit"))
         trackStub(stub(math, "random").invokes(makeRandomFn()))
 
-        CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+        runCommsJamming(commsJammingConfig, jammingState)
       end)
     end)
   end)
@@ -1125,7 +1159,7 @@ describe("CommsJamming", function()
 
     -- Positive: creates context for Y-9 aircraft
     it("should create context for Y-9 aircraft", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "Y9-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -1135,19 +1169,19 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.is_not_nil(commsJammingCtx.jammers["Y9-001"])
-      assert.are.equal("Y9-001", commsJammingCtx.jammers["Y9-001"].guid)
-      assert.are.equal(40, commsJammingCtx.jammers["Y9-001"].commsLevel)
-      assert.are.equal(40, commsJammingCtx.jammers["Y9-001"].commsBase)
-      assert.are.equal(30, commsJammingCtx.jammers["Y9-001"].commsThreshold)
-      assert.are.equal(0, commsJammingCtx.jammers["Y9-001"].outofcomms)
+      assert.is_not_nil(saveData.c.commsJamming.jammers["Y9-001"])
+      assert.are.equal("Y9-001", saveData.c.commsJamming.jammers["Y9-001"].guid)
+      assert.are.equal(40, saveData.c.commsJamming.jammers["Y9-001"].commsLevel)
+      assert.are.equal(40, saveData.c.commsJamming.jammers["Y9-001"].commsBase)
+      assert.are.equal(30, saveData.c.commsJamming.jammers["Y9-001"].commsThreshold)
+      assert.are.equal(0, saveData.c.commsJamming.jammers["Y9-001"].outofcomms)
     end)
 
     -- Positive: creates context for J-15D aircraft
     it("should create context for J-15D aircraft", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "J15D-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -1157,15 +1191,15 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.is_not_nil(commsJammingCtx.jammers["J15D-001"])
-      assert.are.equal("J15D-001", commsJammingCtx.jammers["J15D-001"].guid)
+      assert.is_not_nil(saveData.c.commsJamming.jammers["J15D-001"])
+      assert.are.equal("J15D-001", saveData.c.commsJamming.jammers["J15D-001"].guid)
     end)
 
     -- Positive: creates context for J-16D aircraft
     it("should create context for J-16D aircraft", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "J16D-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -1175,15 +1209,25 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.is_not_nil(commsJammingCtx.jammers["J16D-001"])
-      assert.are.equal("J16D-001", commsJammingCtx.jammers["J16D-001"].guid)
+      assert.is_not_nil(saveData.c.commsJamming.jammers["J16D-001"])
+      assert.are.equal("J16D-001", saveData.c.commsJamming.jammers["J16D-001"].guid)
+    end)
+
+    -- Negative: a disabled jamming side registers no jammers
+    it("should not scan aircraft when comms jamming is disabled", function()
+      local saveData = makeSaveData(makeJammingState(), false)
+      local getSideStub = trackStub(stub(GameApi, "VP_GetSide"))
+
+      CommsJamming.initCommsJammersContext(config, saveData)
+
+      assert.stub(getSideStub).was_not.called()
     end)
 
     -- Negative: skips non-EW aircraft
     it("should skip aircraft that are not EW platforms", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "F16-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -1193,39 +1237,39 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.is_nil(commsJammingCtx.jammers["F16-001"])
+      assert.is_nil(saveData.c.commsJamming.jammers["F16-001"])
     end)
 
     -- Negative: handles nil aircraft list
     it("should handle when VP_GetSide returns no aircraft", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns({
         unitsBy = function() return nil end,
       }))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.are.equal(0, Utils.getCount(commsJammingCtx.jammers))
+      assert.are.equal(0, Utils.getCount(saveData.c.commsJamming.jammers))
     end)
 
     -- Negative: skips unresolvable units
     it("should skip aircraft that cannot be resolved", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({ { guid = "GHOST-001" } })))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.are.equal(0, Utils.getCount(commsJammingCtx.jammers))
+      assert.are.equal(0, Utils.getCount(saveData.c.commsJamming.jammers))
     end)
 
     -- Positive: creates contexts for multiple EW aircraft types
     it("should create contexts for mixed EW aircraft types", function()
-      local commsJammingCtx = { jammers = {} }
+      local saveData = makeSaveData(makeJammingState())
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock({
         { guid = "Y9-001" },
@@ -1249,12 +1293,12 @@ describe("CommsJamming", function()
         return nil
       end))
 
-      CommsJamming.initCommsJammersContext(commsJammingCtx, "China", config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initCommsJammersContext(config, saveData)
 
-      assert.is_not_nil(commsJammingCtx.jammers["Y9-001"])
-      assert.is_not_nil(commsJammingCtx.jammers["J15D-001"])
-      assert.is_not_nil(commsJammingCtx.jammers["J16D-001"])
-      assert.is_nil(commsJammingCtx.jammers["F16-001"])
+      assert.is_not_nil(saveData.c.commsJamming.jammers["Y9-001"])
+      assert.is_not_nil(saveData.c.commsJamming.jammers["J15D-001"])
+      assert.is_not_nil(saveData.c.commsJamming.jammers["J16D-001"])
+      assert.is_nil(saveData.c.commsJamming.jammers["F16-001"])
     end)
   end)
 
@@ -1273,7 +1317,7 @@ describe("CommsJamming", function()
 
     -- Positive: E-2K goes to AEW, other aircraft go to AC, both with comms defaults
     it("should split AEW from other aircraft and apply comms defaults", function()
-      local landBasedCtx = { AEW = {}, AC = {} }
+      local saveData = makeSaveData(makeJammingState())
       local defaults = config.c.commsJamming.aircraftDefaults
       local units = {
         ["E2K-1"] = makeUnit({ guid = "E2K-1", type = constants.UNIT_TYPES.AIRCRAFT, dbid = constants.PLATFORMS.E2K }),
@@ -1284,8 +1328,9 @@ describe("CommsJamming", function()
         return units[guid]
       end))
 
-      CommsJamming.initTargetAircraftContexts(landBasedCtx, defaults)
+      CommsJamming.initTargetAircraftContexts(config, saveData)
 
+      local landBasedCtx = saveData.t.air.landBased
       assert.stub(getSideStub).was.called_with({ side = constants.SIDES.PLAYER })
       assert.are.equal(1, Utils.getCount(landBasedCtx.AEW))
       assert.are.equal(1, Utils.getCount(landBasedCtx.AC))
@@ -1297,13 +1342,13 @@ describe("CommsJamming", function()
 
     -- Edge: stale entries are cleared even when the side has no aircraft
     it("should clear stale entries when no aircraft are found", function()
-      local landBasedCtx = { AEW = { old = {} }, AC = { old = {} } }
+      local saveData = makeSaveData(makeJammingState({ aircraft = { old = {} }, aew = { old = {} } }))
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideMock(nil)))
 
-      CommsJamming.initTargetAircraftContexts(landBasedCtx, config.c.commsJamming.aircraftDefaults)
+      CommsJamming.initTargetAircraftContexts(config, saveData)
 
-      assert.are.same({}, landBasedCtx.AEW)
-      assert.are.same({}, landBasedCtx.AC)
+      assert.are.same({}, saveData.t.air.landBased.AEW)
+      assert.are.same({}, saveData.t.air.landBased.AC)
     end)
   end)
 
@@ -1312,7 +1357,7 @@ describe("CommsJamming", function()
   -- ============================================================================
 
   describe("removeDestroyedUnit", function()
-    local function makeJammingState()
+    local function makeTrackedState()
       return {
         jammers = { ["Y9-1"] = {}, ["J16D-1"] = {} },
         iads = {},
@@ -1323,9 +1368,10 @@ describe("CommsJamming", function()
 
     -- Positive: a destroyed jammer stops jamming; other entries stay
     it("should remove a destroyed China jammer only", function()
-      local jammingState = makeJammingState()
+      local jammingState = makeTrackedState()
+      local unit = { guid = "Y9-1" }
 
-      CommsJamming.removeDestroyedUnit(jammingState, "Y9-1")
+      CommsJamming.removeDestroyedUnit(makeSaveData(jammingState), unit)
 
       assert.is_nil(jammingState.jammers["Y9-1"])
       assert.is_not_nil(jammingState.jammers["J16D-1"])
@@ -1335,10 +1381,13 @@ describe("CommsJamming", function()
 
     -- Positive: destroyed Taiwan aircraft and AEW both stop being jamming targets
     it("should remove destroyed Taiwan aircraft and AEW", function()
-      local jammingState = makeJammingState()
+      local jammingState = makeTrackedState()
+      local saveData = makeSaveData(jammingState)
+      local unit1 = { guid = "F16-1" }
+      local unit2 = { guid = "E2K-1" }
 
-      CommsJamming.removeDestroyedUnit(jammingState, "F16-1")
-      CommsJamming.removeDestroyedUnit(jammingState, "E2K-1")
+      CommsJamming.removeDestroyedUnit(saveData, unit1)
+      CommsJamming.removeDestroyedUnit(saveData, unit2)
 
       assert.are.same({}, jammingState.aircraft)
       assert.are.same({}, jammingState.aew)
@@ -1347,11 +1396,13 @@ describe("CommsJamming", function()
 
     -- Edge: an untracked GUID is a no-op
     it("should leave all maps unchanged for an untracked unit", function()
-      local jammingState = makeJammingState()
+      local jammingState = makeTrackedState()
+      local saveData = makeSaveData(jammingState)
+      local unit = { guid = "unknown" }
 
-      CommsJamming.removeDestroyedUnit(jammingState, "unknown")
+      CommsJamming.removeDestroyedUnit(saveData, unit)
 
-      assert.are.same(makeJammingState(), jammingState)
+      assert.are.same(makeTrackedState(), jammingState)
     end)
   end)
 end)

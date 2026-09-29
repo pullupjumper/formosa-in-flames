@@ -1,5 +1,4 @@
 local PersistentState = require("src.core.persistentState")
-local Logger = require("src.utils.logger")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
 local MissileSystem = require("src.modules.missileSystem.init")
@@ -8,12 +7,6 @@ local CommsJamming = require("src.modules.ew.commsJamming")
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
-local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
-
-if not filteredUnits then
-  Logger.error("filteredUnits is nil")
-  return
-end
 
 PersistentState.update(function(saveData)
   if unit then
@@ -41,7 +34,7 @@ PersistentState.update(function(saveData)
           (score + config.s.destroyingAircraftOnTheGround),
           "Destroyed a communications jammer."
         )
-        CommsJamming.removeDestroyedUnit(PersistentState.commsJamming(saveData), unit.guid)
+        CommsJamming.removeDestroyedUnit(saveData, unit)
       elseif unit.dbid == constants.PLATFORMS.WZ8 or
           unit.dbid == constants.PLATFORMS.BZK005 or
           unit.dbid == constants.PLATFORMS.WZ7 or
@@ -83,23 +76,16 @@ PersistentState.update(function(saveData)
         GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a TEL.")
       elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
         GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a GPS jammer.")
-        GnssJamming.removeJammingZoneByName(PersistentState.gnssJammers(saveData, constants.SIDES.ENEMY),
-          constants.SIDES.ENEMY, unit.name)
+        GnssJamming.processJammerDestruction(config, unit)
       elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-        MissileSystem.processSupplyAssetDestruction(unit, PersistentState.groundForces(saveData, constants.SIDES.ENEMY))
+        MissileSystem.processSupplyAssetDestruction(saveData, unit)
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
           (score + config.s.destroyingAmmo),
           "You have destroyed a " .. text
         )
-      elseif IntegratedAirDefenseSystem.isPLASAM(unit.dbid) then
-        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(iads.c2, "sam", unit)
-        IntegratedAirDefenseSystem.activateNearestRadar(config, filteredUnits, unit)
-      elseif unit.dbid == constants.PLATFORMS.JY26 or unit.dbid == constants.PLATFORMS.YLC8B then
-        IntegratedAirDefenseSystem.removeDestroyedUnitContextFromIADS(iads.c2, "radar", unit)
-        IntegratedAirDefenseSystem.activateNearestRadar(config, filteredUnits, unit)
-      else
+      elseif not IntegratedAirDefenseSystem.processUnitDestruction(config, saveData, unit) then
         for _, dbid in ipairs(config.c.iads.c2FacilityDBIDs) do
           if unit.dbid == dbid and not iads.c2[unit.guid] then
             GameApi.ScenEdit_SetScore(
@@ -108,7 +94,7 @@ PersistentState.update(function(saveData)
               "Destruction of civilian facilities"
             )
           elseif unit.dbid == dbid and iads.c2[unit.guid] then
-            IntegratedAirDefenseSystem.processC2Disruption(iads, unit)
+            IntegratedAirDefenseSystem.processC2Disruption(saveData, unit)
           end
         end
       end

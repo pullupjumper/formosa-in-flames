@@ -5,6 +5,6 @@ local unit = GameApi.ScenEdit_UnitX()
 
 PersistentState.update(function(saveData)
   if unit then
-    RunwayRepairment.processRunwayDamage(PersistentState.runwayRepair(saveData, unit.side), unit)
+    RunwayRepairment.processRunwayDamage(saveData, unit)
   end
 end)

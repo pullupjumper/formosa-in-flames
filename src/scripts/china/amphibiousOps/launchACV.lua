@@ -7,4 +7,4 @@ if not ship then
   return
 end
 
-LandingOps.launchACV(config.c.amphibOps, ship)
+LandingOps.launchACV(config, ship)

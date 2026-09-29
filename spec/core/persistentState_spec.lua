@@ -214,7 +214,7 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
-  -- iads / gnssJammers
+  -- iads
   -- ============================================================================
 
   describe("iads", function()
@@ -225,20 +225,6 @@ describe("PersistentState", function()
 
       assert.are.equal(chinaIads, PersistentState.iads(state, constants.SIDES.ENEMY))
       assert.are.equal(taiwanIads, PersistentState.iads(state, constants.SIDES.PLAYER))
-    end)
-  end)
-
-  describe("gnssJammers", function()
-    -- Positive: each side resolves to its own jammer map, not the other side's
-    it("should return the GNSS jammer map for the given side", function()
-      local chinaJammers, taiwanJammers = {}, {}
-      local state = {
-        c = { gnssJamming = { jammers = chinaJammers } },
-        t = { gnssJamming = { jammers = taiwanJammers } },
-      }
-
-      assert.are.equal(chinaJammers, PersistentState.gnssJammers(state, constants.SIDES.ENEMY))
-      assert.are.equal(taiwanJammers, PersistentState.gnssJammers(state, constants.SIDES.PLAYER))
     end)
   end)
 

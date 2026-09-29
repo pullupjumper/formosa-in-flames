@@ -94,44 +94,20 @@ runInit(function(state)
 
   initEventActions()
   initSpecialActions()
-  LandingOps.init(config.c.amphibOps, PersistentState.landingOps(state))
-  CommsJamming.initTargetAircraftContexts(PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER),
-    config.c.commsJamming.aircraftDefaults)
-  StrikePlanner.init(config, PersistentState.strikePlanner(state))
-  RunwayRepairment.initRunways(config, PersistentState.targetlist(state),
-    PersistentState.runwayRepair(state, constants.SIDES.PLAYER).runways,
-    PersistentState.runwayRepair(state, constants.SIDES.ENEMY).runways)
+  LandingOps.init(config, state)
+  CommsJamming.initTargetAircraftContexts(config, state)
+  StrikePlanner.init(config, state)
+  RunwayRepairment.initRunways(config, state)
 
-  local taiwanIads = PersistentState.iads(state, constants.SIDES.PLAYER)
-  if taiwanIads.enabled then
-    IntegratedAirDefenseSystem.initIADSContexts(config.t.iads, taiwanIads)
-  end
+  IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.PLAYER)
+  IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.ENEMY)
+  CommsJamming.initCommsJammersContext(config, state)
 
-  local chinaIads = PersistentState.iads(state, constants.SIDES.ENEMY)
-  if chinaIads.enabled then
-    IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, chinaIads)
-  end
+  Sigint.initReconAircraftContexts(config, state, "US")
+  Sigint.initReconAircraftContexts(config, state, constants.SIDES.ENEMY)
 
-  local jammingState = PersistentState.commsJamming(state)
-  if jammingState.enabled then
-    CommsJamming.initCommsJammersContext(jammingState, constants.SIDES.ENEMY,
-      config.c.commsJamming.aircraftDefaults)
-  end
-
-  local usSigint = PersistentState.sigint(state, "US")
-  if usSigint.enabled then
-    Sigint.initReconAircraftContexts(usSigint, "US", config.c.commsJamming.aircraftDefaults)
-    Sigint.initReconAircraftContexts(PersistentState.sigint(state, constants.SIDES.ENEMY), constants.SIDES.ENEMY,
-      config.c.commsJamming.aircraftDefaults)
-  end
-
-  if PersistentState.groundForces(state, constants.SIDES.ENEMY).enabled then
-    MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.ENEMY)
-  end
-
-  if PersistentState.groundForces(state, constants.SIDES.PLAYER).enabled then
-    MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.PLAYER)
-  end
+  MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.ENEMY)
+  MissileSystem.initMissileSystemContexts(config, state, constants.SIDES.PLAYER)
 
   if config.isDevMode then
     Logger.log(constants.TAGS.INIT, "Init data and save.")

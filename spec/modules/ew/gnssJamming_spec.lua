@@ -567,16 +567,32 @@ describe("GnssJamming", function()
   end)
 
   -- ============================================================================
-  -- addGnssJammers
+  -- deploySide
   -- ============================================================================
 
-  describe("addGnssJammers", function()
+  describe("deploySide", function()
     before_each(function()
       trackStub(stub(GameUtils, "getCachedSideConfig").returns({
         field = "c",
         enemySide = "Taiwan",
         displayName = "China",
       }))
+    end)
+
+    -- Positive: the side's old jammers are cleared before the new ones go in
+    it("should remove the side's existing jammer zone and unit before adding new ones", function()
+      local descriptor = makeDescriptor({ name = "Jammer A", zoneName = "Zone A" })
+      local sideObj = makeSideObj({ makeZone({ description = "Zone A" }) }, { description = "Zone A", area = {} })
+      trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
+      local removeZoneStub = trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
+      local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
+      trackStub(stub(GameUtils, "tryAddUnit").returns(nil, nil))
+      trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
+
+      GnssJamming.deploySide(makeConfig("c", { jammers = { ["Jammer A"] = descriptor } }), "China")
+
+      assert.stub(removeZoneStub).was.called(1)
+      assert.stub(deleteUnitStub).was.called_with({ side = "China", unitname = "Jammer A" })
     end)
 
     -- Positive: creates multiple jammers successfully
@@ -586,6 +602,7 @@ describe("GnssJamming", function()
         bravo = makeDescriptor({ name = "Jammer B", zoneName = "Zone B" }),
       }
 
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
       trackStub(stub(GameUtils, "tryAddUnit", function(name)
         return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
       end))
@@ -594,7 +611,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local count = GnssJamming.addGnssJammers(descriptors, "China")
+      local count = GnssJamming.deploySide(makeConfig("c", { jammers = descriptors }), "China")
 
       assert.are.equal(2, count)
     end)
@@ -606,6 +623,7 @@ describe("GnssJamming", function()
         bravo = makeDescriptor({ name = "Jammer B", zoneName = "Zone B" }),
       }
 
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
       trackStub(stub(GameUtils, "tryAddUnit", function(name)
         if name == "Jammer A" then
           return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
@@ -617,7 +635,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local count = GnssJamming.addGnssJammers(descriptors, "China")
+      local count = GnssJamming.deploySide(makeConfig("c", { jammers = descriptors }), "China")
 
       assert.are.equal(1, count)
     end)
@@ -628,22 +646,24 @@ describe("GnssJamming", function()
         alpha = makeDescriptor({ name = "Jammer A", zoneName = "Zone A" }),
       }
 
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
       trackStub(stub(GameUtils, "tryAddUnit").returns(
         makeUnit(), { latitude = 25.0, longitude = 121.0 }
       ))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
       trackStub(stub(GameUtils, "createArea").returns(false))
 
-      local count = GnssJamming.addGnssJammers(descriptors, "China")
+      local count = GnssJamming.deploySide(makeConfig("c", { jammers = descriptors }), "China")
 
       assert.are.equal(0, count)
     end)
 
     -- Boundary: empty descriptors returns 0
     it("should return 0 for empty descriptors table", function()
+      trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
       local tryAddUnitStub = trackStub(stub(GameUtils, "tryAddUnit"))
 
-      local count = GnssJamming.addGnssJammers({}, "China")
+      local count = GnssJamming.deploySide(makeConfig("c", { jammers = {} }), "China")
 
       assert.are.equal(0, count)
       assert.stub(tryAddUnitStub).was_not.called()
@@ -651,14 +671,22 @@ describe("GnssJamming", function()
   end)
 
   -- ============================================================================
-  -- removeJammingZoneByName
+  -- processJammerDestruction
   -- ============================================================================
 
-  describe("removeJammingZoneByName", function()
+  describe("processJammerDestruction", function()
+    ---Create config holding China's jammer descriptors keyed by jammer name
+    ---@param jammerDescriptorMap table
+    ---@return table
+    local function makeJammerConfig(jammerDescriptorMap)
+      return makeConfig("c", { jammers = jammerDescriptorMap })
+    end
+
+    local destroyedJammer = { side = "China", name = "alpha" }
+
     -- Positive: removes matching zone by descriptor name
     it("should remove zone matching the named descriptor", function()
       local descriptor = makeDescriptor()
-      local jammerDescriptors = { alpha = descriptor }
       local zone = makeZone({ description = "GNSS Zone Alpha" })
       local standardZone = {
         description = "GNSS Zone Alpha",
@@ -671,7 +699,7 @@ describe("GnssJamming", function()
       local removeZoneStub = trackStub(stub(GameApi, "ScenEdit_RemoveZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local result = GnssJamming.removeJammingZoneByName(jammerDescriptors, "China", "alpha")
+      local result = GnssJamming.processJammerDestruction(makeJammerConfig({ alpha = descriptor }), destroyedJammer)
 
       assert.is_true(result)
       assert.stub(deleteReferencePointStub).was.called(2)
@@ -695,7 +723,7 @@ describe("GnssJamming", function()
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      GnssJamming.removeJammingZoneByName({ alpha = descriptor }, "China", "alpha")
+      GnssJamming.processJammerDestruction(makeJammerConfig({ alpha = descriptor }), destroyedJammer)
 
       assert.stub(deleteUnitStub).was_not.called()
     end)
@@ -704,17 +732,18 @@ describe("GnssJamming", function()
     it("should return false when side object is nil", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(nil))
 
-      local result = GnssJamming.removeJammingZoneByName({ alpha = makeDescriptor() }, "China", "alpha")
+      local result = GnssJamming.processJammerDestruction(makeJammerConfig({ alpha = makeDescriptor() }), destroyedJammer)
 
       assert.is_false(result)
     end)
 
-    -- Negative: returns false when descriptor name not found
-    it("should return false when descriptor key does not exist", function()
+    -- Negative: returns false when the unit name has no descriptor
+    it("should return false when the destroyed unit is not a configured jammer", function()
       local sideObj = makeSideObj()
+      local unit = { side = "China", name = "nonexistent" }
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local result = GnssJamming.removeJammingZoneByName({ alpha = makeDescriptor() }, "China", "nonexistent")
+      local result = GnssJamming.processJammerDestruction(makeJammerConfig({ alpha = makeDescriptor() }), unit)
 
       assert.is_false(result)
     end)
@@ -727,7 +756,7 @@ describe("GnssJamming", function()
 
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local result = GnssJamming.removeJammingZoneByName({ alpha = makeDescriptor() }, "China", "alpha")
+      local result = GnssJamming.processJammerDestruction(makeJammerConfig({ alpha = makeDescriptor() }), destroyedJammer)
 
       assert.is_false(result)
     end)
@@ -739,7 +768,7 @@ describe("GnssJamming", function()
 
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local result = GnssJamming.removeJammingZoneByName({ alpha = makeDescriptor() }, "China", "alpha")
+      local result = GnssJamming.processJammerDestruction(makeJammerConfig({ alpha = makeDescriptor() }), destroyedJammer)
 
       assert.is_false(result)
     end)

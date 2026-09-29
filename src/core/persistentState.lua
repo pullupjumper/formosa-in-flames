@@ -134,14 +134,6 @@ function PersistentState.iads(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].iads
 end
 
----GNSS jammer contexts for a side, indexed by jammer name
----@param state SBJ__SaveData
----@param sideName string China or Taiwan
----@return table<string, SBJ__GNSSJammerContext>
-function PersistentState.gnssJammers(state, sideName)
-  return state[GameUtils.getCachedSideConfig(sideName).field].gnssJamming.jammers
-end
-
 ---Slices China comms jamming reads and mutates: own jammers, Taiwan IADS and aircraft
 ---@param state SBJ__SaveData
 ---@return SBJ__CommsJammingState

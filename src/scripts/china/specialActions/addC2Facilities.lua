@@ -1,10 +1,7 @@
 local config = require("src.core.config")
 local PersistentState = require("src.core.persistentState")
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
-local constants = require("src.core.constants")
 
 PersistentState.update(function(saveData)
-  IntegratedAirDefenseSystem.removeC2Facilities(config.c.iads)
-  IntegratedAirDefenseSystem.addC2Facilities(config.c.iads)
-  IntegratedAirDefenseSystem.initC2FacilitiesContext(config.c.iads, PersistentState.iads(saveData, constants.SIDES.ENEMY))
+  IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
 end)

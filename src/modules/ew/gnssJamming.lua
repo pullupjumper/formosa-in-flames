@@ -247,6 +247,55 @@ local function removeJammerUnit(unitName, sideName)
 end
 
 
+---Add all GNSS jammers for a side
+---Creates multiple GNSS jammer units at randomized positions and sets up their jamming zones
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
+---@param sideName string Side name that will own the jammers
+---@return number # Number of jammers successfully created
+local function addGnssJammers(jammerDescriptorMap, sideName)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local enemySideName = sideConfig.enemySide
+  local successCount = 0
+  local report = LogFormat.report(constants.TAGS.GNSS_JAMMING, "side=" .. sideName, "Add GNSS jammers")
+
+  for _, descriptor in pairs(jammerDescriptorMap) do
+    local unit, point = GameUtils.tryAddUnit(
+      descriptor.name,
+      descriptor.point.latitude,
+      descriptor.point.longitude,
+      descriptor.randomRadius,
+      constants.PLATFORMS.GPS_JAMMER
+    )
+
+    if not unit or not point then
+      report.add("FAIL", {
+        jammer = descriptor.name,
+        zone = descriptor.zoneName,
+        reason = "unit_creation_failed"
+      })
+      goto continue
+    end
+
+    if createJammingZone(unit, descriptor, point, sideName, enemySideName) then
+      successCount = successCount + 1
+      report.add("OK", { jammer = descriptor.name, zone = descriptor.zoneName })
+    else
+      report.add("FAIL", {
+        jammer = descriptor.name,
+        zone = descriptor.zoneName,
+        reason = "zone_creation_failed"
+      })
+    end
+
+    ::continue::
+  end
+
+  report.emit({ created = successCount })
+
+  return successCount
+end
+
+
 -- ============================================================================
 -- Public API
 -- ============================================================================
@@ -315,54 +364,6 @@ function GnssJamming.addGnssJammer(descriptor, sideName)
   return success, unit
 end
 
----Add all GNSS jammers for a side
----Creates multiple GNSS jammer units at randomized positions and sets up their jamming zones
----@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
----@param sideName string Side name that will own the jammers
----@return number # Number of jammers successfully created
-function GnssJamming.addGnssJammers(jammerDescriptorMap, sideName)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local enemySideName = sideConfig.enemySide
-  local successCount = 0
-  local report = LogFormat.report(constants.TAGS.GNSS_JAMMING, "side=" .. sideName, "Add GNSS jammers")
-
-  for _, descriptor in pairs(jammerDescriptorMap) do
-    local unit, point = GameUtils.tryAddUnit(
-      descriptor.name,
-      descriptor.point.latitude,
-      descriptor.point.longitude,
-      descriptor.randomRadius,
-      constants.PLATFORMS.GPS_JAMMER
-    )
-
-    if not unit or not point then
-      report.add("FAIL", {
-        jammer = descriptor.name,
-        zone = descriptor.zoneName,
-        reason = "unit_creation_failed"
-      })
-      goto continue
-    end
-
-    if createJammingZone(unit, descriptor, point, sideName, enemySideName) then
-      successCount = successCount + 1
-      report.add("OK", { jammer = descriptor.name, zone = descriptor.zoneName })
-    else
-      report.add("FAIL", {
-        jammer = descriptor.name,
-        zone = descriptor.zoneName,
-        reason = "zone_creation_failed"
-      })
-    end
-
-    ::continue::
-  end
-
-  report.emit({ created = successCount })
-
-  return successCount
-end
-
 ---Remove all GNSS jammers for a side
 ---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
 ---@param sideName string Side name that owns the jammers
@@ -397,17 +398,28 @@ function GnssJamming.removeJammers(jammerDescriptorMap, sideName)
   return removedCount
 end
 
----Remove specific GNSS jamming zone by name
+---Replace a side's GNSS jammers with fresh ones at the positions in its config
+---@param config SBJ__Config Global configuration table
+---@param sideName string Side name that owns the jammers
+---@return number # Number of jammers successfully created
+function GnssJamming.deploySide(config, sideName)
+  local jammerDescriptorMap = config[GameUtils.getCachedSideConfig(sideName).field].gnssJamming.jammers
+
+  GnssJamming.removeJammers(jammerDescriptorMap, sideName)
+  return addGnssJammers(jammerDescriptorMap, sideName)
+end
+
+---Remove the jamming zone of a destroyed GNSS jammer
 ---Does NOT delete the jammer unit, only the zone and event
----@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
----@param sideName string Side name that owns the jammer
----@param name string Unique name/key of the jammer descriptor to remove
+---@param config SBJ__Config Global configuration table holding each side's jammer descriptors
+---@param unit CMO__Unit The destroyed jammer unit
 ---@return boolean # Whether the zone was successfully removed
-function GnssJamming.removeJammingZoneByName(jammerDescriptorMap, sideName, name)
+function GnssJamming.processJammerDestruction(config, unit)
+  local sideName = unit.side
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if not sideObj then return false end
 
-  local descriptor = jammerDescriptorMap[name]
+  local descriptor = config[GameUtils.getCachedSideConfig(sideName).field].gnssJamming.jammers[unit.name]
   if not descriptor then return false end
 
   for _, zone in ipairs(sideObj.standardzones) do

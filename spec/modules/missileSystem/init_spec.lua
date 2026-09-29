@@ -298,6 +298,29 @@ describe("MissileSystem", function()
     end)
   end)
 
+  describe("initMissileSystemContexts", function()
+    -- Positive: an enabled side builds contexts from its own ground config into its own slice
+    it("should init contexts from the side's ground config when the side is enabled", function()
+      local config, saveData = makeSides()
+      saveData.t.ground.enabled = true
+      local contextStub = trackStub(Context, "initMissileSystemContexts")
+
+      MissileSystem.initMissileSystemContexts(config, saveData, constants.SIDES.PLAYER)
+
+      assert.stub(contextStub).was.called_with(config.t.ground, saveData.t.ground)
+    end)
+
+    -- Negative: a disabled side builds nothing
+    it("should skip a side whose ground forces are disabled", function()
+      local config, saveData = makeSides()
+      local contextStub = trackStub(Context, "initMissileSystemContexts")
+
+      MissileSystem.initMissileSystemContexts(config, saveData, constants.SIDES.ENEMY)
+
+      assert.stub(contextStub).was_not.called()
+    end)
+  end)
+
   describe("deploySide", function()
     -- Positive: units and contexts are built from the side's ground config into the side's slice
     it("should add units and init contexts from the side's ground config", function()
@@ -446,8 +469,8 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("processSupplyAssetDestruction", function()
-    -- Positive: finds the owning system and logs the ammunition delta
-    it("should zero the depot of whichever system owns it and log the delta", function()
+    -- Positive: finds the owning system on the unit's side and logs the ammunition delta
+    it("should zero the depot of whichever system on the unit's side owns it and log the delta", function()
       local srbmCtx = {
         name = "srbm",
         resupplyUnits = {},
@@ -455,13 +478,18 @@ describe("MissileSystem", function()
           ["Ammo Depot Alpha"] = { name = "Ammo Depot Alpha", wpnCurrent = 100 }
         }
       }
-      local groundCtx = {
-        mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
-        srbm = srbmCtx,
+      local saveData = {
+        c = { ground = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } },
+        t = {
+          ground = {
+            mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
+            srbm = srbmCtx,
+          },
+        },
       }
-      local unit = { name = "Ammo Depot Alpha" }
+      local unit = { name = "Ammo Depot Alpha", side = constants.SIDES.PLAYER }
 
-      local processed = MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
+      local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 
       assert.is_true(processed)
       assert.are.equal(0, srbmCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
@@ -477,10 +505,10 @@ describe("MissileSystem", function()
 
     -- Negative: a unit no system tracks is ignored without logging
     it("should return false and stay silent for an untracked unit", function()
-      local groundCtx = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } }
-      local unit = { name = "Random Truck" }
+      local saveData = { c = { ground = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } }
+      local unit = { name = "Random Truck", side = constants.SIDES.ENEMY }
 
-      local processed = MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
+      local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 
       assert.is_false(processed)
       assert.stub(logStub).was_not.called()

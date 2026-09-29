@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
+local PersistentState = require("src.core.persistentState")
 
 local CommsJamming = {}
 
@@ -477,11 +478,17 @@ end
 -- Public API
 -- ============================================================================
 
----Handle communication jamming operations for all active jammers and affected units
+---Run one China comms jamming tick when comms jamming is enabled
 ---Processes jamming effects on SAM/radar systems and monitors aircraft communication quality
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters, thresholds, and effectiveness formulas
----@param jammingState SBJ__CommsJammingState Jammer, aircraft, AEW, and IADS contexts
-function CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; China jammers, Taiwan IADS and aircraft are mutated
+function CommsJamming.process(config, saveData)
+  local jammingState = PersistentState.commsJamming(saveData)
+  if not jammingState.enabled then
+    return
+  end
+
+  local commsJammingConfig = config.c.commsJamming
   local jammers = findJammers(jammingState.jammers)
   local unitCtxMap, targetCount = findSAMAndRadar(jammingState.iads)
 
@@ -503,13 +510,17 @@ function CommsJamming.processCommsJamming(commsJammingConfig, jammingState)
   })
 end
 
----Initialize communications jammer contexts for the specified side
----Scans all aircraft on the side and creates contexts for electronic warfare aircraft
----@param commsJammingCtx SBJ__CommsJammingContext|SBJ__CommsJammingState Jamming state whose jammers map receives the contexts
----@param sideName string The side name to scan for jammers (e.g., 'China', 'Taiwan')
----@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
-function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName, aircraftDefaults)
-  local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+---Register China's electronic warfare aircraft as jammers when comms jamming is enabled
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; China's jammer map is filled
+function CommsJamming.initCommsJammersContext(config, saveData)
+  local jammingState = PersistentState.commsJamming(saveData)
+  if not jammingState.enabled then
+    return
+  end
+
+  local aircraftDefaults = config.c.commsJamming.aircraftDefaults
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
@@ -519,7 +530,7 @@ function CommsJamming.initCommsJammersContext(commsJammingCtx, sideName, aircraf
     local actualUnit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if actualUnit and EW_PLATFORM_DBIDS[actualUnit.dbid] then
-      commsJammingCtx.jammers[actualUnit.guid] = {
+      jammingState.jammers[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,
         commsLevel = aircraftDefaults.commsLevel,
@@ -534,9 +545,11 @@ end
 
 ---Register Taiwan land-based aircraft as comms jamming targets, splitting AEW from other aircraft
 ---Existing entries are discarded so the registry matches the aircraft currently in play.
----@param landBasedCtx SBJ__LandBasedPlatformContext Taiwan land-based platform context; AC/AEW are replaced
----@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
-function CommsJamming.initTargetAircraftContexts(landBasedCtx, aircraftDefaults)
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; Taiwan land-based AC/AEW maps are replaced
+function CommsJamming.initTargetAircraftContexts(config, saveData)
+  local landBasedCtx = PersistentState.landBasedAircraft(saveData, constants.SIDES.PLAYER)
+  local aircraftDefaults = config.c.commsJamming.aircraftDefaults
   landBasedCtx.AEW = {}
   landBasedCtx.AC = {}
 
@@ -578,9 +591,11 @@ function CommsJamming.initTargetAircraftContexts(landBasedCtx, aircraftDefaults)
 end
 
 ---Forget a destroyed unit wherever comms jamming tracks it: China jammers, Taiwan aircraft or AEW
----@param jammingState SBJ__CommsJammingState Jammer, aircraft, AEW, and IADS contexts
----@param guid string Destroyed unit GUID
-function CommsJamming.removeDestroyedUnit(jammingState, guid)
+---@param saveData SBJ__SaveData Persistent save data; comms jamming slices are mutated
+---@param unit CMO__Unit Destroyed unit
+function CommsJamming.removeDestroyedUnit(saveData, unit)
+  local jammingState = PersistentState.commsJamming(saveData)
+  local guid = unit.guid
   jammingState.jammers[guid] = nil
   jammingState.aircraft[guid] = nil
   jammingState.aew[guid] = nil

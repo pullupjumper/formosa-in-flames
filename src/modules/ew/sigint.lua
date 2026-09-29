@@ -466,12 +466,18 @@ end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param sigintCtx SBJ__SIGINTContext SIGINT context to populate with recon aircraft
----@param sideName string Side name to scan for reconnaissance aircraft
----@param aircraftDefaults SBJ__AircraftCommsConfig Aircraft communications default values
+---@param config SBJ__Config Global configuration table
+---@param saveData SBJ__SaveData Persistent save data; the side's SIGINT recon aircraft map is filled
+---@param sideName string Side name to scan for reconnaissance aircraft (China or US)
 ---@return number # Number of reconnaissance aircraft initialized
-function Sigint.initReconAircraftContexts(sigintCtx, sideName, aircraftDefaults)
+function Sigint.initReconAircraftContexts(config, saveData, sideName)
+  local sigintCtx = PersistentState.sigint(saveData, sideName)
+  local aircraftDefaults = config.c.commsJamming.aircraftDefaults
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+
+  if not sigintCtx.enabled then
+    return 0
+  end
 
   if not filteredUnits then
     Logger.warn(LogFormat.line("WARN", { side = sideName, reason = "no_aircraft_units" }))

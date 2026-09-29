@@ -186,10 +186,12 @@ function MissileSystem.processSide(config, saveData, sideName)
 end
 
 ---Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
+---@param saveData SBJ__SaveData Persistent save data; the destroyed unit's side ground slice is mutated
 ---@param unit CMO__Unit Destroyed unit
----@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
 ---@return boolean processed Whether the unit belonged to a missile system and ammo was adjusted
-function MissileSystem.processSupplyAssetDestruction(unit, groundCtx)
+function MissileSystem.processSupplyAssetDestruction(saveData, unit)
+  local groundCtx = PersistentState.groundForces(saveData, unit.side)
+
   for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     local systemCtx = groundCtx[missileSystem]
     local success, result
@@ -288,15 +290,17 @@ function MissileSystem.seedGroundForceState(config, saveData, sideName)
   )
 end
 
----Initialize a side's missile system runtime contexts from configuration
+---Initialize a side's missile system runtime contexts from configuration when its ground forces are enabled
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
 ---@param sideName string Side name (China or Taiwan)
 function MissileSystem.initMissileSystemContexts(config, saveData, sideName)
-  Context.initMissileSystemContexts(
-    config[GameUtils.getCachedSideConfig(sideName).field].ground,
-    PersistentState.groundForces(saveData, sideName)
-  )
+  local groundForceCtx = PersistentState.groundForces(saveData, sideName)
+  if not groundForceCtx.enabled then
+    return
+  end
+
+  Context.initMissileSystemContexts(config[GameUtils.getCachedSideConfig(sideName).field].ground, groundForceCtx)
 end
 
 ---Iterate through enabled missile systems only

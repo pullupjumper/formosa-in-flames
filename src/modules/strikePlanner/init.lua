@@ -7,6 +7,8 @@ local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local AttackManager = require("src.modules.attackManager")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
+local Logger = require("src.utils.logger")
+local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
 local StrikePlanner = {}
@@ -19,8 +21,10 @@ local WZ8_RECON_CHANCE = 0.5
 ---Initialize the strike planner state at scenario start
 ---Builds the persistent target list first, then the recon queue when recon is enabled.
 ---@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
-function StrikePlanner.init(config, plannerState)
+---@param saveData SBJ__SaveData Persistent save data; China's target list and recon queue are filled
+function StrikePlanner.init(config, saveData)
+  local plannerState = PersistentState.strikePlanner(saveData)
+
   TargetingProcess.findTargets(constants.SIDES.ENEMY, config.targetScanning, plannerState.targetlist)
 
   if plannerState.recon.enabled then
@@ -141,9 +145,15 @@ end
 ---Order matters: dynamic plans are inserted before recon settles its queue, and
 ---execution runs last so plans inserted this tick can start in the same tick.
 ---@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts from the game
-function StrikePlanner.process(config, plannerState, contacts)
+---@param saveData SBJ__SaveData Persistent save data; China's strike planner slices are mutated
+function StrikePlanner.process(config, saveData)
+  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
+  if not contacts then
+    Logger.error("contacts is nil")
+    return
+  end
+
+  local plannerState = PersistentState.strikePlanner(saveData)
   processDynamicOperations(config, plannerState, contacts)
   processRecon(config, plannerState)
   launchLACMSalvo(config, plannerState)
