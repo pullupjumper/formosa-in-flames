@@ -144,7 +144,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
+      local results = Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = false }, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.is_nil(systemCtx.firingUnits["Firing Unit Alpha"].reloadStartTime)
@@ -198,7 +198,7 @@ describe("MissileSystem Cycle", function()
         return nil
       end)
 
-      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
+      local results = Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = false }, "Taiwan")
 
       assert.are.equal(20, systemCtx.resupplyUnits["Ammo Sec, Alpha"].wpnCurrent)
       assert.are.equal(80, systemCtx.ammunitions["Ammo Depot"].wpnCurrent)
@@ -225,7 +225,7 @@ describe("MissileSystem Cycle", function()
 
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
+      local results = Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = false }, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.are.equal(0, #results)
@@ -238,7 +238,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {}
       })
 
-      local results = Cycle.process(systemCtx, makeSystemCfg(), false, "Taiwan")
+      local results = Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = false }, "Taiwan")
 
       assert.are.equal(0, #results)
     end)
@@ -288,7 +288,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
+      Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = true }, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingCtx.state)
@@ -339,7 +339,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      local results = Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
+      local results = Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = true }, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
@@ -391,7 +391,7 @@ describe("MissileSystem Cycle", function()
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10, maxWeapons = 10 })
 
-      local results = Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
+      local results = Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = true }, "Taiwan")
 
       assert.are.equal(1, #results)
       assert.are.equal("FAIL", results[1].tag)
@@ -448,7 +448,7 @@ describe("MissileSystem Cycle", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
+      Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = true }, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingCtx.state)
@@ -501,7 +501,7 @@ describe("MissileSystem Cycle", function()
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Cycle.process(systemCtx, makeSystemCfg({ stowTime = 300 }), true, "Taiwan")
+      Cycle.process(systemCtx, { systemConfig = makeSystemCfg({ stowTime = 300 }), isAuto = true }, "Taiwan")
 
       local firingCtx = systemCtx.firingUnits["Firing Unit Alpha"]
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingCtx.state)
@@ -573,7 +573,7 @@ describe("MissileSystem Cycle", function()
       local stubHideUnit = trackStub(Concealment, "hideUnit").returns(true)
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
+      Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = true }, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
@@ -645,7 +645,7 @@ describe("MissileSystem Cycle", function()
       local stubHideUnit = trackStub(Concealment, "hideUnit").returns(true)
       trackStub(math, "random").returns(1)
 
-      Cycle.process(systemCtx, makeSystemCfg(), true, "Taiwan")
+      Cycle.process(systemCtx, { systemConfig = makeSystemCfg(), isAuto = true }, "Taiwan")
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemCtx.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)

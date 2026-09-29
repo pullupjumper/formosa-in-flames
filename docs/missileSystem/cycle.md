@@ -125,7 +125,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `Cycle.process` | `systemCtx: SBJ__MissileSystemContext, isAuto: boolean, sideName: string` | `SBJ__LogResult[]` | 對單一飛彈系統執行一次完整補給循環，回傳本次有實際進度的動作清單 |
+| `Cycle.process` | `systemCtx: SBJ__MissileSystemContext, runCtx: SBJ__CycleRunContext, sideName: string` | `SBJ__LogResult[]` | 對單一飛彈系統執行一次完整補給循環，回傳本次有實際進度的動作清單 |
 
 ---
 

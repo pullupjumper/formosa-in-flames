@@ -146,63 +146,63 @@ end
 ---Set firing unit reload start time
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@param isAuto boolean Whether in automatic mode
-function Movement.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
+function Movement.setReloadStartTime(firingUnitCtx, firingUnit, runCtx)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.RELOAD
   firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   Shared.setGroupUnitProperties(firingUnit, function(unit)
-    return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
+    return Shared.buildModeProperties(runCtx.isAuto, constants.WCS.HOLD)
   end)
 end
 
 ---Set firing unit weapon control status to free fire
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@param isAuto boolean Whether in automatic mode
-function Movement.setWCSToFree(firingUnitCtx, firingUnit, isAuto)
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
+function Movement.setWCSToFree(firingUnitCtx, firingUnit, runCtx)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
   Shared.setGroupUnitProperties(firingUnit, function(unit)
-    return Shared.buildModeProperties(isAuto, constants.WCS.FREE)
+    return Shared.buildModeProperties(runCtx.isAuto, constants.WCS.FREE)
   end)
 end
 
 ---Set firing unit status to hide
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@param isAuto boolean Whether the action is automatic
-function Movement.setStateToHide(firingUnitCtx, firingUnit, isAuto)
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
+function Movement.setStateToHide(firingUnitCtx, firingUnit, runCtx)
   firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.HIDE
   Shared.setGroupUnitProperties(firingUnit, function(unit)
-    return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
+    return Shared.buildModeProperties(runCtx.isAuto, constants.WCS.HOLD)
   end)
 end
 
 ---Reset unit state to STATIC and clear reload timer
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param firingUnit CMO__Unit Unit group to reset
----@param isAuto boolean Whether the action is automatic
-function Movement.setStateToStatic(systemCtx, firingUnit, isAuto)
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
+function Movement.setStateToStatic(systemCtx, firingUnit, runCtx)
   local unitCtx = systemCtx.firingUnits[firingUnit.name] or systemCtx.resupplyUnits[firingUnit.name]
 
   if unitCtx then
     unitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
     unitCtx.reloadStartTime = nil
     Shared.setGroupUnitProperties(firingUnit, function(unit)
-      return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
+      return Shared.buildModeProperties(runCtx.isAuto, constants.WCS.HOLD)
     end)
   end
 end
 
 ---Check if firing unit is currently repositioning
 ---@param firingUnitCtx SBJ__FiringUnitContext|nil Firing unit context
----@param isAuto boolean Whether the action is automatic
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
 ---@return boolean # Whether the unit is repositioning
-function Movement.isRepositioning(firingUnitCtx, isAuto)
+function Movement.isRepositioning(firingUnitCtx, runCtx)
   if not firingUnitCtx then
     return false
   end
 
-  if isAuto then
+  if runCtx.isAuto then
     return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   end
 

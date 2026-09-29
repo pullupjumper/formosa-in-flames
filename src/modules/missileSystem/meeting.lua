@@ -66,17 +66,17 @@ end
 ---Check if firing unit and its paired resupply unit have met in a shared RL area
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggering unit (either firing or resupply)
----@param isAuto boolean Whether in automatic mode
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
 ---@return boolean hasMet Whether the pair has met with reload required
 ---@return SBJ__FiringUnitContext|nil firingUnitCtx Firing unit context targeted for reload
-function Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
+function Meeting.hasMetResupplyUnit(systemCtx, unit, runCtx)
   local firingUnitCtx, resupplyUnitCtx = resolvePair(systemCtx, unit.name)
   if not firingUnitCtx or not resupplyUnitCtx then
     return false, nil
   end
 
   local triggeringCtx = (unit.name == firingUnitCtx.name) and firingUnitCtx or resupplyUnitCtx
-  if not isValidStateForMeeting(triggeringCtx.state, isAuto) then
+  if not isValidStateForMeeting(triggeringCtx.state, runCtx.isAuto) then
     return false, nil
   end
 
@@ -102,12 +102,12 @@ end
 ---Check if resupply unit has met with ammunition depot in a shared AHA
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Unit to check
----@param isAuto boolean Whether in automatic mode
+---@param runCtx SBJ__MissileRunContext Per-run mode shared by every unit in this run
 ---@return boolean hasMet Whether units have met
 ---@return SBJ__ResupplyUnitContext|nil resupplyUnitCtx The matched resupply unit context
-function Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
+function Meeting.hasMetAmmoDepot(systemCtx, unit, runCtx)
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
-  if not resupplyUnitCtx or not isValidStateForMeeting(resupplyUnitCtx.state, isAuto) then
+  if not resupplyUnitCtx or not isValidStateForMeeting(resupplyUnitCtx.state, runCtx.isAuto) then
     return false, nil
   end
 

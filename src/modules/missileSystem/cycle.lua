@@ -9,10 +9,6 @@ local Concealment = require("src.modules.missileSystem.concealment")
 
 local Cycle = {}
 
----@class SBJ__CycleRunContext
----@field systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
----@field isAuto boolean Whether in automatic mode
-
 ---Append a movement command result
 ---Rows carry only unit-level fields; the caller adds the owning system name.
 ---The failing helper supplies its own reason, so no generic one is invented here.
@@ -169,7 +165,7 @@ local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firing
     firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   end
 
-  local hasMet = Meeting.hasMetResupplyUnit(systemCtx, firingUnit, isAuto)
+  local hasMet = Meeting.hasMetResupplyUnit(systemCtx, firingUnit, runCtx)
   local isReadyToReload = isReadyToReloadFiringUnit(firingUnitCtx, systemConfig, hasMet, firingUnit)
 
   if not isReadyToReload then
@@ -230,12 +226,12 @@ end
 ---Trigger resupply movement when resupply unit is static and out of ammo (auto mode only)
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
----@param isAuto boolean Whether in automatic mode
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@return SBJ__LogResult[] results Collected structured results
-local function startResupplyMovement(resupplyUnitCtx, resupplyUnit, isAuto)
+local function startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx)
   local results = {}
 
-  if not isAuto or resupplyUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.STATIC then
+  if not runCtx.isAuto or resupplyUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.STATIC then
     return results
   end
 
@@ -265,7 +261,7 @@ local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx,
     resupplyUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   end
 
-  local hasMet = Meeting.hasMetAmmoDepot(systemCtx, resupplyUnit, isAuto)
+  local hasMet = Meeting.hasMetAmmoDepot(systemCtx, resupplyUnit, runCtx)
   local isReadyToReload = isReadyToReloadResupplyUnit(resupplyUnitCtx, systemConfig, hasMet)
 
   if not isReadyToReload then
@@ -315,7 +311,7 @@ end
 ---@param resupplyUnit CMO__Unit Resupply unit group
 ---@return SBJ__LogResult[] results Collected structured results
 local function processResupplyUnitReloadCycle(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit)
-  local results = startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx.isAuto)
+  local results = startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx)
   Utils.addAll(results, completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit))
   return results
 end
@@ -356,12 +352,10 @@ end
 
 ---Process missile-system reload cycles and return structured results
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
----@param systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
----@param isAuto boolean Whether in automatic mode
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param sideName string Side name
 ---@return SBJ__LogResult[] results Collected structured results
-function Cycle.process(systemCtx, systemConfig, isAuto, sideName)
-  local runCtx = { systemConfig = systemConfig, isAuto = isAuto }
+function Cycle.process(systemCtx, runCtx, sideName)
   local results = processFiringUnits(systemCtx, runCtx, sideName)
   Utils.addAll(results, processResupplyUnits(systemCtx, runCtx, sideName))
   return results

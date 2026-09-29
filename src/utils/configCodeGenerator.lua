@@ -232,10 +232,6 @@ end
 ---Position emitters driving Phase 3 serialization
 ---Each emitter describes one opArea field and where to find its AREAS const
 ---SHRL reuses RL's area by design (shelter -> reload loop shares the reload area)
----@class SBJ__OpAreaPositionEmitter
----@field field string opArea field name (RL/HA/FP/AHA/SHRL)
----@field keyPrefix string areaRefMap subkey; combined with position index as `keyPrefix .. "_" .. i` when indexed
----@field indexed boolean When true, subkey varies per position; when false, keyPrefix is the full subkey
 local POSITION_EMITTERS = {
   { field = "RL",   keyPrefix = "RL",   indexed = true },
   { field = "HA",   keyPrefix = "HA",   indexed = true },
@@ -255,10 +251,6 @@ local function resolveAreaRef(emitter, i, key, areaRefMap)
   local constName = areaRefMap[key][subKey]
   return constName and ("constants.AREAS." .. constName) or nil
 end
-
----@class SBJ__PositionBlockParams
----@field key string Operational-area key (e.g. "ANW")
----@field map table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
 
 ---Emit one position block (single- or multi-position) into opLines
 ---Skips silently if the first position has no resolvable AREAS reference
@@ -354,17 +346,6 @@ local function getSortedStringKeys(tbl)
   table.sort(keys)
   return keys
 end
-
----Shared context for Phase 4 field serializers
----@class SBJ__FieldSerializerContext
----@field configPath string Current config.{side}.ground.{sys} path
----@field opAreaMap table<table, string> opArea table ref -> constant key
----@field reverseState table<any, string> state value -> constant key
----@field reverseWeapons table<integer, string> weapon DBID -> constant key
----@field reversePlatforms table<integer, string> platform DBID -> constant key
-
----Per-field serializer signature; return nil to fall through to default
----@alias SBJ__FieldSerializer fun(value: any, ctx: SBJ__FieldSerializerContext): string|nil
 
 ---Serialize a MissileSystemState enum value to its constant reference
 ---@param value any Field value (expected number)

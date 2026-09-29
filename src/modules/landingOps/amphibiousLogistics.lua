@@ -146,11 +146,6 @@ local function isPlatformMatch(unit, platformType, platformDBID, loadoutDBID)
   return true
 end
 
----@class SBJ__TransferCargoParams
----@field platformType string Embarked unit type ('Aircraft' or 'Boats')
----@field platformDBID number DBID of the receiving platform
----@field loadoutDBID number Loadout ID for aircraft filtering (ignored for boats)
-
 ---Transfer cargo from base to multiple embarked units matching platform spec
 ---Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
 ---@param fromUnit string GUID of the base unit containing embarked platforms

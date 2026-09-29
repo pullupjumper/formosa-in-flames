@@ -58,8 +58,8 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `findUnitArea` | `unit, operationalArea` | `string[]|nil` | 找到機動車組所在 RL 陣地 |
-| `hasMetResupplyUnit` | `systemCtx, unit, isAuto` | `boolean, firingUnitCtx?` | 機動發射車/彈藥補給車於 RL 交會；固定回傳 firing unit context |
-| `hasMetAmmoDepot` | `systemCtx, unit, isAuto` | `boolean, resupplyUnitCtx?` | 彈藥補給車與彈藥儲備點於 AHA 交會 |
+| `hasMetResupplyUnit` | `systemCtx, unit, runCtx` | `boolean, firingUnitCtx?` | 機動發射車/彈藥補給車於 RL 交會；固定回傳 firing unit context |
+| `hasMetAmmoDepot` | `systemCtx, unit, runCtx` | `boolean, resupplyUnitCtx?` | 彈藥補給車與彈藥儲備點於 AHA 交會 |
 
 > 內部輔助函式 `isValidStateForMeeting`、`resolvePair`、`resolveCmoUnit` 為 module-local，不對外暴露。
 

@@ -1028,13 +1028,19 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field wcs? integer Weapon control status
 ---@field useLastCourse? boolean Whether to use the last waypoint in course
 
----Behavior switches for UnitEntersArea move-to-position flow
----Passing nil falls back to all switches off, looking up firing units on the unit's own side
----@class SBJ__MoveToPositionOpts: table
+---Per-run mode shared by every unit handled in one missileSystem run
+---@class SBJ__MissileRunContext: table
+---@field isAuto boolean Whether the run is automatic (computer-controlled side)
+
+---Per-run settings shared by every unit in one missileSystem reload cycle
+---@class SBJ__CycleRunContext: SBJ__MissileRunContext
+---@field systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+
+---Side-specific switches shared by every system in one UnitEntersArea event
+---@class SBJ__MoveToPositionCtx: SBJ__MissileRunContext
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 ---@field firingUnitLookupSide string Side name used to resolve paired firing unit
----@field isAuto boolean Whether the move-to-position flow is automatic
 
 ---Input parameters for missileSystem UnitEntersArea event handling
 ---@class SBJ__MoveToPositionEventParams: table
@@ -1042,7 +1048,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
----@field opts SBJ__MoveToPositionOpts Optional behavior switches for side-specific differences
+---@field moveCtx SBJ__MoveToPositionCtx Side-specific switches for this event
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
@@ -1744,3 +1750,31 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@field targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@field reconType string Reconnaissance type identifier used for FSEM naming
+
+---Position emitter describing one opArea field and where to find its AREAS const
+---@class SBJ__OpAreaPositionEmitter
+---@field field string opArea field name (RL/HA/FP/AHA/SHRL)
+---@field keyPrefix string areaRefMap subkey; combined with position index as `keyPrefix .. "_" .. i` when indexed
+---@field indexed boolean When true, subkey varies per position; when false, keyPrefix is the full subkey
+
+---Inputs for emitting one position block
+---@class SBJ__PositionBlockParams
+---@field key string Operational-area key (e.g. "ANW")
+---@field map table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
+
+---Shared context for Phase 4 field serializers
+---@class SBJ__FieldSerializerContext
+---@field configPath string Current config.{side}.ground.{sys} path
+---@field opAreaMap table<table, string> opArea table ref -> constant key
+---@field reverseState table<any, string> state value -> constant key
+---@field reverseWeapons table<integer, string> weapon DBID -> constant key
+---@field reversePlatforms table<integer, string> platform DBID -> constant key
+
+---Per-field serializer signature; return nil to fall through to default
+---@alias SBJ__FieldSerializer fun(value: any, ctx: SBJ__FieldSerializerContext): string|nil
+
+---Embarked platform selector for cargo transfer
+---@class SBJ__TransferCargoParams
+---@field platformType string Embarked unit type ('Aircraft' or 'Boats')
+---@field platformDBID number DBID of the receiving platform
+---@field loadoutDBID number Loadout ID for aircraft filtering (ignored for boats)

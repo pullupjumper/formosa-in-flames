@@ -53,11 +53,11 @@ flowchart LR
 | `moveToAmmoHoldingArea` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 移動至 AHA |
 | `moveResupplyUnitToReloadPoint` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 彈藥補給車回 RL |
 | `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean, table?` | 移動至 FP |
-| `setReloadStartTime` | `firingUnitCtx, firingUnit, isAuto` | `nil` | 設 `RELOAD` 與起始時間 |
-| `setWCSToFree` | `firingUnitCtx, firingUnit, isAuto` | `nil` | 設 `STATIC` + `WCS.FREE` |
-| `setStateToHide` | `firingUnitCtx, firingUnit, isAuto` | `nil` | 設 `HIDE` + `WCS.HOLD` |
-| `setStateToStatic` | `systemCtx, firingUnit, isAuto` | `nil` | 清空 reload timer 並設 `STATIC` |
-| `isRepositioning` | `firingUnitCtx, isAuto` | `boolean` | 判斷事件是否可接受 |
+| `setReloadStartTime` | `firingUnitCtx, firingUnit, runCtx` | `nil` | 設 `RELOAD` 與起始時間 |
+| `setWCSToFree` | `firingUnitCtx, firingUnit, runCtx` | `nil` | 設 `STATIC` + `WCS.FREE` |
+| `setStateToHide` | `firingUnitCtx, firingUnit, runCtx` | `nil` | 設 `HIDE` + `WCS.HOLD` |
+| `setStateToStatic` | `systemCtx, firingUnit, runCtx` | `nil` | 清空 reload timer 並設 `STATIC` |
+| `isRepositioning` | `firingUnitCtx, runCtx` | `boolean` | 判斷事件是否可接受 |
 
 移動失敗時第二個回傳值是 log 欄位表而非散文訊息，呼叫端直接併進自己的 row：
 

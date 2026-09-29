@@ -24,7 +24,7 @@
 2. 非 FP 事件會先 `dropUnitContact`，降低非必要接觸資訊。
 3. 依陣地類型分派至對應 handler。
 4. HA 流程僅在 `behavior.hideOnEnterHA` 啟用 **且** 機動發射車彈藥充足時，才會切換 `HIDE` 並執行 `hideUnit`；低彈單位保持原狀以便觸發後續補給流程。
-5. RL/AHA 流程會先做 `Meeting` 判斷，成功才進入 `RELOAD` 計時；RL 無會合時 `setStateToStatic` 一律以 `isAuto=false` 呼叫，避免短暫經過 RL 的機動發射車（例如重定位中途）被卡停。若 `behavior.hideResupplyOnRLNoMeeting` 啟用且對應機動發射車彈藥充足，會將彈藥車隱蔽。
+5. RL/AHA 流程會先做 `Meeting` 判斷，成功才進入 `RELOAD` 計時；RL 無會合時 `setStateToStatic` 一律以手動 `runCtx`（`isAuto=false`）呼叫，避免短暫經過 RL 的機動發射車（例如重定位中途）被卡停。若 `behavior.hideResupplyOnRLNoMeeting` 啟用且對應機動發射車彈藥充足，會將彈藥車隱蔽。
 
 ```mermaid
 flowchart TD
@@ -58,8 +58,8 @@ flowchart TD
 | `sendToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`） |
 | `markForStow` | `groundCtx, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
 | `getAmmoInventory` | `groundCtx, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
-| `process` | `groundCtx, groundCfg, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
-| `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `missileSystemPolicy.isAuto` 後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
+| `process` | `groundCtx, groundConfig, runCtx, sideName` | `nil` | 執行循環並輸出結果日誌 |
+| `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `missileSystemPolicy.isAuto`（包成 `runCtx`）後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營組出 policy／behavior，交給私有 `processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `unit, groundCtx` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
 | `redeploy` | `groundForceCfg, groundForceCtx, layouts, sideName` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
