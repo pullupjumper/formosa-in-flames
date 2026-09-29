@@ -93,6 +93,15 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 - `params` 與 `opts` 怎麼分：看函式內有沒有對欄位做 nil 檢查或給預設值。有預設值的是 `opts`。
 - 未使用的參數不加 `_` 前綴。
 
+### 包裝參數命名
+
+- 只准四種包裝名：`params`（必填）、`opts`（選填）、`ctx`（一輪共用）、`state`（會被改寫）。不准 `xxxSpec`、`xxxRef`、`xxxFields`、`xxxCfg`。
+- 一個函式最多一個 `params`。第二包要換成有意義的名詞（`unit`、`target`、`pos`）。
+- 只有 `ctx` 可以加前綴表示屬於誰（`firingCtx`）。`params`、`opts`、`state` 不加前綴。
+- 不縮寫：`Cfg` 寫成 `config` 或 `systemConfig`。
+- 型別名跟函式走：`SBJ__<函式名>Params`。多個函式共用才用領域名。
+- `---@param` 不寫 inline `{a: x, b: y}`，超過 2 欄位就開 `---@class`。
+
 ## 6. 型別（LuaLS）
 
 - 專案型別 `SBJ__PascalCase`，前綴後不再有底線。
