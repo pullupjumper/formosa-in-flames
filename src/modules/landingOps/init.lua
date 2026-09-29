@@ -37,7 +37,11 @@ function LandingOps.process(config, saveData)
 
   local startTime = os.clock()
 
-  Coordinator.process(config, PersistentState.landingOps(saveData), contacts, GameApi.ScenEdit_CurrentTime(), filteredShips)
+  Coordinator.process(config, PersistentState.landingOps(saveData), {
+    contacts = contacts,
+    currentTime = GameApi.ScenEdit_CurrentTime(),
+    filteredShips = filteredShips
+  })
   local endTime = os.clock()
   Logger.log(constants.TAGS.SHIP_MOVEMENT, LogFormat.line("OK", {
     scope = "landingOpsProcess",

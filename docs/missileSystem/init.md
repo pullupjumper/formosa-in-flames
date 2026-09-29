@@ -62,7 +62,7 @@ flowchart TD
 | `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `missileSystemPolicy.isAuto`（包成 `runCtx`）後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營組出 policy／behavior，交給私有 `processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `unit, groundCtx` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
-| `redeploy` | `groundForceConfig, groundForceCtx, layouts, sideName` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
+| `redeploy` | `groundForceConfig, groundForceCtx, sideName, layouts` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
 | `redeployFromSetup` | `config, saveData, sideName, entries` | `nil` | 把 setup menu 送回的 entries 轉成 layouts 後呼叫 `redeploy` |
 | `buildSetupMenuRows` | `config, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 setup menu 所需的系統設定副本（含 zone 頂點） |
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |

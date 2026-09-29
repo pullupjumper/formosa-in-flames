@@ -399,7 +399,7 @@ describe("MissileSystem", function()
       MissileSystem.redeployFromSetup(config, saveData, constants.SIDES.PLAYER, entries)
 
       assert.stub(buildLayoutsStub).was.called_with(entries)
-      assert.stub(redeployStub).was.called_with(config.t.ground, saveData.t.ground, layouts, constants.SIDES.PLAYER)
+      assert.stub(redeployStub).was.called_with(config.t.ground, saveData.t.ground, constants.SIDES.PLAYER, layouts)
     end)
   end)
 
@@ -1394,7 +1394,7 @@ describe("MissileSystem", function()
         table.insert(calls, "initMissileSystemContexts")
       end)
 
-      MissileSystem.redeploy(groundForceConfig, groundForceCtx, layouts, "Taiwan")
+      MissileSystem.redeploy(groundForceConfig, groundForceCtx, "Taiwan", layouts)
 
       assert.are.same({ "applyLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {

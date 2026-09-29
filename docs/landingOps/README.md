@@ -41,7 +41,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | 函式 | 說明 | 外部呼叫端 |
 |---|---|---|
 | `init(amphibOpsConfig, landingState)` | 開局初始化兩棲作戰狀態 | `src/core/init.lua` |
-| `process(config, landingState, contacts, currentTime, filteredShips)` | 轉交 [`Coordinator.process`](coordinator.md) | `landingCheck.lua` |
+| `process(config, landingState, params)`（`params`：`contacts`、`currentTime`、`filteredShips`） | 轉交 [`Coordinator.process`](coordinator.md) | `landingCheck.lua` |
 | `launchACV(amphibOpsConfig, ship)` | ACV 釋放 | `launchACV.lua` |
 | `offloadVehicles(amphibOpsConfig, landingState, ship)` | 重裝備下卸 | `offloadVehicles.lua` |
 | `neutralizeAirlandingZone(amphibOpsConfig, ship, contacts)` | SAG 壓制空/機降區 | `neutralizeAirlandingZone.lua` |

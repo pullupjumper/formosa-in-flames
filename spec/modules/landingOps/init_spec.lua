@@ -157,9 +157,9 @@ describe("LandingOps", function()
       local args = stubProcess.calls[1].vals
       assert.are.same(config, args[1])
       assert.are.same(saveData.c.amphibOps, args[2].amphibOps)
-      assert.are.same(contacts, args[3])
-      assert.are.equal(100, args[4])
-      assert.are.same(filteredShips, args[5])
+      assert.are.same(contacts, args[3].contacts)
+      assert.are.equal(100, args[3].currentTime)
+      assert.are.same(filteredShips, args[3].filteredShips)
     end)
 
     -- Negative: without contacts the tick stops before the coordinator runs

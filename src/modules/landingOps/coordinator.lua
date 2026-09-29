@@ -182,17 +182,15 @@ end
 ---Process all landing operation phases for the current event tick
 ---@param config SBJ__Config Global configuration table
 ---@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
----@param contacts CMO__Contact[] Contact list from the game
----@param currentTime number Current scenario time in seconds
----@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-function Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
+---@param params SBJ__LandingTickParams Contacts, current time and ships for this tick
+function Coordinator.process(config, landingState, params)
   ---@type SBJ__LandingTickContext
   local tickCtx = {
     config = config,
     landingState = landingState,
-    contacts = contacts,
-    currentTime = currentTime,
-    filteredShips = filteredShips
+    contacts = params.contacts,
+    currentTime = params.currentTime,
+    filteredShips = params.filteredShips
   }
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
     local operation = findOperationByName(config.c.amphibOps.operations, zone.name)

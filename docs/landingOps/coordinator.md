@@ -138,7 +138,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 
 | 函數 | 說明 |
 |---|---|
-| `process(config, saveData, contacts, currentTime, filteredShips)` | 主入口：執行全 zone 階段推進、貨物重轉運，最後呼叫私有 `evaluateFireSupportGate` 更新火力閘門 |
+| `process(config, landingState, params)`（`params`：`contacts`、`currentTime`、`filteredShips`） | 主入口：執行全 zone 階段推進、貨物重轉運，最後呼叫私有 `evaluateFireSupportGate` 更新火力閘門 |
 
 ---
 

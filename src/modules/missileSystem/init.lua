@@ -225,9 +225,9 @@ end
 ---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
 ---@param groundForceConfig SBJ__GroundForceConfig Side ground force configuration; mutated
 ---@param groundForceCtx SBJ__GroundForceContext Side ground force runtime context
----@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
 ---@param sideName string Side name for zone/trigger/unit ownership
-function MissileSystem.redeploy(groundForceConfig, groundForceCtx, layouts, sideName)
+---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
+function MissileSystem.redeploy(groundForceConfig, groundForceCtx, sideName, layouts)
   local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceConfig, layouts)
 
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
@@ -244,8 +244,8 @@ function MissileSystem.redeployFromSetup(config, saveData, sideName, entries)
   MissileSystem.redeploy(
     config[GameUtils.getCachedSideConfig(sideName).field].ground,
     PersistentState.groundForces(saveData, sideName),
-    SetupLayout.buildLayouts(entries),
-    sideName
+    sideName,
+    SetupLayout.buildLayouts(entries)
   )
 end
 
