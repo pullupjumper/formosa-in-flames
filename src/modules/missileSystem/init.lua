@@ -321,10 +321,10 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when state changed
-local function processFiringPoint(systemName, systemCtx, unit, isAuto, behavior)
+local function processFiringPoint(systemName, systemCtx, unit, behavior)
+  local isAuto = behavior.isAuto
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
   if Movement.isRepositioning(firingUnitCtx, isAuto) then
     Movement.setWCSToFree(firingUnitCtx, unit, isAuto)
@@ -341,10 +341,10 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration
 ---@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
-local function processHideArea(systemName, systemCtx, unit, isAuto, behavior)
+local function processHideArea(systemName, systemCtx, unit, behavior)
+  local isAuto = behavior.isAuto
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
   if not firingUnitCtx then
     return nil
@@ -375,10 +375,9 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration
 ---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
-local function processReloadPointNoMeeting(systemName, systemCtx, unit, isAuto, behavior)
+local function processReloadPointNoMeeting(systemName, systemCtx, unit, behavior)
   -- Pass false instead of isAuto so a firing unit drifting through RL during repositioning is not halted.
   Movement.setStateToStatic(systemCtx, unit, false)
   if not behavior.hideResupplyOnRLNoMeeting then
@@ -429,10 +428,10 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration
 ---@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
-local function processReloadPoint(systemName, systemCtx, unit, isAuto, behavior)
+local function processReloadPoint(systemName, systemCtx, unit, behavior)
+  local isAuto = behavior.isAuto
   local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
 
   if hasMet and firingUnitCtx then
@@ -465,7 +464,7 @@ local function processReloadPoint(systemName, systemCtx, unit, isAuto, behavior)
     }
   end
 
-  return processReloadPointNoMeeting(systemName, systemCtx, unit, isAuto, behavior)
+  return processReloadPointNoMeeting(systemName, systemCtx, unit, behavior)
 end
 
 ---Handle entering ammo holding area logic for a single missile system context
@@ -474,10 +473,10 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param isAuto boolean Whether the action is in automatic mode
 ---@param behavior SBJ__MoveToPositionOpts Side-specific behavior configuration, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
-local function processAmmoHoldingArea(systemName, systemCtx, unit, isAuto, behavior)
+local function processAmmoHoldingArea(systemName, systemCtx, unit, behavior)
+  local isAuto = behavior.isAuto
   local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
 
@@ -502,7 +501,7 @@ end
 ---Position handlers keyed by the token extracted from the event trigger.
 ---Every entry takes the same arguments so the dispatch site never has to know
 ---which of them a given handler actually uses.
----@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, isAuto: boolean, behavior: SBJ__MoveToPositionOpts): SBJ__LogResult|nil>
+---@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, behavior: SBJ__MoveToPositionOpts): SBJ__LogResult|nil>
 local POSITION_HANDLERS = {
   [constants.POSITION_TYPES.FIRING_POINT]      = processFiringPoint,
   [constants.POSITION_TYPES.HIDE_AREA]         = processHideArea,
@@ -514,7 +513,6 @@ local POSITION_HANDLERS = {
 ---@param params SBJ__MoveToPositionEventParams Unit-enter-area event handling options
 local function processMoveToPositionEvent(params)
   local unit = params.unit
-  local isAuto = params.isAuto
   local behavior = params.behavior
   local positionType = resolvePositionType(params.event)
   local handler = POSITION_HANDLERS[positionType]
@@ -530,7 +528,7 @@ local function processMoveToPositionEvent(params)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
   forEachEnabledSystem(params.groundCtx, function(systemCtx, systemName)
-    local row = handler(systemName, systemCtx, unit, isAuto, behavior)
+    local row = handler(systemName, systemCtx, unit, behavior)
     if row then
       report.add(row.tag, row.fields)
     end
@@ -538,7 +536,7 @@ local function processMoveToPositionEvent(params)
 
   -- position is derived from the event trigger, so it describes the whole batch
   -- rather than any single row.
-  report.emit({ mode = isAuto and "auto" or "manual", position = positionType })
+  report.emit({ mode = behavior.isAuto and "auto" or "manual", position = positionType })
 end
 
 ---Handle a UnitEntersArea event for the triggering unit's side, with its policy taken from config
@@ -553,9 +551,9 @@ function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
     groundCtx = PersistentState.groundForces(saveData, unit.side),
     unit = unit,
     event = event,
-    isAuto = policy.isAuto,
     contacts = GameApi.ScenEdit_GetContacts(unit.side),
     behavior = {
+      isAuto = policy.isAuto,
       hideOnEnterHA = policy.hideOnEnterHA,
       hideResupplyOnRLNoMeeting = policy.hideResupplyOnRLNoMeeting,
       firingUnitLookupSide = unit.side

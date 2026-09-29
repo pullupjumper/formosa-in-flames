@@ -208,6 +208,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Per-side missile system control policy; the only differences between the China and Taiwan event scripts
 ---@class SBJ__MissileSystemPolicyConfig: table
 ---@field isAuto boolean Whether the reload/hide cycle and position events run in automatic mode
+---@field isAuto boolean Whether the flow runs in automatic mode
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 
@@ -1040,7 +1041,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field groundCtx table<string, SBJ__MissileSystemContext> Missile system runtime contexts by type
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
----@field isAuto boolean Whether the flow runs in automatic mode
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
 ---@field behavior SBJ__MoveToPositionOpts Behavior switches for side-specific differences
 
