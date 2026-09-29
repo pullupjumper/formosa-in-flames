@@ -274,20 +274,19 @@ end
 
 ---Build executable package templates from evaluated targets and aircraft validation
 ---Mutates copied package templates with target lists and resolved baseGUID values.
----@param config SBJ__Config Global configuration
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
 ---@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
----@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
+---@param passCtx SBJ__AtoPassContext Pass-scoped state shared by every operation in this tick; free aircraft cache is mutated
 ---@return SBJ__PackageTemplate[] validPackages Array of validated packages with assigned targets
 ---@return table<string, any> fields Package counters for the operation row
 ---@return SBJ__LogResult[] details One row per package rejected by validation
-local function buildExecutablePackages(config, plannerState, waveTemplate, targetsByPackageIndex, freeAircraftCache)
+local function buildExecutablePackages(plannerState, waveTemplate, targetsByPackageIndex, passCtx)
   local validPackages = {}
   local context = {
     reservedAircraft = collectReservedAircraft(plannerState),
-    freeAircraftCache = freeAircraftCache,
-    minimumStrengthRatio = config.c.air.minimumStrengthRatio
+    freeAircraftCache = passCtx.freeAircraftCache,
+    minimumStrengthRatio = passCtx.config.c.air.minimumStrengthRatio
   }
   local totalTargets = 0
   local previousPackage = nil
@@ -302,7 +301,7 @@ local function buildExecutablePackages(config, plannerState, waveTemplate, targe
       if isValid then
         packageTemplate.target.list = packageTargets
         local builtPackage = PackageTiming.createPackageWithTiming(
-          config,
+          passCtx.config,
           packageTemplate,
           previousPackage,
           waveTemplate.strikeInterval
@@ -376,26 +375,17 @@ end
 
 ---Create actual ATO wave from template and evaluation results
 ---Constructs executable packages, calculates timing, and inserts the wave.
----@param config SBJ__Config Global configuration
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param waveTemplate SBJ__WaveTemplate Template defining ATO wave and package configurations
----@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
----@param reconType string Reconnaissance type identifier used for wave naming
----@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
+---@param params SBJ__WaveInsertParams Template, evaluated targets and recon type of the wave to insert
+---@param passCtx SBJ__AtoPassContext Pass-scoped state shared by every operation in this tick; free aircraft cache is mutated
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
-local function createAndInsertATOWaveFromTemplate(
-    config,
-    plannerState,
-    waveTemplate,
-    targetsByPackageIndex,
-    reconType,
-    freeAircraftCache)
+local function createAndInsertATOWaveFromTemplate(plannerState, params, passCtx)
+  local waveTemplate = params.waveTemplate
   local validPackages, fields, details = buildExecutablePackages(
-    config,
     plannerState,
     waveTemplate,
-    targetsByPackageIndex,
-    freeAircraftCache
+    params.targetsByPackageIndex,
+    passCtx
   )
 
   if #validPackages == 0 then
@@ -411,7 +401,7 @@ local function createAndInsertATOWaveFromTemplate(
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
   local wave
-  local waveName = DynamicPlan.insert(plannerState, "air", waveTemplate.name, reconType, function(planName)
+  local waveName = DynamicPlan.insert(plannerState, "air", waveTemplate.name, params.reconType, function(planName)
     wave = buildATOWave(waveTemplate, planName, validPackages)
     return wave
   end)
@@ -424,20 +414,18 @@ end
 -- ============================================================================
 
 ---Process single air operation: evaluate targets, validate packages, insert ATO wave
----@param config SBJ__Config Global configuration table
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Air operation paired with its parent batch
----@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
+---@param passCtx SBJ__AtoPassContext Pass-scoped state shared by every operation in this tick
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
-local function processAirOperation(config, plannerState, contacts, batchedOp, freeAircraftCache)
+local function processAirOperation(plannerState, batchedOp, passCtx)
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
   local targetsByPackageIndex, qualifiedCount = DynamicPlan.evaluateTargets(
-    config,
+    passCtx.config,
     plannerState,
-    contacts,
+    passCtx.contacts,
     "air",
     operation.template
   )
@@ -454,14 +442,11 @@ local function processAirOperation(config, plannerState, contacts, batchedOp, fr
   -- Copied behind the target gate: the build writes resolved targets and baseGUIDs
   -- into the packages, and a retrying tick should not pay for a copy it discards.
   local waveTemplate = Utils.deepCopy(operation.template)
-  return createAndInsertATOWaveFromTemplate(
-    config,
-    plannerState,
-    waveTemplate,
-    targetsByPackageIndex,
-    operationBatch.type,
-    freeAircraftCache
-  )
+  return createAndInsertATOWaveFromTemplate(plannerState, {
+    waveTemplate = waveTemplate,
+    targetsByPackageIndex = targetsByPackageIndex,
+    reconType = operationBatch.type
+  }, passCtx)
 end
 
 -- ============================================================================
@@ -483,14 +468,19 @@ function AtoBuilder.build(config, plannerState, contacts)
 
   -- Must stay a local: base counts only hold still within one pass, so a module-level
   -- table would keep counting aircraft destroyed or committed since an earlier tick.
-  local freeAircraftCache = {}
+  ---@type SBJ__AtoPassContext
+  local passCtx = {
+    config = config,
+    contacts = contacts,
+    freeAircraftCache = {}
+  }
 
   local result = OperationBatch.run(plannerState.dynamicOperations.reconTriggeredOperationBatches, "air", {
     currentTime = GameApi.ScenEdit_CurrentTime(),
     windowSec = config.c.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,
     tryInsert = function(batchedOp)
-      return processAirOperation(config, plannerState, contacts, batchedOp, freeAircraftCache)
+      return processAirOperation(plannerState, batchedOp, passCtx)
     end
   })
 

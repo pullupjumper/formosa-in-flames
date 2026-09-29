@@ -1679,8 +1679,23 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Firing unit status counter tracking validation outcomes
 ---@alias SBJ__FiringUnitStatusResult table<string, number>
 
+---Pass-scoped state for one ATO insertion pass
+---The free aircraft cache is local to the pass so a later tick never counts aircraft already committed
+---@class SBJ__AtoPassContext: table
+---@field config SBJ__Config Global configuration
+---@field contacts CMO__Contact[] Sensor contacts for this pass
+---@field freeAircraftCache table<string, table<number, integer>> Free aircraft per base GUID and DBID; mutated as packages are built
+
+---Inputs for inserting one evaluated ATO wave
+---@class SBJ__WaveInsertParams: table
+---@field waveTemplate SBJ__WaveTemplate Template defining ATO wave and package configurations
+---@field targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
+---@field reconType string Reconnaissance type identifier used for wave naming
+
 ---Pass-scoped caches for firing unit lookups within one execution pass
 ---Caches are local to prevent cross-tick stale data while building FSEMs
 ---@class SBJ__FsemPassContext: table
+---@field contacts CMO__Contact[] Sensor contacts for this pass
+---@field currentTime integer Game time captured at the start of this pass
 ---@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
 ---@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built

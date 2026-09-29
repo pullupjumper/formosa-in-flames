@@ -226,12 +226,11 @@ end
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
----@param matrixStartTime integer Matrix base start time in unix timestamp
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
 ---@return SBJ__FiringUnitStatusResult firingUnitStatusCounter Firing unit validation counts
 ---@return number firingUnitBlockedTaskCount Tasks dropped because no firing unit was available
-local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskIndex, matrixStartTime, passCtx)
+local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskIndex, passCtx)
   local fireSupportTasks = {}
   local firingUnitStatusCounter = createFiringUnitStatusCounter()
   local firingUnitBlockedTaskCount = 0
@@ -254,7 +253,7 @@ local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskI
       else
         local task = Utils.deepCopy(taskTemplate) --[[@as SBJ__FireSupportTask]]
         task.firingUnits = availableFiringUnits
-        task.startTime = buildTaskStartTime(matrixStartTime, matrixTemplate.strikeInterval, slotIndex)
+        task.startTime = buildTaskStartTime(passCtx.currentTime, matrixTemplate.strikeInterval, slotIndex)
         task.isFinished = false
         task.target.list = targets
         setFiringUnitsAssigned(passCtx.assignedFiringUnitNames, availableFiringUnits)
@@ -298,7 +297,6 @@ end
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
 ---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param reconType string Reconnaissance type identifier used for FSEM naming
----@param currentTime integer Current game time in unix timestamp
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
 local function createAndInsertMatrixFromTemplate(
@@ -306,14 +304,12 @@ local function createAndInsertMatrixFromTemplate(
     matrixTemplate,
     targetsByTaskIndex,
     reconType,
-    currentTime,
     passCtx
 )
   local fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount = buildExecutableTasks(
     plannerState,
     matrixTemplate,
     targetsByTaskIndex,
-    currentTime,
     passCtx
   )
   local statusFields = formatFiringUnitStatusCounter(firingUnitStatusCounter)
@@ -331,7 +327,7 @@ local function createAndInsertMatrixFromTemplate(
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
   DynamicPlan.insert(plannerState, "ground", matrixTemplate.name, reconType, function(planName)
-    return buildMatrix(matrixTemplate, planName, fireSupportTasks, currentTime)
+    return buildMatrix(matrixTemplate, planName, fireSupportTasks, passCtx.currentTime)
   end)
   return { success = true, tag = "OK", fields = statusFields }
 end
@@ -339,19 +335,17 @@ end
 ---Evaluate one ground operation and insert its FSEM when targets and firing units allow
 ---@param config SBJ__Config Global configuration table
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts from the game
 ---@param batchedOp SBJ__BatchedOperation Ground operation paired with its parent batch
----@param currentTime integer Current game time in unix timestamp
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function processGroundOperation(config, plannerState, contacts, batchedOp, currentTime, passCtx)
+local function processGroundOperation(config, plannerState, batchedOp, passCtx)
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
 
   local targetsByTaskIndex, targetQualifiedTaskCount = DynamicPlan.evaluateTargets(
     config,
     plannerState,
-    contacts,
+    passCtx.contacts,
     "ground",
     operation.template
   )
@@ -372,7 +366,6 @@ local function processGroundOperation(config, plannerState, contacts, batchedOp,
     matrixTemplate,
     targetsByTaskIndex,
     reconType,
-    currentTime,
     passCtx
   )
 end
@@ -450,6 +443,8 @@ function FsemBuilder.build(config, plannerState, contacts)
   -- Seeded after retirement so units released by a retired matrix are assignable now.
   ---@type SBJ__FsemPassContext
   local passCtx = {
+    contacts = contacts,
+    currentTime = currentTime,
     firingUnitCache = {},
     assignedFiringUnitNames = collectAssignedFiringUnitNames(plannerState)
   }
@@ -459,7 +454,7 @@ function FsemBuilder.build(config, plannerState, contacts)
     windowSec = config.c.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,
     tryInsert = function(batchedOp)
-      return processGroundOperation(config, plannerState, contacts, batchedOp, currentTime, passCtx)
+      return processGroundOperation(config, plannerState, batchedOp, passCtx)
     end
   })
 
