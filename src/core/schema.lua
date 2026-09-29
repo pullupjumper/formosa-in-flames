@@ -1699,3 +1699,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field currentTime integer Game time captured at the start of this pass
 ---@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
 ---@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built
+
+---Inputs shared by every landing phase in one event tick
+---@class SBJ__LandingTickContext: table
+---@field config SBJ__Config Global configuration table
+---@field landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+---@field contacts CMO__Contact[] Contact list from the game
+---@field currentTime number Current scenario time in seconds
+---@field filteredShips CMO__SideUnit[] Unit list from the side filtered for ships

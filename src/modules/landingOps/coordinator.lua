@@ -46,14 +46,12 @@ local function processTaoyuanTemporarySetup(config, landingState, zone, currentT
 end
 
 ---Process a single operational zone through all amphibious phases
----@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+---@param tickCtx SBJ__LandingTickContext Inputs shared by every phase in this tick
 ---@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
 ---@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor for the zone
----@param contacts CMO__Contact[] Contact list from the game
----@param currentTime number Current scenario time in seconds
----@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-local function processZone(config, landingState, zone, operation, contacts, currentTime, filteredShips)
+local function processZone(tickCtx, zone, operation)
+  local config, landingState = tickCtx.config, tickCtx.landingState
+  local contacts, currentTime, filteredShips = tickCtx.contacts, tickCtx.currentTime, tickCtx.filteredShips
   local zoneState = landingState.amphibOps.zoneStates[zone.name]
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
@@ -110,11 +108,10 @@ local function processZone(config, landingState, zone, operation, contacts, curr
 end
 
 ---Handle periodic cargo retransfer for zones with active airlanding missions
----@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
----@param currentTime number Current scenario time in seconds
----@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
-local function processCargoRetransfer(config, landingState, currentTime, filteredShips)
+---@param tickCtx SBJ__LandingTickContext Inputs shared by every phase in this tick
+local function processCargoRetransfer(tickCtx)
+  local config, landingState = tickCtx.config, tickCtx.landingState
+  local currentTime, filteredShips = tickCtx.currentTime, tickCtx.filteredShips
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
     local zoneState = landingState.amphibOps.zoneStates[zone.name]
     if zoneState.airlandingMissionStartTime ~= nil then
@@ -189,17 +186,25 @@ end
 ---@param currentTime number Current scenario time in seconds
 ---@param filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
 function Coordinator.process(config, landingState, contacts, currentTime, filteredShips)
+  ---@type SBJ__LandingTickContext
+  local tickCtx = {
+    config = config,
+    landingState = landingState,
+    contacts = contacts,
+    currentTime = currentTime,
+    filteredShips = filteredShips
+  }
   for _, zone in ipairs(config.c.amphibOps.operationalZones) do
     local operation = findOperationByName(config.c.amphibOps.operations, zone.name)
 
     if operation then
-      processZone(config, landingState, zone, operation, contacts, currentTime, filteredShips)
+      processZone(tickCtx, zone, operation)
     else
       Logger.error(LogFormat.line("ERROR", { zone = zone.name, reason = "operation_not_found" }))
     end
   end
 
-  processCargoRetransfer(config, landingState, currentTime, filteredShips)
+  processCargoRetransfer(tickCtx)
   evaluateFireSupportGate(config, landingState)
 end
 
