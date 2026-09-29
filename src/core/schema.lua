@@ -1738,3 +1738,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field descriptor SBJ__AmphibiousOperationDescriptor Operation configuration
 ---@field shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
 ---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
+
+---Inputs for inserting one evaluated FSEM
+---@class SBJ__MatrixInsertParams: table
+---@field matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
+---@field targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
+---@field reconType string Reconnaissance type identifier used for FSEM naming

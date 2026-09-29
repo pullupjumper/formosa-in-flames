@@ -149,11 +149,11 @@ end
 ---Transfer cargo from base to multiple embarked units matching platform spec
 ---Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
 ---@param fromUnit string GUID of the base unit containing embarked platforms
----@param platformType string Type of embarked unit ('Aircraft' or 'Boats')
----@param platformDBID number Database ID of the platform to receive cargo
----@param loadoutDBID number Loadout ID for aircraft filtering (ignored for boats)
+---@param platformSpec {platformType: string, platformDBID: number, loadoutDBID: number} Embarked unit type ('Aircraft' or 'Boats'), DBID of the receiving platform, and loadout ID for aircraft filtering (ignored for boats)
 ---@param cargoItems table<integer, SBJ__CargoDescriptor[]> Cargo items to transfer (single list or per-unit)
-local function transferCargo(fromUnit, platformType, platformDBID, loadoutDBID, cargoItems)
+local function transferCargo(fromUnit, platformSpec, cargoItems)
+  local platformType, platformDBID = platformSpec.platformType, platformSpec.platformDBID
+  local loadoutDBID = platformSpec.loadoutDBID
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
   if not base then return end
 
@@ -198,7 +198,11 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
   for _, transfer in ipairs(spec.transfers) do
     local cfg = zone[transfer.configKey]
     local manifest = cfg.transferManifest[spec.manifestKey][transfer.loadoutIdx]
-    transferCargo(shipGuid, transfer.platform, cfg.dbid, manifest.loadoutId, manifest.cargoItems)
+    transferCargo(
+      shipGuid,
+      { platformType = transfer.platform, platformDBID = cfg.dbid, loadoutDBID = manifest.loadoutId },
+      manifest.cargoItems
+    )
   end
 end
 
@@ -346,9 +350,11 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
   for _, item in ipairs(transportAircraft) do
     transferCargo(
       item.guid,
-      constants.PLATFORM_TYPES.AIRCRAFT,
-      item.dbid,
-      item.cargoItemsForTransfer[1].loadoutId,
+      {
+        platformType = constants.PLATFORM_TYPES.AIRCRAFT,
+        platformDBID = item.dbid,
+        loadoutDBID = item.cargoItemsForTransfer[1].loadoutId
+      },
       item.cargoItemsForTransfer[1].cargoItems
     )
     AssignMission.assignEmbarkedUnitsToMissions(

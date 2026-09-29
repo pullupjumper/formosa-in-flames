@@ -294,18 +294,12 @@ end
 
 ---Build an FSEM from the template and insert it into the fire support plan
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate Template defining FSEM structure
----@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
----@param reconType string Reconnaissance type identifier used for FSEM naming
+---@param params SBJ__MatrixInsertParams Template, evaluated targets and recon type of the FSEM to insert
 ---@param passCtx SBJ__FsemPassContext Pass-scoped caches shared by every operation in this tick
 ---@return SBJ__OperationProcessResult # Outcome of the FSEM insertion attempt
-local function createAndInsertMatrixFromTemplate(
-    plannerState,
-    matrixTemplate,
-    targetsByTaskIndex,
-    reconType,
-    passCtx
-)
+local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
+  local matrixTemplate, targetsByTaskIndex = params.matrixTemplate, params.targetsByTaskIndex
+  local reconType = params.reconType
   local fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount = buildExecutableTasks(
     plannerState,
     matrixTemplate,
@@ -361,13 +355,11 @@ local function processGroundOperation(config, plannerState, batchedOp, passCtx)
   end
 
   local matrixTemplate = Utils.deepCopy(operation.template)
-  return createAndInsertMatrixFromTemplate(
-    plannerState,
-    matrixTemplate,
-    targetsByTaskIndex,
-    reconType,
-    passCtx
-  )
+  return createAndInsertMatrixFromTemplate(plannerState, {
+    matrixTemplate = matrixTemplate,
+    targetsByTaskIndex = targetsByTaskIndex,
+    reconType = reconType
+  }, passCtx)
 end
 
 -- ============================================================================

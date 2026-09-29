@@ -261,9 +261,9 @@ end
 ---@param opLines string[] Output accumulator (mutated)
 ---@param emitter SBJ__OpAreaPositionEmitter Emitter describing field and areaRefMap subkey lookup
 ---@param positions SBJ__Position[] Position list from opArea[emitter.field]
----@param key string Operational-area key (e.g. "ANW")
----@param areaRefMap table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
-local function formatPositionBlock(opLines, emitter, positions, key, areaRefMap)
+---@param areaRef {key: string, map: table<string, table<string, string>>} Operational-area key (e.g. "ANW") and Phase 2's [opKey][posType_index] -> AREAS const-name map
+local function formatPositionBlock(opLines, emitter, positions, areaRef)
+  local key, areaRefMap = areaRef.key, areaRef.map
   if not resolveAreaRef(emitter, 1, key, areaRefMap) then return end
 
   if #positions == 1 then
@@ -306,7 +306,7 @@ local function formatOpAreasCode(uniqueAreas, areaRefMap)
     for _, emitter in ipairs(POSITION_EMITTERS) do
       local positions = opArea[emitter.field]
       if positions then
-        formatPositionBlock(opLines, emitter, positions, key, areaRefMap)
+        formatPositionBlock(opLines, emitter, positions, { key = key, map = areaRefMap })
       end
     end
 
