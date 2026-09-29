@@ -1731,3 +1731,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__CargoLoadContext: table
 ---@field weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
 ---@field sideName string Side name
+
+---Area, operation, layout and cargo shared by every ship type created for one operation area
+---@class SBJ__ShipFormationContext: table
+---@field areaDescriptor SBJ__OperationAreaDescriptor Area configuration
+---@field descriptor SBJ__AmphibiousOperationDescriptor Operation configuration
+---@field shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
+---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list

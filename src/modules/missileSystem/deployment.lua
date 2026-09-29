@@ -46,12 +46,11 @@ end
 ---@param addedUnit CMO__Unit Unit to clean up weapons for
 ---@param weaponDBIDs number[] Desired weapon DBIDs to keep
 ---@param sideName string Side name
----@param systemName string Missile system name
----@param role string Unit role
+---@param logFields {system: string, role: string} Missile system name and unit role stamped on every log row
 ---@return SBJ__LogResult[] # Failure log rows
-local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, systemName, role)
+local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, logFields)
   local entries = {}
-  local context = { system = systemName, role = role, unit = addedUnit.name, guid = addedUnit.guid }
+  local context = { system = logFields.system, role = logFields.role, unit = addedUnit.name, guid = addedUnit.guid }
   GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
 
   local weaponDBIDSet = {}
@@ -117,11 +116,11 @@ end
 ---@param systemCfg SBJ__MissileSystemConfig Weapon system configuration
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor
 ---@param sideName string Side name for unit creation
----@param isSam boolean True if it is SAM
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
-local function addFiringUnit(systemName, systemCfg, descriptor, sideName, isSam)
+local function addFiringUnit(systemName, systemCfg, descriptor, sideName)
+  local isSam = systemName == "sam"
   local context = {
     system = systemName,
     role = "firing",
@@ -214,8 +213,7 @@ local function addFiringUnit(systemName, systemCfg, descriptor, sideName, isSam)
         addedUnit,
         Shared.normalizeWeaponDBIDs(descriptor.weaponDBID),
         sideName,
-        systemName,
-        "firing"
+        { system = systemName, role = "firing" }
       )
       for _, cleanupEntry in ipairs(cleanupEntries) do
         table.insert(entries, cleanupEntry)
@@ -369,7 +367,6 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
 
   for systemName, systemCfg in pairs(groundForceCfg) do
     ---@cast systemCfg SBJ__MissileSystemConfig
-    local isSam = systemName == "sam"
     local systemHasFailure = false
     local fuTotal, fuExpected = 0, 0
     for _, descriptor in pairs(systemCfg.firingUnits) do
@@ -377,7 +374,7 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
-      local created, expected, detailEntries = addFiringUnit(systemName, systemCfg, descriptor, sideName, isSam)
+      local created, expected, detailEntries = addFiringUnit(systemName, systemCfg, descriptor, sideName)
       fuTotal = fuTotal + created
       fuExpected = fuExpected + expected
       report.addAll(detailEntries)

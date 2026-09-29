@@ -180,12 +180,11 @@ end
 
 ---Create ships by type
 ---@param position CMO__Location Position
----@param areaDescriptor SBJ__OperationAreaDescriptor Area configuration
----@param descriptor SBJ__AmphibiousOperationDescriptor Item configuration
----@param shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
----@param cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
 ---@param shipType SBJ__AmphibiousShipType Ship type
-local function createShipsByType(position, areaDescriptor, descriptor, shipSettings, cargoMap, shipType)
+---@param formationCtx SBJ__ShipFormationContext Area, operation, layout and cargo shared by every ship type
+local function createShipsByType(position, shipType, formationCtx)
+  local areaDescriptor, descriptor = formationCtx.areaDescriptor, formationCtx.descriptor
+  local shipSettings, cargoMap = formationCtx.shipSettings, formationCtx.cargoMap
   local shipConfigs = {
     type075 = {
       dbid = constants.PLATFORMS.TYPE_075,
@@ -680,15 +679,22 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
         .verticalDistance)
 
       -- Create various ship types
-      createShipsByType(positions.type075, areaDescriptor, descriptor, layoutConfig, cargoMap, "type075")
-      createShipsByType(positions.type071, areaDescriptor, descriptor, layoutConfig, cargoMap, "type071")
-      createShipsByType(positions.type076, areaDescriptor, descriptor, layoutConfig, cargoMap, "type076")
-      createShipsByType(positions.barge, areaDescriptor, descriptor, layoutConfig, cargoMap, "barge")
-      createShipsByType(positions.roro, areaDescriptor, descriptor, layoutConfig, cargoMap, "roro")
-      createShipsByType(positions.type072a, areaDescriptor, descriptor, layoutConfig, cargoMap, "type072a")
-      createShipsByType(positions.type072iii, areaDescriptor, descriptor, layoutConfig, cargoMap, "type072iii")
-      createShipsByType(positions.ferry, areaDescriptor, descriptor, layoutConfig, cargoMap, "ferry")
-      createShipsByType(positions.type073a, areaDescriptor, descriptor, layoutConfig, cargoMap, "type073a")
+      ---@type SBJ__ShipFormationContext
+      local formationCtx = {
+        areaDescriptor = areaDescriptor,
+        descriptor = descriptor,
+        shipSettings = layoutConfig,
+        cargoMap = cargoMap
+      }
+      createShipsByType(positions.type075, "type075", formationCtx)
+      createShipsByType(positions.type071, "type071", formationCtx)
+      createShipsByType(positions.type076, "type076", formationCtx)
+      createShipsByType(positions.barge, "barge", formationCtx)
+      createShipsByType(positions.roro, "roro", formationCtx)
+      createShipsByType(positions.type072a, "type072a", formationCtx)
+      createShipsByType(positions.type072iii, "type072iii", formationCtx)
+      createShipsByType(positions.ferry, "ferry", formationCtx)
+      createShipsByType(positions.type073a, "type073a", formationCtx)
     end
   end
 
