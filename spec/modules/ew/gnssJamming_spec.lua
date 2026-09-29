@@ -403,7 +403,7 @@ describe("GnssJamming", function()
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       local unitEntersAreaEventStub = trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local count = GnssJamming.removeJammers(jammerDescriptors, "China")
+      local count = GnssJamming.removeJammers("China", jammerDescriptors)
 
       assert.are.equal(1, count)
       assert.stub(deleteReferencePointStub).was.called(2)
@@ -416,7 +416,7 @@ describe("GnssJamming", function()
     it("should return 0 when side object is nil", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(nil))
 
-      local count = GnssJamming.removeJammers({ alpha = makeDescriptor() }, "China")
+      local count = GnssJamming.removeJammers("China", { alpha = makeDescriptor() })
 
       assert.are.equal(0, count)
     end)
@@ -429,7 +429,7 @@ describe("GnssJamming", function()
 
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local count = GnssJamming.removeJammers({ alpha = makeDescriptor() }, "China")
+      local count = GnssJamming.removeJammers("China", { alpha = makeDescriptor() })
 
       assert.are.equal(0, count)
     end)
@@ -462,7 +462,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local count = GnssJamming.removeJammers(jammerDescriptors, "China")
+      local count = GnssJamming.removeJammers("China", jammerDescriptors)
 
       assert.are.equal(2, count)
     end)
@@ -475,7 +475,7 @@ describe("GnssJamming", function()
 
       trackStub(stub(GameApi, "VP_GetSide").returns(sideObj))
 
-      local count = GnssJamming.removeJammers({ alpha = descriptor }, "China")
+      local count = GnssJamming.removeJammers("China", { alpha = descriptor })
 
       assert.are.equal(0, count)
     end)
@@ -505,7 +505,7 @@ describe("GnssJamming", function()
       local addZoneStub = trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local success, unit = GnssJamming.addGnssJammer(descriptor, "China")
+      local success, unit = GnssJamming.addGnssJammer("China", descriptor)
 
       assert(unit ~= nil)
       assert.is_true(success)
@@ -536,7 +536,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      GnssJamming.addGnssJammer(descriptor, "China")
+      GnssJamming.addGnssJammer("China", descriptor)
 
       assert.stub(addUnitStub).was.called(1)
     end)
@@ -545,7 +545,7 @@ describe("GnssJamming", function()
     it("should return false and nil when ScenEdit_AddUnit returns nil", function()
       trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(nil))
 
-      local success, unit = GnssJamming.addGnssJammer(makeDescriptor(), "China")
+      local success, unit = GnssJamming.addGnssJammer("China", makeDescriptor())
 
       assert.is_false(success)
       assert.is_nil(unit)
@@ -558,7 +558,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
       trackStub(stub(GameUtils, "createArea").returns(false))
 
-      local success, unit = GnssJamming.addGnssJammer(makeDescriptor(), "China")
+      local success, unit = GnssJamming.addGnssJammer("China", makeDescriptor())
 
       assert(unit ~= nil)
       assert.is_false(success)

@@ -319,11 +319,11 @@ end
 
 ---Add a single GNSS jammer
 ---Creates a GNSS jammer unit at the specified location and sets up its jamming zone
----@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration
 ---@param sideName string Side name that will own the jammer
+---@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration
 ---@return boolean success Whether jammer was successfully created
 ---@return CMO__Unit|nil unit The created jammer unit
-function GnssJamming.addGnssJammer(descriptor, sideName)
+function GnssJamming.addGnssJammer(sideName, descriptor)
   local unit = GameApi.ScenEdit_AddUnit({
     side = sideName,
     unitname = descriptor.name,
@@ -357,10 +357,10 @@ function GnssJamming.addGnssJammer(descriptor, sideName)
 end
 
 ---Remove all GNSS jammers for a side
----@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
 ---@param sideName string Side name that owns the jammers
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
 ---@return number # Number of jammers successfully removed
-function GnssJamming.removeJammers(jammerDescriptorMap, sideName)
+function GnssJamming.removeJammers(sideName, jammerDescriptorMap)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
   if not sideObj then return 0 end
 
@@ -397,7 +397,7 @@ end
 function GnssJamming.deploySide(config, sideName)
   local jammerDescriptorMap = config[GameUtils.getCachedSideConfig(sideName).field].gnssJamming.jammers
 
-  GnssJamming.removeJammers(jammerDescriptorMap, sideName)
+  GnssJamming.removeJammers(sideName, jammerDescriptorMap)
   return addGnssJammers(jammerDescriptorMap, sideName)
 end
 

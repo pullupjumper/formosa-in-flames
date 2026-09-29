@@ -107,7 +107,7 @@ describe("UnitStatusUI", function()
 
       UnitStatusUI.createSetupMenu(config, constants.SIDES.PLAYER)
 
-      assert.stub(removeJammersStub).was.called_with({ { name = "J-1" }, { name = "J-2" } }, constants.SIDES.PLAYER)
+      assert.stub(removeJammersStub).was.called_with(constants.SIDES.PLAYER, { { name = "J-1" }, { name = "J-2" } })
       assert.stub(addGnssJammerStub).was.called(2)
       assert.stub(addAircraftStub).was.called_with({ { name = "AB-1" } })
       assert.stub(initTargetAircraftStub).was.called_with(config, saveData)

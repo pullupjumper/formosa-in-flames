@@ -190,7 +190,7 @@ local function removeZones(posTypes, operationalAreasToRemove, zoneType, sideNam
   )
 
   for _, zone in ipairs(zonesToRemove) do
-    local rpsRemoved = GameUtils.removeRPs(zone, resolvedSide)
+    local rpsRemoved = GameUtils.removeRPs(resolvedSide, zone)
     local zoneRemoved = GameApi.ScenEdit_RemoveZone(resolvedSide, zoneType, { description = zone.description })
 
     if rpsRemoved and zoneRemoved then

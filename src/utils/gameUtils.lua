@@ -552,10 +552,10 @@ function GameUtils.isSameRPArray(rpArray1, rpArray2)
 end
 
 ---Remove all reference points from a zone
----@param zone CMO__Zone Zone object containing reference points
 ---@param sideName string Side name for deletion context
+---@param zone CMO__Zone Zone object containing reference points
 ---@return boolean # Whether all reference points were successfully removed
-function GameUtils.removeRPs(zone, sideName)
+function GameUtils.removeRPs(sideName, zone)
   local rps = GameUtils.normalizeToRPArray(zone)
   for _, rp in ipairs(rps) do
     local result = GameApi.ScenEdit_DeleteReferencePoint({ side = sideName, name = rp })

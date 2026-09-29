@@ -303,9 +303,9 @@ local function applySetupResult(config, saveData, sideName, result)
   local missileSystems = result.missileSystems
 
   if jammerDescriptors and #jammerDescriptors > 0 then
-    GnssJamming.removeJammers(jammerDescriptors, sideName)
+    GnssJamming.removeJammers(sideName, jammerDescriptors)
     for _, descriptor in ipairs(jammerDescriptors) do
-      GnssJamming.addGnssJammer(descriptor, sideName)
+      GnssJamming.addGnssJammer(sideName, descriptor)
     end
   end
 

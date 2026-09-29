@@ -117,9 +117,9 @@ GNSSJammerDescriptor
 | 函數 | 說明 |
 |---|---|
 | `jamming(config, sideName)` | 干擾處理入口：解析武器、比對 DBID、擲骰抗性、偏移航路 |
-| `addGnssJammer(descriptor, sideName)` | 建立單一 GNSS 干擾機（指定座標，不含隨機偏移） |
+| `addGnssJammer(sideName, descriptor)` | 建立單一 GNSS 干擾機（指定座標，不含隨機偏移） |
 | `addGnssJammers(jammerDescriptors, sideName)` | 批量建立干擾機（含隨機位置偏移） |
-| `removeJammers(jammerDescriptors, sideName)` | 移除所有干擾機（單元 + Zone + 事件） |
+| `removeJammers(sideName, jammerDescriptors)` | 移除所有干擾機（單元 + Zone + 事件） |
 | `removeJammingZoneByName(jammerDescriptors, sideName, name)` | 依名稱移除特定 Zone（僅清理 Zone，不刪單元） |
 
 ---

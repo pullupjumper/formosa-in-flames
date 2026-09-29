@@ -438,10 +438,10 @@ local function createShipFormation(formationConfig)
 end
 
 ---Create SAG formations
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor> Configuration object
 ---@param sideName string Side name
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor> Configuration object
 ---@return boolean # Whether successful
-function UnitGenerator.createSAGs(sagDescriptorMap, sideName)
+function UnitGenerator.createSAGs(sideName, sagDescriptorMap)
   for _, sagDescriptor in pairs(sagDescriptorMap) do
     local formationConfig = {
       centerPoint = sagDescriptor.from.startingPoint,
@@ -521,10 +521,10 @@ function UnitGenerator.createCSG(csgDescriptor)
 end
 
 ---Add ships deployed at ports
----@param descriptors SBJ__AirbaseDeploymentDescriptor Configuration object
 ---@param sideName string Side name
+---@param descriptors SBJ__AirbaseDeploymentDescriptor Configuration object
 ---@return boolean # Whether successful
-function UnitGenerator.addDeployedShipsAtPort(descriptors, sideName)
+function UnitGenerator.addDeployedShipsAtPort(sideName, descriptors)
   for _, descriptor in ipairs(descriptors) do
     local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
 
