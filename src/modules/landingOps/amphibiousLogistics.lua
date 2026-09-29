@@ -146,14 +146,19 @@ local function isPlatformMatch(unit, platformType, platformDBID, loadoutDBID)
   return true
 end
 
+---@class SBJ__TransferCargoParams
+---@field platformType string Embarked unit type ('Aircraft' or 'Boats')
+---@field platformDBID number DBID of the receiving platform
+---@field loadoutDBID number Loadout ID for aircraft filtering (ignored for boats)
+
 ---Transfer cargo from base to multiple embarked units matching platform spec
 ---Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
 ---@param fromUnit string GUID of the base unit containing embarked platforms
----@param platformSpec {platformType: string, platformDBID: number, loadoutDBID: number} Embarked unit type ('Aircraft' or 'Boats'), DBID of the receiving platform, and loadout ID for aircraft filtering (ignored for boats)
+---@param params SBJ__TransferCargoParams Embarked platform selector
 ---@param cargoItems table<integer, SBJ__CargoDescriptor[]> Cargo items to transfer (single list or per-unit)
-local function transferCargo(fromUnit, platformSpec, cargoItems)
-  local platformType, platformDBID = platformSpec.platformType, platformSpec.platformDBID
-  local loadoutDBID = platformSpec.loadoutDBID
+local function transferCargo(fromUnit, params, cargoItems)
+  local platformType, platformDBID = params.platformType, params.platformDBID
+  local loadoutDBID = params.loadoutDBID
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
   if not base then return end
 

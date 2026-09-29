@@ -141,9 +141,9 @@ end
 ---@param unit CMO__Unit Ship unit
 ---@param resultEntry SBJ__ShipCalculationState|nil Calculation result entry
 ---@param resultKey string Result key used for destination lookup
----@param moveOpts {speed: number, isTesting: boolean} Ship speed in knots and testing mode flag
+---@param params {speed: number, isTesting: boolean} Ship speed in knots and testing mode flag
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveShipToNextLocation(unit, resultEntry, resultKey, moveOpts)
+local function moveShipToNextLocation(unit, resultEntry, resultKey, params)
   if not resultEntry or not resultEntry.locations or not resultEntry.locationIndex then
     return {
       tag = "FAIL",
@@ -160,7 +160,7 @@ local function moveShipToNextLocation(unit, resultEntry, resultKey, moveOpts)
     }
   end
 
-  moveShip(unit, location, moveOpts.speed, moveOpts.isTesting)
+  moveShip(unit, location, params.speed, params.isTesting)
   resultEntry.locationIndex = index + 1
   return {
     tag = "OK",
@@ -220,19 +220,19 @@ end
 ---@param isTesting boolean Testing mode flag
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveMatchingShip(unit, result, speed, isTesting)
-  local moveOpts = { speed = speed, isTesting = isTesting }
+  local params = { speed = speed, isTesting = isTesting }
   for _, entry in ipairs(SHIP_TYPE_DBIDS) do
     if unit.dbid == entry.dbid then
       if entry.key == "type071" then
         return moveType071(unit, result, speed, isTesting)
       end
-      return moveShipToNextLocation(unit, result[entry.key], entry.key, moveOpts)
+      return moveShipToNextLocation(unit, result[entry.key], entry.key, params)
     end
   end
 
   local nameKey = NAME_TO_KEY[unit.name]
   if nameKey then
-    return moveShipToNextLocation(unit, result[nameKey], nameKey, moveOpts)
+    return moveShipToNextLocation(unit, result[nameKey], nameKey, params)
   end
 
   return { tag = "SKIP", fields = { ship = unit.name, dbid = unit.dbid, reason = "unmatched" } }

@@ -78,9 +78,9 @@ end
 ---@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force runtime context
 function Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
-  for system, systemCfg in pairs(groundForceCfg) do
-    ---@cast systemCfg SBJ__MissileSystemConfig
-    local firingUnitMap = Utils.deepCopy(systemCfg.firingUnits)
+  for system, systemConfig in pairs(groundForceCfg) do
+    ---@cast systemConfig SBJ__MissileSystemConfig
+    local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
     for _, descriptor in pairs(firingUnitMap) do
       ---@type SBJ__FiringUnitContext
       local ctx = descriptor
@@ -88,7 +88,7 @@ function Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
       groundForceCtx[system].firingUnits[ctx.name] = ctx
     end
 
-    local resupplyUnitMap = Utils.deepCopy(systemCfg.resupplyUnits)
+    local resupplyUnitMap = Utils.deepCopy(systemConfig.resupplyUnits)
     for _, descriptor in pairs(resupplyUnitMap) do
       ---@type SBJ__ResupplyUnitContext
       local ctx = descriptor
@@ -96,7 +96,7 @@ function Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
       groundForceCtx[system].resupplyUnits[ctx.name] = ctx
     end
 
-    local ammunitionMap = Utils.deepCopy(systemCfg.ammunitions)
+    local ammunitionMap = Utils.deepCopy(systemConfig.ammunitions)
     for _, descriptor in pairs(ammunitionMap) do
       ---@type SBJ__AmmunitionContext
       local ctx = descriptor

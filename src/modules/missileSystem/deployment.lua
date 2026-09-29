@@ -113,13 +113,13 @@ end
 
 ---Create firing units according to configuration
 ---@param systemName string Missile system name
----@param systemCfg SBJ__MissileSystemConfig Weapon system configuration
+---@param systemConfig SBJ__MissileSystemConfig Weapon system configuration
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor
 ---@param sideName string Side name for unit creation
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
-local function addFiringUnit(systemName, systemCfg, descriptor, sideName)
+local function addFiringUnit(systemName, systemConfig, descriptor, sideName)
   local isSam = systemName == "sam"
   local context = {
     system = systemName,
@@ -142,7 +142,7 @@ local function addFiringUnit(systemName, systemCfg, descriptor, sideName)
     return 0, 0, { { tag = "FAIL", fields = LogFormat.merge(context, { reason = "no_fp_defined" }) } }
   end
 
-  local resupplyDescriptor = systemCfg.resupplyUnits[descriptor.resupplyUnit]
+  local resupplyDescriptor = systemConfig.resupplyUnits[descriptor.resupplyUnit]
   if not resupplyDescriptor then
     return 0, 0, { { tag = "FAIL", fields = LogFormat.merge(context, { reason = "no_resupply_unit_defined" }) } }
   end
@@ -302,22 +302,22 @@ end
 
 ---Create ammunition depot unit according to configuration
 ---@param systemName string Missile system name
----@param systemCfg SBJ__MissileSystemConfig Weapon system configuration
+---@param systemConfig SBJ__MissileSystemConfig Weapon system configuration
 ---@param descriptor SBJ__AmmunitionUnitDescriptor Ammunition unit descriptor
 ---@param sideName string Side name for unit creation
 ---@return boolean success Whether unit was successfully created
 ---@return SBJ__LogResult[] entries Failure log rows
-local function addAmmunition(systemName, systemCfg, descriptor, sideName)
+local function addAmmunition(systemName, systemConfig, descriptor, sideName)
   local context = { system = systemName, role = "ammo", unit = descriptor.name }
   local restStr = descriptor.name:gsub("^Ammo Revetment, ", "")
   local name = restStr
-  local resupplyUnitDescriptor = systemCfg.resupplyUnits[name]
+  local resupplyUnitDescriptor = systemConfig.resupplyUnits[name]
 
   if not resupplyUnitDescriptor then
     name = "Ammo Sec, " .. name
   end
 
-  resupplyUnitDescriptor = systemCfg.resupplyUnits[name]
+  resupplyUnitDescriptor = systemConfig.resupplyUnits[name]
 
   if resupplyUnitDescriptor then
     if not resupplyUnitDescriptor.operationalArea.AHA or #resupplyUnitDescriptor.operationalArea.AHA == 0 then
@@ -365,16 +365,16 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
   -- report already routes the individual FAIL rows to the error sink.
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Add missile systems")
 
-  for systemName, systemCfg in pairs(groundForceCfg) do
-    ---@cast systemCfg SBJ__MissileSystemConfig
+  for systemName, systemConfig in pairs(groundForceCfg) do
+    ---@cast systemConfig SBJ__MissileSystemConfig
     local systemHasFailure = false
     local fuTotal, fuExpected = 0, 0
-    for _, descriptor in pairs(systemCfg.firingUnits) do
+    for _, descriptor in pairs(systemConfig.firingUnits) do
       local removeEntries = removeMissileSystem(systemName, "firing", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
-      local created, expected, detailEntries = addFiringUnit(systemName, systemCfg, descriptor, sideName)
+      local created, expected, detailEntries = addFiringUnit(systemName, systemConfig, descriptor, sideName)
       fuTotal = fuTotal + created
       fuExpected = fuExpected + expected
       report.addAll(detailEntries)
@@ -382,7 +382,7 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
     end
 
     local ruTotal, ruExpected = 0, 0
-    for _, descriptor in pairs(systemCfg.resupplyUnits) do
+    for _, descriptor in pairs(systemConfig.resupplyUnits) do
       local removeEntries = removeMissileSystem(systemName, "resupply", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
@@ -395,12 +395,12 @@ function Deployment.addMissileSystems(groundForceCfg, sideName)
     end
 
     local ammoOk, ammoTotal = 0, 0
-    for _, descriptor in pairs(systemCfg.ammunitions) do
+    for _, descriptor in pairs(systemConfig.ammunitions) do
       local removeEntries = removeMissileSystem(systemName, "ammo", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
-      local success, ammoEntries = addAmmunition(systemName, systemCfg, descriptor, sideName)
+      local success, ammoEntries = addAmmunition(systemName, systemConfig, descriptor, sideName)
       ammoTotal = ammoTotal + 1
       if success then ammoOk = ammoOk + 1 end
       report.addAll(ammoEntries)
@@ -435,19 +435,19 @@ function Deployment.applyLayouts(groundForceCfg, layouts)
 
   for _, layout in ipairs(layouts) do
     ---@type SBJ__MissileSystemConfig
-    local systemCfg = groundForceCfg[layout.category]
+    local systemConfig = groundForceCfg[layout.category]
 
-    if systemCfg and systemCfg.firingUnits[layout.unitname] then
-      local firingUnitDescriptor = Utils.deepCopy(systemCfg.firingUnits[layout.unitname])
-      local resupplyUnitDescriptor = Utils.deepCopy(systemCfg.resupplyUnits[firingUnitDescriptor.resupplyUnit])
-      local ammoDescriptor = Utils.deepCopy(systemCfg.ammunitions[resupplyUnitDescriptor.ammunition])
+    if systemConfig and systemConfig.firingUnits[layout.unitname] then
+      local firingUnitDescriptor = Utils.deepCopy(systemConfig.firingUnits[layout.unitname])
+      local resupplyUnitDescriptor = Utils.deepCopy(systemConfig.resupplyUnits[firingUnitDescriptor.resupplyUnit])
+      local ammoDescriptor = Utils.deepCopy(systemConfig.ammunitions[resupplyUnitDescriptor.ammunition])
       table.insert(operationalAreasToRemove, firingUnitDescriptor.operationalArea)
       firingUnitDescriptor.operationalArea = layout.operationalArea
       resupplyUnitDescriptor.operationalArea = layout.operationalArea
       table.insert(operationalAreas, layout.operationalArea)
-      systemCfg.firingUnits[firingUnitDescriptor.name] = firingUnitDescriptor
-      systemCfg.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
-      systemCfg.ammunitions[ammoDescriptor.name] = ammoDescriptor
+      systemConfig.firingUnits[firingUnitDescriptor.name] = firingUnitDescriptor
+      systemConfig.resupplyUnits[resupplyUnitDescriptor.name] = resupplyUnitDescriptor
+      systemConfig.ammunitions[ammoDescriptor.name] = ammoDescriptor
     end
   end
 

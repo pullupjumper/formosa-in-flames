@@ -256,14 +256,18 @@ local function resolveAreaRef(emitter, i, key, areaRefMap)
   return constName and ("constants.AREAS." .. constName) or nil
 end
 
+---@class SBJ__PositionBlockParams
+---@field key string Operational-area key (e.g. "ANW")
+---@field map table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
+
 ---Emit one position block (single- or multi-position) into opLines
 ---Skips silently if the first position has no resolvable AREAS reference
 ---@param opLines string[] Output accumulator (mutated)
 ---@param emitter SBJ__OpAreaPositionEmitter Emitter describing field and areaRefMap subkey lookup
 ---@param positions SBJ__Position[] Position list from opArea[emitter.field]
----@param areaRef {key: string, map: table<string, table<string, string>>} Operational-area key (e.g. "ANW") and Phase 2's [opKey][posType_index] -> AREAS const-name map
-local function formatPositionBlock(opLines, emitter, positions, areaRef)
-  local key, areaRefMap = areaRef.key, areaRef.map
+---@param params SBJ__PositionBlockParams Operational-area key and AREAS lookup
+local function formatPositionBlock(opLines, emitter, positions, params)
+  local key, areaRefMap = params.key, params.map
   if not resolveAreaRef(emitter, 1, key, areaRefMap) then return end
 
   if #positions == 1 then
