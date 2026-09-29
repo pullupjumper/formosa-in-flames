@@ -1707,3 +1707,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field contacts CMO__Contact[] Contact list from the game
 ---@field currentTime number Current scenario time in seconds
 ---@field filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
+
+---Ammunition totals and weapon choice for one group-attack step
+---@class SBJ__GroupAttackRequest: table
+---@field totalAmmoRequested integer Total amount of ammunition requested for this attack
+---@field ammoAlreadyAllocated integer Amount of ammunition already allocated in this attack
+---@field weaponDBID number Specific weapon DBID to use

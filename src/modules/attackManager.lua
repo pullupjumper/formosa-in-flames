@@ -72,13 +72,13 @@ end
 ---Process a fire unit and attempt to allocate weapons for attack
 ---@param firingUnit CMO__Unit The fire unit to process
 ---@param contact CMO__Contact The target contact
----@param totalAmmoRequested integer Total amount of ammunition requested for this attack
----@param ammoAlreadyAllocated integer Amount of ammunition already allocated in this attack
----@param weaponDBID number Specific weapon DBID to use
+---@param request SBJ__GroupAttackRequest Ammunition totals and weapon for this attack
 ---@param shooterIdx integer Current shooter index
 ---@return boolean success Whether to advance to next firing unit
 ---@return integer weaponsAllocated Number of weapons allocated
-local function processUnitGroup(firingUnit, contact, totalAmmoRequested, ammoAlreadyAllocated, weaponDBID, shooterIdx)
+local function processUnitGroup(firingUnit, contact, request, shooterIdx)
+  local totalAmmoRequested, ammoAlreadyAllocated = request.totalAmmoRequested, request.ammoAlreadyAllocated
+  local weaponDBID = request.weaponDBID
   local ammoAllocated = 0
   local advanceFiringUnit = false
 
@@ -217,7 +217,10 @@ local function attackContact(contactGUID, ammoToAllocate, firingUnits, firingUni
       if actualUnit.group then
         -- Track if we need to advance to next firing unit
         local advanceFiringUnit, ammoAllocated = processUnitGroup(
-          actualUnit, contact, ammoToAllocate, totalAmmoAllocated, wpnDBID, shooterIdx
+          actualUnit,
+          contact,
+          { totalAmmoRequested = ammoToAllocate, ammoAlreadyAllocated = totalAmmoAllocated, weaponDBID = wpnDBID },
+          shooterIdx
         )
 
         -- Update our tracking variables

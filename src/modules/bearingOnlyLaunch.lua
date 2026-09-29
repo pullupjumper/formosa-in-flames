@@ -54,18 +54,15 @@ local function calculateHaversineNM(lat1, lon1, lat2, lon2)
 end
 
 ---Check if path crosses radar circular area using midpoint approximation
----@param lat1 number Path start latitude
----@param lon1 number Path start longitude
----@param lat2 number Path end latitude
----@param lon2 number Path end longitude
----@param radarLat number Radar latitude
----@param radarLon number Radar longitude
+---@param startPos {latitude: number, longitude: number} Path start
+---@param endPos {latitude: number, longitude: number} Path end
+---@param radarPos {latitude: number, longitude: number} Radar position
 ---@param radarRangeNm number Radar range in nautical miles
 ---@return boolean # True if path intersects radar circle
-local function isIntersectingRadarCircle(lat1, lon1, lat2, lon2, radarLat, radarLon, radarRangeNm)
-  local midLat = (lat1 + lat2) / 2
-  local midLon = (lon1 + lon2) / 2
-  local dist = calculateHaversineNM(midLat, midLon, radarLat, radarLon)
+local function isIntersectingRadarCircle(startPos, endPos, radarPos, radarRangeNm)
+  local midLat = (startPos.latitude + endPos.latitude) / 2
+  local midLon = (startPos.longitude + endPos.longitude) / 2
+  local dist = calculateHaversineNM(midLat, midLon, radarPos.latitude, radarPos.longitude)
   return dist < radarRangeNm
 end
 
@@ -100,8 +97,12 @@ function BearingOnlyLaunch.buildMissilePaths(params)
       local d = radarRange * distMult
       wpLat, wpLon = calculateDestinationPoint(targetLat, targetLon, angle, d)
 
-      local crossesRadar = isIntersectingRadarCircle(launcherLat, launcherLon, wpLat, wpLon, targetLat, targetLon,
-        radarRange)
+      local crossesRadar = isIntersectingRadarCircle(
+        { latitude = launcherLat, longitude = launcherLon },
+        { latitude = wpLat, longitude = wpLon },
+        { latitude = targetLat, longitude = targetLon },
+        radarRange
+      )
       local totalDistance = calculateHaversineNM(launcherLat, launcherLon, wpLat, wpLon) +
           calculateHaversineNM(wpLat, wpLon, targetLat, targetLon)
 
