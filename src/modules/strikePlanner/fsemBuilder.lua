@@ -320,9 +320,14 @@ local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
 
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
-  DynamicPlan.insert(plannerState, "ground", matrixTemplate.name, reconType, function(planName)
-    return buildMatrix(matrixTemplate, planName, fireSupportTasks, passCtx.currentTime)
-  end)
+  DynamicPlan.insert(plannerState, {
+    operationType = "ground",
+    templateName = matrixTemplate.name,
+    reconType = reconType,
+    buildPlan = function(planName)
+      return buildMatrix(matrixTemplate, planName, fireSupportTasks, passCtx.currentTime)
+    end
+  })
   return { success = true, tag = "OK", fields = statusFields }
 end
 
@@ -336,13 +341,11 @@ local function processGroundOperation(config, plannerState, batchedOp, passCtx)
   local operation = batchedOp.operation
   local reconType = batchedOp.operationBatch.type
 
-  local targetsByTaskIndex, targetQualifiedTaskCount = DynamicPlan.evaluateTargets(
-    config,
-    plannerState,
-    passCtx.contacts,
-    "ground",
-    operation.template
-  )
+  local targetsByTaskIndex, targetQualifiedTaskCount = DynamicPlan.evaluateTargets(config, plannerState, {
+    contacts = passCtx.contacts,
+    operationType = "ground",
+    template = operation.template
+  })
 
   if targetQualifiedTaskCount == 0 then
     -- No firing unit was evaluated yet, so there are no counters to report.

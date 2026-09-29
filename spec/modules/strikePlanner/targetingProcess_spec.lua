@@ -170,7 +170,7 @@ describe("TargetingProcess", function()
       minTargetCount = params.task.target.minTargetCount,
     }
     local plannerState = params.plannerState or makePlannerState()
-    return TargetingProcess.processTargets(params.config, plannerState, params.contacts, targetConfig, false)
+    return TargetingProcess.processTargets(params.config, plannerState, { contacts = params.contacts, targetConfig = targetConfig })
   end
 
   ---Run fixed-target BDA over the given contact GUIDs through processTargets
@@ -190,7 +190,8 @@ describe("TargetingProcess", function()
       minTargetCount = 1,
     }
     return TargetingProcess.processTargets(
-      makeConfig(), makePlannerState({ targetlist = targetlist }), {}, targetConfig, isFirstWave
+      makeConfig(), makePlannerState({ targetlist = targetlist }), { contacts = {}, targetConfig = targetConfig },
+      { isFirstWave = isFirstWave }
     )
   end
 
@@ -1365,11 +1366,14 @@ describe("TargetingProcess", function()
 
     -- Boundary: fixed targets never ask for tracking
     it("should return no tracking requests for fixed targets", function()
-      local _, requests = TargetingProcess.processTargets(makeConfig(), makePlannerState(), {}, {
-        objs = { { baseName = "Hsinchu", subTypes = { "Runway" } } },
-        contactAge = 300,
-        minTargetCount = 1,
-      }, false)
+      local _, requests = TargetingProcess.processTargets(makeConfig(), makePlannerState(), {
+        contacts = {},
+        targetConfig = {
+          objs = { { baseName = "Hsinchu", subTypes = { "Runway" } } },
+          contactAge = 300,
+          minTargetCount = 1,
+        },
+      })
 
       assert.are.same({}, requests)
     end)
@@ -1709,7 +1713,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, plannerState, { contact }, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contacts = { contact }, targetConfig = targetConfig })
 
       assert.are.equal(1, #result)
     end)
@@ -1741,7 +1745,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contacts = {}, targetConfig = targetConfig })
 
       assert.are.equal(1, #result)
     end)
@@ -1749,7 +1753,7 @@ describe("TargetingProcess", function()
     -- Negative: nil targetConfig
     it("should return empty when targetConfig is nil", function()
       local targetTemplate = {}
-      local result = TargetingProcess.processTargets(makeConfig(), makePlannerState(), {}, targetTemplate, false)
+      local result = TargetingProcess.processTargets(makeConfig(), makePlannerState(), { contacts = {}, targetConfig = targetTemplate })
 
       assert.are.equal(0, #result)
     end)
@@ -1782,7 +1786,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contacts = {}, targetConfig = targetConfig })
 
       assert.are.equal(1, #result)
     end)
@@ -1812,7 +1816,7 @@ describe("TargetingProcess", function()
       }
 
       local result = TargetingProcess.processTargets(
-        config, plannerState, { infantryContact, c2Contact }, targetConfig, false
+        config, plannerState, { contacts = { infantryContact, c2Contact }, targetConfig = targetConfig }
       )
 
       assert.are.equal(2, #result)
@@ -1828,7 +1832,7 @@ describe("TargetingProcess", function()
         contactAge = 300,
       }
 
-      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contacts = {}, targetConfig = targetConfig })
 
       assert.are.equal(0, #result)
       assert.stub(warnStub).was.called(1)
@@ -1843,7 +1847,7 @@ describe("TargetingProcess", function()
         contactAge = 300,
       }
 
-      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contacts = {}, targetConfig = targetConfig })
 
       assert.are.equal(0, #result)
     end)
@@ -1862,7 +1866,7 @@ describe("TargetingProcess", function()
         minTargetCount = 1,
       }
 
-      local result = TargetingProcess.processTargets(config, plannerState, {}, targetConfig, false)
+      local result = TargetingProcess.processTargets(config, plannerState, { contacts = {}, targetConfig = targetConfig })
 
       assert.are.equal(0, #result)
     end)

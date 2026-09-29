@@ -114,7 +114,7 @@ targetingProcess 只**提出**追蹤請求，不碰 recon queue。動態篩選�
 |---|---|
 | `findTargets(sideName, scanConfig, saveData)` | 掃描所有接觸並分類至目標清單 |
 | `filterTargetsByTypeAndBase(targetlist, queryParams)` | 依基地名稱與子類型查詢目標；套件外（`runwayRepairment`）經門面 `StrikePlanner.filterTargetsByTypeAndBase` 呼叫 |
-| `processTargets(config, saveData, contacts, targetConfig, isFirstWave)` | 統一入口：路由至動態篩選或固定目標查詢；回傳 `targets, trackingRequests`（固定目標的請求恆為空） |
+| `processTargets(config, plannerState, params, opts)`（`params`：`contacts`、`targetConfig`；`opts`：`isFirstWave`） | 統一入口：路由至動態篩選或固定目標查詢；回傳 `targets, trackingRequests`（固定目標的請求恆為空） |
 
 ---
 

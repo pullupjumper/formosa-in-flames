@@ -657,21 +657,21 @@ end
 ---Never touches the recon queue; the caller hands trackingRequests to Recon.trackTargets.
 ---@param config SBJ__Config Global configuration table
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts
----@param targetConfig SBJ__TargetTemplate Target configuration (from taskTemplate.target or packageData.target)
----@param isFirstWave boolean Whether this is the first wave
+---@param params SBJ__ProcessTargetsParams Available contacts and the target configuration
+---@param opts? SBJ__ProcessTargetsOpts First-wave flag
 ---@return string[] targets Array of target GUIDs
 ---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the targets call for; always empty for fixed targets
-function TargetingProcess.processTargets(config, plannerState, contacts, targetConfig, isFirstWave)
+function TargetingProcess.processTargets(config, plannerState, params, opts)
+  local targetConfig = params.targetConfig
   if not targetConfig then
     return {}, {}
   end
 
   if type(targetConfig.filterNames) == "table" and #targetConfig.filterNames > 0 then
-    return processDynamicTargets(config, plannerState, contacts, targetConfig)
+    return processDynamicTargets(config, plannerState, params.contacts, targetConfig)
   end
 
-  return processFixedTargets(plannerState, targetConfig, isFirstWave), {}
+  return processFixedTargets(plannerState, targetConfig, opts and opts.isFirstWave or false), {}
 end
 
 return TargetingProcess

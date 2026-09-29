@@ -68,13 +68,12 @@ end
 ---Recon tracking is requested for every entry that raised it, qualified or not.
 ---@param config SBJ__Config Global configuration table
 ---@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts from the game
----@param operationType SBJ__OperationType Operation type the template belongs to
----@param template SBJ__WaveTemplate|SBJ__FireSupportExecutionMatrixTemplate Template whose entries are evaluated
+---@param params SBJ__EvaluateTargetsParams Contacts, operation type and the template to evaluate
 ---@return table<integer, string[]> targetsByIndex Evaluated targets keyed by entry index, qualified entries only
 ---@return integer qualifiedCount Number of entries with enough targets
-function DynamicPlan.evaluateTargets(config, plannerState, contacts, operationType, template)
-  local descriptor = resolveDescriptor(operationType)
+function DynamicPlan.evaluateTargets(config, plannerState, params)
+  local template = params.template
+  local descriptor = resolveDescriptor(params.operationType)
   local targetsByIndex = {}
   local qualifiedCount = 0
   local trackingRequests = {}
@@ -84,9 +83,8 @@ function DynamicPlan.evaluateTargets(config, plannerState, contacts, operationTy
     local targets, requests = TargetingProcess.processTargets(
       config,
       plannerState,
-      contacts,
-      entryTemplate.target,
-      template.isFirstWave
+      { contacts = params.contacts, targetConfig = entryTemplate.target },
+      { isFirstWave = template.isFirstWave }
     )
     if requests then
       Utils.addAll(trackingRequests, requests)
@@ -109,20 +107,17 @@ end
 ---buildPlan receives the unique name and returns the wave or matrix to store under it.
 ---The name is registered in the same call, so a generated name can never go unregistered.
 ---@param plannerState SBJ__StrikePlannerState Strike planner state holding the plan tables and the name registry
----@param operationType SBJ__OperationType Operation type deciding which plan table and registry are used
----@param templateName string Full operation template name, wave-stage number included
----@param reconType string Reconnaissance source that triggered the operation
----@param buildPlan fun(planName: string): table Builds the plan entry for the generated name
+---@param params SBJ__InsertPlanParams Operation type, template name, recon type and the plan builder
 ---@return string # The generated plan name
-function DynamicPlan.insert(plannerState, operationType, templateName, reconType, buildPlan)
-  local descriptor = resolveDescriptor(operationType)
+function DynamicPlan.insert(plannerState, params)
+  local descriptor = resolveDescriptor(params.operationType)
   ensureGeneratedOperations(plannerState)
 
   local registrySet = plannerState.dynamicOperations.generatedOperations[descriptor.registryKey]
   local plan = descriptor.resolvePlan(plannerState)
-  local planName = buildUniqueOperationName(templateName, reconType, registrySet, plan)
+  local planName = buildUniqueOperationName(params.templateName, params.reconType, registrySet, plan)
 
-  plan[planName] = buildPlan(planName)
+  plan[planName] = params.buildPlan(planName)
   registrySet[planName] = true
 
   return planName

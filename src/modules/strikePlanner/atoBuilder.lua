@@ -401,10 +401,15 @@ local function createAndInsertATOWaveFromTemplate(plannerState, params, passCtx)
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
   local wave
-  local waveName = DynamicPlan.insert(plannerState, "air", waveTemplate.name, params.reconType, function(planName)
-    wave = buildATOWave(waveTemplate, planName, validPackages)
-    return wave
-  end)
+  local waveName = DynamicPlan.insert(plannerState, {
+    operationType = "air",
+    templateName = waveTemplate.name,
+    reconType = params.reconType,
+    buildPlan = function(planName)
+      wave = buildATOWave(waveTemplate, planName, validPackages)
+      return wave
+    end
+  })
   fields.wave = waveName
   return { success = true, tag = "OK", fields = fields, details = details, timing = collectWaveTimingResults(wave) }
 end
@@ -422,13 +427,11 @@ local function processAirOperation(plannerState, batchedOp, passCtx)
   local operationBatch = batchedOp.operationBatch
   local operation = batchedOp.operation
 
-  local targetsByPackageIndex, qualifiedCount = DynamicPlan.evaluateTargets(
-    passCtx.config,
-    plannerState,
-    passCtx.contacts,
-    "air",
-    operation.template
-  )
+  local targetsByPackageIndex, qualifiedCount = DynamicPlan.evaluateTargets(passCtx.config, plannerState, {
+    contacts = passCtx.contacts,
+    operationType = "air",
+    template = operation.template
+  })
 
   if qualifiedCount == 0 then
     return {

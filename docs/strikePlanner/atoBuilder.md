@@ -92,7 +92,7 @@ flowchart TD
 
 ### 目標評估與 package 篩選
 
-`DynamicPlan.evaluateTargets()` 依 `waveTemplate.packages` 順序處理每個 package，呼叫 `TargetingProcess.processTargets(config, saveData, contacts, packageData.target, waveTemplate.isFirstWave)` 取得候選目標。目標數達到 `packageData.target.minTargetCount` 時，該 package index 才會被記進 `targetsByPackageIndex`，`qualifiedCount` 同時加一。
+`DynamicPlan.evaluateTargets()` 依 `waveTemplate.packages` 順序處理每個 package，呼叫 `TargetingProcess.processTargets(config, plannerState, { contacts, targetConfig = packageData.target }, { isFirstWave })` 取得候選目標。目標數達到 `packageData.target.minTargetCount` 時，該 package index 才會被記進 `targetsByPackageIndex`，`qualifiedCount` 同時加一。
 
 `buildExecutablePackages()` 只處理已通過目標門檻的 package。它把 `package.target.list` 改成實際目標清單，並在機隊驗證成功後委派 `PackageTiming.createPackageWithTiming()` 補齊 timing 與 `loadoutStatus`。時序串接以「前一個**有效** package」為基準，因此即使原始第 1 個 package 被跳過，第 1 個成功建立的 package 仍會被視為第一個有效 package。
 

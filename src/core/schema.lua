@@ -1063,6 +1063,29 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__CreateMissionOpts: table
 ---@field emcon? string EMCON settings string applied to the mission
 
+---Required input for TargetingProcess.processTargets
+---@class SBJ__ProcessTargetsParams: table
+---@field contacts CMO__Contact[] Available sensor contacts
+---@field targetConfig? SBJ__TargetTemplate Target configuration (from taskTemplate.target or packageData.target)
+
+---Optional settings for TargetingProcess.processTargets
+---Passing nil applies every default
+---@class SBJ__ProcessTargetsOpts: table
+---@field isFirstWave? boolean Whether this is the first wave (default: false)
+
+---Required input for DynamicPlan.evaluateTargets
+---@class SBJ__EvaluateTargetsParams: table
+---@field contacts CMO__Contact[] Available sensor contacts from the game
+---@field operationType SBJ__OperationType Operation type the template belongs to
+---@field template SBJ__WaveTemplate|SBJ__FireSupportExecutionMatrixTemplate Template whose entries are evaluated
+
+---Required input for DynamicPlan.insert
+---@class SBJ__InsertPlanParams: table
+---@field operationType SBJ__OperationType Operation type deciding which plan table and registry are used
+---@field templateName string Full operation template name, wave-stage number included
+---@field reconType string Reconnaissance source that triggered the operation
+---@field buildPlan fun(planName: string): table Builds the plan entry for the generated name
+
 ---Movement parameters for commanding units to a randomly selected position
 ---@class SBJ__MoveToPositionParams: table
 ---@field unitName string Unit name (for messages)

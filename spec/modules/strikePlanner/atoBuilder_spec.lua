@@ -376,7 +376,8 @@ describe("AtoBuilder", function()
     stubClock(1000)
     attachOperation(reconEntry, operation)
     -- Package 1 (TAOYUAN) gets 3 targets, Package 2 (HSINCHU) gets 1 target (needs 10)
-    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, params)
+      local targetConfig = params.targetConfig
       if targetConfig and targetConfig.objs and targetConfig.objs[1]
           and targetConfig.objs[1].baseName == "TAOYUAN" then
         return { "TGT-1", "TGT-2", "TGT-3" }
@@ -424,7 +425,8 @@ describe("AtoBuilder", function()
       return 1000
     end))
     attachOperation(reconEntry, operation)
-    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, params)
+      local targetConfig = params.targetConfig
       if targetConfig and targetConfig.objs and targetConfig.objs[1]
           and targetConfig.objs[1].baseName == "TAOYUAN" then
         return { "TGT-1" }
@@ -1053,7 +1055,8 @@ describe("AtoBuilder", function()
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     attachOperation(reconEntry, operation)
-    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, params)
+      local targetConfig = params.targetConfig
       return { targetConfig.objs[1].baseName }
     end))
     stubBases({ ["BASE-1"] = { "S1", "S2" } })
@@ -1519,7 +1522,8 @@ describe("AtoBuilder", function()
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
-    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, _, targetConfig)
+    trackStub(stub(TargetingProcess, "processTargets").invokes(function(_, _, params)
+      local targetConfig = params.targetConfig
       return { targetConfig.objs[1].baseName }
     end))
     -- 2 packages x 2 roles all draw from BASE-1; without the cache that is 4 reads
