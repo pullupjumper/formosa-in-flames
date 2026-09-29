@@ -161,25 +161,25 @@ describe("MissileSystem", function()
     it("should call Cycle.process with each system context and its config", function()
       local srbmCtx = { enabled = true, id = "srbm" }
       local mrbmCtx = { enabled = true, id = "mrbm" }
-      local srbmCfg = { reloadTime = 300 }
-      local mrbmCfg = { reloadTime = 600 }
+      local srbmConfig = { reloadTime = 300 }
+      local mrbmConfig = { reloadTime = 600 }
       local groundCtx = {
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
       }
-      local groundCfg = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCfg,
-        [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCfg,
+      local groundConfig = {
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig,
+        [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmConfig,
       }
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, groundCfg, { isAuto = true }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, { isAuto = true }, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2)
-      assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmCfg, isAuto = true }),
+      assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = true }),
         "Taiwan")
-      assert.stub(cycleProcessStub).was.called_with(mrbmCtx, match.is_same({ systemConfig = mrbmCfg, isAuto = true }),
+      assert.stub(cycleProcessStub).was.called_with(mrbmCtx, match.is_same({ systemConfig = mrbmConfig, isAuto = true }),
         "Taiwan")
     end)
 
@@ -193,7 +193,7 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
         [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsCtx,
       }
-      local groundCfg = {}
+      local groundConfig = {}
 
       local cycleProcessStub = trackStub(Cycle, "process").invokes(function(systemCtx)
         if systemCtx.id == "srbm" then
@@ -204,7 +204,7 @@ describe("MissileSystem", function()
         return {}
       end)
 
-      MissileSystem.process(groundCtx, groundCfg, { isAuto = true }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, { isAuto = true }, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
       assert.stub(logStub).was.called(1)
@@ -226,10 +226,10 @@ describe("MissileSystem", function()
     -- Positive: the log names the run mode so auto and manual sides can be told apart
     it("should report the run mode in the log", function()
       local groundCtx = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true } }
-      local groundCfg = {}
+      local groundConfig = {}
       trackStub(Cycle, "process").returns({ { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } })
 
-      MissileSystem.process(groundCtx, groundCfg, { isAuto = false }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, { isAuto = false }, "Taiwan")
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "mode=manual", 1, true))
@@ -241,7 +241,7 @@ describe("MissileSystem", function()
       local groundCtx = {
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
       }
-      local groundCfg = {}
+      local groundConfig = {}
 
       trackStub(Cycle, "process").returns({
         {
@@ -250,7 +250,7 @@ describe("MissileSystem", function()
         }
       })
 
-      MissileSystem.process(groundCtx, groundCfg, { isAuto = true }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, { isAuto = true }, "Taiwan")
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -262,19 +262,19 @@ describe("MissileSystem", function()
     -- Negative: skips disabled systems and does not log when no events occurred
     it("should skip disabled systems and not log when no results are returned", function()
       local srbmCtx = { enabled = true }
-      local srbmCfg = { reloadTime = 300 }
+      local srbmConfig = { reloadTime = 300 }
       local groundCtx = {
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = { enabled = false },
       }
-      local groundCfg = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCfg }
+      local groundConfig = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig }
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, groundCfg, { isAuto = false }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, { isAuto = false }, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(1)
-      assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmCfg, isAuto = false }),
+      assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = false }),
         "Taiwan")
       assert.stub(logStub).was_not.called()
     end)
@@ -1373,7 +1373,7 @@ describe("MissileSystem", function()
   describe("redeploy", function()
     -- Positive: layouts are applied first, then zones, units and state are rebuilt in order
     it("should apply layouts, then rebuild triggers, units and contexts in order", function()
-      local groundForceCfg = {}
+      local groundForceConfig = {}
       local groundForceCtx = {}
       local layouts = { { category = "srbm", unitname = "FU-1", operationalArea = { name = "#NEW" } } }
       local newAreas = { { name = "#NEW" } }
@@ -1394,7 +1394,7 @@ describe("MissileSystem", function()
         table.insert(calls, "initMissileSystemContexts")
       end)
 
-      MissileSystem.redeploy(groundForceCfg, groundForceCtx, layouts, "Taiwan")
+      MissileSystem.redeploy(groundForceConfig, groundForceCtx, layouts, "Taiwan")
 
       assert.are.same({ "applyLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
@@ -1403,8 +1403,8 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, "Taiwan")
-      assert.stub(addStub).was.called_with(groundForceCfg, "Taiwan")
-      assert.stub(contextStub).was.called_with(groundForceCfg, groundForceCtx)
+      assert.stub(addStub).was.called_with(groundForceConfig, "Taiwan")
+      assert.stub(contextStub).was.called_with(groundForceConfig, groundForceCtx)
     end)
   end)
 end)

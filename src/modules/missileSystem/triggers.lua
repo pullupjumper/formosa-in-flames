@@ -439,7 +439,7 @@ end
 ---@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
 ---@param sideName string Side name for zone/trigger ownership
 function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
-  local sideCfg = GameUtils.getCachedSideConfig(sideName)
+  local sideConfig = GameUtils.getCachedSideConfig(sideName)
 
   local removedTriggerCount, triggerCleanupSuccessful, removedZoneCount, zoneCleanupSuccessful =
       removeExistingTriggersAndZones(positionTypes, operationalAreasToRemove, sideName)
@@ -451,7 +451,7 @@ function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, 
     local created, failed, failMessages = createPositionTriggers(
       operationalArea,
       positionTypes,
-      sideCfg.enemySide,
+      sideConfig.enemySide,
       sideName
     )
     totalCreated = totalCreated + created

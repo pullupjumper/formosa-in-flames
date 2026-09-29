@@ -43,10 +43,10 @@ describe("UnitStatusUI", function()
   ---@param overrides? table
   ---@return table
   local function makeConfig(overrides)
-    local function makeSideCfg()
+    local function makeSideConfig()
       return { gnssJamming = { jammers = {} }, air = { landBased = { deployedACs = {} } }, ground = {} }
     end
-    local config = { c = makeSideCfg(), t = makeSideCfg() }
+    local config = { c = makeSideConfig(), t = makeSideConfig() }
     config.c.amphibOps = { operations = {}, operationalZones = {} }
     if overrides then
       for k, v in pairs(overrides) do config[k] = v end

@@ -223,16 +223,16 @@ function MissileSystem.processSupplyAssetDestruction(saveData, unit)
 end
 
 ---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
----@param groundForceCfg SBJ__GroundForceConfig Side ground force configuration; mutated
+---@param groundForceConfig SBJ__GroundForceConfig Side ground force configuration; mutated
 ---@param groundForceCtx SBJ__GroundForceContext Side ground force runtime context
 ---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
 ---@param sideName string Side name for zone/trigger/unit ownership
-function MissileSystem.redeploy(groundForceCfg, groundForceCtx, layouts, sideName)
-  local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceCfg, layouts)
+function MissileSystem.redeploy(groundForceConfig, groundForceCtx, layouts, sideName)
+  local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceConfig, layouts)
 
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
-  Deployment.addMissileSystems(groundForceCfg, sideName)
-  Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
+  Deployment.addMissileSystems(groundForceConfig, sideName)
+  Context.initMissileSystemContexts(groundForceConfig, groundForceCtx)
 end
 
 ---Redeploy a side's batteries to the placements submitted by the setup menu
@@ -262,10 +262,10 @@ end
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
 ---@param sideName string Side name (China or Taiwan)
 function MissileSystem.deploySide(config, saveData, sideName)
-  local groundForceCfg = config[GameUtils.getCachedSideConfig(sideName).field].ground
+  local groundForceConfig = config[GameUtils.getCachedSideConfig(sideName).field].ground
 
-  Deployment.addMissileSystems(groundForceCfg, sideName)
-  Context.initMissileSystemContexts(groundForceCfg, PersistentState.groundForces(saveData, sideName))
+  Deployment.addMissileSystems(groundForceConfig, sideName)
+  Context.initMissileSystemContexts(groundForceConfig, PersistentState.groundForces(saveData, sideName))
 end
 
 ---Build a side's battery status rows for the status UI, grouped by resupply unit name

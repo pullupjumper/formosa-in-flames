@@ -57,10 +57,10 @@ end
 
 ---Fill the default per-system state for every system in config
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
----@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
+---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
-function Context.seedGroundForceState(groundForceCfg, groundForceCtx)
-  for system, _ in pairs(groundForceCfg) do
+function Context.seedGroundForceState(groundForceConfig, groundForceCtx)
+  for system, _ in pairs(groundForceConfig) do
     ---@type SBJ__MissileSystemContext
     local systemCtx = groundForceCtx[system] or {}
     systemCtx.name = system
@@ -75,10 +75,10 @@ function Context.seedGroundForceState(groundForceCfg, groundForceCtx)
 end
 
 ---Initialize missile system runtime contexts from configuration
----@param groundForceCfg SBJ__GroundForceConfig Ground force configuration
+---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force runtime context
-function Context.initMissileSystemContexts(groundForceCfg, groundForceCtx)
-  for system, systemConfig in pairs(groundForceCfg) do
+function Context.initMissileSystemContexts(groundForceConfig, groundForceCtx)
+  for system, systemConfig in pairs(groundForceConfig) do
     ---@cast systemConfig SBJ__MissileSystemConfig
     local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
     for _, descriptor in pairs(firingUnitMap) do

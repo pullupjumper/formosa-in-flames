@@ -53,14 +53,14 @@ describe("MissileSystem StatusView", function()
     }
   end
 
-  local groundCfg = { srbm = { reloadTime = 1800 }, mlrs = { reloadTime = 600 } }
+  local groundConfig = { srbm = { reloadTime = 1800 }, mlrs = { reloadTime = 600 } }
 
   ---Build rows for SRBM and return the FU-1 row
   ---@param groundCtx table
   ---@param now number
   ---@return table
   local function buildRow(groundCtx, now)
-    return StatusView.buildBatteryStatusRows(groundCtx, groundCfg, { "srbm" }, now)["RS-1"][1]
+    return StatusView.buildBatteryStatusRows(groundCtx, groundConfig, { "srbm" }, now)["RS-1"][1]
   end
 
   -- ============================================================================
@@ -70,7 +70,7 @@ describe("MissileSystem StatusView", function()
   describe("buildBatteryStatusRows", function()
     -- Positive: one row per firing unit, under its resupply unit
     it("should group firing unit rows under their resupply unit", function()
-      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), groundCfg, { "srbm" }, 1120)
+      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), groundConfig, { "srbm" }, 1120)
 
       assert.are.same({
         {
@@ -89,7 +89,7 @@ describe("MissileSystem StatusView", function()
 
     -- Positive: the UI table lists idle resupply units too
     it("should keep an empty row list for resupply units without a firing unit", function()
-      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), groundCfg, { "srbm" }, 1120)
+      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), groundConfig, { "srbm" }, 1120)
 
       assert.are.same({}, rows["RS-2"])
     end)
@@ -113,7 +113,7 @@ describe("MissileSystem StatusView", function()
 
     -- Negative: system types that were not asked for, or have no state, produce no rows
     it("should skip system types that are not requested or have no context", function()
-      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), groundCfg, { "mlrs" }, 1120)
+      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), groundConfig, { "mlrs" }, 1120)
 
       assert.are.same({}, rows)
     end)

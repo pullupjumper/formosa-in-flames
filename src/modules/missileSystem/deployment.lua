@@ -357,15 +357,15 @@ local function addAmmunition(systemName, systemConfig, descriptor, sideName)
 end
 
 ---Add missile system units to the game
----@param groundForceCfg SBJ__GroundForceConfig Ground force context
+---@param groundForceConfig SBJ__GroundForceConfig Ground force context
 ---@param sideName string Side name
-function Deployment.addMissileSystems(groundForceCfg, sideName)
+function Deployment.addMissileSystems(groundForceConfig, sideName)
   -- systemHasFailure is derived from the rows each helper produced, so it cannot
   -- drift from them. It only picks the tag of the per-system summary row; the
   -- report already routes the individual FAIL rows to the error sink.
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Add missile systems")
 
-  for systemName, systemConfig in pairs(groundForceCfg) do
+  for systemName, systemConfig in pairs(groundForceConfig) do
     ---@cast systemConfig SBJ__MissileSystemConfig
     local systemHasFailure = false
     local fuTotal, fuExpected = 0, 0
@@ -425,17 +425,17 @@ end
 ---Point firing and resupply unit descriptors at their new operational areas
 ---Descriptors are replaced with copies rather than edited in place. Layouts naming an
 ---unknown system or firing unit are skipped.
----@param groundForceCfg SBJ__GroundForceConfig Ground force configuration; mutated
+---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration; mutated
 ---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
 ---@return SBJ__OperationalArea[] operationalAreas New areas that need zones and triggers
 ---@return SBJ__OperationalArea[] operationalAreasToRemove Replaced areas whose zones and triggers must go
-function Deployment.applyLayouts(groundForceCfg, layouts)
+function Deployment.applyLayouts(groundForceConfig, layouts)
   local operationalAreas = {}
   local operationalAreasToRemove = {}
 
   for _, layout in ipairs(layouts) do
     ---@type SBJ__MissileSystemConfig
-    local systemConfig = groundForceCfg[layout.category]
+    local systemConfig = groundForceConfig[layout.category]
 
     if systemConfig and systemConfig.firingUnits[layout.unitname] then
       local firingUnitDescriptor = Utils.deepCopy(systemConfig.firingUnits[layout.unitname])
