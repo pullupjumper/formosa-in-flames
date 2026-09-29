@@ -297,7 +297,7 @@ end
 ---@param saveData SBJ__SaveData Persistent save data; mutated
 ---@param sideName string Side name ('China' or 'Taiwan')
 ---@param result SBJ__SetupResult Parsed setup menu submission
-local function applySetupResult(config, saveData, sideName, result)
+local function updateFromSetupResult(config, saveData, sideName, result)
   local jammerDescriptors = result.jammers
   local airbaseDeploymentDescriptors = result.airbases
   local missileSystems = result.missileSystems
@@ -357,7 +357,7 @@ function UnitStatusUI.createSetupMenu(config, sideName)
 
       local result = gKH.json.parse(jsonStr)
       ---@cast result SBJ__SetupResult
-      applySetupResult(config, saveData, sideName, result)
+      updateFromSetupResult(config, saveData, sideName, result)
     end
   end)
 end

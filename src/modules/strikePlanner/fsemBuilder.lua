@@ -320,7 +320,7 @@ local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
 
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
-  DynamicPlan.insert(plannerState, {
+  DynamicPlan.add(plannerState, {
     operationType = "ground",
     templateName = matrixTemplate.name,
     reconType = reconType,
@@ -394,7 +394,7 @@ local function retireStaleMatrices(plannerState, currentTime, staleAfterSec, opR
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
           -- Only units that left their hide area need to go back; RELOAD already ends in HA.
-          MissileSystem.markForStow(plannerState.ground, task.missileSystem, task.firingUnits, { onlyDeployed = true })
+          MissileSystem.startStow(plannerState.ground, task.missileSystem, task.firingUnits, { onlyDeployed = true })
         end
       end
 
@@ -444,7 +444,7 @@ function FsemBuilder.build(config, plannerState, contacts)
     assignedFiringUnitNames = collectAssignedFiringUnitNames(plannerState)
   }
 
-  local result = OperationBatch.run(plannerState.dynamicOperations.reconTriggeredOperationBatches, "ground", {
+  local result = OperationBatch.process(plannerState.dynamicOperations.reconTriggeredOperationBatches, "ground", {
     currentTime = currentTime,
     windowSec = config.c.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,

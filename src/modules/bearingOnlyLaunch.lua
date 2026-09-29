@@ -8,26 +8,24 @@ local BearingOnlyLaunch = {}
 EARTH_RADIUS_NM = 3440.065
 
 ---Convert degrees to radians
----@param d number Degrees
+---@param degrees number Degrees
 ---@return number # Radians
-local function deg2rad(d) return d * math.pi / 180 end
+local function deg2rad(degrees) return degrees * math.pi / 180 end
 
 ---Convert radians to degrees
----@param r number Radians
+---@param radians number Radians
 ---@return number # Degrees
-local function rad2deg(r) return r * 180 / math.pi end
+local function rad2deg(radians) return radians * 180 / math.pi end
 
 ---Calculate destination point based on starting point, bearing, and distance
----@param lat number Starting latitude
----@param lon number Starting longitude
+---@param pos CMO__Location Starting point
 ---@param bearingDeg number Bearing in degrees
 ---@param distanceNm number Distance in nautical miles
----@return number lat2 Destination latitude
----@return number lon2 Destination longitude
-local function calculateDestinationPoint(lat, lon, bearingDeg, distanceNm)
+---@return CMO__Location # Destination point
+local function calculateDestinationPoint(pos, bearingDeg, distanceNm)
   local bearing = deg2rad(bearingDeg)
-  local lat1 = deg2rad(lat)
-  local lon1 = deg2rad(lon)
+  local lat1 = deg2rad(pos.latitude)
+  local lon1 = deg2rad(pos.longitude)
   local dDivR = distanceNm / EARTH_RADIUS_NM
 
   local lat2 = math.asin(math.sin(lat1) * math.cos(dDivR) +
@@ -35,7 +33,7 @@ local function calculateDestinationPoint(lat, lon, bearingDeg, distanceNm)
   local lon2 = lon1 + Utils.atan2(math.sin(bearing) * math.sin(dDivR) * math.cos(lat1),
     math.cos(dDivR) - math.sin(lat1) * math.sin(lat2))
 
-  return rad2deg(lat2), rad2deg(lon2)
+  return { latitude = rad2deg(lat2), longitude = rad2deg(lon2) }
 end
 
 ---Calculate distance between two points using Haversine formula
@@ -95,7 +93,8 @@ function BearingOnlyLaunch.buildMissilePaths(params)
 
     for attempt = 1, maxAttempts do
       local d = radarRange * distMult
-      wpLat, wpLon = calculateDestinationPoint(targetLat, targetLon, angle, d)
+      local wpPos = calculateDestinationPoint({ latitude = targetLat, longitude = targetLon }, angle, d)
+      wpLat, wpLon = wpPos.latitude, wpPos.longitude
 
       local crossesRadar = isIntersectingRadarCircle(
         { latitude = launcherLat, longitude = launcherLon },

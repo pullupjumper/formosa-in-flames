@@ -401,7 +401,7 @@ local function createAndInsertATOWaveFromTemplate(plannerState, params, passCtx)
   -- Naming, insertion and registration happen in one call, so the generated name can
   -- never go unregistered.
   local wave
-  local waveName = DynamicPlan.insert(plannerState, {
+  local waveName = DynamicPlan.add(plannerState, {
     operationType = "air",
     templateName = waveTemplate.name,
     reconType = params.reconType,
@@ -478,7 +478,7 @@ function AtoBuilder.build(config, plannerState, contacts)
     freeAircraftCache = {}
   }
 
-  local result = OperationBatch.run(plannerState.dynamicOperations.reconTriggeredOperationBatches, "air", {
+  local result = OperationBatch.process(plannerState.dynamicOperations.reconTriggeredOperationBatches, "air", {
     currentTime = GameApi.ScenEdit_CurrentTime(),
     windowSec = config.c.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,

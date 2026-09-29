@@ -220,7 +220,7 @@ describe("DynamicPlan", function()
     it("should name, write and register an air wave in one call", function()
       local plannerState = makePlannerState()
 
-      local planName = DynamicPlan.insert(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", planName)
       assert.are.equal(planName, plannerState.air.airTaskingOrder[planName].name)
@@ -235,7 +235,7 @@ describe("DynamicPlan", function()
     it("should name, write and register a ground matrix in one call", function()
       local plannerState = makePlannerState()
 
-      local planName = DynamicPlan.insert(plannerState, { operationType = "ground", templateName = "GND/STRIKE/INFRA/ALL/1", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(plannerState, { operationType = "ground", templateName = "GND/STRIKE/INFRA/ALL/1", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-01", planName)
       assert.are.equal(planName, plannerState.ground.fireSupportPlan[planName].name)
@@ -245,7 +245,7 @@ describe("DynamicPlan", function()
 
     -- Positive: the template wave-stage number is preserved as the prefix
     it("should keep the template wave-stage number recoverable from the generated name", function()
-      local planName = DynamicPlan.insert(makePlannerState(), { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(makePlannerState(), { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("2", planName:match("^AIR/STRIKE/AB/W/(%d+)/DYN"))
     end)
@@ -253,17 +253,17 @@ describe("DynamicPlan", function()
     -- Positive: unmapped recon sources pass through as uppercase
     it("should pass through UAV and SIGINT sources as uppercase in the name", function()
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-UAV-01",
-        DynamicPlan.insert(makePlannerState(), { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "UAV", buildPlan = buildPlan }))
+        DynamicPlan.add(makePlannerState(), { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "UAV", buildPlan = buildPlan }))
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SIGINT-01",
-        DynamicPlan.insert(makePlannerState(), { operationType = "ground", templateName = "GND/STRIKE/INFRA/ALL/1", reconType = "SIGINT", buildPlan = buildPlan }))
+        DynamicPlan.add(makePlannerState(), { operationType = "ground", templateName = "GND/STRIKE/INFRA/ALL/1", reconType = "SIGINT", buildPlan = buildPlan }))
     end)
 
     -- Positive: repeated inserts walk the sequence forward
     it("should advance the sequence on each insert of the same template", function()
       local plannerState = makePlannerState()
 
-      local first = DynamicPlan.insert(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
-      local second = DynamicPlan.insert(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local first = DynamicPlan.add(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local second = DynamicPlan.add(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", first)
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", second)
@@ -277,7 +277,7 @@ describe("DynamicPlan", function()
         generatedOperations = { air = { ["AIR/STRIKE/AB/W/2/DYN-SAT-01"] = true }, ground = {} }
       })
 
-      local planName = DynamicPlan.insert(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-02", planName)
     end)
@@ -287,7 +287,7 @@ describe("DynamicPlan", function()
       local existing = { name = "existing" }
       local plannerState = makePlannerState({ fireSupportPlan = { ["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"] = existing } })
 
-      local planName = DynamicPlan.insert(plannerState, { operationType = "ground", templateName = "GND/STRIKE/INFRA/ALL/1", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(plannerState, { operationType = "ground", templateName = "GND/STRIKE/INFRA/ALL/1", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("GND/STRIKE/INFRA/ALL/1/DYN-SAT-02", planName)
       assert.are.equal(existing, plannerState.ground.fireSupportPlan["GND/STRIKE/INFRA/ALL/1/DYN-SAT-01"])
@@ -300,7 +300,7 @@ describe("DynamicPlan", function()
         airTaskingOrder = { ["AIR/STRIKE/AB/W/2/DYN-SAT-02"] = { name = "existing" } }
       })
 
-      local planName = DynamicPlan.insert(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-03", planName)
     end)
@@ -310,7 +310,7 @@ describe("DynamicPlan", function()
       local plannerState = makePlannerState()
       plannerState.dynamicOperations.generatedOperations = nil
 
-      local planName = DynamicPlan.insert(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
+      local planName = DynamicPlan.add(plannerState, { operationType = "air", templateName = "AIR/STRIKE/AB/W/2", reconType = "satellite", buildPlan = buildPlan })
 
       assert.are.equal("AIR/STRIKE/AB/W/2/DYN-SAT-01", planName)
       assert.is_true(plannerState.dynamicOperations.generatedOperations.air[planName])
@@ -322,7 +322,7 @@ describe("DynamicPlan", function()
       local receivedName
       local plannerState = makePlannerState()
 
-      local planName = DynamicPlan.insert(plannerState, {
+      local planName = DynamicPlan.add(plannerState, {
         operationType = "air",
         templateName = "AIR/STRIKE/AB/W/2",
         reconType = "satellite",
@@ -338,7 +338,7 @@ describe("DynamicPlan", function()
     -- Negative: unknown type
     it("should error on an unknown operation type", function()
       assert.has_error(function()
-        DynamicPlan.insert(makePlannerState(), { operationType = "naval", templateName = "SEA/STRIKE/PORT/1", reconType = "satellite", buildPlan = buildPlan })
+        DynamicPlan.add(makePlannerState(), { operationType = "naval", templateName = "SEA/STRIKE/PORT/1", reconType = "satellite", buildPlan = buildPlan })
       end)
     end)
   end)

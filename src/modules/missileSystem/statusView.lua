@@ -19,14 +19,14 @@ end
 
 ---Calculate minutes elapsed since a reload started
 ---@param reloadStartTime number|nil Reload start time in seconds, nil when not reloading
----@param now number Current scenario time in seconds
+---@param currentTime number Current scenario time in seconds
 ---@return number # Elapsed minutes rounded to 2 decimal places, never negative; 0 when not reloading
-local function calculateReloadMinutes(reloadStartTime, now)
+local function calculateReloadMinutes(reloadStartTime, currentTime)
   if reloadStartTime == nil then
     return 0
   end
 
-  local minutes = math.floor(((now - reloadStartTime) / 60) * 100 + 0.5) / 100
+  local minutes = math.floor(((currentTime - reloadStartTime) / 60) * 100 + 0.5) / 100
   if minutes < 0 then
     return 0
   end
@@ -38,9 +38,9 @@ end
 ---@param groundCtx SBJ__GroundForceContext Side ground force runtime context
 ---@param groundConfig SBJ__GroundForceConfig Side ground force configuration
 ---@param systemTypes string[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
----@param now number Current scenario time in seconds
+---@param currentTime number Current scenario time in seconds
 ---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
-function StatusView.buildBatteryStatusRows(groundCtx, groundConfig, systemTypes, now)
+function StatusView.buildBatteryStatusRows(groundCtx, groundConfig, systemTypes, currentTime)
   local rows = {}
 
   for _, missileSystem in ipairs(systemTypes) do
@@ -68,8 +68,8 @@ function StatusView.buildBatteryStatusRows(groundCtx, groundConfig, systemTypes,
           resupplyUnitState = formatState(resupplyUnitCtx.state),
           missilesInAmmoVehicles = resupplyUnitCtx.wpnCurrent,
           missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent,
-          firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, now),
-          resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, now),
+          firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, currentTime),
+          resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, currentTime),
           defaultReloadTime = groundConfig[missileSystem].reloadTime / 60
         })
       end

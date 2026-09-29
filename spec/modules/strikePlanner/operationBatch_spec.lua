@@ -136,7 +136,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { airOp, groundOp, doneOp } })
       local params, calls = makeRunParams(RETRYABLE_OUTCOME)
 
-      OperationBatch.run({ batch }, "air", params)
+      OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(1, #calls)
       assert.are.equal(airOp, calls[1].operation)
@@ -148,7 +148,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ executed = true })
       local params, calls = makeRunParams(SUCCESS_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(0, #calls)
       assert.are.equal(0, #result.entries)
@@ -161,7 +161,7 @@ describe("OperationBatch", function()
       batch.operations = nil
       local params, calls = makeRunParams(SUCCESS_OUTCOME)
 
-      OperationBatch.run({ batch }, "air", params)
+      OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(0, #calls)
     end)
@@ -174,7 +174,7 @@ describe("OperationBatch", function()
       }
       local params, calls = makeRunParams(RETRYABLE_OUTCOME)
 
-      local result = OperationBatch.run(batches, "air", params)
+      local result = OperationBatch.process(batches, "air", params)
 
       assert.are.equal(3, #calls)
       assert.are.equal(3, #result.entries)
@@ -184,7 +184,7 @@ describe("OperationBatch", function()
     it("should return an empty result for an empty batch list", function()
       local params, calls = makeRunParams(SUCCESS_OUTCOME)
 
-      local result = OperationBatch.run({}, "air", params)
+      local result = OperationBatch.process({}, "air", params)
 
       assert.are.equal(0, #calls)
       assert.are.equal(0, #result.entries)
@@ -202,7 +202,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch()
       local params, calls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME - 1 })
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(0, #calls)
       assert.are.equal(0, #result.entries)
@@ -213,7 +213,7 @@ describe("OperationBatch", function()
     it("should attempt exactly at the trigger time", function()
       local params, calls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME })
 
-      OperationBatch.run({ makeOperationBatch() }, "air", params)
+      OperationBatch.process({ makeOperationBatch() }, "air", params)
 
       assert.are.equal(1, #calls)
     end)
@@ -222,7 +222,7 @@ describe("OperationBatch", function()
     it("should attempt exactly at the window deadline", function()
       local params, calls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME + WINDOW_SEC })
 
-      OperationBatch.run({ makeOperationBatch() }, "air", params)
+      OperationBatch.process({ makeOperationBatch() }, "air", params)
 
       assert.are.equal(1, #calls)
     end)
@@ -233,7 +233,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { operation } })
       local params, calls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME + WINDOW_SEC + 1 })
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(0, #calls)
       assert.are.equal(1, #result.entries)
@@ -250,11 +250,11 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ delay = 600 })
 
       local early, earlyCalls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME + 599 })
-      OperationBatch.run({ batch }, "air", early)
+      OperationBatch.process({ batch }, "air", early)
       assert.are.equal(0, #earlyCalls)
 
       local due, dueCalls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME + 600 })
-      OperationBatch.run({ batch }, "air", due)
+      OperationBatch.process({ batch }, "air", due)
       assert.are.equal(1, #dueCalls)
     end)
 
@@ -264,7 +264,7 @@ describe("OperationBatch", function()
       batch.delay = nil
       local params, calls = makeRunParams(SUCCESS_OUTCOME, { currentTime = TRIGGER_TIME })
 
-      OperationBatch.run({ batch }, "air", params)
+      OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(1, #calls)
     end)
@@ -281,7 +281,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { operation } })
       local params = makeRunParams(SUCCESS_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.is_true(operation.executed)
       assert.is_true(result.hasExecutedAny)
@@ -297,7 +297,7 @@ describe("OperationBatch", function()
       })
       local params = makeRunParams(SUCCESS_OUTCOME)
 
-      OperationBatch.run({ batch }, "air", params)
+      OperationBatch.process({ batch }, "air", params)
 
       assert.is_true(batch.executed)
     end)
@@ -309,7 +309,7 @@ describe("OperationBatch", function()
       })
       local params = makeRunParams(SUCCESS_OUTCOME)
 
-      OperationBatch.run({ batch }, "air", params)
+      OperationBatch.process({ batch }, "air", params)
 
       assert.is_true(batch.operations[1].executed)
       assert.is_false(batch.executed)
@@ -321,7 +321,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { operation } })
       local params = makeRunParams(RETRYABLE_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.is_false(operation.executed)
       assert.are.equal(1, #batch.operations)
@@ -339,7 +339,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { operation, sibling } })
       local params = makeRunParams(TERMINAL_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(1, #batch.operations)
       assert.are.equal(sibling, batch.operations[1])
@@ -353,7 +353,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch()
       local params = makeRunParams({ success = false, tag = "FAIL" })
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(0, #batch.operations)
       assert.are.equal("abandoned", result.entries[1].fields.state)
@@ -368,7 +368,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { op1, op2, op3 } })
       local params = makeRunParams(TERMINAL_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(3, #result.entries)
       assert.are.equal(0, #batch.operations)
@@ -389,7 +389,7 @@ describe("OperationBatch", function()
         end
       })
 
-      OperationBatch.run({ batch }, "air", params)
+      OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal(1, #batch.operations)
       assert.are.equal(op2, batch.operations[1])
@@ -407,7 +407,7 @@ describe("OperationBatch", function()
         end
       })
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.is_true(result.hasExecutedAny)
       assert.are.equal("OK", result.entries[1].tag)
@@ -426,7 +426,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ type = "UAV", time = BATCH_TIME })
       local params = makeRunParams(SUCCESS_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       local fields = result.entries[1].fields
       assert.are.equal("AIR/STRIKE/AB/W/1", fields.operation)
@@ -441,7 +441,7 @@ describe("OperationBatch", function()
       local batch = makeOperationBatch({ operations = { operation } })
       local params = makeRunParams(TERMINAL_OUTCOME)
 
-      local result = OperationBatch.run({ batch }, "air", params)
+      local result = OperationBatch.process({ batch }, "air", params)
 
       assert.are.equal("unknown", result.entries[1].fields.operation)
     end)
@@ -451,7 +451,7 @@ describe("OperationBatch", function()
       local outcome = { success = false, tag = "SKIP", reason = "retry_me", fields = { targets = 0 } }
       local params = makeRunParams(outcome)
 
-      OperationBatch.run({ makeOperationBatch() }, "air", params)
+      OperationBatch.process({ makeOperationBatch() }, "air", params)
 
       assert.is_nil(outcome.fields.state)
       assert.is_nil(outcome.fields.operation)

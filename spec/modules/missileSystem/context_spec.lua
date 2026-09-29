@@ -215,16 +215,16 @@ describe("MissileSystem Context", function()
   end)
 
   -- ============================================================================
-  -- seedGroundForceState
+  -- ensureGroundForceState
   -- ============================================================================
 
-  describe("seedGroundForceState", function()
+  describe("ensureGroundForceState", function()
     -- Positive: every configured system gets its full default state; timers stay in config
     it("should create default state for each configured system", function()
       local groundForceConfig = { srbm = { reloadTime = 300, stowTime = 60 } }
       local groundForceCtx = {}
 
-      Context.seedGroundForceState(groundForceConfig, groundForceCtx)
+      Context.ensureGroundForceState(groundForceConfig, groundForceCtx)
 
       assert.are.same({
         name = "srbm",
@@ -242,7 +242,7 @@ describe("MissileSystem Context", function()
       local groundForceConfig = { ascm = { reloadTime = 1, stowTime = 1 } }
       local groundForceCtx = { ascm = { test = test, enabled = false, firingUnits = firingUnits } }
 
-      Context.seedGroundForceState(groundForceConfig, groundForceCtx)
+      Context.ensureGroundForceState(groundForceConfig, groundForceCtx)
 
       assert.are.equal(test, groundForceCtx.ascm.test)
       assert.is_false(groundForceCtx.ascm.enabled)
@@ -254,7 +254,7 @@ describe("MissileSystem Context", function()
       local groundForceConfig = {}
       local groundForceCtx = { enabled = true, fireSupportPlan = {} }
 
-      Context.seedGroundForceState(groundForceConfig, groundForceCtx)
+      Context.ensureGroundForceState(groundForceConfig, groundForceCtx)
 
       assert.are.same({ enabled = true, fireSupportPlan = {} }, groundForceCtx)
     end)

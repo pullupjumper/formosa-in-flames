@@ -27,7 +27,7 @@ flowchart TD
     OFF(["return false"])
     RETIRE["retireStaleMatrices"]
     SEED["建立 passCtx"]
-    RUN["OperationBatch.run(batches, ground, params)"]
+    RUN["OperationBatch.process(batches, ground, params)"]
     TRY["tryInsert = processGroundOperation"]
     ENTRIES["逐筆 entry：opReport.add"]
     EMIT["opReport.emit"]
@@ -108,7 +108,7 @@ flowchart TD
 
 ### 為什麼失敗要移除 operation，而不是標記 executed
 
-終止性失敗由 `OperationBatch.run()` 把 operation 從 batch 陣列移除，而不是設 `executed = true`。本模組只透過 `RETRYABLE_REASON` 告訴它哪些 reason 該留下。
+終止性失敗由 `OperationBatch.process()` 把 operation 從 batch 陣列移除，而不是設 `executed = true`。本模組只透過 `RETRYABLE_REASON` 告訴它哪些 reason 該留下。
 
 `executed` 的語義是「計畫已插入」。若失敗也標記 executed，[operationScheduler](operationScheduler.md) 會認為這一波已經打完並推進波次計數，同一波再也不會被重開；移除則讓 batch 在下次偵察完成時重新產生同一波。`insufficient_targets` 與 `no_available_firing_units` 屬於可重試原因，兩者都不動 batch。
 
@@ -120,7 +120,7 @@ flowchart TD
 |---|---|
 | 判定條件 | `matrix.isActivated and not matrix.isFinished`，且 `currentTime - matrix.createdAt > config.c.recon.fsemStaleAfterSec`。缺 `createdAt` 的舊存檔永不過期。 |
 | 退役動作 | 設 `matrix.isFinished = true`。matrix 保留在 FSP 內供命名唯一性檢查，不刪除。 |
-| 單元處置 | 掃描未完成的 FST，呼叫 `MissileSystem.markForStow(..., { onlyDeployed = true })`：非 SAM 且已離開隱蔽區（`STATIC`／`REPOSITIONING`）的發射單元啟動 stow 倒數，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
+| 單元處置 | 掃描未完成的 FST，呼叫 `MissileSystem.startStow(..., { onlyDeployed = true })`：非 SAM 且已離開隱蔽區（`STATIC`／`REPOSITIONING`）的發射單元啟動 stow 倒數，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
 | 日誌 | 每退役一個 matrix 輸出一列 `[WARN] matrix=<name> reason=fsem_stale_timeout ageSec=<age>`。 |
 
 `isFinished = true` 同時達成兩件事：釋放發射單元回可分配池，並讓 `FireSupportPlan.strike` 停止指揮這些單位，避免與 stow 倒數形成重複指令。
@@ -131,7 +131,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 ### 結果分類與 log
 
-`processGroundOperation()` 回傳 `SBJ__OperationProcessResult`；觀察窗逾時則由 [operationBatch](operationBatch.md) 直接組出同型結果，讓兩條路徑共用同一個輸出流程。log tag 由產生分支直接寫進結果，不經過 reason → tag 對照表。`state=observing` 與 `state=abandoned` 由 `OperationBatch.run()` 在決定保留或移除的同一個分支加上，控制流程與 log 欄位共用一組判斷。
+`processGroundOperation()` 回傳 `SBJ__OperationProcessResult`；觀察窗逾時則由 [operationBatch](operationBatch.md) 直接組出同型結果，讓兩條路徑共用同一個輸出流程。log tag 由產生分支直接寫進結果，不經過 reason → tag 對照表。`state=observing` 與 `state=abandoned` 由 `OperationBatch.process()` 在決定保留或移除的同一個分支加上，控制流程與 log 欄位共用一組判斷。
 
 | reason | Tag | operation 去向 | 說明 |
 |---|---|---|---|
@@ -146,7 +146,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 `NO_FIRING_UNITS_FIELDS` 是 `insufficient_targets` 與 `formatFiringUnitStatusCounter()` 共用的同一份唯讀 table。安全的前提是 `LogFormat.merge()` 回傳新 table，`fields.reason = ...` 改的是合併結果而非這份共用常數。
 
-`build()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, "dynamicGroundOperations", "Process operations")`，退役列先進去，`OperationBatch.run()` 回傳的 entries 逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責（`src/utils/logFormat.lua`）。
+`build()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, "dynamicGroundOperations", "Process operations")`，退役列先進去，`OperationBatch.process()` 回傳的 entries 逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責（`src/utils/logFormat.lua`）。
 
 ```text
 [DYNAMIC_OPERATIONS] dynamicGroundOperations: Process operations | total=2 ok=1 skip=1
@@ -162,10 +162,10 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 路徑或 API | 行為 |
 |---|---|
-| `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.insert()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
+| `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.add()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
 | `saveData.c.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
 | `saveData.c.ground[<missileSystem>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
-| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.insert()` 呼叫內登記。 |
+| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
 | `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 
 本模組**不寫任何遊戲狀態**，只透過 `GameApi.ScenEdit_CurrentTime()` 取時間、`GameApi.ScenEdit_GetUnit()` 讀發射單元。

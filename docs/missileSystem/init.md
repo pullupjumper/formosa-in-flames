@@ -56,7 +56,7 @@ flowchart TD
 | `getFiringUnitContext` | `groundCtx, missileSystem, firingUnitName` | `SBJ__FiringUnitContext?` | 依系統（大小寫皆可）與單位名稱取 runtime context |
 | `isLowAmmo` | `firingUnitCtx, firingUnit` | `boolean` | 以 context 內的 `ammoThreshold`／`weaponDBID` 判斷低彈量 |
 | `sendToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`） |
-| `markForStow` | `groundCtx, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
+| `startStow` | `groundCtx, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
 | `getAmmoInventory` | `groundCtx, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
 | `process` | `groundCtx, groundConfig, runCtx, sideName` | `nil` | 執行循環並輸出結果日誌 |
 | `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `missileSystemPolicy.isAuto`（包成 `runCtx`）後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
@@ -67,10 +67,10 @@ flowchart TD
 | `buildSetupMenuRows` | `config, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 setup menu 所需的系統設定副本（含 zone 頂點） |
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |
 | `buildBatteryStatusRows` | `config, saveData, sideName, systemTypes` | `table<string, SBJ__BatteryStatusRow[]>` | 供狀態 UI 使用，依彈藥補給車名稱分組的電池狀態列 |
-| `seedGroundForceState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.seedGroundForceState` |
+| `ensureGroundForceState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.ensureGroundForceState` |
 | `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.initMissileSystemContexts` |
 
-`seedGroundForceState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[context](context.md) 內的同名函式仍維持 `(groundForceConfig, groundForceCtx)`。
+`ensureGroundForceState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[context](context.md) 內的同名函式仍維持 `(groundForceConfig, groundForceCtx)`。
 
 > 原本轉發 `Deployment.addMissileSystems` 的門面函式已刪除，外部改用 `deploySide`；`processMoveToPositionEvent` 改為私有，只經 `processUnitEntersArea` 進入。
 

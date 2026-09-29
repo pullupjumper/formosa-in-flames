@@ -25,18 +25,18 @@ function Utils.getCount(list)
   return count
 end
 
----Insert a list of items into another list
----@param list table The list to insert into
----@param insertedList table The list of items to insert
----@return table # The updated list with items inserted
-function Utils.addAll(list, insertedList)
-  local count = Utils.getCount(insertedList)
+---Insert a items of items into another items
+---@param items table The items to insert into
+---@param newItems table The items of items to insert
+---@return table # The updated items with items inserted
+function Utils.addAll(items, newItems)
+  local count = Utils.getCount(newItems)
 
   for i = 1, count, 1 do
-    table.insert(list, insertedList[i])
+    table.insert(items, newItems[i])
   end
 
-  return list
+  return items
 end
 
 ---Parse a datetime string in the format "YYYY-MM-DD HH:MM:SS" to a UTC timestamp

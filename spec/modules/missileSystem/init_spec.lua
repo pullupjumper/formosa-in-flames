@@ -368,16 +368,16 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- seedGroundForceState
+  -- ensureGroundForceState
   -- ============================================================================
 
-  describe("seedGroundForceState", function()
+  describe("ensureGroundForceState", function()
     -- Positive: the side's own config seeds the side's own slice
     it("should seed the side's slice from the side's ground config", function()
       local config, saveData = makeSides()
-      local seedStub = trackStub(Context, "seedGroundForceState")
+      local seedStub = trackStub(Context, "ensureGroundForceState")
 
-      MissileSystem.seedGroundForceState(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.ensureGroundForceState(config, saveData, constants.SIDES.PLAYER)
 
       assert.stub(seedStub).was.called_with(config.t.ground, saveData.t.ground)
     end)
@@ -499,10 +499,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- markForStow
+  -- startStow
   -- ============================================================================
 
-  describe("markForStow", function()
+  describe("startStow", function()
     local STATE = constants.MISSILE_SYSTEM_STATE
 
     local function makeGroundCtx()
@@ -531,7 +531,7 @@ describe("MissileSystem", function()
       local groundCtx = makeGroundCtx()
       local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.markForStow(groundCtx, "SRBM", firingUnits)
+      MissileSystem.startStow(groundCtx, "SRBM", firingUnits)
 
       assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
       assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
@@ -542,7 +542,7 @@ describe("MissileSystem", function()
       local groundCtx = makeGroundCtx()
       local firingUnits = { { name = "FU-Stowing" } }
 
-      MissileSystem.markForStow(groundCtx, "srbm", firingUnits)
+      MissileSystem.startStow(groundCtx, "srbm", firingUnits)
 
       assert.are.equal(500, groundCtx.srbm.firingUnits["FU-Stowing"].stowStartTime)
     end)
@@ -552,7 +552,7 @@ describe("MissileSystem", function()
       local groundCtx = makeGroundCtx()
       local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.markForStow(groundCtx, "SRBM", firingUnits, { onlyDeployed = true })
+      MissileSystem.startStow(groundCtx, "SRBM", firingUnits, { onlyDeployed = true })
 
       assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
       assert.is_nil(groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
@@ -563,7 +563,7 @@ describe("MissileSystem", function()
       local groundCtx = makeGroundCtx()
       local firingUnits = { { name = "SAM-1" } }
 
-      MissileSystem.markForStow(groundCtx, "SAM", firingUnits)
+      MissileSystem.startStow(groundCtx, "SAM", firingUnits)
 
       assert.is_nil(groundCtx.sam.firingUnits["SAM-1"].stowStartTime)
     end)
@@ -575,10 +575,10 @@ describe("MissileSystem", function()
       local staticUnits = { { name = "FU-Static" } }
 
       assert.has_no.Error(function()
-        MissileSystem.markForStow(groundCtx, "SRBM", ghostUnits)
-        MissileSystem.markForStow(groundCtx, "GLCM", staticUnits)
-        MissileSystem.markForStow(groundCtx, nil, staticUnits)
-        MissileSystem.markForStow(groundCtx, "SRBM", nil)
+        MissileSystem.startStow(groundCtx, "SRBM", ghostUnits)
+        MissileSystem.startStow(groundCtx, "GLCM", staticUnits)
+        MissileSystem.startStow(groundCtx, nil, staticUnits)
+        MissileSystem.startStow(groundCtx, "SRBM", nil)
       end)
       assert.is_nil(groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
     end)
@@ -1380,8 +1380,8 @@ describe("MissileSystem", function()
       local oldAreas = { { name = "OPAREA-OLD" } }
       local calls = {}
 
-      trackStub(Deployment, "applyLayouts").invokes(function()
-        table.insert(calls, "applyLayouts")
+      trackStub(Deployment, "updateLayouts").invokes(function()
+        table.insert(calls, "updateLayouts")
         return newAreas, oldAreas
       end)
       local triggersStub = trackStub(Triggers, "initEventTriggers").invokes(function()
@@ -1396,7 +1396,7 @@ describe("MissileSystem", function()
 
       MissileSystem.redeploy(groundForceConfig, groundForceCtx, "Taiwan", layouts)
 
-      assert.are.same({ "applyLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
+      assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,

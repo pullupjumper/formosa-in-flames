@@ -77,7 +77,7 @@ end
 ---Command firing unit to move to firing point (FP), logging any failure
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
-local function commandMoveToFiringPoint(firingUnitCtx, firingUnit)
+local function startMoveToFiringPoint(firingUnitCtx, firingUnit)
   local success, errorFields = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
   if not success and errorFields then
     Logger.error(LogFormat.line("FAIL", LogFormat.merge({
@@ -105,7 +105,7 @@ function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
   if firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE and
       not Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
     Concealment.moveFromHideArea(firingUnitCtx, firingUnit)
-    commandMoveToFiringPoint(firingUnitCtx, firingUnit)
+    startMoveToFiringPoint(firingUnitCtx, firingUnit)
   end
 
   return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.STATIC
@@ -141,7 +141,7 @@ end
 ---@param missileSystem string|nil Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnits SBJ__FiringUnit[]|nil Firing units to stow
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
-function MissileSystem.markForStow(groundCtx, missileSystem, firingUnits, opts)
+function MissileSystem.startStow(groundCtx, missileSystem, firingUnits, opts)
   if not missileSystem or not firingUnits or string.lower(missileSystem) == constants.MISSILE_SYSTEM_TYPES.SAM then
     return
   end
@@ -186,7 +186,8 @@ end
 function MissileSystem.processSide(config, saveData, sideName)
   local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
 
-  MissileSystem.process(PersistentState.groundForces(saveData, sideName), sideConfig.ground, { isAuto = sideConfig.missileSystemPolicy.isAuto }, sideName)
+  MissileSystem.process(PersistentState.groundForces(saveData, sideName), sideConfig.ground,
+    { isAuto = sideConfig.missileSystemPolicy.isAuto }, sideName)
 end
 
 ---Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
@@ -228,7 +229,7 @@ end
 ---@param sideName string Side name for zone/trigger/unit ownership
 ---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
 function MissileSystem.redeploy(groundForceConfig, groundForceCtx, sideName, layouts)
-  local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceConfig, layouts)
+  local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(groundForceConfig, layouts)
 
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
   Deployment.addMissileSystems(groundForceConfig, sideName)
@@ -287,8 +288,8 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is seeded in place
 ---@param sideName string Side name (China or Taiwan)
-function MissileSystem.seedGroundForceState(config, saveData, sideName)
-  Context.seedGroundForceState(
+function MissileSystem.ensureGroundForceState(config, saveData, sideName)
+  Context.ensureGroundForceState(
     config[GameUtils.getCachedSideConfig(sideName).field].ground,
     PersistentState.groundForces(saveData, sideName)
   )

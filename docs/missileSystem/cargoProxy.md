@@ -25,7 +25,7 @@ CMO 沒有「把地面單位塞進建築」的原生操作，`cargoProxy.lua` �
 1. 依 `unitCtx.name` 取得來源單位，並展開 group member 清單（無 group 時只處理自身）
 2. 透過 `createCargoProxy` 在目標載具或建築物上建立對應 cargo proxy
 3. 對 cargo proxy 執行 `stripCargoProxyMounts`：清空彈匣並移除原有 mounts
-4. 將來源單位的 mounts 複製到 cargo proxy（`cloneMountsAndTallyWeapons`），並根據 `unitCtx.weaponDBID` 統計需要保留的武器數量
+4. 將來源單位的 mounts 複製到 cargo proxy（`countWeaponsAndCloneMounts`），並根據 `unitCtx.weaponDBID` 統計需要保留的武器數量
 5. 執行 `updateWeaponReloads`：先清除 cargo proxy 現有 mount weapon 的 reload，再依統計結果回填實際彈量
 6. 複製群組名稱與單位名稱後，刪除原始來源單位
 
@@ -37,7 +37,7 @@ flowchart TD
     B --> C[normalizeGroupMember]
     C --> D[createCargoProxy]
     D --> E[stripCargoProxyMounts]
-    E --> F[cloneMountsAndTallyWeapons]
+    E --> F[countWeaponsAndCloneMounts]
     F --> G[updateWeaponReloads]
     G --> H[ScenEdit_DeleteUnit 原單位]
 ```

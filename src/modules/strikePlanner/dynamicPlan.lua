@@ -109,7 +109,7 @@ end
 ---@param plannerState SBJ__StrikePlannerState Strike planner state holding the plan tables and the name registry
 ---@param params SBJ__InsertPlanParams Operation type, template name, recon type and the plan builder
 ---@return string # The generated plan name
-function DynamicPlan.insert(plannerState, params)
+function DynamicPlan.add(plannerState, params)
   local descriptor = resolveDescriptor(params.operationType)
   ensureGeneratedOperations(plannerState)
 

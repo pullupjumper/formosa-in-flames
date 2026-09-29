@@ -103,10 +103,10 @@ describe("MissileSystem Deployment", function()
   end)
 
   -- ============================================================================
-  -- applyLayouts
+  -- updateLayouts
   -- ============================================================================
 
-  describe("applyLayouts", function()
+  describe("updateLayouts", function()
     local function makeLayoutConfig()
       local oldArea = { name = "OPAREA-OLD" }
       return {
@@ -130,7 +130,7 @@ describe("MissileSystem Deployment", function()
       local originalFiringUnit = groundForceConfig.srbm.firingUnits["FU-1"]
       local newArea = { name = "#ABC" }
 
-      local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceConfig, {
+      local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(groundForceConfig, {
         { category = "srbm", unitname = "FU-1", operationalArea = newArea }
       })
 
@@ -148,7 +148,7 @@ describe("MissileSystem Deployment", function()
       local operationalArea1 = { name = "#X" }
       local operationalArea2 = { name = "#Y" }
 
-      local operationalAreas, operationalAreasToRemove = Deployment.applyLayouts(groundForceConfig, {
+      local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(groundForceConfig, {
         { category = "glcm", unitname = "FU-1",  operationalArea = operationalArea1 },
         { category = "srbm", unitname = "Ghost", operationalArea = operationalArea2 }
       })

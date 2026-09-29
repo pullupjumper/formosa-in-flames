@@ -69,7 +69,7 @@ AttackManager.attackContacts({
 成功發射後，模組呼叫：
 
 ```lua
-MissileSystem.markForStow(saveData.c.ground, task.missileSystem, task.firingUnits)
+MissileSystem.startStow(saveData.c.ground, task.missileSystem, task.firingUnits)
 ```
 
 由 missileSystem 替每個 firing unit 啟動 stow 倒數。已有倒數的不覆寫；SAM 任務整批略過，因為 SAM firing unit 不走打擊後 stow 流程。
@@ -114,7 +114,7 @@ flowchart TD
     TASK_READY{"FST 未完成<br/>且已達 startTime?"}
     ATTACK["AttackManager.attackContacts()"]
     FIRED{"fired > 0?"}
-    STOW["MissileSystem.markForStow()"]
+    STOW["MissileSystem.startStow()"]
     TASK_DONE["task.isFinished = true"]
     MATRIX_DONE{"isMatrixFinished()?"}
     FINISH["matrix.isFinished = true"]

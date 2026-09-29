@@ -12,10 +12,10 @@ local AirbaseAttrition = {}
 ---Aircraft count as combat-capable iff both they and their home base are alive; destroyed base zeroes the wing.
 ---@param deployments SBJ__AirbaseDeploymentDescriptor[] Airbase deployment descriptors
 ---@param baseNames string[] Airbase names to query (empty array yields a zero summary)
----@param side? string Side name to enumerate aircraft from (default: constants.SIDES.ENEMY)
+---@param sideName? string Side name to enumerate aircraft from (default: constants.SIDES.ENEMY)
 ---@return SBJ__AirbaseAttritionResult # Per-base details and overall attrition summary
-function AirbaseAttrition.calculate(deployments, baseNames, side)
-  side = side or constants.SIDES.ENEMY
+function AirbaseAttrition.calculate(deployments, baseNames, sideName)
+  sideName = sideName or constants.SIDES.ENEMY
 
   -- Phase 1: Build lookup tables.
   -- descriptorByName: translate user-supplied baseName -> descriptor.
@@ -89,7 +89,7 @@ function AirbaseAttrition.calculate(deployments, baseNames, side)
 
   -- Phase 3: Enumerate side-wide aircraft and attribute by aircraft.base.guid.
   -- This counts both grounded and airborne aircraft as long as their home base is alive.
-  local sideObj = GameApi.VP_GetSide({ side = side })
+  local sideObj = GameApi.VP_GetSide({ side = sideName })
   if sideObj then
     local aircraftList = sideObj:unitsBy(constants.UNIT_TYPES.AIRCRAFT) or {}
     for _, entry in ipairs(aircraftList) do

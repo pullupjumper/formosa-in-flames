@@ -98,7 +98,7 @@ end
 
 ---Empty an array in place so holders of the same table see the change
 ---@param list any[] Array to clear
-local function clearList(list)
+local function removeAll(list)
   for i = #list, 1, -1 do
     list[i] = nil
   end
@@ -218,7 +218,7 @@ function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
 
   if not contacts then
     Logger.warn(LogFormat.line("WARN", { side = sideName, reason = "contacts_unavailable" }))
-    clearList(targetlist)
+    removeAll(targetlist)
     return
   end
 
@@ -227,7 +227,7 @@ function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
   -- Initialize location maps for bases and ports
   local baseLocationMap = buildLocationMap(contacts, scanConfig.taiwanAirBases)
   local portLocationMap = buildLocationMap(contacts, scanConfig.taiwanPorts)
-  clearList(targetlist)
+  removeAll(targetlist)
 
   -- Single pass through contacts to categorize all targets
   for _, contact in ipairs(contacts) do

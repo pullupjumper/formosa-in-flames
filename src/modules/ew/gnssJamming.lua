@@ -111,12 +111,11 @@ end
 ---Build deviated course and target for the jammed weapon
 ---Replaces terminal waypoint with deviated coordinates, preserving earlier waypoints
 ---@param weaponUnit CMO__Unit The weapon unit to modify
----@param lat number Deviated latitude
----@param lon number Deviated longitude
+---@param pos CMO__Location Deviated point
 ---@param waypointCount number Number of waypoints in original course
-local function buildDeviatedCourse(weaponUnit, lat, lon, waypointCount)
-  local deviatedTarget = { latitude = lat, longitude = lon, guid = "BOL" }
-  local terminalPoint = { latitude = lat, longitude = lon, TypeOf = "TerminalPoint" }
+local function buildDeviatedCourse(weaponUnit, pos, waypointCount)
+  local deviatedTarget = { latitude = pos.latitude, longitude = pos.longitude, guid = "BOL" }
+  local terminalPoint = { latitude = pos.latitude, longitude = pos.longitude, TypeOf = "TerminalPoint" }
 
   if waypointCount <= 1 then
     weaponUnit.target = deviatedTarget
@@ -166,7 +165,7 @@ local function rollJamming(gnssGuidedWeapons)
   end
 
   local lat, lon = calculateDeviation(lastWaypoint.latitude, lastWaypoint.longitude)
-  buildDeviatedCourse(weaponUnit, lat, lon, count)
+  buildDeviatedCourse(weaponUnit, { latitude = lat, longitude = lon }, count)
 
   return GNSS_JAMMING_RESULT.JAMMED, weaponUnit.name
 end

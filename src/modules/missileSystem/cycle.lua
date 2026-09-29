@@ -15,14 +15,14 @@ local Cycle = {}
 ---@param results SBJ__LogResult[] Result list to append to
 ---@param params {unit: string, action: string} Unit name and snake_case action token
 ---@param success boolean Whether the command succeeded
----@param errorFields table<string, any>|nil Log fields describing the failure
-local function addCommandResult(results, params, success, errorFields)
+---@param errorDetail table<string, any>|nil Log fields describing the failure
+local function addCommandResult(results, params, success, errorDetail)
   if success then
     table.insert(results, { tag = "OK", fields = { unit = params.unit, action = params.action } })
     return
   end
 
-  table.insert(results, { tag = "FAIL", fields = LogFormat.merge({ unit = params.unit, action = params.action }, errorFields) })
+  table.insert(results, { tag = "FAIL", fields = LogFormat.merge({ unit = params.unit, action = params.action }, errorDetail) })
 end
 
 ---Check if firing unit reload conditions are met

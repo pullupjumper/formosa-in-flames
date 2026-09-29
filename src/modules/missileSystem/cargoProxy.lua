@@ -69,7 +69,7 @@ end
 ---@param cargo CMO__Unit Cargo proxy unit to receive mounts
 ---@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
 ---@return table<number, number> # Weapon DBID to current count mapping
-local function cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
+local function countWeaponsAndCloneMounts(sourceUnit, cargo, weaponDBIDSet)
   local weaponCountMap = {}
 
   for _, mount in ipairs(sourceUnit.mounts) do
@@ -144,7 +144,7 @@ local function normalizeGroupMember(base, sourceUnit, idx, loadCtx)
   end
 
   stripCargoProxyMounts(cargo, sideName)
-  local weaponCountMap = cloneMountsAndTallyWeapons(sourceUnit, cargo, weaponDBIDSet)
+  local weaponCountMap = countWeaponsAndCloneMounts(sourceUnit, cargo, weaponDBIDSet)
   updateWeaponReloads(cargo, sideName, weaponCountMap)
 
   if sourceUnit.group then

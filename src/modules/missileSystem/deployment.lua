@@ -46,11 +46,11 @@ end
 ---@param addedUnit CMO__Unit Unit to clean up weapons for
 ---@param weaponDBIDs number[] Desired weapon DBIDs to keep
 ---@param sideName string Side name
----@param logFields {system: string, role: string} Missile system name and unit role stamped on every log row
+---@param params {system: string, role: string} Missile system name and unit role stamped on every log row
 ---@return SBJ__LogResult[] # Failure log rows
-local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, logFields)
+local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, params)
   local entries = {}
-  local context = { system = logFields.system, role = logFields.role, unit = addedUnit.name, guid = addedUnit.guid }
+  local context = { system = params.system, role = params.role, unit = addedUnit.name, guid = addedUnit.guid }
   GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = addedUnit.guid })
 
   local weaponDBIDSet = {}
@@ -429,7 +429,7 @@ end
 ---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
 ---@return SBJ__OperationalArea[] operationalAreas New areas that need zones and triggers
 ---@return SBJ__OperationalArea[] operationalAreasToRemove Replaced areas whose zones and triggers must go
-function Deployment.applyLayouts(groundForceConfig, layouts)
+function Deployment.updateLayouts(groundForceConfig, layouts)
   local operationalAreas = {}
   local operationalAreasToRemove = {}
 

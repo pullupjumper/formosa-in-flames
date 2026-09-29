@@ -568,11 +568,11 @@ end
 
 ---Check if point is within defined area using reference points
 ---Converts reference point names to polygon coordinates and performs point-in-polygon test
----@param side string Side name (used to retrieve reference points)
+---@param sideName string Side name (used to retrieve reference points)
 ---@param point CMO__Location|nil Point to check
 ---@param area string[] Array of reference point names defining the polygon boundary
 ---@return boolean # True if point is inside the area, false otherwise
-function GameUtils.isInArea(side, point, area)
+function GameUtils.isInArea(sideName, point, area)
   local minPolygonPoints = 3
 
   if not point or not area then
@@ -580,7 +580,7 @@ function GameUtils.isInArea(side, point, area)
   end
 
   -- area is an array of reference point names that define the polygon
-  local points = GameApi.ScenEdit_GetReferencePoints({ side = side, area = area })
+  local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = area })
   if not points or #points < minPolygonPoints then
     return false
   end

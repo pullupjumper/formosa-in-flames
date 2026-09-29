@@ -47,7 +47,7 @@ saveData.c.gnssJamming.jammers = {}
 
 -- ============================================================================
 -- Ground Forces (China)
--- Per-system missile state is seeded by MissileSystem.seedGroundForceState
+-- Per-system missile state is seeded by MissileSystem.ensureGroundForceState
 -- ============================================================================
 
 saveData.c.ground = {}
@@ -125,7 +125,7 @@ saveData.c.repairRunway.runways = {}
 
 -- ============================================================================
 -- Ground Forces (Taiwan)
--- Per-system missile state is seeded by MissileSystem.seedGroundForceState
+-- Per-system missile state is seeded by MissileSystem.ensureGroundForceState
 -- ============================================================================
 
 saveData.t.ground = {}

@@ -32,7 +32,7 @@ flowchart LR
 
 ## 執行：`run`
 
-`OperationBatch.run(batches, operationType, params)` 跑一個 tick。`params` 是 `SBJ__OperationBatchRunParams`：
+`OperationBatch.process(batches, operationType, params)` 跑一個 tick。`params` 是 `SBJ__OperationBatchRunParams`：
 
 | 欄位 | 用途 |
 |---|---|

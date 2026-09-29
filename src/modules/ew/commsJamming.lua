@@ -178,10 +178,10 @@ end
 -- ============================================================================
 
 ---Check if a number is a valid (non-NaN) number
----@param n number The number to check
+---@param value number The number to check
 ---@return boolean # True if the number is valid
-local function isValidNumber(n)
-  return n == n
+local function isValidNumber(value)
+  return value == value
 end
 
 

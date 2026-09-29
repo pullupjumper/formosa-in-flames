@@ -776,7 +776,7 @@ describe("OperationScheduler", function()
       ---production one, not a hand-rolled table.remove.
       ---@param operationBatches table[]
       local function abandonPendingGroundOperations(operationBatches)
-        OperationBatch.run(operationBatches, "ground", {
+        OperationBatch.process(operationBatches, "ground", {
           currentTime = Utils.parseDatetimeToTimestamp("2026-02-14 08:00:00"),
           windowSec = 3600,
           retryableReasonSet = {},

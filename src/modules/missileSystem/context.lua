@@ -59,7 +59,7 @@ end
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
 ---@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
 ---@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
-function Context.seedGroundForceState(groundForceConfig, groundForceCtx)
+function Context.ensureGroundForceState(groundForceConfig, groundForceCtx)
   for system, _ in pairs(groundForceConfig) do
     ---@type SBJ__MissileSystemContext
     local systemCtx = groundForceCtx[system] or {}

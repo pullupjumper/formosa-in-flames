@@ -7,9 +7,9 @@ Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 
 
 ---Print formatted box message to player
----@param side string The side the message is visible to (sidename may also be used)
+---@param sideName string The side the message is visible to (sidename may also be used)
 ---@param ... string Variable number of string arguments to be printed inside the box
-local function logBox(side, ...)
+local function logBox(sideName, ...)
   -- Collect all string parameters into array
   local strings = { ... }
 
@@ -38,13 +38,13 @@ local function logBox(side, ...)
   local boxString = "\n" .. table.concat(middleLines, "\n")
 
   -- Output all at once
-  ScenEdit_SpecialMessage(side, boxString)
+  ScenEdit_SpecialMessage(sideName, boxString)
 end
 
---- Helper function to show a log message
+--- Helper function to print a log message
 ---@param message string Log message
 ---@param level string Log level
-local function show(message, level)
+local function logMessage(message, level)
   if Logger.inGame then
     logBox("playerside", string.format("[%s] %s", level, message))
   end
@@ -60,22 +60,22 @@ function Logger.log(moduleNameOrMessage, message)
 
   if moduleConfig and moduleConfig.verbose then
     local formattedMessage = string.format("[%s] %s", moduleNameOrMessage, message)
-    show(formattedMessage, "LOG")
+    logMessage(formattedMessage, "LOG")
   elseif moduleNameOrMessage and not message then
-    show(moduleNameOrMessage, "LOG")
+    logMessage(moduleNameOrMessage, "LOG")
   end
 end
 
 ---Error logging (always output, no verbose check)
 ---@param message string Error message
 function Logger.error(message)
-  show(message, "ERROR")
+  logMessage(message, "ERROR")
 end
 
 ---Warning logging (similar to error, always output)
 ---@param message string Warning message
 function Logger.warn(message)
-  show(message, "WARN")
+  logMessage(message, "WARN")
 end
 
 return Logger

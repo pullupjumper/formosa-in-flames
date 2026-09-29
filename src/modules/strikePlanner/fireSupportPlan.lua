@@ -85,7 +85,7 @@ local function startFireSupportTasks(plannerState, matrix)
       })
 
       if fired > 0 then
-        MissileSystem.markForStow(plannerState.ground, task.missileSystem, task.firingUnits)
+        MissileSystem.startStow(plannerState.ground, task.missileSystem, task.firingUnits)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,

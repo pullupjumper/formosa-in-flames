@@ -40,7 +40,7 @@ flowchart LR
 
 ## `insert`
 
-`DynamicPlan.insert(saveData, operationType, templateName, reconType, buildPlan)` 一次做完三件事，回傳生成的名稱：
+`DynamicPlan.add(saveData, operationType, templateName, reconType, buildPlan)` 一次做完三件事，回傳生成的名稱：
 
 1. 產生唯一名稱，同時檢查 `generatedOperations[registryKey]` 與目標計畫表，兩邊都沒撞名才用
 2. 呼叫 `buildPlan(planName)` 拿到 wave / matrix，寫進 `descriptor.resolvePlan(saveData)[planName]`

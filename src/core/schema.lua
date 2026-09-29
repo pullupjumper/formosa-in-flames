@@ -1079,7 +1079,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field operationType SBJ__OperationType Operation type the template belongs to
 ---@field template SBJ__WaveTemplate|SBJ__FireSupportExecutionMatrixTemplate Template whose entries are evaluated
 
----Required input for DynamicPlan.insert
+---Required input for DynamicPlan.add
 ---@class SBJ__InsertPlanParams: table
 ---@field operationType SBJ__OperationType Operation type deciding which plan table and registry are used
 ---@field templateName string Full operation template name, wave-stage number included
@@ -1466,12 +1466,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field operations SBJ__Operation[] Operations to execute
 
 ---Operation paired with the reconnaissance-triggered batch that owns it
----Handed to the builder's tryInsert by OperationBatch.run; execution status is written back by OperationBatch, not the builder
+---Handed to the builder's tryInsert by OperationBatch.process; execution status is written back by OperationBatch, not the builder
 ---@class SBJ__BatchedOperation: table
 ---@field operationBatch SBJ__ReconTriggeredOperationBatch Parent batch owning the operation
 ---@field operation SBJ__Operation Operation to execute
 
----Inputs for one OperationBatch.run tick
+---Inputs for one OperationBatch.process tick
 ---The builder only answers "can this template be inserted right now"; every batch
 ---policy (observation window, retry, abandon, expiry) stays inside OperationBatch.
 ---@class SBJ__OperationBatchRunParams: table
@@ -1480,14 +1480,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field retryableReasonSet table<string, true> Failure reasons that keep an operation pending inside the window
 ---@field tryInsert fun(batchedOp: SBJ__BatchedOperation): SBJ__OperationProcessResult Attempt to build and insert the operation's plan
 
----One attempted operation from an OperationBatch.run tick
+---One attempted operation from an OperationBatch.process tick
 ---fields already carries operation=, batch=, reason= and state=, ready for a report row.
 ---@class SBJ__OperationBatchRunEntry: table
 ---@field tag string Status tag for the operation row
 ---@field fields table<string, any> Merged row fields
 ---@field outcome SBJ__OperationProcessResult Raw outcome returned by tryInsert or synthesized on expiry
 
----Outcome of one OperationBatch.run tick
+---Outcome of one OperationBatch.process tick
 ---@class SBJ__OperationBatchRunResult: table
 ---@field hasExecutedAny boolean True when at least one operation had its plan inserted
 ---@field entries SBJ__OperationBatchRunEntry[] One entry per operation that was due this tick

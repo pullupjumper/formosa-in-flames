@@ -190,7 +190,7 @@ end
 ---@param operationType SBJ__OperationType Operation type to process
 ---@param params SBJ__OperationBatchRunParams Tick inputs and the builder's insertion attempt
 ---@return SBJ__OperationBatchRunResult # Whether anything executed, plus one entry per attempted operation
-function OperationBatch.run(batches, operationType, params)
+function OperationBatch.process(batches, operationType, params)
   ---@type SBJ__OperationBatchRunResult
   local result = { hasExecutedAny = false, entries = {} }
 

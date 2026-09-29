@@ -26,7 +26,7 @@ flowchart TD
     ENABLED{"dynamicOperations enabled?"}
     STOP["return false"]
     CACHE["建立 freeAircraftCache"]
-    RUN["OperationBatch.run(batches, air, params)"]
+    RUN["OperationBatch.process(batches, air, params)"]
     TRY["tryInsert = processAirOperation"]
     ENTRIES["逐筆 entry：opReport.add + timingReport.addAll"]
     EMIT["opReport.emit + timingReport.emit"]
@@ -39,7 +39,7 @@ flowchart TD
     RUN --> ENTRIES --> EMIT --> RETURN
 ```
 
-本模組交給 `OperationBatch.run` 的 `params` 只有四樣：目前時間、`observationWindowSec`、`RETRYABLE_REASON`，以及 `tryInsert`。篩選 operation、判定觀察窗、標記 executed、移除放棄的 operation、合併 `operation=` / `batch=` / `state=` 欄位，全在 [operationBatch](operationBatch.md) 內完成；本模組拿回 entries 後只負責餵兩份 report。沒有到期 operation 時 entries 為空，report 零列不輸出。
+本模組交給 `OperationBatch.process` 的 `params` 只有四樣：目前時間、`observationWindowSec`、`RETRYABLE_REASON`，以及 `tryInsert`。篩選 operation、判定觀察窗、標記 executed、移除放棄的 operation、合併 `operation=` / `batch=` / `state=` 欄位，全在 [operationBatch](operationBatch.md) 內完成；本模組拿回 entries 後只負責餵兩份 report。沒有到期 operation 時 entries 為空，report 零列不輸出。
 
 ### 單一 operation：processAirOperation 的建構決策
 
@@ -54,7 +54,7 @@ flowchart TD
     CREATE["createAndInsertATOWaveFromTemplate"]
     BUILD["buildExecutablePackages"]
     HAS_PKG{"validPackages 非空?"}
-    INSERT["DynamicPlan.insert(..., air, ...)<br>命名 → buildATOWave → 寫入 → 登記"]
+    INSERT["DynamicPlan.add(..., air, ...)<br>命名 → buildATOWave → 寫入 → 登記"]
     TIMING["collectWaveTimingResults"]
     OK["success = true"]
     ERR["missing_wave_template"]
@@ -86,7 +86,7 @@ flowchart TD
 
 ### 為什麼失敗要移除 operation，而不是標記 executed
 
-不可重試的失敗（缺 template、ATO 未初始化、未知原因）不等窗口逾時，`OperationBatch.run` 在同一個 tick 就把 operation 從 batch 陣列移除。
+不可重試的失敗（缺 template、ATO 未初始化、未知原因）不等窗口逾時，`OperationBatch.process` 在同一個 tick 就把 operation 從 batch 陣列移除。
 
 移除而非標記 `executed`，是為了讓排程器把同一波重新排一次，而不是把沒打成的波次當成推進基準跳過去。`executed` 因此有嚴格語義：**只代表「Wave 真的插進計畫了」**，不代表飛機起飛。細節見 [operationBatch](operationBatch.md) 與 [operationScheduler](operationScheduler.md) 的排程不變式。
 
@@ -148,7 +148,7 @@ timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻
 
 ### 結果分類與 log
 
-`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `OperationBatch.run()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
+`processAirOperation()` 回傳 `SBJ__AirOperationProcessResult`。`success` 與 `reason` 供 `OperationBatch.process()` 判斷該 operation 是標記已執行、留在窗內重試，還是從 batch 移除。`reason` 的字串同時是控制流程的判斷值與 log 的 `reason=` 內容，所以任何一行 log 都能直接反查到產生它的分支。
 
 | reason | tag | 條件 | 後續處理 |
 |---|---|---|---|
@@ -160,7 +160,7 @@ timing log 的收集範圍與機隊驗證共用 `PACKAGE_ROLES`，`reconUAV` 刻
 
 `RETRYABLE_REASON` 只收錄 `no_valid_packages`，其餘（含未預期的未知 reason）一律走移除路徑——預設保守，不讓沒對應到的失敗永遠卡在窗內。
 
-tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`OperationBatch.run()` 把 operation 識別欄位與 `outcome.fields` 合併成 entry，`AtoBuilder.build()` 再交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
+tag 由產生分支直接寫入結果，不經 reason → tag 對照表。`OperationBatch.process()` 把 operation 識別欄位與 `outcome.fields` 合併成 entry，`AtoBuilder.build()` 再交給 `LogFormat.report`，格式化、info／error 分流與空輸出抑制全部由 report 負責。
 
 log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都是 `constants.TAGS.DYNAMIC_OPERATIONS`。package 驗證失敗會成為 operation 行底下縮排一層的 detail 行，歸屬清楚且不計入 header 的 `total`：
 
@@ -182,8 +182,8 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 路徑或 API | 行為 |
 |---|---|
-| `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時透過 `DynamicPlan.insert()` 寫入新的 `SBJ__Wave`。 |
-| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 同一次 `DynamicPlan.insert()` 呼叫內登記。 |
+| `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時透過 `DynamicPlan.add()` 寫入新的 `SBJ__Wave`。 |
+| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
 | `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 | `roleData.baseGUID` | 機隊驗證選定候選基地時，就地改寫拷貝後的 package template。 |
 

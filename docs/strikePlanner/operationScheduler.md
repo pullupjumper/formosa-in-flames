@@ -105,7 +105,7 @@ flowchart TD
 | 第 N 波被移除（首波仍在） | 判定排過 | 最新仍是 `/N-1` | 重新產生 `/N`，不會跳到 `/N+1` |
 | 作戰仍在觀察窗內重試 | 判定排過 | 找不到已執行前導波 | `[SKIP] reason=no_executed_predecessor`，系列暫停等它打出去 |
 
-反過來說，如果失敗的作戰被標記成已執行留在 batch 裡，`findLatestExecuted` 會把它當成合法的推進基準——第一波根本沒打成，第二波卻照排。這是這個模組最容易被忽略的失效模式，`spec/modules/strikePlanner/operationScheduler_spec.lua` 的「abandoned operations」測試群組用真的 `OperationBatch.run` 移除作戰，釘住上表三列。
+反過來說，如果失敗的作戰被標記成已執行留在 batch 裡，`findLatestExecuted` 會把它當成合法的推進基準——第一波根本沒打成，第二波卻照排。這是這個模組最容易被忽略的失效模式，`spec/modules/strikePlanner/operationScheduler_spec.lua` 的「abandoned operations」測試群組用真的 `OperationBatch.process` 移除作戰，釘住上表三列。
 
 ---
 
