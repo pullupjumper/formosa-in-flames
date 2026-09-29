@@ -81,6 +81,15 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | 布林旗標 | `isXxx` |
 | context 物件 | `xxxCtx`（型別名用全名 `SBJ__XxxContext`） |
 
+### 參數數量與順序
+
+- **最多 4 個參數。** 超過就把相關的包成 `params`（必填）或 `ctx`（一輪內共用）。
+- **固定順序：** `config` → `saveData` / `state` → `sideName` → 主角（`unit`、`zone`）→ 其他輸入 → `opts`。用不到的直接省略，其他不變。
+- **一輪內不變的值放進 ctx。** `isAuto`、`currentTime`、`systemCfg` 這類整輪都一樣的值，不要每層函式重傳。
+- **旗標放進 `opts`。** 不要放在位置參數尾巴（`f(x, true)` 看不出 `true` 是什麼）。
+- **座標傳 `pos`（`{ latitude, longitude }`）。** 不拆成 `lat, lon`。
+- ctx 已經帶著的東西，不要再單獨傳一次。
+
 - `params` 與 `opts` 怎麼分：看函式內有沒有對欄位做 nil 檢查或給預設值。有預設值的是 `opts`。
 - 未使用的參數不加 `_` 前綴。
 

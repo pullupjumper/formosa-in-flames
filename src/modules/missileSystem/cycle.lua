@@ -9,6 +9,10 @@ local Concealment = require("src.modules.missileSystem.concealment")
 
 local Cycle = {}
 
+---@class SBJ__CycleRunContext
+---@field systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+---@field isAuto boolean Whether in automatic mode
+
 ---Append a movement command result
 ---Rows carry only unit-level fields; the caller adds the owning system name.
 ---The failing helper supplies its own reason, so no generic one is invented here.
@@ -53,12 +57,12 @@ end
 
 ---Trigger reload movement when firing unit is static and low on ammo (auto mode only)
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@param isAuto boolean Whether in automatic mode
 ---@return SBJ__LogResult[] results Collected structured results
-local function startReloadMovement(systemCtx, systemCfg, firingUnitCtx, firingUnit, isAuto)
+local function startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
+  local systemCfg, isAuto = runCtx.systemCfg, runCtx.isAuto
   local results = {}
 
   if not isAuto or firingUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.STATIC then
@@ -151,12 +155,12 @@ end
 
 ---Complete firing unit reload when conditions are met
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@param isAuto boolean Whether in automatic mode
 ---@return SBJ__LogResult[] results Collected structured results
-local function completeFiringUnitReload(systemCtx, systemCfg, firingUnitCtx, firingUnit, isAuto)
+local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firingUnit)
+  local systemCfg, isAuto = runCtx.systemCfg, runCtx.isAuto
   local results = {}
 
   if firingUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.RELOAD then
@@ -216,14 +220,13 @@ end
 
 ---Handle firing unit reload cycle: trigger movement and complete reload
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
 ---@param firingUnit CMO__Unit Firing unit group
----@param isAuto boolean Whether in automatic mode
 ---@return SBJ__LogResult[] results Collected structured results
-local function processFiringUnitReloadCycle(systemCtx, systemCfg, firingUnitCtx, firingUnit, isAuto)
-  local results = startReloadMovement(systemCtx, systemCfg, firingUnitCtx, firingUnit, isAuto)
-  Utils.addAll(results, completeFiringUnitReload(systemCtx, systemCfg, firingUnitCtx, firingUnit, isAuto))
+local function processFiringUnitReloadCycle(systemCtx, runCtx, firingUnitCtx, firingUnit)
+  local results = startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
+  Utils.addAll(results, completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firingUnit))
   return results
 end
 
@@ -249,12 +252,12 @@ end
 
 ---Complete resupply unit transload when conditions are met
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
----@param isAuto boolean Whether in automatic mode
 ---@return SBJ__LogResult[] results Collected structured results
-local function completeResupplyUnitTransload(systemCtx, systemCfg, resupplyUnitCtx, resupplyUnit, isAuto)
+local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit)
+  local systemCfg, isAuto = runCtx.systemCfg, runCtx.isAuto
   local results = {}
 
   if resupplyUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.RELOAD then
@@ -310,48 +313,45 @@ end
 
 ---Handle resupply unit reload cycle: trigger movement and complete transload
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
 ---@param resupplyUnit CMO__Unit Resupply unit group
----@param isAuto boolean Whether in automatic mode
 ---@return SBJ__LogResult[] results Collected structured results
-local function processResupplyUnitReloadCycle(systemCtx, systemCfg, resupplyUnitCtx, resupplyUnit, isAuto)
-  local results = startResupplyMovement(resupplyUnitCtx, resupplyUnit, isAuto)
-  Utils.addAll(results, completeResupplyUnitTransload(systemCtx, systemCfg, resupplyUnitCtx, resupplyUnit, isAuto))
+local function processResupplyUnitReloadCycle(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit)
+  local results = startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx.isAuto)
+  Utils.addAll(results, completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit))
   return results
 end
 
 ---Process all firing units and collect structured results
 ---@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
----@param isAuto boolean Whether in automatic mode
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param sideName string Side name
 ---@return SBJ__LogResult[] results Collected structured results
-local function processFiringUnits(systemCtx, systemCfg, isAuto, sideName)
+local function processFiringUnits(systemCtx, runCtx, sideName)
   local results = {}
   for _, firingUnitCtx in pairs(systemCtx.firingUnits) do
     local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
 
     if firingUnit then
-      Utils.addAll(results, processFiringUnitReloadCycle(systemCtx, systemCfg, firingUnitCtx, firingUnit, isAuto))
+      Utils.addAll(results, processFiringUnitReloadCycle(systemCtx, runCtx, firingUnitCtx, firingUnit))
     end
   end
   return results
 end
 
 ---Process all resupply units and collect structured results
----@param msCtx SBJ__MissileSystemContext Weapon system context
----@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
----@param isAuto boolean Whether in automatic mode
+---@param systemCtx SBJ__MissileSystemContext Weapon system context
+---@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
 ---@param sideName string Side name
 ---@return SBJ__LogResult[] results Collected structured results
-local function processResupplyUnits(msCtx, systemCfg, isAuto, sideName)
+local function processResupplyUnits(systemCtx, runCtx, sideName)
   local results = {}
-  for _, resupplyUnitCtx in pairs(msCtx.resupplyUnits) do
+  for _, resupplyUnitCtx in pairs(systemCtx.resupplyUnits) do
     local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitCtx.name, sideName)
 
     if resupplyUnit then
-      Utils.addAll(results, processResupplyUnitReloadCycle(msCtx, systemCfg, resupplyUnitCtx, resupplyUnit, isAuto))
+      Utils.addAll(results, processResupplyUnitReloadCycle(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit))
     end
   end
   return results
@@ -364,8 +364,9 @@ end
 ---@param sideName string Side name
 ---@return SBJ__LogResult[] results Collected structured results
 function Cycle.process(systemCtx, systemCfg, isAuto, sideName)
-  local results = processFiringUnits(systemCtx, systemCfg, isAuto, sideName)
-  Utils.addAll(results, processResupplyUnits(systemCtx, systemCfg, isAuto, sideName))
+  local runCtx = { systemCfg = systemCfg, isAuto = isAuto }
+  local results = processFiringUnits(systemCtx, runCtx, sideName)
+  Utils.addAll(results, processResupplyUnits(systemCtx, runCtx, sideName))
   return results
 end
 
