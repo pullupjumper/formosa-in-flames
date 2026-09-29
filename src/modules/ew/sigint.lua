@@ -286,11 +286,11 @@ end
 ---Increments currentDetectionLevel and checks autodetectable threshold
 ---@param sigintCtx SBJ__SIGINTContext SIGINT context to update transmission records
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit context data with metadata
----@param result SBJ__SIGINTResult Detection result with position and confidence
----@param unit CMO__Unit Actual unit object for autodetectable state updates
+---@param hit SBJ__SIGINTHit Detected unit paired with its detection result
 ---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
-local function updateTransmissionData(sigintCtx, unitCtx, result, unit, maxCount)
+local function updateTransmissionData(sigintCtx, unitCtx, hit, maxCount)
+  local unit, result = hit.unit, hit.result
   local transmission = sigintCtx.transmissions[unit.guid]
 
   if not transmission then
@@ -370,14 +370,15 @@ end
 ---Enhanced SIGINT detection handler
 ---Monitors several unit context groups, consolidating results and log output
 ---@param config SBJ__Config Configuration object
----@param sigintCtx SBJ__SIGINTContext SIGINT context
+---@param saveData SBJ__SaveData Persistent save data; the side's SIGINT slice is mutated
 ---@param sideName string Side name (used to determine enemy side for area checks)
 ---@param isShown boolean Whether to show detection notifications on map
----@param sigintConfig SBJ__SIGINTConfig SIGINT-specific configuration
----@param emitterGroups table<string, SBJ__FiringUnitContext|SBJ__C2Context>[] Unit context groups to monitor
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
-local function collectSigint(config, sigintCtx, sideName, isShown, sigintConfig, emitterGroups)
+local function collectSigint(config, saveData, sideName, isShown)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
+  local sigintCtx = PersistentState.sigint(saveData, sideName)
+  local sigintConfig = config[sideConfig.field].sigint
+  local emitterGroups = PersistentState.sigintEmitters(saveData, sideName)
   local enemySide = sideConfig.enemySide
 
   local maxCount = sigintConfig.maxCount
@@ -420,7 +421,7 @@ local function collectSigint(config, sigintCtx, sideName, isShown, sigintConfig,
       -- Update transmission data based on result
       if result.isDetected then
         totalDetected = totalDetected + 1
-        local status = updateTransmissionData(sigintCtx, unitCtx, result, actualUnit, maxCount)
+        local status = updateTransmissionData(sigintCtx, unitCtx, { unit = actualUnit, result = result }, maxCount)
         report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
 
         if isShown then
@@ -453,15 +454,7 @@ function Sigint.processSide(config, saveData, sideName)
     return
   end
 
-  local sigintConfig = config[GameUtils.getCachedSideConfig(sideName).field].sigint
-  collectSigint(
-    config,
-    sigintCtx,
-    sideName,
-    true,
-    sigintConfig,
-    PersistentState.sigintEmitters(saveData, sideName)
-  )
+  collectSigint(config, saveData, sideName, true)
 end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations

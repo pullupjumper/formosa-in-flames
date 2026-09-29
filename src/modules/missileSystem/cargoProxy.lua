@@ -127,10 +127,10 @@ end
 ---@param base CMO__Unit Base ship to load cargo onto
 ---@param sourceUnit CMO__Unit Source unit to convert
 ---@param idx integer Index in group unit list
----@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
----@param sideName string Side name
+---@param loadCtx SBJ__CargoLoadContext Weapon set and side shared by every member of the group
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function normalizeGroupMember(base, sourceUnit, idx, weaponDBIDSet, sideName)
+local function normalizeGroupMember(base, sourceUnit, idx, loadCtx)
+  local weaponDBIDSet, sideName = loadCtx.weaponDBIDSet, loadCtx.sideName
   local cargo = createCargoProxy(base, sourceUnit.dbid, idx, sideName)
   if not cargo then
     return {
@@ -167,7 +167,7 @@ function CargoProxy.loadCargo(base, unitCtx, sideName)
   if not actualUnit then return end
 
   local group = actualUnit.group and actualUnit.group.unitlist or { actualUnit.guid }
-  local weaponDBIDSet = normalizeWeaponDBIDs(unitCtx.weaponDBID)
+  local loadCtx = { weaponDBIDSet = normalizeWeaponDBIDs(unitCtx.weaponDBID), sideName = sideName }
   local report = LogFormat.report(
     constants.TAGS.MISSILE_SYSTEM, "ship=" .. (base.name or base.guid), "Load cargo")
 
@@ -177,7 +177,7 @@ function CargoProxy.loadCargo(base, unitCtx, sideName)
     if not unit then
       report.add("SKIP", { guid = guid, index = idx, reason = "unit_not_found" })
     else
-      local result = normalizeGroupMember(base, unit, idx, weaponDBIDSet, sideName)
+      local result = normalizeGroupMember(base, unit, idx, loadCtx)
       report.add(result.tag, result.fields)
     end
   end

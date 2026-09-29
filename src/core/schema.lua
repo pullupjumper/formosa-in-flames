@@ -208,7 +208,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Per-side missile system control policy; the only differences between the China and Taiwan event scripts
 ---@class SBJ__MissileSystemPolicyConfig: table
 ---@field isAuto boolean Whether the reload/hide cycle and position events run in automatic mode
----@field isAuto boolean Whether the flow runs in automatic mode
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 
@@ -1035,6 +1034,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 ---@field firingUnitLookupSide string Side name used to resolve paired firing unit
+---@field isAuto boolean Whether the move-to-position flow is automatic
 
 ---Input parameters for missileSystem UnitEntersArea event handling
 ---@class SBJ__MoveToPositionEventParams: table
@@ -1713,3 +1713,21 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field totalAmmoRequested integer Total amount of ammunition requested for this attack
 ---@field ammoAlreadyAllocated integer Amount of ammunition already allocated in this attack
 ---@field weaponDBID number Specific weapon DBID to use
+
+---A detected SIGINT emitter paired with its detection result
+---@class SBJ__SIGINTHit: table
+---@field unit CMO__Unit Actual unit object for autodetectable state updates
+---@field result SBJ__SIGINTResult Detection result with position and confidence
+
+---Inputs for launching embarked units from a base
+---@class SBJ__LaunchUnitsParams: table
+---@field baseGUID string The base GUID to launch units from
+---@field course CMO__Waypoint[] The course waypoints for launched units
+---@field unitCount number The number of units to launch
+---@field unitDBID number The unit database ID to filter by
+---@field unitType string The unit type to launch (e.g., 'Aircraft' or 'Boats')
+
+---Settings shared by every group member when loading cargo proxies onto a ship
+---@class SBJ__CargoLoadContext: table
+---@field weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
+---@field sideName string Side name

@@ -26,13 +26,11 @@ local WZ8_INITIAL_SPEED = 3300
 -- ============================================================================
 
 ---Launch units from a base with specified parameters
----@param baseGUID string The base GUID to launch units from
----@param course CMO__Waypoint[] The course waypoints for launched units
----@param unitCount number The number of units to launch
----@param unitDBID number The unit database ID to filter by
----@param unitType string The unit type to launch (e.g., 'Aircraft' or 'Boats')
+---@param params SBJ__LaunchUnitsParams Base, course and unit filter of the launch
 ---@return CMO__Unit[] # Returns array of launched unit objects (empty if none launched)
-local function launchUnits(baseGUID, course, unitCount, unitDBID, unitType)
+local function launchUnits(params)
+  local baseGUID, course, unitCount = params.baseGUID, params.course, params.unitCount
+  local unitDBID, unitType = params.unitDBID, params.unitType
   -- Single lookup: the wrapper already falls back to a name lookup on constants.SIDES.ENEMY.
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
@@ -162,7 +160,13 @@ local function startLaunchPhase(entry)
     return { tag = "SKIP", fields = { base = entry.baseGUID, reason = "takeoff_time_not_reached" } }
   end
 
-  local launchedUnit = launchUnits(entry.baseGUID, entry.course, 1, entry.unitDBID, "Aircraft")[1]
+  local launchedUnit = launchUnits({
+    baseGUID = entry.baseGUID,
+    course = entry.course,
+    unitCount = 1,
+    unitDBID = entry.unitDBID,
+    unitType = "Aircraft"
+  })[1]
 
   if not launchedUnit then
     return { tag = "FAIL", fields = { base = entry.baseGUID, reason = "launch_failed" } }

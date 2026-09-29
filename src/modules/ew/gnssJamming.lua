@@ -181,9 +181,9 @@ end
 ---@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration descriptor
 ---@param point CMO__Location Center point for the jamming zone
 ---@param sideName string Side name that owns the jammer
----@param enemySideName string Enemy side name whose weapons will be jammed
 ---@return boolean # Whether the jamming zone was successfully created
-local function createJammingZone(unit, descriptor, point, sideName, enemySideName)
+local function createJammingZone(unit, descriptor, point, sideName)
+  local enemySideName = GameUtils.getCachedSideConfig(sideName).enemySide
   GameApi.ScenEdit_SetEMCON("Unit", unit.guid, "OECM=Active")
 
   local area = GameUtils.createArea(point, {
@@ -253,8 +253,6 @@ end
 ---@param sideName string Side name that will own the jammers
 ---@return number # Number of jammers successfully created
 local function addGnssJammers(jammerDescriptorMap, sideName)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local enemySideName = sideConfig.enemySide
   local successCount = 0
   local report = LogFormat.report(constants.TAGS.GNSS_JAMMING, "side=" .. sideName, "Add GNSS jammers")
 
@@ -276,7 +274,7 @@ local function addGnssJammers(jammerDescriptorMap, sideName)
       goto continue
     end
 
-    if createJammingZone(unit, descriptor, point, sideName, enemySideName) then
+    if createJammingZone(unit, descriptor, point, sideName) then
       successCount = successCount + 1
       report.add("OK", { jammer = descriptor.name, zone = descriptor.zoneName })
     else
@@ -330,8 +328,6 @@ end
 ---@return boolean success Whether jammer was successfully created
 ---@return CMO__Unit|nil unit The created jammer unit
 function GnssJamming.addGnssJammer(descriptor, sideName)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local enemySideName = sideConfig.enemySide
   local unit = GameApi.ScenEdit_AddUnit({
     side = sideName,
     unitname = descriptor.name,
@@ -351,7 +347,7 @@ function GnssJamming.addGnssJammer(descriptor, sideName)
   end
 
   local point = { latitude = descriptor.point.latitude, longitude = descriptor.point.longitude }
-  local success = createJammingZone(unit, descriptor, point, sideName, enemySideName)
+  local success = createJammingZone(unit, descriptor, point, sideName)
 
   Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.line(success and "OK" or "FAIL", {
     jammer = descriptor.name,
