@@ -1018,6 +1018,51 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field wcs? integer Weapon control status: 1=Free, 2=Hold
 ---@field formation? CMO__FormationGroup Formation settings
 
+---Required input for GameUtils.setUnitEntersAreaEvent
+---@class SBJ__UnitEntersAreaEventParams: table
+---@field name string Event name (must be unique within the scenario)
+---@field mode string Operation mode: 'add', 'update' or 'remove'
+---@field filter? table Unit filter criteria (e.g. side name, unit type)
+---@field area? table Reference point area defining the trigger zone
+---@field script? string Lua script executed when the event triggers
+
+---Optional settings for GameUtils.setUnitEntersAreaEvent
+---Passing nil applies every default
+---@class SBJ__UnitEntersAreaEventOpts: table
+---@field exit? boolean Trigger on EXIT instead of ENTER (default: false)
+---@field isRepeatable? boolean Whether the event can trigger more than once (default: false)
+---@field isActive? boolean Whether the event is active immediately (default: true)
+
+---Required input for GameUtils.tryAddUnit
+---@class SBJ__TryAddUnitParams: table
+---@field name string Unique name for the unit to be created
+---@field pos CMO__Location Center point for unit placement
+---@field randomRadius number Maximum distance in nautical miles from the center point
+---@field unitDBID integer CMO platform DBID of the unit type to create
+
+---Optional settings for GameUtils.tryAddUnit
+---Passing nil applies every default
+---@class SBJ__TryAddUnitOpts: table
+---@field maxAttempts? integer Maximum placement attempts before giving up (default: 50)
+
+---Required input for AssignMission.assignEmbarkedUnitToStrikeMission
+---@class SBJ__AssignEmbarkedUnitParams: table
+---@field baseGUID string GUID of the unit carrying the embarked aircraft
+---@field unitCount integer Number of units to assign to the mission
+---@field weaponDBID number Weapon DBID to filter by, or 0 for any weapon
+---@field unitDBID? number Unit DBID to filter by, or nil for any unit
+---@field missionName string Name of the mission to assign units to
+
+---Optional settings for AssignMission.assignEmbarkedUnitToStrikeMission
+---Passing nil applies every default
+---@class SBJ__AssignEmbarkedUnitOpts: table
+---@field isEscort? boolean Whether the mission is an escort mission (default: false)
+
+---Optional settings for GameUtils.createMission
+---Passing nil applies every default
+---@class SBJ__CreateMissionOpts: table
+---@field emcon? string EMCON settings string applied to the mission
+
 ---Movement parameters for commanding units to a randomly selected position
 ---@class SBJ__MoveToPositionParams: table
 ---@field unitName string Unit name (for messages)

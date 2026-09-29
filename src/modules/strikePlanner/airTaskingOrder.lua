@@ -162,13 +162,7 @@ end
 ---@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
 ---@return CMO__Mission|nil # Created mission object, or nil on failure
 local function createPackageMission(roleData, missionCreationParams)
-  local mission = GameUtils.createMission(
-    constants.SIDES.ENEMY,
-    missionCreationParams.name,
-    missionCreationParams.type,
-    missionCreationParams.opts,
-    roleData.emcon
-  )
+  local mission = GameUtils.createMission(constants.SIDES.ENEMY, missionCreationParams, { emcon = roleData.emcon })
 
   if mission and missionCreationParams.type == "strike" then
     GameApi.ScenEdit_SetDoctrine(
@@ -348,14 +342,13 @@ end
 ---@param unitCount integer Number of units to assign
 ---@return string[]|nil # Assigned unit GUIDs
 local function assignRoleUnitsToMission(roleData, missionName, unitCount)
-  return AssignMission.assignEmbarkedUnitToStrikeMission(
-    roleData.baseGUID,
-    unitCount,
-    roleData.weaponDBID,
-    roleData.unitDBID,
-    missionName,
-    false
-  )
+  return AssignMission.assignEmbarkedUnitToStrikeMission({
+    baseGUID = roleData.baseGUID,
+    unitCount = unitCount,
+    weaponDBID = roleData.weaponDBID,
+    unitDBID = roleData.unitDBID,
+    missionName = missionName
+  })
 end
 
 ---Assign tanker units evenly across all configured tanker missions

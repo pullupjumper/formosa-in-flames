@@ -111,15 +111,14 @@ local function isUnitEligibleForStrikeMission(unit, weaponCount, unitDBID)
 end
 
 ---Assign embarked units to strike mission
----@param fromUnit string The unit guid with embarked units
----@param unitCount integer The number of units to assign to the mission
----@param weaponDBID number|0 The database ID of the weapon to filter by, or 0 for any weapon
----@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
----@param missionName string The name of the mission to assign units to
----@param isEscort boolean Whether the mission is an escort mission
+---@param params SBJ__AssignEmbarkedUnitParams Base, unit count, weapon/unit DBID filters and mission name
+---@param opts? SBJ__AssignEmbarkedUnitOpts Escort flag
 ---@return string[]|nil # A list of assigned units
-function AssignMission.assignEmbarkedUnitToStrikeMission(fromUnit, unitCount, weaponDBID, unitDBID, missionName, isEscort)
-  local airbase = GameApi.ScenEdit_GetUnit(fromUnit)
+function AssignMission.assignEmbarkedUnitToStrikeMission(params, opts)
+  local unitCount, weaponDBID, unitDBID = params.unitCount, params.weaponDBID, params.unitDBID
+  local missionName = params.missionName
+  local isEscort = opts and opts.isEscort or false
+  local airbase = GameApi.ScenEdit_GetUnit(params.baseGUID)
 
   if not airbase then
     return

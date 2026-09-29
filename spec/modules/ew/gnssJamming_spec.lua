@@ -603,7 +603,8 @@ describe("GnssJamming", function()
       }
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
-      trackStub(stub(GameUtils, "tryAddUnit", function(name)
+      trackStub(stub(GameUtils, "tryAddUnit", function(params)
+        local name = params.name
         return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
       end))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
@@ -624,7 +625,8 @@ describe("GnssJamming", function()
       }
 
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
-      trackStub(stub(GameUtils, "tryAddUnit", function(name)
+      trackStub(stub(GameUtils, "tryAddUnit", function(params)
+        local name = params.name
         if name == "Jammer A" then
           return makeUnit({ name = name }), { latitude = 25.0, longitude = 121.0 }
         end

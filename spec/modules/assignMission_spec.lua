@@ -183,7 +183,7 @@ describe("AssignMission", function()
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(base))
       local stubGetMission = trackStub(stub(GameApi, "ScenEdit_GetMission").returns(nil))
 
-      local result = AssignMission.assignEmbarkedUnitToStrikeMission("BASE-1", 1, 5001, nil, "STRIKE-1", false)
+      local result = AssignMission.assignEmbarkedUnitToStrikeMission({ baseGUID = "BASE-1", unitCount = 1, weaponDBID = 5001, missionName = "STRIKE-1" })
 
       assert.is_nil(result)
       assert.stub(stubGetUnit).was.called_with("BASE-1")
@@ -214,7 +214,7 @@ describe("AssignMission", function()
       end))
       local stubAssign = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission").returns(true))
 
-      local result = AssignMission.assignEmbarkedUnitToStrikeMission("BASE-1", 2, 5001, nil, "STRIKE-1", true)
+      local result = AssignMission.assignEmbarkedUnitToStrikeMission({ baseGUID = "BASE-1", unitCount = 2, weaponDBID = 5001, missionName = "STRIKE-1" }, { isEscort = true })
 
       assert.are.same({ "AC-1" }, result)
       assert.is_true(mission.isactive)
@@ -237,7 +237,7 @@ describe("AssignMission", function()
       trackStub(stub(GameApi, "ScenEdit_GetLoadout").returns({ weapons = { { wpn_dbid = 9999, wpn_current = 4 } } }))
       local stubAssign = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission").returns(true))
 
-      local result = AssignMission.assignEmbarkedUnitToStrikeMission("BASE-1", 1, 5001, 7001, "STRIKE-2", false)
+      local result = AssignMission.assignEmbarkedUnitToStrikeMission({ baseGUID = "BASE-1", unitCount = 1, weaponDBID = 5001, unitDBID = 7001, missionName = "STRIKE-2" })
 
       assert.are.same({ "AC-1" }, result)
       assert.stub(stubAssign).was.called_with("AC-1", "STRIKE-2", false)

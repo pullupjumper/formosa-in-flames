@@ -82,7 +82,7 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `assignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)` | 母單位 GUID、平台型別、平台 DBID、mission descriptor 陣列 | `nil` | 篩選 embarked 平台後，依各 mission 的 `unitCount/loadoutId` 分派單位 |
-| `assignEmbarkedUnitToStrikeMission(fromUnit, unitCount, weaponDBID, unitDBID, missionName, isEscort)` | 基地 GUID、需派遣數量、武器 DBID、機型 DBID、任務名、護航旗標 | `table<integer, string>\|nil` | 對航空平台做掛載/待命條件判定並分派到打擊任務，回傳成功名單 |
+| `assignEmbarkedUnitToStrikeMission(params, opts)` | `params`：`baseGUID`、`unitCount`、`weaponDBID`、`unitDBID`、`missionName`；`opts`：`isEscort` | `table<integer, string>\|nil` | 對航空平台做掛載/待命條件判定並分派到打擊任務，回傳成功名單 |
 
 ---
 

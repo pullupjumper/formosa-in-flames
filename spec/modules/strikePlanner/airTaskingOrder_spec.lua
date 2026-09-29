@@ -658,7 +658,7 @@ describe("AirTaskingOrder", function()
 
       assert.stub(stubCreate).was.called(1)
       assert.are.equal("China", stubCreate.calls[1].vals[1])
-      assert.are.equal("STRIKE-PKG-1", stubCreate.calls[1].vals[2])
+      assert.are.equal("STRIKE-PKG-1", stubCreate.calls[1].vals[2].name)
     end)
 
     -- Positive: create multiple tanker missions
@@ -677,7 +677,8 @@ describe("AirTaskingOrder", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-      local stubCreate = trackStub(stub(GameUtils, "createMission").invokes(function(_, name)
+      local stubCreate = trackStub(stub(GameUtils, "createMission").invokes(function(_, params)
+        local name = params.name
         return { name = name }
       end))
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
@@ -687,9 +688,9 @@ describe("AirTaskingOrder", function()
       AirTaskingOrder.process(makeConfig(), plannerState)
 
       assert.stub(stubCreate).was.called(3)
-      assert.are.equal("AAR-EAST", stubCreate.calls[1].vals[2])
-      assert.are.equal("AAR-WEST", stubCreate.calls[2].vals[2])
-      assert.are.equal("STRIKE-PKG-1", stubCreate.calls[3].vals[2])
+      assert.are.equal("AAR-EAST", stubCreate.calls[1].vals[2].name)
+      assert.are.equal("AAR-WEST", stubCreate.calls[2].vals[2].name)
+      assert.are.equal("STRIKE-PKG-1", stubCreate.calls[3].vals[2].name)
     end)
 
     -- Positive: mission properties assignment
@@ -786,7 +787,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       -- Striker found but escort not found and creation fails
       trackStub(stub(GameApi, "ScenEdit_GetMission").returns(nil))
-      trackStub(stub(GameUtils, "createMission").invokes(function(_, name)
+      trackStub(stub(GameUtils, "createMission").invokes(function(_, params)
+        local name = params.name
         if name == "STRIKE-PKG-1" then return { name = name } end
         return nil
       end))
@@ -981,7 +983,8 @@ describe("AirTaskingOrder", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
-      trackStub(stub(GameUtils, "createMission").invokes(function(_, name)
+      trackStub(stub(GameUtils, "createMission").invokes(function(_, params)
+        local name = params.name
         return { name = name }
       end))
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
@@ -991,11 +994,11 @@ describe("AirTaskingOrder", function()
       AirTaskingOrder.process(makeConfig(), plannerState)
 
       assert.stub(stubAssign).was.called(3)
-      assert.are.equal(4, stubAssign.calls[1].vals[2])
-      assert.are.equal("AAR-EAST", stubAssign.calls[1].vals[5])
-      assert.are.equal(4, stubAssign.calls[2].vals[2])
-      assert.are.equal("AAR-WEST", stubAssign.calls[2].vals[5])
-      assert.are.equal("STRIKE-PKG-1", stubAssign.calls[3].vals[5])
+      assert.are.equal(4, stubAssign.calls[1].vals[1].unitCount)
+      assert.are.equal("AAR-EAST", stubAssign.calls[1].vals[1].missionName)
+      assert.are.equal(4, stubAssign.calls[2].vals[1].unitCount)
+      assert.are.equal("AAR-WEST", stubAssign.calls[2].vals[1].missionName)
+      assert.are.equal("STRIKE-PKG-1", stubAssign.calls[3].vals[1].missionName)
     end)
 
     -- Positive: flight plan for non-striker/non-tanker roles
@@ -1307,7 +1310,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetMission").returns(nil))
 
       local createdMissions = {}
-      trackStub(stub(GameUtils, "createMission").invokes(function(_, name)
+      trackStub(stub(GameUtils, "createMission").invokes(function(_, params)
+        local name = params.name
         local m = { name = name }
         createdMissions[name] = m
         return m
@@ -1362,7 +1366,8 @@ describe("AirTaskingOrder", function()
       trackStub(stub(GameApi, "ScenEdit_GetMission").returns(nil))
 
       local createdMissions = {}
-      trackStub(stub(GameUtils, "createMission").invokes(function(_, name)
+      trackStub(stub(GameUtils, "createMission").invokes(function(_, params)
+        local name = params.name
         local m = { name = name }
         createdMissions[name] = m
         return m

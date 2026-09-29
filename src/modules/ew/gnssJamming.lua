@@ -201,16 +201,13 @@ local function createJammingZone(unit, descriptor, point, sideName)
     area = area
   })
 
-  GameUtils.setUnitEntersAreaEvent(
-    descriptor.zoneName,
-    { TargetSide = enemySideName, TargetType = TARGET_TYPE_WEAPON },
-    area,
-    "GnssJamming.processJamming(config, \\\"" .. sideName .. "\\\")",
-    "add",
-    false,
-    true,
-    true
-  )
+  GameUtils.setUnitEntersAreaEvent({
+    name = descriptor.zoneName,
+    mode = "add",
+    filter = { TargetSide = enemySideName, TargetType = TARGET_TYPE_WEAPON },
+    area = area,
+    script = "GnssJamming.processJamming(config, \\\"" .. sideName .. "\\\")"
+  }, { isRepeatable = true })
 
   return true
 end
@@ -233,7 +230,7 @@ local function removeZoneResources(sideObj, zone, sideName, zoneName)
   end
 
   GameApi.ScenEdit_RemoveZone(sideName, constants.ZONE_TYPES.STANDARD, { Description = myz.description })
-  GameUtils.setUnitEntersAreaEvent(zoneName, {}, {}, "", "remove", false, false, false)
+  GameUtils.setUnitEntersAreaEvent({ name = zoneName, mode = "remove" })
 
   return true
 end
@@ -257,13 +254,12 @@ local function addGnssJammers(jammerDescriptorMap, sideName)
   local report = LogFormat.report(constants.TAGS.GNSS_JAMMING, "side=" .. sideName, "Add GNSS jammers")
 
   for _, descriptor in pairs(jammerDescriptorMap) do
-    local unit, point = GameUtils.tryAddUnit(
-      descriptor.name,
-      descriptor.point.latitude,
-      descriptor.point.longitude,
-      descriptor.randomRadius,
-      constants.PLATFORMS.GPS_JAMMER
-    )
+    local unit, point = GameUtils.tryAddUnit({
+      name = descriptor.name,
+      pos = descriptor.point,
+      randomRadius = descriptor.randomRadius,
+      unitDBID = constants.PLATFORMS.GPS_JAMMER
+    })
 
     if not unit or not point then
       report.add("FAIL", {

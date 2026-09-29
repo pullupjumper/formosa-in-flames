@@ -255,21 +255,22 @@ end
 
 ---Create a new mission with specified parameters and optional EMCON settings
 ---Combines mission creation, configuration, and EMCON setup in a single operation
----@param side string Side name that owns the mission
----@param name string Mission name (must be unique)
----@param type string Mission type (e.g., "Strike", "Patrol", "Ferry")
----@param opts CMO__Mission Mission configuration options
----@param emcon? string Optional EMCON settings string
+---@param sideName string Side name that owns the mission
+---@param params SBJ__MissionCreationParams Mission name, type and configuration options
+---@param opts? SBJ__CreateMissionOpts Optional EMCON settings
 ---@return CMO__Mission|nil # Created mission object, or nil if any step fails
-function GameUtils.createMission(side, name, type, opts, emcon)
-  local mission = GameApi.ScenEdit_AddMission(side, name, type, opts)
+function GameUtils.createMission(sideName, params, opts)
+  local name = params.name
+  local missionOpts = params.opts
+  local emcon = opts and opts.emcon
+  local mission = GameApi.ScenEdit_AddMission(sideName, name, params.type, missionOpts)
 
   if not mission then
     return
   end
 
-  if opts then
-    local result = GameApi.ScenEdit_SetMission(side, name, opts)
+  if missionOpts then
+    local result = GameApi.ScenEdit_SetMission(sideName, name, missionOpts)
 
     if not result then
       return
@@ -289,20 +290,16 @@ end
 
 ---Creates, updates, or removes a "Unit Enters Area" event trigger in the CMO scenario
 ---Sets up event system that executes Lua script when units matching filter enter/exit specified area
----@param name string Event name (must be unique within the scenario)
----@param FilterType table Unit filter criteria (e.g., side name, unit type, or complex filter)
----@param area table Reference point area or area table defining the trigger zone
----@param script string Lua script code to execute when the event triggers
----@param mode string Operation mode: 'add' (create new), 'update' (modify existing), 'remove' (delete)
----@param exit boolean If true, triggers when units EXIT the area; if false, triggers on ENTER
----@param isRepeatable boolean If true, event can trigger multiple times; if false, triggers only once
----@param isActive boolean If true, event is immediately active; if false, event is dormant
+---@param params SBJ__UnitEntersAreaEventParams Event name, mode, filter, area and script
+---@param opts? SBJ__UnitEntersAreaEventOpts Exit / repeatable / active flags
 ---@return boolean # True if operation succeeded, false if any API call failed
-function GameUtils.setUnitEntersAreaEvent(name, FilterType, area, script, mode, exit, isRepeatable, isActive)
-  -- Set default parameter values
-  if isRepeatable == nil then isRepeatable = false end
-  if isActive == nil then isActive = true end
-  if exit == nil then exit = false end
+function GameUtils.setUnitEntersAreaEvent(params, opts)
+  opts = opts or {}
+  local name, mode, area, script = params.name, params.mode, params.area, params.script
+  local filter = params.filter
+  local exit = opts.exit or false
+  local isRepeatable = opts.isRepeatable or false
+  local isActive = opts.isActive ~= false
 
   if mode == "add" then
     -- Create the trigger component that monitors unit movement
@@ -310,7 +307,7 @@ function GameUtils.setUnitEntersAreaEvent(name, FilterType, area, script, mode, 
       description = name .. "",
       mode = "add",
       type = "UnitEntersArea",
-      TargetFilter = FilterType,
+      TargetFilter = filter,
       Area = area,
       ExitArea = exit -- Controls whether this triggers on enter (false) or exit (true)
     })
@@ -342,7 +339,7 @@ function GameUtils.setUnitEntersAreaEvent(name, FilterType, area, script, mode, 
         description = name .. "",
         mode = "update",
         type = "UnitEntersArea",
-        TargetFilter = FilterType,
+        TargetFilter = filter,
         Area = area,
         ExitArea = exit
       })
@@ -364,42 +361,33 @@ end
 
 ---Attempts to add a unit to the scenario with retry logic and random positioning
 ---Retries with different random positions within circular area up to max attempts if creation fails
----@param name string Unique name for the unit to be created
----@param latitude number|string Latitude coordinate of the center point for unit placement
----@param longitude number|string Longitude coordinate of the center point for unit placement
----@param randomRadius number Maximum distance in nautical miles from center point for random placement
----@param unitDBID integer Database ID of the unit type to create (must be valid CMO platform DBID)
----@param attempt? integer Current attempt number (used internally for recursion, defaults to 1)
----@param maxAttempts? number Maximum number of placement attempts before giving up (defaults to 50)
+---@param params SBJ__TryAddUnitParams Unit name, center position, random radius and DBID
+---@param opts? SBJ__TryAddUnitOpts Retry settings
 ---@return CMO__Unit|nil unit The created unit object if successful, nil if all attempts failed
 ---@return CMO__Location|nil point The final position where unit was placed, nil if creation failed
-function GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID, attempt, maxAttempts)
-  attempt = attempt or 1
-  maxAttempts = maxAttempts or 50
+function GameUtils.tryAddUnit(params, opts)
+  local maxAttempts = opts and opts.maxAttempts or 50
 
-  local point = calculateCircularRandomPosition(latitude, longitude, randomRadius)
-  local unit
-
-  if point then
-    unit = GameApi.ScenEdit_AddUnit({
-      type = constants.UNIT_TYPES.FACILITY,
-      unitname = name,
-      dbid = unitDBID,
-      side = constants.SIDES.ENEMY,
-      latitude = point.latitude,
-      longitude = point.longitude,
-      autodetectable = false
-    })
+  for _ = 1, maxAttempts do
+    local point = calculateCircularRandomPosition(params.pos.latitude, params.pos.longitude, params.randomRadius)
+    if point then
+      local unit = GameApi.ScenEdit_AddUnit({
+        type = constants.UNIT_TYPES.FACILITY,
+        unitname = params.name,
+        dbid = params.unitDBID,
+        side = constants.SIDES.ENEMY,
+        latitude = point.latitude,
+        longitude = point.longitude,
+        autodetectable = false
+      })
+      if unit then
+        return unit, point
+      end
+    end
   end
 
-  if unit then
-    return unit, point
-  elseif attempt < maxAttempts then
-    return GameUtils.tryAddUnit(name, latitude, longitude, randomRadius, unitDBID, attempt + 1, maxAttempts)
-  else
-    print("Failed to create jammer unit after " .. maxAttempts .. " attempts: " .. name)
-    return nil, nil
-  end
+  print("Failed to create jammer unit after " .. maxAttempts .. " attempts: " .. params.name)
+  return nil, nil
 end
 
 ---Attempt to create a single unit (with retry mechanism)
