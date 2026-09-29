@@ -128,13 +128,13 @@ local function buildLocationMap(contacts, locationNames)
 end
 
 ---Match contact against airfield-related patterns
----@param description string Contact type description
+---@param contact CMO__Contact Contact to match
 ---@param baseLocationMap table<string, CMO__Location> Map of base locations
----@param guid string Contact GUID
 ---@param threshold number Distance threshold in nautical miles
 ---@param patterns SBJ__AirfieldPatternConfig Airfield pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function findAirfieldTarget(description, baseLocationMap, guid, threshold, patterns)
+local function findAirfieldTarget(contact, baseLocationMap, threshold, patterns)
+  local description, guid = contact.type_description, contact.guid
   local isAirfieldFacility =
       string.find(description, patterns.runwayPattern) or
       string.find(description, patterns.taxiwayPattern) or
@@ -164,13 +164,13 @@ local function findAirfieldTarget(description, baseLocationMap, guid, threshold,
 end
 
 ---Match contact against port-related patterns
----@param description string Contact type description
+---@param contact CMO__Contact Contact to match
 ---@param portLocationMap table<string, CMO__Location> Map of port locations
----@param guid string Contact GUID
 ---@param threshold number Distance threshold in nautical miles
 ---@param patterns SBJ__PortPatternConfig Port pattern configuration
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
-local function findPortTarget(description, portLocationMap, guid, threshold, patterns)
+local function findPortTarget(contact, portLocationMap, threshold, patterns)
+  local description, guid = contact.type_description, contact.guid
   if string.find(description, patterns.pierPattern) then
     for portName, location in pairs(portLocationMap) do
       if isNearby(location, guid, threshold) then
@@ -236,7 +236,7 @@ function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
     local target = nil
 
     -- Try matching airfield targets
-    target = findAirfieldTarget(contact.type_description, baseLocationMap, contact.guid, threshold,
+    target = findAirfieldTarget(contact, baseLocationMap, threshold,
       scanConfig.targetCategories.airfield)
     if target then
       table.insert(targetlist, target)
@@ -244,7 +244,7 @@ function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
     end
 
     -- Try matching port targets
-    target = findPortTarget(contact.type_description, portLocationMap, contact.guid, threshold,
+    target = findPortTarget(contact, portLocationMap, threshold,
       scanConfig.targetCategories.port)
     if target then
       table.insert(targetlist, target)

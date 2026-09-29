@@ -17,17 +17,16 @@ local Cycle = {}
 ---Rows carry only unit-level fields; the caller adds the owning system name.
 ---The failing helper supplies its own reason, so no generic one is invented here.
 ---@param results SBJ__LogResult[] Result list to append to
+---@param command {unit: string, action: string} Unit name and snake_case action token
 ---@param success boolean Whether the command succeeded
 ---@param errorFields table<string, any>|nil Log fields describing the failure
----@param unitName string Unit name
----@param action string Snake_case action token
-local function addCommandResult(results, success, errorFields, unitName, action)
+local function addCommandResult(results, command, success, errorFields)
   if success then
-    table.insert(results, { tag = "OK", fields = { unit = unitName, action = action } })
+    table.insert(results, { tag = "OK", fields = { unit = command.unit, action = command.action } })
     return
   end
 
-  table.insert(results, { tag = "FAIL", fields = LogFormat.merge({ unit = unitName, action = action }, errorFields) })
+  table.insert(results, { tag = "FAIL", fields = LogFormat.merge({ unit = command.unit, action = command.action }, errorFields) })
 end
 
 ---Check if firing unit reload conditions are met
@@ -35,13 +34,12 @@ end
 ---@param systemCfg SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
 ---@param hasMet boolean Whether firing unit has met with resupply unit
 ---@param firingUnit CMO__Unit Firing unit group
----@param weaponDBID number|number[] Weapon database ID(s)
 ---@return boolean # Whether reload conditions are met
-local function isReadyToReloadFiringUnit(firingUnitCtx, systemCfg, hasMet, firingUnit, weaponDBID)
+local function isReadyToReloadFiringUnit(firingUnitCtx, systemCfg, hasMet, firingUnit)
   if firingUnitCtx.reloadStartTime == nil then return false end
   local elapsedTime = GameApi.ScenEdit_CurrentTime() - firingUnitCtx.reloadStartTime
   return elapsedTime >= systemCfg.reloadTime and hasMet and
-      Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, weaponDBID)
+      Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
 end
 
 ---Check if resupply unit reload conditions are met
@@ -99,7 +97,7 @@ local function startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
   -- Stow complete: sufficient ammo -> hide area; low -> reload point
   if not isLowAmmo then
     local success, errorFields = Movement.moveToHideArea(firingUnitCtx, firingUnit)
-    addCommandResult(results, success, errorFields, firingUnitCtx.name, "move_to_hide_area")
+    addCommandResult(results, { unit = firingUnitCtx.name, action = "move_to_hide_area" }, success, errorFields)
     firingUnitCtx.stowStartTime = nil
     return results
   end
@@ -125,7 +123,7 @@ local function startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
         resupplyUnit,
         resupplyUnitCtx.operationalArea.SHRL
       )
-      addCommandResult(results, success, errorFields, resupplyUnitCtx.name, "move_resupply_to_reload_point")
+      addCommandResult(results, { unit = resupplyUnitCtx.name, action = "move_resupply_to_reload_point" }, success, errorFields)
     else
       table.insert(results, {
         tag = "WARN",
@@ -148,7 +146,7 @@ local function startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
   end
 
   local success, errorFields = Movement.moveToReloadPoint(firingUnitCtx, firingUnit)
-  addCommandResult(results, success, errorFields, firingUnitCtx.name, "move_firing_unit_to_reload_point")
+  addCommandResult(results, { unit = firingUnitCtx.name, action = "move_firing_unit_to_reload_point" }, success, errorFields)
   firingUnitCtx.stowStartTime = nil
   return results
 end
@@ -172,8 +170,7 @@ local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firing
   end
 
   local hasMet = Meeting.hasMetResupplyUnit(systemCtx, firingUnit, isAuto)
-  local isReadyToReload = isReadyToReloadFiringUnit(firingUnitCtx, systemCfg, hasMet, firingUnit,
-    firingUnitCtx.weaponDBID)
+  local isReadyToReload = isReadyToReloadFiringUnit(firingUnitCtx, systemCfg, hasMet, firingUnit)
 
   if not isReadyToReload then
     return results
@@ -208,10 +205,10 @@ local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firing
     local success, errorFields
     if systemCtx.name == constants.MISSILE_SYSTEM_TYPES.SAM then
       success, errorFields = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
-      addCommandResult(results, success, errorFields, firingUnitCtx.name, "move_to_firing_point")
+      addCommandResult(results, { unit = firingUnitCtx.name, action = "move_to_firing_point" }, success, errorFields)
     else
       success, errorFields = Movement.moveToHideArea(firingUnitCtx, firingUnit)
-      addCommandResult(results, success, errorFields, firingUnitCtx.name, "move_to_hide_area")
+      addCommandResult(results, { unit = firingUnitCtx.name, action = "move_to_hide_area" }, success, errorFields)
     end
   end
 
@@ -244,7 +241,7 @@ local function startResupplyMovement(resupplyUnitCtx, resupplyUnit, isAuto)
 
   if resupplyUnitCtx.wpnCurrent == 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
     local success, errorFields = Movement.moveToAmmoHoldingArea(resupplyUnitCtx, resupplyUnit)
-    addCommandResult(results, success, errorFields, resupplyUnitCtx.name, "move_to_ammo_holding_area")
+    addCommandResult(results, { unit = resupplyUnitCtx.name, action = "move_to_ammo_holding_area" }, success, errorFields)
   end
 
   return results
@@ -305,7 +302,7 @@ local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx,
 
   if isAuto then
     local success, errorFields = Movement.moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
-    addCommandResult(results, success, errorFields, resupplyUnitCtx.name, "move_resupply_to_reload_point")
+    addCommandResult(results, { unit = resupplyUnitCtx.name, action = "move_resupply_to_reload_point" }, success, errorFields)
   end
 
   return results
