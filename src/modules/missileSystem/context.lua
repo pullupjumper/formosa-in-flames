@@ -58,11 +58,12 @@ end
 ---Fill the default per-system state for every system in config
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
 ---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration
----@param groundForceCtx SBJ__GroundForceContext Ground force state to seed in place
-function Context.ensureGroundForceState(missileSystemTypeConfig, groundForceCtx)
+---@param groundCtx SBJ__GroundContext Ground force state to seed in place
+function Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
+  groundCtx.missileSystemTypes = groundCtx.missileSystemTypes or {}
   for system, _ in pairs(missileSystemTypeConfig) do
     ---@type SBJ__MissileSystemContext
-    local systemCtx = groundForceCtx[system] or {}
+    local systemCtx = groundCtx.missileSystemTypes[system] or {}
     systemCtx.name = system
     if systemCtx.enabled == nil then
       systemCtx.enabled = true
@@ -70,14 +71,14 @@ function Context.ensureGroundForceState(missileSystemTypeConfig, groundForceCtx)
     systemCtx.ammunitions = systemCtx.ammunitions or {}
     systemCtx.resupplyUnits = systemCtx.resupplyUnits or {}
     systemCtx.firingUnits = systemCtx.firingUnits or {}
-    groundForceCtx[system] = systemCtx
+    groundCtx.missileSystemTypes[system] = systemCtx
   end
 end
 
 ---Initialize missile system runtime contexts from configuration
 ---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration
----@param groundForceCtx SBJ__GroundForceContext Ground force runtime context
-function Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+---@param groundCtx SBJ__GroundContext Ground force runtime context
+function Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
   for system, systemConfig in pairs(missileSystemTypeConfig) do
     ---@cast systemConfig SBJ__MissileSystemConfig
     local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
@@ -85,7 +86,7 @@ function Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceC
       ---@type SBJ__FiringUnitContext
       local ctx = descriptor
       ctx.reloadStartTime = nil
-      groundForceCtx[system].firingUnits[ctx.name] = ctx
+      groundCtx.missileSystemTypes[system].firingUnits[ctx.name] = ctx
     end
 
     local resupplyUnitMap = Utils.deepCopy(systemConfig.resupplyUnits)
@@ -93,14 +94,14 @@ function Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceC
       ---@type SBJ__ResupplyUnitContext
       local ctx = descriptor
       ctx.reloadStartTime = nil
-      groundForceCtx[system].resupplyUnits[ctx.name] = ctx
+      groundCtx.missileSystemTypes[system].resupplyUnits[ctx.name] = ctx
     end
 
     local ammunitionMap = Utils.deepCopy(systemConfig.ammunitions)
     for _, descriptor in pairs(ammunitionMap) do
       ---@type SBJ__AmmunitionContext
       local ctx = descriptor
-      groundForceCtx[system].ammunitions[ctx.name] = ctx
+      groundCtx.missileSystemTypes[system].ammunitions[ctx.name] = ctx
     end
   end
 end

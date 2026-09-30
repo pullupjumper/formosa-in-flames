@@ -38,7 +38,7 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `processSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 補給資產戰損後同步修正庫存 |
-| `initMissileSystemContexts` | `missileSystemTypeConfig, groundForceCtx` | `nil` | 初始化 runtime context |
+| `initMissileSystemContexts` | `missileSystemTypeConfig, groundCtx` | `nil` | 初始化 runtime context |
 
 ---
 

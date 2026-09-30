@@ -215,16 +215,16 @@ describe("MissileSystem Context", function()
   end)
 
   -- ============================================================================
-  -- ensureGroundForceState
+  -- ensureGroundState
   -- ============================================================================
 
-  describe("ensureGroundForceState", function()
+  describe("ensureGroundState", function()
     -- Positive: every configured system gets its full default state; timers stay in config
     it("should create default state for each configured system", function()
       local missileSystemTypeConfig = { srbm = { reloadTime = 300, stowTime = 60 } }
-      local groundForceCtx = {}
+      local groundCtx = {}
 
-      Context.ensureGroundForceState(missileSystemTypeConfig, groundForceCtx)
+      Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
 
       assert.are.same({
         name = "srbm",
@@ -232,7 +232,7 @@ describe("MissileSystem Context", function()
         ammunitions = {},
         resupplyUnits = {},
         firingUnits = {},
-      }, groundForceCtx.srbm)
+      }, groundCtx.missileSystemTypes.srbm)
     end)
 
     -- Positive: extras seeded elsewhere (Taiwan ascm.test) must survive seeding
@@ -240,23 +240,23 @@ describe("MissileSystem Context", function()
       local test = { isAntishipMissionActivated = false }
       local firingUnits = { ["FU-1"] = { name = "FU-1" } }
       local missileSystemTypeConfig = { ascm = { reloadTime = 1, stowTime = 1 } }
-      local groundForceCtx = { ascm = { test = test, enabled = false, firingUnits = firingUnits } }
+      local groundCtx = { missileSystemTypes = { ascm = { test = test, enabled = false, firingUnits = firingUnits } } }
 
-      Context.ensureGroundForceState(missileSystemTypeConfig, groundForceCtx)
+      Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
 
-      assert.are.equal(test, groundForceCtx.ascm.test)
-      assert.is_false(groundForceCtx.ascm.enabled)
-      assert.are.equal(firingUnits, groundForceCtx.ascm.firingUnits)
+      assert.are.equal(test, groundCtx.missileSystemTypes.ascm.test)
+      assert.is_false(groundCtx.missileSystemTypes.ascm.enabled)
+      assert.are.equal(firingUnits, groundCtx.missileSystemTypes.ascm.firingUnits)
     end)
 
     -- Negative: side-level keys that are not systems are left alone
     it("should not touch ground keys absent from config", function()
       local missileSystemTypeConfig = {}
-      local groundForceCtx = { enabled = true, fireSupportPlan = {} }
+      local groundCtx = { enabled = true, fireSupportPlan = {} }
 
-      Context.ensureGroundForceState(missileSystemTypeConfig, groundForceCtx)
+      Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
 
-      assert.are.same({ enabled = true, fireSupportPlan = {} }, groundForceCtx)
+      assert.are.same({ enabled = true, fireSupportPlan = {}, missileSystemTypes = {} }, groundCtx)
     end)
   end)
 
@@ -276,13 +276,15 @@ describe("MissileSystem Context", function()
           ammunitions = {}
         }
       }
-      local groundForceCtx = {
-        system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      local groundCtx = {
+        missileSystemTypes = {
+          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+        }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
 
-      local ctx = groundForceCtx.system1.firingUnits["FU-1"]
+      local ctx = groundCtx.missileSystemTypes.system1.firingUnits["FU-1"]
       assert.is_not_nil(ctx)
       assert.are.equal("FU-1", ctx.name)
       assert.is_nil(ctx.reloadStartTime)
@@ -299,13 +301,15 @@ describe("MissileSystem Context", function()
           ammunitions = {}
         }
       }
-      local groundForceCtx = {
-        system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      local groundCtx = {
+        missileSystemTypes = {
+          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+        }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
 
-      local ctx = groundForceCtx.system1.resupplyUnits["RU-1"]
+      local ctx = groundCtx.missileSystemTypes.system1.resupplyUnits["RU-1"]
       assert.is_not_nil(ctx)
       assert.are.equal("RU-1", ctx.name)
       assert.is_nil(ctx.reloadStartTime)
@@ -322,13 +326,15 @@ describe("MissileSystem Context", function()
           }
         }
       }
-      local groundForceCtx = {
-        system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      local groundCtx = {
+        missileSystemTypes = {
+          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+        }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
 
-      local ctx = groundForceCtx.system1.ammunitions["Ammo-1"]
+      local ctx = groundCtx.missileSystemTypes.system1.ammunitions["Ammo-1"]
       assert.is_not_nil(ctx)
       assert.are.equal("Ammo-1", ctx.name)
       assert.are.equal(50, ctx.wpnCurrent)
@@ -345,13 +351,15 @@ describe("MissileSystem Context", function()
           ammunitions = {}
         }
       }
-      local groundForceCtx = {
-        system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      local groundCtx = {
+        missileSystemTypes = {
+          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+        }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
 
-      groundForceCtx.system1.firingUnits["FU-1"].operationalArea.name = "CHANGED"
+      groundCtx.missileSystemTypes.system1.firingUnits["FU-1"].operationalArea.name = "CHANGED"
       assert.are.equal("OA-1", missileSystemTypeConfig.system1.firingUnits.fu1.operationalArea.name)
     end)
 
@@ -369,15 +377,17 @@ describe("MissileSystem Context", function()
           ammunitions = {}
         }
       }
-      local groundForceCtx = {
-        sysA = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-        sysB = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      local groundCtx = {
+        missileSystemTypes = {
+          sysA = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
+          sysB = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+        }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
 
-      assert.is_not_nil(groundForceCtx.sysA.firingUnits["A"])
-      assert.is_not_nil(groundForceCtx.sysB.resupplyUnits["B"])
+      assert.is_not_nil(groundCtx.missileSystemTypes.sysA.firingUnits["A"])
+      assert.is_not_nil(groundCtx.missileSystemTypes.sysB.resupplyUnits["B"])
     end)
   end)
 end)

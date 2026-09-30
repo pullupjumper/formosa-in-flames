@@ -47,10 +47,11 @@ saveData.c.gnssJamming.jammers = {}
 
 -- ============================================================================
 -- Ground Forces (China)
--- Per-system missile state is seeded by MissileSystem.ensureGroundForceState
+-- Per-system missile state is seeded by MissileSystem.ensureGroundState
 -- ============================================================================
 
 saveData.c.ground = {}
+saveData.c.ground.missileSystemTypes = {}
 
 
 -- ============================================================================
@@ -125,13 +126,14 @@ saveData.c.repairRunway.runways = {}
 
 -- ============================================================================
 -- Ground Forces (Taiwan)
--- Per-system missile state is seeded by MissileSystem.ensureGroundForceState
+-- Per-system missile state is seeded by MissileSystem.ensureGroundState
 -- ============================================================================
 
 saveData.t.ground = {}
 saveData.t.ground.enabled = true
-saveData.t.ground.ascm = {}
-saveData.t.ground.ascm.test = {
+saveData.t.ground.missileSystemTypes = {}
+saveData.t.ground.missileSystemTypes.ascm = {}
+saveData.t.ground.missileSystemTypes.ascm.test = {
   isAntishipMissionActivated = false,
   nai1 = constants.AREAS.groundAscmTestNai1,
   nai2 = constants.AREAS.groundAscmTestNai2,

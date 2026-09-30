@@ -19,7 +19,7 @@ local function setAntiShipMissionStartTime()
 end
 
 PersistentState.update(function(saveData)
-  local trigger = PersistentState.groundForces(saveData, constants.SIDES.PLAYER).ascm.test
+  local trigger = PersistentState.ground(saveData, constants.SIDES.PLAYER).missileSystemTypes.ascm.test
 
   if trigger.isAntishipMissionActivated == false and contacts ~= nil then
     for _, value in ipairs(contacts) do

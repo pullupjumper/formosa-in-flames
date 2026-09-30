@@ -353,12 +353,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Global configuration data structure
 ---@class SBJ__Config: table
+---@field version string Version of the game
 ---@field isDevMode boolean Development mode flag
 ---@field isSaved boolean Save game flag
 ---@field difficulty string Difficulty level
 ---@field logging SBJ__LoggingConfig Logging configuration
 ---@field aircraftReadySec number Ready time for aircraft after landing and for package templates (seconds)
----@field missileSystemState table<string, integer> Battery state enumeration
 ---@field c SBJ__ChinaConfig China faction configuration
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
 ---@field u SBJ__USConfig US faction configuration
@@ -389,7 +389,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field iads SBJ__IADSContext Integrated Air Defense System context
 ---@field commsJamming SBJ__CommsJammingContext Communications jamming context
 ---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
----@field ground SBJ__StrikingGroundForceContext Ground force systems context with fire support
+---@field ground SBJ__StrikingGroundContext Ground force systems context with fire support
 ---@field recon SBJ__ReconContext Reconnaissance operations context
 ---@field air SBJ__AirOperationsContext Air operations context
 ---@field amphibOps SBJ__AmphibOpsContext Amphibious operations context
@@ -400,7 +400,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Taiwan faction saved data structure
 ---@class SBJ__TaiwanSaveData: table
----@field ground SBJ__GroundForceContext Ground force systems context
+---@field ground SBJ__GroundContext Ground force systems context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air { landBased: SBJ__LandBasedPlatformContext } Air operations context
@@ -997,9 +997,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of context wpnCurrent/wpnDefault)
 ---@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + ammo
 
----Ground force context base - common missile systems for all ground operations
----@class SBJ__GroundForceContext: table
----@field enabled boolean Whether ground force systems are activated
+---Per-type missile system runtime state, keyed by missile system type
+---@class SBJ__MissileSystemTypeContext: table
 ---@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
 ---@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
 ---@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system
@@ -1007,9 +1006,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
 ---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system
 
----Ground force context with fire support - for strike operations (China/Taiwan)
+---Ground context base - common missile systems for all ground operations
+---@class SBJ__GroundContext: table
+---@field enabled boolean Whether ground force systems are activated
+---@field missileSystemTypes SBJ__MissileSystemTypeContext Missile system runtime state by type
+
+---Ground context with fire support - for strike operations (China/Taiwan)
 ---Extends base context with dynamic fire support execution matrices
----@class SBJ__StrikingGroundForceContext: SBJ__GroundForceContext
+---@class SBJ__StrikingGroundContext: SBJ__GroundContext
 ---@field fireSupportPlan table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices (always initialized)
 
 ---Optional unit property overrides for ground units
@@ -1602,7 +1606,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field recon SBJ__ReconContext China recon context
 ---@field dynamicOperations SBJ__DynamicOperationsContext Recon-triggered batches and generated operation names
 ---@field air SBJ__AirOperationsContext China air operations, including the ATO
----@field ground SBJ__StrikingGroundForceContext China ground forces, including the FSP
+---@field ground SBJ__StrikingGroundContext China ground forces, including the FSP
 ---@field lacm SBJ__LACMContext CSG land-attack cruise missile state
 ---@field slcm SBJ__SLCMContext Submarine-launched cruise missile state
 ---@field fireSupportOnHold boolean Landing ops hold on SRBM fire support, read at slice time
@@ -1611,7 +1615,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__LandingOpsState: table
 ---@field amphibOps SBJ__AmphibOpsContext China amphibious operations context
 ---@field recon SBJ__ReconContext China recon context the Taoyuan setup queues GJ-11 recon into
----@field ground SBJ__GroundForceContext China ground forces the fire support gate reads SRBM ammo from
+---@field ground SBJ__GroundContext China ground forces the fire support gate reads SRBM ammo from
 
 ---State slices read and mutated by one comms jamming cycle
 ---@class SBJ__CommsJammingState: table

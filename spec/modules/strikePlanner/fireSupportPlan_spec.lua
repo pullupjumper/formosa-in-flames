@@ -69,12 +69,14 @@ describe("FireSupportPlan", function()
     return {
       ground = {
         fireSupportPlan = { [matrix.name] = matrix },
-        srbm = {
-          firingUnits = {
-            ["Battery-1"] = {
-              state = overrides.firingUnitState or constants.MISSILE_SYSTEM_STATE.HIDE,
-              ammoThreshold = 40,
-              weaponDBID = 3104
+        missileSystemTypes = {
+          srbm = {
+            firingUnits = {
+              ["Battery-1"] = {
+                state = overrides.firingUnitState or constants.MISSILE_SYSTEM_STATE.HIDE,
+                ammoThreshold = 40,
+                weaponDBID = 3104
+              }
             }
           }
         }
@@ -167,7 +169,7 @@ describe("FireSupportPlan", function()
       FireSupportPlan.process(plannerState)
 
       assert.stub(stubSend).was.called(1)
-      assert.stub(stubSend).was.called_with(plannerState.ground.srbm.firingUnits["Battery-1"], mockUnit)
+      assert.stub(stubSend).was.called_with(plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"], mockUnit)
     end)
 
     -- Positive: all units at firing point
@@ -206,7 +208,7 @@ describe("FireSupportPlan", function()
     -- Boundary: a unit without runtime context is dropped like a destroyed one
     it("should remove a firing unit that has no runtime context", function()
       local plannerState = makePlannerState({})
-      plannerState.ground.srbm.firingUnits["Battery-1"] = nil
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"] = nil
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "UNIT-1", name = "Battery-1" }))
       local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint"))
@@ -238,7 +240,7 @@ describe("FireSupportPlan", function()
       local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -269,7 +271,7 @@ describe("FireSupportPlan", function()
       local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -310,7 +312,7 @@ describe("FireSupportPlan", function()
           ammoPerTarget = 1
         }
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -364,7 +366,7 @@ describe("FireSupportPlan", function()
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
         firingUnits = firingUnits
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -447,7 +449,7 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.process(plannerState)
 
-      assert.are.equal(5000, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(5000, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Negative: SAM strike does not stamp stowStartTime
@@ -456,7 +458,7 @@ describe("FireSupportPlan", function()
         missileSystemType = "SAM",
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC
       })
-      plannerState.ground.sam = {
+      plannerState.ground.missileSystemTypes.sam = {
         firingUnits = {
           ["Battery-1"] = {
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -473,7 +475,7 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.process(plannerState)
 
-      assert.is_nil(plannerState.ground.sam.firingUnits["Battery-1"].stowStartTime)
+      assert.is_nil(plannerState.ground.missileSystemTypes.sam.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Negative: zero-result strike leaves stowStartTime untouched
@@ -487,13 +489,13 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.process(plannerState)
 
-      assert.is_nil(plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.is_nil(plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Boundary: existing stowStartTime is preserved
     it("should not overwrite existing stowStartTime when strike succeeds", function()
       local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
-      plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime = 1000
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime = 1000
       currentTimeStub.returns(5000)
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -502,7 +504,7 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.process(plannerState)
 
-      assert.are.equal(1000, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(1000, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
 
     -- Boundary: every firing unit in a multi-unit task gets stowStartTime
@@ -511,7 +513,7 @@ describe("FireSupportPlan", function()
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC,
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -528,8 +530,8 @@ describe("FireSupportPlan", function()
 
       FireSupportPlan.process(plannerState)
 
-      assert.are.equal(7777, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
-      assert.are.equal(7777, plannerState.ground.srbm.firingUnits["Battery-2"].stowStartTime)
+      assert.are.equal(7777, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
+      assert.are.equal(7777, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"].stowStartTime)
     end)
   end)
 
@@ -737,7 +739,7 @@ describe("FireSupportPlan", function()
       local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.STATIC,
         ammoThreshold = 40,
         weaponDBID = 3104
@@ -764,7 +766,7 @@ describe("FireSupportPlan", function()
       local plannerState = makePlannerState({
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
-      plannerState.ground.srbm.firingUnits["Battery-2"] = {
+      plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_SYSTEM_STATE.HIDE,
         ammoThreshold = 40,
         weaponDBID = 3104

@@ -193,21 +193,21 @@ saveData.c.ground
 | `task.isFinished` | write | `startFireSupportTasks()` 在成功發射後標記完成。 |
 | `matrix.isFinished` | write | `process()` 在所有 FST 完成後標記 FSEM 完成。 |
 | `task.target.list` | read | `startFireSupportTasks()` 交給 `AttackManager.attackContacts()` 作為目標 GUID 清單。 |
-| `saveData.c.ground.<system>.firingUnits.<name>.stowStartTime` | write | 非 SAM 任務成功發射後啟動 stow 倒數。 |
+| `saveData.c.ground.missileSystemTypes.<system>.firingUnits.<name>.stowStartTime` | write | 非 SAM 任務成功發射後啟動 stow 倒數。 |
 
 ---
 
 ## `config` 參考
 
-`fireSupportPlan.lua` 不直接 `require("src.core.config")`，但它讀寫的 `saveData.c.ground.<system>` 由 `src/core/saveData.lua` 依 `config.c.ground.*` 初始化。
+`fireSupportPlan.lua` 不直接 `require("src.core.config")`，但它讀寫的 `saveData.c.ground.missileSystemTypes.<system>` 由 `src/core/saveData.lua` 依 `config.c.ground.*` 初始化。
 
 | config 路徑 | 間接用途 |
 |---|---|
 | `config.logging.modules[constants.TAGS.GROUND]` | 控制 `constants.TAGS.GROUND` 日誌是否 verbose。 |
-| `config.c.ground.<system>.reloadTime` | 初始化 `saveData.c.ground.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
-| `config.c.ground.<system>.stowTime` | 初始化 `saveData.c.ground.<system>.stowTime`，供打擊後 stow 視窗使用。 |
-| `config.c.ground.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitContext` 後由 `MissileSystem.isLowAmmo()` 使用。 |
-| `config.c.ground.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitContext` 後用於彈量檢查與發射單元武器設定。 |
+| `config.c.ground.missileSystemTypes.<system>.reloadTime` | 初始化 `saveData.c.ground.missileSystemTypes.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
+| `config.c.ground.missileSystemTypes.<system>.stowTime` | 初始化 `saveData.c.ground.missileSystemTypes.<system>.stowTime`，供打擊後 stow 視窗使用。 |
+| `config.c.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitContext` 後由 `MissileSystem.isLowAmmo()` 使用。 |
+| `config.c.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitContext` 後用於彈量檢查與發射單元武器設定。 |
 | `config.c.fireSupportTaskTemplates.*.target.minTargetCount` | 上游 `fsemBuilder` 建立 FSEM 前用來過濾目標數不足的 FST；本模組執行時不直接讀取。 |
 | `config.c.fireSupportTaskTemplates.*.target.ammoPerTarget` | 進入 executable FST 後成為 `task.target.ammoPerTarget`，本模組傳給 `AttackManager.attackContacts()` 的 `qty`。 |
 

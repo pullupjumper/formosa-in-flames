@@ -164,8 +164,10 @@ describe("MissileSystem", function()
       local srbmConfig = { reloadTime = 300 }
       local mrbmConfig = { reloadTime = 600 }
       local groundCtx = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
-        [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
+        missileSystemTypes = {
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
+        }
       }
       local missileSystemTypeConfig = {
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig,
@@ -189,9 +191,11 @@ describe("MissileSystem", function()
       local mrbmCtx = { enabled = true, id = "mrbm" }
       local mlrsCtx = { enabled = false, id = "mlrs" }
       local groundCtx = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
-        [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
-        [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsCtx,
+        missileSystemTypes = {
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsCtx,
+        }
       }
       local missileSystemTypeConfig = {}
 
@@ -225,7 +229,7 @@ describe("MissileSystem", function()
 
     -- Positive: the log names the run mode so auto and manual sides can be told apart
     it("should report the run mode in the log", function()
-      local groundCtx = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true } }
+      local groundCtx = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true } } }
       local missileSystemTypeConfig = {}
       trackStub(Cycle, "process").returns({ { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } })
 
@@ -239,7 +243,9 @@ describe("MissileSystem", function()
     it("should log reload cycle failures through Logger.error", function()
       local srbmCtx = { enabled = true, id = "srbm" }
       local groundCtx = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+        missileSystemTypes = {
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+        }
       }
       local missileSystemTypeConfig = {}
 
@@ -264,8 +270,10 @@ describe("MissileSystem", function()
       local srbmCtx = { enabled = true }
       local srbmConfig = { reloadTime = 300 }
       local groundCtx = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
-        [constants.MISSILE_SYSTEM_TYPES.MRBM] = { enabled = false },
+        missileSystemTypes = {
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.MRBM] = { enabled = false },
+        }
       }
       local missileSystemTypeConfig = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig }
 
@@ -372,16 +380,16 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- ensureGroundForceState
+  -- ensureGroundState
   -- ============================================================================
 
-  describe("ensureGroundForceState", function()
+  describe("ensureGroundState", function()
     -- Positive: the side's own config seeds the side's own slice
     it("should seed the side's slice from the side's ground config", function()
       local config, saveData = makeSides()
-      local seedStub = trackStub(Context, "ensureGroundForceState")
+      local seedStub = trackStub(Context, "ensureGroundState")
 
-      MissileSystem.ensureGroundForceState(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.ensureGroundState(config, saveData, constants.SIDES.PLAYER)
 
       assert.stub(seedStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
     end)
@@ -457,7 +465,9 @@ describe("MissileSystem", function()
       local event = { triggers = { { UnitEntersArea = { Description = "(China) Arrive in HA - 1 - AreaA" } } } }
       local firingUnitCtx = { name = "FU1" }
       saveData.c.ground = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = {} }
+        missileSystemTypes = {
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = {} }
+        }
       }
       local contact = { actualunitid = unit.guid, DropContact = function() end }
       local dropContactStub = trackStub(contact, "DropContact")
@@ -479,7 +489,7 @@ describe("MissileSystem", function()
       local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in AHA - 1 - AreaA" } } } }
 
       local systemCtx = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
-      saveData.t.ground = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemCtx }
+      saveData.t.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemCtx } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
       trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
@@ -499,16 +509,18 @@ describe("MissileSystem", function()
 
     local function makeGroundCtx()
       return {
-        srbm = {
-          firingUnits = {
-            ["FU-Static"] = { name = "FU-Static", state = STATE.STATIC },
-            ["FU-Hide"] = { name = "FU-Hide", state = STATE.HIDE },
-            ["FU-Stowing"] = { name = "FU-Stowing", state = STATE.STATIC, stowStartTime = 500 },
-          }
-        },
-        sam = {
-          firingUnits = {
-            ["SAM-1"] = { name = "SAM-1", state = STATE.STATIC },
+        missileSystemTypes = {
+          srbm = {
+            firingUnits = {
+              ["FU-Static"] = { name = "FU-Static", state = STATE.STATIC },
+              ["FU-Hide"] = { name = "FU-Hide", state = STATE.HIDE },
+              ["FU-Stowing"] = { name = "FU-Stowing", state = STATE.STATIC, stowStartTime = 500 },
+            }
+          },
+          sam = {
+            firingUnits = {
+              ["SAM-1"] = { name = "SAM-1", state = STATE.STATIC },
+            }
           }
         }
       }
@@ -525,8 +537,8 @@ describe("MissileSystem", function()
 
       MissileSystem.startStow(groundCtx, "SRBM", firingUnits)
 
-      assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
-      assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
+      assert.are.equal(9000, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.are.equal(9000, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
     end)
 
     -- Boundary: a running countdown is preserved
@@ -536,7 +548,7 @@ describe("MissileSystem", function()
 
       MissileSystem.startStow(groundCtx, "srbm", firingUnits)
 
-      assert.are.equal(500, groundCtx.srbm.firingUnits["FU-Stowing"].stowStartTime)
+      assert.are.equal(500, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Stowing"].stowStartTime)
     end)
 
     -- Boundary: onlyDeployed leaves units still in their hide area alone
@@ -546,8 +558,8 @@ describe("MissileSystem", function()
 
       MissileSystem.startStow(groundCtx, "SRBM", firingUnits, { onlyDeployed = true })
 
-      assert.are.equal(9000, groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
-      assert.is_nil(groundCtx.srbm.firingUnits["FU-Hide"].stowStartTime)
+      assert.are.equal(9000, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.is_nil(groundCtx.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
     end)
 
     -- Negative: SAM never stows
@@ -557,7 +569,7 @@ describe("MissileSystem", function()
 
       MissileSystem.startStow(groundCtx, "SAM", firingUnits)
 
-      assert.is_nil(groundCtx.sam.firingUnits["SAM-1"].stowStartTime)
+      assert.is_nil(groundCtx.missileSystemTypes.sam.firingUnits["SAM-1"].stowStartTime)
     end)
 
     -- Negative: unknown units, unknown systems and missing inputs are ignored
@@ -572,7 +584,7 @@ describe("MissileSystem", function()
         MissileSystem.startStow(groundCtx, nil, staticUnits)
         MissileSystem.startStow(groundCtx, "SRBM", nil)
       end)
-      assert.is_nil(groundCtx.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.is_nil(groundCtx.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
     end)
   end)
 
@@ -591,11 +603,13 @@ describe("MissileSystem", function()
         }
       }
       local saveData = {
-        c = { ground = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } },
+        c = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } },
         t = {
           ground = {
-            mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
-            srbm = srbmCtx,
+            missileSystemTypes = {
+              mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
+              srbm = srbmCtx,
+            },
           },
         },
       }
@@ -617,7 +631,7 @@ describe("MissileSystem", function()
 
     -- Negative: a unit no system tracks is ignored without logging
     it("should return false and stay silent for an untracked unit", function()
-      local saveData = { c = { ground = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } }
+      local saveData = { c = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } } }
       local unit = { name = "Random Truck", side = constants.SIDES.ENEMY }
 
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
@@ -651,7 +665,7 @@ describe("MissileSystem", function()
 
   describe("getFiringUnitContext", function()
     local function makeGroundCtx()
-      return { srbm = { firingUnits = { FU1 = { name = "FU1" } } } }
+      return { missileSystemTypes = { srbm = { firingUnits = { FU1 = { name = "FU1" } } } } }
     end
 
     -- Positive: the system name is matched in any case
@@ -660,7 +674,7 @@ describe("MissileSystem", function()
 
       local firingUnitCtx = MissileSystem.getFiringUnitContext(groundCtx, "SRBM", "FU1")
 
-      assert.are.equal(groundCtx.srbm.firingUnits.FU1, firingUnitCtx)
+      assert.are.equal(groundCtx.missileSystemTypes.srbm.firingUnits.FU1, firingUnitCtx)
     end)
 
     -- Negative: an unknown unit resolves to nothing
@@ -682,7 +696,7 @@ describe("MissileSystem", function()
     -- Positive: delegates with the system context picked from groundCtx
     it("should report inventory for the requested system", function()
       local srbmCtx = { name = "srbm" }
-      local groundCtx = { srbm = srbmCtx }
+      local groundCtx = { missileSystemTypes = { srbm = srbmCtx } }
 
       local inventoryStub = trackStub(Ammo, "getInventory").returns({ total = { percentage = 80 } })
 
@@ -695,7 +709,7 @@ describe("MissileSystem", function()
 
     -- Negative: absent system yields nil
     it("should return nil when the system is absent", function()
-      local groundCtx = {}
+      local groundCtx = { missileSystemTypes = {} }
       assert.is_nil(MissileSystem.getAmmoInventory(groundCtx, "srbm", "China"))
     end)
   end)
@@ -749,7 +763,7 @@ describe("MissileSystem", function()
     end
 
     local function groundCtxWith(systemCtx)
-      return { [SYSTEM_KEY] = systemCtx }
+      return { missileSystemTypes = { [SYSTEM_KEY] = systemCtx } }
     end
 
     ---Fire UnitEntersArea for the unit's side, with that side's slice and policy built from params
@@ -1366,7 +1380,7 @@ describe("MissileSystem", function()
     -- Positive: layouts are applied first, then zones, units and state are rebuilt in order
     it("should apply layouts, then rebuild triggers, units and contexts in order", function()
       local missileSystemTypeConfig = {}
-      local groundForceCtx = {}
+      local groundCtx = {}
       local layouts = { { category = "srbm", unitname = "FU-1", operationalArea = { name = "#NEW" } } }
       local newAreas = { { name = "#NEW" } }
       local oldAreas = { { name = "OPAREA-OLD" } }
@@ -1386,7 +1400,7 @@ describe("MissileSystem", function()
         table.insert(calls, "initMissileSystemContexts")
       end)
 
-      MissileSystem.redeploy(missileSystemTypeConfig, groundForceCtx, "Taiwan", layouts)
+      MissileSystem.redeploy(missileSystemTypeConfig, groundCtx, "Taiwan", layouts)
 
       assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
@@ -1396,7 +1410,7 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, "Taiwan")
       assert.stub(addStub).was.called_with(missileSystemTypeConfig, "Taiwan")
-      assert.stub(contextStub).was.called_with(missileSystemTypeConfig, groundForceCtx)
+      assert.stub(contextStub).was.called_with(missileSystemTypeConfig, groundCtx)
     end)
   end)
 end)

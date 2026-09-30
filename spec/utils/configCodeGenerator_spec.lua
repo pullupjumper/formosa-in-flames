@@ -74,7 +74,8 @@ describe("ConfigCodeGenerator", function()
 
     -- Boundary: entries without firingUnits are skipped
     it("should skip entries that have no firingUnits", function()
-      local _, _, configStr = ConfigCodeGenerator.format("China", { policy = { isAuto = true } })
+      local config = { policy = { isAuto = true } }
+      local _, _, configStr = ConfigCodeGenerator.format("China", config)
 
       assert.are.equal("", configStr)
     end)

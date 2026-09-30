@@ -13,8 +13,8 @@ local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 
 if config.isSaved then
-  MissileSystem.ensureGroundForceState(config, saveData, constants.SIDES.ENEMY)
-  MissileSystem.ensureGroundForceState(config, saveData, constants.SIDES.PLAYER)
+  MissileSystem.ensureGroundState(config, saveData, constants.SIDES.ENEMY)
+  MissileSystem.ensureGroundState(config, saveData, constants.SIDES.PLAYER)
   PersistentState.reset(saveData)
 end
 

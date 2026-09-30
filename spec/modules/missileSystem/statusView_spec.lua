@@ -42,13 +42,15 @@ describe("MissileSystem StatusView", function()
   ---@return table
   local function makeGroundCtx(firingUnitCtx, resupplyUnitCtx)
     return {
-      srbm = {
-        firingUnits = { ["FU-1"] = firingUnitCtx or makeFiringUnitCtx() },
-        resupplyUnits = {
-          ["RS-1"] = resupplyUnitCtx or makeResupplyUnitCtx(),
-          ["RS-2"] = makeResupplyUnitCtx({ name = "RS-2" })
-        },
-        ammunitions = { ["AHA-1"] = { wpnCurrent = 12 } }
+      missileSystemTypes = {
+        srbm = {
+          firingUnits = { ["FU-1"] = firingUnitCtx or makeFiringUnitCtx() },
+          resupplyUnits = {
+            ["RS-1"] = resupplyUnitCtx or makeResupplyUnitCtx(),
+            ["RS-2"] = makeResupplyUnitCtx({ name = "RS-2" })
+          },
+          ammunitions = { ["AHA-1"] = { wpnCurrent = 12 } }
+        }
       }
     }
   end

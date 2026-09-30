@@ -122,7 +122,7 @@ flowchart TD
 
 - **單調釋放**：phase 機只往前推進，「所有 zone 到位」一旦達成即永久釋放，不會在 HOLD/RESUME 間反覆 toggle
 - **省一次查詢**：已 `fireSupportOnHold=true` 時直接 return，避免重複呼叫 `getAmmoInventory`
-- **防禦性**：`saveData.c.ground.srbm` 缺失時靜默 return（測試保存或部分初始化情境）
+- **防禦性**：`saveData.c.ground.missileSystemTypes.srbm` 缺失時靜默 return（測試保存或部分初始化情境）
 
 ### 已抵達狀態定義
 

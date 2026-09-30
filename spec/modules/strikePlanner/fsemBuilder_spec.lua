@@ -109,9 +109,11 @@ describe("FsemBuilder", function()
     local plannerState = {
       ground = {
         fireSupportPlan = {},
-        srbm = {
-          firingUnits = {
-            ["Battery-1"] = makeBatteryContext()
+        missileSystemTypes = {
+          srbm = {
+            firingUnits = {
+              ["Battery-1"] = makeBatteryContext()
+            }
           }
         }
       },
@@ -129,7 +131,7 @@ describe("FsemBuilder", function()
         plannerState.ground.fireSupportPlan = overrides.fireSupportPlan
       end
       if overrides.srbmFiringUnits then
-        plannerState.ground.srbm.firingUnits = overrides.srbmFiringUnits
+        plannerState.ground.missileSystemTypes.srbm.firingUnits = overrides.srbmFiringUnits
       end
       if overrides.reconTriggeredOperationBatches then
         plannerState.dynamicOperations.reconTriggeredOperationBatches = overrides.reconTriggeredOperationBatches
@@ -970,7 +972,7 @@ describe("FsemBuilder", function()
         assert.is_true(matrix.isFinished)
         -- Retired, not deleted: the matrix stays in the FSP for name uniqueness checks
         assert.are.equal(1, countMatrices(plannerState.ground.fireSupportPlan))
-        assert.are.equal(currentTime, plannerState.ground.srbm.firingUnits["Battery-1"].stowStartTime)
+        assert.are.equal(currentTime, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
 
         assert.is_true(hasLogCall("%[WARN%]"))
         assert.is_true(hasLogCall("matrix=STALE%-FSEM"))
@@ -1052,8 +1054,8 @@ describe("FsemBuilder", function()
           },
           reconTriggeredOperationBatches = { reconEntry }
         })
-        plannerState.ground.srbm.firingUnits["Battery-P"].stowStartTime = 500
-        plannerState.ground.sam = {
+        plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-P"].stowStartTime = 500
+        plannerState.ground.missileSystemTypes.sam = {
           firingUnits = {
             ["Sam-1"] = makeBatteryContext({ name = "Sam-1", state = constants.MISSILE_SYSTEM_STATE.STATIC })
           }
@@ -1066,13 +1068,13 @@ describe("FsemBuilder", function()
         FsemBuilder.build(config, plannerState, {})
 
         assert.is_true(matrix.isFinished)
-        local srbmUnits = plannerState.ground.srbm.firingUnits
+        local srbmUnits = plannerState.ground.missileSystemTypes.srbm.firingUnits
         assert.are.equal(currentTime, srbmUnits["Battery-S"].stowStartTime)
         assert.are.equal(currentTime, srbmUnits["Battery-R"].stowStartTime)
         assert.is_nil(srbmUnits["Battery-H"].stowStartTime)
         assert.are.equal(500, srbmUnits["Battery-P"].stowStartTime)
         assert.is_nil(srbmUnits["Battery-F"].stowStartTime)
-        assert.is_nil(plannerState.ground.sam.firingUnits["Sam-1"].stowStartTime)
+        assert.is_nil(plannerState.ground.missileSystemTypes.sam.firingUnits["Sam-1"].stowStartTime)
 
         assert.is_true(hasLogCall("%[WARN%]"))
         assert.is_true(hasLogCall("matrix=STALE%-FSEM"))
@@ -1102,7 +1104,7 @@ describe("FsemBuilder", function()
         local reconEntry2 = makeReconEntry()
         reconEntry2.operations = { operation2 }
         local plannerStateWithAnotherEmptyFSP = {
-          ground = { fireSupportPlan = {}, srbm = { firingUnits = {} } },
+          ground = { fireSupportPlan = {}, missileSystemTypes = { srbm = { firingUnits = {} } } },
           dynamicOperations = {
             enabled = true,
             reconTriggeredOperationBatches = { reconEntry2 }

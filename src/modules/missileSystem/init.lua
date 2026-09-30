@@ -111,12 +111,12 @@ function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
----@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param groundCtx SBJ__GroundContext Ground force runtime context
 ---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string Side name used to resolve firing units in game state
 ---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
 function MissileSystem.getAmmoInventory(groundCtx, missileSystemType, sideName)
-  local systemCtx = groundCtx[missileSystemType]
+  local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
   if not systemCtx then
     return nil
   end
@@ -125,18 +125,18 @@ function MissileSystem.getAmmoInventory(groundCtx, missileSystemType, sideName)
 end
 
 ---Resolve a firing unit runtime context by missile system and unit name
----@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param groundCtx SBJ__GroundContext Ground force runtime context
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnitName string Firing unit name used as context key
 ---@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
 function MissileSystem.getFiringUnitContext(groundCtx, missileSystemType, firingUnitName)
-  local systemCtx = groundCtx[string.lower(missileSystemType)]
+  local systemCtx = groundCtx.missileSystemTypes[string.lower(missileSystemType)]
   return systemCtx and systemCtx.firingUnits and systemCtx.firingUnits[firingUnitName]
 end
 
 ---Start the stow countdown so the reload cycle sends the firing units back
 ---SAM never stows, and a countdown already running is kept.
----@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param groundCtx SBJ__GroundContext Ground force runtime context
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnits SBJ__FiringUnit[]|nil Firing units to stow
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
@@ -158,7 +158,7 @@ function MissileSystem.startStow(groundCtx, missileSystemType, firingUnits, opts
 end
 
 ---Check status of all missile systems and trigger corresponding actions
----@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
+---@param groundCtx SBJ__GroundContext Ground force runtime context
 ---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration (reload/stow timers per system)
 ---@param isAuto boolean Whether this side runs in automatic mode
 ---@param sideName string Side name
@@ -166,7 +166,7 @@ function MissileSystem.process(groundCtx, missileSystemTypeConfig, isAuto, sideN
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
   for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx[missileSystemType]
+    local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
     if systemCtx and systemCtx.enabled then
       for _, result in ipairs(Cycle.process(systemCtx, { systemConfig = missileSystemTypeConfig[missileSystemType], isAuto = isAuto }, sideName)) do
         result.fields.system = missileSystemType
@@ -186,7 +186,7 @@ function MissileSystem.processSide(config, saveData, sideName)
   local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
 
   MissileSystem.process(
-    PersistentState.groundForces(saveData, sideName),
+    PersistentState.ground(saveData, sideName),
     sideConfig.ground.missileSystemTypes,
     sideConfig.ground.policy.isAuto,
     sideName
@@ -198,10 +198,10 @@ end
 ---@param unit CMO__Unit Destroyed unit
 ---@return boolean processed Whether the unit belonged to a missile system and ammo was adjusted
 function MissileSystem.processSupplyAssetDestruction(saveData, unit)
-  local groundCtx = PersistentState.groundForces(saveData, unit.side)
+  local groundCtx = PersistentState.ground(saveData, unit.side)
 
   for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx[missileSystemType]
+    local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
     local success, result
     if systemCtx then
       success, result = Context.processSupplyAssetDestruction(unit, systemCtx)
@@ -228,15 +228,15 @@ end
 
 ---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
 ---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Side ground force configuration; mutated
----@param groundForceCtx SBJ__GroundForceContext Side ground force runtime context
+---@param groundCtx SBJ__GroundContext Side ground force runtime context
 ---@param sideName string Side name for zone/trigger/unit ownership
 ---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
-function MissileSystem.redeploy(missileSystemTypeConfig, groundForceCtx, sideName, layouts)
+function MissileSystem.redeploy(missileSystemTypeConfig, groundCtx, sideName, layouts)
   local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemTypeConfig, layouts)
 
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
   Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
-  Context.initMissileSystemContexts(missileSystemTypeConfig, groundForceCtx)
+  Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
 end
 
 ---Redeploy a side's batteries to the placements submitted by the setup menu
@@ -247,7 +247,7 @@ end
 function MissileSystem.redeployFromSetup(config, saveData, sideName, entries)
   MissileSystem.redeploy(
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
-    PersistentState.groundForces(saveData, sideName),
+    PersistentState.ground(saveData, sideName),
     sideName,
     SetupLayout.buildLayouts(entries)
   )
@@ -258,7 +258,8 @@ end
 ---@param sideName string Side name (China or Taiwan)
 ---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
 function MissileSystem.buildSetupMenuRows(config, sideName)
-  return SetupLayout.buildSetupMenuRows(config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes, sideName)
+  return SetupLayout.buildSetupMenuRows(config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    sideName)
 end
 
 ---Add a side's missile system units and build their runtime contexts from config
@@ -269,7 +270,7 @@ function MissileSystem.deploySide(config, saveData, sideName)
   local missileSystemTypeConfig = config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
 
   Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
-  Context.initMissileSystemContexts(missileSystemTypeConfig, PersistentState.groundForces(saveData, sideName))
+  Context.initMissileSystemContexts(missileSystemTypeConfig, PersistentState.ground(saveData, sideName))
 end
 
 ---Build a side's battery status rows for the status UI, grouped by resupply unit name
@@ -280,7 +281,7 @@ end
 ---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
 function MissileSystem.buildBatteryStatusRows(config, saveData, sideName, systemTypes)
   return StatusView.buildBatteryStatusRows(
-    PersistentState.groundForces(saveData, sideName),
+    PersistentState.ground(saveData, sideName),
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
     systemTypes,
     GameApi.ScenEdit_CurrentTime()
@@ -291,10 +292,10 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is seeded in place
 ---@param sideName string Side name (China or Taiwan)
-function MissileSystem.ensureGroundForceState(config, saveData, sideName)
-  Context.ensureGroundForceState(
+function MissileSystem.ensureGroundState(config, saveData, sideName)
+  Context.ensureGroundState(
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
-    PersistentState.groundForces(saveData, sideName)
+    PersistentState.ground(saveData, sideName)
   )
 end
 
@@ -303,20 +304,21 @@ end
 ---@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
 ---@param sideName string Side name (China or Taiwan)
 function MissileSystem.initSide(config, saveData, sideName)
-  local groundForceCtx = PersistentState.groundForces(saveData, sideName)
-  if not groundForceCtx.enabled then
+  local groundCtx = PersistentState.ground(saveData, sideName)
+  if not groundCtx.enabled then
     return
   end
 
-  Context.initMissileSystemContexts(config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes, groundForceCtx)
+  Context.initMissileSystemContexts(config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    groundCtx)
 end
 
 ---Iterate through enabled missile systems only
----@param groundCtx table<string, SBJ__MissileSystemContext> Missile system contexts keyed by system type
+---@param groundCtx SBJ__GroundContext Ground force runtime context
 ---@param callback fun(systemCtx: SBJ__MissileSystemContext, systemName: string) Callback invoked for each enabled system context
 local function forEachEnabledSystem(groundCtx, callback)
   for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx[missileSystemType]
+    local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
     if systemCtx and systemCtx.enabled then
       callback(systemCtx, missileSystemType)
     end
@@ -552,7 +554,7 @@ function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
   local policy = config[GameUtils.getCachedSideConfig(unit.side).field].ground.policy
 
   processMoveToPositionEvent({
-    groundCtx = PersistentState.groundForces(saveData, unit.side),
+    groundCtx = PersistentState.ground(saveData, unit.side),
     unit = unit,
     event = event,
     contacts = GameApi.ScenEdit_GetContacts(unit.side),

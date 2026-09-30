@@ -97,17 +97,17 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
-  -- groundForces
+  -- ground
   -- ============================================================================
 
-  describe("groundForces", function()
+  describe("ground", function()
     -- Positive: each side resolves to its own ground slice, not the other side's
     it("should return the ground slice for the given side", function()
       local chinaGround, taiwanGround = {}, {}
       local state = { c = { ground = chinaGround }, t = { ground = taiwanGround } }
 
-      assert.are.equal(chinaGround, PersistentState.groundForces(state, constants.SIDES.ENEMY))
-      assert.are.equal(taiwanGround, PersistentState.groundForces(state, constants.SIDES.PLAYER))
+      assert.are.equal(chinaGround, PersistentState.ground(state, constants.SIDES.ENEMY))
+      assert.are.equal(taiwanGround, PersistentState.ground(state, constants.SIDES.PLAYER))
     end)
   end)
 
@@ -123,7 +123,7 @@ describe("PersistentState", function()
         for _, system in ipairs({ ... }) do
           g[system] = { firingUnits = { name = system } }
         end
-        return g
+        return { missileSystemTypes = g }
       end
       return {
         c = {
@@ -152,10 +152,10 @@ describe("PersistentState", function()
       local state = makeSigintState()
 
       assert.are.same({
-        state.t.ground.srbm.firingUnits,
-        state.t.ground.glcm.firingUnits,
-        state.t.ground.mlrs.firingUnits,
-        state.t.ground.ascm.firingUnits,
+        state.t.ground.missileSystemTypes.srbm.firingUnits,
+        state.t.ground.missileSystemTypes.glcm.firingUnits,
+        state.t.ground.missileSystemTypes.mlrs.firingUnits,
+        state.t.ground.missileSystemTypes.ascm.firingUnits,
         state.t.iads.rocc,
         state.t.iads.taaoc,
       }, PersistentState.sigintEmitters(state, constants.SIDES.ENEMY))
@@ -166,9 +166,9 @@ describe("PersistentState", function()
       local state = makeSigintState()
 
       assert.are.same({
-        state.c.ground.mlrs.firingUnits,
-        state.c.ground.srbm.firingUnits,
-        state.c.ground.glcm.firingUnits,
+        state.c.ground.missileSystemTypes.mlrs.firingUnits,
+        state.c.ground.missileSystemTypes.srbm.firingUnits,
+        state.c.ground.missileSystemTypes.glcm.firingUnits,
         state.c.iads.c2,
       }, PersistentState.sigintEmitters(state, "US"))
     end)

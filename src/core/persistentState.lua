@@ -94,8 +94,8 @@ end
 ---Ground force (missile system) slice for a side
 ---@param state SBJ__SaveData
 ---@param sideName string China or Taiwan
----@return SBJ__GroundForceContext|SBJ__StrikingGroundForceContext
-function PersistentState.groundForces(state, sideName)
+---@return SBJ__GroundContext|SBJ__StrikingGroundContext
+function PersistentState.ground(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].ground
 end
 
@@ -117,7 +117,7 @@ function PersistentState.sigintEmitters(state, collectorSide)
   local groups = {}
 
   for _, system in ipairs(targets.systems) do
-    table.insert(groups, enemy.ground[system].firingUnits)
+    table.insert(groups, enemy.ground.missileSystemTypes[system].firingUnits)
   end
   for _, node in ipairs(targets.iadsNodes) do
     table.insert(groups, enemy.iads[node])
@@ -155,7 +155,7 @@ function PersistentState.landingOps(state)
   return {
     amphibOps = state.c.amphibOps,
     recon = PersistentState.recon(state),
-    ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
+    ground = PersistentState.ground(state, constants.SIDES.ENEMY),
   }
 end
 
@@ -171,7 +171,7 @@ function PersistentState.strikePlanner(state)
     recon = PersistentState.recon(state),
     dynamicOperations = china.dynamicOperations,
     air = china.air,
-    ground = PersistentState.groundForces(state, constants.SIDES.ENEMY),
+    ground = PersistentState.ground(state, constants.SIDES.ENEMY),
     lacm = PersistentState.lacm(state),
     slcm = china.subSurface.slcm,
     fireSupportOnHold = china.amphibOps.fireSupportOnHold == true,
