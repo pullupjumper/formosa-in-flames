@@ -184,7 +184,7 @@ local function filterAvailableFiringUnits(plannerState, taskTemplate, firingUnit
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
     -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil context and
     -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
-    local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, taskTemplate.missileSystem, firingUnit.name)
+    local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, taskTemplate.missileSystemType, firingUnit.name)
     local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
 
     if firingUnitCtx then
@@ -394,7 +394,7 @@ local function retireStaleMatrices(plannerState, currentTime, staleAfterSec, opR
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
           -- Only units that left their hide area need to go back; RELOAD already ends in HA.
-          MissileSystem.startStow(plannerState.ground, task.missileSystem, task.firingUnits, { onlyDeployed = true })
+          MissileSystem.startStow(plannerState.ground, task.missileSystemType, task.firingUnits, { onlyDeployed = true })
         end
       end
 

@@ -64,13 +64,13 @@ describe("OperationScheduler", function()
       GND_STRIKE_C2_N_1 = { {
         name = "FST-C2-1",
         firingUnits = {},
-        missileSystem = "",
+        missileSystemType = "",
         target = { list = {}, contactAge = 0, minTargetCount = 1 },
       } },
       GND_STRIKE_C2_N_2 = { {
         name = "FST-C2-2",
         firingUnits = {},
-        missileSystem = "",
+        missileSystemType = "",
         target = { list = {}, contactAge = 0, minTargetCount = 1 },
       } },
     }
@@ -257,7 +257,7 @@ describe("OperationScheduler", function()
       config.c.fireSupportTaskTemplates.GND_STRIKE_C2_C_2 = { {
         name = "FST-C2-C-2",
         firingUnits = {},
-        missileSystem = "",
+        missileSystemType = "",
         target = { list = {}, contactAge = 0, minTargetCount = 1 },
       } }
 
@@ -470,7 +470,7 @@ describe("OperationScheduler", function()
       config.c.fireSupportTaskTemplates.GND_STRIKE_INFRA_ALL_1 = { {
         name = "FST-INFRA-1",
         firingUnits = {},
-        missileSystem = "",
+        missileSystemType = "",
         target = { contactAge = 0, minTargetCount = 1, list = {} },
       } }
       local operationBatches = {}
@@ -824,7 +824,7 @@ describe("OperationScheduler", function()
         config.c.fireSupportTaskTemplates.GND_STRIKE_C2_N_3 = { {
           name = "FST-C2-3",
           firingUnits = {},
-          missileSystem = "",
+          missileSystemType = "",
           target = { list = {}, contactAge = 0, minTargetCount = 1 },
         } }
 

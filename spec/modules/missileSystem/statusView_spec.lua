@@ -75,7 +75,7 @@ describe("MissileSystem StatusView", function()
       assert.are.same({
         {
           name = "FU-1",
-          missileSystem = "srbm",
+          missileSystemType = "srbm",
           firingUnitState = "RELOAD",
           resupplyUnitState = "HIDE",
           missilesInAmmoVehicles = 4,

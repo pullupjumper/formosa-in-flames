@@ -112,11 +112,11 @@ end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
----@param missileSystem string Missile system type (constants.MISSILE_SYSTEM_TYPES)
+---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string Side name used to resolve firing units in game state
 ---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
-function MissileSystem.getAmmoInventory(groundCtx, missileSystem, sideName)
-  local systemCtx = groundCtx[missileSystem]
+function MissileSystem.getAmmoInventory(groundCtx, missileSystemType, sideName)
+  local systemCtx = groundCtx[missileSystemType]
   if not systemCtx then
     return nil
   end
@@ -126,22 +126,22 @@ end
 
 ---Resolve a firing unit runtime context by missile system and unit name
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
----@param missileSystem string Missile system name in any case (e.g., "SRBM", "srbm")
+---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnitName string Firing unit name used as context key
 ---@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
-function MissileSystem.getFiringUnitContext(groundCtx, missileSystem, firingUnitName)
-  local systemCtx = groundCtx[string.lower(missileSystem)]
+function MissileSystem.getFiringUnitContext(groundCtx, missileSystemType, firingUnitName)
+  local systemCtx = groundCtx[string.lower(missileSystemType)]
   return systemCtx and systemCtx.firingUnits and systemCtx.firingUnits[firingUnitName]
 end
 
 ---Start the stow countdown so the reload cycle sends the firing units back
 ---SAM never stows, and a countdown already running is kept.
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
----@param missileSystem string|nil Missile system name in any case (e.g., "SRBM", "srbm")
+---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnits SBJ__FiringUnit[]|nil Firing units to stow
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
-function MissileSystem.startStow(groundCtx, missileSystem, firingUnits, opts)
-  if not missileSystem or not firingUnits or string.lower(missileSystem) == constants.MISSILE_SYSTEM_TYPES.SAM then
+function MissileSystem.startStow(groundCtx, missileSystemType, firingUnits, opts)
+  if not missileSystemType or not firingUnits or string.lower(missileSystemType) == constants.MISSILE_SYSTEM_TYPES.SAM then
     return
   end
 
@@ -149,7 +149,7 @@ function MissileSystem.startStow(groundCtx, missileSystem, firingUnits, opts)
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
   for _, firingUnit in ipairs(firingUnits) do
-    local firingUnitCtx = MissileSystem.getFiringUnitContext(groundCtx, missileSystem, firingUnit.name)
+    local firingUnitCtx = MissileSystem.getFiringUnitContext(groundCtx, missileSystemType, firingUnit.name)
 
     if firingUnitCtx and not firingUnitCtx.stowStartTime and (not onlyDeployed or DEPLOYED_STATES[firingUnitCtx.state]) then
       firingUnitCtx.stowStartTime = currentTime
@@ -165,11 +165,11 @@ end
 function MissileSystem.process(groundCtx, missileSystemTypeConfig, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
-  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx[missileSystem]
+  for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
+    local systemCtx = groundCtx[missileSystemType]
     if systemCtx and systemCtx.enabled then
-      for _, result in ipairs(Cycle.process(systemCtx, { systemConfig = missileSystemTypeConfig[missileSystem], isAuto = isAuto }, sideName)) do
-        result.fields.system = missileSystem
+      for _, result in ipairs(Cycle.process(systemCtx, { systemConfig = missileSystemTypeConfig[missileSystemType], isAuto = isAuto }, sideName)) do
+        result.fields.system = missileSystemType
         report.add(result.tag, result.fields)
       end
     end
@@ -200,8 +200,8 @@ end
 function MissileSystem.processSupplyAssetDestruction(saveData, unit)
   local groundCtx = PersistentState.groundForces(saveData, unit.side)
 
-  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx[missileSystem]
+  for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
+    local systemCtx = groundCtx[missileSystemType]
     local success, result
     if systemCtx then
       success, result = Context.processSupplyAssetDestruction(unit, systemCtx)
@@ -315,10 +315,10 @@ end
 ---@param groundCtx table<string, SBJ__MissileSystemContext> Missile system contexts keyed by system type
 ---@param callback fun(systemCtx: SBJ__MissileSystemContext, systemName: string) Callback invoked for each enabled system context
 local function forEachEnabledSystem(groundCtx, callback)
-  for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx[missileSystem]
+  for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
+    local systemCtx = groundCtx[missileSystemType]
     if systemCtx and systemCtx.enabled then
-      callback(systemCtx, missileSystem)
+      callback(systemCtx, missileSystemType)
     end
   end
 end

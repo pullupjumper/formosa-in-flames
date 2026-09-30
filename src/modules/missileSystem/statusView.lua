@@ -43,8 +43,8 @@ end
 function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, systemTypes, currentTime)
   local rows = {}
 
-  for _, missileSystem in ipairs(systemTypes) do
-    local resupplyUnitCtxs = groundCtx[missileSystem] and groundCtx[missileSystem].resupplyUnits
+  for _, missileSystemType in ipairs(systemTypes) do
+    local resupplyUnitCtxs = groundCtx[missileSystemType] and groundCtx[missileSystemType].resupplyUnits
 
     if resupplyUnitCtxs then
       for key, _ in pairs(resupplyUnitCtxs) do
@@ -53,8 +53,8 @@ function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, s
     end
   end
 
-  for _, missileSystem in ipairs(systemTypes) do
-    local missileSystemCtx = groundCtx[missileSystem]
+  for _, missileSystemType in ipairs(systemTypes) do
+    local missileSystemCtx = groundCtx[missileSystemType]
     local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
 
     if missileSystemCtx and firingUnitCtxs then
@@ -63,14 +63,14 @@ function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, s
 
         table.insert(rows[firingUnitCtx.resupplyUnit], {
           name = firingUnitCtx.name,
-          missileSystem = missileSystem,
+          missileSystemType = missileSystemType,
           firingUnitState = formatState(firingUnitCtx.state),
           resupplyUnitState = formatState(resupplyUnitCtx.state),
           missilesInAmmoVehicles = resupplyUnitCtx.wpnCurrent,
           missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent,
           firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, currentTime),
           resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, currentTime),
-          defaultReloadTime = missileSystemTypeConfig[missileSystem].reloadTime / 60
+          defaultReloadTime = missileSystemTypeConfig[missileSystemType].reloadTime / 60
         })
       end
     end

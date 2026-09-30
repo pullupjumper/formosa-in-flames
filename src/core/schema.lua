@@ -916,7 +916,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---One firing unit row in the status UI battery table, built by MissileSystem.buildBatteryStatusRows
 ---@class SBJ__BatteryStatusRow: table
 ---@field name string Firing unit name
----@field missileSystem string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field firingUnitState string Firing unit state label
 ---@field resupplyUnitState string Paired resupply unit state label
 ---@field missilesInAmmoVehicles number Missiles carried by the resupply unit
@@ -1260,7 +1260,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Fire Support Task template extending task with firing units
 ---@class SBJ__FireSupportTaskTemplate: SBJ__Task
 ---@field name string FST name
----@field missileSystem string Missile system type
+---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field firingUnits SBJ__FiringUnit[] Firing unit array
 
 ---Fire Support Task execution state

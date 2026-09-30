@@ -15,7 +15,7 @@ export interface SignalData {
 
 export interface MissileSystemUnit {
   name: string;
-  missileSystem: string;
+  missileSystemType: string;
   firingUnitState: string;
   resupplyUnitState: string;
   firingUnitReloadTime: number;

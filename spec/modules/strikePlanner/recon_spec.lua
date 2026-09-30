@@ -168,7 +168,7 @@ describe("Recon", function()
       STRIKE_C2_2 = { {
         name = "FST-C2-2",
         firingUnits = {},
-        missileSystem = '',
+        missileSystemType = '',
         target = { list = {}, contactAge = 0, minTargetCount = 1 },
       } },
     }

@@ -45,7 +45,7 @@ describe("FireSupportPlan", function()
     overrides = overrides or {}
     local task = {
       name = overrides.taskName or "FST-ALPHA",
-      missileSystem = overrides.missileSystem or "SRBM",
+      missileSystemType = overrides.missileSystemType or "SRBM",
       isFinished = overrides.taskFinished or false,
       startTime = overrides.startTime or "2026-02-14 00:00:00",
       firingUnits = overrides.firingUnits or { { name = "Battery-1" } },
@@ -298,7 +298,7 @@ describe("FireSupportPlan", function()
       local plannerState = makePlannerState({})
       table.insert(plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
         name = "FST-BETA",
-        missileSystem = "SRBM",
+        missileSystemType = "SRBM",
         isFinished = false,
         startTime = "2026-02-14 00:00:00",
         firingUnits = { { name = "Battery-2" } },
@@ -453,7 +453,7 @@ describe("FireSupportPlan", function()
     -- Negative: SAM strike does not stamp stowStartTime
     it("should not set stowStartTime when missile system is SAM", function()
       local plannerState = makePlannerState({
-        missileSystem = "SAM",
+        missileSystemType = "SAM",
         firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC
       })
       plannerState.ground.sam = {
@@ -569,7 +569,7 @@ describe("FireSupportPlan", function()
       local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.STATIC })
       table.insert(plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks, {
         name = "FST-BETA",
-        missileSystem = "SRBM",
+        missileSystemType = "SRBM",
         isFinished = false,
         startTime = "2026-02-14 00:00:00",
         firingUnits = { { name = "Battery-1" } },
@@ -611,7 +611,7 @@ describe("FireSupportPlan", function()
         fireSupportTasks = {
           {
             name = "FST-BRAVO",
-            missileSystem = "SRBM",
+            missileSystemType = "SRBM",
             isFinished = false,
             startTime = "2026-02-14 00:00:00",
             firingUnits = { { name = "Battery-1" } },

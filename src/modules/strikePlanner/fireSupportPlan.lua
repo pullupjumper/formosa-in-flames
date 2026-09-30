@@ -19,7 +19,7 @@ local FireSupportPlan = {}
 ---@return boolean unitMissing Whether the unit no longer exists in game or has no runtime context
 local function deploySingleFiringUnit(plannerState, task, firingUnit)
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
-  local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, task.missileSystem, firingUnit.name)
+  local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, task.missileSystemType, firingUnit.name)
   if not actualUnit or not firingUnitCtx then
     return false, true
   end
@@ -85,7 +85,7 @@ local function startFireSupportTasks(plannerState, matrix)
       })
 
       if fired > 0 then
-        MissileSystem.startStow(plannerState.ground, task.missileSystem, task.firingUnits)
+        MissileSystem.startStow(plannerState.ground, task.missileSystemType, task.firingUnits)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,

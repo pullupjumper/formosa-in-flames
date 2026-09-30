@@ -204,7 +204,7 @@ function MobileLaunchersTable({ data }: MobileLaunchersTableProps) {
               return (
                 <Tr key={`${area}-${index}`}>
                   <Td>{unit.name}</Td>
-                  <Td>{unit.missileSystem.toUpperCase()}</Td>
+                  <Td>{unit.missileSystemType.toUpperCase()}</Td>
                   <Td>{unit.firingUnitState}</Td>
                   <Td>
                     {unit.firingUnitReloadTime >= 0 && <ProgressBar percentage={firingProgress} />}

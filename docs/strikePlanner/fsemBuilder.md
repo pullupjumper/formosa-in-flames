@@ -82,7 +82,7 @@ flowchart TD
 | `firingAvailable` | 通過驗證、已寫入 FST 的數量。 |
 | `firingAssigned` | 被其他 active FSEM 或本趟先前的 FST 佔用；等前一個 FSEM 完成或退役即可。 |
 | `firingUnitNotFound` | CMO 裡已無此單位，通常是被摧毀。template 的發射單元名單需要檢討。 |
-| `firingContextNotFound` | `saveData.c.ground[<missileSystem>].firingUnits` 缺這個 key；多半是 template 名稱與 saveData 初始化不一致。 |
+| `firingContextNotFound` | `saveData.c.ground[<missileSystemType>].firingUnits` 缺這個 key；多半是 template 名稱與 saveData 初始化不一致。 |
 | `firingBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
 | `firingLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
 
@@ -164,7 +164,7 @@ SAM 任務依慣例排除在 stow 之外。
 |---|---|
 | `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.add()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
 | `saveData.c.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
-| `saveData.c.ground[<missileSystem>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
+| `saveData.c.ground[<missileSystemType>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
 | `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
 | `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 

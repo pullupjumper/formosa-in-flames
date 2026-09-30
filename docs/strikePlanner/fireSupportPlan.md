@@ -36,7 +36,7 @@
 `processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 會由 `deploySingleFiringUnit()` 取得實體單位與 runtime context：
 
 1. `GameApi.ScenEdit_GetUnit(firingUnit.name)` 取得 CMO 實體單位。
-2. `MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystem, firingUnit.name)` 取得 runtime context。實體或 context 任一不存在，都視同陣亡、從 FST 移除。
+2. `MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystemType, firingUnit.name)` 取得 runtime context。實體或 context 任一不存在，都視同陣亡、從 FST 移除。
 3. `MissileSystem.sendToFiringPoint()` 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。
 
 若任一 firing unit 尚未就位，該 FST 會被列入 pending 結果，並在日誌中輸出 `reason=firing_units_not_in_position` 與單位名稱。
@@ -69,7 +69,7 @@ AttackManager.attackContacts({
 成功發射後，模組呼叫：
 
 ```lua
-MissileSystem.startStow(saveData.c.ground, task.missileSystem, task.firingUnits)
+MissileSystem.startStow(saveData.c.ground, task.missileSystemType, task.firingUnits)
 ```
 
 由 missileSystem 替每個 firing unit 啟動 stow 倒數。已有倒數的不覆寫；SAM 任務整批略過，因為 SAM firing unit 不走打擊後 stow 流程。
@@ -166,7 +166,7 @@ saveData.c.ground
 │       └── fireSupportTasks: SBJ__FireSupportTask[]
 │           └── <task>
 │               ├── name: string
-│               ├── missileSystem: string
+│               ├── missileSystemType: string
 │               ├── startTime: string
 │               ├── isFinished: boolean
 │               ├── firingUnits: SBJ__FiringUnit[]

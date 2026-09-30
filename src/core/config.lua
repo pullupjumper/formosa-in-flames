@@ -2674,7 +2674,7 @@ config.c.fireSupportTaskTemplates = {
   GND_STRIKE_INFRA_ALL_1 = {
     {
       name = "RADAR",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "614th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A },
         { name = "613rd Bde, PLARF", weaponDBID = constants.WEAPONS.DF15B }
@@ -2693,7 +2693,7 @@ config.c.fireSupportTaskTemplates = {
     },
     {
       name = "RUNWAY",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "636th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A },
         { name = "617th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A }
@@ -2720,7 +2720,7 @@ config.c.fireSupportTaskTemplates = {
     },
     {
       name = "PORT",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "615th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A }
       },
@@ -2742,7 +2742,7 @@ config.c.fireSupportTaskTemplates = {
     },
     {
       name = "SHELTER",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "616th Bde, PLARF", weaponDBID = constants.WEAPONS.DF15C }
       },
@@ -2765,7 +2765,7 @@ config.c.fireSupportTaskTemplates = {
   GND_STRIKE_INFRA_ALL_2 = {
     {
       name = "RADAR",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "614th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A },
         { name = "613rd Bde, PLARF", weaponDBID = constants.WEAPONS.DF15B }
@@ -2784,7 +2784,7 @@ config.c.fireSupportTaskTemplates = {
     },
     {
       name = "RUNWAY",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "636th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A },
         { name = "617th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A }
@@ -2816,7 +2816,7 @@ config.c.fireSupportTaskTemplates = {
     },
     {
       name = "PORT",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "615th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A }
       },
@@ -2840,7 +2840,7 @@ config.c.fireSupportTaskTemplates = {
     },
     {
       name = "SHELTER",
-      missileSystem = "SRBM",
+      missileSystemType = "SRBM",
       firingUnits = {
         { name = "616th Bde, PLARF", weaponDBID = constants.WEAPONS.DF15C }
       },
@@ -2867,7 +2867,7 @@ config.c.fireSupportTaskTemplates = {
   GND_ASUW_SHIP_E_1 = {
     {
       name = "ANTISHIP",
-      missileSystem = "MRBM",
+      missileSystemType = "MRBM",
       firingUnits = {
         { name = "624th Bde, PLARF", weaponDBID = constants.WEAPONS.DF21D }
       },
@@ -2885,7 +2885,7 @@ config.c.fireSupportTaskTemplates = {
   GND_ASUW_SHIP_N_1 = {
     {
       name = "ANTISHIP",
-      missileSystem = "ASCM",
+      missileSystemType = "ASCM",
       firingUnits = {
         { name = "1st Pili Reg", weaponDBID = constants.WEAPONS.YJ12 }
       },
@@ -2903,7 +2903,7 @@ config.c.fireSupportTaskTemplates = {
   GND_STRIKE_C2_N_1 = {
     {
       name = "PINGTAN",
-      missileSystem = "MLRS",
+      missileSystemType = "MLRS",
       firingUnits = {
         { name = "1st Bn, 1st Rockets Arty Bde", weaponDBID = constants.WEAPONS.FD280 }
       },
@@ -2921,7 +2921,7 @@ config.c.fireSupportTaskTemplates = {
   GND_STRIKE_C2_C_1 = {
     {
       name = "CHINCHEW",
-      missileSystem = "MLRS",
+      missileSystemType = "MLRS",
       firingUnits = {
         { name = "6th Bn, 73rd Arty Bde", weaponDBID = constants.WEAPONS.FD280 }
       },
@@ -2939,7 +2939,7 @@ config.c.fireSupportTaskTemplates = {
   GND_STRIKE_HELIPAD_ALL_1 = {
     {
       name = "HELIPAD",
-      missileSystem = "GLCM",
+      missileSystemType = "GLCM",
       firingUnits = {
         { name = "635th Bde, PLARF", weaponDBID = constants.WEAPONS.CJ10A }
       },

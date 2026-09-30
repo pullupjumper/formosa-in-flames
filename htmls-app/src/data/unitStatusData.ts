@@ -44,7 +44,7 @@ export const LAUNCHERS_DATA: MissileSystemData = {
   'Area A': [
     {
       name: 'Launcher 1',
-      missileSystem: 'Type 1',
+      missileSystemType: 'Type 1',
       firingUnitState: 'STATIC',
       resupplyUnitState: 'STATIC',
       firingUnitReloadTime: 10,
@@ -55,7 +55,7 @@ export const LAUNCHERS_DATA: MissileSystemData = {
     },
     {
       name: 'Launcher 2',
-      missileSystem: 'Type 1',
+      missileSystemType: 'Type 1',
       firingUnitState: 'STATIC',
       resupplyUnitState: 'STATIC',
       firingUnitReloadTime: 10,

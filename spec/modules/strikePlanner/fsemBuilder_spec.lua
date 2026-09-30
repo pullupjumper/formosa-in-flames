@@ -72,7 +72,7 @@ describe("FsemBuilder", function()
         fireSupportTasks = {
           {
             name = "FST-TEST",
-            missileSystem = "SRBM",
+            missileSystemType = "SRBM",
             firingUnits = { { name = "Battery-1" } },
             target = { minTargetCount = 1, ammoPerTarget = 2 }
           }
@@ -494,13 +494,13 @@ describe("FsemBuilder", function()
           fireSupportTasks = {
             {
               name = "FST-1",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               firingUnits = { { name = "Battery-1" } },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               firingUnits = { { name = "Battery-1" } },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
@@ -527,13 +527,13 @@ describe("FsemBuilder", function()
           fireSupportTasks = {
             {
               name = "FST-1",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
@@ -601,13 +601,13 @@ describe("FsemBuilder", function()
           fireSupportTasks = {
             {
               name = "FST-1",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               firingUnits = { { name = "Battery-1" } },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               firingUnits = { { name = "Battery-2" } },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
@@ -850,7 +850,7 @@ describe("FsemBuilder", function()
           fireSupportTasks = {
             {
               name = "FST-HELD",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               isFinished = false,
               firingUnits = { { name = "Battery-1" } }
             }
@@ -1015,7 +1015,7 @@ describe("FsemBuilder", function()
           fireSupportTasks = {
             {
               name = "FST-SRBM",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               isFinished = false,
               firingUnits = {
                 { name = "Battery-S" },
@@ -1026,13 +1026,13 @@ describe("FsemBuilder", function()
             },
             {
               name = "FST-SAM",
-              missileSystem = "SAM",
+              missileSystemType = "SAM",
               isFinished = false,
               firingUnits = { { name = "Sam-1" } }
             },
             {
               name = "FST-DONE",
-              missileSystem = "SRBM",
+              missileSystemType = "SRBM",
               isFinished = true,
               firingUnits = { { name = "Battery-F" } }
             }
