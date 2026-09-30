@@ -22,6 +22,7 @@ describe("ConfigCodeGenerator", function()
             weaponDBID = constants.WEAPONS.FD280,
             ammoThreshold = 2,
             dbid = constants.PLATFORMS.PHL16,
+            missileSystem = "PHL-16",
           },
         },
       },
@@ -62,6 +63,13 @@ describe("ConfigCodeGenerator", function()
       assert.is_truthy(configStr:find("weaponDBID = constants.WEAPONS.FD280,", 1, true))
       assert.is_truthy(configStr:find("dbid = constants.PLATFORMS.PHL16,", 1, true))
       assert.is_truthy(configStr:find("ammoThreshold = config.c.ground.missileSystemTypes.mlrs.ammoThreshold,", 1, true))
+    end)
+
+    -- Positive: missileSystem is quoted and follows dbid
+    it("should serialize missileSystem as a quoted string after dbid", function()
+      local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())
+
+      assert.is_truthy(configStr:find("dbid = constants.PLATFORMS.PHL16,\n    missileSystem = \"PHL-16\",", 1, true))
     end)
 
     -- Boundary: entries without firingUnits are skipped

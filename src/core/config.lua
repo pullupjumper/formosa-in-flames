@@ -358,6 +358,7 @@ config.c.ground.missileSystemTypes.mlrs.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
     dbid = constants.PLATFORMS.PHL16,
+    missileSystem = "PHL-16",
   },
   ["6th Bn, 73rd Arty Bde"] = {
     guid = "",
@@ -369,6 +370,7 @@ config.c.ground.missileSystemTypes.mlrs.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 6th Bn, 73rd Arty Bde",
     dbid = constants.PLATFORMS.PHL16,
+    missileSystem = "PHL-16",
   },
 }
 
@@ -415,6 +417,7 @@ config.c.ground.missileSystemTypes.glcm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "CJ-10A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CH_SSC_9,
   },
 }
@@ -547,6 +550,7 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 613rd Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-15B",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD3,
   },
   ["614th Bde, PLARF"] = {
@@ -559,6 +563,7 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 614th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-11A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
   },
   ["615th Bde, PLARF"] = {
@@ -571,6 +576,7 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 615th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-11A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
   },
   ["616th Bde, PLARF"] = {
@@ -583,6 +589,7 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 616th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-15C",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD2,
   },
   ["617th Bde, PLARF"] = {
@@ -595,6 +602,7 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 617th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-16A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
   },
   ["636th Bde, PLARF"] = {
@@ -607,6 +615,7 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 636th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-16A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
   },
 }
@@ -654,6 +663,7 @@ config.c.ground.missileSystemTypes.mrbm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.mrbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 624th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "DF-21D",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS5_MOD5,
   },
 }
@@ -701,6 +711,7 @@ config.c.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Pili Reg",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "YJ-12",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.YJ12,
   },
 }
@@ -867,6 +878,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94695 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["94759 Unit, PLAAF"] = {
     guid = "",
@@ -878,6 +890,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94759 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["94774 Unit, PLAAF"] = {
     guid = "",
@@ -889,6 +902,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94774 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["94777 Unit, PLAAF"] = {
     guid = "",
@@ -900,6 +914,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94777 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["94807 Unit, PLAAF"] = {
     guid = "",
@@ -911,6 +926,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94807 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["94908 Unit, PLAAF"] = {
     guid = "",
@@ -922,6 +938,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94908 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["94967 Unit, PLAAF"] = {
     guid = "",
@@ -933,6 +950,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94967 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
   ["95324 Unit, PLAAF"] = {
     guid = "",
@@ -944,6 +962,7 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 95324 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
+    missileSystem = "S-300",
   },
 }
 
@@ -4843,6 +4862,7 @@ config.t.ground.missileSystemTypes.mlrs.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
     dbid = constants.PLATFORMS.LT2000,
+    missileSystem = "LT-2000",
   },
 }
 
@@ -4888,6 +4908,7 @@ config.t.ground.missileSystemTypes.srbm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
     dbid = constants.PLATFORMS.HIMARS,
+    missileSystem = "HIMARS",
   },
 }
 
@@ -4950,6 +4971,7 @@ config.t.ground.missileSystemTypes.glcm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "HF-2E",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
   },
   ["642nd Bn, 791st AFAD & Arty Bde"] = {
@@ -4962,6 +4984,7 @@ config.t.ground.missileSystemTypes.glcm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
+    missileSystem = "HF-2E",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
   },
 }
@@ -5094,6 +5117,7 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
+    missileSystem = "HF-3",
   },
   ["2nd Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
@@ -5105,6 +5129,7 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
+    missileSystem = "HF-3",
   },
   ["3rd Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
@@ -5116,6 +5141,7 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
+    missileSystem = "HF-3",
   },
   ["4th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
@@ -5127,6 +5153,7 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
+    missileSystem = "HF-3",
   },
   ["5th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
@@ -5138,6 +5165,7 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
+    missileSystem = "HF-3",
   },
   ["6th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
@@ -5149,6 +5177,7 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
+    missileSystem = "HF-3",
   },
 }
 
@@ -5431,6 +5460,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
@@ -5442,6 +5472,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
@@ -5453,6 +5484,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
@@ -5463,6 +5495,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
@@ -5473,6 +5506,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
@@ -5483,6 +5517,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
@@ -5494,6 +5529,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
@@ -5505,6 +5541,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
@@ -5515,6 +5552,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
@@ -5525,6 +5563,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
@@ -5535,6 +5574,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
@@ -5546,6 +5586,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
+    missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
@@ -5557,6 +5598,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
@@ -5567,6 +5609,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
   ["3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
@@ -5577,6 +5620,7 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
+    missileSystem = "PAC-3",
   },
 }
 

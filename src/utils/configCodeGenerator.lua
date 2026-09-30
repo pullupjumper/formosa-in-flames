@@ -332,7 +332,7 @@ end
 ---Firing-unit field output order; extras are appended alphabetically
 local FIELD_ORDER = {
   "guid", "name", "msg", "state", "operationalArea",
-  "weaponDBID", "ammoThreshold", "resupplyUnit", "dbid", "mountDescriptors"
+  "weaponDBID", "ammoThreshold", "resupplyUnit", "dbid", "missileSystem", "mountDescriptors"
 }
 
 ---Sort a table's string keys alphabetically (ignores non-string keys)

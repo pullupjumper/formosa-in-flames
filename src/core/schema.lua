@@ -956,6 +956,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit
 ---@field dbid number The firing unit database ID
+---@field missileSystem string Missile system designation (e.g. "HF-3")
 ---@field mountDescriptors? {dbid:number, mountCount:integer}[] Mount DBIDs and counts on the firing unit
 
 ---Ammunition context data structure
