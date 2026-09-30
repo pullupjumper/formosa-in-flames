@@ -85,13 +85,13 @@ local function resolveVertices(sideName, area)
 end
 
 ---Build the setup menu's missile system rows, with zone names resolved to vertices
----@param groundForceConfig SBJ__GroundForceConfig Side ground force configuration; left untouched
+---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Side ground force configuration; left untouched
 ---@param sideName string Side owning the reference points
 ---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
-function SetupLayout.buildSetupMenuRows(groundForceConfig, sideName)
+function SetupLayout.buildSetupMenuRows(missileSystemTypeConfig, sideName)
   local rows = {}
 
-  for key, system in pairs(groundForceConfig) do
+  for key, system in pairs(missileSystemTypeConfig) do
     ---@cast system SBJ__MissileSystemConfig
     local copy = Utils.deepCopy(system)
     copy.resupplyUnits = nil

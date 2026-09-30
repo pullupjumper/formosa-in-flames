@@ -4,7 +4,7 @@
 
 > Source: `src/modules/missileSystem/deployment.lua`
 
-責任摘要：依 `groundForceConfig` 建立機動發射車/彈藥補給車/彈藥儲備點三類配置並整理武器掛載。
+責任摘要：依 `missileSystemTypeConfig` 建立機動發射車/彈藥補給車/彈藥儲備點三類配置並整理武器掛載。
 
 ---
 
@@ -42,8 +42,8 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `addMissileSystems` | `groundForceConfig, sideName` | `nil` | 依配置創建所有飛彈系統單位 |
-| `updateLayouts` | `groundForceConfig, layouts` | `SBJ__OperationalArea[], SBJ__OperationalArea[]` | 把 firing／resupply descriptor 換成指向新陣地的副本；回傳新陣地與被取代的舊陣地，供 `MissileSystem.redeploy` 重建 zone／trigger |
+| `addMissileSystems` | `missileSystemTypeConfig, sideName` | `nil` | 依配置創建所有飛彈系統單位 |
+| `updateLayouts` | `missileSystemTypeConfig, layouts` | `SBJ__OperationalArea[], SBJ__OperationalArea[]` | 把 firing／resupply descriptor 換成指向新陣地的副本；回傳新陣地與被取代的舊陣地，供 `MissileSystem.redeploy` 重建 zone／trigger |
 
 ---
 

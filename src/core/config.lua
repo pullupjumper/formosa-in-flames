@@ -288,46 +288,47 @@ config.c.gnssJamming.jammers = {
 
 
 -- ============================================================================
--- Missile system policy (China)
+-- Ground policy (China)
 -- ============================================================================
 
-config.c.missileSystemPolicy = {
+config.c.ground = {}
+config.c.ground.policy = {
   isAuto = true,
   hideOnEnterHA = true,
   hideResupplyOnRLNoMeeting = true
 }
+config.c.ground.missileSystemTypes = {}
 
 -- ============================================================================
 -- MLRS (China)
 -- ============================================================================
 
-config.c.ground = {}
-config.c.ground.mlrs = {}
-config.c.ground.mlrs.wpnDefault = 96
-config.c.ground.mlrs.ammoThreshold = 55
-config.c.ground.mlrs.contactAge = 30 * 60
-config.c.ground.mlrs.reloadTime = 30 * 60
-config.c.ground.mlrs.stowTime = 5 * 60
-config.c.ground.mlrs.ammunitions = {
+config.c.ground.missileSystemTypes.mlrs = {}
+config.c.ground.missileSystemTypes.mlrs.wpnDefault = 96
+config.c.ground.missileSystemTypes.mlrs.ammoThreshold = 55
+config.c.ground.missileSystemTypes.mlrs.contactAge = 30 * 60
+config.c.ground.missileSystemTypes.mlrs.reloadTime = 30 * 60
+config.c.ground.missileSystemTypes.mlrs.stowTime = 5 * 60
+config.c.ground.missileSystemTypes.mlrs.ammunitions = {
   ["Ammo Revetment, 1st Bn, 1st Rockets Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
-    wpnCurrent = config.c.ground.mlrs.wpnDefault * 2,
-    wpnDefault = config.c.ground.mlrs.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
   },
   ["Ammo Revetment, 6th Bn, 73rd Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
-    wpnCurrent = config.c.ground.mlrs.wpnDefault * 2,
-    wpnDefault = config.c.ground.mlrs.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
   },
 }
-config.c.ground.mlrs.resupplyUnits = {
+config.c.ground.missileSystemTypes.mlrs.resupplyUnits = {
   ["Ammo Sec, 1st Bn, 1st Rockets Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
-    wpnCurrent = config.c.ground.mlrs.wpnDefault,
-    wpnDefault = config.c.ground.mlrs.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.JUK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -337,8 +338,8 @@ config.c.ground.mlrs.resupplyUnits = {
   ["Ammo Sec, 6th Bn, 73rd Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 6th Bn, 73rd Arty Bde",
-    wpnCurrent = config.c.ground.mlrs.wpnDefault,
-    wpnDefault = config.c.ground.mlrs.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.YMC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -346,7 +347,7 @@ config.c.ground.mlrs.resupplyUnits = {
     firingUnit = "6th Bn, 73rd Arty Bde"
   },
 }
-config.c.ground.mlrs.firingUnits = {
+config.c.ground.missileSystemTypes.mlrs.firingUnits = {
   ["1st Bn, 1st Rockets Arty Bde"] = {
     guid = "",
     name = "1st Bn, 1st Rockets Arty Bde",
@@ -354,7 +355,7 @@ config.c.ground.mlrs.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.JUK,
     weaponDBID = constants.WEAPONS.FD280,
-    ammoThreshold = config.c.ground.mlrs.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
     dbid = constants.PLATFORMS.PHL16,
   },
@@ -365,7 +366,7 @@ config.c.ground.mlrs.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.YMC,
     weaponDBID = constants.WEAPONS.FD280,
-    ammoThreshold = config.c.ground.mlrs.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, 6th Bn, 73rd Arty Bde",
     dbid = constants.PLATFORMS.PHL16,
   },
@@ -376,26 +377,26 @@ config.c.ground.mlrs.firingUnits = {
 -- GLCM (China)
 -- ============================================================================
 
-config.c.ground.glcm = {}
-config.c.ground.glcm.wpnDefault = 120
-config.c.ground.glcm.ammoThreshold = 55
-config.c.ground.glcm.contactAge = 30 * 60
-config.c.ground.glcm.reloadTime = 45 * 60
-config.c.ground.glcm.stowTime = 5 * 60
-config.c.ground.glcm.ammunitions = {
+config.c.ground.missileSystemTypes.glcm = {}
+config.c.ground.missileSystemTypes.glcm.wpnDefault = 120
+config.c.ground.missileSystemTypes.glcm.ammoThreshold = 55
+config.c.ground.missileSystemTypes.glcm.contactAge = 30 * 60
+config.c.ground.missileSystemTypes.glcm.reloadTime = 45 * 60
+config.c.ground.missileSystemTypes.glcm.stowTime = 5 * 60
+config.c.ground.missileSystemTypes.glcm.ammunitions = {
   ["Ammo Revetment, 635th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 635th Bde, PLARF",
-    wpnCurrent = config.c.ground.glcm.wpnDefault / 2,
-    wpnDefault = config.c.ground.glcm.wpnDefault / 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
+    wpnDefault = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
   },
 }
-config.c.ground.glcm.resupplyUnits = {
+config.c.ground.missileSystemTypes.glcm.resupplyUnits = {
   ["Ammo Sec, 635th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 635th Bde, PLARF",
-    wpnCurrent = config.c.ground.glcm.wpnDefault / 2,
-    wpnDefault = config.c.ground.glcm.wpnDefault / 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
+    wpnDefault = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
     unitCount = 5,
     operationalArea = constants.OPERATIONAL_AREAS.TXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -403,7 +404,7 @@ config.c.ground.glcm.resupplyUnits = {
     firingUnit = "635th Bde, PLARF"
   },
 }
-config.c.ground.glcm.firingUnits = {
+config.c.ground.missileSystemTypes.glcm.firingUnits = {
   ["635th Bde, PLARF"] = {
     guid = "",
     name = "635th Bde, PLARF",
@@ -411,7 +412,7 @@ config.c.ground.glcm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.TXI,
     weaponDBID = constants.WEAPONS.CJ10A,
-    ammoThreshold = config.c.ground.glcm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CH_SSC_9,
@@ -423,56 +424,56 @@ config.c.ground.glcm.firingUnits = {
 -- SRBM (China)
 -- ============================================================================
 
-config.c.ground.srbm = {}
-config.c.ground.srbm.wpnDefault = 36
-config.c.ground.srbm.ammoThreshold = 55
-config.c.ground.srbm.contactAge = 30 * 60
-config.c.ground.srbm.reloadTime = 5 * 60
-config.c.ground.srbm.stowTime = 5 * 60
-config.c.ground.srbm.ammunitions = {
+config.c.ground.missileSystemTypes.srbm = {}
+config.c.ground.missileSystemTypes.srbm.wpnDefault = 36
+config.c.ground.missileSystemTypes.srbm.ammoThreshold = 55
+config.c.ground.missileSystemTypes.srbm.contactAge = 30 * 60
+config.c.ground.missileSystemTypes.srbm.reloadTime = 5 * 60
+config.c.ground.missileSystemTypes.srbm.stowTime = 5 * 60
+config.c.ground.missileSystemTypes.srbm.ammunitions = {
   ["Ammo Revetment, 613rd Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 613rd Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.srbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
   },
   ["Ammo Revetment, 614th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 614th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.srbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
   },
   ["Ammo Revetment, 615th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 615th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.srbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
   },
   ["Ammo Revetment, 616th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 616th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.srbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
   },
   ["Ammo Revetment, 617th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 617th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.srbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
   },
   ["Ammo Revetment, 636th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 636th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.srbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
   },
 }
-config.c.ground.srbm.resupplyUnits = {
+config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
   ["Ammo Sec, 613rd Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 613rd Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault,
-    wpnDefault = config.c.ground.srbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.XZL,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -482,8 +483,8 @@ config.c.ground.srbm.resupplyUnits = {
   ["Ammo Sec, 614th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 614th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault,
-    wpnDefault = config.c.ground.srbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.GSU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -493,8 +494,8 @@ config.c.ground.srbm.resupplyUnits = {
   ["Ammo Sec, 615th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 615th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault,
-    wpnDefault = config.c.ground.srbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.HUZ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -504,8 +505,8 @@ config.c.ground.srbm.resupplyUnits = {
   ["Ammo Sec, 616th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 616th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault,
-    wpnDefault = config.c.ground.srbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.IDP,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -515,8 +516,8 @@ config.c.ground.srbm.resupplyUnits = {
   ["Ammo Sec, 617th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 617th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault,
-    wpnDefault = config.c.ground.srbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 9,
     operationalArea = constants.OPERATIONAL_AREAS.GMJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -526,8 +527,8 @@ config.c.ground.srbm.resupplyUnits = {
   ["Ammo Sec, 636th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 636th Bde, PLARF",
-    wpnCurrent = config.c.ground.srbm.wpnDefault,
-    wpnDefault = config.c.ground.srbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 9,
     operationalArea = constants.OPERATIONAL_AREAS.HMJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -535,7 +536,7 @@ config.c.ground.srbm.resupplyUnits = {
     firingUnit = "636th Bde, PLARF"
   },
 }
-config.c.ground.srbm.firingUnits = {
+config.c.ground.missileSystemTypes.srbm.firingUnits = {
   ["613rd Bde, PLARF"] = {
     guid = "",
     name = "613rd Bde, PLARF",
@@ -543,7 +544,7 @@ config.c.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.XZL,
     weaponDBID = constants.WEAPONS.DF15B,
-    ammoThreshold = config.c.ground.srbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 613rd Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD3,
@@ -555,7 +556,7 @@ config.c.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.GSU,
     weaponDBID = constants.WEAPONS.DF11A,
-    ammoThreshold = config.c.ground.srbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 614th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
@@ -567,7 +568,7 @@ config.c.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.HUZ,
     weaponDBID = constants.WEAPONS.DF11A,
-    ammoThreshold = config.c.ground.srbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 615th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
@@ -579,7 +580,7 @@ config.c.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.IDP,
     weaponDBID = constants.WEAPONS.DF15C,
-    ammoThreshold = config.c.ground.srbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 616th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD2,
@@ -591,7 +592,7 @@ config.c.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.GMJ,
     weaponDBID = constants.WEAPONS.DF16A,
-    ammoThreshold = config.c.ground.srbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 617th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
@@ -603,7 +604,7 @@ config.c.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.HMJ,
     weaponDBID = constants.WEAPONS.DF16A,
-    ammoThreshold = config.c.ground.srbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 636th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
@@ -615,26 +616,26 @@ config.c.ground.srbm.firingUnits = {
 -- MRBM (China)
 -- ============================================================================
 
-config.c.ground.mrbm = {}
-config.c.ground.mrbm.wpnDefault = 24
-config.c.ground.mrbm.ammoThreshold = 55
-config.c.ground.mrbm.contactAge = 30 * 60
-config.c.ground.mrbm.reloadTime = 5 * 60
-config.c.ground.mrbm.stowTime = 5 * 60
-config.c.ground.mrbm.ammunitions = {
+config.c.ground.missileSystemTypes.mrbm = {}
+config.c.ground.missileSystemTypes.mrbm.wpnDefault = 24
+config.c.ground.missileSystemTypes.mrbm.ammoThreshold = 55
+config.c.ground.missileSystemTypes.mrbm.contactAge = 30 * 60
+config.c.ground.missileSystemTypes.mrbm.reloadTime = 5 * 60
+config.c.ground.missileSystemTypes.mrbm.stowTime = 5 * 60
+config.c.ground.missileSystemTypes.mrbm.ammunitions = {
   ["Ammo Revetment, 624th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Revetment, 624th Bde, PLARF",
-    wpnCurrent = config.c.ground.mrbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.mrbm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.mrbm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.mrbm.wpnDefault * 2,
   },
 }
-config.c.ground.mrbm.resupplyUnits = {
+config.c.ground.missileSystemTypes.mrbm.resupplyUnits = {
   ["Ammo Sec, 624th Bde, PLARF"] = {
     guid = "",
     name = "Ammo Sec, 624th Bde, PLARF",
-    wpnCurrent = config.c.ground.mrbm.wpnDefault,
-    wpnDefault = config.c.ground.mrbm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.mrbm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.mrbm.wpnDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.ZWQ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -642,7 +643,7 @@ config.c.ground.mrbm.resupplyUnits = {
     firingUnit = "624th Bde, PLARF"
   },
 }
-config.c.ground.mrbm.firingUnits = {
+config.c.ground.missileSystemTypes.mrbm.firingUnits = {
   ["624th Bde, PLARF"] = {
     guid = "",
     name = "624th Bde, PLARF",
@@ -650,7 +651,7 @@ config.c.ground.mrbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.ZWQ,
     weaponDBID = constants.WEAPONS.DF21D,
-    ammoThreshold = config.c.ground.mrbm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.mrbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 624th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS5_MOD5,
@@ -662,26 +663,26 @@ config.c.ground.mrbm.firingUnits = {
 -- ASCM (China)
 -- ============================================================================
 
-config.c.ground.ascm = {}
-config.c.ground.ascm.wpnDefault = 12
-config.c.ground.ascm.ammoThreshold = 55
-config.c.ground.ascm.contactAge = 30 * 60
-config.c.ground.ascm.reloadTime = 5 * 60
-config.c.ground.ascm.stowTime = 5 * 60
-config.c.ground.ascm.ammunitions = {
+config.c.ground.missileSystemTypes.ascm = {}
+config.c.ground.missileSystemTypes.ascm.wpnDefault = 12
+config.c.ground.missileSystemTypes.ascm.ammoThreshold = 55
+config.c.ground.missileSystemTypes.ascm.contactAge = 30 * 60
+config.c.ground.missileSystemTypes.ascm.reloadTime = 5 * 60
+config.c.ground.missileSystemTypes.ascm.stowTime = 5 * 60
+config.c.ground.missileSystemTypes.ascm.ammunitions = {
   ["Ammo Revetment, 1st Pili Reg"] = {
     guid = "",
     name = "Ammo Revetment, 1st Pili Reg",
-    wpnCurrent = config.c.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.c.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
 }
-config.c.ground.ascm.resupplyUnits = {
+config.c.ground.missileSystemTypes.ascm.resupplyUnits = {
   ["Ammo Sec, 1st Pili Reg"] = {
     guid = "",
     name = "Ammo Sec, 1st Pili Reg",
-    wpnCurrent = config.c.ground.ascm.wpnDefault,
-    wpnDefault = config.c.ground.ascm.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.RCU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -689,7 +690,7 @@ config.c.ground.ascm.resupplyUnits = {
     firingUnit = "1st Pili Reg"
   },
 }
-config.c.ground.ascm.firingUnits = {
+config.c.ground.missileSystemTypes.ascm.firingUnits = {
   ["1st Pili Reg"] = {
     guid = "",
     name = "1st Pili Reg",
@@ -697,7 +698,7 @@ config.c.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.RCU,
     weaponDBID = constants.WEAPONS.YJ12,
-    ammoThreshold = config.c.ground.ascm.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Pili Reg",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.YJ12,
@@ -709,68 +710,68 @@ config.c.ground.ascm.firingUnits = {
 -- SAM (China)
 -- ============================================================================
 
-config.c.ground.sam = {}
-config.c.ground.sam.wpnDefault = 16
-config.c.ground.sam.ammoThreshold = 55
-config.c.ground.sam.contactAge = 15 * 60
-config.c.ground.sam.reloadTime = 5 * 60
-config.c.ground.sam.stowTime = 5 * 60
-config.c.ground.sam.ammunitions = {
+config.c.ground.missileSystemTypes.sam = {}
+config.c.ground.missileSystemTypes.sam.wpnDefault = 16
+config.c.ground.missileSystemTypes.sam.ammoThreshold = 55
+config.c.ground.missileSystemTypes.sam.contactAge = 15 * 60
+config.c.ground.missileSystemTypes.sam.reloadTime = 5 * 60
+config.c.ground.missileSystemTypes.sam.stowTime = 5 * 60
+config.c.ground.missileSystemTypes.sam.ammunitions = {
   ["Ammo Revetment, 94695 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94695 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 94759 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94759 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 94774 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94774 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 94777 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94777 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 94807 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94807 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 94908 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94908 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 94967 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 94967 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 95324 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Revetment, 95324 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
 }
-config.c.ground.sam.resupplyUnits = {
+config.c.ground.missileSystemTypes.sam.resupplyUnits = {
   ["Ammo Sec, 94695 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94695 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QXV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -780,8 +781,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 94759 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94759 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.URF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -791,8 +792,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 94774 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94774 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.WEP,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -802,8 +803,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 94777 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94777 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.EAJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -813,8 +814,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 94807 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94807 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IDC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -824,8 +825,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 94908 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94908 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.OJM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -835,8 +836,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 94967 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 94967 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.LPU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -846,8 +847,8 @@ config.c.ground.sam.resupplyUnits = {
   ["Ammo Sec, 95324 Unit, PLAAF"] = {
     guid = "",
     name = "Ammo Sec, 95324 Unit, PLAAF",
-    wpnCurrent = config.c.ground.sam.wpnDefault,
-    wpnDefault = config.c.ground.sam.wpnDefault,
+    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.KRO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -855,7 +856,7 @@ config.c.ground.sam.resupplyUnits = {
     firingUnit = "95324 Unit, PLAAF"
   },
 }
-config.c.ground.sam.firingUnits = {
+config.c.ground.missileSystemTypes.sam.firingUnits = {
   ["94695 Unit, PLAAF"] = {
     guid = "",
     name = "94695 Unit, PLAAF",
@@ -863,7 +864,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.QXV,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94695 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -874,7 +875,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.URF,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94759 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -885,7 +886,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.WEP,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94774 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -896,7 +897,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.EAJ,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94777 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -907,7 +908,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.IDC,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94807 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -918,7 +919,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.OJM,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94908 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -929,7 +930,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.LPU,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 94967 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -940,7 +941,7 @@ config.c.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.KRO,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
-    ammoThreshold = config.c.ground.sam.ammoThreshold,
+    ammoThreshold = config.c.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 95324 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
   },
@@ -2685,7 +2686,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 4,
         ammoPerTarget = 3
       },
@@ -2712,7 +2713,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 4,
         ammoPerTarget = 4
       },
@@ -2734,7 +2735,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 4,
         ammoPerTarget = 2
       },
@@ -2755,7 +2756,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 4,
         ammoPerTarget = 2
       },
@@ -2776,7 +2777,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 3
       },
@@ -2808,7 +2809,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 4
       },
@@ -2832,7 +2833,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 2
       },
@@ -2857,7 +2858,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.srbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.srbm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 2
       },
@@ -2875,7 +2876,7 @@ config.c.fireSupportTaskTemplates = {
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_PACIFIC },
         filterNames = { "findNavalTargets" },
-        contactAge = config.c.ground.mrbm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.mrbm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 6
       },
@@ -2893,7 +2894,7 @@ config.c.fireSupportTaskTemplates = {
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_D },
         filterNames = { "findNavalTargets" },
-        contactAge = config.c.ground.ascm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.ascm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 2
       },
@@ -2911,7 +2912,7 @@ config.c.fireSupportTaskTemplates = {
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_NORTH },
         filterNames = { "evaluateEmissions", "findRadioDirection" },
-        contactAge = config.c.ground.mlrs.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.mlrs.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 8
       },
@@ -2929,7 +2930,7 @@ config.c.fireSupportTaskTemplates = {
         objs = {},
         areas = { constants.AREAS.AREA_OF_OPS_CENTER },
         filterNames = { "evaluateEmissions", "findRadioDirection" },
-        contactAge = config.c.ground.mlrs.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.mlrs.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 8
       },
@@ -2953,7 +2954,7 @@ config.c.fireSupportTaskTemplates = {
         },
         areas = {},
         filterNames = nil,
-        contactAge = config.c.ground.glcm.contactAge,
+        contactAge = config.c.ground.missileSystemTypes.glcm.contactAge,
         minTargetCount = 1,
         ammoPerTarget = 4
       },
@@ -4790,39 +4791,40 @@ config.t.gnssJamming.jammers = {
 
 
 -- ============================================================================
--- Missile system policy (Taiwan)
+-- Ground policy (Taiwan)
 -- ============================================================================
 
-config.t.missileSystemPolicy = {
+config.t.ground = {}
+config.t.ground.policy = {
   isAuto = false,
   hideOnEnterHA = false,
   hideResupplyOnRLNoMeeting = false
 }
+config.t.ground.missileSystemTypes = {}
 
 -- ============================================================================
 -- MLRS (Taiwan)
 -- ============================================================================
 
-config.t.ground = {}
-config.t.ground.mlrs = {}
-config.t.ground.mlrs.wpnDefault = 144
-config.t.ground.mlrs.ammoThreshold = 25
-config.t.ground.mlrs.reloadTime = 30 * 60
-config.t.ground.mlrs.stowTime = 5 * 60
-config.t.ground.mlrs.ammunitions = {
+config.t.ground.missileSystemTypes.mlrs = {}
+config.t.ground.missileSystemTypes.mlrs.wpnDefault = 144
+config.t.ground.missileSystemTypes.mlrs.ammoThreshold = 25
+config.t.ground.missileSystemTypes.mlrs.reloadTime = 30 * 60
+config.t.ground.missileSystemTypes.mlrs.stowTime = 5 * 60
+config.t.ground.missileSystemTypes.mlrs.ammunitions = {
   ["Ammo Revetment, Rocket Arty Coy, 21st Arty Command"] = {
     guid = "",
     name = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
-    wpnCurrent = config.t.ground.mlrs.wpnDefault,
-    wpnDefault = config.t.ground.mlrs.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
   },
 }
-config.t.ground.mlrs.resupplyUnits = {
+config.t.ground.missileSystemTypes.mlrs.resupplyUnits = {
   ["Ammo Sec, Rocket Arty Coy, 21st Arty Command"] = {
     guid = "",
     name = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
-    wpnCurrent = config.t.ground.mlrs.wpnDefault,
-    wpnDefault = config.t.ground.mlrs.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.NVD,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4830,7 +4832,7 @@ config.t.ground.mlrs.resupplyUnits = {
     firingUnit = "Rocket Arty Coy, 21st Arty Command"
   },
 }
-config.t.ground.mlrs.firingUnits = {
+config.t.ground.missileSystemTypes.mlrs.firingUnits = {
   ["Rocket Arty Coy, 21st Arty Command"] = {
     guid = "",
     name = "Rocket Arty Coy, 21st Arty Command",
@@ -4838,7 +4840,7 @@ config.t.ground.mlrs.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.NVD,
     weaponDBID = constants.WEAPONS.MK45_AMLRS,
-    ammoThreshold = config.t.ground.mlrs.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.mlrs.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
     dbid = constants.PLATFORMS.LT2000,
   },
@@ -4849,25 +4851,25 @@ config.t.ground.mlrs.firingUnits = {
 -- SRBM (Taiwan)
 -- ============================================================================
 
-config.t.ground.srbm = {}
-config.t.ground.srbm.wpnDefault = 27
-config.t.ground.srbm.ammoThreshold = 25
-config.t.ground.srbm.reloadTime = 10 * 60
-config.t.ground.srbm.stowTime = 5 * 60
-config.t.ground.srbm.ammunitions = {
+config.t.ground.missileSystemTypes.srbm = {}
+config.t.ground.missileSystemTypes.srbm.wpnDefault = 27
+config.t.ground.missileSystemTypes.srbm.ammoThreshold = 25
+config.t.ground.missileSystemTypes.srbm.reloadTime = 10 * 60
+config.t.ground.missileSystemTypes.srbm.stowTime = 5 * 60
+config.t.ground.missileSystemTypes.srbm.ammunitions = {
   ["Ammo Revetment, Rocket Arty Coy, 58th Arty Command"] = {
     guid = "",
     name = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
-    wpnCurrent = config.t.ground.srbm.wpnDefault,
-    wpnDefault = config.t.ground.srbm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.srbm.wpnDefault,
   },
 }
-config.t.ground.srbm.resupplyUnits = {
+config.t.ground.missileSystemTypes.srbm.resupplyUnits = {
   ["Ammo Sec, Rocket Arty Coy, 58th Arty Command"] = {
     guid = "",
     name = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
-    wpnCurrent = config.t.ground.srbm.wpnDefault,
-    wpnDefault = config.t.ground.srbm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.srbm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.srbm.wpnDefault,
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.LPK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4875,7 +4877,7 @@ config.t.ground.srbm.resupplyUnits = {
     firingUnit = "Rocket Arty Coy, 58th Arty Command"
   },
 }
-config.t.ground.srbm.firingUnits = {
+config.t.ground.missileSystemTypes.srbm.firingUnits = {
   ["Rocket Arty Coy, 58th Arty Command"] = {
     guid = "",
     name = "Rocket Arty Coy, 58th Arty Command",
@@ -4883,7 +4885,7 @@ config.t.ground.srbm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.LPK,
     weaponDBID = constants.WEAPONS.ATACMS,
-    ammoThreshold = config.t.ground.srbm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.srbm.ammoThreshold,
     resupplyUnit = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
     dbid = constants.PLATFORMS.HIMARS,
   },
@@ -4894,31 +4896,31 @@ config.t.ground.srbm.firingUnits = {
 -- GLCM (Taiwan)
 -- ============================================================================
 
-config.t.ground.glcm = {}
-config.t.ground.glcm.wpnDefault = 48
-config.t.ground.glcm.ammoThreshold = 25
-config.t.ground.glcm.reloadTime = 45 * 60
-config.t.ground.glcm.stowTime = 5 * 60
-config.t.ground.glcm.ammunitions = {
+config.t.ground.missileSystemTypes.glcm = {}
+config.t.ground.missileSystemTypes.glcm.wpnDefault = 48
+config.t.ground.missileSystemTypes.glcm.ammoThreshold = 25
+config.t.ground.missileSystemTypes.glcm.reloadTime = 45 * 60
+config.t.ground.missileSystemTypes.glcm.stowTime = 5 * 60
+config.t.ground.missileSystemTypes.glcm.ammunitions = {
   ["Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.glcm.wpnDefault * 2,
-    wpnDefault = config.t.ground.glcm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
   },
   ["Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.glcm.wpnDefault * 2,
-    wpnDefault = config.t.ground.glcm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
   },
 }
-config.t.ground.glcm.resupplyUnits = {
+config.t.ground.missileSystemTypes.glcm.resupplyUnits = {
   ["Ammo Sec, 641st Bn, 791st AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.glcm.wpnDefault,
-    wpnDefault = config.t.ground.glcm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault,
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.SET,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4928,8 +4930,8 @@ config.t.ground.glcm.resupplyUnits = {
   ["Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.glcm.wpnDefault,
-    wpnDefault = config.t.ground.glcm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault,
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.AMG,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4937,7 +4939,7 @@ config.t.ground.glcm.resupplyUnits = {
     firingUnit = "642nd Bn, 791st AFAD & Arty Bde"
   },
 }
-config.t.ground.glcm.firingUnits = {
+config.t.ground.missileSystemTypes.glcm.firingUnits = {
   ["641st Bn, 791st AFAD & Arty Bde"] = {
     guid = "",
     name = "641st Bn, 791st AFAD & Arty Bde",
@@ -4945,7 +4947,7 @@ config.t.ground.glcm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.SET,
     weaponDBID = constants.WEAPONS.HF2E,
-    ammoThreshold = config.t.ground.glcm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
@@ -4957,7 +4959,7 @@ config.t.ground.glcm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.AMG,
     weaponDBID = constants.WEAPONS.HF2E,
-    ammoThreshold = config.t.ground.glcm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.glcm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
@@ -4969,56 +4971,56 @@ config.t.ground.glcm.firingUnits = {
 -- ASCM (Taiwan)
 -- ============================================================================
 
-config.t.ground.ascm = {}
-config.t.ground.ascm.wpnDefault = 16
-config.t.ground.ascm.ammoThreshold = 25
--- config.t.ground.ascm.reloadTime = 45 * 60
-config.t.ground.ascm.reloadTime = 5 * 60
-config.t.ground.ascm.stowTime = 5 * 60
-config.t.ground.ascm.ammunitions = {
+config.t.ground.missileSystemTypes.ascm = {}
+config.t.ground.missileSystemTypes.ascm.wpnDefault = 16
+config.t.ground.missileSystemTypes.ascm.ammoThreshold = 25
+-- config.t.ground.missileSystemTypes.ascm.reloadTime = 45 * 60
+config.t.ground.missileSystemTypes.ascm.reloadTime = 5 * 60
+config.t.ground.missileSystemTypes.ascm.stowTime = 5 * 60
+config.t.ground.missileSystemTypes.ascm.ammunitions = {
   ["Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
   ["Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
   ["Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
   ["Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
   ["Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
   ["Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.ascm.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
   },
 }
-config.t.ground.ascm.resupplyUnits = {
+config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
   ["Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault,
-    wpnDefault = config.t.ground.ascm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.FZM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5028,8 +5030,8 @@ config.t.ground.ascm.resupplyUnits = {
   ["Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault,
-    wpnDefault = config.t.ground.ascm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.DLF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5039,8 +5041,8 @@ config.t.ground.ascm.resupplyUnits = {
   ["Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault,
-    wpnDefault = config.t.ground.ascm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.TGO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5050,8 +5052,8 @@ config.t.ground.ascm.resupplyUnits = {
   ["Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault,
-    wpnDefault = config.t.ground.ascm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.BPM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5061,8 +5063,8 @@ config.t.ground.ascm.resupplyUnits = {
   ["Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault,
-    wpnDefault = config.t.ground.ascm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.PDN,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5072,8 +5074,8 @@ config.t.ground.ascm.resupplyUnits = {
   ["Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.ascm.wpnDefault,
-    wpnDefault = config.t.ground.ascm.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.SKB,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5081,7 +5083,7 @@ config.t.ground.ascm.resupplyUnits = {
     firingUnit = "6th Hai Feng Shore-based ASM MOB Sqn"
   },
 }
-config.t.ground.ascm.firingUnits = {
+config.t.ground.missileSystemTypes.ascm.firingUnits = {
   ["1st Hai Feng Shore-based ASM MOB Sqn"] = {
     guid = "",
     name = "1st Hai Feng Shore-based ASM MOB Sqn",
@@ -5089,7 +5091,7 @@ config.t.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.FZM,
     weaponDBID = constants.WEAPONS.HF3,
-    ammoThreshold = config.t.ground.ascm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
   },
@@ -5100,7 +5102,7 @@ config.t.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.DLF,
     weaponDBID = constants.WEAPONS.HF3,
-    ammoThreshold = config.t.ground.ascm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
   },
@@ -5111,7 +5113,7 @@ config.t.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.TGO,
     weaponDBID = constants.WEAPONS.HF3,
-    ammoThreshold = config.t.ground.ascm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
   },
@@ -5122,7 +5124,7 @@ config.t.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.BPM,
     weaponDBID = constants.WEAPONS.HF3,
-    ammoThreshold = config.t.ground.ascm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
   },
@@ -5133,7 +5135,7 @@ config.t.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.PDN,
     weaponDBID = constants.WEAPONS.HF3,
-    ammoThreshold = config.t.ground.ascm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
   },
@@ -5144,7 +5146,7 @@ config.t.ground.ascm.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
     operationalArea = constants.OPERATIONAL_AREAS.SKB,
     weaponDBID = constants.WEAPONS.HF3,
-    ammoThreshold = config.t.ground.ascm.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.ascm.ammoThreshold,
     resupplyUnit = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
   },
@@ -5155,12 +5157,12 @@ config.t.ground.ascm.firingUnits = {
 -- SAM (Taiwan)
 -- ============================================================================
 
-config.t.ground.sam = {}
-config.t.ground.sam.wpnDefault = 54
-config.t.ground.sam.ammoThreshold = 50
-config.t.ground.sam.reloadTime = 5 * 60
-config.t.ground.sam.stowTime = 5 * 60
-config.t.ground.sam.ammunitions = {
+config.t.ground.missileSystemTypes.sam = {}
+config.t.ground.missileSystemTypes.sam.wpnDefault = 54
+config.t.ground.missileSystemTypes.sam.ammoThreshold = 50
+config.t.ground.missileSystemTypes.sam.reloadTime = 5 * 60
+config.t.ground.missileSystemTypes.sam.stowTime = 5 * 60
+config.t.ground.missileSystemTypes.sam.ammunitions = {
   ["Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
@@ -5176,20 +5178,20 @@ config.t.ground.sam.ammunitions = {
   ["Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
@@ -5206,20 +5208,20 @@ config.t.ground.sam.ammunitions = {
   ["Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
@@ -5236,23 +5238,23 @@ config.t.ground.sam.ammunitions = {
   ["Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
   ["Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.sam.wpnDefault * 2,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
   },
 }
-config.t.ground.sam.resupplyUnits = {
+config.t.ground.missileSystemTypes.sam.resupplyUnits = {
   ["Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
@@ -5278,8 +5280,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5289,8 +5291,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5300,8 +5302,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5333,8 +5335,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5344,8 +5346,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5355,8 +5357,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5388,8 +5390,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5399,8 +5401,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5410,8 +5412,8 @@ config.t.ground.sam.resupplyUnits = {
   ["Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     guid = "",
     name = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.sam.wpnDefault,
-    wpnDefault = config.t.ground.sam.wpnDefault,
+    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5419,14 +5421,14 @@ config.t.ground.sam.resupplyUnits = {
     firingUnit = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
 }
-config.t.ground.sam.firingUnits = {
+config.t.ground.missileSystemTypes.sam.firingUnits = {
   ["1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     guid = "",
     name = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.IKJ,
     weaponDBID = constants.WEAPONS.TK3,
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5437,7 +5439,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.UVY,
     weaponDBID = constants.WEAPONS.TK3,
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5448,7 +5450,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5458,7 +5460,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5468,7 +5470,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5478,7 +5480,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.MAK,
     weaponDBID = constants.WEAPONS.TK3,
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5489,7 +5491,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.FMK,
     weaponDBID = constants.WEAPONS.TK3,
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5500,7 +5502,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5510,7 +5512,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5520,7 +5522,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5530,7 +5532,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.PXV,
     weaponDBID = constants.WEAPONS.TK3,
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5541,7 +5543,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.IDW,
     weaponDBID = constants.WEAPONS.TK3,
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5552,7 +5554,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5562,7 +5564,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },
@@ -5572,7 +5574,7 @@ config.t.ground.sam.firingUnits = {
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
-    ammoThreshold = config.t.ground.sam.ammoThreshold,
+    ammoThreshold = config.t.ground.missileSystemTypes.sam.ammoThreshold,
     resupplyUnit = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
   },

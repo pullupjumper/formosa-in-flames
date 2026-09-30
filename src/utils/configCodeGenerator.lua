@@ -1,6 +1,6 @@
 ---Generates Lua source-code strings from ground-force configuration.
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
----`config.{side}.ground.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks.
+---`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks.
 ---Invoked interactively (console/REPL) to regenerate the hand-pasted constants
 ---and config sections whenever the scenario layout changes.
 
@@ -13,7 +13,7 @@ local ConfigCodeGenerator = {}
 --   Phase 1 (collectUniqueAreas)  : scan config -> dedupe operationalArea tables, build opAreaMap
 --   Phase 2 (formatAreasCode)   : emit `constants.AREAS = { ... }`, build areaRefMap for Phase 3
 --   Phase 3 (formatOpAreasCode) : emit `constants.OPERATIONAL_AREAS = { ... }` via POSITION_EMITTERS
---   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.{sys}.{ammo,resupply,firing}` blocks
+--   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.missileSystemTypes.{sys}.{ammo,resupply,firing}` blocks
 -- ============================================================================
 
 local AREA_NAME_PREFIXES = {
@@ -174,14 +174,14 @@ local function collectOpAreasFromUnits(unitMap, opAreaMap, seenKeySet, uniqueAre
 end
 
 ---Phase 1: Collect unique operational areas from all firing/resupply units
----@param groundForceConfig SBJ__GroundForceConfig Ground force config to scan
+---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force config to scan
 ---@return {key: string, opArea: SBJ__OperationalArea}[] uniqueAreas Sorted by key
 ---@return table<table, string> opAreaMap Maps opArea refs to constant key names
-local function collectUniqueAreas(groundForceConfig)
+local function collectUniqueAreas(missileSystemTypeConfig)
   local uniqueAreas = {}
   local seenKeySet = {}
   local opAreaMap = {}
-  for _, sysConfig in pairs(groundForceConfig) do
+  for _, sysConfig in pairs(missileSystemTypeConfig) do
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       collectOpAreasFromUnits(sysConfig.firingUnits, opAreaMap, seenKeySet, uniqueAreas)
       if sysConfig.resupplyUnits then
@@ -497,7 +497,7 @@ local function getOrderedFiringUnitFields(unit)
 end
 
 ---Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitionMap absent
----@param configPath string Config path prefix (e.g. "config.c.ground.mlrs")
+---@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
 ---@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
 ---@param wpnDefault number System's default weapon count for wpnRef simplification
 ---@return string|nil # Serialized block, or nil when ammunitionMap is nil
@@ -518,7 +518,7 @@ local function formatAmmunitionsBlock(configPath, ammunitionMap, wpnDefault)
 end
 
 ---Emit the `config.{...}.resupplyUnits = { ... }` block, or nil if resupplyUnits absent
----@param configPath string Config path prefix (e.g. "config.c.ground.mlrs")
+---@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
 ---@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil Resupply units keyed by unit name
 ---@param wpnDefault number System's default weapon count for wpnRef simplification
 ---@param ctx SBJ__FieldSerializerContext Shared context for operationalArea/state serialization
@@ -552,7 +552,7 @@ local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, wpnDefault,
 end
 
 ---Emit the `config.{...}.firingUnits = { ... }` block
----@param configPath string Config path prefix (e.g. "config.c.ground.mlrs")
+---@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
 ---@param firingUnitMap table<string, SBJ__FiringUnitDescriptor> Firing units keyed by unit name
 ---@param ctx SBJ__FieldSerializerContext Shared context for per-field constant lookup
 ---@return string # Serialized `config.{...}.firingUnits = { ... }` block
@@ -570,12 +570,12 @@ local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
   return table.concat(lines, "\n")
 end
 
----Phase 4: Generate all `config.{side}.ground.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
+---Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
 ---@param sideField string Side config field key ("c" / "t" / "u")
----@param groundForceConfig SBJ__GroundForceConfig Source ground-force config to serialize
+---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Source ground-force config to serialize
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
 ---@return string # Concatenated ammunitions/resupplyUnits/firingUnits blocks separated by newlines
-local function formatConfigCode(sideField, groundForceConfig, opAreaMap)
+local function formatConfigCode(sideField, missileSystemTypeConfig, opAreaMap)
   local ctx = {
     configPath = "",
     opAreaMap = opAreaMap,
@@ -585,10 +585,10 @@ local function formatConfigCode(sideField, groundForceConfig, opAreaMap)
   }
 
   local blocks = {}
-  for _, sysKey in ipairs(getSortedStringKeys(groundForceConfig)) do
-    local sysConfig = groundForceConfig[sysKey]
+  for _, sysKey in ipairs(getSortedStringKeys(missileSystemTypeConfig)) do
+    local sysConfig = missileSystemTypeConfig[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
-      ctx.configPath = "config." .. sideField .. ".ground." .. sysKey
+      ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
       local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.wpnDefault)
       if ammoBlock then blocks[#blocks + 1] = ammoBlock end
       local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.wpnDefault, ctx)
@@ -615,19 +615,19 @@ end
 
 ---Generate Lua source-code strings from ground-force configuration
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
----`config.{side}.ground.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
----Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.c.ground)
+---`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
+---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.c.ground.missileSystemTypes)
 ---@param sideName string Side name ("China", "Taiwan")
----@param groundForceConfig SBJ__GroundForceConfig Ground force configuration
+---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration
 ---@return string areasStr constants.AREAS code
 ---@return string opAreasStr constants.OPERATIONAL_AREAS code
 ---@return string configStr config blocks with constant references
-function ConfigCodeGenerator.format(sideName, groundForceConfig)
+function ConfigCodeGenerator.format(sideName, missileSystemTypeConfig)
   local sideField = resolveSideField(sideName)
-  local uniqueAreas, opAreaMap = collectUniqueAreas(groundForceConfig)
+  local uniqueAreas, opAreaMap = collectUniqueAreas(missileSystemTypeConfig)
   local areasStr, areaRefMap = formatAreasCode(uniqueAreas)
   local opAreasStr = formatOpAreasCode(uniqueAreas, areaRefMap)
-  local configStr = formatConfigCode(sideField, groundForceConfig, opAreaMap)
+  local configStr = formatConfigCode(sideField, missileSystemTypeConfig, opAreaMap)
   return areasStr, opAreasStr, configStr
 end
 

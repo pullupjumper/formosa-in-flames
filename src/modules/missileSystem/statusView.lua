@@ -36,11 +36,11 @@ end
 
 ---Build battery status rows grouped by resupply unit name
 ---@param groundCtx SBJ__GroundForceContext Side ground force runtime context
----@param groundConfig SBJ__GroundForceConfig Side ground force configuration
+---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Side ground force configuration
 ---@param systemTypes string[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
 ---@param currentTime number Current scenario time in seconds
 ---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
-function StatusView.buildBatteryStatusRows(groundCtx, groundConfig, systemTypes, currentTime)
+function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, systemTypes, currentTime)
   local rows = {}
 
   for _, missileSystem in ipairs(systemTypes) do
@@ -70,7 +70,7 @@ function StatusView.buildBatteryStatusRows(groundCtx, groundConfig, systemTypes,
           missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent,
           firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, currentTime),
           resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, currentTime),
-          defaultReloadTime = groundConfig[missileSystem].reloadTime / 60
+          defaultReloadTime = missileSystemTypeConfig[missileSystem].reloadTime / 60
         })
       end
     end

@@ -205,14 +205,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
 ---@field firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units indexed by unit name
 
----Per-side missile system control policy; the only differences between the China and Taiwan event scripts
----@class SBJ__MissileSystemPolicyConfig: table
+---Per-side ground policy; the only differences between the China and Taiwan event scripts
+---@class SBJ__GroundPolicyConfig: table
 ---@field isAuto boolean Whether the reload/hide cycle and position events run in automatic mode
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 
----Ground force configuration
----@class SBJ__GroundForceConfig: table
+---Missile system type configuration, keyed by type
+---@class SBJ__MissileSystemTypeConfig: table
 ---@field mlrs SBJ__MissileSystemConfig MLRS configuration
 ---@field glcm SBJ__MissileSystemConfig GLCM configuration
 ---@field srbm SBJ__MissileSystemConfig SRBM configuration
@@ -220,6 +220,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ascm SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
 ---@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
 ---@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
+
+---Ground force configuration
+---@class SBJ__GroundConfig: table
+---@field policy SBJ__GroundPolicyConfig Ground policy
+---@field missileSystemTypes SBJ__MissileSystemTypeConfig Missile system type configurations
 
 ---Dynamic operation type discriminator
 ---@alias SBJ__OperationType "air"|"ground"
@@ -305,8 +310,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field iads SBJ__IADSConfig IADS configuration
 ---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
 ---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
----@field ground SBJ__GroundForceConfig Ground force configuration
----@field missileSystemPolicy SBJ__MissileSystemPolicyConfig Missile system control policy
+---@field ground SBJ__GroundConfig Ground force configuration
 ---@field recon SBJ__ReconConfig Reconnaissance configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field amphibOps SBJ__AmphibOpsConfig Amphibious operations configuration
@@ -318,8 +322,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Taiwan faction configuration
 ---@class SBJ__TaiwanConfig: table
 ---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
----@field ground SBJ__GroundForceConfig Ground force configuration
----@field missileSystemPolicy SBJ__MissileSystemPolicyConfig Missile system control policy
+---@field ground SBJ__GroundConfig Ground force configuration
 ---@field iads SBJ__IADSFactionConfig IADS configuration
 ---@field repairRunway SBJ__TaiwanRunwayRepairConfig Runway repair configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
@@ -1861,7 +1864,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Shared context for Phase 4 field serializers
 ---@class SBJ__FieldSerializerContext
----@field configPath string Current config.{side}.ground.{sys} path
+---@field configPath string Current config.{side}.ground.missileSystemTypes.{sys} path
 ---@field opAreaMap table<table, string> opArea table ref -> constant key
 ---@field reverseState table<any, string> state value -> constant key
 ---@field reverseWeapons table<integer, string> weapon DBID -> constant key

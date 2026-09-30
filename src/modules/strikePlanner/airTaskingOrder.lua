@@ -436,7 +436,7 @@ local function scheduleReconUAV(config, plannerState, packageData)
   end
 
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
-  local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.srbm.reloadTime -
+  local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.missileSystemTypes.srbm.reloadTime -
       flightTime
   local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
   return Recon.addEntry(plannerState.recon, packageData.reconUAV, takeoffTimeStr)

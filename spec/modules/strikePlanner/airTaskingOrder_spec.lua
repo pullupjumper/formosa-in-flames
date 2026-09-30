@@ -1064,7 +1064,7 @@ describe("AirTaskingOrder", function()
           }
         }
       })
-      local config = { c = { ground = { srbm = { reloadTime = 300 } } } }
+      local config = { c = { ground = { missileSystemTypes = { srbm = { reloadTime = 300 } } } } }
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       -- trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))
       stubMissionAndAssignment()
@@ -1095,7 +1095,7 @@ describe("AirTaskingOrder", function()
       local pkg = makePackage({ reconUAV = reconUAV })
       -- Default recon queue has no satellite pass, so addEntry has no window to anchor.
       local plannerState = makePlannerState({ packages = { pkg } })
-      local config = { c = { ground = { srbm = { reloadTime = 300 } } } }
+      local config = { c = { ground = { missileSystemTypes = { srbm = { reloadTime = 300 } } } } }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(2000))

@@ -44,7 +44,7 @@ describe("UnitStatusUI", function()
   ---@return table
   local function makeConfig(overrides)
     local function makeSideConfig()
-      return { gnssJamming = { jammers = {} }, air = { landBased = { deployedACs = {} } }, ground = {} }
+      return { gnssJamming = { jammers = {} }, air = { landBased = { deployedACs = {} } }, ground = { missileSystemTypes = {} } }
     end
     local config = { c = makeSideConfig(), t = makeSideConfig() }
     config.c.amphibOps = { operations = {}, operationalZones = {} }

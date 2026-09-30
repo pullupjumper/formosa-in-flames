@@ -14,7 +14,7 @@
 
 模組內將觸發流程拆成多個局部 handler：`processFiringPoint`、`processHideArea`、`processReloadPoint`、`processAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。
 
-此外，`behavior`（由 `processUnitEntersArea` 從陣營的 `missileSystemPolicy` 組出）允許不同陣營自訂流程，例如電腦控制陣營可在進入 HA 時自動 `hideUnit`（前提為彈藥充足），玩家控制陣營或低彈藥量單位則不做動作，以便接續前往 RL 補給。
+此外，`behavior`（由 `processUnitEntersArea` 從陣營的 `ground.policy` 組出）允許不同陣營自訂流程，例如電腦控制陣營可在進入 HA 時自動 `hideUnit`（前提為彈藥充足），玩家控制陣營或低彈藥量單位則不做動作，以便接續前往 RL 補給。
 
 ---
 
@@ -58,11 +58,11 @@ flowchart TD
 | `sendToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`） |
 | `startStow` | `groundCtx, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
 | `getAmmoInventory` | `groundCtx, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
-| `process` | `groundCtx, groundConfig, runCtx, sideName` | `nil` | 執行循環並輸出結果日誌 |
-| `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `missileSystemPolicy.isAuto`（包成 `runCtx`）後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
+| `process` | `groundCtx, missileSystemTypeConfig, runCtx, sideName` | `nil` | 執行循環並輸出結果日誌 |
+| `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營組出 policy／behavior，交給私有 `processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `unit, groundCtx` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
-| `redeploy` | `groundForceConfig, groundForceCtx, sideName, layouts` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
+| `redeploy` | `missileSystemTypeConfig, groundForceCtx, sideName, layouts` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
 | `redeployFromSetup` | `config, saveData, sideName, entries` | `nil` | 把 setup menu 送回的 entries 轉成 layouts 後呼叫 `redeploy` |
 | `buildSetupMenuRows` | `config, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 setup menu 所需的系統設定副本（含 zone 頂點） |
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |
@@ -70,7 +70,7 @@ flowchart TD
 | `ensureGroundForceState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.ensureGroundForceState` |
 | `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `Context.initMissileSystemContexts` |
 
-`ensureGroundForceState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[context](context.md) 內的同名函式仍維持 `(groundForceConfig, groundForceCtx)`。
+`ensureGroundForceState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[context](context.md) 內的同名函式仍維持 `(missileSystemTypeConfig, groundForceCtx)`。
 
 > 原本轉發 `Deployment.addMissileSystems` 的門面函式已刪除，外部改用 `deploySide`；`processMoveToPositionEvent` 改為私有，只經 `processUnitEntersArea` 進入。
 

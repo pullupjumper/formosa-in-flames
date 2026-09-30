@@ -195,7 +195,7 @@ SAM 任務依慣例排除在 stow 之外。
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
 | `config` | `config.c.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [atoBuilder](atoBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
-| `config` | `config.c.recon.fsemStaleAfterSec` | FSEM 退役時限，目前配置為 `30 * 60` 秒，刻意與觀察窗對齊（競爭中的 operation 最多等 30 分鐘）並與 `config.c.ground.srbm.contactAge` 一致（更舊的目標資料本來就過期）。 |
+| `config` | `config.c.recon.fsemStaleAfterSec` | FSEM 退役時限，目前配置為 `30 * 60` 秒，刻意與觀察窗對齊（競爭中的 operation 最多等 30 分鐘）並與 `config.c.ground.missileSystemTypes.srbm.contactAge` 一致（更舊的目標資料本來就過期）。 |
 | `constants` | `constants.MISSILE_SYSTEM_STATE.HIDE` | 發射單元必須處於此狀態才可被選用。 |
 | `constants` | `constants.MISSILE_SYSTEM_STATE.STATIC`／`REPOSITIONING` | 構成 `STOW_ON_RETIRE_STATE`。 |
 | `constants` | `constants.DATE_FORMAT` | FST `startTime` 的 UTC 格式。 |

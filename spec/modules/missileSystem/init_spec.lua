@@ -167,14 +167,14 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
       }
-      local groundConfig = {
+      local missileSystemTypeConfig = {
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig,
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmConfig,
       }
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, groundConfig, true, "Taiwan")
+      MissileSystem.process(groundCtx, missileSystemTypeConfig, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = true }),
@@ -193,7 +193,7 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
         [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsCtx,
       }
-      local groundConfig = {}
+      local missileSystemTypeConfig = {}
 
       local cycleProcessStub = trackStub(Cycle, "process").invokes(function(systemCtx)
         if systemCtx.id == "srbm" then
@@ -204,7 +204,7 @@ describe("MissileSystem", function()
         return {}
       end)
 
-      MissileSystem.process(groundCtx, groundConfig, true, "Taiwan")
+      MissileSystem.process(groundCtx, missileSystemTypeConfig, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
       assert.stub(logStub).was.called(1)
@@ -226,10 +226,10 @@ describe("MissileSystem", function()
     -- Positive: the log names the run mode so auto and manual sides can be told apart
     it("should report the run mode in the log", function()
       local groundCtx = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true } }
-      local groundConfig = {}
+      local missileSystemTypeConfig = {}
       trackStub(Cycle, "process").returns({ { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } })
 
-      MissileSystem.process(groundCtx, groundConfig, false, "Taiwan")
+      MissileSystem.process(groundCtx, missileSystemTypeConfig, false, "Taiwan")
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "mode=manual", 1, true))
@@ -241,7 +241,7 @@ describe("MissileSystem", function()
       local groundCtx = {
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
       }
-      local groundConfig = {}
+      local missileSystemTypeConfig = {}
 
       trackStub(Cycle, "process").returns({
         {
@@ -250,7 +250,7 @@ describe("MissileSystem", function()
         }
       })
 
-      MissileSystem.process(groundCtx, groundConfig, true, "Taiwan")
+      MissileSystem.process(groundCtx, missileSystemTypeConfig, true, "Taiwan")
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -267,11 +267,11 @@ describe("MissileSystem", function()
         [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
         [constants.MISSILE_SYSTEM_TYPES.MRBM] = { enabled = false },
       }
-      local groundConfig = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig }
+      local missileSystemTypeConfig = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmConfig }
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, groundConfig, false, "Taiwan")
+      MissileSystem.process(groundCtx, missileSystemTypeConfig, false, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(1)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = false }),
@@ -289,12 +289,16 @@ describe("MissileSystem", function()
   local function makeSides()
     local config = {
       c = {
-        ground = { id = "c-cfg" },
-        missileSystemPolicy = { isAuto = true, hideOnEnterHA = true, hideResupplyOnRLNoMeeting = true }
+        ground = {
+          missileSystemTypes = { id = "c-cfg" },
+          policy = { isAuto = true, hideOnEnterHA = true, hideResupplyOnRLNoMeeting = true }
+        }
       },
       t = {
-        ground = { id = "t-cfg" },
-        missileSystemPolicy = { isAuto = false, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
+        ground = {
+          missileSystemTypes = { id = "t-cfg" },
+          policy = { isAuto = false, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
+        }
       }
     }
     local saveData = { c = { ground = { id = "c-ctx" } }, t = { ground = { id = "t-ctx" } } }
@@ -315,9 +319,9 @@ describe("MissileSystem", function()
       MissileSystem.processSide(config, saveData, constants.SIDES.PLAYER)
 
       assert.stub(processStub).was.called(2)
-      assert.stub(processStub).was.called_with(saveData.c.ground, config.c.ground, true,
+      assert.stub(processStub).was.called_with(saveData.c.ground, config.c.ground.missileSystemTypes, true,
         constants.SIDES.ENEMY)
-      assert.stub(processStub).was.called_with(saveData.t.ground, config.t.ground, false,
+      assert.stub(processStub).was.called_with(saveData.t.ground, config.t.ground.missileSystemTypes, false,
         constants.SIDES.PLAYER)
     end)
   end)
@@ -335,7 +339,7 @@ describe("MissileSystem", function()
 
       MissileSystem.initSide(config, saveData, constants.SIDES.PLAYER)
 
-      assert.stub(contextStub).was.called_with(config.t.ground, saveData.t.ground)
+      assert.stub(contextStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
     end)
 
     -- Negative: a disabled side builds nothing
@@ -362,8 +366,8 @@ describe("MissileSystem", function()
 
       MissileSystem.deploySide(config, saveData, constants.SIDES.PLAYER)
 
-      assert.stub(addStub).was.called_with(config.t.ground, constants.SIDES.PLAYER)
-      assert.stub(contextStub).was.called_with(config.t.ground, saveData.t.ground)
+      assert.stub(addStub).was.called_with(config.t.ground.missileSystemTypes, constants.SIDES.PLAYER)
+      assert.stub(contextStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
     end)
   end)
 
@@ -379,7 +383,7 @@ describe("MissileSystem", function()
 
       MissileSystem.ensureGroundForceState(config, saveData, constants.SIDES.PLAYER)
 
-      assert.stub(seedStub).was.called_with(config.t.ground, saveData.t.ground)
+      assert.stub(seedStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
     end)
   end)
 
@@ -399,7 +403,7 @@ describe("MissileSystem", function()
       MissileSystem.redeployFromSetup(config, saveData, constants.SIDES.PLAYER, entries)
 
       assert.stub(buildLayoutsStub).was.called_with(entries)
-      assert.stub(redeployStub).was.called_with(config.t.ground, saveData.t.ground, constants.SIDES.PLAYER, layouts)
+      assert.stub(redeployStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground, constants.SIDES.PLAYER, layouts)
     end)
   end)
 
@@ -417,7 +421,7 @@ describe("MissileSystem", function()
       local result = MissileSystem.buildSetupMenuRows(config, constants.SIDES.PLAYER)
 
       assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(config.t.ground, constants.SIDES.PLAYER)
+      assert.stub(rowsStub).was.called_with(config.t.ground.missileSystemTypes, constants.SIDES.PLAYER)
     end)
   end)
 
@@ -437,7 +441,7 @@ describe("MissileSystem", function()
       local result = MissileSystem.buildBatteryStatusRows(config, saveData, constants.SIDES.PLAYER, systemTypes)
 
       assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(saveData.t.ground, config.t.ground, systemTypes, 4200)
+      assert.stub(rowsStub).was.called_with(saveData.t.ground, config.t.ground.missileSystemTypes, systemTypes, 4200)
     end)
   end)
 
@@ -753,7 +757,7 @@ describe("MissileSystem", function()
     local function enterArea(params)
       local field = GameUtils.getCachedSideConfig(params.unit.side).field
       local policy = { isAuto = true, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
-      local config = { [field] = { missileSystemPolicy = policy } }
+      local config = { [field] = { ground = { policy = policy } } }
       local saveData = { [field] = { ground = params.groundCtx } }
       for k, v in pairs(params.policy or {}) do
         policy[k] = v
@@ -1361,7 +1365,7 @@ describe("MissileSystem", function()
   describe("redeploy", function()
     -- Positive: layouts are applied first, then zones, units and state are rebuilt in order
     it("should apply layouts, then rebuild triggers, units and contexts in order", function()
-      local groundForceConfig = {}
+      local missileSystemTypeConfig = {}
       local groundForceCtx = {}
       local layouts = { { category = "srbm", unitname = "FU-1", operationalArea = { name = "#NEW" } } }
       local newAreas = { { name = "#NEW" } }
@@ -1382,7 +1386,7 @@ describe("MissileSystem", function()
         table.insert(calls, "initMissileSystemContexts")
       end)
 
-      MissileSystem.redeploy(groundForceConfig, groundForceCtx, "Taiwan", layouts)
+      MissileSystem.redeploy(missileSystemTypeConfig, groundForceCtx, "Taiwan", layouts)
 
       assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
@@ -1391,8 +1395,8 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, "Taiwan")
-      assert.stub(addStub).was.called_with(groundForceConfig, "Taiwan")
-      assert.stub(contextStub).was.called_with(groundForceConfig, groundForceCtx)
+      assert.stub(addStub).was.called_with(missileSystemTypeConfig, "Taiwan")
+      assert.stub(contextStub).was.called_with(missileSystemTypeConfig, groundForceCtx)
     end)
   end)
 end)

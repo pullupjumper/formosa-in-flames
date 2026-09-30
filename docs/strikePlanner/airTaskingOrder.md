@@ -112,10 +112,10 @@ flowchart TD
 
 ### 偵察 UAV 排程
 
-若 Package 帶有 `reconUAV`，任務建立後 `scheduleReconUAV()` 會安排一架打擊後偵察 UAV。當 `reconUAV.takeoffTime` 尚未預先設定時，模組以 striker 任務結束時間、`config.c.ground.srbm.reloadTime` 與 UAV 航程飛行時間推算起飛時間：
+若 Package 帶有 `reconUAV`，任務建立後 `scheduleReconUAV()` 會安排一架打擊後偵察 UAV。當 `reconUAV.takeoffTime` 尚未預先設定時，模組以 striker 任務結束時間、`config.c.ground.missileSystemTypes.srbm.reloadTime` 與 UAV 航程飛行時間推算起飛時間：
 
 ```text
-takeoffTime = striker.endTime + config.c.ground.srbm.reloadTime - flightTime
+takeoffTime = striker.endTime + config.c.ground.missileSystemTypes.srbm.reloadTime - flightTime
 ```
 
 接著把這個起飛時間當作 `startTime`，委派給 [`Recon.addEntry(saveData.c.recon, reconUAV, takeoffTime)`](recon.md)。實際的空窗檢查、deep copy、欄位重設（`hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`）、`endTime = takeoffTime + flightTime` 計算與寫入佇列，全部由 `addEntry` 完成；`scheduleReconUAV()` 只負責推算起飛時間並回傳 `addEntry` 給出的 entry（或 `nil`）。
@@ -227,7 +227,7 @@ saveData.c
 
 | 類型 | 路徑 | 用途 |
 |---|---|---|
-| `config` | `config.c.ground.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
+| `config` | `config.c.ground.missileSystemTypes.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
 | `config` | `config.aircraftReadySec` | Package template 會用它填入必填的 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
 | `config` | `config.c.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
 | `config` | `config.c.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
