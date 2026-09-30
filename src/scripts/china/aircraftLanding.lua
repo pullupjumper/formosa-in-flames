@@ -10,7 +10,7 @@ if unit then
       unit.dbid == constants.PLATFORMS.H6K or
       unit.dbid == constants.PLATFORMS.J35 or
       unit.dbid == constants.PLATFORMS.J10C then
-    unit.readytime = config.readyTime
+    unit.readytime = config.aircraftReadySec
     unit.mission = ""
   end
 end

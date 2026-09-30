@@ -261,6 +261,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Air operations configuration
 ---@class SBJ__AirOperationsConfig: table
+---@field strikeInterval number Default interval between strike packages of an air operation (seconds)
 ---@field minimumStrengthRatio number Fraction of a role's requested aircraft a base must supply for the package to be dispatched; at or above it the package launches understrength rather than being skipped
 ---@field timing SBJ__AirTimingConfig Dynamic ATO timing and safety margins
 ---@field landBased { deployedACs: SBJ__AirbaseDeploymentDescriptor[], wpnNum?: number } Land-based aircraft deployment
@@ -298,6 +299,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---China faction configuration
 ---@class SBJ__ChinaConfig: table
 ---@field triggers SBJ__TriggerConfig Trigger timing configuration
+---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
+---@field repairRunway SBJ__ChinaRunwayRepairConfig Runway repair configuration
 ---@field sigint SBJ__SIGINTConfig SIGINT configuration
 ---@field iads SBJ__IADSConfig IADS configuration
 ---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
@@ -318,6 +321,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ground SBJ__GroundForceConfig Ground force configuration
 ---@field missileSystemPolicy SBJ__MissileSystemPolicyConfig Missile system control policy
 ---@field iads SBJ__IADSFactionConfig IADS configuration
+---@field repairRunway SBJ__TaiwanRunwayRepairConfig Runway repair configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
 
@@ -350,12 +354,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isSaved boolean Save game flag
 ---@field difficulty string Difficulty level
 ---@field logging SBJ__LoggingConfig Logging configuration
----@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
----@field radarDistance number Radar detection distance (nautical miles)
----@field readyTime number Ready time for missions (seconds)
----@field strikeInterval number Strike interval for strike packages (seconds)
+---@field aircraftReadySec number Ready time for aircraft after landing and for package templates (seconds)
 ---@field missileSystemState table<string, integer> Battery state enumeration
----@field repairRunway SBJ__RunwayRepairConfig Runway repair configuration
 ---@field c SBJ__ChinaConfig China faction configuration
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
 ---@field u SBJ__USConfig US faction configuration
@@ -1149,6 +1149,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AircraftValidationContext: table
 ---@field reservedAircraft table<string, integer> Map of reservation key to reserved aircraft count; mutated on success
 ---@field freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache keyed by base GUID, with per-DBID counts; mutated
+---@field strikeInterval number Default interval between strike packages of an air operation (seconds)
 ---@field minimumStrengthRatio number Fraction of the requested aircraft a base must supply to be accepted (0-1)
 
 
@@ -1655,6 +1656,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ratio {C2:number} C2 facility ratio multiplier
 ---@field c2FacilityDBIDs number[] Database IDs for C2 facility types
 ---@field randomRadius number Random deployment radius (nautical miles)
+---@field radarDistance number Backup radar search distance when a radar is destroyed (nautical miles)
 ---@field c2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
 
 ---IADS context managing air defense system state
@@ -1696,12 +1698,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field guid string Runway unit GUID
 ---@field startTime number|nil Repair operation start timestamp, nil if not yet started
 
----Unified runway repair configuration for all factions
----@class SBJ__RunwayRepairConfig: table
+---China runway repair configuration
+---@class SBJ__ChinaRunwayRepairConfig: table
 ---@field percentagePerHour number Repair percentage per hour
----@field runwayDBIDs number[] List of runway database IDs to repair (China)
----@field airBases string[] List of Taiwan airbases with runways to repair (Taiwan)
----@field runwaySubTypes string[] Array of runway facility sub-type patterns to match (Taiwan)
+---@field runwayDBIDs number[] List of runway database IDs to repair
+
+---Taiwan runway repair configuration
+---@class SBJ__TaiwanRunwayRepairConfig: table
+---@field percentagePerHour number Repair percentage per hour
+---@field airBases string[] List of Taiwan airbases with runways to repair
+---@field runwaySubTypes string[] Array of runway facility sub-type patterns to match
 
 ---Runway repair context managing runway damage repair operations
 ---@class SBJ__RunwayRepairmentContext: table

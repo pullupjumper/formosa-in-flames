@@ -3,5 +3,5 @@ local GameApi = require("src.utils.gameApi")
 local unit = GameApi.ScenEdit_UnitX()
 
 if unit then
-  unit.readytime = config.readyTime
+  unit.readytime = config.aircraftReadySec
 end

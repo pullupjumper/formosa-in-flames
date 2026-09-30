@@ -228,7 +228,7 @@ saveData.c
 | 類型 | 路徑 | 用途 |
 |---|---|---|
 | `config` | `config.c.ground.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
-| `config` | `config.readyTime` | Package template 會用它填入必填的 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
+| `config` | `config.aircraftReadySec` | Package template 會用它填入必填的 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
 | `config` | `config.c.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
 | `config` | `config.c.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
 | `constants` | `constants.SIDES.ENEMY` | 建立 China side 任務、設定 doctrine、建立 flight plan。 |

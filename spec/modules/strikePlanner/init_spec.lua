@@ -44,8 +44,8 @@ describe("StrikePlanner", function()
   ---@return table
   local function makeConfig()
     return {
-      targetScanning = { scan = true },
       c = {
+        targetScanning = { scan = true },
         recon = {
           queue = {},
           template = { WZ8_RECON_ISLAND = { id = "WZ8_RECON_ISLAND" } },
@@ -157,7 +157,8 @@ describe("StrikePlanner", function()
 
       runInit(config, plannerState)
 
-      assert.stub(findTargetsStub).was.called_with(constants.SIDES.ENEMY, config.targetScanning, plannerState.targetlist)
+      assert.stub(findTargetsStub).was.called_with(constants.SIDES.ENEMY, config.c.targetScanning,
+        plannerState.targetlist)
     end)
 
     -- Positive: recon enabled seeds the queue from the recon config slice.

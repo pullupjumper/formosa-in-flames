@@ -36,7 +36,7 @@ config.t = {}
 config.u = {}
 config.score = {}
 
-config.targetScanning = {
+config.c.targetScanning = {
   distanceThreshold = 1.5, -- nautical miles
   taiwanAirBases = {
     "Jiashan AB",
@@ -97,10 +97,8 @@ config.targetScanning = {
     }
   }
 }
-config.radarDistance = 70
--- config.readyTime = 3600 * 1.5
-config.readyTime = 5 * 60
-config.strikeInterval = 60 * 60
+-- config.aircraftReadySec = 3600 * 1.5
+config.aircraftReadySec = 5 * 60
 
 
 -- ============================================================================
@@ -160,6 +158,7 @@ config.c.iads = {}
 config.c.iads.ratio = { C2 = 1.5, }
 config.c.iads.c2FacilityDBIDs = { 319, 318, 115, 113 }
 config.c.iads.randomRadius = 10
+config.c.iads.radarDistance = 70 -- nautical miles
 config.c.iads.c2Deployments = {
   {
     position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
@@ -1118,6 +1117,7 @@ config.c.air = {}
 -- package is dispatched at all. Below it the package is skipped; at or above it the
 -- package launches understrength, since a half-strength strike beats none.
 config.c.air.minimumStrengthRatio = 0.5
+config.c.air.strikeInterval = 60 * 60
 config.c.air.timing = {
   assignmentSafetyMargin = 5 * 60,
   flightTimeSafetyMargin = 5 * 60,
@@ -2634,12 +2634,16 @@ config.c.subSurface.slcm.randomRadius = 20
 
 
 -- ============================================================================
--- Runway Repair Configuration
+-- Runway Repair (China / Taiwan)
 -- ============================================================================
 
-config.repairRunway = {
+config.c.repairRunway = {
   percentagePerHour = 3,
   runwayDBIDs = { 55, 43, 757, 1422, 1424, 1423, 1421 },
+}
+
+config.t.repairRunway = {
+  percentagePerHour = 3,
   airBases = {
     "Hualien AB",
     "Taitung/Jhihhang AB",
@@ -2965,7 +2969,7 @@ config.c.fireSupportTaskTemplates = {
 config.c.packageTemplates = {
   AIR_STRIKE_AB_W_1 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3049,7 +3053,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.SHANTOU_WAISHA_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3130,7 +3134,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.HUIAN_AAB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3212,7 +3216,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_2 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.XINGNING_AB,
         weaponDBID = constants.WEAPONS.YJ63,
@@ -3242,7 +3246,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.ANQING_AB,
         weaponDBID = constants.WEAPONS.YJ63,
@@ -3272,7 +3276,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_3 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -3354,7 +3358,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.ZHANGZHOU_LONGXI_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -3435,7 +3439,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.LONGTIAN_AAB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -3517,7 +3521,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_AAR_1 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.JIAXING_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3666,7 +3670,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.JIAXING_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3825,7 +3829,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.JIAXING_AB,
         weaponDBID = constants.WEAPONS.AKD88,
@@ -3986,7 +3990,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_W_AAR_3 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.TAIZHOU_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -4135,7 +4139,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.TAIZHOU_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -4294,7 +4298,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.TAIZHOU_AB,
         weaponDBID = constants.WEAPONS.KAB1500,
@@ -4456,7 +4460,7 @@ config.c.packageTemplates = {
   },
   AIR_INTERCEPT_AIR_E_1 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.WUHU_AB,
         weaponDBID = constants.WEAPONS.PL15,
@@ -4512,7 +4516,7 @@ config.c.packageTemplates = {
   },
   AIR_STRIKE_AB_E_1 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
@@ -4593,7 +4597,7 @@ config.c.packageTemplates = {
       },
     },
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = "CSG",
         weaponDBID = constants.WEAPONS.LS_6_500,
@@ -4676,7 +4680,7 @@ config.c.packageTemplates = {
   },
   AIR_ASUW_SHIP_N_1 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.SHUIMEN_AAB,
         weaponDBID = constants.WEAPONS.YJ83,
@@ -4723,7 +4727,7 @@ config.c.packageTemplates = {
   },
   AIR_CAS_TROOPS_N_1 = {
     {
-      timeToReady = config.readyTime,
+      timeToReady = config.aircraftReadySec,
       striker = {
         baseGUID = constants.BASES.SHUIMEN_AAB,
         weaponDBID = constants.WEAPONS.CS_BBC_5,

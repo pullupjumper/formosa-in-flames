@@ -25,7 +25,7 @@ local WZ8_RECON_CHANCE = 0.5
 function StrikePlanner.init(config, saveData)
   local plannerState = PersistentState.strikePlanner(saveData)
 
-  TargetingProcess.findTargets(constants.SIDES.ENEMY, config.targetScanning, plannerState.targetlist)
+  TargetingProcess.findTargets(constants.SIDES.ENEMY, config.c.targetScanning, plannerState.targetlist)
 
   if plannerState.recon.enabled then
     Recon.initQueue(config.c.recon, plannerState.recon)

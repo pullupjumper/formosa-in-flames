@@ -15,7 +15,7 @@ describe("OperationType", function()
   it("should describe air operations", function()
     local descriptor = OperationType.resolve("air")
     local plannerState = makePlannerState()
-    local config = { strikeInterval = 900 }
+    local config = { c = { air = { strikeInterval = 900 } } }
 
     assert(descriptor ~= nil)
     assert.is_table(descriptor)
@@ -30,7 +30,7 @@ describe("OperationType", function()
   it("should describe ground operations", function()
     local descriptor = OperationType.resolve("ground")
     local plannerState = makePlannerState()
-    local config = { strikeInterval = 900 }
+    local config = { c = { air = { strikeInterval = 900 } } }
 
     assert(descriptor ~= nil)
     assert.is_table(descriptor)

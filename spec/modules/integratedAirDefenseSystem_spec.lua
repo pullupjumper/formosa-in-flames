@@ -179,7 +179,7 @@ describe("IntegratedAirDefenseSystem", function()
   -- ============================================================================
 
   describe("processUnitDestruction", function()
-    local cfg = { radarDistance = 100 }
+    local cfg = { c = { iads = { radarDistance = 100 } } }
 
     ---Create one C2 node covering area A-1 with the given sam and radar entries
     ---@param overrides? table

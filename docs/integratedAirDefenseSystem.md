@@ -85,7 +85,7 @@ SBJ__C2Context
 
 | 路徑 | 用途 |
 |---|---|
-| `config.radarDistance` | `activateNearestRadar` 的搜尋距離上限（由呼叫端傳入） |
+| `config.c.iads.radarDistance` | `activateNearestRadar` 的搜尋距離上限（由呼叫端傳入） |
 | `config.c.iads.c2FacilityDBIDs` | 新增/初始化/刪除中國 C2 設施時的 DBID 白名單 |
 | `config.c.iads.randomRadius` | C2 設施隨機部署半徑 |
 | `config.c.iads.c2Deployments` | 中國 C2 佈署點（座標、區域、名稱） |

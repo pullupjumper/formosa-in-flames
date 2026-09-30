@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
+local GameUtils = require("src.utils.gameUtils")
 
 local RunwayRepairment = {}
 
@@ -16,8 +17,8 @@ function RunwayRepairment.init(config, saveData)
 
   -- Initialize Taiwan runways from targetlist
   local taiwanAirBases = {}
-  for _, baseName in ipairs(config.repairRunway.airBases) do
-    table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.repairRunway.runwaySubTypes })
+  for _, baseName in ipairs(config.t.repairRunway.airBases) do
+    table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.t.repairRunway.runwaySubTypes })
   end
 
   local runwayGUIDs = StrikePlanner.filterTargetsByTypeAndBase(PersistentState.targetlist(saveData), taiwanAirBases)
@@ -38,7 +39,7 @@ function RunwayRepairment.init(config, saveData)
 
     if actualUnit then
       -- Check if unit DBID matches any runway DBID in config
-      for _, runwayDBID in ipairs(config.repairRunway.runwayDBIDs) do
+      for _, runwayDBID in ipairs(config.c.repairRunway.runwayDBIDs) do
         if actualUnit.dbid == runwayDBID then
           table.insert(chinaRunways, { guid = actualUnit.guid, startTime = nil })
           break
@@ -73,7 +74,7 @@ function RunwayRepairment.repairSide(config, saveData, sideName)
     if actualRunway and runway.startTime ~= nil then
       GameApi.ScenEdit_SetUnitDamage({
         guid = actualRunway.guid,
-        dp = -actualRunway.damage.startdp * config.repairRunway.percentagePerHour / 12 / 100,
+        dp = -actualRunway.damage.startdp * config[GameUtils.getCachedSideConfig(sideName).field].repairRunway.percentagePerHour / 12 / 100,
         fires = "NoFire"
       })
     end

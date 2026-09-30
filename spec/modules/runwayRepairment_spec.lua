@@ -35,12 +35,8 @@ describe("RunwayRepairment", function()
   ---@return table
   local function makeConfig()
     return {
-      repairRunway = {
-        airBases = { "Hsinchu" },
-        runwaySubTypes = { "Runway" },
-        runwayDBIDs = { 101 },
-        percentagePerHour = 12,
-      },
+      c = { repairRunway = { runwayDBIDs = { 101 }, percentagePerHour = 12 } },
+      t = { repairRunway = { airBases = { "Hsinchu" }, runwaySubTypes = { "Runway" }, percentagePerHour = 12 } },
     }
   end
 

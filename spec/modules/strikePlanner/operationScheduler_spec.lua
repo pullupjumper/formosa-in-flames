@@ -431,7 +431,7 @@ describe("OperationScheduler", function()
         templatesByName[operation.template.name] = operation.template
       end
 
-      assert.are.equal(config.strikeInterval, templatesByName["AIR/STRIKE/AB/W/1"].strikeInterval)
+      assert.are.equal(config.c.air.strikeInterval, templatesByName["AIR/STRIKE/AB/W/1"].strikeInterval)
       assert.are.equal(0, templatesByName["GND/STRIKE/C2/N/1"].strikeInterval)
     end)
 
@@ -992,7 +992,7 @@ describe("OperationScheduler", function()
       it("should default an air wave's strikeInterval to the configured interval", function()
         local config = makeConfig()
         local template = { { striker = {} } }
-        config.strikeInterval = 45
+        config.c.air.strikeInterval = 45
         config.c.packageTemplates.AIR_STRIKE_AB_W_2 = template
         local operationBatches = {}
         addExecutedSeries(operationBatches, "AIR/STRIKE/AB/W/1", "air", { packages = {} })

@@ -180,7 +180,7 @@ local function activateNearestRadar(config, destroyedRadar)
     return
   end
 
-  local temp = { unit = nil, distance = config.radarDistance }
+  local temp = { unit = nil, distance = config.c.iads.radarDistance }
   local latitude = destroyedRadar.latitude
   local longitude = destroyedRadar.longitude
 

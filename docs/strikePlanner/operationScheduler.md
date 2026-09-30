@@ -181,7 +181,7 @@ flowchart TD
 | `config` | `config.c.recon.frontlineRedirect` | 交由 `FrontlineRedirect.updateMappings` 判斷是否改寫 mapping 名稱 |
 | `config` | `config.c.packageTemplates` | `air` operation 的模板來源，鍵為 mapping 名稱的 `/` 換 `_` |
 | `config` | `config.c.fireSupportTaskTemplates` | `ground` operation 的模板來源，鍵同上 |
-| `config` | `config.strikeInterval` | `air` 作戰的預設 `strikeInterval`；`ground` 固定為 `0` |
+| `config` | `config.c.air.strikeInterval` | `air` 作戰的預設 `strikeInterval`；`ground` 固定為 `0` |
 | `saveData` | `saveData.c.dynamicOperations.reconTriggeredOperationBatches` | 寫入偵察觸發作戰批次；同時作為既有/待執行作戰查詢來源 |
 | `saveData` | `saveData.c.recon.frontlineRedirected` | 由 `FrontlineRedirect.updateMappings` 讀取；本模組不直接改寫 |
 | `saveData` | `saveData.c.surface.lacm` | 以 `lacmCtx` 傳入，讀取 sticky 的 `enabled` |
