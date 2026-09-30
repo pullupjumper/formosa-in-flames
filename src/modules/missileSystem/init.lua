@@ -165,9 +165,8 @@ end
 function MissileSystem.process(groundCtx, missileSystemTypeConfig, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
-  for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
-    if systemCtx and systemCtx.enabled then
+  for missileSystemType, systemCtx in pairs(groundCtx.missileSystemTypes) do
+    if systemCtx.enabled then
       for _, result in ipairs(Cycle.process(systemCtx, { systemConfig = missileSystemTypeConfig[missileSystemType], isAuto = isAuto }, sideName)) do
         result.fields.system = missileSystemType
         report.add(result.tag, result.fields)
@@ -200,12 +199,8 @@ end
 function MissileSystem.processSupplyAssetDestruction(saveData, unit)
   local groundCtx = PersistentState.ground(saveData, unit.side)
 
-  for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
-    local success, result
-    if systemCtx then
-      success, result = Context.processSupplyAssetDestruction(unit, systemCtx)
-    end
+  for _, systemCtx in pairs(groundCtx.missileSystemTypes) do
+    local success, result = Context.processSupplyAssetDestruction(unit, systemCtx)
 
     -- A destroyed unit belongs to at most one system, so the first match ends the search.
     if success and result then
@@ -315,11 +310,10 @@ end
 
 ---Iterate through enabled missile systems only
 ---@param groundCtx SBJ__GroundContext Ground force runtime context
----@param callback fun(systemCtx: SBJ__MissileSystemContext, systemName: string) Callback invoked for each enabled system context
+---@param callback fun(systemCtx: SBJ__MissileSystemContext, missileSystemType: string) Callback invoked for each enabled system context
 local function forEachEnabledSystem(groundCtx, callback)
-  for _, missileSystemType in pairs(constants.MISSILE_SYSTEM_TYPES) do
-    local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
-    if systemCtx and systemCtx.enabled then
+  for missileSystemType, systemCtx in pairs(groundCtx.missileSystemTypes) do
+    if systemCtx.enabled then
       callback(systemCtx, missileSystemType)
     end
   end
@@ -328,18 +322,18 @@ end
 ---Handle entering firing point logic for a single missile system context
 ---Position handlers share one signature so they can be dispatched from a table;
 ---this one has no behavior switches of its own.
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when state changed
-local function processFiringPoint(systemName, systemCtx, unit, moveCtx)
+local function processFiringPoint(missileSystemType, systemCtx, unit, moveCtx)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
   if Movement.isRepositioning(firingUnitCtx, moveCtx.isAuto) then
     Movement.setWCSToFree(firingUnitCtx, unit, moveCtx.isAuto)
     return {
       tag = "OK",
-      fields = { system = systemName, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
+      fields = { system = missileSystemType, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
     }
   end
 
@@ -347,12 +341,12 @@ local function processFiringPoint(systemName, systemCtx, unit, moveCtx)
 end
 
 ---Handle entering hide area logic for a single missile system context
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches
 ---@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
-local function processHideArea(systemName, systemCtx, unit, moveCtx)
+local function processHideArea(missileSystemType, systemCtx, unit, moveCtx)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
   if not firingUnitCtx then
     return nil
@@ -365,7 +359,7 @@ local function processHideArea(systemName, systemCtx, unit, moveCtx)
       return {
         tag = "WARN",
         fields = LogFormat.merge({
-          system = systemName,
+          system = missileSystemType,
           unit = unit.name,
           action = "concealment_failed",
           state = "HIDE"
@@ -373,19 +367,19 @@ local function processHideArea(systemName, systemCtx, unit, moveCtx)
       }
     end
 
-    return { tag = "OK", fields = { system = systemName, unit = unit.name, action = "concealed", state = "HIDE" } }
+    return { tag = "OK", fields = { system = missileSystemType, unit = unit.name, action = "concealed", state = "HIDE" } }
   end
 
   return nil
 end
 
 ---Handle reload-point fallback when no meeting occurs
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches
 ---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
-local function processReloadPointNoMeeting(systemName, systemCtx, unit, moveCtx)
+local function processReloadPointNoMeeting(missileSystemType, systemCtx, unit, moveCtx)
   -- Use the manual mode instead of moveCtx so a firing unit drifting through RL during repositioning is not halted.
   Movement.setStateToStatic(systemCtx, unit, MANUAL_MODE)
   if not moveCtx.hideResupplyOnRLNoMeeting then
@@ -409,7 +403,7 @@ local function processReloadPointNoMeeting(systemName, systemCtx, unit, moveCtx)
       return {
         tag = "WARN",
         fields = LogFormat.merge({
-          system = systemName,
+          system = missileSystemType,
           unit = unit.name,
           action = "resupply_concealment_failed",
           pairedFiringUnit = firingUnitCtx.name
@@ -420,7 +414,7 @@ local function processReloadPointNoMeeting(systemName, systemCtx, unit, moveCtx)
     return {
       tag = "OK",
       fields = {
-        system = systemName,
+        system = missileSystemType,
         unit = unit.name,
         action = "resupply_concealed",
         pairedFiringUnit = firingUnitCtx.name,
@@ -433,12 +427,12 @@ local function processReloadPointNoMeeting(systemName, systemCtx, unit, moveCtx)
 end
 
 ---Handle entering reload point logic for a single missile system context
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches
 ---@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
-local function processReloadPoint(systemName, systemCtx, unit, moveCtx)
+local function processReloadPoint(missileSystemType, systemCtx, unit, moveCtx)
   local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, moveCtx.isAuto)
 
   if hasMet and firingUnitCtx then
@@ -449,7 +443,7 @@ local function processReloadPoint(systemName, systemCtx, unit, moveCtx)
       return {
         tag = "OK",
         fields = {
-          system = systemName,
+          system = missileSystemType,
           unit = firingUnitCtx.name,
           action = "reload_started",
           triggerUnit = unit.name,
@@ -462,7 +456,7 @@ local function processReloadPoint(systemName, systemCtx, unit, moveCtx)
     return {
       tag = "WARN",
       fields = {
-        system = systemName,
+        system = missileSystemType,
         unit = firingUnitCtx.name,
         action = "reload_not_started",
         triggerUnit = unit.name,
@@ -471,18 +465,18 @@ local function processReloadPoint(systemName, systemCtx, unit, moveCtx)
     }
   end
 
-  return processReloadPointNoMeeting(systemName, systemCtx, unit, moveCtx)
+  return processReloadPointNoMeeting(missileSystemType, systemCtx, unit, moveCtx)
 end
 
 ---Handle entering ammo holding area logic for a single missile system context
 ---Position handlers share one signature so they can be dispatched from a table;
 ---this one has no behavior switches of its own.
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
-local function processAmmoHoldingArea(systemName, systemCtx, unit, moveCtx)
+local function processAmmoHoldingArea(missileSystemType, systemCtx, unit, moveCtx)
   local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemCtx, unit, moveCtx.isAuto)
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
 
@@ -491,7 +485,7 @@ local function processAmmoHoldingArea(systemName, systemCtx, unit, moveCtx)
     return {
       tag = "OK",
       fields = {
-        system = systemName,
+        system = missileSystemType,
         unit = resupplyUnit.name,
         action = "transload_started",
         state = "RELOAD",
@@ -507,7 +501,7 @@ end
 ---Position handlers keyed by the token extracted from the event trigger.
 ---Every entry takes the same arguments so the dispatch site never has to know
 ---which of them a given handler actually uses.
----@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, moveCtx: SBJ__MoveToPositionContext): SBJ__LogResult|nil>
+---@type table<string, fun(missileSystemType: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, moveCtx: SBJ__MoveToPositionContext): SBJ__LogResult|nil>
 local POSITION_HANDLERS = {
   [constants.POSITION_TYPES.FIRING_POINT]      = processFiringPoint,
   [constants.POSITION_TYPES.HIDE_AREA]         = processHideArea,
@@ -533,8 +527,8 @@ local function processMoveToPositionEvent(params)
 
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
-  forEachEnabledSystem(params.groundCtx, function(systemCtx, systemName)
-    local row = handler(systemName, systemCtx, unit, moveCtx)
+  forEachEnabledSystem(params.groundCtx, function(systemCtx, missileSystemType)
+    local row = handler(missileSystemType, systemCtx, unit, moveCtx)
     if row then
       report.add(row.tag, row.fields)
     end

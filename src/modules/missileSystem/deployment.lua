@@ -8,12 +8,12 @@ local Utils = require("src.utils.utils")
 local Deployment = {}
 
 ---Remove missile systems from the game
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param role string Unit role
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor with removal info
 ---@param sideName string Side name for unit deletion
 ---@return SBJ__LogResult[] # Failure log rows
-local function removeMissileSystem(systemName, role, descriptor, sideName)
+local function removeMissileSystem(missileSystemType, role, descriptor, sideName)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
   local entries = {}
 
@@ -29,7 +29,7 @@ local function removeMissileSystem(systemName, role, descriptor, sideName)
       table.insert(entries, {
         tag = "FAIL",
         fields = {
-          system = systemName,
+          system = missileSystemType,
           role = role,
           unit = descriptor.name,
           guid = guid,
@@ -112,17 +112,17 @@ local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, pa
 end
 
 ---Create firing units according to configuration
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemConfig SBJ__MissileSystemConfig Weapon system configuration
 ---@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor
 ---@param sideName string Side name for unit creation
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
-local function addFiringUnit(systemName, systemConfig, descriptor, sideName)
-  local isSam = systemName == "sam"
+local function addFiringUnit(missileSystemType, systemConfig, descriptor, sideName)
+  local isSam = missileSystemType == "sam"
   local context = {
-    system = systemName,
+    system = missileSystemType,
     role = "firing",
     unit = descriptor.name,
     area = descriptor.operationalArea.name
@@ -196,7 +196,7 @@ local function addFiringUnit(systemName, systemConfig, descriptor, sideName)
               table.insert(entries, {
                 tag = "FAIL",
                 fields = {
-                  system = systemName,
+                  system = missileSystemType,
                   role = "firing",
                   unit = name,
                   guid = addedUnit.guid,
@@ -213,7 +213,7 @@ local function addFiringUnit(systemName, systemConfig, descriptor, sideName)
         addedUnit,
         Shared.normalizeWeaponDBIDs(descriptor.weaponDBID),
         sideName,
-        { system = systemName, role = "firing" }
+        { system = missileSystemType, role = "firing" }
       )
       for _, cleanupEntry in ipairs(cleanupEntries) do
         table.insert(entries, cleanupEntry)
@@ -223,7 +223,7 @@ local function addFiringUnit(systemName, systemConfig, descriptor, sideName)
       table.insert(entries, {
         tag = "FAIL",
         fields = {
-          system = systemName,
+          system = missileSystemType,
           role = "firing",
           unit = name,
           reason = "add_unit_failed"
@@ -236,18 +236,18 @@ local function addFiringUnit(systemName, systemConfig, descriptor, sideName)
 end
 
 ---Create resupply units according to configuration
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param descriptor SBJ__ResupplyUnitDescriptor Resupply unit descriptor
 ---@param sideName string Side name for unit creation
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
-local function addResupplyUnit(systemName, descriptor, sideName)
+local function addResupplyUnit(missileSystemType, descriptor, sideName)
   if not descriptor.operationalArea.RL or #descriptor.operationalArea.RL == 0 then
     return 0, 0, { {
       tag = "FAIL",
       fields = {
-        system = systemName,
+        system = missileSystemType,
         role = "resupply",
         unit = descriptor.name,
         area = descriptor.operationalArea.name,
@@ -288,7 +288,7 @@ local function addResupplyUnit(systemName, descriptor, sideName)
       table.insert(entries, {
         tag = "FAIL",
         fields = {
-          system = systemName,
+          system = missileSystemType,
           role = "resupply",
           unit = name,
           reason = "add_unit_failed"
@@ -301,14 +301,14 @@ local function addResupplyUnit(systemName, descriptor, sideName)
 end
 
 ---Create ammunition depot unit according to configuration
----@param systemName string Missile system name
+---@param missileSystemType string Missile system name
 ---@param systemConfig SBJ__MissileSystemConfig Weapon system configuration
 ---@param descriptor SBJ__AmmunitionUnitDescriptor Ammunition unit descriptor
 ---@param sideName string Side name for unit creation
 ---@return boolean success Whether unit was successfully created
 ---@return SBJ__LogResult[] entries Failure log rows
-local function addAmmunition(systemName, systemConfig, descriptor, sideName)
-  local context = { system = systemName, role = "ammo", unit = descriptor.name }
+local function addAmmunition(missileSystemType, systemConfig, descriptor, sideName)
+  local context = { system = missileSystemType, role = "ammo", unit = descriptor.name }
   local restStr = descriptor.name:gsub("^Ammo Revetment, ", "")
   local name = restStr
   local resupplyUnitDescriptor = systemConfig.resupplyUnits[name]
@@ -365,16 +365,16 @@ function Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
   -- report already routes the individual FAIL rows to the error sink.
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Add missile systems")
 
-  for systemName, systemConfig in pairs(missileSystemTypeConfig) do
+  for missileSystemType, systemConfig in pairs(missileSystemTypeConfig) do
     ---@cast systemConfig SBJ__MissileSystemConfig
     local systemHasFailure = false
     local fuTotal, fuExpected = 0, 0
     for _, descriptor in pairs(systemConfig.firingUnits) do
-      local removeEntries = removeMissileSystem(systemName, "firing", descriptor, sideName)
+      local removeEntries = removeMissileSystem(missileSystemType, "firing", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
-      local created, expected, detailEntries = addFiringUnit(systemName, systemConfig, descriptor, sideName)
+      local created, expected, detailEntries = addFiringUnit(missileSystemType, systemConfig, descriptor, sideName)
       fuTotal = fuTotal + created
       fuExpected = fuExpected + expected
       report.addAll(detailEntries)
@@ -383,11 +383,11 @@ function Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
 
     local ruTotal, ruExpected = 0, 0
     for _, descriptor in pairs(systemConfig.resupplyUnits) do
-      local removeEntries = removeMissileSystem(systemName, "resupply", descriptor, sideName)
+      local removeEntries = removeMissileSystem(missileSystemType, "resupply", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
-      local created, expected, detailEntries = addResupplyUnit(systemName, descriptor, sideName)
+      local created, expected, detailEntries = addResupplyUnit(missileSystemType, descriptor, sideName)
       ruTotal = ruTotal + created
       ruExpected = ruExpected + expected
       report.addAll(detailEntries)
@@ -396,11 +396,11 @@ function Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
 
     local ammoOk, ammoTotal = 0, 0
     for _, descriptor in pairs(systemConfig.ammunitions) do
-      local removeEntries = removeMissileSystem(systemName, "ammo", descriptor, sideName)
+      local removeEntries = removeMissileSystem(missileSystemType, "ammo", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
 
-      local success, ammoEntries = addAmmunition(systemName, systemConfig, descriptor, sideName)
+      local success, ammoEntries = addAmmunition(missileSystemType, systemConfig, descriptor, sideName)
       ammoTotal = ammoTotal + 1
       if success then ammoOk = ammoOk + 1 end
       report.addAll(ammoEntries)
@@ -412,7 +412,7 @@ function Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
     end
 
     report.add(systemHasFailure and "FAIL" or "OK", {
-      system = systemName,
+      system = missileSystemType,
       firing = fuTotal .. "/" .. fuExpected,
       resupply = ruTotal .. "/" .. ruExpected,
       ammo = ammoOk .. "/" .. ammoTotal
