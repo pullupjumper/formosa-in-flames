@@ -31,7 +31,7 @@ bash bin/build.sh -i
 
 ### Core System Design
 The project uses a **modular event-driven architecture** centered around `src/core/init.lua` which orchestrates all game systems. Configuration is split into two files:
-- `src/core/config.lua` - Runtime configuration values (weapon counts, timing, operational parameters) using nested namespaces (`.c`, `.t`, `.u`, `.s` for different factions)
+- `src/core/config.lua` - Runtime configuration values (weapon counts, timing, operational parameters) using nested namespaces (`.c`, `.t`, `.u` for China, Taiwan, US)
 - `src/core/constants.lua` - Immutable constants (platform DBIDs, base GUIDs, weapon IDs, area definitions)
 
 ### Key Architectural Patterns

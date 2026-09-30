@@ -128,7 +128,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 
 ## 7. `config.lua` 與 `constants.lua` 的 key
 
-- `config.lua`：camelCase。UPPER_SNAKE 只用在人為指定的代號：`AIR_STRIKE_AB_W_1`、`WZ8_RECON_ISLAND`。陣營命名空間 `.c`、`.t`、`.u`、`.s`。
+- `config.lua`：camelCase。UPPER_SNAKE 只用在人為指定的代號：`AIR_STRIKE_AB_W_1`、`WZ8_RECON_ISLAND`。陣營命名空間 `.c`、`.t`、`.u`；計分用 `config.score`。
 - `constants.lua`：頂層與識別碼 UPPER_SNAKE（`constants.SIDES.ENEMY`），描述物件內欄位 camelCase（`shelterPoints`）。
 
 ## 8. Log tag 與字串常值

@@ -359,7 +359,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field c SBJ__ChinaConfig China faction configuration
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
 ---@field u SBJ__USConfig US faction configuration
----@field s SBJ__ScoringConfig Scoring system configuration
+---@field score SBJ__ScoringConfig Scoring system configuration
 ---@field [SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
 
 ---GNSS jamming context managing GNSS denial operations state
@@ -810,7 +810,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
 ---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field transferCargoMap table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
----@field missionStartime table<string, number[]> Mission start times by type (seconds)
+---@field missionStartTime table<string, number[]> Mission start times by type (seconds)
 ---@field formationSettings SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field operations SBJ__AmphibiousOperationDescriptor[] Amphibious operation descriptors
 ---@field operationalZones SBJ__OperationalZoneDescriptor[] Operation zone descriptors

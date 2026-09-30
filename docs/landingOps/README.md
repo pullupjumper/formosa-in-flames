@@ -202,7 +202,7 @@ flowchart BT
 | `config.c.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且各 zone 尚未到位即啟動火力支援暫停閘門 |
 | `config.c.amphibOps.cargoMap` | 各艦型貨物清單（依艦型索引） |
 | `config.c.amphibOps.transferCargoMap` | 轉移用貨物清單（依作戰群組索引） |
-| `config.c.amphibOps.missionStartime` | 各載具類型任務延遲時間 |
+| `config.c.amphibOps.missionStartTime` | 各載具類型任務延遲時間 |
 | `config.c.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
 | `config.c.amphibOps.operations` | 作戰區域定義（集結區→錨泊區） |
 | `config.c.amphibOps.operationalZones` | 作戰區設定（錨泊區、泛水編波區、任務） |

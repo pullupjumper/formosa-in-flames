@@ -9,7 +9,7 @@ if unit then
   local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
   GameApi.ScenEdit_SetScore(
     constants.SIDES.PLAYER,
-    (score + config.s.attackBeforeTheHHour),
+    (score + config.score.attackBeforeTheHHour),
     "Attacked before the Chinese missile strike."
   )
   Logger.log(constants.TAGS.SCORE, "You have attacked first to cause a military esclaion.")
@@ -24,10 +24,10 @@ end
 --         if target then
 --             ScenEdit_SpecialMessage('Taiwan', tostring(target.name))
 
---             if (target.type ~= 'Submarine') and (target.dbid ~= CONFIG.s.weaponDBID) then
+--             if (target.type ~= 'Submarine') and (target.dbid ~= CONFIG.score.weaponDBID) then
 --                 local score = ScenEdit_GetScore("Taiwan")
 --                 ScenEdit_SetScore(
---                     "Taiwan", (score + CONFIG.s.attackBeforeTheHHour),
+--                     "Taiwan", (score + CONFIG.score.attackBeforeTheHHour),
 --                     "Attack before the H hour."
 --                 )
 --                 ScenEdit_SpecialMessage(

@@ -17,7 +17,7 @@ PersistentState.update(function(saveData)
       if unit.dbid == constants.PLATFORMS.UNDERGROUND_SHELTER then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
-          (score + config.s.undergroundShelterIsDestroyed),
+          (score + config.score.undergroundShelterIsDestroyed),
           "Underground shelter has been destoryed"
         )
       elseif unit.dbid == constants.PLATFORMS.AMMO_TRUCK or unit.dbid == constants.PLATFORMS.AMMO then

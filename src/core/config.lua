@@ -34,7 +34,7 @@ config.logging = {
 config.c = {}
 config.t = {}
 config.u = {}
-config.s = {}
+config.score = {}
 
 config.targetScanning = {
   distanceThreshold = 1.5, -- nautical miles
@@ -1689,7 +1689,7 @@ config.c.amphibOps.transferCargoMap = {
     { type = 2, num = 3, dbid = constants.PLATFORMS.ZBD03 }, -- II-76 ZBD-03
   },
 }
-config.c.amphibOps.missionStartime = {
+config.c.amphibOps.missionStartTime = {
   transportHelicopter = { 42 * 60, 72 * 60, 92 * 60, 112 * 60 },
   attackHelicopter = { 40 * 60, },
   boat = { 41 * 60, 61 * 60, },
@@ -1904,13 +1904,13 @@ config.c.amphibOps.operationalZones = {
           name = "LANDING/TAO/1/1",
           loadoutId = 0,
           unitCount = 1,
-          startTime = config.c.amphibOps.missionStartime.boat[1],
+          startTime = config.c.amphibOps.missionStartTime.boat[1],
         },
         {
           name = "LANDING/TAO/1/2",
           loadoutId = 0,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.boat[2],
+          startTime = config.c.amphibOps.missionStartTime.boat[2],
         },
       },
       zone = constants.AREAS.LANDING_TAOYUAN,
@@ -1951,25 +1951,25 @@ config.c.amphibOps.operationalZones = {
           name = "AIRLANDING/TAO/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[1],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/TAO/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[2],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/TAO/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[3],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/TAO/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[4],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[4],
         },
       },
       zone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -2007,7 +2007,7 @@ config.c.amphibOps.operationalZones = {
           name = "CAS/E",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           unitCount = 13,
-          startTime = config.c.amphibOps.missionStartime.attackHelicopter[1],
+          startTime = config.c.amphibOps.missionStartTime.attackHelicopter[1],
         },
       }
     },
@@ -2041,13 +2041,13 @@ config.c.amphibOps.operationalZones = {
           name = "LANDING/SISHU/1/1",
           loadoutId = 0,
           unitCount = 1,
-          startTime = config.c.amphibOps.missionStartime.boat[1],
+          startTime = config.c.amphibOps.missionStartTime.boat[1],
         },
         {
           name = "LANDING/SISHU/1/2",
           loadoutId = 0,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.boat[2],
+          startTime = config.c.amphibOps.missionStartTime.boat[2],
         },
       },
       zone = constants.AREAS.LANDING_SISHU,
@@ -2088,25 +2088,25 @@ config.c.amphibOps.operationalZones = {
           name = "AIRLANDING/CHANGLONG/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[1],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/CHANGLONG/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[2],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/CHANGLONG/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[3],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/CHANGLONG/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[4],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[4],
         },
       },
       zone = constants.AREAS.AIRLANDING_CHANGLONG,
@@ -2144,7 +2144,7 @@ config.c.amphibOps.operationalZones = {
           name = "CAS/S",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           unitCount = 13,
-          startTime = config.c.amphibOps.missionStartime.attackHelicopter[1],
+          startTime = config.c.amphibOps.missionStartTime.attackHelicopter[1],
         },
       }
     },
@@ -2178,13 +2178,13 @@ config.c.amphibOps.operationalZones = {
           name = "LANDING/PENGHU/1/1",
           loadoutId = 0,
           unitCount = 1,
-          startTime = config.c.amphibOps.missionStartime.boat[1],
+          startTime = config.c.amphibOps.missionStartTime.boat[1],
         },
         {
           name = "LANDING/PENGHU/1/2",
           loadoutId = 0,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.boat[2],
+          startTime = config.c.amphibOps.missionStartTime.boat[2],
         },
       },
       zone = constants.AREAS.LANDING_PENGHU,
@@ -2225,25 +2225,25 @@ config.c.amphibOps.operationalZones = {
           name = "AIRLANDING/PENGHU/1/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[1],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[1],
         },
         {
           name = "AIRLANDING/PENGHU/1/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[2],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[2],
         },
         {
           name = "AIRLANDING/PENGHU/2/1",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[3],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[3],
         },
         {
           name = "AIRLANDING/PENGHU/2/2",
           loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
           unitCount = 3,
-          startTime = config.c.amphibOps.missionStartime.transportHelicopter[4],
+          startTime = config.c.amphibOps.missionStartTime.transportHelicopter[4],
         },
       },
       zone = constants.AREAS.AIRLANDING_PENGHU,
@@ -2281,7 +2281,7 @@ config.c.amphibOps.operationalZones = {
           name = "CAS/PENGHU",
           loadoutId = constants.LOADOUTS.Z10_ATTACK,
           unitCount = 13,
-          startTime = config.c.amphibOps.missionStartime.attackHelicopter[1],
+          startTime = config.c.amphibOps.missionStartTime.attackHelicopter[1],
         },
       }
     },
@@ -5997,21 +5997,21 @@ config.u.sigint.detectionSkipProbability = config.c.sigint.detectionSkipProbabil
 -- Scoring Configuration
 -- ============================================================================
 
-config.s.destroyingAircraftOnTheGround = 5
-config.s.destroyingAmmo = 100
-config.s.destroyingAmmoTruck = 20
-config.s.lhd = 10
-config.s.lst = 10
-config.s.ddg = 10
-config.s.cv = 100
-config.s.ifv = -5
-config.s.infantry = -3
-config.s.sub = 15
-config.s.uav = 20
-config.s.tel = 20
-config.s.weaponDBID = constants.WEAPONS.MK48_TORPEDO
-config.s.attackBeforeTheHHour = -1000
-config.s.undergroundShelterIsDestroyed = -200
-config.s.destroyingCivilianFacility = -100
+config.score.destroyingAircraftOnTheGround = 5
+config.score.destroyingAmmo = 100
+config.score.destroyingAmmoTruck = 20
+config.score.lhd = 10
+config.score.lst = 10
+config.score.ddg = 10
+config.score.cv = 100
+config.score.ifv = -5
+config.score.infantry = -3
+config.score.sub = 15
+config.score.uav = 20
+config.score.tel = 20
+config.score.weaponDBID = constants.WEAPONS.MK48_TORPEDO
+config.score.attackBeforeTheHHour = -1000
+config.score.undergroundShelterIsDestroyed = -200
+config.score.destroyingCivilianFacility = -100
 
 return config

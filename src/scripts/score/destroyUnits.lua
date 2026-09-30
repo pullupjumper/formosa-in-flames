@@ -16,13 +16,13 @@ PersistentState.update(function(saveData)
       if unit.condition == "Parked" and unit.dbid == constants.PLATFORMS.Z10 then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
-          (score + config.s.destroyingAircraftOnTheGround),
+          (score + config.score.destroyingAircraftOnTheGround),
           "Destroyed an helicopter on the ground."
         )
       elseif unit.dbid == constants.PLATFORMS.Y9DZ then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
-          (score + config.s.destroyingAircraftOnTheGround),
+          (score + config.score.destroyingAircraftOnTheGround),
           "Destroyed a recon aircraft."
         )
         PersistentState.sigint(saveData, constants.SIDES.ENEMY).reconAircraft[unit.guid] = nil
@@ -31,7 +31,7 @@ PersistentState.update(function(saveData)
           unit.dbid == constants.PLATFORMS.J15D then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
-          (score + config.s.destroyingAircraftOnTheGround),
+          (score + config.score.destroyingAircraftOnTheGround),
           "Destroyed a communications jammer."
         )
         CommsJamming.removeDestroyedUnit(saveData, unit)
@@ -41,7 +41,7 @@ PersistentState.update(function(saveData)
           unit.dbid == constants.PLATFORMS.GJ11 then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
-          (score + config.s.uav),
+          (score + config.score.uav),
           "Destroyed a recon UAV."
         )
       end
@@ -52,18 +52,18 @@ PersistentState.update(function(saveData)
           unit.dbid == constants.PLATFORMS.TYPE_072III or
           unit.dbid == constants.PLATFORMS.TYPE_072A or
           unit.dbid == constants.PLATFORMS.TYPE_073A then
-        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.lst), "You have destroyed a ship (LST).")
+        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.lst), "You have destroyed a ship (LST).")
       elseif unit.dbid == constants.PLATFORMS.TYPE_075 then
-        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.lhd), "You have destroyed a ship (LHD).")
+        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.lhd), "You have destroyed a ship (LHD).")
       elseif unit.dbid == constants.PLATFORMS.TYPE_002 then
-        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.cv), "You have destroyed a carrier.")
+        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.cv), "You have destroyed a carrier.")
       else
-        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.ddg), "You have destroyed a ship.")
+        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.ddg), "You have destroyed a ship.")
       end
     end
 
     if unit.type == constants.UNIT_TYPES.SUBMARINE then
-      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.sub), "You have destroyed a submarine.")
+      GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.sub), "You have destroyed a submarine.")
     end
 
     if unit.type == constants.UNIT_TYPES.FACILITY then
@@ -73,16 +73,16 @@ PersistentState.update(function(saveData)
           unit.dbid == constants.PLATFORMS.PHL03 or
           string.find(unit.name, "DF") or
           string.find(unit.name, "CJ") then
-        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a TEL.")
+        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.tel), "You have destroyed a TEL.")
       elseif unit.dbid == constants.PLATFORMS.GPS_JAMMER then
-        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.s.tel), "You have destroyed a GPS jammer.")
+        GameApi.ScenEdit_SetScore(constants.SIDES.PLAYER, (score + config.score.tel), "You have destroyed a GPS jammer.")
         GnssJamming.processJammerDestruction(config, unit)
       elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
         MissileSystem.processSupplyAssetDestruction(saveData, unit)
         GameApi.ScenEdit_SetScore(
           constants.SIDES.PLAYER,
-          (score + config.s.destroyingAmmo),
+          (score + config.score.destroyingAmmo),
           "You have destroyed a " .. text
         )
       elseif not IntegratedAirDefenseSystem.processUnitDestruction(config, saveData, unit) then
@@ -90,7 +90,7 @@ PersistentState.update(function(saveData)
           if unit.dbid == dbid and not iads.c2[unit.guid] then
             GameApi.ScenEdit_SetScore(
               constants.SIDES.PLAYER,
-              (score + config.s.destroyingCivilianFacility),
+              (score + config.score.destroyingCivilianFacility),
               "Destruction of civilian facilities"
             )
           elseif unit.dbid == dbid and iads.c2[unit.guid] then

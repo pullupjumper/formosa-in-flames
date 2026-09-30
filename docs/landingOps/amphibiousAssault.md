@@ -76,9 +76,9 @@ flowchart TD
 
 | 類別 | 配置路徑 | 延遲（秒） |
 |---|---|---|
-| transportHelicopter | `missionStartime.transportHelicopter` | 2520 / 4320 / 5520 / 6720 |
-| boat | `missionStartime.boat` | 2460 / 3660 |
-| attackHelicopter | `missionStartime.attackHelicopter` | 2400 |
+| transportHelicopter | `missionStartTime.transportHelicopter` | 2520 / 4320 / 5520 / 6720 |
+| boat | `missionStartTime.boat` | 2460 / 3660 |
+| attackHelicopter | `missionStartTime.attackHelicopter` | 2400 |
 
 ---
 
