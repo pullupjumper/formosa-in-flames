@@ -147,11 +147,11 @@ flowchart TB
 
 | 參數路徑 | 說明 |
 |---|---|
-| `config.*.ground.<system>.ammoThreshold` | 再裝填啟動門檻 |
-| `config.*.ground.<system>.reloadTime` | 再裝填所需時間 |
-| `config.*.ground.<system>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
-| `config.*.ground.<system>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
-| `config.*.ground.<system>.ammunitions[*].wpnDefault` | 彈藥儲備點初始庫存 |
+| `config.*.ground.missileSystemTypes.<type>.ammoThreshold` | 再裝填啟動門檻 |
+| `config.*.ground.missileSystemTypes.<type>.reloadTime` | 再裝填所需時間 |
+| `config.*.ground.missileSystemTypes.<type>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
+| `config.*.ground.missileSystemTypes.<type>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
+| `config.*.ground.missileSystemTypes.<type>.ammunitions[*].wpnDefault` | 彈藥儲備點初始庫存 |
 | `operationalArea` 的 FP/HA/RL/AHA 陣地位置 | 補給路徑與交會條件 |
 
 ---

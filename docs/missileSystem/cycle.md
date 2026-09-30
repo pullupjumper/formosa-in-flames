@@ -149,8 +149,8 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `systemCtx.reloadTime`（對應 `config.*.ground.<system>.reloadTime`） | reload 倒數時長 |
-| `systemCtx.stowTime`（對應 `config.*.ground.<system>.stowTime`） | 射擊／低彈量後的 stow 等待時長 |
+| `systemCtx.reloadTime`（對應 `config.*.ground.missileSystemTypes.<type>.reloadTime`） | reload 倒數時長 |
+| `systemCtx.stowTime`（對應 `config.*.ground.missileSystemTypes.<type>.stowTime`） | 射擊／低彈量後的 stow 等待時長 |
 | `firingUnitCtx.ammoThreshold` | 低彈量觸發門檻，傳給 `Ammo.isLowAmmo` |
 | `firingUnitCtx.weaponDBID` | 用來鎖定要回補的武器類別 |
 | `firingUnitCtx.stowStartTime` / `reloadStartTime` | 倒數時間錨點，存在 `saveData.*.ground.<system>.firingUnits[*]` |
