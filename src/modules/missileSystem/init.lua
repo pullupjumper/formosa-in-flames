@@ -18,9 +18,8 @@ local SetupLayout = require("src.modules.missileSystem.setupLayout")
 local MissileSystem = {}
 
 ---Firing unit states in which the unit is out of its hide area and has to be stowed back
----Manual mode context for flows that must never halt a unit
----@type SBJ__MissileRunContext
-local MANUAL_RUN_CTX = { isAuto = false }
+---Manual mode for flows that must never halt a unit
+local MANUAL_MODE = false
 
 local DEPLOYED_STATES = {
   [constants.MISSILE_SYSTEM_STATE.STATIC] = true,
@@ -161,22 +160,22 @@ end
 ---Check status of all missile systems and trigger corresponding actions
 ---@param groundCtx SBJ__GroundForceContext Ground force contexts keyed by missile system type
 ---@param groundConfig SBJ__GroundForceConfig Ground force configuration (reload/stow timers per system)
----@param runCtx SBJ__MissileRunContext Per-run mode for this side
+---@param isAuto boolean Whether this side runs in automatic mode
 ---@param sideName string Side name
-function MissileSystem.process(groundCtx, groundConfig, runCtx, sideName)
+function MissileSystem.process(groundCtx, groundConfig, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
   for _, missileSystem in pairs(constants.MISSILE_SYSTEM_TYPES) do
     local systemCtx = groundCtx[missileSystem]
     if systemCtx and systemCtx.enabled then
-      for _, result in ipairs(Cycle.process(systemCtx, { systemConfig = groundConfig[missileSystem], isAuto = runCtx.isAuto }, sideName)) do
+      for _, result in ipairs(Cycle.process(systemCtx, { systemConfig = groundConfig[missileSystem], isAuto = isAuto }, sideName)) do
         result.fields.system = missileSystem
         report.add(result.tag, result.fields)
       end
     end
   end
 
-  report.emit({ mode = runCtx.isAuto and "auto" or "manual" })
+  report.emit({ mode = isAuto and "auto" or "manual" })
 end
 
 ---Run one reload/hide cycle for a side, with its policy taken from config
@@ -186,8 +185,12 @@ end
 function MissileSystem.processSide(config, saveData, sideName)
   local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
 
-  MissileSystem.process(PersistentState.groundForces(saveData, sideName), sideConfig.ground,
-    { isAuto = sideConfig.missileSystemPolicy.isAuto }, sideName)
+  MissileSystem.process(
+    PersistentState.groundForces(saveData, sideName),
+    sideConfig.ground,
+    sideConfig.missileSystemPolicy.isAuto,
+    sideName
+  )
 end
 
 ---Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
@@ -326,12 +329,12 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionCtx Side-specific switches, unused here
+---@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when state changed
 local function processFiringPoint(systemName, systemCtx, unit, moveCtx)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
-  if Movement.isRepositioning(firingUnitCtx, moveCtx) then
-    Movement.setWCSToFree(firingUnitCtx, unit, moveCtx)
+  if Movement.isRepositioning(firingUnitCtx, moveCtx.isAuto) then
+    Movement.setWCSToFree(firingUnitCtx, unit, moveCtx.isAuto)
     return {
       tag = "OK",
       fields = { system = systemName, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
@@ -345,7 +348,7 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionCtx Side-specific switches
+---@param moveCtx SBJ__MoveToPositionContext Side-specific switches
 ---@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
 local function processHideArea(systemName, systemCtx, unit, moveCtx)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
@@ -354,7 +357,7 @@ local function processHideArea(systemName, systemCtx, unit, moveCtx)
   end
 
   if moveCtx.hideOnEnterHA and not Ammo.isLowAmmo(unit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID) then
-    Movement.setStateToHide(firingUnitCtx, unit, moveCtx)
+    Movement.setStateToHide(firingUnitCtx, unit, moveCtx.isAuto)
     local success, errorFields = Concealment.hideUnit(firingUnitCtx, unit)
     if success == false then
       return {
@@ -378,11 +381,11 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionCtx Side-specific switches
+---@param moveCtx SBJ__MoveToPositionContext Side-specific switches
 ---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
 local function processReloadPointNoMeeting(systemName, systemCtx, unit, moveCtx)
   -- Use the manual mode instead of moveCtx so a firing unit drifting through RL during repositioning is not halted.
-  Movement.setStateToStatic(systemCtx, unit, MANUAL_RUN_CTX)
+  Movement.setStateToStatic(systemCtx, unit, MANUAL_MODE)
   if not moveCtx.hideResupplyOnRLNoMeeting then
     return nil
   end
@@ -431,16 +434,16 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionCtx Side-specific switches
+---@param moveCtx SBJ__MoveToPositionContext Side-specific switches
 ---@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
 local function processReloadPoint(systemName, systemCtx, unit, moveCtx)
-  local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, moveCtx)
+  local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, moveCtx.isAuto)
 
   if hasMet and firingUnitCtx then
     local firingUnit = (unit.name == firingUnitCtx.name) and unit or
         GameApi.ScenEdit_GetUnit(firingUnitCtx.name, unit.side)
     if firingUnit then
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, moveCtx)
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, moveCtx.isAuto)
       return {
         tag = "OK",
         fields = {
@@ -475,14 +478,14 @@ end
 ---@param systemName string Missile system name
 ---@param systemCtx SBJ__MissileSystemContext Missile system context
 ---@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionCtx Side-specific switches, unused here
+---@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
 local function processAmmoHoldingArea(systemName, systemCtx, unit, moveCtx)
-  local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemCtx, unit, moveCtx)
+  local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemCtx, unit, moveCtx.isAuto)
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.name]
 
   if resupplyUnitCtx and hasMet and resupplyUnit then
-    Movement.setReloadStartTime(resupplyUnit, unit, moveCtx)
+    Movement.setReloadStartTime(resupplyUnit, unit, moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
@@ -495,14 +498,14 @@ local function processAmmoHoldingArea(systemName, systemCtx, unit, moveCtx)
     }
   end
 
-  Movement.setStateToStatic(systemCtx, unit, moveCtx)
+  Movement.setStateToStatic(systemCtx, unit, moveCtx.isAuto)
   return nil
 end
 
 ---Position handlers keyed by the token extracted from the event trigger.
 ---Every entry takes the same arguments so the dispatch site never has to know
 ---which of them a given handler actually uses.
----@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, moveCtx: SBJ__MoveToPositionCtx): SBJ__LogResult|nil>
+---@type table<string, fun(systemName: string, systemCtx: SBJ__MissileSystemContext, unit: CMO__Unit, moveCtx: SBJ__MoveToPositionContext): SBJ__LogResult|nil>
 local POSITION_HANDLERS = {
   [constants.POSITION_TYPES.FIRING_POINT]      = processFiringPoint,
   [constants.POSITION_TYPES.HIDE_AREA]         = processHideArea,

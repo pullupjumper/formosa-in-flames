@@ -174,7 +174,7 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, groundConfig, { isAuto = true }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = true }),
@@ -204,7 +204,7 @@ describe("MissileSystem", function()
         return {}
       end)
 
-      MissileSystem.process(groundCtx, groundConfig, { isAuto = true }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
       assert.stub(logStub).was.called(1)
@@ -229,7 +229,7 @@ describe("MissileSystem", function()
       local groundConfig = {}
       trackStub(Cycle, "process").returns({ { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } })
 
-      MissileSystem.process(groundCtx, groundConfig, { isAuto = false }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, false, "Taiwan")
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "mode=manual", 1, true))
@@ -250,7 +250,7 @@ describe("MissileSystem", function()
         }
       })
 
-      MissileSystem.process(groundCtx, groundConfig, { isAuto = true }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, true, "Taiwan")
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -271,7 +271,7 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, groundConfig, { isAuto = false }, "Taiwan")
+      MissileSystem.process(groundCtx, groundConfig, false, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(1)
       assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = false }),
@@ -315,9 +315,9 @@ describe("MissileSystem", function()
       MissileSystem.processSide(config, saveData, constants.SIDES.PLAYER)
 
       assert.stub(processStub).was.called(2)
-      assert.stub(processStub).was.called_with(saveData.c.ground, config.c.ground, match.is_same({ isAuto = true }),
+      assert.stub(processStub).was.called_with(saveData.c.ground, config.c.ground, true,
         constants.SIDES.ENEMY)
-      assert.stub(processStub).was.called_with(saveData.t.ground, config.t.ground, match.is_same({ isAuto = false }),
+      assert.stub(processStub).was.called_with(saveData.t.ground, config.t.ground, false,
         constants.SIDES.PLAYER)
     end)
   end)
@@ -465,13 +465,7 @@ describe("MissileSystem", function()
 
       assert.stub(getContactsStub).was.called_with(constants.SIDES.ENEMY)
       assert.stub(dropContactStub).was.called(1)
-      assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, match.is_same({
-        isAuto = true,
-        hideOnEnterHA = true,
-        hideResupplyOnRLNoMeeting = true,
-        firingUnitLookupSide = constants.SIDES
-            .ENEMY
-      }))
+      assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, true)
     end)
 
     -- Positive: a Taiwan unit gets the manual policy and the Taiwan slice
@@ -488,13 +482,7 @@ describe("MissileSystem", function()
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)
 
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, match.is_same({
-        isAuto = false,
-        hideOnEnterHA = false,
-        hideResupplyOnRLNoMeeting = false,
-        firingUnitLookupSide = constants.SIDES
-            .PLAYER
-      }))
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
     end)
   end)
 
@@ -809,7 +797,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setWCSToFreeStub).was.called(1)
-      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, match.is_same(makeMoveCtx()))
+      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, makeMoveCtx().isAuto)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]
@@ -934,7 +922,7 @@ describe("MissileSystem", function()
 
       assert.stub(setStateToHideStub).was.called(1)
       assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit,
-        match.is_same(makeMoveCtx({ hideOnEnterHA = true })))
+        makeMoveCtx({ hideOnEnterHA = true }).isAuto)
       assert.stub(hideUnitStub).was.called(1)
       assert.stub(hideUnitStub).was.called_with(firingUnitCtx, unit)
       assert.stub(logStub).was.called(1)
@@ -1016,7 +1004,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setReloadStartTimeStub).was.called(1)
-      assert.stub(setReloadStartTimeStub).was.called_with(firingUnitCtx, unit, match.is_same(makeMoveCtx()))
+      assert.stub(setReloadStartTimeStub).was.called_with(firingUnitCtx, unit, makeMoveCtx().isAuto)
       assert.stub(setStateToStaticStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
@@ -1065,7 +1053,7 @@ describe("MissileSystem", function()
 
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, match.is_same({ isAuto = false }))
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
       assert.stub(logStub).was_not.called()
     end)
 
@@ -1094,7 +1082,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, match.is_same({ isAuto = false }))
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
       assert.stub(getUnitStub).was.called(1)
       assert.stub(getUnitStub).was.called_with("FU1", "China")
       assert.stub(isLowAmmoStub).was.called(1)
@@ -1209,7 +1197,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setReloadStartTimeStub).was.called(1)
-      assert.stub(setReloadStartTimeStub).was.called_with(resupplyUnitCtx, unit, match.is_same(makeMoveCtx()))
+      assert.stub(setReloadStartTimeStub).was.called_with(resupplyUnitCtx, unit, makeMoveCtx().isAuto)
       assert.stub(setStateToStaticStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
@@ -1235,7 +1223,7 @@ describe("MissileSystem", function()
 
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, match.is_same(makeMoveCtx()))
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, makeMoveCtx().isAuto)
       assert.stub(logStub).was_not.called()
     end)
 
@@ -1317,7 +1305,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setWCSToFreeStub).was.called(1)
-      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, match.is_same(makeMoveCtx()))
+      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, makeMoveCtx().isAuto)
       assert.stub(setStateToHideStub).was_not.called()
     end)
 
@@ -1342,7 +1330,7 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, match.is_same({ isAuto = false }))
+      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
       assert.stub(getUnitStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
     end)

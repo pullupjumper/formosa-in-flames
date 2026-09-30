@@ -165,7 +165,7 @@ local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firing
     firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   end
 
-  local hasMet = Meeting.hasMetResupplyUnit(systemCtx, firingUnit, runCtx)
+  local hasMet = Meeting.hasMetResupplyUnit(systemCtx, firingUnit, isAuto)
   local isReadyToReload = isReadyToReloadFiringUnit(firingUnitCtx, systemConfig, hasMet, firingUnit)
 
   if not isReadyToReload then
@@ -261,7 +261,7 @@ local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx,
     resupplyUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   end
 
-  local hasMet = Meeting.hasMetAmmoDepot(systemCtx, resupplyUnit, runCtx)
+  local hasMet = Meeting.hasMetAmmoDepot(systemCtx, resupplyUnit, isAuto)
   local isReadyToReload = isReadyToReloadResupplyUnit(resupplyUnitCtx, systemConfig, hasMet)
 
   if not isReadyToReload then

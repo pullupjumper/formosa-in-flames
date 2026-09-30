@@ -274,7 +274,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, false)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, firingUnitCtx.state)
     end)
@@ -288,7 +288,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, false)
 
       assert.are.equal(67890, firingUnitCtx.reloadStartTime)
     end)
@@ -305,7 +305,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.are.equal("SINGLE-001", stubSetUnit.calls[1].vals[1].guid)
@@ -329,7 +329,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(3)
     end)
@@ -343,7 +343,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_true(stubSetUnit.calls[1].vals[1].holdposition)
@@ -358,7 +358,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, false)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_false(stubSetUnit.calls[1].vals[1].holdposition)
@@ -382,7 +382,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setReloadStartTime(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setReloadStartTime(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -424,7 +424,7 @@ describe("MissileSystem Movement", function()
       local stubGetUnit = trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = true })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, true)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, firingUnitAlpha.state)
       assert.are.equal(12345, firingUnitAlpha.reloadStartTime)
@@ -439,7 +439,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = false })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, false)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, mockSystemCtx.firingUnits["Firing Unit Alpha"].state)
     end)
@@ -451,7 +451,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = false })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, false)
 
       assert.is_nil(mockSystemCtx.firingUnits["Firing Unit Alpha"].reloadStartTime)
     end)
@@ -464,7 +464,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       local stubSetDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = true })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_true(stubSetUnit.calls[1].vals[1].holdposition)
@@ -480,7 +480,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = false })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, false)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_false(stubSetUnit.calls[1].vals[1].holdposition)
@@ -497,7 +497,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = true })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.are.equal("SINGLE-001", stubSetUnit.calls[1].vals[1].guid)
@@ -521,7 +521,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = true })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(3)
     end)
@@ -544,7 +544,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = true })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -566,7 +566,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setStateToStatic(mockSystemCtx, firingUnit, { isAuto = false })
+      Movement.setStateToStatic(mockSystemCtx, firingUnit, false)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingUnitAlpha.state)
       assert.is_nil(firingUnitAlpha.reloadStartTime)
@@ -588,7 +588,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setStateToHide(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setStateToHide(firingUnitCtx, firingUnit, false)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.HIDE, firingUnitCtx.state)
     end)
@@ -605,7 +605,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToHide(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setStateToHide(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.are.equal("SINGLE-001", stubSetUnit.calls[1].vals[1].guid)
@@ -629,7 +629,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToHide(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setStateToHide(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(3)
     end)
@@ -643,7 +643,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       local stubSetDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToHide(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setStateToHide(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_true(stubSetUnit.calls[1].vals[1].holdposition)
@@ -660,7 +660,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToHide(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setStateToHide(firingUnitCtx, firingUnit, false)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_false(stubSetUnit.calls[1].vals[1].holdposition)
@@ -684,7 +684,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setStateToHide(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setStateToHide(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -699,14 +699,14 @@ describe("MissileSystem Movement", function()
   describe("isRepositioning", function()
     -- Boundary: returns false when firingUnitCtx is nil
     it("should return false when firingUnitCtx is nil", function()
-      assert.is_false(Movement.isRepositioning(nil, { isAuto = true }))
-      assert.is_false(Movement.isRepositioning(nil, { isAuto = false }))
+      assert.is_false(Movement.isRepositioning(nil, true))
+      assert.is_false(Movement.isRepositioning(nil, false))
     end)
 
     -- Positive: returns true when auto mode and state is REPOSITIONING
     it("should return true when isAuto and state is REPOSITIONING", function()
       local firingUnitCtx = { state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }
-      assert.is_true(Movement.isRepositioning(firingUnitCtx, { isAuto = true }))
+      assert.is_true(Movement.isRepositioning(firingUnitCtx, true))
     end)
 
     -- Negative: returns false when auto mode and state is not REPOSITIONING
@@ -719,7 +719,7 @@ describe("MissileSystem Movement", function()
 
       for _, state in ipairs(states) do
         local firingUnitCtx = { state = state }
-        assert.is_false(Movement.isRepositioning(firingUnitCtx, { isAuto = true }))
+        assert.is_false(Movement.isRepositioning(firingUnitCtx, true))
       end
     end)
 
@@ -734,7 +734,7 @@ describe("MissileSystem Movement", function()
 
       for _, state in ipairs(states) do
         local firingUnitCtx = { state = state }
-        assert.is_true(Movement.isRepositioning(firingUnitCtx, { isAuto = false }))
+        assert.is_true(Movement.isRepositioning(firingUnitCtx, false))
       end
     end)
   end)
@@ -752,7 +752,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.setWCSToFree(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setWCSToFree(firingUnitCtx, firingUnit, false)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingUnitCtx.state)
     end)
@@ -766,7 +766,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_SetUnit")
       local stubSetDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setWCSToFree(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setWCSToFree(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetDoctrine).was.called(1)
       assert.are.equal(constants.WCS.FREE, stubSetDoctrine.calls[1].vals[2].weapon_control_status_land)
@@ -781,7 +781,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setWCSToFree(firingUnitCtx, firingUnit, { isAuto = false })
+      Movement.setWCSToFree(firingUnitCtx, firingUnit, false)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.is_false(stubSetUnit.calls[1].vals[1].holdposition)
@@ -805,7 +805,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setWCSToFree(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setWCSToFree(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -821,7 +821,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_SetUnit")
       local stubSetDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.setWCSToFree(firingUnitCtx, firingUnit, { isAuto = true })
+      Movement.setWCSToFree(firingUnitCtx, firingUnit, true)
 
       assert.stub(stubSetDoctrine).was.called(1)
       assert.are.equal(constants.WCS.FREE, stubSetDoctrine.calls[1].vals[2].weapon_control_status_air)

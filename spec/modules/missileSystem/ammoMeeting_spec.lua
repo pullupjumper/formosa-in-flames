@@ -324,7 +324,7 @@ describe("MissileSystem Ammo And Meeting", function()
     -- Boundary: returns false when unit is unknown
     it("should return false when unit name not in firingUnits or resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "Taiwan" }
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, unit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, unit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -338,7 +338,7 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function() return false end
       }
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -352,7 +352,7 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function() return false end
       }
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -380,7 +380,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
       assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
@@ -409,7 +409,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
       assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
@@ -437,7 +437,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -453,7 +453,7 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function(_, area) return area[1] == "RP-001" end
       }
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -483,7 +483,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, { isAuto = false })
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, false)
       assert.is_true(hasMet)
       assert.is_not_nil(ctx)
     end)
@@ -517,7 +517,7 @@ describe("MissileSystem Ammo And Meeting", function()
     -- Boundary: returns false when unit is unknown
     it("should return false when unit name not in resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "China" }
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, unit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, unit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -541,7 +541,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -565,7 +565,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
       assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Ammo Sec, Alpha", ctx.name)
@@ -590,7 +590,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -606,7 +606,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -622,7 +622,7 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function(_, area) return area[1] == "RP-101" end
       }
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, { isAuto = true })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -648,7 +648,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, { isAuto = false })
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, false)
       assert.is_true(hasMet)
       assert.is_not_nil(ctx)
     end)

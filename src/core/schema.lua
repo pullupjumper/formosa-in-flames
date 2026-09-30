@@ -1105,7 +1105,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
 
 ---Side-specific switches shared by every system in one UnitEntersArea event
----@class SBJ__MoveToPositionCtx: SBJ__MissileRunContext
+---@class SBJ__MoveToPositionContext: SBJ__MissileRunContext
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 ---@field firingUnitLookupSide string Side name used to resolve paired firing unit
@@ -1116,7 +1116,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
----@field moveCtx SBJ__MoveToPositionCtx Side-specific switches for this event
+---@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
