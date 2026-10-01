@@ -357,16 +357,15 @@ local function addAmmunition(missileSystemType, systemConfig, descriptor, sideNa
 end
 
 ---Add missile system units to the game
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force context
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force context
 ---@param sideName string Side name
-function Deployment.addMissileSystems(missileSystemTypeConfig, sideName)
+function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
   -- systemHasFailure is derived from the rows each helper produced, so it cannot
   -- drift from them. It only picks the tag of the per-system summary row; the
   -- report already routes the individual FAIL rows to the error sink.
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Add missile systems")
 
-  for missileSystemType, systemConfig in pairs(missileSystemTypeConfig) do
-    ---@cast systemConfig SBJ__MissileSystemConfig
+  for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
     local systemHasFailure = false
     local fuTotal, fuExpected = 0, 0
     for _, descriptor in pairs(systemConfig.firingUnits) do
@@ -425,17 +424,16 @@ end
 ---Point firing and resupply unit descriptors at their new operational areas
 ---Descriptors are replaced with copies rather than edited in place. Layouts naming an
 ---unknown system or firing unit are skipped.
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration; mutated
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration; mutated
 ---@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
 ---@return SBJ__OperationalArea[] operationalAreas New areas that need zones and triggers
 ---@return SBJ__OperationalArea[] operationalAreasToRemove Replaced areas whose zones and triggers must go
-function Deployment.updateLayouts(missileSystemTypeConfig, layouts)
+function Deployment.updateLayouts(missileSystemConfigMap, layouts)
   local operationalAreas = {}
   local operationalAreasToRemove = {}
 
   for _, layout in ipairs(layouts) do
-    ---@type SBJ__MissileSystemConfig
-    local systemConfig = missileSystemTypeConfig[layout.category]
+    local systemConfig = missileSystemConfigMap[layout.category]
 
     if systemConfig and systemConfig.firingUnits[layout.unitname] then
       local firingUnitDescriptor = Utils.deepCopy(systemConfig.firingUnits[layout.unitname])

@@ -211,22 +211,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 
----@class SBJ__MissileSystemTypeKey: table
-
----Missile system type configuration, keyed by type
----@class SBJ__MissileSystemTypeConfig: table
----@field mlrs SBJ__MissileSystemConfig MLRS configuration
----@field glcm SBJ__MissileSystemConfig GLCM configuration
----@field srbm SBJ__MissileSystemConfig SRBM configuration
----@field mrbm? SBJ__MissileSystemConfig MRBM configuration (China only)
----@field ascm SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
----@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
----@field [SBJ__MissileSystemTypeKey] SBJ__MissileSystemConfig
-
 ---Ground force configuration
 ---@class SBJ__GroundConfig: table
 ---@field policy SBJ__GroundPolicyConfig Ground policy
----@field missileSystemTypes SBJ__MissileSystemTypeConfig Missile system type configurations
+---@field missileSystemTypes table<string,SBJ__MissileSystemConfig>  Missile system type configurations
 
 ---Dynamic operation type discriminator
 ---@alias SBJ__OperationType "air"|"ground"
@@ -898,6 +886,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field course CMO__Waypoint[] Waypoints to area
 ---@field area string[] Area reference points, e.g., {"rp-100","rp-101","rp-102","rp-103","rp-104"}
 
+---@class SBJ__PositionType: table
+
 ---Operational area definition with multiple tactical position types
 ---Defines fire positions, hide areas, and reload locations for TEL operations
 ---@class SBJ__OperationalArea: table
@@ -910,6 +900,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field uShapeVertices? CMO__Location[] U shape vertices
 ---@field shelterPoints? CMO__Location[] Shelter points
 ---@field SHRL? SBJ__Position[] Shelter-hide-reload loop path
+---@field [SBJ__PositionType] SBJ__Position[]
 
 ---Player-chosen operational area for one battery, applied by MissileSystem.redeploy
 ---@class SBJ__MissileSystemLayout: table
@@ -1001,20 +992,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of context wpnCurrent/wpnDefault)
 ---@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + ammo
 
----Per-type missile system runtime state, keyed by missile system type
----@class SBJ__MissileSystemTypeContext: table
----@field mlrs SBJ__MissileSystemContext Multiple Launch Rocket System
----@field srbm SBJ__MissileSystemContext Short-Range Ballistic Missile system
----@field mrbm? SBJ__MissileSystemContext Medium-Range Ballistic Missile system
----@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
----@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
----@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system
----@field [SBJ__MissileSystemTypeKey] SBJ__MissileSystemContext
-
 ---Ground context base - common missile systems for all ground operations
 ---@class SBJ__GroundContext: table
 ---@field enabled boolean Whether ground force systems are activated
----@field missileSystemTypes SBJ__MissileSystemTypeContext Missile system runtime state by type
+---@field missileSystemTypes table<string, SBJ__MissileSystemContext> Missile system runtime state by type
 
 ---Ground context with fire support - for strike operations (China/Taiwan)
 ---Extends base context with dynamic fire support execution matrices

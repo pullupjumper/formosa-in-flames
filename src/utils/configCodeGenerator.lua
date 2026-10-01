@@ -174,14 +174,14 @@ local function collectOpAreasFromUnits(unitMap, opAreaMap, seenKeySet, uniqueAre
 end
 
 ---Phase 1: Collect unique operational areas from all firing/resupply units
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force config to scan
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force config to scan
 ---@return {key: string, opArea: SBJ__OperationalArea}[] uniqueAreas Sorted by key
 ---@return table<table, string> opAreaMap Maps opArea refs to constant key names
-local function collectUniqueAreas(missileSystemTypeConfig)
+local function collectUniqueAreas(missileSystemConfigMap)
   local uniqueAreas = {}
   local seenKeySet = {}
   local opAreaMap = {}
-  for _, sysConfig in pairs(missileSystemTypeConfig) do
+  for _, sysConfig in pairs(missileSystemConfigMap) do
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       collectOpAreasFromUnits(sysConfig.firingUnits, opAreaMap, seenKeySet, uniqueAreas)
       if sysConfig.resupplyUnits then
@@ -477,7 +477,7 @@ local function formatFiringUnitRef(value)
 end
 
 ---Compute firingUnit field emission order: FIELD_ORDER first, extras alphabetically
----@param unit table FiringUnit descriptor whose fields should be ordered
+---@param unit SBJ__FiringUnitDescriptor FiringUnit descriptor whose fields should be ordered
 ---@return string[] # Ordered field names for serialization
 local function getOrderedFiringUnitFields(unit)
   local ordered, seen = {}, {}
@@ -572,10 +572,10 @@ end
 
 ---Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
 ---@param sideField string Side config field key ("c" / "t" / "u")
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Source ground-force config to serialize
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Source ground-force config to serialize
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
 ---@return string # Concatenated ammunitions/resupplyUnits/firingUnits blocks separated by newlines
-local function formatConfigCode(sideField, missileSystemTypeConfig, opAreaMap)
+local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   local ctx = {
     configPath = "",
     opAreaMap = opAreaMap,
@@ -585,8 +585,8 @@ local function formatConfigCode(sideField, missileSystemTypeConfig, opAreaMap)
   }
 
   local blocks = {}
-  for _, sysKey in ipairs(getSortedStringKeys(missileSystemTypeConfig)) do
-    local sysConfig = missileSystemTypeConfig[sysKey]
+  for _, sysKey in ipairs(getSortedStringKeys(missileSystemConfigMap)) do
+    local sysConfig = missileSystemConfigMap[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
       local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.wpnDefault)
@@ -618,16 +618,16 @@ end
 ---`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
 ---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.c.ground.missileSystemTypes)
 ---@param sideName string Side name ("China", "Taiwan")
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
 ---@return string areasStr constants.AREAS code
 ---@return string opAreasStr constants.OPERATIONAL_AREAS code
 ---@return string configStr config blocks with constant references
-function ConfigCodeGenerator.format(sideName, missileSystemTypeConfig)
+function ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
   local sideField = resolveSideField(sideName)
-  local uniqueAreas, opAreaMap = collectUniqueAreas(missileSystemTypeConfig)
+  local uniqueAreas, opAreaMap = collectUniqueAreas(missileSystemConfigMap)
   local areasStr, areaRefMap = formatAreasCode(uniqueAreas)
   local opAreasStr = formatOpAreasCode(uniqueAreas, areaRefMap)
-  local configStr = formatConfigCode(sideField, missileSystemTypeConfig, opAreaMap)
+  local configStr = formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   return areasStr, opAreasStr, configStr
 end
 

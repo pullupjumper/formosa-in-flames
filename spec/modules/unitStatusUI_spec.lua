@@ -172,13 +172,10 @@ describe("UnitStatusUI", function()
       countUnitsStub = trackStub(stub(AmphibiousAssault, "countUnitsInEachArea").returns({}))
     end)
 
-    -- Positive: China's dashboard adds MRBM batteries and landed units
-    it("should show MRBM batteries and landed units for China", function()
+    -- Positive: China's dashboard adds landed units
+    it("should show landed units for China", function()
       UnitStatusUI.createUI(makeConfig(), constants.SIDES.ENEMY)
 
-      local types = constants.MISSILE_SYSTEM_TYPES
-      assert.are.same({ types.SRBM, types.MLRS, types.GLCM, types.ASCM, types.MRBM, types.SAM },
-        batteryStub.calls[1].vals[4])
       assert.stub(countUnitsStub).was.called(1)
       assert.stub(dialogStub).was.called(1)
     end)
@@ -190,13 +187,10 @@ describe("UnitStatusUI", function()
       assert.spy(sigintSpy).was.called_with(saveData, "US")
     end)
 
-    -- Negative: Taiwan has no MRBM batteries and no landing tab
-    it("should leave out MRBM batteries and landed units for Taiwan", function()
+    -- Negative: Taiwan has no landing tab
+    it("should leave out landed units for Taiwan", function()
       UnitStatusUI.createUI(makeConfig(), constants.SIDES.PLAYER)
 
-      local types = constants.MISSILE_SYSTEM_TYPES
-      assert.are.same({ types.SRBM, types.MLRS, types.GLCM, types.ASCM, types.SAM },
-        batteryStub.calls[1].vals[4])
       assert.stub(countUnitsStub).was_not.called()
       assert.stub(dialogStub).was.called(1)
     end)

@@ -57,12 +57,11 @@ end
 
 ---Fill the default per-system state for every system in config
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
 ---@param groundCtx SBJ__GroundContext Ground force state to seed in place
-function Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
+function Context.ensureGroundState(missileSystemConfigMap, groundCtx)
   groundCtx.missileSystemTypes = groundCtx.missileSystemTypes or {}
-  for system, _ in pairs(missileSystemTypeConfig) do
-    ---@type SBJ__MissileSystemContext
+  for system, _ in pairs(missileSystemConfigMap) do
     local systemCtx = groundCtx.missileSystemTypes[system] or {}
     systemCtx.name = system
     if systemCtx.enabled == nil then
@@ -76,30 +75,24 @@ function Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
 end
 
 ---Initialize missile system runtime contexts from configuration
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Ground force configuration
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
 ---@param groundCtx SBJ__GroundContext Ground force runtime context
-function Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
-  for system, systemConfig in pairs(missileSystemTypeConfig) do
-    ---@cast systemConfig SBJ__MissileSystemConfig
+function Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
+  for system, systemConfig in pairs(missileSystemConfigMap) do
     local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
     for _, descriptor in pairs(firingUnitMap) do
-      ---@type SBJ__FiringUnitContext
       local ctx = descriptor
-      ctx.reloadStartTime = nil
       groundCtx.missileSystemTypes[system].firingUnits[ctx.name] = ctx
     end
 
     local resupplyUnitMap = Utils.deepCopy(systemConfig.resupplyUnits)
     for _, descriptor in pairs(resupplyUnitMap) do
-      ---@type SBJ__ResupplyUnitContext
       local ctx = descriptor
-      ctx.reloadStartTime = nil
       groundCtx.missileSystemTypes[system].resupplyUnits[ctx.name] = ctx
     end
 
     local ammunitionMap = Utils.deepCopy(systemConfig.ammunitions)
     for _, descriptor in pairs(ammunitionMap) do
-      ---@type SBJ__AmmunitionContext
       local ctx = descriptor
       groundCtx.missileSystemTypes[system].ammunitions[ctx.name] = ctx
     end

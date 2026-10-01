@@ -79,7 +79,7 @@ describe("MissileSystem SetupLayout", function()
   ---Create a ground force config with one SRBM firing unit
   ---@param overrides? table Fields merged into the firing unit's operational area
   ---@return table
-  local function makeMissileSystemTypeConfig(overrides)
+  local function makeMissileSystemConfigMap(overrides)
     local operationalArea = {
       HA = { { area = { "rp-1" } } },
       FP = { { area = { "rp-missing" } }, { course = {} } },
@@ -166,7 +166,7 @@ describe("MissileSystem SetupLayout", function()
 
     -- Positive: the setup menu only needs firing units
     it("should drop resupply units and ammunitions from the copy", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemTypeConfig(), "Taiwan")
+      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap(), "Taiwan")
 
       assert.is_nil(rows.srbm.resupplyUnits)
       assert.is_nil(rows.srbm.ammunitions)
@@ -175,7 +175,7 @@ describe("MissileSystem SetupLayout", function()
 
     -- Positive: zone names become numeric vertices the menu can draw
     it("should resolve zone and mask names to numeric vertices", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemTypeConfig(), "Taiwan")
+      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap(), "Taiwan")
       local operationalArea = rows.srbm.firingUnits.fu.operationalArea
 
       assert.are.same({ { latitude = 25.5, longitude = 121.5 } }, operationalArea.HA[1].area)
@@ -184,24 +184,24 @@ describe("MissileSystem SetupLayout", function()
 
     -- Negative: the caller's config must survive for the next redeploy
     it("should leave the source config untouched", function()
-      local missileSystemTypeConfig = makeMissileSystemTypeConfig()
+      local missileSystemConfigMap = makeMissileSystemConfigMap()
 
-      SetupLayout.buildSetupMenuRows(missileSystemTypeConfig, "Taiwan")
+      SetupLayout.buildSetupMenuRows(missileSystemConfigMap, "Taiwan")
 
-      assert.are.same({ "rp-1" }, missileSystemTypeConfig.srbm.firingUnits.fu.operationalArea.HA[1].area)
-      assert.is_not_nil(missileSystemTypeConfig.srbm.resupplyUnits)
+      assert.are.same({ "rp-1" }, missileSystemConfigMap.srbm.firingUnits.fu.operationalArea.HA[1].area)
+      assert.is_not_nil(missileSystemConfigMap.srbm.resupplyUnits)
     end)
 
     -- Boundary: reference points that no longer exist keep their names
     it("should keep zone names that resolve to no vertices", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemTypeConfig(), "Taiwan")
+      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap(), "Taiwan")
 
       assert.are.same({ "rp-missing" }, rows.srbm.firingUnits.fu.operationalArea.FP[1].area)
     end)
 
     -- Boundary: an unresolved mask leaves no U-shape rather than an empty one
     it("should not set U-shape vertices when the mask does not resolve", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemTypeConfig({ mask = { area = { "rp-missing" } } }), "Taiwan")
+      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), "Taiwan")
 
       assert.is_nil(rows.srbm.firingUnits.fu.operationalArea.uShapeVertices)
     end)

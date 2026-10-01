@@ -6,6 +6,7 @@ local SetupLayout = {}
 
 ---Position types whose zones are resolved to vertices for the setup menu
 local SETUP_POSITION_TYPES = { "HA", "FP", "RL", "AHA", "SHRL" }
+---@cast SETUP_POSITION_TYPES SBJ__PositionType[]
 
 ---Turn a setup menu path into a fast-moving course
 ---@param path SBJ__MovementPath Path drawn in the setup menu
@@ -85,14 +86,13 @@ local function resolveVertices(sideName, area)
 end
 
 ---Build the setup menu's missile system rows, with zone names resolved to vertices
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Side ground force configuration; left untouched
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Side ground force configuration; left untouched
 ---@param sideName string Side owning the reference points
 ---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
-function SetupLayout.buildSetupMenuRows(missileSystemTypeConfig, sideName)
+function SetupLayout.buildSetupMenuRows(missileSystemConfigMap, sideName)
   local rows = {}
 
-  for key, system in pairs(missileSystemTypeConfig) do
-    ---@cast system SBJ__MissileSystemConfig
+  for key, system in pairs(missileSystemConfigMap) do
     local copy = Utils.deepCopy(system)
     copy.resupplyUnits = nil
     copy.ammunitions = nil
@@ -101,7 +101,6 @@ function SetupLayout.buildSetupMenuRows(missileSystemTypeConfig, sideName)
       local operationalArea = descriptor.operationalArea
 
       for _, attr in ipairs(SETUP_POSITION_TYPES) do
-        ---@type SBJ__Position[]
         local positions = operationalArea[attr]
 
         if positions then

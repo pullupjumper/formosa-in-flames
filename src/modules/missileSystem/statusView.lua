@@ -36,15 +36,14 @@ end
 
 ---Build battery status rows grouped by resupply unit name
 ---@param groundCtx SBJ__GroundContext Side ground force runtime context
----@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Side ground force configuration
----@param systemTypes SBJ__MissileSystemTypeKey[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
+---@param missileSystemConfigMap table<string,SBJ__MissileSystemConfig> Side ground force configuration
 ---@param currentTime number Current scenario time in seconds
 ---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
-function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, systemTypes, currentTime)
+function StatusView.buildBatteryStatusRows(groundCtx, missileSystemConfigMap, currentTime)
   local rows = {}
   local typeCtxs = groundCtx.missileSystemTypes
 
-  for _, missileSystemType in ipairs(systemTypes) do
+  for missileSystemType, _ in pairs(typeCtxs) do
     local resupplyUnitCtxs = typeCtxs[missileSystemType] and typeCtxs[missileSystemType].resupplyUnits
 
     if resupplyUnitCtxs then
@@ -54,7 +53,7 @@ function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, s
     end
   end
 
-  for _, missileSystemType in ipairs(systemTypes) do
+  for missileSystemType, _ in pairs(typeCtxs) do
     local missileSystemCtx = typeCtxs[missileSystemType]
     local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
 
@@ -71,12 +70,11 @@ function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, s
           missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].wpnCurrent,
           firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, currentTime),
           resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, currentTime),
-          defaultReloadTime = missileSystemTypeConfig[missileSystemType].reloadTime / 60
+          defaultReloadTime = missileSystemConfigMap[missileSystemType].reloadTime / 60
         })
       end
     end
   end
-
   return rows
 end
 

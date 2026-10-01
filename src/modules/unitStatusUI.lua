@@ -242,31 +242,16 @@ end
 local STATUS_UI_SIDES = {
   [constants.SIDES.ENEMY] = {
     signalSide = constants.SIDES.ENEMY,
-    systemTypes = {
-      constants.MISSILE_SYSTEM_TYPES.SRBM,
-      constants.MISSILE_SYSTEM_TYPES.MLRS,
-      constants.MISSILE_SYSTEM_TYPES.GLCM,
-      constants.MISSILE_SYSTEM_TYPES.ASCM,
-      constants.MISSILE_SYSTEM_TYPES.MRBM,
-      constants.MISSILE_SYSTEM_TYPES.SAM
-    },
     c2Types = { "c2" },
     showsLandedUnits = true
   },
   [constants.SIDES.PLAYER] = {
     signalSide = "US",
-    systemTypes = {
-      constants.MISSILE_SYSTEM_TYPES.SRBM,
-      constants.MISSILE_SYSTEM_TYPES.MLRS,
-      constants.MISSILE_SYSTEM_TYPES.GLCM,
-      constants.MISSILE_SYSTEM_TYPES.ASCM,
-      constants.MISSILE_SYSTEM_TYPES.SAM
-    },
     c2Types = { "rocc", "taaoc" },
     showsLandedUnits = false
   }
 }
----@cast STATUS_UI_SIDES table<string, {signalSide: string, systemTypes: SBJ__MissileSystemTypeKey[], c2Types: SBJ__C2TypeKey[], showsLandedUnits: boolean}>
+---@cast STATUS_UI_SIDES table<string, {signalSide: string, c2Types: SBJ__C2TypeKey[], showsLandedUnits: boolean}>
 
 
 ---Create comprehensive status UI with multi-tab military dashboard
@@ -276,7 +261,7 @@ function UnitStatusUI.createUI(config, sideName)
   local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.PLAYER]
 
   PersistentState.read(function(saveData)
-    local batteryRows = MissileSystem.buildBatteryStatusRows(config, saveData, sideName, view.systemTypes)
+    local batteryRows = MissileSystem.buildBatteryStatusRows(config, saveData, sideName)
     local landingUnitsString = view.showsLandedUnits
         and gKH.json.stringify(LandingOps.countUnitsInEachArea(config))
         or "{}"

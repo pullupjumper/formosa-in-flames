@@ -24,7 +24,7 @@ describe("MissileSystem Deployment", function()
     return s
   end
 
-  local function makeMissileSystemTypeConfig()
+  local function makeMissileSystemConfigMap()
     return {
       srbm = {
         firingUnits = {
@@ -87,7 +87,7 @@ describe("MissileSystem Deployment", function()
         return { guid = "RU-1", name = opts.unitname, mounts = {} }
       end)
 
-      Deployment.addMissileSystems(makeMissileSystemTypeConfig(), constants.SIDES.ENEMY)
+      Deployment.addMissileSystems(makeMissileSystemConfigMap(), constants.SIDES.ENEMY)
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -126,36 +126,36 @@ describe("MissileSystem Deployment", function()
 
     -- Positive: firing and resupply descriptors move to the new area as fresh copies
     it("should point both descriptors at the new area and report old and new areas", function()
-      local missileSystemTypeConfig, oldArea = makeLayoutConfig()
-      local originalFiringUnit = missileSystemTypeConfig.srbm.firingUnits["FU-1"]
+      local missileSystemConfigMap, oldArea = makeLayoutConfig()
+      local originalFiringUnit = missileSystemConfigMap.srbm.firingUnits["FU-1"]
       local newArea = { name = "#ABC" }
 
-      local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemTypeConfig, {
+      local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, {
         { category = "srbm", unitname = "FU-1", operationalArea = newArea }
       })
 
       assert.are.same({ newArea }, operationalAreas)
       assert.are.same(oldArea, operationalAreasToRemove[1])
-      assert.are.equal(newArea, missileSystemTypeConfig.srbm.firingUnits["FU-1"].operationalArea)
-      assert.are.equal(newArea, missileSystemTypeConfig.srbm.resupplyUnits["RU-1"].operationalArea)
-      assert.are_not.equal(originalFiringUnit, missileSystemTypeConfig.srbm.firingUnits["FU-1"])
+      assert.are.equal(newArea, missileSystemConfigMap.srbm.firingUnits["FU-1"].operationalArea)
+      assert.are.equal(newArea, missileSystemConfigMap.srbm.resupplyUnits["RU-1"].operationalArea)
+      assert.are_not.equal(originalFiringUnit, missileSystemConfigMap.srbm.firingUnits["FU-1"])
       assert.are.equal(oldArea, originalFiringUnit.operationalArea)
     end)
 
     -- Negative: unknown system or firing unit is skipped
     it("should skip layouts naming an unknown system or firing unit", function()
-      local missileSystemTypeConfig, oldArea = makeLayoutConfig()
+      local missileSystemConfigMap, oldArea = makeLayoutConfig()
       local operationalArea1 = { name = "#X" }
       local operationalArea2 = { name = "#Y" }
 
-      local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemTypeConfig, {
+      local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, {
         { category = "glcm", unitname = "FU-1",  operationalArea = operationalArea1 },
         { category = "srbm", unitname = "Ghost", operationalArea = operationalArea2 }
       })
 
       assert.are.same({}, operationalAreas)
       assert.are.same({}, operationalAreasToRemove)
-      assert.are.equal(oldArea, missileSystemTypeConfig.srbm.firingUnits["FU-1"].operationalArea)
+      assert.are.equal(oldArea, missileSystemConfigMap.srbm.firingUnits["FU-1"].operationalArea)
     end)
   end)
 end)

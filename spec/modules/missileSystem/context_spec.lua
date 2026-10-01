@@ -221,10 +221,10 @@ describe("MissileSystem Context", function()
   describe("ensureGroundState", function()
     -- Positive: every configured system gets its full default state; timers stay in config
     it("should create default state for each configured system", function()
-      local missileSystemTypeConfig = { srbm = { reloadTime = 300, stowTime = 60 } }
+      local missileSystemConfigMap = { srbm = { reloadTime = 300, stowTime = 60 } }
       local groundCtx = {}
 
-      Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
+      Context.ensureGroundState(missileSystemConfigMap, groundCtx)
 
       assert.are.same({
         name = "srbm",
@@ -239,10 +239,10 @@ describe("MissileSystem Context", function()
     it("should keep fields already present on the system state", function()
       local test = { isAntishipMissionActivated = false }
       local firingUnits = { ["FU-1"] = { name = "FU-1" } }
-      local missileSystemTypeConfig = { ascm = { reloadTime = 1, stowTime = 1 } }
+      local missileSystemConfigMap = { ascm = { reloadTime = 1, stowTime = 1 } }
       local groundCtx = { missileSystemTypes = { ascm = { test = test, enabled = false, firingUnits = firingUnits } } }
 
-      Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
+      Context.ensureGroundState(missileSystemConfigMap, groundCtx)
 
       assert.are.equal(test, groundCtx.missileSystemTypes.ascm.test)
       assert.is_false(groundCtx.missileSystemTypes.ascm.enabled)
@@ -251,10 +251,10 @@ describe("MissileSystem Context", function()
 
     -- Negative: side-level keys that are not systems are left alone
     it("should not touch ground keys absent from config", function()
-      local missileSystemTypeConfig = {}
+      local missileSystemConfigMap = {}
       local groundCtx = { enabled = true, fireSupportPlan = {} }
 
-      Context.ensureGroundState(missileSystemTypeConfig, groundCtx)
+      Context.ensureGroundState(missileSystemConfigMap, groundCtx)
 
       assert.are.same({ enabled = true, fireSupportPlan = {}, missileSystemTypes = {} }, groundCtx)
     end)
@@ -266,11 +266,11 @@ describe("MissileSystem Context", function()
 
   describe("initMissileSystemContexts", function()
     -- Positive: initializes firing unit contexts from config
-    it("should deep copy firing unit descriptors and set reloadStartTime to nil", function()
-      local missileSystemTypeConfig = {
+    it("should deep copy firing unit descriptors", function()
+      local missileSystemConfigMap = {
         system1 = {
           firingUnits = {
-            fu1 = { name = "FU-1", state = 0, reloadStartTime = 999 }
+            fu1 = { name = "FU-1", state = 0 }
           },
           resupplyUnits = {},
           ammunitions = {}
@@ -282,21 +282,21 @@ describe("MissileSystem Context", function()
         }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
+      Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
 
       local ctx = groundCtx.missileSystemTypes.system1.firingUnits["FU-1"]
       assert.is_not_nil(ctx)
       assert.are.equal("FU-1", ctx.name)
-      assert.is_nil(ctx.reloadStartTime)
+      assert.are_not.equal(missileSystemConfigMap.system1.firingUnits.fu1, ctx)
     end)
 
     -- Positive: initializes resupply unit contexts from config
-    it("should deep copy resupply unit descriptors and set reloadStartTime to nil", function()
-      local missileSystemTypeConfig = {
+    it("should deep copy resupply unit descriptors", function()
+      local missileSystemConfigMap = {
         system1 = {
           firingUnits = {},
           resupplyUnits = {
-            ru1 = { name = "RU-1", state = 0, reloadStartTime = 888 }
+            ru1 = { name = "RU-1", state = 0 }
           },
           ammunitions = {}
         }
@@ -307,17 +307,17 @@ describe("MissileSystem Context", function()
         }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
+      Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
 
       local ctx = groundCtx.missileSystemTypes.system1.resupplyUnits["RU-1"]
       assert.is_not_nil(ctx)
       assert.are.equal("RU-1", ctx.name)
-      assert.is_nil(ctx.reloadStartTime)
+      assert.are_not.equal(missileSystemConfigMap.system1.resupplyUnits.ru1, ctx)
     end)
 
     -- Positive: initializes ammunition contexts from config
     it("should deep copy ammunition descriptors into context", function()
-      local missileSystemTypeConfig = {
+      local missileSystemConfigMap = {
         system1 = {
           firingUnits = {},
           resupplyUnits = {},
@@ -332,7 +332,7 @@ describe("MissileSystem Context", function()
         }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
+      Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
 
       local ctx = groundCtx.missileSystemTypes.system1.ammunitions["Ammo-1"]
       assert.is_not_nil(ctx)
@@ -342,7 +342,7 @@ describe("MissileSystem Context", function()
 
     -- Positive: isolates context from config references
     it("should not share references between config and context", function()
-      local missileSystemTypeConfig = {
+      local missileSystemConfigMap = {
         system1 = {
           firingUnits = {
             fu1 = { name = "FU-1", state = 0, operationalArea = { name = "OA-1" } }
@@ -357,15 +357,15 @@ describe("MissileSystem Context", function()
         }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
+      Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
 
       groundCtx.missileSystemTypes.system1.firingUnits["FU-1"].operationalArea.name = "CHANGED"
-      assert.are.equal("OA-1", missileSystemTypeConfig.system1.firingUnits.fu1.operationalArea.name)
+      assert.are.equal("OA-1", missileSystemConfigMap.system1.firingUnits.fu1.operationalArea.name)
     end)
 
     -- Positive: initializes contexts for multiple systems
     it("should initialize contexts for multiple missile systems", function()
-      local missileSystemTypeConfig = {
+      local missileSystemConfigMap = {
         sysA = {
           firingUnits = { a = { name = "A", state = 0 } },
           resupplyUnits = {},
@@ -384,7 +384,7 @@ describe("MissileSystem Context", function()
         }
       }
 
-      Context.initMissileSystemContexts(missileSystemTypeConfig, groundCtx)
+      Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
 
       assert.is_not_nil(groundCtx.missileSystemTypes.sysA.firingUnits["A"])
       assert.is_not_nil(groundCtx.missileSystemTypes.sysB.resupplyUnits["B"])
