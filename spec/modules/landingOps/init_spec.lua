@@ -344,7 +344,7 @@ describe("LandingOps", function()
         }),
       }
       local cfg = {
-        sag = {
+        sags = {
           ["SAG Alpha"] = {
             area = { "RP-SAG-1", "RP-SAG-2" },
           },
@@ -376,7 +376,7 @@ describe("LandingOps", function()
     -- Negative: returns false when the ship is not a valid Type 052D SAG unit
     it("should return false for ships outside the supported SAG destroyer context", function()
       local ship = makeShip({ dbid = constants.PLATFORMS.TYPE_054A })
-      local cfg = { sag = {} }
+      local cfg = { sags = {} }
 
       local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
 
@@ -396,7 +396,7 @@ describe("LandingOps", function()
         }),
       }
       local cfg = {
-        sag = {
+        sags = {
           ["SAG Alpha"] = {
             area = { "RP-SAG-1", "RP-SAG-2" },
           },

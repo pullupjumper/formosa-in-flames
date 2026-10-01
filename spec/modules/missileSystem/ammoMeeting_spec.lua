@@ -41,8 +41,8 @@ describe("MissileSystem Ammo And Meeting", function()
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
           state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-          wpnCurrent = 10,
-          wpnDefault = 20,
+          weaponCountCurrent = 10,
+          weaponCountDefault = 20,
           firingUnit = "Firing Unit Alpha",
           operationalArea = {
             name = "OPAREA-1",
@@ -215,11 +215,11 @@ describe("MissileSystem Ammo And Meeting", function()
           ["FU-Alpha"] = { name = "FU-Alpha", weaponDBID = 1234 },
         },
         resupplyUnits = {
-          ["RU-Alpha"] = { name = "RU-Alpha", wpnCurrent = 6, wpnDefault = 10 },
-          ["RU-Bravo"] = { name = "RU-Bravo", wpnCurrent = 4, wpnDefault = 10 },
+          ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 6, weaponCountDefault = 10 },
+          ["RU-Bravo"] = { name = "RU-Bravo", weaponCountCurrent = 4, weaponCountDefault = 10 },
         },
         ammunitions = {
-          ["Depot-1"] = { name = "Depot-1", wpnCurrent = 50, wpnDefault = 100 },
+          ["Depot-1"] = { name = "Depot-1", weaponCountCurrent = 50, weaponCountDefault = 100 },
         },
       }
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(nameOrGuid)
@@ -245,7 +245,7 @@ describe("MissileSystem Ammo And Meeting", function()
           ["FU-Ghost"] = { name = "FU-Ghost", weaponDBID = 1234 },
         },
         resupplyUnits = {
-          ["RU-Alpha"] = { name = "RU-Alpha", wpnCurrent = 5, wpnDefault = 10 },
+          ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 5, weaponCountDefault = 10 },
         },
         ammunitions = {},
       }
@@ -266,7 +266,7 @@ describe("MissileSystem Ammo And Meeting", function()
       local systemCtx = {
         firingUnits = {},
         resupplyUnits = {
-          ["RU-Empty"] = { name = "RU-Empty", wpnCurrent = 0, wpnDefault = 0 },
+          ["RU-Empty"] = { name = "RU-Empty", weaponCountCurrent = 0, weaponCountDefault = 0 },
         },
         ammunitions = {},
       }
@@ -504,7 +504,7 @@ describe("MissileSystem Ammo And Meeting", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
             ammunition = "Ammo Revetment, Alpha",
-            wpnCurrent = 0,
+            weaponCountCurrent = 0,
             operationalArea = {
               name = "OPAREA-1",
               AHA = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }

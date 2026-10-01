@@ -7,13 +7,13 @@ export const JAMMERS_DATA: Jammer[] = [
   {
     zoneName: 'JAMMING ZONE/1',
     name: 'Comm and Info Coy, 584th Mech Bde',
-    randomRadius: 20,
+    randomRadiusNm: 20,
     radius: 11,
   },
   {
     zoneName: 'JAMMING ZONE/2',
     name: 'Comm and Info Coy, 269th Mech Bde',
-    randomRadius: 20,
+    randomRadiusNm: 20,
     radius: 11,
   },
 ];
@@ -304,7 +304,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
   sam: {
     operationalAreas: {},
     reloadTime: 600,
-    wpnDefault: 27,
+    weaponCountDefault: 27,
     firingUnits: {
       '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde': {
         dbid: 2446,
@@ -407,7 +407,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
   srbm: {
     operationalAreas: {},
     reloadTime: 600,
-    wpnDefault: 27,
+    weaponCountDefault: 27,
     firingUnits: {
       'Rocket Arty Coy, 58th Arty Command': {
         dbid: 2446,
@@ -510,7 +510,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
   ascm: {
     operationalAreas: {},
     reloadTime: 2700,
-    wpnDefault: 16,
+    weaponCountDefault: 16,
     firingUnits: {
       '1st Hai Feng Shore-based ASM MOB Sqn': {
         dbid: 3531,

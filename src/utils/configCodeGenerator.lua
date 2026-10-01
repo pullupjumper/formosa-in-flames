@@ -121,22 +121,22 @@ local function formatValue(value, level, opAreaMap)
   return table.concat(lines, "\n")
 end
 
----Serialize wpnCurrent/wpnDefault value as configPath reference when possible
+---Serialize weaponCountCurrent/weaponCountDefault value as configPath reference when possible
 ---@param value number Ammunition count value
----@param wpnDefault number System's default weapon count
+---@param weaponCountDefault number System's default weapon count
 ---@param configPath string Config path prefix
 ---@return string # Serialized expression string
-local function formatWpnRef(value, wpnDefault, configPath)
-  if wpnDefault and wpnDefault > 0 and value > 0 then
-    if value == wpnDefault then
-      return configPath .. ".wpnDefault"
+local function formatWeaponCountRef(value, weaponCountDefault, configPath)
+  if weaponCountDefault and weaponCountDefault > 0 and value > 0 then
+    if value == weaponCountDefault then
+      return configPath .. ".weaponCountDefault"
     end
-    local ratio = value / wpnDefault
+    local ratio = value / weaponCountDefault
     if ratio == math.floor(ratio) and ratio > 1 then
-      return configPath .. ".wpnDefault * " .. math.floor(ratio)
+      return configPath .. ".weaponCountDefault * " .. math.floor(ratio)
     end
-    if value * 2 == wpnDefault then
-      return configPath .. ".wpnDefault / 2"
+    if value * 2 == weaponCountDefault then
+      return configPath .. ".weaponCountDefault / 2"
     end
   end
   return tostring(value)
@@ -331,9 +331,12 @@ end
 
 ---Firing-unit field output order; extras are appended alphabetically
 local FIELD_ORDER = {
-  "guid", "name", "msg", "state", "operationalArea",
+  "name", "msg", "state", "operationalArea",
   "weaponDBID", "ammoThreshold", "resupplyUnit", "dbid", "missileSystem", "mountDescriptors"
 }
+
+---Runtime-only fields that live in saveData contexts and never belong in generated config
+local RUNTIME_FIELDS = { guid = true }
 
 ---Sort a table's string keys alphabetically (ignores non-string keys)
 ---@param tbl table Any table whose string keys should be enumerated in order
@@ -489,7 +492,7 @@ local function getOrderedFiringUnitFields(unit)
   end
   local extras = {}
   for f in pairs(unit) do
-    if not seen[f] then extras[#extras + 1] = f end
+    if not seen[f] and not RUNTIME_FIELDS[f] then extras[#extras + 1] = f end
   end
   table.sort(extras)
   for _, f in ipairs(extras) do ordered[#ordered + 1] = f end
@@ -499,18 +502,17 @@ end
 ---Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitionMap absent
 ---@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
 ---@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
----@param wpnDefault number System's default weapon count for wpnRef simplification
+---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
 ---@return string|nil # Serialized block, or nil when ammunitionMap is nil
-local function formatAmmunitionsBlock(configPath, ammunitionMap, wpnDefault)
+local function formatAmmunitionsBlock(configPath, ammunitionMap, weaponCountDefault)
   if not ammunitionMap then return nil end
   local lines = { configPath .. ".ammunitions = {" }
   for _, name in ipairs(getSortedStringKeys(ammunitionMap)) do
     local ammo = ammunitionMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
-    lines[#lines + 1] = "    guid = " .. string.format("%q", ammo.guid) .. ","
     lines[#lines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
-    lines[#lines + 1] = "    wpnCurrent = " .. formatWpnRef(ammo.wpnCurrent, wpnDefault, configPath) .. ","
-    lines[#lines + 1] = "    wpnDefault = " .. formatWpnRef(ammo.wpnDefault, wpnDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountCurrent = " .. formatWeaponCountRef(ammo.weaponCountCurrent, weaponCountDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountDefault = " .. formatWeaponCountRef(ammo.weaponCountDefault, weaponCountDefault, configPath) .. ","
     lines[#lines + 1] = "  },"
   end
   lines[#lines + 1] = "}"
@@ -520,19 +522,18 @@ end
 ---Emit the `config.{...}.resupplyUnits = { ... }` block, or nil if resupplyUnits absent
 ---@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
 ---@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil Resupply units keyed by unit name
----@param wpnDefault number System's default weapon count for wpnRef simplification
+---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
 ---@param ctx SBJ__FieldSerializerContext Shared context for operationalArea/state serialization
 ---@return string|nil # Serialized block, or nil when resupplyUnitMap is nil
-local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, wpnDefault, ctx)
+local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCountDefault, ctx)
   if not resupplyUnitMap then return nil end
   local lines = { configPath .. ".resupplyUnits = {" }
   for _, name in ipairs(getSortedStringKeys(resupplyUnitMap)) do
     local unit = resupplyUnitMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
-    lines[#lines + 1] = "    guid = " .. string.format("%q", unit.guid) .. ","
     lines[#lines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
-    lines[#lines + 1] = "    wpnCurrent = " .. formatWpnRef(unit.wpnCurrent, wpnDefault, configPath) .. ","
-    lines[#lines + 1] = "    wpnDefault = " .. formatWpnRef(unit.wpnDefault, wpnDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountCurrent = " .. formatWeaponCountRef(unit.weaponCountCurrent, weaponCountDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountDefault = " .. formatWeaponCountRef(unit.weaponCountDefault, weaponCountDefault, configPath) .. ","
     lines[#lines + 1] = "    unitCount = " .. tostring(unit.unitCount) .. ","
     lines[#lines + 1] = "    operationalArea = " .. formatField("operationalArea", unit.operationalArea, ctx) .. ","
     lines[#lines + 1] = "    state = " .. formatField("state", unit.state, ctx) .. ","
@@ -589,9 +590,9 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
     local sysConfig = missileSystemConfigMap[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
-      local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.wpnDefault)
+      local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.weaponCountDefault)
       if ammoBlock then blocks[#blocks + 1] = ammoBlock end
-      local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.wpnDefault, ctx)
+      local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.weaponCountDefault, ctx)
       if resBlock then blocks[#blocks + 1] = resBlock end
       blocks[#blocks + 1] = formatFiringUnitsBlock(ctx.configPath, sysConfig.firingUnits, ctx)
     end

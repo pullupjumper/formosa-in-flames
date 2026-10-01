@@ -599,7 +599,7 @@ describe("MissileSystem", function()
         name = "srbm",
         resupplyUnits = {},
         ammunitions = {
-          ["Ammo Depot Alpha"] = { name = "Ammo Depot Alpha", wpnCurrent = 100 }
+          ["Ammo Depot Alpha"] = { name = "Ammo Depot Alpha", weaponCountCurrent = 100 }
         }
       }
       local saveData = {
@@ -618,7 +618,7 @@ describe("MissileSystem", function()
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 
       assert.is_true(processed)
-      assert.are.equal(0, srbmCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
+      assert.are.equal(0, srbmCtx.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]

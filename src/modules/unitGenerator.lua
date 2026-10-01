@@ -444,7 +444,7 @@ end
 function UnitGenerator.createSAGs(sideName, sagDescriptorMap)
   for _, sagDescriptor in pairs(sagDescriptorMap) do
     local formationConfig = {
-      centerPoint = sagDescriptor.from.startingPoint,
+      centerPoint = sagDescriptor.from.pos,
       heading = sagDescriptor.from.heading,
       groupName = sagDescriptor.groupName,
       sideName = sideName,
@@ -480,7 +480,7 @@ end
 ---@return boolean # Whether successful
 function UnitGenerator.createCSG(csgDescriptor)
   local formationConfig = {
-    centerPoint = csgDescriptor.from.startingPoint,
+    centerPoint = csgDescriptor.from.pos,
     heading = csgDescriptor.from.heading,
     groupName = csgDescriptor.groupName,
     sideName = constants.SIDES.ENEMY,
@@ -560,10 +560,10 @@ function UnitGenerator.addSubmarines(config, sideName)
     end
 
     local addedUnit = GameUtils.createRandomUnits({
-      centerPoint = unit.from.startingPoint,
+      centerPoint = unit.from.pos,
       dbids = { constants.PLATFORMS.TYPE_093B },
       count = 1,
-      randomRadius = config.c.subSurface.slcm.randomRadius,
+      randomRadiusNm = config.c.subSurface.slcm.randomRadiusNm,
       sideName = sideName,
       unitType = constants.UNIT_TYPES.SUBMARINE,
       unitname = unit.name,
@@ -666,7 +666,7 @@ end
 function UnitGenerator.addLandingShips(amphibOpsConfig)
   local descriptors = amphibOpsConfig.operations
   local layoutConfig = amphibOpsConfig.formationSettings
-  local cargoMap = amphibOpsConfig.cargoMap
+  local cargoMap = amphibOpsConfig.cargo
 
   for _, descriptor in ipairs(descriptors) do
     for _, areaDescriptor in ipairs(descriptor.from.areas) do

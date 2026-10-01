@@ -29,8 +29,8 @@ describe("MissileSystem Context", function()
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
           state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-          wpnCurrent = 10,
-          wpnDefault = 20,
+          weaponCountCurrent = 10,
+          weaponCountDefault = 20,
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -75,45 +75,45 @@ describe("MissileSystem Context", function()
         resupplyUnits = {
           ["Resupply Group Alpha"] = {
             name = "Resupply Group Alpha",
-            wpnCurrent = 20,
-            wpnDefault = 20,
+            weaponCountCurrent = 20,
+            weaponCountDefault = 20,
             unitCount = 4
           },
           ["Resupply Group Beta"] = {
             name = "Resupply Group Beta",
-            wpnCurrent = 3,
-            wpnDefault = 20,
+            weaponCountCurrent = 3,
+            weaponCountDefault = 20,
             unitCount = 4
           },
           ["Resupply Group Empty"] = {
             name = "Resupply Group Empty",
-            wpnCurrent = 0,
-            wpnDefault = 20,
+            weaponCountCurrent = 0,
+            weaponCountDefault = 20,
             unitCount = 4
           }
         },
         ammunitions = {
           ["Ammo Depot Alpha"] = {
             name = "Ammo Depot Alpha",
-            wpnCurrent = 100
+            weaponCountCurrent = 100
           },
           ["Ammo Depot Empty"] = {
             name = "Ammo Depot Empty",
-            wpnCurrent = 0
+            weaponCountCurrent = 0
           }
         }
       })
     end)
 
     -- Positive: clears ammo depot ammo on destruction
-    it("should set wpnCurrent to 0 when ammo depot with ammo is destroyed", function()
+    it("should set weaponCountCurrent to 0 when ammo depot with ammo is destroyed", function()
       local unit = { name = "Ammo Depot Alpha" }
 
       local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert(detail ~= nil)
       assert.is_true(result)
-      assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
+      assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
       assert.are.equal("ammo_depot", detail.role)
       assert.are.equal(100, detail.ammoBefore)
       assert.are.equal(0, detail.ammoAfter)
@@ -121,7 +121,7 @@ describe("MissileSystem Context", function()
     end)
 
     -- Positive: reduces resupply ammo proportionally on destruction
-    it("should reduce wpnCurrent proportionally when resupply unit is destroyed", function()
+    it("should reduce weaponCountCurrent proportionally when resupply unit is destroyed", function()
       local unit = {
         name = "Resupply Vehicle 1",
         group = { name = "Resupply Group Alpha" }
@@ -131,7 +131,7 @@ describe("MissileSystem Context", function()
 
       assert(detail ~= nil)
       assert.is_true(result)
-      assert.are.equal(15, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].wpnCurrent)
+      assert.are.equal(15, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].weaponCountCurrent)
       assert.are.equal("resupply_unit", detail.role)
       assert.are.equal("Resupply Group Alpha", detail.contextName)
       assert.are.equal(20, detail.ammoBefore)
@@ -140,7 +140,7 @@ describe("MissileSystem Context", function()
     end)
 
     -- Boundary: clamps resupply ammo at zero
-    it("should set wpnCurrent to 0 when reduction would go negative", function()
+    it("should set weaponCountCurrent to 0 when reduction would go negative", function()
       local unit = {
         name = "Resupply Vehicle 1",
         group = { name = "Resupply Group Beta" }
@@ -149,7 +149,7 @@ describe("MissileSystem Context", function()
       local result = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
-      assert.are.equal(0, mockSystemCtx.resupplyUnits["Resupply Group Beta"].wpnCurrent)
+      assert.are.equal(0, mockSystemCtx.resupplyUnits["Resupply Group Beta"].weaponCountCurrent)
     end)
 
     -- Negative: returns false when resupply unit has no ammo
@@ -163,7 +163,7 @@ describe("MissileSystem Context", function()
 
       assert.is_false(result)
       assert.is_nil(detail)
-      assert.are.equal(0, mockSystemCtx.resupplyUnits["Resupply Group Empty"].wpnCurrent)
+      assert.are.equal(0, mockSystemCtx.resupplyUnits["Resupply Group Empty"].weaponCountCurrent)
     end)
 
     -- Negative: returns false for unknown units
@@ -192,15 +192,15 @@ describe("MissileSystem Context", function()
       Context.processSupplyAssetDestruction(unit1, mockSystemCtx)
       Context.processSupplyAssetDestruction(unit2, mockSystemCtx)
 
-      assert.are.equal(10, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].wpnCurrent)
+      assert.are.equal(10, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].weaponCountCurrent)
     end)
 
     -- Positive: prioritizes ammo depot match over resupply group match
     it("should prioritize ammo depot match over resupply unit match", function()
       mockSystemCtx.resupplyUnits["Ammo Depot Alpha"] = {
         name = "Ammo Depot Alpha",
-        wpnCurrent = 50,
-        wpnDefault = 50,
+        weaponCountCurrent = 50,
+        weaponCountDefault = 50,
         unitCount = 5
       }
 
@@ -209,8 +209,8 @@ describe("MissileSystem Context", function()
       local result = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
       assert.is_true(result)
-      assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].wpnCurrent)
-      assert.are.equal(50, mockSystemCtx.resupplyUnits["Ammo Depot Alpha"].wpnCurrent)
+      assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
+      assert.are.equal(50, mockSystemCtx.resupplyUnits["Ammo Depot Alpha"].weaponCountCurrent)
     end)
   end)
 
@@ -322,7 +322,7 @@ describe("MissileSystem Context", function()
           firingUnits = {},
           resupplyUnits = {},
           ammunitions = {
-            ammo1 = { name = "Ammo-1", wpnCurrent = 50 }
+            ammo1 = { name = "Ammo-1", weaponCountCurrent = 50 }
           }
         }
       }
@@ -337,7 +337,7 @@ describe("MissileSystem Context", function()
       local ctx = groundCtx.missileSystemTypes.system1.ammunitions["Ammo-1"]
       assert.is_not_nil(ctx)
       assert.are.equal("Ammo-1", ctx.name)
-      assert.are.equal(50, ctx.wpnCurrent)
+      assert.are.equal(50, ctx.weaponCountCurrent)
     end)
 
     -- Positive: isolates context from config references

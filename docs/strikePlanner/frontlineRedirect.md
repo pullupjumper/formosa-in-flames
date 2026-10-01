@@ -12,7 +12,7 @@
 
 這個旗標是 sticky 狀態，觸發後不會由本模組清回 `false`。後續 tick 若再次呼叫 `evaluate`，會直接回傳 `true, nil`，避免每次都列舉整個 side 的 aircraft。
 
-實際 mapping 改寫由 `updateMappings` 與其私有 helper `buildRewrittenMappings` 處理。改寫前會先深拷貝輸入 mapping 陣列，避免污染 `config.c.recon.strikeMappingsByReconObjective` 這份全域設定。
+實際 mapping 改寫由 `updateMappings` 與其私有 helper `buildRewrittenMappings` 處理。改寫前會先深拷貝輸入 mapping 陣列，避免污染 `config.c.recon.strikeMappings` 這份全域設定。
 
 ---
 
@@ -30,7 +30,7 @@
 
 | 來源 | 用途 |
 |---|---|
-| `config.c.air.landBased.deployedACs` | 機場與計畫駐機基線 |
+| `config.c.air.deployedACs` | 機場與計畫駐機基線 |
 | `config.c.recon.frontlineRedirect.frontlineBaseNames` | 要納入統計的前線基地名稱 |
 | `config.c.recon.frontlineRedirect.attritionThresholdPct` | 啟用 redirect 的整體戰損門檻 |
 
@@ -110,7 +110,7 @@ saveData.c.recon
 | `config` | `config.c.recon.frontlineRedirect.attritionThresholdPct` | 整體戰損達到此百分比即啟用 |
 | `config` | `config.c.recon.frontlineRedirect.frontlineBaseNames` | 交給 `AirbaseAttrition.calculate` 的基地名稱清單 |
 | `config` | `config.c.recon.frontlineRedirect.mappings` | mapping 改寫規則陣列 |
-| `config` | `config.c.air.landBased.deployedACs` | 前線基地計畫駐機基線 |
+| `config` | `config.c.air.deployedACs` | 前線基地計畫駐機基線 |
 | `saveData` | `saveData.c.recon.frontlineRedirected` | sticky redirect 狀態 |
 
 ---

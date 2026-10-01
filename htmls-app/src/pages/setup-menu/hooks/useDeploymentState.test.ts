@@ -33,8 +33,8 @@ const UNIT_KEY = 'ascm_HF3_01';
 const UNIT_NAME = 'HF3 Battery 1';
 
 const JAMMERS = [
-  { zoneName: 'Z1', name: 'EW North', randomRadius: 5, radius: 50 },
-  { zoneName: 'Z2', name: 'EW South', randomRadius: 5, radius: 50 },
+  { zoneName: 'Z1', name: 'EW North', randomRadiusNm: 5, radius: 50 },
+  { zoneName: 'Z2', name: 'EW South', randomRadiusNm: 5, radius: 50 },
 ] as Jammer[];
 
 function makeDeployment(): MissileDeployment {

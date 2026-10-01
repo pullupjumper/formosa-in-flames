@@ -10,7 +10,7 @@
 
 `operationScheduler` 是 [recon](recon.md) 從偵察生命週期拆出的動態作戰排程層。它不處理 UAV 發射、航線監控或衛星任務完成判定，只接收 `SBJ__ReconQueueProcessingContext` 與已完成且成功的 `SBJ__ReconQueueEntry`，把偵察目標轉換成 `SBJ__Operation`（型別定義見 `src/core/schema.lua`）。
 
-模組依 `reconEntry.reconObjectiveId` 查詢 `config.c.recon.strikeMappingsByReconObjective`，逐筆決定該 mapping 要開首波還是推進既有序列。排程結果新增為一個 `SBJ__ReconTriggeredOperationBatch` 並寫入呼叫端傳入的 `reconTriggeredOperationBatches`。
+模組依 `reconEntry.reconObjectiveId` 查詢 `config.c.recon.strikeMappings`，逐筆決定該 mapping 要開首波還是推進既有序列。排程結果新增為一個 `SBJ__ReconTriggeredOperationBatch` 並寫入呼叫端傳入的 `reconTriggeredOperationBatches`。
 
 後續由 [atoBuilder](atoBuilder.md) 取出 `air` operation 生成 ATO Wave，[fsemBuilder](fsemBuilder.md) 取出 `ground` operation 生成 FSEM。批次上的 `time` 與 `type` 直接沿用偵察 entry 的 `endTime` 與 `type`，下游用它們標記日誌並判斷觀測窗。
 
@@ -177,7 +177,7 @@ flowchart TD
 
 | 類型 | 路徑 | 用途 |
 |---|---|---|
-| `config` | `config.c.recon.strikeMappingsByReconObjective` | 依 `reconObjectiveId` 取得後續 strike mappings；mapping 可帶 `requiresLACM` 宣告 LACM 前提 |
+| `config` | `config.c.recon.strikeMappings` | 依 `reconObjectiveId` 取得後續 strike mappings；mapping 可帶 `requiresLACM` 宣告 LACM 前提 |
 | `config` | `config.c.recon.frontlineRedirect` | 交由 `FrontlineRedirect.updateMappings` 判斷是否改寫 mapping 名稱 |
 | `config` | `config.c.packageTemplates` | `air` operation 的模板來源，鍵為 mapping 名稱的 `/` 換 `_` |
 | `config` | `config.c.fireSupportTaskTemplates` | `ground` operation 的模板來源，鍵同上 |

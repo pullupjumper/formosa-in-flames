@@ -44,7 +44,7 @@ describe("UnitStatusUI", function()
   ---@return table
   local function makeConfig(overrides)
     local function makeSideConfig()
-      return { gnssJamming = { jammers = {} }, air = { landBased = { deployedACs = {} } }, ground = { missileSystemTypes = {} } }
+      return { gnssJamming = { jammers = {} }, air = { deployedACs = {} }, ground = { missileSystemTypes = {} } }
     end
     local config = { c = makeSideConfig(), t = makeSideConfig() }
     config.c.amphibOps = { operations = {}, operationalZones = {} }
@@ -59,7 +59,7 @@ describe("UnitStatusUI", function()
   ---@return table
   local function makeSaveData(overrides)
     local function makeSideState()
-      return { sigint = { transmissions = {} }, iads = {}, air = { landBased = {} } }
+      return { sigint = { transmissions = {} }, iads = {}, air = {} }
     end
     local saveData = { c = makeSideState(), t = makeSideState(), u = makeSideState() }
     if overrides then

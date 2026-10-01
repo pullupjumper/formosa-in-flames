@@ -369,7 +369,7 @@ function GameUtils.tryAddUnit(params, opts)
   local maxAttempts = opts and opts.maxAttempts or 50
 
   for _ = 1, maxAttempts do
-    local point = calculateCircularRandomPosition(params.pos.latitude, params.pos.longitude, params.randomRadius)
+    local point = calculateCircularRandomPosition(params.pos.latitude, params.pos.longitude, params.randomRadiusNm)
     if point then
       local unit = GameApi.ScenEdit_AddUnit({
         type = constants.UNIT_TYPES.FACILITY,
@@ -424,7 +424,7 @@ function GameUtils.createRandomUnits(descriptor)
     local point = calculateCircularRandomPosition(
       descriptor.centerPoint.latitude,
       descriptor.centerPoint.longitude,
-      descriptor.randomRadius
+      descriptor.randomRadiusNm
     )
     local unitDescriptor
 

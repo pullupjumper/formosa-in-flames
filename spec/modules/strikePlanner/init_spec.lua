@@ -48,7 +48,7 @@ describe("StrikePlanner", function()
         targetScanning = { scan = true },
         recon = {
           queue = {},
-          template = { WZ8_RECON_ISLAND = { id = "WZ8_RECON_ISLAND" } },
+          templates = { WZ8_RECON_ISLAND = { id = "WZ8_RECON_ISLAND" } },
         },
         triggers = {
           launchLACM = { startTime = "LACM_START" },
@@ -271,7 +271,7 @@ describe("StrikePlanner", function()
 
         runProcess(config, plannerState, {})
 
-        assert.stub(addEntryStub).was.called_with(plannerState.recon, config.c.recon.template.WZ8_RECON_ISLAND)
+        assert.stub(addEntryStub).was.called_with(plannerState.recon, config.c.recon.templates.WZ8_RECON_ISLAND)
       end)
 
       -- Negative: a failing roll queues nothing extra.

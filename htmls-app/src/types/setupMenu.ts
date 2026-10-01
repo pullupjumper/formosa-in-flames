@@ -37,9 +37,9 @@ export interface Airbase {
 export interface Jammer {
   zoneName: string;
   name: string;
-  randomRadius: number;
+  randomRadiusNm: number;
   radius: number;
-  point?: Coordinate;
+  pos?: Coordinate;
 }
 
 export interface AreaDefinition {
@@ -71,9 +71,9 @@ export interface FiringUnit {
 
 export interface ResupplyUnit {
   unitCount: number;
-  wpnCurrent: number;
+  weaponCountCurrent: number;
   ammunition: string;
-  wpnDefault: number;
+  weaponCountDefault: number;
   name: string;
   state: number;
   guid: string;
@@ -82,15 +82,15 @@ export interface ResupplyUnit {
 
 export interface Ammunition {
   name: string;
-  wpnCurrent: number;
+  weaponCountCurrent: number;
   guid: string;
-  wpnDefault: number;
+  weaponCountDefault: number;
 }
 
 export interface MissileSystemCategory {
   operationalAreas: Record<string, OperationalArea>;
   reloadTime: number;
-  wpnDefault: number;
+  weaponCountDefault: number;
   firingUnits: Record<string, FiringUnit>;
   resupplyUnits?: Record<string, ResupplyUnit>;
   ammoThreshold: number;
@@ -125,8 +125,8 @@ export interface BudgetResult {
 export interface JammerResult {
   zoneName: string;
   name: string;
-  point: Coordinate;
-  randomRadius: number;
+  pos: Coordinate;
+  randomRadiusNm: number;
   radius: number;
 }
 

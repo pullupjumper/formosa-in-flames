@@ -50,7 +50,7 @@ local function createMagazineDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  local descriptors = config[field].air.landBased.deployedACs
+  local descriptors = config[field].air.deployedACs
 
   for _, descriptor in ipairs(descriptors) do
     local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
@@ -185,7 +185,7 @@ local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local rows = {}
-  local descriptors = config[field].air.landBased.deployedACs
+  local descriptors = config[field].air.deployedACs
 
   for _, descriptor in pairs(descriptors) do
     local row = Utils.deepCopy(descriptor)

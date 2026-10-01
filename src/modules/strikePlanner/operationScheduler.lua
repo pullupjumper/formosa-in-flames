@@ -249,7 +249,7 @@ local function buildOperationsForReconObjective(processingCtx, reconEntry)
     return operations, results
   end
 
-  local strikeMappings = processingCtx.config.c.recon.strikeMappingsByReconObjective[reconEntry.reconObjectiveId]
+  local strikeMappings = processingCtx.config.c.recon.strikeMappings[reconEntry.reconObjectiveId]
   if not strikeMappings then
     table.insert(results, {
       tag = "SKIP",

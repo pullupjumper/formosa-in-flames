@@ -22,15 +22,15 @@
 
 ## 主要機制
 
-- `reloadUnit`（私有）依每種武器 `max - available` 計算缺口，再受 `resupplyUnitCtx.wpnCurrent` 上限約束。
+- `reloadUnit`（私有）依每種武器 `max - available` 計算缺口，再受 `resupplyUnitCtx.weaponCountCurrent` 上限約束。
 - `reloadFiringUnit` 會遍歷group裡的 GUID，對每個單位呼叫 `reloadUnit` 進行再裝填。
 - `isLowAmmo` 將group與所有 `weaponDBID` 的 `available/max` 比率，比對門檻百分比。
-- `getInventory` 聚合三個子總和：firing 由 `ScenEdit_GetUnit` + `getWeaponInfo` 即時查詢，resupply / ammunitions 由 context 中的 `wpnCurrent` / `wpnDefault` 累加；缺單位（找不到 unit）會被略過，max=0 時百分比固定 0 以避免除零。
+- `getInventory` 聚合三個子總和：firing 由 `ScenEdit_GetUnit` + `getWeaponInfo` 即時查詢，resupply / ammunitions 由 context 中的 `weaponCountCurrent` / `weaponCountDefault` 累加；缺單位（找不到 unit）會被略過，max=0 時百分比固定 0 以避免除零。
 
 ```mermaid
 flowchart LR
-    AD[ammoDepotCtx.wpnCurrent] --> TA[transferAmmunition]
-    TA --> RU[resupplyUnitCtx.wpnCurrent]
+    AD[ammoDepotCtx.weaponCountCurrent] --> TA[transferAmmunition]
+    TA --> RU[resupplyUnitCtx.weaponCountCurrent]
 
     RU --> RF[reloadFiringUnit]
     RF --> R1[reloadUnit for each GUID]

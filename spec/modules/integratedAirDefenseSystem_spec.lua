@@ -179,7 +179,7 @@ describe("IntegratedAirDefenseSystem", function()
   -- ============================================================================
 
   describe("processUnitDestruction", function()
-    local cfg = { c = { iads = { radarDistance = 100 } } }
+    local cfg = { c = { iads = { radarDistanceNm = 100 } } }
 
     ---Create one C2 node covering area A-1 with the given sam and radar entries
     ---@param overrides? table
@@ -324,7 +324,7 @@ describe("IntegratedAirDefenseSystem", function()
       local iads = {
         c2Deployments = {},
         c2FacilityDBIDs = { 9001 },
-        randomRadius = 5,
+        randomRadiusNm = 5,
       }
       if overrides then
         for k, v in pairs(overrides) do iads[k] = v end
@@ -338,8 +338,8 @@ describe("IntegratedAirDefenseSystem", function()
       local f2 = makeUnit({ guid = "F-2", dbid = 7777 })
       local config = makeConfig({
         c2Deployments = {
-          { name = "Sector A", areas = {}, position = { latitude = 1, longitude = 2 } },
-          { name = "Sector B", areas = {}, position = { latitude = 3, longitude = 4 } },
+          { name = "Sector A", areas = {}, pos = { latitude = 1, longitude = 2 } },
+          { name = "Sector B", areas = {}, pos = { latitude = 3, longitude = 4 } },
         },
       })
       local saveData = { c = { iads = {} } }
@@ -396,7 +396,7 @@ describe("IntegratedAirDefenseSystem", function()
       trackStub(stub(math, "random").returns(1))
 
       IntegratedAirDefenseSystem.deployC2Facilities(
-        makeConfig({ c2Deployments = { { name = "Sector A", areas = { areaA }, position = {} } } }),
+        makeConfig({ c2Deployments = { { name = "Sector A", areas = { areaA }, pos = {} } } }),
         saveData
       )
 
@@ -410,8 +410,8 @@ describe("IntegratedAirDefenseSystem", function()
     it("should stop creating facilities after a deployment fails", function()
       local config = makeConfig({
         c2Deployments = {
-          { name = "Sector A", areas = {}, position = { latitude = 1, longitude = 2 } },
-          { name = "Sector B", areas = {}, position = { latitude = 3, longitude = 4 } },
+          { name = "Sector A", areas = {}, pos = { latitude = 1, longitude = 2 } },
+          { name = "Sector B", areas = {}, pos = { latitude = 3, longitude = 4 } },
         },
       })
       local saveData = { c = { iads = {} } }

@@ -100,7 +100,7 @@ saveData.c.amphibOps.barges = {}
 }
 ```
 
-SAG 詳細描述符維持在 `config.c.amphibOps.sag` 作為 lookup table，各模組依 `sagNames` 查找。
+SAG 詳細描述符維持在 `config.c.amphibOps.sags` 作為 lookup table，各模組依 `sagNames` 查找。
 
 ### 4. 驅動層重寫 — `landingCheck.lua`
 
@@ -147,7 +147,7 @@ for _, zone in ipairs(amphibOpsConfig.operationalZones) do
 
         -- GJ-11 偵察任務：暫時只對 Taoyuan 執行
         if zone.name == "Taoyuan" then
-          local entry = Utils.deepCopy(config.c.recon.template.GJ11_RECON)
+          local entry = Utils.deepCopy(config.c.recon.templates.GJ11_RECON)
           ---@cast entry SBJ__ReconQueueEntry
           local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
           local endTime = currentTime + flightTime
@@ -169,11 +169,11 @@ for _, zone in ipairs(amphibOpsConfig.operationalZones) do
     )
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
     local shouldLaunch = contactCount < operation.contactThreshold
-        or elapsed >= amphibOpsConfig.periodOfTime
+        or elapsed >= amphibOpsConfig.periodSec
 
     if shouldLaunch then
       local ok = AmphibiousAssault.setLandingMissionStartTime(zone, saveData, zoneState)
-          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, amphibOpsConfig.sag)
+          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, amphibOpsConfig.sags)
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
       end
@@ -243,7 +243,7 @@ end
 | `moveToStagingArea` | `(amphibOpsConfig, saveData, filteredUnits)` | `(amphibOpsConfig, saveData, filteredUnits, operation)` |
 
 - 新增 `operation` 參數，只處理該 operation 的 `stagingArea` 內的艦船
-- 依 `operation.sagNames` 從 `amphibOpsConfig.sag` 查找對應 SAG 並處理移動
+- 依 `operation.sagNames` 從 `amphibOpsConfig.sags` 查找對應 SAG 並處理移動
 - `calculateDestination` 保持不變（一次預算所有位置）
 
 #### secondWaveUnloading.lua
@@ -261,7 +261,7 @@ SAG 護航編隊改為 per-zone，依各 zone 的階段執行：
 - `operations` 中新增 `sagNames` 欄位，建立 SAG 與 zone 的對應
 - **Phase 1**（`shipMovement.moveToStagingArea`）：依 `operation.sagNames` 只處理該 zone 的 SAG，移動至錨泊區
 - **Phase 3**（`amphibiousAssault.setCoursesForLSTs`）：接收 `operation` 和 `sagLookup`，依 `operation.sagNames` 查找 SAG 並設定前往兩棲載具集結區的航向
-- SAG 詳細描述符維持在 `config.c.amphibOps.sag` 作為 lookup table
+- SAG 詳細描述符維持在 `config.c.amphibOps.sags` 作為 lookup table
 
 ### 7. 測試更新
 

@@ -52,9 +52,9 @@
 
 `startResupplyMovement` 與 `completeResupplyUnitTransload` 與機動發射車對稱，但流程較精簡：
 
-- 觸發條件：自動模式 + `STATIC` + `wpnCurrent == 0` + 仍位於 `operationalArea` 任一陣地內
+- 觸發條件：自動模式 + `STATIC` + `weaponCountCurrent == 0` + 仍位於 `operationalArea` 任一陣地內
 - 觸發後呼叫 `Movement.moveToAmmoHoldingArea` 前往 AHA 與彈藥儲備點交會
-- `isReadyToReloadResupplyUnit` 確認 `reloadTime` 已過、`wpnCurrent` 仍為 0、`Meeting.hasMetAmmoDepot` 回 `true`
+- `isReadyToReloadResupplyUnit` 確認 `reloadTime` 已過、`weaponCountCurrent` 仍為 0、`Meeting.hasMetAmmoDepot` 回 `true`
 - 條件達成呼叫 `Ammo.transferAmmunition`，並在自動模式下由 `Movement.moveResupplyUnitToReloadPoint` 回 RL 待命
 
 ### 結果回傳
@@ -104,13 +104,13 @@ flowchart TD
     C1 --> R[startResupplyMovement]
     C1 --> S[completeResupplyUnitTransload]
 
-    R --> R1{isAuto 且 STATIC 且 wpnCurrent=0 且 在作戰區?}
+    R --> R1{isAuto 且 STATIC 且 weaponCountCurrent=0 且 在作戰區?}
     R1 -->|Yes| R2[moveToAmmoHoldingArea]
     R1 -->|No| Rend([結束])
 
     S --> S1{state == RELOAD?}
     S1 -->|No| Send([結束])
-    S1 -->|Yes| S2{已達 reloadTime 且 wpnCurrent=0 且 hasMet?}
+    S1 -->|Yes| S2{已達 reloadTime 且 weaponCountCurrent=0 且 hasMet?}
     S2 -->|No| Send
     S2 -->|Yes| S3[Ammo.transferAmmunition]
     S3 --> S4{isAuto?}
@@ -154,7 +154,7 @@ flowchart TD
 | `firingUnitCtx.ammoThreshold` | 低彈量觸發門檻，傳給 `Ammo.isLowAmmo` |
 | `firingUnitCtx.weaponDBID` | 用來鎖定要回補的武器類別 |
 | `firingUnitCtx.stowStartTime` / `reloadStartTime` | 倒數時間錨點，存在 `saveData.*.ground.missileSystemTypes.<system>.firingUnits[*]` |
-| `resupplyUnitCtx.wpnCurrent` | 二級補給觸發條件 |
+| `resupplyUnitCtx.weaponCountCurrent` | 二級補給觸發條件 |
 | `constants.MISSILE_SYSTEM_STATE.STATIC` / `RELOAD` | stow 觸發與 reload 完成判斷的狀態守門 |
 | `constants.MISSILE_SYSTEM_TYPES.SAM` | 補完後是否回 FP 的分流 |
 

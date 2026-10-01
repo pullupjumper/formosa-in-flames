@@ -42,7 +42,7 @@ local function processTaoyuanTemporarySetup(config, landingState, zone, currentT
   end
 
   AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-  StrikePlanner.addReconEntry(landingState.recon, config.c.recon.template.GJ11_RECON)
+  StrikePlanner.addReconEntry(landingState.recon, config.c.recon.templates.GJ11_RECON)
 end
 
 ---Process a single operational zone through all amphibious phases
@@ -82,11 +82,11 @@ local function processZone(tickCtx, zone, operation)
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT then
     local contactCount = AmphibiousAssault.countContactsInArea(contacts, operation.airLandingZone)
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
-    local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.c.amphibOps.periodOfTime
+    local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.c.amphibOps.periodSec
 
     if shouldLaunch then
       local ok = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
-          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.c.amphibOps.sag)
+          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.c.amphibOps.sags)
 
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE

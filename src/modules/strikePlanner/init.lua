@@ -58,7 +58,7 @@ local function processRecon(config, plannerState)
   })
 
   if math.random() > WZ8_RECON_CHANCE then
-    Recon.addEntry(plannerState.recon, config.c.recon.template.WZ8_RECON_ISLAND)
+    Recon.addEntry(plannerState.recon, config.c.recon.templates.WZ8_RECON_ISLAND)
   end
 end
 

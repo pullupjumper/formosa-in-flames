@@ -188,7 +188,7 @@ describe("ShipMovement", function()
     local cfg = {
       formationSettings = makeFormationSettings(),
       operations = { makeOperation() },
-      sag = {},
+      sags = {},
     }
     if overrides then
       for k, v in pairs(overrides) do cfg[k] = v end
@@ -407,7 +407,7 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -434,7 +434,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -467,7 +467,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -499,7 +499,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -553,7 +553,7 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
       local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -633,7 +633,7 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -650,7 +650,7 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
       local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -675,7 +675,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -703,7 +703,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
       local operation = config.operations[1]
       local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 
@@ -757,7 +757,7 @@ describe("ShipMovement", function()
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sag = { ["SAG Alpha"] = sagDesc } })
+      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
       local operation = config.operations[1]
       ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
 

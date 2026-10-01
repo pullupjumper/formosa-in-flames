@@ -105,15 +105,15 @@ describe("LandingOps Coordinator", function()
         amphibOps = {
           operationalZones = { makeZone() },
           operations = { makeOperation() },
-          periodOfTime = 3600,
-          sag = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
+          periodSec = 3600,
+          sags = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
           transportAircraft = { { guid = "TA-001", name = "Transport 1" } },
         },
         triggers = {
           amphibiousOps = { startTime = "2026-04-03 00:00:00" },
         },
         recon = {
-          template = {
+          templates = {
             GJ11_RECON = {
               course = { { latitude = 25.0, longitude = 121.0 } },
               speed = 400,
@@ -277,7 +277,7 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubTransferTransportAircraft).was.called(1)
-      assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.c.recon.template.GJ11_RECON)
+      assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.c.recon.templates.GJ11_RECON)
     end)
 
     -- Negative: non-Taoyuan zones skip transport-aircraft transfer and recon insertion
@@ -343,12 +343,12 @@ describe("LandingOps Coordinator", function()
           amphibOps = {
             operationalZones = { makeZone({ name = "Kaohsiung" }) },
             operations = { makeOperation({ name = "Taoyuan" }) },
-            periodOfTime = 3600,
-            sag = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
+            periodSec = 3600,
+            sags = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
             transportAircraft = {},
           },
           recon = {
-            template = {
+            templates = {
               GJ11_RECON = {
                 course = { { latitude = 25.0, longitude = 121.0 } },
                 speed = 400,

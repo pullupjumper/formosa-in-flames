@@ -87,7 +87,7 @@ function Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
   end
 
   if not Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
-      or resupplyUnitCtx.wpnCurrent <= 0 then
+      or resupplyUnitCtx.weaponCountCurrent <= 0 then
     return false, nil
   end
 
@@ -111,7 +111,7 @@ function Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)
     return false, nil
   end
 
-  if resupplyUnitCtx.wpnCurrent ~= 0 then
+  if resupplyUnitCtx.weaponCountCurrent ~= 0 then
     return false, nil
   end
 

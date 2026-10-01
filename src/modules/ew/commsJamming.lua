@@ -548,10 +548,10 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; Taiwan land-based AC/AEW maps are replaced
 function CommsJamming.updateTargetAircraft(config, saveData)
-  local landBasedCtx = PersistentState.landBasedAircraft(saveData, constants.SIDES.PLAYER)
+  local aircraftCtx = PersistentState.aircraft(saveData, constants.SIDES.PLAYER)
   local aircraftDefaults = config.c.commsJamming.aircraftDefaults
-  landBasedCtx.AEW = {}
-  landBasedCtx.AC = {}
+  aircraftCtx.aew = {}
+  aircraftCtx.ac = {}
 
   local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
   if not filteredUnits then
@@ -566,7 +566,7 @@ function CommsJamming.updateTargetAircraft(config, saveData)
 
     if actualUnit and actualUnit.type == constants.UNIT_TYPES.AIRCRAFT then
       local isAEW = actualUnit.dbid == constants.PLATFORMS.E2K
-      local group = isAEW and landBasedCtx.AEW or landBasedCtx.AC
+      local group = isAEW and aircraftCtx.aew or aircraftCtx.ac
       group[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,

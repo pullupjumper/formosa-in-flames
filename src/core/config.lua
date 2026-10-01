@@ -120,8 +120,8 @@ config.c.triggers = {
 
 config.c.sigint = {}
 config.c.sigint.maxCount = 6
--- config.c.sigint.maxCount = 1
-config.c.sigint.maxRange = 2.5
+-- config.c.sigint.maxRangeNm = 1
+config.c.sigint.maxRangeNm = 2.5
 -- Detection parameters
 config.c.sigint.detectionThreshold = 60
 config.c.sigint.maxDetectionRange = { 300, 340 }
@@ -155,58 +155,57 @@ config.c.sigint.detectionSkipProbability = 0.3
 -- ============================================================================
 
 config.c.iads = {}
-config.c.iads.ratio = { C2 = 1.5, }
 config.c.iads.c2FacilityDBIDs = { 319, 318, 115, 113 }
-config.c.iads.randomRadius = 10
-config.c.iads.radarDistance = 70 -- nautical miles
+config.c.iads.randomRadiusNm = 10
+config.c.iads.radarDistanceNm = 70 -- nautical miles
 config.c.iads.c2Deployments = {
   {
-    position = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
+    pos = { latitude = "N 25.30.37", longitude = "E 119.30.54" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_FUZHOU, },
     name = "Fuzhou"
   },
   {
-    position = { latitude = "N 25.19.12", longitude = "E 119.06.36" },
+    pos = { latitude = "N 25.19.12", longitude = "E 119.06.36" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_PUTIAN, },
     name = "Putian"
   },
   {
-    position = { latitude = "N 24.57.01", longitude = "E 118.34.22" },
+    pos = { latitude = "N 24.57.01", longitude = "E 118.34.22" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_CHANGZHOU, },
     name = "Changzhou"
   },
   {
-    position = { latitude = "N 24.43.19", longitude = "E 118.12.29" },
+    pos = { latitude = "N 24.43.19", longitude = "E 118.12.29" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_XIAMEN, },
     name = "Xiamen"
   },
   {
-    position = { latitude = "N 24.10.12", longitude = "E 117.28.46" },
+    pos = { latitude = "N 24.10.12", longitude = "E 117.28.46" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_ZHANGZHOU, },
     name = "Zhangzhou"
   },
   {
-    position = { latitude = "N 23.39.17", longitude = "E 116.41.26" },
+    pos = { latitude = "N 23.39.17", longitude = "E 116.41.26" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANTOU, },
     name = "Shantou"
   },
   {
-    position = { latitude = "N 23.08.19", longitude = "E 115.22.49" },
+    pos = { latitude = "N 23.08.19", longitude = "E 115.22.49" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANWEI, },
     name = "Shanwei"
   },
   {
-    position = { latitude = "N 24.06.12", longitude = "E 116.05.36" },
+    pos = { latitude = "N 24.06.12", longitude = "E 116.05.36" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_MEIZHOU, },
     name = "Meizhou"
   },
   {
-    position = { latitude = "N 31.06.11", longitude = "E 121.03.35" },
+    pos = { latitude = "N 31.06.11", longitude = "E 121.03.35" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_SHANGHAI, },
     name = "Shanghai"
   },
   {
-    position = { latitude = "N 27.05.38", longitude = "E 119.55.05" },
+    pos = { latitude = "N 27.05.38", longitude = "E 119.55.05" },
     areas = { constants.AREAS.MILITARY_SUB_DISTRICT_NINGDE, },
     name = "Ningde"
   },
@@ -260,7 +259,7 @@ config.c.commsJamming.aircraftDefaults = {
 -- ============================================================================
 
 config.c.gnssJamming = {}
-config.c.gnssJamming.randomRadius = 20 -- random radius
+config.c.gnssJamming.randomRadiusNm = 20 -- random radius
 config.c.gnssJamming.radius = 14
 config.c.gnssJamming.gnssGuidedWeapons = {
   { dbid = constants.WEAPONS.JDAM,       jammingResistance = 50 },
@@ -273,15 +272,15 @@ config.c.gnssJamming.jammers = {
   ["1st Bn, 1st ECM Bde"] = {
     zoneName = "JAMMING ZONE/1",
     name = "1st Bn, 1st ECM Bde",
-    point = { latitude = "N 25.28.17", longitude = "E 119.35.17" },
-    randomRadius = config.c.gnssJamming.randomRadius,
+    pos = { latitude = "N 25.28.17", longitude = "E 119.35.17" },
+    randomRadiusNm = config.c.gnssJamming.randomRadiusNm,
     radius = config.c.gnssJamming.radius
   },
   ["2nd Bn, 1st ECM Bde"] = {
     zoneName = "JAMMING ZONE/2",
     name = "2nd Bn, 1st ECM Bde",
-    point = { latitude = "N 24.43.49", longitude = "E 118.29.41" },
-    randomRadius = config.c.gnssJamming.randomRadius,
+    pos = { latitude = "N 24.43.49", longitude = "E 118.29.41" },
+    randomRadiusNm = config.c.gnssJamming.randomRadiusNm,
     radius = config.c.gnssJamming.radius
   },
 }
@@ -304,31 +303,28 @@ config.c.ground.missileSystemTypes = {}
 -- ============================================================================
 
 config.c.ground.missileSystemTypes.mlrs = {}
-config.c.ground.missileSystemTypes.mlrs.wpnDefault = 96
+config.c.ground.missileSystemTypes.mlrs.weaponCountDefault = 96
 config.c.ground.missileSystemTypes.mlrs.ammoThreshold = 55
 config.c.ground.missileSystemTypes.mlrs.contactAge = 30 * 60
 config.c.ground.missileSystemTypes.mlrs.reloadTime = 30 * 60
 config.c.ground.missileSystemTypes.mlrs.stowTime = 5 * 60
 config.c.ground.missileSystemTypes.mlrs.ammunitions = {
   ["Ammo Revetment, 1st Bn, 1st Rockets Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
-    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 6th Bn, 73rd Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
-    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,
   },
 }
 config.c.ground.missileSystemTypes.mlrs.resupplyUnits = {
   ["Ammo Sec, 1st Bn, 1st Rockets Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
-    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.JUK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -336,10 +332,9 @@ config.c.ground.missileSystemTypes.mlrs.resupplyUnits = {
     firingUnit = "1st Bn, 1st Rockets Arty Bde"
   },
   ["Ammo Sec, 6th Bn, 73rd Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 6th Bn, 73rd Arty Bde",
-    wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.YMC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -349,7 +344,6 @@ config.c.ground.missileSystemTypes.mlrs.resupplyUnits = {
 }
 config.c.ground.missileSystemTypes.mlrs.firingUnits = {
   ["1st Bn, 1st Rockets Arty Bde"] = {
-    guid = "",
     name = "1st Bn, 1st Rockets Arty Bde",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -361,7 +355,6 @@ config.c.ground.missileSystemTypes.mlrs.firingUnits = {
     missileSystem = "PHL-16",
   },
   ["6th Bn, 73rd Arty Bde"] = {
-    guid = "",
     name = "6th Bn, 73rd Arty Bde",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -380,25 +373,23 @@ config.c.ground.missileSystemTypes.mlrs.firingUnits = {
 -- ============================================================================
 
 config.c.ground.missileSystemTypes.glcm = {}
-config.c.ground.missileSystemTypes.glcm.wpnDefault = 120
+config.c.ground.missileSystemTypes.glcm.weaponCountDefault = 120
 config.c.ground.missileSystemTypes.glcm.ammoThreshold = 55
 config.c.ground.missileSystemTypes.glcm.contactAge = 30 * 60
 config.c.ground.missileSystemTypes.glcm.reloadTime = 45 * 60
 config.c.ground.missileSystemTypes.glcm.stowTime = 5 * 60
 config.c.ground.missileSystemTypes.glcm.ammunitions = {
   ["Ammo Revetment, 635th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 635th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
-    wpnDefault = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
   },
 }
 config.c.ground.missileSystemTypes.glcm.resupplyUnits = {
   ["Ammo Sec, 635th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 635th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
-    wpnDefault = config.c.ground.missileSystemTypes.glcm.wpnDefault / 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
     unitCount = 5,
     operationalArea = constants.OPERATIONAL_AREAS.TXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -408,7 +399,6 @@ config.c.ground.missileSystemTypes.glcm.resupplyUnits = {
 }
 config.c.ground.missileSystemTypes.glcm.firingUnits = {
   ["635th Bde, PLARF"] = {
-    guid = "",
     name = "635th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -428,55 +418,48 @@ config.c.ground.missileSystemTypes.glcm.firingUnits = {
 -- ============================================================================
 
 config.c.ground.missileSystemTypes.srbm = {}
-config.c.ground.missileSystemTypes.srbm.wpnDefault = 36
+config.c.ground.missileSystemTypes.srbm.weaponCountDefault = 36
 config.c.ground.missileSystemTypes.srbm.ammoThreshold = 55
 config.c.ground.missileSystemTypes.srbm.contactAge = 30 * 60
 config.c.ground.missileSystemTypes.srbm.reloadTime = 5 * 60
 config.c.ground.missileSystemTypes.srbm.stowTime = 5 * 60
 config.c.ground.missileSystemTypes.srbm.ammunitions = {
   ["Ammo Revetment, 613rd Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 613rd Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 614th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 614th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 615th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 615th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 616th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 616th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 617th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 617th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 636th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 636th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
 }
 config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
   ["Ammo Sec, 613rd Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 613rd Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.XZL,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -484,10 +467,9 @@ config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
     firingUnit = "613rd Bde, PLARF"
   },
   ["Ammo Sec, 614th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 614th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.GSU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -495,10 +477,9 @@ config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
     firingUnit = "614th Bde, PLARF"
   },
   ["Ammo Sec, 615th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 615th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.HUZ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -506,10 +487,9 @@ config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
     firingUnit = "615th Bde, PLARF"
   },
   ["Ammo Sec, 616th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 616th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.IDP,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -517,10 +497,9 @@ config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
     firingUnit = "616th Bde, PLARF"
   },
   ["Ammo Sec, 617th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 617th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 9,
     operationalArea = constants.OPERATIONAL_AREAS.GMJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -528,10 +507,9 @@ config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
     firingUnit = "617th Bde, PLARF"
   },
   ["Ammo Sec, 636th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 636th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 9,
     operationalArea = constants.OPERATIONAL_AREAS.HMJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -541,7 +519,6 @@ config.c.ground.missileSystemTypes.srbm.resupplyUnits = {
 }
 config.c.ground.missileSystemTypes.srbm.firingUnits = {
   ["613rd Bde, PLARF"] = {
-    guid = "",
     name = "613rd Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -554,7 +531,6 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD3,
   },
   ["614th Bde, PLARF"] = {
-    guid = "",
     name = "614th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -567,7 +543,6 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
   },
   ["615th Bde, PLARF"] = {
-    guid = "",
     name = "615th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -580,7 +555,6 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
   },
   ["616th Bde, PLARF"] = {
-    guid = "",
     name = "616th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -593,7 +567,6 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD2,
   },
   ["617th Bde, PLARF"] = {
-    guid = "",
     name = "617th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -606,7 +579,6 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
   },
   ["636th Bde, PLARF"] = {
-    guid = "",
     name = "636th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -626,25 +598,23 @@ config.c.ground.missileSystemTypes.srbm.firingUnits = {
 -- ============================================================================
 
 config.c.ground.missileSystemTypes.mrbm = {}
-config.c.ground.missileSystemTypes.mrbm.wpnDefault = 24
+config.c.ground.missileSystemTypes.mrbm.weaponCountDefault = 24
 config.c.ground.missileSystemTypes.mrbm.ammoThreshold = 55
 config.c.ground.missileSystemTypes.mrbm.contactAge = 30 * 60
 config.c.ground.missileSystemTypes.mrbm.reloadTime = 5 * 60
 config.c.ground.missileSystemTypes.mrbm.stowTime = 5 * 60
 config.c.ground.missileSystemTypes.mrbm.ammunitions = {
   ["Ammo Revetment, 624th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Revetment, 624th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.mrbm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.mrbm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.mrbm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.mrbm.weaponCountDefault * 2,
   },
 }
 config.c.ground.missileSystemTypes.mrbm.resupplyUnits = {
   ["Ammo Sec, 624th Bde, PLARF"] = {
-    guid = "",
     name = "Ammo Sec, 624th Bde, PLARF",
-    wpnCurrent = config.c.ground.missileSystemTypes.mrbm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.mrbm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.mrbm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.mrbm.weaponCountDefault,
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.ZWQ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -654,7 +624,6 @@ config.c.ground.missileSystemTypes.mrbm.resupplyUnits = {
 }
 config.c.ground.missileSystemTypes.mrbm.firingUnits = {
   ["624th Bde, PLARF"] = {
-    guid = "",
     name = "624th Bde, PLARF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -674,25 +643,23 @@ config.c.ground.missileSystemTypes.mrbm.firingUnits = {
 -- ============================================================================
 
 config.c.ground.missileSystemTypes.ascm = {}
-config.c.ground.missileSystemTypes.ascm.wpnDefault = 12
+config.c.ground.missileSystemTypes.ascm.weaponCountDefault = 12
 config.c.ground.missileSystemTypes.ascm.ammoThreshold = 55
 config.c.ground.missileSystemTypes.ascm.contactAge = 30 * 60
 config.c.ground.missileSystemTypes.ascm.reloadTime = 5 * 60
 config.c.ground.missileSystemTypes.ascm.stowTime = 5 * 60
 config.c.ground.missileSystemTypes.ascm.ammunitions = {
   ["Ammo Revetment, 1st Pili Reg"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Pili Reg",
-    wpnCurrent = config.c.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
 }
 config.c.ground.missileSystemTypes.ascm.resupplyUnits = {
   ["Ammo Sec, 1st Pili Reg"] = {
-    guid = "",
     name = "Ammo Sec, 1st Pili Reg",
-    wpnCurrent = config.c.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.RCU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -702,7 +669,6 @@ config.c.ground.missileSystemTypes.ascm.resupplyUnits = {
 }
 config.c.ground.missileSystemTypes.ascm.firingUnits = {
   ["1st Pili Reg"] = {
-    guid = "",
     name = "1st Pili Reg",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -722,67 +688,58 @@ config.c.ground.missileSystemTypes.ascm.firingUnits = {
 -- ============================================================================
 
 config.c.ground.missileSystemTypes.sam = {}
-config.c.ground.missileSystemTypes.sam.wpnDefault = 16
+config.c.ground.missileSystemTypes.sam.weaponCountDefault = 16
 config.c.ground.missileSystemTypes.sam.ammoThreshold = 55
 config.c.ground.missileSystemTypes.sam.contactAge = 15 * 60
 config.c.ground.missileSystemTypes.sam.reloadTime = 5 * 60
 config.c.ground.missileSystemTypes.sam.stowTime = 5 * 60
 config.c.ground.missileSystemTypes.sam.ammunitions = {
   ["Ammo Revetment, 94695 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94695 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 94759 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94759 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 94774 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94774 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 94777 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94777 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 94807 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94807 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 94908 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94908 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 94967 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 94967 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 95324 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Revetment, 95324 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
 }
 config.c.ground.missileSystemTypes.sam.resupplyUnits = {
   ["Ammo Sec, 94695 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94695 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QXV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -790,10 +747,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94695 Unit, PLAAF"
   },
   ["Ammo Sec, 94759 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94759 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.URF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -801,10 +757,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94759 Unit, PLAAF"
   },
   ["Ammo Sec, 94774 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94774 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.WEP,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -812,10 +767,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94774 Unit, PLAAF"
   },
   ["Ammo Sec, 94777 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94777 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.EAJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -823,10 +777,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94777 Unit, PLAAF"
   },
   ["Ammo Sec, 94807 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94807 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IDC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -834,10 +787,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94807 Unit, PLAAF"
   },
   ["Ammo Sec, 94908 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94908 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.OJM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -845,10 +797,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94908 Unit, PLAAF"
   },
   ["Ammo Sec, 94967 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 94967 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.LPU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -856,10 +807,9 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "94967 Unit, PLAAF"
   },
   ["Ammo Sec, 95324 Unit, PLAAF"] = {
-    guid = "",
     name = "Ammo Sec, 95324 Unit, PLAAF",
-    wpnCurrent = config.c.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.c.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.c.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.KRO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -869,7 +819,6 @@ config.c.ground.missileSystemTypes.sam.resupplyUnits = {
 }
 config.c.ground.missileSystemTypes.sam.firingUnits = {
   ["94695 Unit, PLAAF"] = {
-    guid = "",
     name = "94695 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -881,7 +830,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["94759 Unit, PLAAF"] = {
-    guid = "",
     name = "94759 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -893,7 +841,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["94774 Unit, PLAAF"] = {
-    guid = "",
     name = "94774 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -905,7 +852,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["94777 Unit, PLAAF"] = {
-    guid = "",
     name = "94777 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -917,7 +863,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["94807 Unit, PLAAF"] = {
-    guid = "",
     name = "94807 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -929,7 +874,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["94908 Unit, PLAAF"] = {
-    guid = "",
     name = "94908 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -941,7 +885,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["94967 Unit, PLAAF"] = {
-    guid = "",
     name = "94967 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -953,7 +896,6 @@ config.c.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "S-300",
   },
   ["95324 Unit, PLAAF"] = {
-    guid = "",
     name = "95324 Unit, PLAAF",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -978,7 +920,7 @@ config.c.recon.observationWindowSec = 30 * 60
 -- operations wait at most 30 min) and c.ground.srbm.contactAge (older targeting
 -- data is stale anyway); production templates deploy well inside this window.
 config.c.recon.fsemStaleAfterSec = 30 * 60
-config.c.recon.template = {
+config.c.recon.templates = {
   BZK005_RECON_1 = {
     templateId = "BZK005_RECON_1",
     type = "UAV",
@@ -1041,7 +983,7 @@ config.c.recon.template = {
     isTracking = false
   }
 }
-config.c.recon.strikeMappingsByReconObjective = {
+config.c.recon.strikeMappings = {
   C2_NORTH_TARGETING = {
     { name = "GND/STRIKE/C2/N/1", type = "ground", }
   },
@@ -1161,9 +1103,7 @@ config.c.air.timing = {
     tanker = 250,
   },
 }
-config.c.air.landBased = {}
-config.c.air.shipBased = {}
-config.c.air.landBased.deployedACs = {
+config.c.air.deployedACs = {
   {
     name = "Huizhou Pingtan AB (PLAAF)",
     baseGUID = constants.BASES.HUIZHOU_PINGTAN_AB,
@@ -1628,9 +1568,9 @@ config.c.air.landBased.deployedACs = {
 
 config.c.amphibOps = {}
 config.c.amphibOps.isTesting = true
-config.c.amphibOps.periodOfTime = 5 * 60
+config.c.amphibOps.periodSec = 5 * 60
 config.c.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
-config.c.amphibOps.cargoMap = {
+config.c.amphibOps.cargo = {
   type075 = {
     { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
@@ -1676,12 +1616,12 @@ config.c.amphibOps.cargoMap = {
     { type = 2, num = 4,  dbid = constants.PLATFORMS.M977 },   -- M977
   }
 }
-config.c.amphibOps.transferCargoMap = {
+config.c.amphibOps.transferCargo = {
   boat = {
     { type = 2, num = 1, dbid = constants.PLATFORMS.ZBD05 }, -- ZBD-05
     { type = 2, num = 1, dbid = constants.PLATFORMS.ZTD05 }, -- ZTD-05
   },
-  assultLandingGroup = {
+  assaultLandingGroup = {
     { type = 2, num = 4, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05
     -- Assault Landing Group
   },
@@ -1945,9 +1885,9 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.transferCargoMap.assultLandingGroup,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
+              config.c.amphibOps.transferCargo.assaultLandingGroup,
+              config.c.amphibOps.transferCargo.deepAssaultGroup1,
+              config.c.amphibOps.transferCargo.deepAssaultGroup2,
             }
           },
         },
@@ -1955,10 +1895,10 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.transferCargoMap.assultLandingGroup,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup3,
+              config.c.amphibOps.transferCargo.assaultLandingGroup,
+              config.c.amphibOps.transferCargo.deepAssaultGroup1,
+              config.c.amphibOps.transferCargo.deepAssaultGroup2,
+              config.c.amphibOps.transferCargo.deepAssaultGroup3,
             }
           },
         }
@@ -2005,17 +1945,17 @@ config.c.amphibOps.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup1 }
           },
         }
       },
@@ -2082,9 +2022,9 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.transferCargoMap.assultLandingGroup,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
+              config.c.amphibOps.transferCargo.assaultLandingGroup,
+              config.c.amphibOps.transferCargo.deepAssaultGroup1,
+              config.c.amphibOps.transferCargo.deepAssaultGroup2,
             }
           },
         },
@@ -2092,10 +2032,10 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.transferCargoMap.assultLandingGroup,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup3
+              config.c.amphibOps.transferCargo.assaultLandingGroup,
+              config.c.amphibOps.transferCargo.deepAssaultGroup1,
+              config.c.amphibOps.transferCargo.deepAssaultGroup2,
+              config.c.amphibOps.transferCargo.deepAssaultGroup3
             }
           },
         }
@@ -2142,17 +2082,17 @@ config.c.amphibOps.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup1 }
           },
         }
       },
@@ -2219,9 +2159,9 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.transferCargoMap.assultLandingGroup,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
+              config.c.amphibOps.transferCargo.assaultLandingGroup,
+              config.c.amphibOps.transferCargo.deepAssaultGroup1,
+              config.c.amphibOps.transferCargo.deepAssaultGroup2,
             }
           },
         },
@@ -2229,10 +2169,10 @@ config.c.amphibOps.operationalZones = {
           {
             loadoutId = 0,
             cargoItems = {
-              config.c.amphibOps.transferCargoMap.assultLandingGroup,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup1,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup2,
-              config.c.amphibOps.transferCargoMap.deepAssaultGroup3
+              config.c.amphibOps.transferCargo.assaultLandingGroup,
+              config.c.amphibOps.transferCargo.deepAssaultGroup1,
+              config.c.amphibOps.transferCargo.deepAssaultGroup2,
+              config.c.amphibOps.transferCargo.deepAssaultGroup3
             }
           },
         }
@@ -2279,17 +2219,17 @@ config.c.amphibOps.operationalZones = {
         type075 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup1 }
           },
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup2 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup2 }
           },
         },
         type071 = {
           {
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup1 }
+            cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup1 }
           },
         }
       },
@@ -2337,12 +2277,12 @@ config.c.amphibOps.transportAircraft = {
     cargoItemsForTransfer = {
       {
         loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
-        cargoItems = { config.c.amphibOps.transferCargoMap.airAssaultGroup3 }
+        cargoItems = { config.c.amphibOps.transferCargo.airAssaultGroup3 }
       },
     }
   },
 }
-config.c.amphibOps.sag = {
+config.c.amphibOps.sags = {
   ["SAG 173"] = {
     groupName = "SAG 173",
     unitMap = {
@@ -2350,7 +2290,7 @@ config.c.amphibOps.sag = {
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = "N 26.54.18", longitude = "E 121.31.38", },
+      pos = { latitude = "N 26.54.18", longitude = "E 121.31.38", },
       heading = 225
     },
     to = {
@@ -2372,7 +2312,7 @@ config.c.amphibOps.sag = {
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = "N 26.13.13", longitude = "E 120.59.55", },
+      pos = { latitude = "N 26.13.13", longitude = "E 120.59.55", },
       heading = 225
     },
     to = {
@@ -2394,7 +2334,7 @@ config.c.amphibOps.sag = {
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
+      pos = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
       heading = config.c.amphibOps.formationSettings.heading.penghu.vertical,
     },
     to = {
@@ -2415,7 +2355,7 @@ config.c.amphibOps.sag = {
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
+      pos = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
       heading = config.c.amphibOps.formationSettings.heading.sishu.vertical,
     },
     to = {
@@ -2436,7 +2376,7 @@ config.c.amphibOps.sag = {
       type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
     },
     from = {
-      startingPoint = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
+      pos = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
       heading = config.c.amphibOps.formationSettings.heading.sishu.vertical,
     },
     to = {
@@ -2562,7 +2502,7 @@ config.c.surface.lacm.csg = {
     },
   },
   from = {
-    startingPoint = { latitude = "N 21.09.59", longitude = "E 120.48.05", },
+    pos = { latitude = "N 21.09.59", longitude = "E 120.48.05", },
     heading = 83
   },
   to = {
@@ -2590,56 +2530,52 @@ config.c.subSurface.slcm.weaponDBID = constants.WEAPONS.CJ10_SLCM
 config.c.subSurface.slcm.submarines = {
   ["407"] = {
     name = "407",
-    guid = "",
     course = {
       { latitude = "N 25.07.57", longitude = "E 122.46.06", presetDepth = 3 },
       { latitude = "N 24.33.33", longitude = "E 122.05.57", presetDepth = 3 },
       { latitude = "N 24.30.54", longitude = "E 122.48.02", presetDepth = 3 },
     },
     from = {
-      startingPoint = { latitude = "N 25.05.32", longitude = "E 122.11.39" },
+      pos = { latitude = "N 25.05.32", longitude = "E 122.11.39" },
       heading = 180
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
   ["408"] = {
     name = "408",
-    guid = "",
     course = {
       { latitude = "N 25.11.06", longitude = "E 122.42.15", presetDepth = 3 },
       { latitude = "N 24.33.33", longitude = "E 122.08.38", presetDepth = 3 },
       { latitude = "N 25.09.37", longitude = "E 122.06.45", presetDepth = 3 },
     },
     from = {
-      startingPoint = { latitude = "N 24.32.30", longitude = "E 122.47.45", },
+      pos = { latitude = "N 24.32.30", longitude = "E 122.47.45", },
       heading = 270
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
   ["409"] = {
     name = "409",
-    guid = "",
     course = {
       { latitude = 23.1405738004732, longitude = 122.453896349795, presetDepth = 3 },
       { latitude = 24.3097078500905, longitude = 122.142301456749, presetDepth = 3 },
       { latitude = 23.3573584800694, longitude = 121.777514450334, presetDepth = 3 }
     },
     from = {
-      startingPoint = { latitude = "N 23.29.41", longitude = "E 122.39.12", },
+      pos = { latitude = "N 23.29.41", longitude = "E 122.39.12", },
       heading = 180
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
   },
   ["410"] = {
     name = "410",
-    guid = "",
     course = {
       { latitude = 24.2344610141018, longitude = 122.681795983267, presetDepth = 3 },
       { latitude = 23.4458260682078, longitude = 121.855392759008, presetDepth = 3 },
       { latitude = 24.280771111992,  longitude = 121.981212557257, presetDepth = 3 }
     },
     from = {
-      startingPoint = { latitude = "N 22.41.17", longitude = "E 122.01.36", },
+      pos = { latitude = "N 22.41.17", longitude = "E 122.01.36", },
       heading = 30
     },
     weaponDBID = config.c.subSurface.slcm.weaponDBID
@@ -2650,7 +2586,7 @@ config.c.subSurface.slcm.targetlist = {
   "6Z8LM5-0HMIJ7B89BCF4",
   "6Z8LM5-0HMIJ7B89BCF5",
 }
-config.c.subSurface.slcm.randomRadius = 20
+config.c.subSurface.slcm.randomRadiusNm = 20
 
 
 -- ============================================================================
@@ -3059,7 +2995,7 @@ config.c.packageTemplates = {
         emcon = "Radar=Passive;OECM=Active"
       },
       tanker = nil,
-      reconUAV = config.c.recon.template.BZK005_RECON_1,
+      reconUAV = config.c.recon.templates.BZK005_RECON_1,
       target = {
         list = {},
         objs = {
@@ -4782,7 +4718,7 @@ config.c.packageTemplates.AIR_STRIKE_AB_W_AAR_2 = config.c.packageTemplates.AIR_
 -- ============================================================================
 
 config.t.gnssJamming = {}
-config.t.gnssJamming.randomRadius = 20 -- random radius
+config.t.gnssJamming.randomRadiusNm = 20 -- random radius
 config.t.gnssJamming.radius = 11
 config.t.gnssJamming.gnssGuidedWeapons = {
   { dbid = constants.WEAPONS.FD280,    jammingResistance = 50 },
@@ -4795,15 +4731,15 @@ config.t.gnssJamming.jammers = {
   ["Comms & Info Coy, 584th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/1",
     name = "Comms & Info Coy, 584th Mech Bde",
-    point = nil,
-    randomRadius = config.t.gnssJamming.randomRadius,
+    pos = nil,
+    randomRadiusNm = config.t.gnssJamming.randomRadiusNm,
     radius = config.t.gnssJamming.radius
   },
   ["Comms & Info Coy, 269th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/2",
     name = "Comms & Info Coy, 269th Mech Bde",
-    point = nil,
-    randomRadius = config.t.gnssJamming.randomRadius,
+    pos = nil,
+    randomRadiusNm = config.t.gnssJamming.randomRadiusNm,
     radius = config.t.gnssJamming.radius
   },
 }
@@ -4826,24 +4762,22 @@ config.t.ground.missileSystemTypes = {}
 -- ============================================================================
 
 config.t.ground.missileSystemTypes.mlrs = {}
-config.t.ground.missileSystemTypes.mlrs.wpnDefault = 144
+config.t.ground.missileSystemTypes.mlrs.weaponCountDefault = 144
 config.t.ground.missileSystemTypes.mlrs.ammoThreshold = 25
 config.t.ground.missileSystemTypes.mlrs.reloadTime = 30 * 60
 config.t.ground.missileSystemTypes.mlrs.stowTime = 5 * 60
 config.t.ground.missileSystemTypes.mlrs.ammunitions = {
   ["Ammo Revetment, Rocket Arty Coy, 21st Arty Command"] = {
-    guid = "",
     name = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
-    wpnCurrent = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.mlrs.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.mlrs.weaponCountDefault,
   },
 }
 config.t.ground.missileSystemTypes.mlrs.resupplyUnits = {
   ["Ammo Sec, Rocket Arty Coy, 21st Arty Command"] = {
-    guid = "",
     name = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
-    wpnCurrent = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.mlrs.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.mlrs.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.mlrs.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.NVD,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4853,7 +4787,6 @@ config.t.ground.missileSystemTypes.mlrs.resupplyUnits = {
 }
 config.t.ground.missileSystemTypes.mlrs.firingUnits = {
   ["Rocket Arty Coy, 21st Arty Command"] = {
-    guid = "",
     name = "Rocket Arty Coy, 21st Arty Command",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -4872,24 +4805,22 @@ config.t.ground.missileSystemTypes.mlrs.firingUnits = {
 -- ============================================================================
 
 config.t.ground.missileSystemTypes.srbm = {}
-config.t.ground.missileSystemTypes.srbm.wpnDefault = 27
+config.t.ground.missileSystemTypes.srbm.weaponCountDefault = 27
 config.t.ground.missileSystemTypes.srbm.ammoThreshold = 25
 config.t.ground.missileSystemTypes.srbm.reloadTime = 10 * 60
 config.t.ground.missileSystemTypes.srbm.stowTime = 5 * 60
 config.t.ground.missileSystemTypes.srbm.ammunitions = {
   ["Ammo Revetment, Rocket Arty Coy, 58th Arty Command"] = {
-    guid = "",
     name = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
-    wpnCurrent = config.t.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.srbm.weaponCountDefault,
   },
 }
 config.t.ground.missileSystemTypes.srbm.resupplyUnits = {
   ["Ammo Sec, Rocket Arty Coy, 58th Arty Command"] = {
-    guid = "",
     name = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
-    wpnCurrent = config.t.ground.missileSystemTypes.srbm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.srbm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.srbm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.srbm.weaponCountDefault,
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.LPK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4899,7 +4830,6 @@ config.t.ground.missileSystemTypes.srbm.resupplyUnits = {
 }
 config.t.ground.missileSystemTypes.srbm.firingUnits = {
   ["Rocket Arty Coy, 58th Arty Command"] = {
-    guid = "",
     name = "Rocket Arty Coy, 58th Arty Command",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -4918,30 +4848,27 @@ config.t.ground.missileSystemTypes.srbm.firingUnits = {
 -- ============================================================================
 
 config.t.ground.missileSystemTypes.glcm = {}
-config.t.ground.missileSystemTypes.glcm.wpnDefault = 48
+config.t.ground.missileSystemTypes.glcm.weaponCountDefault = 48
 config.t.ground.missileSystemTypes.glcm.ammoThreshold = 25
 config.t.ground.missileSystemTypes.glcm.reloadTime = 45 * 60
 config.t.ground.missileSystemTypes.glcm.stowTime = 5 * 60
 config.t.ground.missileSystemTypes.glcm.ammunitions = {
   ["Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.glcm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.glcm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.glcm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.glcm.weaponCountDefault * 2,
   },
 }
 config.t.ground.missileSystemTypes.glcm.resupplyUnits = {
   ["Ammo Sec, 641st Bn, 791st AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.glcm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.glcm.weaponCountDefault,
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.SET,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4949,10 +4876,9 @@ config.t.ground.missileSystemTypes.glcm.resupplyUnits = {
     firingUnit = "641st Bn, 791st AFAD & Arty Bde"
   },
   ["Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.glcm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.glcm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.glcm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.glcm.weaponCountDefault,
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.AMG,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -4962,7 +4888,6 @@ config.t.ground.missileSystemTypes.glcm.resupplyUnits = {
 }
 config.t.ground.missileSystemTypes.glcm.firingUnits = {
   ["641st Bn, 791st AFAD & Arty Bde"] = {
-    guid = "",
     name = "641st Bn, 791st AFAD & Arty Bde",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -4975,7 +4900,6 @@ config.t.ground.missileSystemTypes.glcm.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
   },
   ["642nd Bn, 791st AFAD & Arty Bde"] = {
-    guid = "",
     name = "642nd Bn, 791st AFAD & Arty Bde",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -4995,55 +4919,48 @@ config.t.ground.missileSystemTypes.glcm.firingUnits = {
 -- ============================================================================
 
 config.t.ground.missileSystemTypes.ascm = {}
-config.t.ground.missileSystemTypes.ascm.wpnDefault = 16
+config.t.ground.missileSystemTypes.ascm.weaponCountDefault = 16
 config.t.ground.missileSystemTypes.ascm.ammoThreshold = 25
 -- config.t.ground.missileSystemTypes.ascm.reloadTime = 45 * 60
 config.t.ground.missileSystemTypes.ascm.reloadTime = 5 * 60
 config.t.ground.missileSystemTypes.ascm.stowTime = 5 * 60
 config.t.ground.missileSystemTypes.ascm.ammunitions = {
   ["Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
 }
 config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
   ["Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.FZM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5051,10 +4968,9 @@ config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
     firingUnit = "1st Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.DLF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5062,10 +4978,9 @@ config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
     firingUnit = "2nd Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.TGO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5073,10 +4988,9 @@ config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
     firingUnit = "3rd Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.BPM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5084,10 +4998,9 @@ config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
     firingUnit = "4th Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.PDN,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5095,10 +5008,9 @@ config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
     firingUnit = "5th Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
-    wpnCurrent = config.t.ground.missileSystemTypes.ascm.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.ascm.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.ascm.weaponCountDefault,
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.SKB,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5108,7 +5020,6 @@ config.t.ground.missileSystemTypes.ascm.resupplyUnits = {
 }
 config.t.ground.missileSystemTypes.ascm.firingUnits = {
   ["1st Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "1st Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -5120,7 +5031,6 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     missileSystem = "HF-3",
   },
   ["2nd Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "2nd Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -5132,7 +5042,6 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     missileSystem = "HF-3",
   },
   ["3rd Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "3rd Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -5144,7 +5053,6 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     missileSystem = "HF-3",
   },
   ["4th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "4th Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -5156,7 +5064,6 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     missileSystem = "HF-3",
   },
   ["5th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "5th Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -5168,7 +5075,6 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
     missileSystem = "HF-3",
   },
   ["6th Hai Feng Shore-based ASM MOB Sqn"] = {
-    guid = "",
     name = "6th Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
     state = constants.MISSILE_SYSTEM_STATE.HIDE,
@@ -5187,108 +5093,92 @@ config.t.ground.missileSystemTypes.ascm.firingUnits = {
 -- ============================================================================
 
 config.t.ground.missileSystemTypes.sam = {}
-config.t.ground.missileSystemTypes.sam.wpnDefault = 54
+config.t.ground.missileSystemTypes.sam.weaponCountDefault = 54
 config.t.ground.missileSystemTypes.sam.ammoThreshold = 50
 config.t.ground.missileSystemTypes.sam.reloadTime = 5 * 60
 config.t.ground.missileSystemTypes.sam.stowTime = 5 * 60
 config.t.ground.missileSystemTypes.sam.ammunitions = {
   ["Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    wpnCurrent = 96,
-    wpnDefault = 96,
+    weaponCountCurrent = 96,
+    weaponCountDefault = 96,
   },
   ["Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = 96,
-    wpnDefault = 96,
+    weaponCountCurrent = 96,
+    weaponCountDefault = 96,
   },
   ["Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    wpnCurrent = 96,
-    wpnDefault = 96,
+    weaponCountCurrent = 96,
+    weaponCountDefault = 96,
   },
   ["Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = 96,
-    wpnDefault = 96,
+    weaponCountCurrent = 96,
+    weaponCountDefault = 96,
   },
   ["Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    wpnCurrent = 96,
-    wpnDefault = 96,
+    weaponCountCurrent = 96,
+    weaponCountDefault = 96,
   },
   ["Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = 96,
-    wpnDefault = 96,
+    weaponCountCurrent = 96,
+    weaponCountDefault = 96,
   },
   ["Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
   ["Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault * 2,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
 }
 config.t.ground.missileSystemTypes.sam.resupplyUnits = {
   ["Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    wpnCurrent = 48,
-    wpnDefault = 48,
+    weaponCountCurrent = 48,
+    weaponCountDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IKJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5296,10 +5186,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = 48,
-    wpnDefault = 48,
+    weaponCountCurrent = 48,
+    weaponCountDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.UVY,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5307,10 +5196,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5318,10 +5206,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5329,10 +5216,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5340,10 +5226,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    wpnCurrent = 48,
-    wpnDefault = 48,
+    weaponCountCurrent = 48,
+    weaponCountDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.MAK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5351,10 +5236,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = 48,
-    wpnDefault = 48,
+    weaponCountCurrent = 48,
+    weaponCountDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.FMK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5362,10 +5246,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5373,10 +5256,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5384,10 +5266,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5395,10 +5276,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    wpnCurrent = 48,
-    wpnDefault = 48,
+    weaponCountCurrent = 48,
+    weaponCountDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.PXV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5406,10 +5286,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = 48,
-    wpnDefault = 48,
+    weaponCountCurrent = 48,
+    weaponCountDefault = 48,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IDW,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5417,10 +5296,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5428,10 +5306,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5439,10 +5316,9 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
     firingUnit = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    wpnCurrent = config.t.ground.missileSystemTypes.sam.wpnDefault,
-    wpnDefault = config.t.ground.missileSystemTypes.sam.wpnDefault,
+    weaponCountCurrent = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
+    weaponCountDefault = config.t.ground.missileSystemTypes.sam.weaponCountDefault,
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
@@ -5452,7 +5328,6 @@ config.t.ground.missileSystemTypes.sam.resupplyUnits = {
 }
 config.t.ground.missileSystemTypes.sam.firingUnits = {
   ["1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.IKJ,
@@ -5464,7 +5339,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.UVY,
@@ -5476,7 +5350,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
@@ -5487,7 +5360,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
@@ -5498,7 +5370,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
@@ -5509,7 +5380,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.MAK,
@@ -5521,7 +5391,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.FMK,
@@ -5533,7 +5402,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
@@ -5544,7 +5412,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
@@ -5555,7 +5422,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
@@ -5566,7 +5432,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
-    guid = "",
     name = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.PXV,
@@ -5578,7 +5443,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.IDW,
@@ -5590,7 +5454,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
   },
   ["3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
-    guid = "",
     name = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
@@ -5601,7 +5464,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
-    guid = "",
     name = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
@@ -5612,7 +5474,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
     missileSystem = "PAC-3",
   },
   ["3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
-    guid = "",
     name = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
@@ -5630,7 +5491,6 @@ config.t.ground.missileSystemTypes.sam.firingUnits = {
 -- ============================================================================
 
 config.t.iads = {}
-config.t.iads.ratio = { ROCC = 1.5, TAAOC = 1.5 }
 config.t.iads.rocc = {
   {
     name = "ROCC/North",
@@ -5670,9 +5530,8 @@ config.t.iads.taaoc = {
 -- ============================================================================
 
 config.t.air = {}
-config.t.air.landBased = {}
-config.t.air.landBased.wpnNum = 8
-config.t.air.landBased.deployedACs = {
+config.t.air.weaponCount = 8
+config.t.air.deployedACs = {
   {
     name = "Ching Chuang Kang AB",
     baseGUID = constants.BASES.CHING_CHUANG_KANG_AB,
@@ -5689,7 +5548,7 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.weaponCount }, --Wan Chien X 2
     }
   },
   {
@@ -5708,9 +5567,9 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.weaponCount }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.weaponCount }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.weaponCount }, --GBU X 2
     }
   },
   {
@@ -5729,7 +5588,7 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.weaponCount }, --Wan Chien X 2
     }
   },
   {
@@ -5748,7 +5607,7 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.weaponCount }, --Wan Chien X 2
     }
   },
   {
@@ -5767,7 +5626,7 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.weaponCount }, --Hellfire X 8
     }
   },
   {
@@ -5828,10 +5687,10 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "SLAM-ER", loadoutId = constants.LOADOUTS.F16V_BLK70_SLAM_ER, num = config.t.air.landBased.wpnNum }, --SLAMER X 2
-      { name = "JDAM",    loadoutId = constants.LOADOUTS.F16V_BLK70_JDAM,    num = config.t.air.landBased.wpnNum }, --JDAM X 4
-      { name = "HARM",    loadoutId = constants.LOADOUTS.F16V_BLK70_HARM,    num = config.t.air.landBased.wpnNum }, --HARM X 2
-      { name = "JSOW",    loadoutId = constants.LOADOUTS.F16V_BLK70_JSOW,    num = config.t.air.landBased.wpnNum }, --JSOW X 4
+      { name = "SLAM-ER", loadoutId = constants.LOADOUTS.F16V_BLK70_SLAM_ER, num = config.t.air.weaponCount }, --SLAMER X 2
+      { name = "JDAM",    loadoutId = constants.LOADOUTS.F16V_BLK70_JDAM,    num = config.t.air.weaponCount }, --JDAM X 4
+      { name = "HARM",    loadoutId = constants.LOADOUTS.F16V_BLK70_HARM,    num = config.t.air.weaponCount }, --HARM X 2
+      { name = "JSOW",    loadoutId = constants.LOADOUTS.F16V_BLK70_JSOW,    num = config.t.air.weaponCount }, --JSOW X 4
     }
   },
   {
@@ -5860,9 +5719,9 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.weaponCount }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.weaponCount }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.weaponCount }, --GBU X 2
     }
   },
   {
@@ -5881,7 +5740,7 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "MICA AAM", loadoutId = constants.LOADOUTS.MIRAGE2000_MICA, num = config.t.air.landBased.wpnNum }, --MICA X 4
+      { name = "MICA AAM", loadoutId = constants.LOADOUTS.MIRAGE2000_MICA, num = config.t.air.weaponCount }, --MICA X 4
 
     }
   },
@@ -5901,7 +5760,7 @@ config.t.air.landBased.deployedACs = {
       }
     },
     loadouts = {
-      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.weaponCount }, --Hellfire X 16
     }
   },
   {
@@ -5924,45 +5783,45 @@ config.t.air.landBased.deployedACs = {
     name = "Rende Emergency Highway Strip",
     baseGUID = constants.BASES.RENDE_STRIP,
     loadouts = {
-      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.landBased.wpnNum }, --Wan Chien X 2
+      { name = "Wan Chien", loadoutId = constants.LOADOUTS.IDF_WAN_CHIEN, num = config.t.air.weaponCount }, --Wan Chien X 2
     }
   },
   {
     name = "Madou Emergency Highway Strip",
     baseGUID = constants.BASES.MADOU_STRIP,
     loadouts = {
-      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.weaponCount }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.weaponCount }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.weaponCount }, --GBU X 2
     }
   },
   {
     name = "Minxiong Emergency Highway Strip",
     baseGUID = constants.BASES.MINXIONG_STRIP,
     loadouts = {
-      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.landBased.wpnNum }, --AMRAAM X 4
-      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.landBased.wpnNum }, --Harpoon X 2
-      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.landBased.wpnNum }, --GBU X 2
+      { name = "AMRAAM",  loadoutId = constants.LOADOUTS.F16V_BLK20_AMRAAM,  num = config.t.air.weaponCount }, --AMRAAM X 4
+      { name = "Harpoon", loadoutId = constants.LOADOUTS.F16V_BLK20_HARPOON, num = config.t.air.weaponCount }, --Harpoon X 2
+      { name = "GBU",     loadoutId = constants.LOADOUTS.F16V_BLK20_GBU,     num = config.t.air.weaponCount }, --GBU X 2
     }
   },
   {
     name = "Tainan Field Airdrome",
     baseGUID = constants.BASES.TAINAN_FIELD_AIRDROME,
     loadouts = {
-      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 8
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH1W_HELLFIRE, num = config.t.air.weaponCount }, --Hellfire X 8
     }
   },
   {
     name = "Hsinchu Field Airdrome ",
     baseGUID = constants.BASES.HSINCHU_FIELD_AIRDROME,
     loadouts = {
-      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.landBased.wpnNum }, --Hellfire X 16
+      { name = "Hellfire", loadoutId = constants.LOADOUTS.AH64E_HELLFIRE, num = config.t.air.weaponCount }, --Hellfire X 16
     }
   },
 }
 
 config.t.surface = {}
-config.t.surface.sag = {
+config.t.surface.sags = {
   ["264th Sqn"] = {
     groupName = "264th Sqn",
     unitMap = {
@@ -5999,7 +5858,7 @@ config.t.surface.sag = {
     },
     missionName = "ASW/E",
     from = {
-      startingPoint = { latitude = "N 24.28.47", longitude = "E 122.25.49", },
+      pos = { latitude = "N 24.28.47", longitude = "E 122.25.49", },
       heading = 0
     },
   },
@@ -6030,7 +5889,7 @@ config.t.surface.deployedShips = {
 
 config.u.sigint = {}
 config.u.sigint.maxCount = config.c.sigint.maxCount
-config.u.sigint.maxRange = config.c.sigint.maxRange
+config.u.sigint.maxRangeNm = config.c.sigint.maxRangeNm
 -- Detection parameters (shared with China)
 config.u.sigint.detectionThreshold = config.c.sigint.detectionThreshold
 config.u.sigint.maxDetectionRange = config.c.sigint.maxDetectionRange

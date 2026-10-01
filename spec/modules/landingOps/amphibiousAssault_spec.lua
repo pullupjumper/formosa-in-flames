@@ -88,7 +88,7 @@ describe("AmphibiousAssault", function()
   local function makeAmphibOpsConfig(overrides)
     local cfg = {
       operationalZones = { makeZone() },
-      sag = {},
+      sags = {},
     }
     if overrides then
       for k, v in pairs(overrides) do cfg[k] = v end

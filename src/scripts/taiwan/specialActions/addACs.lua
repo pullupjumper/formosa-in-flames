@@ -4,6 +4,6 @@ local CommsJamming = require("src.modules.ew.commsJamming")
 local config = require("src.core.config")
 
 PersistentState.update(function(saveData)
-  UnitGenerator.addAircraft(config.t.air.landBased.deployedACs)
+  UnitGenerator.addAircraft(config.t.air.deployedACs)
   CommsJamming.updateTargetAircraft(config, saveData)
 end)

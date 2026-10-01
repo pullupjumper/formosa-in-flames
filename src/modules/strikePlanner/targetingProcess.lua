@@ -376,7 +376,7 @@ end
 ---@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
-  return distance <= config.c.sigint.maxRange and transmission.currentDetectionLevel > config.c.sigint.maxCount
+  return distance <= config.c.sigint.maxRangeNm and transmission.currentDetectionLevel > config.c.sigint.maxCount
 end
 
 ---Filter targets that are within range of SIGINT-detected radio sources

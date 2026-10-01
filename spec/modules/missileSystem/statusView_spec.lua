@@ -29,7 +29,7 @@ describe("MissileSystem StatusView", function()
   ---@param overrides? table
   ---@return table
   local function makeResupplyUnitCtx(overrides)
-    local ctx = { name = "RS-1", state = STATE.HIDE, wpnCurrent = 4, ammunition = "AHA-1" }
+    local ctx = { name = "RS-1", state = STATE.HIDE, weaponCountCurrent = 4, ammunition = "AHA-1" }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
     end
@@ -49,7 +49,7 @@ describe("MissileSystem StatusView", function()
             ["RS-1"] = resupplyUnitCtx or makeResupplyUnitCtx(),
             ["RS-2"] = makeResupplyUnitCtx({ name = "RS-2" })
           },
-          ammunitions = { ["AHA-1"] = { wpnCurrent = 12 } }
+          ammunitions = { ["AHA-1"] = { weaponCountCurrent = 12 } }
         }
       }
     }

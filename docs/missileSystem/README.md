@@ -128,12 +128,12 @@ flowchart TB
 
 **情境 A：彈藥補給車被摧毀**
 
-- 對應資料欄位 `resupplyUnits[*].wpnCurrent` 會下降或歸零
+- 對應資料欄位 `resupplyUnits[*].weaponCountCurrent` 會下降或歸零
 - 機動發射車短期仍可作戰，但無法進行再裝填
 
 **情境 B：彈藥儲備點被摧毀**
 
-- 對應 `ammunitions[*].wpnCurrent` 歸零
+- 對應 `ammunitions[*].weaponCountCurrent` 歸零
 - 彈藥補給車用盡後無法再裝填，該作戰區飛彈系統續戰力將衰退
 
 **情境 C：未在同一陣地交會**
@@ -151,7 +151,7 @@ flowchart TB
 | `config.*.ground.missileSystemTypes.<type>.reloadTime` | 再裝填所需時間 |
 | `config.*.ground.missileSystemTypes.<type>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
 | `config.*.ground.missileSystemTypes.<type>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
-| `config.*.ground.missileSystemTypes.<type>.ammunitions[*].wpnDefault` | 彈藥儲備點初始庫存 |
+| `config.*.ground.missileSystemTypes.<type>.ammunitions[*].weaponCountDefault` | 彈藥儲備點初始庫存 |
 | `operationalArea` 的 FP/HA/RL/AHA 陣地位置 | 補給路徑與交會條件 |
 
 ---

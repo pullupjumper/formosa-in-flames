@@ -36,7 +36,7 @@ flowchart LR
 
 `addGnssJammers` 對每個 `GNSSJammerDescriptor` 執行：
 
-1. `GameUtils.tryAddUnit()` — 在指定座標（含隨機偏移 `randomRadius`）建立 GPS_JAMMER 設施
+1. `GameUtils.tryAddUnit()` — 在指定座標（含隨機偏移 `randomRadiusNm`）建立 GPS_JAMMER 設施
 2. `ScenEdit_SetEMCON("OECM=Active")` — 啟動電子反制
 3. `GameUtils.createArea()` — 以設施為中心建立圓形區域（半徑 = `descriptor.radius`）
 4. `ScenEdit_AddZone()` — 建立 Standard Zone（type = -925）
@@ -105,9 +105,9 @@ flowchart TD
 GNSSJammerDescriptor
 ├── name: string          -- 單元名稱（如 "1st Bn, 1st ECM Bde"）
 ├── zoneName: string      -- Zone 描述（唯一識別）
-├── point: CMO__Location  -- 部署座標（可為 nil 表示延遲部署）
+├── pos: CMO__Location  -- 部署座標（可為 nil 表示延遲部署）
 ├── radius: number        -- 干擾有效半徑 (nm)
-└── randomRadius: number  -- 部署位置隨機偏移 (nm)
+└── randomRadiusNm: number  -- 部署位置隨機偏移 (nm)
 ```
 
 ---

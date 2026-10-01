@@ -14,8 +14,8 @@
 
 `processSupplyAssetDestruction` 會在分數腳本觸發時被呼叫：
 
-- 若擊毀彈藥儲備點（非 group），直接將對應 `ammoDepotCtx.wpnCurrent = 0`
-- 若擊毀彈藥補給車群組成員，按每車平均彈量扣減群組 `wpnCurrent`
+- 若擊毀彈藥儲備點（非 group），直接將對應 `ammoDepotCtx.weaponCountCurrent = 0`
+- 若擊毀彈藥補給車群組成員，按每車平均彈量扣減群組 `weaponCountCurrent`
 
 ---
 
@@ -24,11 +24,11 @@
 ```mermaid
 flowchart TD
     A[processSupplyAssetDestruction] --> B{unit 是否對應 ammoDepot?}
-    B -->|Yes| C[ammoDepotCtx.wpnCurrent = 0]
+    B -->|Yes| C[ammoDepotCtx.weaponCountCurrent = 0]
     B -->|No| D{unit 是否有 group?}
     D -->|No| E[return false]
     D -->|Yes| F[找 resupplyUnitCtx]
-    F --> G[按每車平均扣減 wpnCurrent]
+    F --> G[按每車平均扣減 weaponCountCurrent]
 ```
 
 ---

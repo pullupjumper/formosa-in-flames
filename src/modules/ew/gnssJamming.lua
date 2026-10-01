@@ -255,8 +255,8 @@ local function addGnssJammers(jammerDescriptorMap, sideName)
   for _, descriptor in pairs(jammerDescriptorMap) do
     local unit, point = GameUtils.tryAddUnit({
       name = descriptor.name,
-      pos = descriptor.point,
-      randomRadius = descriptor.randomRadius,
+      pos = descriptor.pos,
+      randomRadiusNm = descriptor.randomRadiusNm,
       unitDBID = constants.PLATFORMS.GPS_JAMMER
     })
 
@@ -328,8 +328,8 @@ function GnssJamming.addGnssJammer(sideName, descriptor)
     unitname = descriptor.name,
     dbid = constants.PLATFORMS.GPS_JAMMER,
     type = constants.UNIT_TYPES.FACILITY,
-    latitude = descriptor.point.latitude,
-    longitude = descriptor.point.longitude
+    latitude = descriptor.pos.latitude,
+    longitude = descriptor.pos.longitude
   })
 
   if not unit then
@@ -341,7 +341,7 @@ function GnssJamming.addGnssJammer(sideName, descriptor)
     return false, nil
   end
 
-  local point = { latitude = descriptor.point.latitude, longitude = descriptor.point.longitude }
+  local point = { latitude = descriptor.pos.latitude, longitude = descriptor.pos.longitude }
   local success = createJammingZone(unit, descriptor, point, sideName)
 
   Logger.log(constants.TAGS.GNSS_JAMMING, LogFormat.line(success and "OK" or "FAIL", {

@@ -44,7 +44,7 @@ stateDiagram-v2
     [*] --> MOVING: saveData 初始化
     MOVING --> WAITING_ARRIVAL: ShipMovement.moveToStagingArea() done
     WAITING_ARRIVAL --> WAITING_ASSAULT: 艦數 > arrivalThreshold<br>且裝載與任務建立成功
-    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 接觸數 < contactThreshold<br>或等待逾時 (periodOfTime)
+    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 接觸數 < contactThreshold<br>或等待逾時 (periodSec)
     WAITING_SECOND_WAVE --> COMPLETED: 灘頭建立 (ZBD-05 ≥ 1)
 ```
 
@@ -54,7 +54,7 @@ stateDiagram-v2
 |---|---|---|
 | `MOVING` | `saveData.c.amphibOps.startTime` 到達 | `ShipMovement.moveToStagingArea` |
 | `WAITING_ARRIVAL` | `units > zone.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
-| `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodOfTime` | `setLandingMissionStartTime` + `setCoursesForLSTs` |
+| `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `setLandingMissionStartTime` + `setCoursesForLSTs` |
 | `WAITING_SECOND_WAVE` | 灘頭建立（ZBD-05 ≥ 1） | `startSecondWaveUnloading` |
 
 ---
@@ -64,7 +64,7 @@ stateDiagram-v2
 `processTaoyuanTemporarySetup` 僅在 Taoyuan 進入 `WAITING_ASSAULT` 時觸發：
 
 1. 對運輸機隊執行貨物轉移與任務指派（`AmphibiousLogistics.transferAndAssignTransportAircraft`）
-2. 經門面 [`StrikePlanner.addReconEntry(saveData.c.recon, config.c.recon.template.GJ11_RECON)`](../strikePlanner/README.md)（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）排入一架 GJ-11 偵察任務；coordinator 不直接 require strikePlanner 內部模組
+2. 經門面 [`StrikePlanner.addReconEntry(saveData.c.recon, config.c.recon.templates.GJ11_RECON)`](../strikePlanner/README.md)（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）排入一架 GJ-11 偵察任務；coordinator 不直接 require strikePlanner 內部模組
 
 由於未傳入 `startTime`，`addEntry` 以當前遊戲時間為起飛錨點，並自行完成範本深拷貝、`takeoffTime`/`endTime` 推算、欄位重設（`hasLaunched`/`isFinished`/`trackingTargetGUID`）與寫入佇列。插入是**有條件**的：偵察佇列中沒有可錨定的衛星空窗、或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入（GJ-11 偵察當輪不啟動），兩棲流程其餘部分不受影響。
 
@@ -158,7 +158,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 
 | 設定路徑 | 用途 |
 |---|---|
-| `config.c.amphibOps.periodOfTime` | `WAITING_ASSAULT` 等待逾時上限（秒） |
+| `config.c.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
 | `config.c.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
 | `config.c.amphibOps.operationalZones[].arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
 | `config.c.amphibOps.operations[].contactThreshold` | 空/機降區可接受的最大接觸數 |

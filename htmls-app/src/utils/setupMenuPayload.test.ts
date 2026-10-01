@@ -93,7 +93,7 @@ describe('toSetupResult', () => {
     expect(result.budget).toEqual({ initial: 1000, used: 0, remaining: 1000 });
     expect(result.jammers[0]).toMatchObject({
       zoneName: JAMMERS_DATA[0].zoneName,
-      point: { latitude: 24, longitude: 121 },
+      pos: { latitude: 24, longitude: 121 },
     });
     const system = result.missileSystems[0];
     expect(system.key).toBe('k');

@@ -226,7 +226,7 @@ saveData.c.recon
     │   ├── hasLaunched / isFinished / unitGUID
     │   └── isTracking / trackingTargetGUID
     └── Satellite / SIGINT Entry
-        ├── reconObjectiveId: string  -- 情蒐目標 ID，對應 strikeMappingsByReconObjective 索引
+        ├── reconObjectiveId: string  -- 情蒐目標 ID，對應 strikeMappings 索引
         ├── endTime
         └── isFinished
 ```
@@ -290,14 +290,14 @@ flowchart BT
 | 設定路徑 | 用途 |
 |---|---|
 | `config.c.ground.missileSystemTypes.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
-| `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
+| `config.c.recon.strikeMappings` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
 | `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
 | `config.c.recon.observationWindowSec` | 動態作戰的觀測窗長度；`atoBuilder` 與 `fsemBuilder` 共用，窗內重試、逾時把 operation 移出 batch |
 | `config.c.packageTemplates` | 空中打擊包模板；`operationScheduler` 建立 air operation template，`atoBuilder` 轉為 Wave |
 | `config.c.fireSupportTaskTemplates` | 火力支援任務模板；`operationScheduler` 建立 ground operation template，`fsemBuilder` 轉為 FSEM |
 | `config.c.air.minimumStrengthRatio` | 動態打擊包的最低出擊兵力比例；低於門檻整包跳過，達到就以現有兵力出擊（預設 `0.5`） |
-| `config.c.air.landBased.deployedACs` | 機場部署描述子；`airbaseAttrition` 以此建立計畫駐機基線 |
-| `config.c.sigint.maxRange` | SIGINT 最大偵測距離 |
+| `config.c.air.deployedACs` | 機場部署描述子；`airbaseAttrition` 以此建立計畫駐機基線 |
+| `config.c.sigint.maxRangeNm` | SIGINT 最大偵測距離 |
 | `config.c.sigint.maxCount` | SIGINT 偵測次數門檻 |
 | `config.c.targetScanning` | 目標掃描配置（距離門檻、機場/港口清單、模式匹配） |
 | `config.aircraftReadySec` | 所有空中打擊 template 必填的 `timeToReady` 來源，進入 Package 後由 ATO 掛彈流程使用 |

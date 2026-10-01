@@ -186,7 +186,7 @@ local function activateNearestRadar(config, destroyedRadar)
     return
   end
 
-  local temp = { unit = nil, distance = config.c.iads.radarDistance }
+  local temp = { unit = nil, distance = config.c.iads.radarDistanceNm }
   local latitude = destroyedRadar.latitude
   local longitude = destroyedRadar.longitude
 
@@ -270,10 +270,10 @@ end
 local function addC2Facilities(iadsConfig)
   for _, setting in ipairs(iadsConfig.c2Deployments) do
     local units = GameUtils.createRandomUnits({
-      centerPoint = setting.position,
+      centerPoint = setting.pos,
       dbids = iadsConfig.c2FacilityDBIDs,
       count = 3,
-      randomRadius = iadsConfig.randomRadius,
+      randomRadiusNm = iadsConfig.randomRadiusNm,
       sideName = constants.SIDES.ENEMY,
       unitType = constants.UNIT_TYPES.FACILITY,
       unitname = "Suspected C2 Facility#",
@@ -301,6 +301,7 @@ local function initC2FacilitiesContext(iadsConfig, iadsCtx)
   end
 
   for _, setting in ipairs(iadsConfig.c2Deployments) do
+    ---@type CMO__Unit[]
     local facilities = {}
 
     for _, sideUnit in ipairs(sideUnits) do
@@ -319,7 +320,6 @@ local function initC2FacilitiesContext(iadsConfig, iadsCtx)
 
     if #facilities > 0 then
       local randomIdx = math.random(#facilities)
-      ---@type CMO__Unit
       local randomFacility = facilities[randomIdx]
       iadsCtx.c2[randomFacility.guid] = {
         name = randomFacility.name .. "/" .. setting.name,

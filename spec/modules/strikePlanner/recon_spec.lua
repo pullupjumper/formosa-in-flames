@@ -150,7 +150,7 @@ describe("Recon", function()
   ---@return SBJ__Config
   local function makeConfig(overrides)
     local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    cfg.c.recon.strikeMappingsByReconObjective = {
+    cfg.c.recon.strikeMappings = {
       C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       },

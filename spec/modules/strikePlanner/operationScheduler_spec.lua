@@ -46,7 +46,7 @@ describe("OperationScheduler", function()
   ---@return SBJ__Config
   local function makeConfig()
     local config = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    config.c.recon.strikeMappingsByReconObjective = {
+    config.c.recon.strikeMappings = {
       C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       },
@@ -190,7 +190,7 @@ describe("OperationScheduler", function()
     -- Positive: satellite entries resolve mappings by reconObjectiveId.
     it("should resolve satellite mappings by reconObjectiveId", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING =
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
 
@@ -206,7 +206,7 @@ describe("OperationScheduler", function()
     -- Negative: unmapped objectives are skipped.
     it("should log SKIP when no mappings match the entry's recon objective", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING =
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
 
@@ -223,7 +223,7 @@ describe("OperationScheduler", function()
     -- Positive: the batch carries the recon entry's identity for the downstream builders.
     it("should stamp the batch with the recon entry's time and type", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_EMITTER_TARGETING =
+      config.c.recon.strikeMappings.C2_EMITTER_TARGETING =
       { { name = "GND/STRIKE/C2/N/1", type = "ground" } }
       local operationBatches = {}
 
@@ -246,7 +246,7 @@ describe("OperationScheduler", function()
     -- Each mapping takes exactly one path: open a first wave, or advance an existing series.
     it("should process multiple strikeMappings with mixed new, skip, and next", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
+      config.c.recon.strikeMappings.C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
         { name = "GND/STRIKE/C2/C/1", type = "ground" },
         { name = "AIR/STRIKE/AB/E/1", type = "air",   requiresLACM = true },
@@ -283,7 +283,7 @@ describe("OperationScheduler", function()
     -- Negative: GND/STRIKE/INFRA/ALL/* mappings are skipped while fire support is on hold.
     it("should skip GND/STRIKE/INFRA/ALL/* mappings when fireSupportOnHold is true", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" },
         { name = "AIR/STRIKE/AB/W/1",      type = "air" },
       }
@@ -307,7 +307,7 @@ describe("OperationScheduler", function()
     -- Negative: the LACM strike stays out of the batch until the LACM context activates.
     it("should skip a requiresLACM mapping when LACM is not committed", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "AIR/STRIKE/AB/E/1", type = "air", requiresLACM = true },
         { name = "AIR/STRIKE/AB/W/1", type = "air" },
       }
@@ -335,7 +335,7 @@ describe("OperationScheduler", function()
     -- Negative: the gate also covers follow-on waves, not just the first one.
     it("should skip a requiresLACM follow-on wave when LACM is not committed", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "AIR/STRIKE/AB/E/1", type = "air", requiresLACM = true },
       }
       local operationBatches = {}
@@ -356,7 +356,7 @@ describe("OperationScheduler", function()
     -- Positive: the same mapping schedules once LACM is active, proving the gate is conditional
     it("should schedule a requiresLACM mapping when LACM is committed", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "AIR/STRIKE/AB/E/1", type = "air", requiresLACM = true },
       }
       config.c.packageTemplates.AIR_STRIKE_AB_E_1 = {
@@ -377,7 +377,7 @@ describe("OperationScheduler", function()
     -- Negative: a mapping whose config template is missing must not reach the batch.
     it("should reject a mapping with no resolved template", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "AIR/STRIKE/NOPE/1", type = "air" },
       }
       -- config.c.packageTemplates has no AIR_STRIKE_NOPE_1 entry
@@ -395,7 +395,7 @@ describe("OperationScheduler", function()
     -- Negative: an operation type OperationType cannot resolve has no template field to fill.
     it("should reject a mapping with an unknown operation type", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "SEA/STRIKE/PORT/1", type = "naval" },
       }
       local operationBatches = {}
@@ -412,7 +412,7 @@ describe("OperationScheduler", function()
     -- Positive: strikeInterval defaults come from the OperationType descriptor, per operation type.
     it("should apply the configured strike interval to air waves and zero to ground waves", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "AIR/STRIKE/AB/W/1", type = "air" },
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
@@ -438,7 +438,7 @@ describe("OperationScheduler", function()
     -- Negative: scope metadata belongs to the summary action, not the entry rollup.
     it("should keep scope metadata out of the entry counts", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING =
       { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
       config.c.packageTemplates.AIR_STRIKE_AB_W_1 = {
         { timeToReady = 5 * 60, name = "PKG-AB-W-1", target = { list = {}, contactAge = 0, minTargetCount = 1 } }
@@ -465,7 +465,7 @@ describe("OperationScheduler", function()
     -- Positive: GND/STRIKE/INFRA/ALL/* mappings are inserted when hold is off.
     it("should insert GND/STRIKE/INFRA/ALL/* mappings when fireSupportOnHold is false", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING =
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING =
       { { name = "GND/STRIKE/INFRA/ALL/1", type = "ground" } }
       config.c.fireSupportTaskTemplates.GND_STRIKE_INFRA_ALL_1 = { {
         name = "FST-INFRA-1",
@@ -487,7 +487,7 @@ describe("OperationScheduler", function()
     -- Negative: non-INFRASTRUCTURE mappings are unaffected by fire support hold.
     it("should not gate non-INFRASTRUCTURE mappings even when fireSupportOnHold is true", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
+      config.c.recon.strikeMappings.C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operationBatches = {}
@@ -504,7 +504,7 @@ describe("OperationScheduler", function()
     -- Boundary: pending next waves are deduplicated.
     it("should not schedule a duplicate next wave when an identical one is already pending", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
+      config.c.recon.strikeMappings.C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operationBatches = {
@@ -531,7 +531,7 @@ describe("OperationScheduler", function()
     -- Boundary: REUSED_CURRENT is deduplicated too, not only FOUND_NEXT.
     it("should not re-queue a REUSED_CURRENT wave while an identical one is still pending", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
+      config.c.recon.strikeMappings.C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operationBatches = {
@@ -560,7 +560,7 @@ describe("OperationScheduler", function()
     -- Positive: the REUSED_CURRENT block lifts once the pending copy has executed.
     it("should re-queue a REUSED_CURRENT wave after the pending copy has executed", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
+      config.c.recon.strikeMappings.C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       local operationBatches = {
@@ -589,7 +589,7 @@ describe("OperationScheduler", function()
     -- Runs the real query/buildNextOperation path; before the fix this reached 3.
     it("should keep a single pending copy across repeated recon completions", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.C2_NORTH_TARGETING = {
+      config.c.recon.strikeMappings.C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       }
       -- Drop the /2 template so every completion resolves to REUSED_CURRENT
@@ -643,7 +643,7 @@ describe("OperationScheduler", function()
     -- Positive: active frontline redirect rewrites matching strike mappings.
     it("should apply frontline redirect mappings when sticky flag is active", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "AIR/STRIKE/AB/W/1", type = "air" },
         { name = "AIR/STRIKE/AB/E/1", type = "air" },
       }
@@ -701,7 +701,7 @@ describe("OperationScheduler", function()
     -- Negative: a series whose type OperationType cannot resolve has no next template to look up
     it("should warn instead of scheduling when the executed series has an unknown type", function()
       local config = makeConfig()
-      config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = {
+      config.c.recon.strikeMappings.FIXED_SITE_TARGETING = {
         { name = "SEA/STRIKE/PORT/1", type = "naval" },
       }
       local operationBatches = {}
@@ -859,7 +859,7 @@ describe("OperationScheduler", function()
       ---@param strikeMapping table
       ---@return table|nil # The operation queued by this pass, or nil when none was
       local function scheduleNextWave(config, operationBatches, strikeMapping)
-        config.c.recon.strikeMappingsByReconObjective.FIXED_SITE_TARGETING = { strikeMapping }
+        config.c.recon.strikeMappings.FIXED_SITE_TARGETING = { strikeMapping }
         local batchCountBefore = #operationBatches
 
         OperationScheduler.schedule(

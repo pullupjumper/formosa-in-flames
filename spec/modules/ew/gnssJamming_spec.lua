@@ -45,8 +45,8 @@ describe("GnssJamming", function()
     local d = {
       name = "GNSS Jammer Alpha",
       zoneName = "GNSS Zone Alpha",
-      point = { latitude = 25.0, longitude = 121.0 },
-      randomRadius = 5,
+      pos = { latitude = 25.0, longitude = 121.0 },
+      randomRadiusNm = 5,
       radius = 50,
     }
     if overrides then
@@ -519,7 +519,7 @@ describe("GnssJamming", function()
     -- Positive: passes correct parameters to ScenEdit_AddUnit
     it("should pass correct parameters when creating unit", function()
       local descriptor = makeDescriptor({
-        point = { latitude = 26.0, longitude = 122.0 },
+        pos = { latitude = 26.0, longitude = 122.0 },
       })
 
       local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit").invokes(function(params)

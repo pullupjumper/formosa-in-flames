@@ -61,7 +61,7 @@ function FrontlineRedirect.evaluate(config, reconCtx)
     return false, nil
   end
 
-  local summary = AirbaseAttrition.calculate(config.c.air.landBased.deployedACs, cfg.frontlineBaseNames)
+  local summary = AirbaseAttrition.calculate(config.c.air.deployedACs, cfg.frontlineBaseNames)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
     reconCtx.frontlineRedirected = true

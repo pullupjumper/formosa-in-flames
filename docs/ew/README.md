@@ -146,9 +146,9 @@ config.*.gnssJamming
     └── GNSSJammerDescriptor
         ├── name: string (單元名稱)
         ├── zoneName: string (Zone 描述)
-        ├── point: CMO__Location (部署座標)
+        ├── pos: CMO__Location (部署座標)
         ├── radius: number (干擾半徑 nm)
-        └── randomRadius: number (部署隨機偏移 nm)
+        └── randomRadiusNm: number (部署隨機偏移 nm)
 ```
 
 ### SIGINT
@@ -220,7 +220,7 @@ flowchart BT
 | `config.t.gnssJamming.gnssGuidedWeapons` | 可被干擾的 GNSS 導引武器清單 |
 | `config.t.gnssJamming.radius` | 台灣側干擾有效半徑 (nm) |
 | `config.c.sigint.maxCount` | SIGINT 偵測次數門檻（超過後 autodetectable） |
-| `config.c.sigint.maxRange` | SIGINT 最大偵測距離（與 transmissions 比較） |
+| `config.c.sigint.maxRangeNm` | SIGINT 最大偵測距離（與 transmissions 比較） |
 | `config.c.sigint.detectionThreshold` | 保證偵測距離 (nm) |
 | `config.c.sigint.maxDetectionRange` | 最大偵測距離範圍 |
 | `config.c.sigint.formulaConstants` | 偵測機率與訊號偏差公式參數 |

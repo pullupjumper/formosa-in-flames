@@ -10,9 +10,9 @@ local Context = {}
 function Context.processSupplyAssetDestruction(unit, systemCtx)
   local ammoDepotCtx = systemCtx.ammunitions[unit.name]
 
-  if ammoDepotCtx and unit.group == nil and ammoDepotCtx.wpnCurrent > 0 then
-    local ammoBefore = ammoDepotCtx.wpnCurrent
-    ammoDepotCtx.wpnCurrent = 0
+  if ammoDepotCtx and unit.group == nil and ammoDepotCtx.weaponCountCurrent > 0 then
+    local ammoBefore = ammoDepotCtx.weaponCountCurrent
+    ammoDepotCtx.weaponCountCurrent = 0
     return true, {
       tag = "OK",
       system = systemCtx.name or "unknown",
@@ -20,8 +20,8 @@ function Context.processSupplyAssetDestruction(unit, systemCtx)
       contextName = ammoDepotCtx.name,
       role = "ammo_depot",
       ammoBefore = ammoBefore,
-      ammoAfter = ammoDepotCtx.wpnCurrent,
-      delta = ammoDepotCtx.wpnCurrent - ammoBefore
+      ammoAfter = ammoDepotCtx.weaponCountCurrent,
+      delta = ammoDepotCtx.weaponCountCurrent - ammoBefore
     }
   end
 
@@ -31,14 +31,14 @@ function Context.processSupplyAssetDestruction(unit, systemCtx)
 
   local resupplyUnitCtx = systemCtx.resupplyUnits[unit.group.name]
 
-  if resupplyUnitCtx and resupplyUnitCtx.wpnCurrent > 0 then
-    local ammoBefore = resupplyUnitCtx.wpnCurrent
-    local ammoPerUnit = resupplyUnitCtx.wpnDefault / resupplyUnitCtx.unitCount
+  if resupplyUnitCtx and resupplyUnitCtx.weaponCountCurrent > 0 then
+    local ammoBefore = resupplyUnitCtx.weaponCountCurrent
+    local ammoPerUnit = resupplyUnitCtx.weaponCountDefault / resupplyUnitCtx.unitCount
 
-    if (resupplyUnitCtx.wpnCurrent - ammoPerUnit) < 0 then
-      resupplyUnitCtx.wpnCurrent = 0
+    if (resupplyUnitCtx.weaponCountCurrent - ammoPerUnit) < 0 then
+      resupplyUnitCtx.weaponCountCurrent = 0
     else
-      resupplyUnitCtx.wpnCurrent = resupplyUnitCtx.wpnCurrent - ammoPerUnit
+      resupplyUnitCtx.weaponCountCurrent = resupplyUnitCtx.weaponCountCurrent - ammoPerUnit
     end
     return true, {
       tag = "OK",
@@ -47,8 +47,8 @@ function Context.processSupplyAssetDestruction(unit, systemCtx)
       contextName = resupplyUnitCtx.name,
       role = "resupply_unit",
       ammoBefore = ammoBefore,
-      ammoAfter = resupplyUnitCtx.wpnCurrent,
-      delta = resupplyUnitCtx.wpnCurrent - ammoBefore
+      ammoAfter = resupplyUnitCtx.weaponCountCurrent,
+      delta = resupplyUnitCtx.weaponCountCurrent - ammoBefore
     }
   end
 

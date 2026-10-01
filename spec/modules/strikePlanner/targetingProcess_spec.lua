@@ -152,7 +152,7 @@ describe("TargetingProcess", function()
   local function makeConfig(overrides)
     overrides = overrides or {}
     local config = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    config.c.sigint.maxRange = overrides.maxRange or 50
+    config.c.sigint.maxRangeNm = overrides.maxRange or 50
     config.c.sigint.maxCount = overrides.maxCount or 3
     return config
   end

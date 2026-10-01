@@ -35,7 +35,7 @@ describe("FrontlineRedirect", function()
   ---@return SBJ__Config
   local function makeConfig(redirectOverrides)
     local cfg = Utils.deepCopy(BaseConfig)
-    cfg.c.air.landBased.deployedACs = {
+    cfg.c.air.deployedACs = {
       {
         name = "Frontline Base",
         baseGUID = "BASE-FRONT",

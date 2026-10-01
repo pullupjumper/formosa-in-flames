@@ -195,7 +195,7 @@ describe("CommsJamming", function()
       c = { commsJamming = { enabled = enabled ~= false, jammers = jammingState.jammers } },
       t = {
         iads = jammingState.iads,
-        air = { landBased = { AC = jammingState.aircraft, AEW = jammingState.aew } },
+        air = { ac = jammingState.aircraft, aew = jammingState.aew },
       },
     }
   end
@@ -1330,14 +1330,14 @@ describe("CommsJamming", function()
 
       CommsJamming.updateTargetAircraft(config, saveData)
 
-      local landBasedCtx = saveData.t.air.landBased
+      local aircraftCtx = saveData.t.air
       assert.stub(getSideStub).was.called_with({ side = constants.SIDES.PLAYER })
-      assert.are.equal(1, Utils.getCount(landBasedCtx.AEW))
-      assert.are.equal(1, Utils.getCount(landBasedCtx.AC))
-      assert.is_not_nil(landBasedCtx.AEW["E2K-1"])
-      assert.is_not_nil(landBasedCtx.AC["F16-1"])
-      assert.are.equal(defaults.commsLevel, landBasedCtx.AC["F16-1"].commsLevel)
-      assert.are.equal(defaults.outOfComms, landBasedCtx.AEW["E2K-1"].outofcomms)
+      assert.are.equal(1, Utils.getCount(aircraftCtx.aew))
+      assert.are.equal(1, Utils.getCount(aircraftCtx.ac))
+      assert.is_not_nil(aircraftCtx.aew["E2K-1"])
+      assert.is_not_nil(aircraftCtx.ac["F16-1"])
+      assert.are.equal(defaults.commsLevel, aircraftCtx.ac["F16-1"].commsLevel)
+      assert.are.equal(defaults.outOfComms, aircraftCtx.aew["E2K-1"].outofcomms)
     end)
 
     -- Edge: stale entries are cleared even when the side has no aircraft
@@ -1347,8 +1347,8 @@ describe("CommsJamming", function()
 
       CommsJamming.updateTargetAircraft(config, saveData)
 
-      assert.are.same({}, saveData.t.air.landBased.AEW)
-      assert.are.same({}, saveData.t.air.landBased.AC)
+      assert.are.same({}, saveData.t.air.aew)
+      assert.are.same({}, saveData.t.air.ac)
     end)
   end)
 

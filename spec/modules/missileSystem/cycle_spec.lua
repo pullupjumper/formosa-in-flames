@@ -51,8 +51,8 @@ describe("MissileSystem Cycle", function()
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
           state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-          wpnCurrent = 10,
-          wpnDefault = 20,
+          weaponCountCurrent = 10,
+          weaponCountDefault = 20,
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -110,8 +110,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-            wpnCurrent = 10,
-            wpnDefault = 20,
+            weaponCountCurrent = 10,
+            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -162,8 +162,8 @@ describe("MissileSystem Cycle", function()
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
             ammunition = "Ammo Depot",
-            wpnCurrent = 0,
-            wpnDefault = 20,
+            weaponCountCurrent = 0,
+            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -174,7 +174,7 @@ describe("MissileSystem Cycle", function()
         ammunitions = {
           ["Ammo Depot"] = {
             name = "Ammo Depot",
-            wpnCurrent = 100
+            weaponCountCurrent = 100
           }
         }
       })
@@ -200,8 +200,8 @@ describe("MissileSystem Cycle", function()
 
       local results = Cycle.process(systemCtx, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
-      assert.are.equal(20, systemCtx.resupplyUnits["Ammo Sec, Alpha"].wpnCurrent)
-      assert.are.equal(80, systemCtx.ammunitions["Ammo Depot"].wpnCurrent)
+      assert.are.equal(20, systemCtx.resupplyUnits["Ammo Sec, Alpha"].weaponCountCurrent)
+      assert.are.equal(80, systemCtx.ammunitions["Ammo Depot"].weaponCountCurrent)
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemCtx.resupplyUnits["Ammo Sec, Alpha"].state)
       assert.are.equal(1, #results)
       assert.are.equal("ammo_transload_finished", results[1].fields.action)
@@ -265,8 +265,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
-            wpnCurrent = 10,
-            wpnDefault = 20
+            weaponCountCurrent = 10,
+            weaponCountDefault = 20
           }
         }
       })
@@ -317,8 +317,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
-            wpnCurrent = 10,
-            wpnDefault = 20
+            weaponCountCurrent = 10,
+            weaponCountDefault = 20
           }
         }
       })
@@ -370,8 +370,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
-            wpnCurrent = 20,
-            wpnDefault = 20
+            weaponCountCurrent = 20,
+            weaponCountDefault = 20
           }
         }
       })
@@ -425,8 +425,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
-            wpnCurrent = 20,
-            wpnDefault = 20
+            weaponCountCurrent = 20,
+            weaponCountDefault = 20
           }
         }
       })
@@ -479,8 +479,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
-            wpnCurrent = 20,
-            wpnDefault = 20
+            weaponCountCurrent = 20,
+            weaponCountDefault = 20
           }
         }
       })
@@ -535,8 +535,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-            wpnCurrent = 10,
-            wpnDefault = 20,
+            weaponCountCurrent = 10,
+            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -607,8 +607,8 @@ describe("MissileSystem Cycle", function()
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-            wpnCurrent = 10,
-            wpnDefault = 20,
+            weaponCountCurrent = 10,
+            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },

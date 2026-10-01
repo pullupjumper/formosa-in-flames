@@ -43,7 +43,7 @@ flowchart TD
     H -->|No| X1
     H -->|Yes| I[hasMet=true, 回傳 firingUnitCtx]
 
-    J[hasMetAmmoDepot] --> K{補給車 且 狀態合法 且 wpnCurrent==0?}
+    J[hasMetAmmoDepot] --> K{補給車 且 狀態合法 且 weaponCountCurrent==0?}
     K -->|No| X2[hasMet=false]
     K -->|Yes| L{取得 ammoDepot?}
     L -->|No| X2

@@ -6,17 +6,16 @@ describe("ConfigCodeGenerator", function()
   local function buildMlrsConfig()
     return {
       mlrs = {
-        wpnDefault = 4,
+        weaponCountDefault = 4,
         ammoThreshold = 2,
         ammunitions = {
-          ["AHA-1"] = { guid = "A-1", name = "AHA-1", wpnCurrent = 8, wpnDefault = 8 },
+          ["AHA-1"] = { name = "AHA-1", weaponCountCurrent = 8, weaponCountDefault = 8 },
         },
         resupplyUnits = {
-          ["RES-1"] = { guid = "R-1", name = "RES-1", wpnCurrent = 4, wpnDefault = 2, unitCount = 3 },
+          ["RES-1"] = { name = "RES-1", weaponCountCurrent = 4, weaponCountDefault = 2, unitCount = 3 },
         },
         firingUnits = {
           ["TEL-1"] = {
-            guid = "T-1",
             name = "TEL-1",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponDBID = constants.WEAPONS.FD280,
@@ -46,13 +45,13 @@ describe("ConfigCodeGenerator", function()
       assert.is_truthy(configStr:find("config.t.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
     end)
 
-    -- Positive: wpn values are rewritten as wpnDefault references
-    it("should reference wpnDefault with multiplier and divisor", function()
+    -- Positive: wpn values are rewritten as weaponCountDefault references
+    it("should reference weaponCountDefault with multiplier and divisor", function()
       local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())
 
-      assert.is_truthy(configStr:find("wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault * 2,", 1, true))
-      assert.is_truthy(configStr:find("wpnDefault = config.c.ground.missileSystemTypes.mlrs.wpnDefault / 2,", 1, true))
-      assert.is_truthy(configStr:find("wpnCurrent = config.c.ground.missileSystemTypes.mlrs.wpnDefault,", 1, true))
+      assert.is_truthy(configStr:find("weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,", 1, true))
+      assert.is_truthy(configStr:find("weaponCountDefault = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault / 2,", 1, true))
+      assert.is_truthy(configStr:find("weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault,", 1, true))
     end)
 
     -- Positive: constants and thresholds are emitted as references

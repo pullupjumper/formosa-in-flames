@@ -8,7 +8,7 @@
 
 ## 概述
 
-`airbaseAttrition` 是 Strike Planner 的機場戰損統計模組。呼叫端傳入 `config.c.air.landBased.deployedACs` 與要查詢的基地名稱清單，模組會回傳每個基地以及整體的 `SBJ__AirbaseAttritionResult`。
+`airbaseAttrition` 是 Strike Planner 的機場戰損統計模組。呼叫端傳入 `config.c.air.deployedACs` 與要查詢的基地名稱清單，模組會回傳每個基地以及整體的 `SBJ__AirbaseAttritionResult`。
 
 此模組的核心語意是「可作戰戰力 = 飛機本身存活 + 母基地存活」。飛機即使已經起飛，只要其 `aircraft.base.guid` 仍指向存活基地，仍會被計入 `currentTotal`；若母基地已不存在，該基地聯隊會被視為整體失能。
 
@@ -20,7 +20,7 @@
 
 ### 計畫駐機基線
 
-`deployments` 是 `SBJ__AirbaseDeploymentDescriptor[]`，通常來自 `config.c.air.landBased.deployedACs`。模組會先以 `descriptor.name` 建立查詢表，再依 `baseNames` 的順序建立 `baseAcc`，因此回傳的 `summary.bases` 順序與查詢輸入一致。
+`deployments` 是 `SBJ__AirbaseDeploymentDescriptor[]`，通常來自 `config.c.air.deployedACs`。模組會先以 `descriptor.name` 建立查詢表，再依 `baseNames` 的順序建立 `baseAcc`，因此回傳的 `summary.bases` 順序與查詢輸入一致。
 
 每個基地的 `expectedTotal` 來自：
 
@@ -114,7 +114,7 @@ SBJ__AirbaseAttritionResult
 
 | 類型 | 路徑 / API | 用途 |
 |---|---|---|
-| `config` | `config.c.air.landBased.deployedACs` | 常見的 `deployments` 來源，提供基地 GUID 與計畫駐機數 |
+| `config` | `config.c.air.deployedACs` | 常見的 `deployments` 來源，提供基地 GUID 與計畫駐機數 |
 | `constants` | `constants.SIDES.ENEMY` | `side` 參數省略時的預設 side |
 | `constants` | `constants.UNIT_TYPES.AIRCRAFT` | 列舉指定 side 的 aircraft |
 | `GameAPI` | `GameApi.ScenEdit_GetUnit(baseGUID)` | 判斷基地是否存在 |

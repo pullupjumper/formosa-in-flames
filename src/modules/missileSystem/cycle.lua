@@ -46,7 +46,7 @@ end
 local function isReadyToReloadResupplyUnit(resupplyUnitCtx, systemConfig, hasMet)
   if resupplyUnitCtx.reloadStartTime == nil then return false end
   local elapsedTime = GameApi.ScenEdit_CurrentTime() - resupplyUnitCtx.reloadStartTime
-  return elapsedTime >= systemConfig.reloadTime and resupplyUnitCtx.wpnCurrent == 0 and hasMet
+  return elapsedTime >= systemConfig.reloadTime and resupplyUnitCtx.weaponCountCurrent == 0 and hasMet
 end
 
 ---Trigger reload movement when firing unit is static and low on ammo (auto mode only)
@@ -185,7 +185,7 @@ local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firing
   })
 
   if isAuto then
-    if resupplyUnit and resupplyUnitCtx.wpnCurrent > 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
+    if resupplyUnit and resupplyUnitCtx.weaponCountCurrent > 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
       local hideSuccess, hideFields = Concealment.hideUnit(resupplyUnitCtx, resupplyUnit)
       if not hideSuccess then
         table.insert(results, {
@@ -235,7 +235,7 @@ local function startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx)
     return results
   end
 
-  if resupplyUnitCtx.wpnCurrent == 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
+  if resupplyUnitCtx.weaponCountCurrent == 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitCtx.operationalArea) then
     local success, errorFields = Movement.moveToAmmoHoldingArea(resupplyUnitCtx, resupplyUnit)
     addCommandResult(results, { unit = resupplyUnitCtx.name, action = "move_to_ammo_holding_area" }, success, errorFields)
   end
@@ -281,10 +281,10 @@ local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx,
     return results
   end
 
-  local beforeResupply = resupplyUnitCtx.wpnCurrent
-  local beforeDepot = ammoDepotCtx.wpnCurrent
+  local beforeResupply = resupplyUnitCtx.weaponCountCurrent
+  local beforeDepot = ammoDepotCtx.weaponCountCurrent
   Ammo.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-  local transferred = resupplyUnitCtx.wpnCurrent - beforeResupply
+  local transferred = resupplyUnitCtx.weaponCountCurrent - beforeResupply
   table.insert(results, {
     tag = "OK",
     fields = {
@@ -292,7 +292,7 @@ local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx,
       action = "ammo_transload_finished",
       transferred = transferred,
       depotBefore = beforeDepot,
-      depotAfter = ammoDepotCtx.wpnCurrent
+      depotAfter = ammoDepotCtx.weaponCountCurrent
     }
   })
 

@@ -76,8 +76,6 @@ saveData.c.ground.fireSupportPlan = {}
 -- ============================================================================
 
 saveData.c.air = {}
-saveData.c.air.landBased = {}
-saveData.c.air.shipBased = {}
 saveData.c.air.enabled = true
 saveData.c.air.airTaskingOrder = {}
 
@@ -166,9 +164,8 @@ saveData.t.iads.taaoc = {}
 -- ============================================================================
 
 saveData.t.air = {}
-saveData.t.air.landBased = {}
-saveData.t.air.landBased.AEW = {}
-saveData.t.air.landBased.AC = {}
+saveData.t.air.aew = {}
+saveData.t.air.ac = {}
 
 
 -- ============================================================================

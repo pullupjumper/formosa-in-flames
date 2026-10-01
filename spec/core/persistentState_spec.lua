@@ -190,7 +190,7 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
-  -- runwayRepair / landBasedAircraft
+  -- runwayRepair / aircraft
   -- ============================================================================
 
   describe("runwayRepair", function()
@@ -203,13 +203,13 @@ describe("PersistentState", function()
     end)
   end)
 
-  describe("landBasedAircraft", function()
+  describe("aircraft", function()
     -- Positive: each side resolves to its own land-based aircraft slice
-    it("should return the land-based aircraft slice for the given side", function()
-      local state = { c = { air = { landBased = {} } }, t = { air = { landBased = { AC = {}, AEW = {} } } } }
+    it("should return the aircraft slice for the given side", function()
+      local state = { c = { air = {} }, t = { air = { ac = {}, aew = {} } } }
 
-      assert.are.equal(state.c.air.landBased, PersistentState.landBasedAircraft(state, constants.SIDES.ENEMY))
-      assert.are.equal(state.t.air.landBased, PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER))
+      assert.are.equal(state.c.air, PersistentState.aircraft(state, constants.SIDES.ENEMY))
+      assert.are.equal(state.t.air, PersistentState.aircraft(state, constants.SIDES.PLAYER))
     end)
   end)
 
@@ -237,15 +237,15 @@ describe("PersistentState", function()
     it("should expose China jammers and Taiwan IADS/aircraft by reference", function()
       local state = {
         c = { commsJamming = { enabled = true, jammers = {} } },
-        t = { iads = {}, air = { landBased = { AC = {}, AEW = {} } } },
+        t = { iads = {}, air = { ac = {}, aew = {} } },
       }
 
       local jammingState = PersistentState.commsJamming(state)
 
       assert.are.equal(state.c.commsJamming.jammers, jammingState.jammers)
       assert.are.equal(state.t.iads, jammingState.iads)
-      assert.are.equal(state.t.air.landBased.AC, jammingState.aircraft)
-      assert.are.equal(state.t.air.landBased.AEW, jammingState.aew)
+      assert.are.equal(state.t.air.ac, jammingState.aircraft)
+      assert.are.equal(state.t.air.aew, jammingState.aew)
       assert.is_true(jammingState.enabled)
     end)
   end)

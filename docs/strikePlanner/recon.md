@@ -253,9 +253,9 @@ flowchart TD
 | 路徑 | 用途 |
 |---|---|
 | `config.c.recon.queue` | 偵察佇列 plan（被 `initQueue` 深拷貝為執行期 entry） |
-| `config.c.recon.template` | UAV 模板字典（如 `BZK005_RECON_1`）；每筆的 `templateId` 是 `addEntry` 去重的唯一依據 |
-| `config.c.recon.template.*.trackingSpeed` | 追蹤機種與發射機種不同時的指定速度（如 `WZ8_RECON_ISLAND`） |
-| `config.c.recon.strikeMappingsByReconObjective` | 偵察目標到打擊任務的映射表；由 `operationScheduler` 消費 |
+| `config.c.recon.templates` | UAV 模板字典（如 `BZK005_RECON_1`）；每筆的 `templateId` 是 `addEntry` 去重的唯一依據 |
+| `config.c.recon.templates.*.trackingSpeed` | 追蹤機種與發射機種不同時的指定速度（如 `WZ8_RECON_ISLAND`） |
+| `config.c.recon.strikeMappings` | 偵察目標到打擊任務的映射表；由 `operationScheduler` 消費 |
 | `config.c.recon.frontlineRedirect` | 前線重導向設定；由 `FrontlineRedirect.evaluate` 消費 |
 | `constants.PLATFORMS.WZ8` / `constants.LOADOUTS.WZ8_RECON` / `constants.SENSORS.WZ8_RADAR` / `constants.SENSOR_ARCS` | 發射 WZ-8 的平台、掛載、感測器與弧段 |
 | `constants.BASES.LONGTIAN_AAB` | WZ-8 預設歸屬基地 |

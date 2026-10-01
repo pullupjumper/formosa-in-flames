@@ -492,7 +492,7 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, calculationResult, filt
   end
 
   for _, sagName in ipairs(operation.sagNames) do
-    local descriptor = amphibOpsConfig.sag[sagName]
+    local descriptor = amphibOpsConfig.sags[sagName]
     if descriptor then
       table.insert(results, processSAG(descriptor, isTesting))
     else

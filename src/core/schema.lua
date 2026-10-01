@@ -150,7 +150,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---SIGINT operation configuration
 ---@class SBJ__SIGINTConfig: table
 ---@field maxCount integer Maximum detection count before unit becomes autodetectable
----@field maxRange number Maximum detection range (nautical miles)
+---@field maxRangeNm number Maximum detection range (nautical miles)
 ---@field detectionThreshold number Distance threshold for guaranteed detection (nautical miles)
 ---@field maxDetectionRange number[] Range [min, max] for random maximum detection distance
 ---@field formulaConstants SBJ__SIGINTFormulaConfig Detection formula constants
@@ -189,14 +189,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---GNSS jamming configuration
 ---@class SBJ__GNSSJammingConfig: table
----@field randomRadius number Random deployment radius (nautical miles)
+---@field randomRadiusNm number Random deployment radius (nautical miles)
 ---@field radius number Jamming effectiveness radius (nautical miles)
 ---@field gnssGuidedWeapons SBJ__GNSSJammedWeapon[] GNSS-guided weapons to jam
 ---@field jammers table<string, SBJ__GNSSJammerDescriptor> GNSS jammer descriptors indexed by jammer name
 
 ---Weapon system configuration
 ---@class SBJ__MissileSystemConfig: table
----@field wpnDefault number Default weapon count
+---@field weaponCountDefault number Default weapon count
 ---@field ammoThreshold number Ammunition threshold for resupply
 ---@field contactAge? number Contact valid age in seconds
 ---@field reloadTime number Reload time in seconds
@@ -230,14 +230,14 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__FrontlineRedirectConfig: table
 ---@field enabled boolean Whether the redirect mechanism is active
 ---@field attritionThresholdPct number Aggregated attrition percentage that triggers redirect (0-100)
----@field frontlineBaseNames string[] Frontline airbase names (must match config.c.air.landBased.deployedACs[].name)
+---@field frontlineBaseNames string[] Frontline airbase names (must match config.c.air.deployedACs[].name)
 ---@field mappings SBJ__StrikeMappingRewriteRule[] Strike mapping rewrites applied once redirect is active
 
 ---Reconnaissance configuration
 ---@class SBJ__ReconConfig: table
----@field template table<string, SBJ__ReconUAVTemplate> Reconnaissance templates indexed by template name
+---@field templates table<string, SBJ__ReconUAVTemplate> Reconnaissance templates indexed by template name
 ---@field queue SBJ__ReconQueueDescriptor[] Reconnaissance queue as authored in config; initQueue turns each plan into its SBJ__ReconQueueEntry form
----@field strikeMappingsByReconObjective table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconnaissance objective ID
+---@field strikeMappings table<string, SBJ__ReconStrikeMapping[]> Strike mappings indexed by reconnaissance objective ID
 ---@field frontlineRedirect SBJ__FrontlineRedirectConfig Frontline strike redirect configuration
 ---@field isTesting boolean Whether system is in test mode
 ---@field observationWindowSec number Dynamic operation observation window in seconds, shared by air and ground (window starts at recon trigger time; operations re-evaluate every tick within it, and are dropped from their batch once it expires)
@@ -259,8 +259,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field strikeInterval number Default interval between strike packages of an air operation (seconds)
 ---@field minimumStrengthRatio number Fraction of a role's requested aircraft a base must supply for the package to be dispatched; at or above it the package launches understrength rather than being skipped
 ---@field timing SBJ__AirTimingConfig Dynamic ATO timing and safety margins
----@field landBased { deployedACs: SBJ__AirbaseDeploymentDescriptor[], wpnNum?: number } Land-based aircraft deployment
----@field shipBased table Ship-based aircraft configuration (reserved)
+---@field deployedACs SBJ__AirbaseDeploymentDescriptor[] Land-based aircraft deployment
+---@field weaponCount? number Weapons per loadout slot (Taiwan only)
 
 ---Surface operations configuration (LACM)
 ---@class SBJ__SurfaceLACMConfig: table
@@ -271,7 +271,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Surface operations configuration
 ---@class SBJ__SurfaceOperationsConfig: table
 ---@field lacm SBJ__SurfaceLACMConfig LACM configuration
----@field sag? table<string, SBJ__SAGDescriptor> Surface Action Groups (Taiwan only)
+---@field sags? table<string, SBJ__SAGDescriptor> Surface Action Groups (Taiwan only)
 ---@field deployedShips? SBJ__AirbaseDeploymentDescriptor[] Deployed ships (Taiwan only)
 
 ---Submarine SLCM configuration
@@ -279,7 +279,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field weaponDBID number SLCM weapon database ID
 ---@field submarines table<string, SBJ__SubmarineDescriptor> Submarines indexed by submarine name
 ---@field targetlist string[] Target GUID list
----@field randomRadius number Random deployment radius (nautical miles)
+---@field randomRadiusNm number Random deployment radius (nautical miles)
 
 ---Subsurface operations configuration
 ---@class SBJ__SubsurfaceOperationsConfig: table
@@ -287,7 +287,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---IADS configuration for faction
 ---@class SBJ__IADSFactionConfig: table
----@field ratio table<string, number> C2 facility ratio multipliers
 ---@field taaoc? SBJ__C2Descriptor[] TAAOC descriptors
 ---@field rocc? SBJ__C2Descriptor[] ROCC descriptors
 
@@ -395,7 +394,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ground SBJ__GroundContext Ground force systems context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
----@field air { landBased: SBJ__LandBasedPlatformContext } Air operations context
+---@field air SBJ__AircraftSliceContext Aircraft context
 ---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
 
 ---US faction saved data structure
@@ -439,7 +438,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Random units descriptor for creating multiple units at random positions
 ---@class SBJ__RandomUnitsDescriptor: table
 ---@field centerPoint CMO__Waypoint Center point for random positioning
----@field randomRadius number Maximum radius from center point (nautical miles)
+---@field randomRadiusNm number Maximum radius from center point (nautical miles)
 ---@field autodetectable boolean Whether units are automatically detectable
 ---@field unitname string Base name for created units (random suffix will be added if useRandomSuffix is true)
 ---@field sideName string Side name (e.g., "China", "Taiwan", "US")
@@ -574,7 +573,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Departure point definition with starting coordinates and heading
 ---@class SBJ__DeparturePoint: table
----@field startingPoint CMO__Location Starting coordinates
+---@field pos CMO__Location Starting coordinates
 ---@field heading number Initial heading angle
 
 ---Destination area definition with waypoints
@@ -597,7 +596,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Submarine descriptor for SLCM operations
 ---@class SBJ__SubmarineDescriptor: table
 ---@field name string Submarine name/identifier
----@field guid string Submarine unit GUID (empty string if not yet created)
 ---@field course CMO__Waypoint[] Submarine patrol route waypoints
 ---@field from SBJ__DeparturePoint Starting location with heading
 ---@field weaponDBID number Weapon database ID for SLCM
@@ -801,16 +799,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Comprehensive configuration for amphibious assault operations including
 ---cargo manifests, ship layouts, operational zones, and mission timing
 ---@class SBJ__AmphibOpsConfig: table
----@field periodOfTime number Check interval in seconds
+---@field periodSec number Check interval in seconds
 ---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
----@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
----@field transferCargoMap table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
+---@field cargo table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
+---@field transferCargo table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartTime table<string, number[]> Mission start times by type (seconds)
 ---@field formationSettings SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field operations SBJ__AmphibiousOperationDescriptor[] Amphibious operation descriptors
 ---@field operationalZones SBJ__OperationalZoneDescriptor[] Operation zone descriptors
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
----@field sag table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
+---@field sags table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
 ---@field isTesting boolean Whether the system is in testing mode
 
 ---Land-Attack Cruise Missile context managing LACM operations state
@@ -862,8 +860,6 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Air operations context managing air tasking orders and aircraft status
 ---@class SBJ__AirOperationsContext: table
----@field landBased table Land-based aircraft context (reserved for future use)
----@field shipBased table Ship-based aircraft context (reserved for future use)
 ---@field enabled boolean Whether air operations system is activated
 ---@field airTaskingOrder table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
 
@@ -922,12 +918,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Weapon status tracking for ammunition count
 ---@class SBJ__WeaponStatus: table
----@field wpnCurrent number Current available ammunition count
----@field wpnDefault number Default/maximum ammunition count
+---@field weaponCountCurrent number Current available ammunition count
+---@field weaponCountDefault number Default/maximum ammunition count
 
 ---Base unit information with GUID and name
 ---@class SBJ__UnitBase: table
----@field guid string Unit GUID
+---@field guid? string Unit GUID (runtime only, absent in config)
 ---@field name string Unit name
 
 ---Unit operational status information
@@ -988,8 +984,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Ammunition inventory report aggregating firing/resupply/ammo subtotals and overall total
 ---@class SBJ__AmmoInventoryResult: table
 ---@field firing SBJ__AmmoSubtotalEntry Firing units total (queried from live game state)
----@field resupply SBJ__AmmoSubtotalEntry Resupply units total (sum of context wpnCurrent/wpnDefault)
----@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of context wpnCurrent/wpnDefault)
+---@field resupply SBJ__AmmoSubtotalEntry Resupply units total (sum of context weaponCountCurrent/weaponCountDefault)
+---@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of context weaponCountCurrent/weaponCountDefault)
 ---@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + ammo
 
 ---Ground context base - common missile systems for all ground operations
@@ -1031,7 +1027,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__TryAddUnitParams: table
 ---@field name string Unique name for the unit to be created
 ---@field pos CMO__Location Center point for unit placement
----@field randomRadius number Maximum distance in nautical miles from the center point
+---@field randomRadiusNm number Maximum distance in nautical miles from the center point
 ---@field unitDBID integer CMO platform DBID of the unit type to create
 
 ---Optional settings for GameUtils.tryAddUnit
@@ -1331,11 +1327,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isFinished boolean Whether the mission has settled
 ---@field hasScheduledOperations boolean Whether follow-on operations were queued; never cleared, unlike isFinished
 
----UAV reconnaissance blueprint held in config.c.recon.template
+---UAV reconnaissance blueprint held in config.c.recon.templates
 ---Carries no timings: addEntry resolves those when the entry is queued.
 ---@class SBJ__ReconUAVTemplate: table
 ---@field type "UAV" Platform discriminator
----@field templateId string Unique identifier matching its key in config.c.recon.template; used to detect duplicate queue entries
+---@field templateId string Unique identifier matching its key in config.c.recon.templates; used to detect duplicate queue entries
 ---@field reconObjectiveId? string Recon objective used to schedule follow-on strike mappings; omit for recon that does not trigger strikes
 ---@field baseGUID string Base GUID where the UAV is stationed
 ---@field unitDBID number Platform database ID of the unit launched from baseGUID
@@ -1543,8 +1539,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__GNSSJammerDescriptor: table
 ---@field name string Jammer unit identifier
 ---@field zoneName string Associated jamming zone name for area creation
----@field point? CMO__Location Deployment coordinates
----@field randomRadius number Position randomization radius (nautical miles)
+---@field pos? CMO__Location Deployment coordinates
+---@field randomRadiusNm number Position randomization radius (nautical miles)
 ---@field radius number GNSS jamming effectiveness radius (nautical miles)
 
 ---GNSS jammer context extending descriptor with runtime state
@@ -1646,17 +1642,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---C2 node deployment descriptor
 ---Defines how to create and deploy a single Command and Control node
 ---@class SBJ__C2Descriptor: table
----@field position? CMO__Location C2 position coordinates
+---@field pos? CMO__Location C2 position coordinates
 ---@field areas string[][] Operation areas array
 ---@field name string Operation area name
 
 ---Integrated Air Defense System configuration
 ---Defines C2 facility parameters and deployment settings for IADS
 ---@class SBJ__IADSConfig: table
----@field ratio {C2:number} C2 facility ratio multiplier
 ---@field c2FacilityDBIDs number[] Database IDs for C2 facility types
----@field randomRadius number Random deployment radius (nautical miles)
----@field radarDistance number Backup radar search distance when a radar is destroyed (nautical miles)
+---@field randomRadiusNm number Random deployment radius (nautical miles)
+---@field radarDistanceNm number Backup radar search distance when a radar is destroyed (nautical miles)
 ---@field c2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
 
 ---IADS context managing air defense system state
@@ -1682,10 +1677,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field commsThreshold number Aircraft communications threshold
 ---@field outofcomms number Aircraft out of communications threshold
 
----Land-based platform context tracking aircraft and AEW
----@class SBJ__LandBasedPlatformContext: table
----@field AC table<string, SBJ__AircraftContext> Aircraft context data structure indexed by GUID
----@field AEW table<string, SBJ__AircraftContext> AEW aircraft context data structure indexed by GUID
+---Aircraft slice tracking aircraft and AEW
+---@class SBJ__AircraftSliceContext: table
+---@field ac table<string, SBJ__AircraftContext> Aircraft context data structure indexed by GUID
+---@field aew table<string, SBJ__AircraftContext> AEW aircraft context data structure indexed by GUID
 
 
 -- ============================================================================

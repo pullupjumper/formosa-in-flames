@@ -83,12 +83,12 @@ function PersistentState.runwayRepair(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].repairRunway
 end
 
----Land-based aircraft slice for a side
+---Aircraft slice (AC and AEW) for a side
 ---@param state SBJ__SaveData
 ---@param sideName string China or Taiwan
----@return SBJ__LandBasedPlatformContext
-function PersistentState.landBasedAircraft(state, sideName)
-  return state[GameUtils.getCachedSideConfig(sideName).field].air.landBased
+---@return SBJ__AircraftSliceContext
+function PersistentState.aircraft(state, sideName)
+  return state[GameUtils.getCachedSideConfig(sideName).field].air
 end
 
 ---Ground force (missile system) slice for a side
@@ -138,13 +138,13 @@ end
 ---@param state SBJ__SaveData
 ---@return SBJ__CommsJammingState
 function PersistentState.commsJamming(state)
-  local taiwanAircraft = PersistentState.landBasedAircraft(state, constants.SIDES.PLAYER)
+  local taiwanAircraft = PersistentState.aircraft(state, constants.SIDES.PLAYER)
   return {
     enabled = state.c.commsJamming.enabled,
     jammers = state.c.commsJamming.jammers,
     iads = PersistentState.iads(state, constants.SIDES.PLAYER),
-    aircraft = taiwanAircraft.AC,
-    aew = taiwanAircraft.AEW,
+    aircraft = taiwanAircraft.ac,
+    aew = taiwanAircraft.aew,
   }
 end
 

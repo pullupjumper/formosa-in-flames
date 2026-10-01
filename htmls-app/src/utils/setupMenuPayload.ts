@@ -168,8 +168,8 @@ export function toSetupResult({
       return {
         zoneName: unit.zoneName,
         name: unit.name,
-        point: position,
-        randomRadius: unit.randomRadius,
+        pos: position,
+        randomRadiusNm: unit.randomRadiusNm,
         radius: unit.radius,
       };
     }),

@@ -155,7 +155,7 @@ function LandingOps.neutralizeAirlandingZone(config, ship)
     return false
   end
 
-  local sagConfig = config.c.amphibOps.sag[ship.group.name]
+  local sagConfig = config.c.amphibOps.sags[ship.group.name]
   if not sagConfig then
     return false
   end
