@@ -40,7 +40,16 @@ busted --lua=luajit spec                                       # Lua tests
 python3 tools/build_lua_scenario.py                            # bundle only -> slim/main.lua, slim/_main.lua
 python3 tools/cmo_scen_v5_decoder.py decode <scen>             # dump <scen>.decoded.xml
 python3 tools/cmo_scen_v5_decoder.py inject <scen> --in-place  # inject slim/_main.lua, keep .bak
+python3 tools/apply_generated_config.py [--dry-run]            # write ConfigCodeGenerator.dump() output into constants/config
 ```
+
+### Regenerate constants/config from the scenario
+
+1. In CMO's Lua console: `ConfigCodeGenerator.dump("China", config.red.ground.missileSystemTypes)` (prints marked blocks to the Lua log).
+2. `python3 tools/apply_generated_config.py --dry-run`, then again without `--dry-run`. It uses the newest `LuaHistory_*.txt` in CMO's `Logs/` (override with `--log-dir` / `--log`).
+3. `git diff` to review.
+
+It replaces the lines between `-- START: X` / `-- END: X` in `constants.lua`, and each `config.<...> = {` block (by its header line) in `config.lua`. Missing markers/blocks are reported as `⚠`.
 
 ## Layout
 
@@ -53,7 +62,7 @@ src/htmls/      built single-file HTMLs (output of htmls-app)
 htmls-app/      React 19 + Vite source for in-game panels
 spec/           busted tests, mirrors src/modules/
 docs/           per-module architecture docs
-tools/          build_lua_scenario.py (bundler), cmo_scen_v5_decoder.py (scen decrypt/inject)
+tools/          build_lua_scenario.py (bundler), cmo_scen_v5_decoder.py (scen decrypt/inject), apply_generated_config.py (log -> constants/config)
 slim/           bundled output: main.lua (readable), _main.lua (minified)
 ```
 

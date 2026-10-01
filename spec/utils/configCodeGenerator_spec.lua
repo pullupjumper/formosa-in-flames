@@ -79,4 +79,37 @@ describe("ConfigCodeGenerator", function()
       assert.are.equal("", configStr)
     end)
   end)
+
+  describe("dump", function()
+    local originalPrint = print
+    local printed
+
+    before_each(function()
+      printed = {}
+      _G.print = function(s) printed[#printed + 1] = s end
+    end)
+
+    after_each(function()
+      _G.print = originalPrint
+    end)
+
+    -- Positive: one marked section per generated block, tagged by side
+    it("should print marked AREAS, OPERATIONAL_AREAS and CONFIG sections", function()
+      ConfigCodeGenerator.dump("China", buildMlrsConfig())
+
+      assert.are.equal(3, #printed)
+      assert.is_truthy(printed[1]:find("^@@GEN_BEGIN CHINA_AREAS_BLOCK\n"))
+      assert.is_truthy(printed[1]:find("\n@@GEN_END CHINA_AREAS_BLOCK$"))
+      assert.is_truthy(printed[2]:find("^@@GEN_BEGIN CHINA_OPERATIONAL_AREAS_BLOCK\n"))
+      assert.is_truthy(printed[3]:find("^@@GEN_BEGIN CONFIG_red\nconfig.red.ground.missileSystemTypes.mlrs.ammunitions = {"))
+    end)
+
+    -- Boundary: table wrapper is stripped so the body fits between START/END markers
+    it("should strip the constants wrapper lines from area sections", function()
+      ConfigCodeGenerator.dump("China", buildMlrsConfig())
+
+      assert.is_nil(printed[1]:find("constants.AREAS = {", 1, true))
+      assert.is_nil(printed[2]:find("constants.OPERATIONAL_AREAS = {", 1, true))
+    end)
+  end)
 end)

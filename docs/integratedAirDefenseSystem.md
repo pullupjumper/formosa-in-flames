@@ -62,10 +62,10 @@ flowchart TD
 
 ```text
 saveData
-├── c.iads
+├── red.iads
 │   ├── enabled: boolean
 │   └── c2: table<string, SBJ__C2Context>
-└── t.iads
+└── blue.iads
     ├── enabled: boolean
     ├── rocc: table<string, SBJ__C2Context>
     └── taaoc: table<string, SBJ__C2Context>

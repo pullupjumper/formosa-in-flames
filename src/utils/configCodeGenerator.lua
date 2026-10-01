@@ -1,8 +1,8 @@
 ---Generates Lua source-code strings from ground-force configuration.
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
 ---`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks.
----Invoked interactively (console/REPL) to regenerate the hand-pasted constants
----and config sections whenever the scenario layout changes.
+---Invoked interactively (console/REPL) via `dump` to print marked sections into the CMO Lua log;
+---`tools/apply_generated_config.py` then writes them into constants.lua / config.lua.
 
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
@@ -623,6 +623,37 @@ function ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
   local opAreasStr = formatOpAreasCode(uniqueAreas, areaRefMap)
   local configStr = formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   return areasStr, opAreasStr, configStr
+end
+
+---Marker tags matching `-- START: <tag>_AREAS_BLOCK` in constants.lua, keyed by side config field
+local SIDE_BLOCK_TAGS = { red = "CHINA", blue = "TAIWAN", ally = "ALLY" }
+
+---Drop the `constants.X = {` first line and `}` last line, keeping only the table body
+---@param code string Generated `constants.X = { ... }` block
+---@return string # Body lines only (may be empty)
+local function stripTableWrapper(code)
+  return (code:gsub("^[^\n]*\n", ""):gsub("\n?}$", ""))
+end
+
+---Print one marked section so tools/apply_generated_config.py can lift it out of the CMO Lua log
+---@param name string Section name (matches `-- START: <name>` marker, or `CONFIG_<field>`)
+---@param body string Section content
+local function printSection(name, body)
+  print("@@GEN_BEGIN " .. name .. "\n" .. body .. "\n@@GEN_END " .. name)
+end
+
+---Print the generated code into the CMO Lua log, wrapped in markers
+---Run `python tools/apply_generated_config.py` afterwards to write it into constants.lua / config.lua
+---Example: ConfigCodeGenerator.dump("China", config.red.ground.missileSystemTypes)
+---@param sideName string Side name ("China", "Taiwan")
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
+function ConfigCodeGenerator.dump(sideName, missileSystemConfigMap)
+  local field = GameUtils.getCachedSideConfig(sideName).field
+  local tag = SIDE_BLOCK_TAGS[field]
+  local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
+  printSection(tag .. "_AREAS_BLOCK", stripTableWrapper(areasStr))
+  printSection(tag .. "_OPERATIONAL_AREAS_BLOCK", stripTableWrapper(opAreasStr))
+  printSection("CONFIG_" .. field, configStr)
 end
 
 return ConfigCodeGenerator
