@@ -31,7 +31,7 @@ local WZ8_INITIAL_SPEED = 3300
 local function launchUnits(params)
   local baseGUID, course, unitCount = params.baseGUID, params.course, params.unitCount
   local unitDBID, unitType = params.unitDBID, params.unitType
-  -- Single lookup: the wrapper already falls back to a name lookup on constants.SIDES.ENEMY.
+  -- Single lookup: the wrapper already falls back to a name lookup on constants.SIDES.RED.
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
 
   if not base then
@@ -91,7 +91,7 @@ end
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
 local function createWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
-    side = constants.SIDES.ENEMY,
+    side = constants.SIDES.RED,
     type = "Aircraft",
     name = "WZ-8",
     dbid = constants.PLATFORMS.WZ8,
@@ -195,7 +195,7 @@ local function updateTrackingCourse(entry, reconUnit)
     }
   end
 
-  local target = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, entry.trackingTargetGUID)
+  local target = GameApi.ScenEdit_GetContact(constants.SIDES.RED, entry.trackingTargetGUID)
 
   if not target then
     return false, {
@@ -535,7 +535,7 @@ function Recon.trackTargets(reconCtx, requests)
   for _, request in ipairs(requests) do
     if not isTargetAlreadyTracked(reconCtx.queue, request.target.guid) then
       if aircraft == nil then
-        local side = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY })
+        local side = GameApi.VP_GetSide({ side = constants.SIDES.RED })
         aircraft = side and side:unitsBy(constants.UNIT_TYPES.AIRCRAFT) or false
       end
       if not aircraft then

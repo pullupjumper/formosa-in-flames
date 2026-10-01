@@ -4,6 +4,6 @@ local config = require("src.core.config")
 local constants = require("src.core.constants")
 
 PersistentState.update(function(saveData)
-  MissileSystem.processSide(config, saveData, constants.SIDES.ENEMY)
-  MissileSystem.processSide(config, saveData, constants.SIDES.PLAYER)
+  MissileSystem.processSide(config, saveData, constants.SIDES.RED)
+  MissileSystem.processSide(config, saveData, constants.SIDES.BLUE)
 end)

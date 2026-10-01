@@ -87,7 +87,7 @@ describe("MissileSystem Deployment", function()
         return { guid = "RU-1", name = opts.unitname, mounts = {} }
       end)
 
-      Deployment.addMissileSystems(makeMissileSystemConfigMap(), constants.SIDES.ENEMY)
+      Deployment.addMissileSystems(makeMissileSystemConfigMap(), constants.SIDES.RED)
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)

@@ -3052,9 +3052,11 @@ constants.CONTACT_TYPES = {
   FACILITY_MOBILE = 8
 }
 
+---Scenario side names by role: RED is script-driven, BLUE is the player, ALLY supports BLUE
 constants.SIDES = {
-  ENEMY = "China",
-  PLAYER = "Taiwan"
+  RED = "China",
+  BLUE = "Taiwan",
+  ALLY = "US"
 }
 
 constants.AMPHIBIOUS_PHASES = {

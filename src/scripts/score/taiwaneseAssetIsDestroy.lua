@@ -11,12 +11,12 @@ local unit = GameApi.ScenEdit_UnitX()
 
 PersistentState.update(function(saveData)
   if unit then
-    local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
+    local score = GameApi.ScenEdit_GetScore(constants.SIDES.BLUE)
 
     if unit.type == constants.UNIT_TYPES.FACILITY then
       if unit.dbid == constants.PLATFORMS.UNDERGROUND_SHELTER then
         GameApi.ScenEdit_SetScore(
-          constants.SIDES.PLAYER,
+          constants.SIDES.BLUE,
           (score + config.score.undergroundShelterIsDestroyed),
           "Underground shelter has been destoryed"
         )
@@ -37,7 +37,7 @@ PersistentState.update(function(saveData)
       CommsJamming.removeDestroyedUnit(saveData, unit)
 
       if unit.dbid == constants.PLATFORMS.RC135V then
-        PersistentState.sigint(saveData, "US").reconAircraft[unit.guid] = nil
+        PersistentState.sigint(saveData, constants.SIDES.ALLY).reconAircraft[unit.guid] = nil
       end
     end
   end

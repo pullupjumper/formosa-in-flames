@@ -52,7 +52,7 @@ stateDiagram-v2
 
 | 起始 phase | 觸發條件 | 對應動作 |
 |---|---|---|
-| `MOVING` | `saveData.c.amphibOps.startTime` 到達 | `ShipMovement.moveToStagingArea` |
+| `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToStagingArea` |
 | `WAITING_ARRIVAL` | `units > zone.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
 | `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `setLandingMissionStartTime` + `setCoursesForLSTs` |
 | `WAITING_SECOND_WAVE` | 灘頭建立（ZBD-05 ≥ 1） | `startSecondWaveUnloading` |
@@ -64,7 +64,7 @@ stateDiagram-v2
 `processTaoyuanTemporarySetup` 僅在 Taoyuan 進入 `WAITING_ASSAULT` 時觸發：
 
 1. 對運輸機隊執行貨物轉移與任務指派（`AmphibiousLogistics.transferAndAssignTransportAircraft`）
-2. 經門面 [`StrikePlanner.addReconEntry(saveData.c.recon, config.c.recon.templates.GJ11_RECON)`](../strikePlanner/README.md)（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）排入一架 GJ-11 偵察任務；coordinator 不直接 require strikePlanner 內部模組
+2. 經門面 [`StrikePlanner.addReconEntry(saveData.red.recon, config.red.recon.templates.GJ11_RECON)`](../strikePlanner/README.md)（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）排入一架 GJ-11 偵察任務；coordinator 不直接 require strikePlanner 內部模組
 
 由於未傳入 `startTime`，`addEntry` 以當前遊戲時間為起飛錨點，並自行完成範本深拷貝、`takeoffTime`/`endTime` 推算、欄位重設（`hasLaunched`/`isFinished`/`trackingTargetGUID`）與寫入佇列。插入是**有條件**的：偵察佇列中沒有可錨定的衛星空窗、或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入（GJ-11 偵察當輪不啟動），兩棲流程其餘部分不受影響。
 
@@ -82,7 +82,7 @@ stateDiagram-v2
 
 ## 火力支援暫停閘門
 
-私有函式 `evaluateFireSupportGate`（在 `Coordinator.process` 末尾呼叫）防止 SRBM 在艦隊抵達錨泊區之前耗盡彈藥。閘門狀態存於 `saveData.c.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRA/*` 映射。
+私有函式 `evaluateFireSupportGate`（在 `Coordinator.process` 末尾呼叫）防止 SRBM 在艦隊抵達錨泊區之前耗盡彈藥。閘門狀態存於 `saveData.red.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRA/*` 映射。
 
 ### 狀態轉移
 
@@ -122,7 +122,7 @@ flowchart TD
 
 - **單調釋放**：phase 機只往前推進，「所有 zone 到位」一旦達成即永久釋放，不會在 HOLD/RESUME 間反覆 toggle
 - **省一次查詢**：已 `fireSupportOnHold=true` 時直接 return，避免重複呼叫 `getAmmoInventory`
-- **防禦性**：`saveData.c.ground.missileSystemTypes.srbm` 缺失時靜默 return（測試保存或部分初始化情境）
+- **防禦性**：`saveData.red.ground.missileSystemTypes.srbm` 缺失時靜默 return（測試保存或部分初始化情境）
 
 ### 已抵達狀態定義
 
@@ -146,11 +146,11 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 
 | 路徑 | 寫入時機 |
 |---|---|
-| `saveData.c.amphibOps.zoneStates[zoneName].phase` | 階段轉換 |
-| `saveData.c.amphibOps.zoneStates[zoneName].amphibiousAssaultStartTime` | 進入 `WAITING_ASSAULT` |
-| `saveData.c.amphibOps.zoneStates[zoneName].airlandingMissionStartTime` | `setLandingMissionStartTime` 與重轉運後 |
-| `saveData.c.amphibOps.fireSupportOnHold` | 閘門 HOLD / RESUME |
-| `saveData.c.recon.queue` | Taoyuan 特例經 `StrikePlanner.addReconEntry` → `Recon.addEntry` 插入 GJ-11 偵察項目（有衛星空窗才插入） |
+| `saveData.red.amphibOps.zoneStates[zoneName].phase` | 階段轉換 |
+| `saveData.red.amphibOps.zoneStates[zoneName].amphibiousAssaultStartTime` | 進入 `WAITING_ASSAULT` |
+| `saveData.red.amphibOps.zoneStates[zoneName].airlandingMissionStartTime` | `setLandingMissionStartTime` 與重轉運後 |
+| `saveData.red.amphibOps.fireSupportOnHold` | 閘門 HOLD / RESUME |
+| `saveData.red.recon.queue` | Taoyuan 特例經 `StrikePlanner.addReconEntry` → `Recon.addEntry` 插入 GJ-11 偵察項目（有衛星空窗才插入） |
 
 ---
 
@@ -158,10 +158,10 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 
 | 設定路徑 | 用途 |
 |---|---|
-| `config.c.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
-| `config.c.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
-| `config.c.amphibOps.operationalZones[].arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
-| `config.c.amphibOps.operations[].contactThreshold` | 空/機降區可接受的最大接觸數 |
+| `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
+| `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
+| `config.red.amphibOps.operationalZones[].arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
+| `config.red.amphibOps.operations[].contactThreshold` | 空/機降區可接受的最大接觸數 |
 
 ---
 

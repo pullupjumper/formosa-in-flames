@@ -108,7 +108,7 @@ describe("DynamicPlan", function()
     it("should pass the entry target config and the template first-wave flag through", function()
       local target = makeTarget("ONLY", 1)
       local template = { name = "AIR/STRIKE/AB/W/2", isFirstWave = false, packages = { { target = target } } }
-      local config, plannerState, contacts = { c = {} }, makePlannerState(), { "CONTACT" }
+      local config, plannerState, contacts = { red = {} }, makePlannerState(), { "CONTACT" }
       local processTargetsStub = stubTargets({ ONLY = { "T1" } })
 
       DynamicPlan.evaluateTargets(config, plannerState, { contacts = contacts, operationType = "air", template = template })

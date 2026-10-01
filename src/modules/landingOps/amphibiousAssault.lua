@@ -72,7 +72,7 @@ end
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setMissionStartTime(mission, currentTime)
   local startTime = os.date(constants.DATE_FORMAT, (currentTime + mission.startTime))
-  local cmoMission = GameApi.ScenEdit_GetMission(constants.SIDES.ENEMY, mission.name)
+  local cmoMission = GameApi.ScenEdit_GetMission(constants.SIDES.RED, mission.name)
 
   if not cmoMission then
     return { tag = "FAIL", fields = { mission = mission.name, reason = "mission_not_found" } }
@@ -137,7 +137,7 @@ end
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function createSingleACV(acvType, location, destination)
   local addedUnit = GameApi.ScenEdit_AddUnit({
-    side = constants.SIDES.ENEMY,
+    side = constants.SIDES.RED,
     type = "Vehicle",
     name = acvType.name,
     dbid = acvType.dbid,
@@ -351,16 +351,16 @@ end
 ---@param config SBJ__Config Configuration table
 ---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
 function AmphibiousAssault.countUnitsInEachArea(config)
-  local unitsFromChina = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }).units
+  local unitsFromRed = GameApi.VP_GetSide({ side = constants.SIDES.RED }).units
   local result = {}
 
-  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
     local item = {}
     for _, unitType in ipairs(LANDED_UNIT_TYPES) do
       item[unitType.name] = 0
     end
 
-    for _, u in ipairs(unitsFromChina) do
+    for _, u in ipairs(unitsFromRed) do
       local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
       if unit and unit:inArea(zone.casArea) then

@@ -42,15 +42,15 @@ describe("PersistentState", function()
   describe("update", function()
     -- Positive: the table fn mutated is the one written back under the same key
     it("should save the mutated state back to the SaveData key", function()
-      local state = { c = { counter = 1 } }
+      local state = { red = { counter = 1 } }
       loadStub.returns(state)
 
       local ran = PersistentState.update(function(s)
-        s.c.counter = 2
+        s.red.counter = 2
       end)
 
       assert.is_true(ran)
-      assert.are.equal(2, state.c.counter)
+      assert.are.equal(2, state.red.counter)
       assert.stub(loadStub).was.called_with("SaveData")
       assert.stub(saveStub).was.called_with(state, "SaveData")
     end)
@@ -87,7 +87,7 @@ describe("PersistentState", function()
   describe("reset", function()
     -- Positive: defaults replace whatever is stored, without loading first
     it("should write defaults to the SaveData key", function()
-      local defaults = { c = { targetlist = {} } }
+      local defaults = { red = { targetlist = {} } }
 
       PersistentState.reset(defaults)
 
@@ -103,11 +103,11 @@ describe("PersistentState", function()
   describe("ground", function()
     -- Positive: each side resolves to its own ground slice, not the other side's
     it("should return the ground slice for the given side", function()
-      local chinaGround, taiwanGround = {}, {}
-      local state = { c = { ground = chinaGround }, t = { ground = taiwanGround } }
+      local redGround, blueGround = {}, {}
+      local state = { red = { ground = redGround }, blue = { ground = blueGround } }
 
-      assert.are.equal(chinaGround, PersistentState.ground(state, constants.SIDES.ENEMY))
-      assert.are.equal(taiwanGround, PersistentState.ground(state, constants.SIDES.PLAYER))
+      assert.are.equal(redGround, PersistentState.ground(state, constants.SIDES.RED))
+      assert.are.equal(blueGround, PersistentState.ground(state, constants.SIDES.BLUE))
     end)
   end)
 
@@ -126,16 +126,16 @@ describe("PersistentState", function()
         return { missileSystemTypes = g }
       end
       return {
-        c = {
+        red = {
           sigint = { name = "china sigint" },
           ground = ground("mlrs", "srbm", "glcm", "mrbm", "ascm", "sam"),
           iads = { c2 = {} },
         },
-        t = {
+        blue = {
           ground = ground("mlrs", "srbm", "glcm", "ascm", "sam"),
           iads = { rocc = {}, taaoc = {} },
         },
-        u = { sigint = { name = "us sigint" } },
+        ally = { sigint = { name = "us sigint" } },
       }
     end
 
@@ -143,8 +143,8 @@ describe("PersistentState", function()
     it("should return the SIGINT slice of the collecting side", function()
       local state = makeSigintState()
 
-      assert.are.equal(state.c.sigint, PersistentState.sigint(state, constants.SIDES.ENEMY))
-      assert.are.equal(state.u.sigint, PersistentState.sigint(state, "US"))
+      assert.are.equal(state.red.sigint, PersistentState.sigint(state, constants.SIDES.RED))
+      assert.are.equal(state.ally.sigint, PersistentState.sigint(state, "US"))
     end)
 
     -- Positive: China listens to Taiwan's four TEL systems plus ROCC and TAAOC, in collection order
@@ -152,13 +152,13 @@ describe("PersistentState", function()
       local state = makeSigintState()
 
       assert.are.same({
-        state.t.ground.missileSystemTypes.srbm.firingUnits,
-        state.t.ground.missileSystemTypes.glcm.firingUnits,
-        state.t.ground.missileSystemTypes.mlrs.firingUnits,
-        state.t.ground.missileSystemTypes.ascm.firingUnits,
-        state.t.iads.rocc,
-        state.t.iads.taaoc,
-      }, PersistentState.sigintEmitters(state, constants.SIDES.ENEMY))
+        state.blue.ground.missileSystemTypes.srbm.firingUnits,
+        state.blue.ground.missileSystemTypes.glcm.firingUnits,
+        state.blue.ground.missileSystemTypes.mlrs.firingUnits,
+        state.blue.ground.missileSystemTypes.ascm.firingUnits,
+        state.blue.iads.rocc,
+        state.blue.iads.taaoc,
+      }, PersistentState.sigintEmitters(state, constants.SIDES.RED))
     end)
 
     -- Positive: US listens to China's MLRS/SRBM/GLCM and C2 only
@@ -166,10 +166,10 @@ describe("PersistentState", function()
       local state = makeSigintState()
 
       assert.are.same({
-        state.c.ground.missileSystemTypes.mlrs.firingUnits,
-        state.c.ground.missileSystemTypes.srbm.firingUnits,
-        state.c.ground.missileSystemTypes.glcm.firingUnits,
-        state.c.iads.c2,
+        state.red.ground.missileSystemTypes.mlrs.firingUnits,
+        state.red.ground.missileSystemTypes.srbm.firingUnits,
+        state.red.ground.missileSystemTypes.glcm.firingUnits,
+        state.red.iads.c2,
       }, PersistentState.sigintEmitters(state, "US"))
     end)
   end)
@@ -181,11 +181,11 @@ describe("PersistentState", function()
   describe("China-only slices", function()
     -- Positive: each accessor returns the live China table, not a copy
     it("should return China targetlist, recon, and LACM by reference", function()
-      local state = { c = { targetlist = {}, recon = {}, surface = { lacm = {} } } }
+      local state = { red = { targetlist = {}, recon = {}, surface = { lacm = {} } } }
 
-      assert.are.equal(state.c.targetlist, PersistentState.targetlist(state))
-      assert.are.equal(state.c.recon, PersistentState.recon(state))
-      assert.are.equal(state.c.surface.lacm, PersistentState.lacm(state))
+      assert.are.equal(state.red.targetlist, PersistentState.targetlist(state))
+      assert.are.equal(state.red.recon, PersistentState.recon(state))
+      assert.are.equal(state.red.surface.lacm, PersistentState.lacm(state))
     end)
   end)
 
@@ -196,20 +196,20 @@ describe("PersistentState", function()
   describe("runwayRepair", function()
     -- Positive: each side resolves to its own runway repair slice
     it("should return the runway repair slice for the given side", function()
-      local state = { c = { repairRunway = { runways = {} } }, t = { repairRunway = { runways = {} } } }
+      local state = { red = { repairRunway = { runways = {} } }, blue = { repairRunway = { runways = {} } } }
 
-      assert.are.equal(state.c.repairRunway, PersistentState.runwayRepair(state, constants.SIDES.ENEMY))
-      assert.are.equal(state.t.repairRunway, PersistentState.runwayRepair(state, constants.SIDES.PLAYER))
+      assert.are.equal(state.red.repairRunway, PersistentState.runwayRepair(state, constants.SIDES.RED))
+      assert.are.equal(state.blue.repairRunway, PersistentState.runwayRepair(state, constants.SIDES.BLUE))
     end)
   end)
 
   describe("aircraft", function()
     -- Positive: each side resolves to its own land-based aircraft slice
     it("should return the aircraft slice for the given side", function()
-      local state = { c = { air = {} }, t = { air = { ac = {}, aew = {} } } }
+      local state = { red = { air = {} }, blue = { air = { ac = {}, aew = {} } } }
 
-      assert.are.equal(state.c.air, PersistentState.aircraft(state, constants.SIDES.ENEMY))
-      assert.are.equal(state.t.air, PersistentState.aircraft(state, constants.SIDES.PLAYER))
+      assert.are.equal(state.red.air, PersistentState.aircraft(state, constants.SIDES.RED))
+      assert.are.equal(state.blue.air, PersistentState.aircraft(state, constants.SIDES.BLUE))
     end)
   end)
 
@@ -220,11 +220,11 @@ describe("PersistentState", function()
   describe("iads", function()
     -- Positive: each side resolves to its own IADS slice, not the other side's
     it("should return the IADS slice for the given side", function()
-      local chinaIads, taiwanIads = { c2 = {} }, { rocc = {}, taaoc = {} }
-      local state = { c = { iads = chinaIads }, t = { iads = taiwanIads } }
+      local redIads, blueIads = { c2 = {} }, { rocc = {}, taaoc = {} }
+      local state = { red = { iads = redIads }, blue = { iads = blueIads } }
 
-      assert.are.equal(chinaIads, PersistentState.iads(state, constants.SIDES.ENEMY))
-      assert.are.equal(taiwanIads, PersistentState.iads(state, constants.SIDES.PLAYER))
+      assert.are.equal(redIads, PersistentState.iads(state, constants.SIDES.RED))
+      assert.are.equal(blueIads, PersistentState.iads(state, constants.SIDES.BLUE))
     end)
   end)
 
@@ -236,16 +236,16 @@ describe("PersistentState", function()
     -- Positive: slices are the live tables, so jamming mutations land in saved state
     it("should expose China jammers and Taiwan IADS/aircraft by reference", function()
       local state = {
-        c = { commsJamming = { enabled = true, jammers = {} } },
-        t = { iads = {}, air = { ac = {}, aew = {} } },
+        red = { commsJamming = { enabled = true, jammers = {} } },
+        blue = { iads = {}, air = { ac = {}, aew = {} } },
       }
 
       local jammingState = PersistentState.commsJamming(state)
 
-      assert.are.equal(state.c.commsJamming.jammers, jammingState.jammers)
-      assert.are.equal(state.t.iads, jammingState.iads)
-      assert.are.equal(state.t.air.ac, jammingState.aircraft)
-      assert.are.equal(state.t.air.aew, jammingState.aew)
+      assert.are.equal(state.red.commsJamming.jammers, jammingState.jammers)
+      assert.are.equal(state.blue.iads, jammingState.iads)
+      assert.are.equal(state.blue.air.ac, jammingState.aircraft)
+      assert.are.equal(state.blue.air.aew, jammingState.aew)
       assert.is_true(jammingState.enabled)
     end)
   end)
@@ -258,15 +258,15 @@ describe("PersistentState", function()
     -- Positive: slices are the live China tables, so landing mutations land in saved state
     it("should expose China amphibious, recon, and ground slices by reference", function()
       local state = {
-        c = { amphibOps = {}, recon = {}, ground = {} },
-        t = { ground = {} },
+        red = { amphibOps = {}, recon = {}, ground = {} },
+        blue = { ground = {} },
       }
 
       local landingState = PersistentState.landingOps(state)
 
-      assert.are.equal(state.c.amphibOps, landingState.amphibOps)
-      assert.are.equal(state.c.recon, landingState.recon)
-      assert.are.equal(state.c.ground, landingState.ground)
+      assert.are.equal(state.red.amphibOps, landingState.amphibOps)
+      assert.are.equal(state.red.recon, landingState.recon)
+      assert.are.equal(state.red.ground, landingState.ground)
     end)
   end)
 
@@ -275,9 +275,9 @@ describe("PersistentState", function()
   -- ============================================================================
 
   describe("strikePlanner", function()
-    local function makeChinaState(fireSupportOnHold)
+    local function makeRedState(fireSupportOnHold)
       return {
-        c = {
+        red = {
           targetlist = {},
           sigint = { transmissions = {} },
           recon = {},
@@ -288,30 +288,30 @@ describe("PersistentState", function()
           subSurface = { slcm = {} },
           amphibOps = { fireSupportOnHold = fireSupportOnHold },
         },
-        t = { ground = {} },
+        blue = { ground = {} },
       }
     end
 
     -- Positive: slices are the live China tables, so planner mutations land in saved state
     it("should expose China planner slices by reference", function()
-      local state = makeChinaState(true)
+      local state = makeRedState(true)
 
       local plannerState = PersistentState.strikePlanner(state)
 
-      assert.are.equal(state.c.targetlist, plannerState.targetlist)
-      assert.are.equal(state.c.sigint.transmissions, plannerState.transmissions)
-      assert.are.equal(state.c.recon, plannerState.recon)
-      assert.are.equal(state.c.dynamicOperations, plannerState.dynamicOperations)
-      assert.are.equal(state.c.air, plannerState.air)
-      assert.are.equal(state.c.ground, plannerState.ground)
-      assert.are.equal(state.c.surface.lacm, plannerState.lacm)
-      assert.are.equal(state.c.subSurface.slcm, plannerState.slcm)
+      assert.are.equal(state.red.targetlist, plannerState.targetlist)
+      assert.are.equal(state.red.sigint.transmissions, plannerState.transmissions)
+      assert.are.equal(state.red.recon, plannerState.recon)
+      assert.are.equal(state.red.dynamicOperations, plannerState.dynamicOperations)
+      assert.are.equal(state.red.air, plannerState.air)
+      assert.are.equal(state.red.ground, plannerState.ground)
+      assert.are.equal(state.red.surface.lacm, plannerState.lacm)
+      assert.are.equal(state.red.subSurface.slcm, plannerState.slcm)
       assert.is_true(plannerState.fireSupportOnHold)
     end)
 
     -- Edge: an unset landing ops hold reads as false, not nil
     it("should report fireSupportOnHold as false when landing ops never set it", function()
-      local plannerState = PersistentState.strikePlanner(makeChinaState(nil))
+      local plannerState = PersistentState.strikePlanner(makeRedState(nil))
 
       assert.is_false(plannerState.fireSupportOnHold)
     end)
@@ -324,7 +324,7 @@ describe("PersistentState", function()
   describe("read", function()
     -- Positive: fn sees the loaded state and nothing is written
     it("should run fn with the loaded state without saving", function()
-      local state = { c = {} }
+      local state = { red = {} }
       loadStub.returns(state)
       local fn = spy.new(function() end)
 

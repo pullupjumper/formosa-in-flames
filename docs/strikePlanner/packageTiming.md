@@ -66,7 +66,7 @@ conservativeFlightTime = (estimated or fallback) + flightTimeSafetyMargin
 | `striker` | `calculateStrikerFlightTime` | striker 基地到第一個 target 的距離扣除 `weaponDBID` 對地最大射程 | `unresolvedFlightTime.striker` |
 | 其他角色 | `calculateSupportRoleFlightTime` | 角色基地到任務區的最長航程 | `unresolvedFlightTime.support` |
 
-任務區座標由 `getMissionZonePoint()` 取得：先讀 `missionCreationParams.opts.PatrolZone`，不存在則用 `opts.Zone`，再以 `constants.SIDES.ENEMY` 從 CMO reference point 取第一個 zone 座標。多任務 tanker 會計算所有可解析 zone 的航程並採用**最長**飛行時間。距離換算時間時，`tanker` 使用 `cruiseSpeed.tanker`，其餘角色使用 `cruiseSpeed.combatAircraft`：
+任務區座標由 `getMissionZonePoint()` 取得：先讀 `missionCreationParams.opts.PatrolZone`，不存在則用 `opts.Zone`，再以 `constants.SIDES.RED` 從 CMO reference point 取第一個 zone 座標。多任務 tanker 會計算所有可解析 zone 的航程並採用**最長**飛行時間。距離換算時間時，`tanker` 使用 `cruiseSpeed.tanker`，其餘角色使用 `cruiseSpeed.combatAircraft`：
 
 ```text
 flightTimeSeconds = ceil((distanceNm / speed) * 3600)
@@ -183,15 +183,15 @@ scheduleShift = max(0, readinessShift, intervalShift)
 
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
-| `config` | `config.c.air.timing.cruiseSpeed.tanker` / `.combatAircraft` | 距離換算飛行時間的巡航速度。 |
-| `config` | `config.c.air.timing.flightTimeSafetyMargin` | 每段估算航程額外加上的安全裕度。 |
-| `config` | `config.c.air.timing.unresolvedFlightTime.striker` / `.support` | 無法估算航程時的 fallback 飛行時間。 |
-| `config` | `config.c.air.timing.supportLeadTime.{escort,wildWeasel,jammer}` | 支援角色提前抵達作戰區的時間。 |
-| `config` | `config.c.air.timing.tankerSetupTime` | tanker 需在受油機到場前就位的提前量。 |
-| `config` | `config.c.air.timing.tankerUnresolvedArrivalLeadTime` | 無法解析受油機到場時，tanker 相對 striker TOT 的 fallback 提前量。 |
-| `config` | `config.c.air.timing.missionDuration.standard` / `.tanker` | 一般角色與 tanker（含含 tanker 之 striker）的任務持續時間。 |
-| `config` | `config.c.air.timing.assignmentSafetyMargin` | 掛載就緒後計算最早允許起飛的安全裕度。 |
-| `constants` | `constants.SIDES.ENEMY` | 讀取角色任務區 reference point 的 China side 名稱。 |
+| `config` | `config.red.air.timing.cruiseSpeed.tanker` / `.combatAircraft` | 距離換算飛行時間的巡航速度。 |
+| `config` | `config.red.air.timing.flightTimeSafetyMargin` | 每段估算航程額外加上的安全裕度。 |
+| `config` | `config.red.air.timing.unresolvedFlightTime.striker` / `.support` | 無法估算航程時的 fallback 飛行時間。 |
+| `config` | `config.red.air.timing.supportLeadTime.{escort,wildWeasel,jammer}` | 支援角色提前抵達作戰區的時間。 |
+| `config` | `config.red.air.timing.tankerSetupTime` | tanker 需在受油機到場前就位的提前量。 |
+| `config` | `config.red.air.timing.tankerUnresolvedArrivalLeadTime` | 無法解析受油機到場時，tanker 相對 striker TOT 的 fallback 提前量。 |
+| `config` | `config.red.air.timing.missionDuration.standard` / `.tanker` | 一般角色與 tanker（含含 tanker 之 striker）的任務持續時間。 |
+| `config` | `config.red.air.timing.assignmentSafetyMargin` | 掛載就緒後計算最早允許起飛的安全裕度。 |
+| `constants` | `constants.SIDES.RED` | 讀取角色任務區 reference point 的 China side 名稱。 |
 | `constants` | `constants.DATE_FORMAT` | 時間戳寫回 descriptor 時的 UTC 格式字串。 |
 
 ---

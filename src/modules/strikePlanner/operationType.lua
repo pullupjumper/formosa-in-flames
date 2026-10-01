@@ -9,7 +9,7 @@ local DESCRIPTORS = {
     templateField = "packages",
     registryKey = "air",
     resolvePlan = function(plannerState) return plannerState.air.airTaskingOrder end,
-    resolveDefaultInterval = function(config) return config.c.air.strikeInterval end,
+    resolveDefaultInterval = function(config) return config.red.air.strikeInterval end,
   },
   ground = {
     templateSource = "fireSupportTaskTemplates",

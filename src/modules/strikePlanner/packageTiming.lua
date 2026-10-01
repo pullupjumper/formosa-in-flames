@@ -37,7 +37,7 @@ local function getMissionZonePoint(missionCreationParams)
     return nil
   end
 
-  local point = GameApi.ScenEdit_GetReferencePoint({ side = constants.SIDES.ENEMY, name = zone[1] })
+  local point = GameApi.ScenEdit_GetReferencePoint({ side = constants.SIDES.RED, name = zone[1] })
   if not point then
     return nil
   end
@@ -414,7 +414,7 @@ end
 ---@param strikeInterval integer Time interval in seconds between consecutive strikes
 ---@return SBJ__Package # Executable package with complete timing and loadout status
 function PackageTiming.createPackageWithTiming(config, packageData, previousPackage, strikeInterval)
-  local timingConfig = config.c.air.timing
+  local timingConfig = config.red.air.timing
   local strikerTimeOnTarget = resolveStrikerTimeOnTargetAnchor(packageData, timingConfig)
   local roleTimingMap = buildRoleTimings(packageData, strikerTimeOnTarget, timingConfig)
   local earliestAllowedTakeoff = GameApi.ScenEdit_CurrentTime() +

@@ -12,11 +12,11 @@
 
 | 欄位 | air | ground | 誰在讀 |
 |---|---|---|---|
-| `templateSource` | `"packageTemplates"` | `"fireSupportTaskTemplates"` | [operationScheduler](operationScheduler.md) 查 `config.c[templateSource]` |
+| `templateSource` | `"packageTemplates"` | `"fireSupportTaskTemplates"` | [operationScheduler](operationScheduler.md) 查 `config.red[templateSource]` |
 | `templateField` | `"packages"` | `"fireSupportTasks"` | operationScheduler 組 template；[dynamicPlan](dynamicPlan.md) 走訪 template |
 | `registryKey` | `"air"` | `"ground"` | dynamicPlan 登記到 `generatedOperations[registryKey]` |
-| `resolvePlan(saveData)` | `saveData.c.air.airTaskingOrder` | `saveData.c.ground.fireSupportPlan` | dynamicPlan 寫入計畫 |
-| `resolveDefaultInterval(config)` | `config.c.air.strikeInterval` | `0` | operationScheduler 補 template 缺省的 `strikeInterval` |
+| `resolvePlan(saveData)` | `saveData.red.air.airTaskingOrder` | `saveData.red.ground.fireSupportPlan` | dynamicPlan 寫入計畫 |
+| `resolveDefaultInterval(config)` | `config.red.air.strikeInterval` | `0` | operationScheduler 補 template 缺省的 `strikeInterval` |
 
 ground 的預設間隔固定為 `0`，因為地面 FSEM 採 TOT 導向，與空中 wave 的錯開發射相反。
 

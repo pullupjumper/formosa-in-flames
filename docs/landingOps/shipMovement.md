@@ -10,7 +10,7 @@
 
 shipMovement 負責登陸作戰的第一階段——艦隊展開。系統將各型登陸艦（LHD/LPD/LST/渡輪/駁船/RORO）從集結區（Staging Area）移動至錨泊區（Anchorage Area），每型艦船在錨泊區中佔據不同的列位置，形成分層編隊。
 
-位置計算分為兩步：首先透過 `calculateDestination` 預算所有錨泊位置，結果儲存至 `saveData.c.amphibOps.calculationResult`；接著 `moveToStagingArea` 在每次觸發時依序將集結區內的艦船分配至下一個可用位置。
+位置計算分為兩步：首先透過 `calculateDestination` 預算所有錨泊位置，結果儲存至 `saveData.red.amphibOps.calculationResult`；接著 `moveToStagingArea` 在每次觸發時依序將集結區內的艦船分配至下一個可用位置。
 
 SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、護衛艦左右翼展開陣型。
 

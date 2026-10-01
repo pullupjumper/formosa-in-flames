@@ -430,7 +430,7 @@ function FsemBuilder.build(config, plannerState, contacts)
   -- targets are already gone never fires, so no task is ever marked finished and nothing
   -- else releases its firing units; gating retirement on "another operation is waiting"
   -- would leave those brigades deployed indefinitely on every quiet tick.
-  retireStaleMatrices(plannerState, currentTime, config.c.recon.fsemStaleAfterSec, opReport)
+  retireStaleMatrices(plannerState, currentTime, config.red.recon.fsemStaleAfterSec, opReport)
 
   -- Must stay a local: both caches only hold still within one pass. Promoting them to
   -- module scope would let them survive across ticks (the module table becomes a global
@@ -446,7 +446,7 @@ function FsemBuilder.build(config, plannerState, contacts)
 
   local result = OperationBatch.process(plannerState.dynamicOperations.reconTriggeredOperationBatches, "ground", {
     currentTime = currentTime,
-    windowSec = config.c.recon.observationWindowSec,
+    windowSec = config.red.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,
     tryInsert = function(batchedOp)
       return processGroundOperation(config, plannerState, batchedOp, passCtx)

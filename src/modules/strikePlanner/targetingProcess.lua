@@ -69,7 +69,7 @@ local RECON_TRACKING_CONFIG = {
   findRadioDirection = {
     platformDBID = constants.PLATFORMS.BZK005,
     getTarget = function(params, targetGUIDs)
-      return GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, targetGUIDs[1])
+      return GameApi.ScenEdit_GetContact(constants.SIDES.RED, targetGUIDs[1])
     end,
   },
 }
@@ -211,7 +211,7 @@ end
 ---Scan and categorize contacts into a target list
 ---Results replace the contents of targetlist in place so the persisted table stays the same
 ---@param sideName string Side name to get contacts from (e.g., 'China')
----@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, taiwanAirBases, taiwanPorts, and targetCategories
+---@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, blueAirBases, bluePorts, and targetCategories
 ---@param targetlist SBJ__TargetEntry[] Persisted target list, cleared and refilled
 function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
   local contacts = GameApi.ScenEdit_GetContacts(sideName)
@@ -225,8 +225,8 @@ function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
   local threshold = scanConfig.distanceThreshold
 
   -- Initialize location maps for bases and ports
-  local baseLocationMap = buildLocationMap(contacts, scanConfig.taiwanAirBases)
-  local portLocationMap = buildLocationMap(contacts, scanConfig.taiwanPorts)
+  local baseLocationMap = buildLocationMap(contacts, scanConfig.blueAirBases)
+  local portLocationMap = buildLocationMap(contacts, scanConfig.bluePorts)
   removeAll(targetlist)
 
   -- Single pass through contacts to categorize all targets
@@ -376,7 +376,7 @@ end
 ---@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
-  return distance <= config.c.sigint.maxRangeNm and transmission.currentDetectionLevel > config.c.sigint.maxCount
+  return distance <= config.red.sigint.maxRangeNm and transmission.currentDetectionLevel > config.red.sigint.maxCount
 end
 
 ---Filter targets that are within range of SIGINT-detected radio sources
@@ -389,7 +389,7 @@ local function filterTargetsWithinRangeOfRadioSource(config, transmissions, cont
   local targets = {}
 
   for _, guid in ipairs(contacts) do
-    local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
+    local contact = GameApi.ScenEdit_GetContact(constants.SIDES.RED, guid)
 
     if contact then
       for _, tm in pairs(transmissions) do
@@ -479,7 +479,7 @@ local function evaluateTargetsDamage(task, isFirstWave)
   end
 
   for _, guid in ipairs(task.target.list) do
-    local actualTarget = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
+    local actualTarget = GameApi.ScenEdit_GetContact(constants.SIDES.RED, guid)
 
     if actualTarget and evaluateTarget(actualTarget, task.target.contactAge, isFirstWave) then
       table.insert(evaluatedTargetlist, actualTarget.guid)

@@ -12,12 +12,12 @@ recon 模組管理偵察佇列中所有 UAV、衛星與 SIGINT 任務的完整�
 
 除了偵察生命週期外，recon 只負責協調兩個拆分模組：
 
-- 每個 tick 開頭呼叫 [frontlineRedirect](frontlineRedirect.md)，更新 `saveData.c.recon.frontlineRedirected` sticky 旗標。
-- 偵察成功結算時呼叫 [operationScheduler](operationScheduler.md)，將完成的偵察 entry 轉成 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 批次。
+- 每個 tick 開頭呼叫 [frontlineRedirect](frontlineRedirect.md)，更新 `saveData.red.recon.frontlineRedirected` sticky 旗標。
+- 偵察成功結算時呼叫 [operationScheduler](operationScheduler.md)，將完成的偵察 entry 轉成 `saveData.red.dynamicOperations.reconTriggeredOperationBatches` 批次。
 
 [airbaseAttrition](airbaseAttrition.md) 是 `frontlineRedirect` 的下游統計工具，recon 不直接呼叫。
 
-偵察 entry 有 template → plan → entry 三層形態，定義在 `src/core/schema.lua`（`SBJ__ReconUAVTemplate` / `SBJ__ReconUAVDescriptor` / `SBJ__ReconUAVEntry`，被動偵察對應 `SBJ__ReconPassiveDescriptor` / `SBJ__ReconPassiveEntry`）。分界是 `SBJ__ReconRunState` 這個 mixin：`Recon.initQueue` 深拷貝 `config.c.recon.queue` 並補上 run-state 旗標，plan 就成為 entry。
+偵察 entry 有 template → plan → entry 三層形態，定義在 `src/core/schema.lua`（`SBJ__ReconUAVTemplate` / `SBJ__ReconUAVDescriptor` / `SBJ__ReconUAVEntry`，被動偵察對應 `SBJ__ReconPassiveDescriptor` / `SBJ__ReconPassiveEntry`）。分界是 `SBJ__ReconRunState` 這個 mixin：`Recon.initQueue` 深拷貝 `config.red.recon.queue` 並補上 run-state 旗標，plan 就成為 entry。
 
 ---
 
@@ -142,7 +142,7 @@ flowchart TD
 
 ## 拆分模組協調
 
-`Recon.processQueue` 是偵察 tick 的協調入口，由 `StrikePlanner.process`（`init.lua`）從 `saveData.c.*` 組出 `SBJ__ReconQueueProcessingContext` 後呼叫。
+`Recon.processQueue` 是偵察 tick 的協調入口，由 `StrikePlanner.process`（`init.lua`）從 `saveData.red.*` 組出 `SBJ__ReconQueueProcessingContext` 後呼叫。
 
 ```mermaid
 flowchart TD
@@ -234,7 +234,7 @@ flowchart TD
 | `launchWZ8(reconCtx, h6n)` | 從執行中 entry 的 H-6N 發射 WZ-8 並把 entry 交接給它；沒有對應 entry 或發射失敗回傳 `nil`（建立後的任一步驟失敗會刪除該架無人機）；套件外經門面 `StrikePlanner.launchWZ8` 呼叫 |
 | `trackTargets(reconCtx, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標（私有 `isTargetAlreadyTracked`）跳過，側別飛機最多列舉一次，再交給私有 `trackTarget` 指派 |
 | `addEntry(reconCtx, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil`；套件外經門面 `StrikePlanner.addReconEntry` 呼叫 |
-| `initQueue(reconConfig, reconCtx)` | 把 `config.c.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
+| `initQueue(reconConfig, reconCtx)` | 把 `config.red.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
 
 `processingCtx`（`SBJ__ReconQueueProcessingContext`）欄位：
 
@@ -252,14 +252,14 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `config.c.recon.queue` | 偵察佇列 plan（被 `initQueue` 深拷貝為執行期 entry） |
-| `config.c.recon.templates` | UAV 模板字典（如 `BZK005_RECON_1`）；每筆的 `templateId` 是 `addEntry` 去重的唯一依據 |
-| `config.c.recon.templates.*.trackingSpeed` | 追蹤機種與發射機種不同時的指定速度（如 `WZ8_RECON_ISLAND`） |
-| `config.c.recon.strikeMappings` | 偵察目標到打擊任務的映射表；由 `operationScheduler` 消費 |
-| `config.c.recon.frontlineRedirect` | 前線重導向設定；由 `FrontlineRedirect.evaluate` 消費 |
+| `config.red.recon.queue` | 偵察佇列 plan（被 `initQueue` 深拷貝為執行期 entry） |
+| `config.red.recon.templates` | UAV 模板字典（如 `BZK005_RECON_1`）；每筆的 `templateId` 是 `addEntry` 去重的唯一依據 |
+| `config.red.recon.templates.*.trackingSpeed` | 追蹤機種與發射機種不同時的指定速度（如 `WZ8_RECON_ISLAND`） |
+| `config.red.recon.strikeMappings` | 偵察目標到打擊任務的映射表；由 `operationScheduler` 消費 |
+| `config.red.recon.frontlineRedirect` | 前線重導向設定；由 `FrontlineRedirect.evaluate` 消費 |
 | `constants.PLATFORMS.WZ8` / `constants.LOADOUTS.WZ8_RECON` / `constants.SENSORS.WZ8_RADAR` / `constants.SENSOR_ARCS` | 發射 WZ-8 的平台、掛載、感測器與弧段 |
 | `constants.BASES.LONGTIAN_AAB` | WZ-8 預設歸屬基地 |
-| `constants.SIDES.ENEMY` | China side 名稱；建立 WZ-8 與查詢接觸時使用 |
+| `constants.SIDES.RED` | China side 名稱；建立 WZ-8 與查詢接觸時使用 |
 | `constants.DATE_FORMAT` | `addEntry` 寫回時間欄位的 UTC 格式 |
 | `constants.TAGS.RECON` | 偵察佇列處理、前線重導向 activation 與 WZ-8 發射失敗的 log tag |
 

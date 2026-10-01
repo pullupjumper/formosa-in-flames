@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/strikePlanner/operationBatch.lua`
 
-**職責**：擁有 `saveData.c.dynamicOperations.reconTriggeredOperationBatches`。排程、每 tick 的執行決策（觀察窗、重試、放棄、逾時）、batch 完成判定，以及排程器需要的查詢，全部只住在這裡。
+**職責**：擁有 `saveData.red.dynamicOperations.reconTriggeredOperationBatches`。排程、每 tick 的執行決策（觀察窗、重試、放棄、逾時）、batch 完成判定，以及排程器需要的查詢，全部只住在這裡。
 
 ---
 
@@ -37,7 +37,7 @@ flowchart LR
 | 欄位 | 用途 |
 |---|---|
 | `currentTime` | 目前劇本時間 |
-| `windowSec` | 觀察窗長度，兩個建構器都傳 `config.c.recon.observationWindowSec` |
+| `windowSec` | 觀察窗長度，兩個建構器都傳 `config.red.recon.observationWindowSec` |
 | `retryableReasonSet` | 哪些 `reason` 讓 operation 留在窗內重試 |
 | `tryInsert(batchedOp)` | 建構器的插入嘗試，回傳 `SBJ__OperationProcessResult` |
 

@@ -46,8 +46,8 @@ describe("UnitStatusUI", function()
     local function makeSideConfig()
       return { gnssJamming = { jammers = {} }, air = { deployedACs = {} }, ground = { missileSystemTypes = {} } }
     end
-    local config = { c = makeSideConfig(), t = makeSideConfig() }
-    config.c.amphibOps = { operations = {}, operationalZones = {} }
+    local config = { red = makeSideConfig(), blue = makeSideConfig() }
+    config.red.amphibOps = { operations = {}, operationalZones = {} }
     if overrides then
       for k, v in pairs(overrides) do config[k] = v end
     end
@@ -61,7 +61,7 @@ describe("UnitStatusUI", function()
     local function makeSideState()
       return { sigint = { transmissions = {} }, iads = {}, air = {} }
     end
-    local saveData = { c = makeSideState(), t = makeSideState(), u = makeSideState() }
+    local saveData = { red = makeSideState(), blue = makeSideState(), ally = makeSideState() }
     if overrides then
       for k, v in pairs(overrides) do saveData[k] = v end
     end
@@ -105,20 +105,20 @@ describe("UnitStatusUI", function()
       local config = makeConfig()
       submit([[{"jammers":[{"name":"J-1"},{"name":"J-2"}],"airbases":[{"name":"AB-1"}],"missileSystems":[{"unitname":"FU-1"}]}]])
 
-      UnitStatusUI.createSetupMenu(config, constants.SIDES.PLAYER)
+      UnitStatusUI.createSetupMenu(config, constants.SIDES.BLUE)
 
-      assert.stub(removeJammersStub).was.called_with(constants.SIDES.PLAYER, { { name = "J-1" }, { name = "J-2" } })
+      assert.stub(removeJammersStub).was.called_with(constants.SIDES.BLUE, { { name = "J-1" }, { name = "J-2" } })
       assert.stub(addGnssJammerStub).was.called(2)
       assert.stub(addAircraftStub).was.called_with({ { name = "AB-1" } })
       assert.stub(initTargetAircraftStub).was.called_with(config, saveData)
-      assert.stub(redeployStub).was.called_with(config, saveData, constants.SIDES.PLAYER, { { unitname = "FU-1" } })
+      assert.stub(redeployStub).was.called_with(config, saveData, constants.SIDES.BLUE, { { unitname = "FU-1" } })
     end)
 
     -- Negative: comms jamming targets only Taiwan's aircraft
     it("should skip comms jamming target registration for China", function()
       submit([[{"airbases":[{"name":"AB-1"}]}]])
 
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.ENEMY)
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.RED)
 
       assert.stub(addAircraftStub).was.called(1)
       assert.stub(initTargetAircraftStub).was_not.called()
@@ -128,7 +128,7 @@ describe("UnitStatusUI", function()
     it("should apply nothing when the form is closed without Done", function()
       submit([[{"airbases":[{"name":"AB-1"}]}]], "Cancel")
 
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.PLAYER)
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.BLUE)
 
       assert.stub(addAircraftStub).was_not.called()
     end)
@@ -137,7 +137,7 @@ describe("UnitStatusUI", function()
     it("should apply nothing when the form has no summary", function()
       submit(nil)
 
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.PLAYER)
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.BLUE)
 
       assert.stub(addAircraftStub).was_not.called()
     end)
@@ -146,7 +146,7 @@ describe("UnitStatusUI", function()
     it("should do nothing for an empty submission", function()
       submit([[{"jammers":[],"airbases":[],"missileSystems":[]}]])
 
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.PLAYER)
+      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.BLUE)
 
       assert.stub(removeJammersStub).was_not.called()
       assert.stub(addAircraftStub).was_not.called()
@@ -174,7 +174,7 @@ describe("UnitStatusUI", function()
 
     -- Positive: China's dashboard adds landed units
     it("should show landed units for China", function()
-      UnitStatusUI.createUI(makeConfig(), constants.SIDES.ENEMY)
+      UnitStatusUI.createUI(makeConfig(), constants.SIDES.RED)
 
       assert.stub(countUnitsStub).was.called(1)
       assert.stub(dialogStub).was.called(1)
@@ -182,14 +182,14 @@ describe("UnitStatusUI", function()
 
     -- Positive: Taiwan's SIGINT tab shows what US collectors heard
     it("should read SIGINT from the US side when showing Taiwan", function()
-      UnitStatusUI.createUI(makeConfig(), constants.SIDES.PLAYER)
+      UnitStatusUI.createUI(makeConfig(), constants.SIDES.BLUE)
 
       assert.spy(sigintSpy).was.called_with(saveData, "US")
     end)
 
     -- Negative: Taiwan has no landing tab
     it("should leave out landed units for Taiwan", function()
-      UnitStatusUI.createUI(makeConfig(), constants.SIDES.PLAYER)
+      UnitStatusUI.createUI(makeConfig(), constants.SIDES.BLUE)
 
       assert.stub(countUnitsStub).was_not.called()
       assert.stub(dialogStub).was.called(1)

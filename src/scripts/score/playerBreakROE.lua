@@ -6,9 +6,9 @@ local unit = GameApi.ScenEdit_UnitX()
 
 
 if unit then
-  local score = GameApi.ScenEdit_GetScore(constants.SIDES.PLAYER)
+  local score = GameApi.ScenEdit_GetScore(constants.SIDES.BLUE)
   GameApi.ScenEdit_SetScore(
-    constants.SIDES.PLAYER,
+    constants.SIDES.BLUE,
     (score + config.score.attackBeforeTheHHour),
     "Attacked before the Chinese missile strike."
   )

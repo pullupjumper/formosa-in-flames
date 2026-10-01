@@ -155,8 +155,8 @@ flowchart TD
 |---|---|---|
 | 偵察機 | Y-9DZ | RC-135V |
 | 目標 | 台灣 SRBM/GLCM/MLRS/ASCM + ROCC/TAAOC | 中國 MLRS/SRBM/GLCM + C2 |
-| SIGINT Context | `saveData.c.sigint` | `saveData.u.sigint` |
-| 配置參數 | `config.c.sigint` | `config.u.sigint`（引用 China 側） |
+| SIGINT Context | `saveData.red.sigint` | `saveData.ally.sigint` |
+| 配置參數 | `config.red.sigint` | `config.ally.sigint`（引用 China 側） |
 
 ---
 

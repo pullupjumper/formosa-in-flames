@@ -55,7 +55,7 @@ describe("MissileSystem Triggers", function()
       }
       local createdZones = {}
 
-      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
+      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.RED })
       trackStub(GameUtils, "removeZones").returns(0, true)
       trackStub(GameUtils, "removeEventTriggers").returns(0, true)
       trackStub(GameApi, "ScenEdit_GetEvent").returns({ triggers = {} })
@@ -80,7 +80,7 @@ describe("MissileSystem Triggers", function()
         operationalAreas,
         {},
         { constants.POSITION_TYPES.RELOAD_POINT },
-        constants.SIDES.ENEMY
+        constants.SIDES.RED
       )
 
       assert.are.equal(2, #createdZones)
@@ -100,7 +100,7 @@ describe("MissileSystem Triggers", function()
       local maskZoneType
       local maskZone
 
-      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
+      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.RED })
       trackStub(GameUtils, "removeZones").returns(0, true)
       trackStub(GameUtils, "removeEventTriggers").returns(0, true)
       trackStub(GameApi, "ScenEdit_GetEvent").returns({ triggers = {} })
@@ -127,7 +127,7 @@ describe("MissileSystem Triggers", function()
         { operationalArea },
         {},
         { constants.POSITION_TYPES.RELOAD_POINT },
-        constants.SIDES.PLAYER
+        constants.SIDES.BLUE
       )
 
       assert.are.equal(constants.ZONE_TYPES.STANDARD, maskZoneType)
@@ -151,7 +151,7 @@ describe("MissileSystem Triggers", function()
         }
       }
 
-      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.ENEMY })
+      trackStub(GameUtils, "getCachedSideConfig").returns({ enemySide = constants.SIDES.RED })
       trackStub(GameApi, "ScenEdit_GetEvent").returns({ triggers = {} })
       trackStub(GameApi, "VP_GetSide").returns({ standardzones = {} })
       trackStub(GameUtils, "normalizeToRPArray").invokes(function(zone)
@@ -172,7 +172,7 @@ describe("MissileSystem Triggers", function()
         { operationalArea },
         {},
         { constants.POSITION_TYPES.RELOAD_POINT },
-        constants.SIDES.PLAYER
+        constants.SIDES.BLUE
       )
 
       assert.stub(errorStub).was.called(1)

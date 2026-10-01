@@ -8,11 +8,11 @@
 
 ## 概述
 
-`frontlineRedirect` 將前線空軍基地的戰損情況轉成動態作戰排程的 mapping rewrite。當 `AirbaseAttrition.calculate` 回報的整體 `attritionPct` 達到 `config.c.recon.frontlineRedirect.attritionThresholdPct`，模組會把 `reconCtx.frontlineRedirected` 設為 `true`。
+`frontlineRedirect` 將前線空軍基地的戰損情況轉成動態作戰排程的 mapping rewrite。當 `AirbaseAttrition.calculate` 回報的整體 `attritionPct` 達到 `config.red.recon.frontlineRedirect.attritionThresholdPct`，模組會把 `reconCtx.frontlineRedirected` 設為 `true`。
 
 這個旗標是 sticky 狀態，觸發後不會由本模組清回 `false`。後續 tick 若再次呼叫 `evaluate`，會直接回傳 `true, nil`，避免每次都列舉整個 side 的 aircraft。
 
-實際 mapping 改寫由 `updateMappings` 與其私有 helper `buildRewrittenMappings` 處理。改寫前會先深拷貝輸入 mapping 陣列，避免污染 `config.c.recon.strikeMappings` 這份全域設定。
+實際 mapping 改寫由 `updateMappings` 與其私有 helper `buildRewrittenMappings` 處理。改寫前會先深拷貝輸入 mapping 陣列，避免污染 `config.red.recon.strikeMappings` 這份全域設定。
 
 ---
 
@@ -23,16 +23,16 @@
 `evaluate(config, reconCtx)` 只在以下條件成立時呼叫 [airbaseAttrition](airbaseAttrition.md)：
 
 - `reconCtx.frontlineRedirected ~= true`
-- `config.c.recon.frontlineRedirect` 存在
-- `config.c.recon.frontlineRedirect.enabled == true`
+- `config.red.recon.frontlineRedirect` 存在
+- `config.red.recon.frontlineRedirect.enabled == true`
 
 評估使用：
 
 | 來源 | 用途 |
 |---|---|
-| `config.c.air.deployedACs` | 機場與計畫駐機基線 |
-| `config.c.recon.frontlineRedirect.frontlineBaseNames` | 要納入統計的前線基地名稱 |
-| `config.c.recon.frontlineRedirect.attritionThresholdPct` | 啟用 redirect 的整體戰損門檻 |
+| `config.red.air.deployedACs` | 機場與計畫駐機基線 |
+| `config.red.recon.frontlineRedirect.frontlineBaseNames` | 要納入統計的前線基地名稱 |
+| `config.red.recon.frontlineRedirect.attritionThresholdPct` | 啟用 redirect 的整體戰損門檻 |
 
 達標時會回傳 `true` 以及一份 activation log 欄位表（`action`／`reason`／`attritionPct`／`thresholdPct`／`expected`／`current`），實際 log 由 [recon](recon.md) 的 `processQueue` 併上 `scope=frontlineRedirect` 後以 `LogFormat.line` 輸出到 `constants.TAGS.RECON`。
 
@@ -49,7 +49,7 @@
 rule.toPrefix .. mapping.name:sub(#rule.fromPrefix + 1)
 ```
 
-以目前設定為例，`AIR/STRIKE/AB/W/1` 會被改寫為 `AIR/STRIKE/AB/W/AAR/1`，使 [operationScheduler](operationScheduler.md) 查詢 `config.c.packageTemplates.AIR_STRIKE_AB_W_AAR_1`。
+以目前設定為例，`AIR/STRIKE/AB/W/1` 會被改寫為 `AIR/STRIKE/AB/W/AAR/1`，使 [operationScheduler](operationScheduler.md) 查詢 `config.red.packageTemplates.AIR_STRIKE_AB_W_AAR_1`。
 
 ---
 
@@ -92,13 +92,13 @@ flowchart TD
 ## saveData 結構
 
 ```
-saveData.c.recon
+saveData.red.recon
 ├── enabled: boolean
 ├── frontlineRedirected: boolean
 └── queue: SBJ__ReconQueueEntry[]
 ```
 
-`frontlineRedirect` 只改寫 `reconCtx.frontlineRedirected`。在實際情境中，這個 `reconCtx` 由 `saveData.c.recon` 傳入，因此 sticky 旗標會隨 saveData 保存。
+`frontlineRedirect` 只改寫 `reconCtx.frontlineRedirected`。在實際情境中，這個 `reconCtx` 由 `saveData.red.recon` 傳入，因此 sticky 旗標會隨 saveData 保存。
 
 ---
 
@@ -106,12 +106,12 @@ saveData.c.recon
 
 | 類型 | 路徑 | 用途 |
 |---|---|---|
-| `config` | `config.c.recon.frontlineRedirect.enabled` | 是否啟用前線重導向 |
-| `config` | `config.c.recon.frontlineRedirect.attritionThresholdPct` | 整體戰損達到此百分比即啟用 |
-| `config` | `config.c.recon.frontlineRedirect.frontlineBaseNames` | 交給 `AirbaseAttrition.calculate` 的基地名稱清單 |
-| `config` | `config.c.recon.frontlineRedirect.mappings` | mapping 改寫規則陣列 |
-| `config` | `config.c.air.deployedACs` | 前線基地計畫駐機基線 |
-| `saveData` | `saveData.c.recon.frontlineRedirected` | sticky redirect 狀態 |
+| `config` | `config.red.recon.frontlineRedirect.enabled` | 是否啟用前線重導向 |
+| `config` | `config.red.recon.frontlineRedirect.attritionThresholdPct` | 整體戰損達到此百分比即啟用 |
+| `config` | `config.red.recon.frontlineRedirect.frontlineBaseNames` | 交給 `AirbaseAttrition.calculate` 的基地名稱清單 |
+| `config` | `config.red.recon.frontlineRedirect.mappings` | mapping 改寫規則陣列 |
+| `config` | `config.red.air.deployedACs` | 前線基地計畫駐機基線 |
+| `saveData` | `saveData.red.recon.frontlineRedirected` | sticky redirect 狀態 |
 
 ---
 

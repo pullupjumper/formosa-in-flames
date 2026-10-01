@@ -44,7 +44,7 @@ describe("StrikePlanner", function()
   ---@return table
   local function makeConfig()
     return {
-      c = {
+      red = {
         targetScanning = { scan = true },
         recon = {
           queue = {},
@@ -157,7 +157,7 @@ describe("StrikePlanner", function()
 
       runInit(config, plannerState)
 
-      assert.stub(findTargetsStub).was.called_with(constants.SIDES.ENEMY, config.c.targetScanning,
+      assert.stub(findTargetsStub).was.called_with(constants.SIDES.RED, config.red.targetScanning,
         plannerState.targetlist)
     end)
 
@@ -168,7 +168,7 @@ describe("StrikePlanner", function()
 
       runInit(config, plannerState)
 
-      assert.stub(initQueueStub).was.called_with(config.c.recon, plannerState.recon)
+      assert.stub(initQueueStub).was.called_with(config.red.recon, plannerState.recon)
     end)
 
     -- Negative: recon disabled leaves the queue untouched.
@@ -271,7 +271,7 @@ describe("StrikePlanner", function()
 
         runProcess(config, plannerState, {})
 
-        assert.stub(addEntryStub).was.called_with(plannerState.recon, config.c.recon.templates.WZ8_RECON_ISLAND)
+        assert.stub(addEntryStub).was.called_with(plannerState.recon, config.red.recon.templates.WZ8_RECON_ISLAND)
       end)
 
       -- Negative: a failing roll queues nothing extra.
@@ -333,7 +333,7 @@ describe("StrikePlanner", function()
         runProcess(config, makePlannerState({ lacm = true }), {})
 
         assert.stub(attackContactsStub).was.called_with({
-          contacts = config.c.surface.lacm.targetlist,
+          contacts = config.red.surface.lacm.targetlist,
           qty = 5,
           firingUnits = { { guid = "SHIP-055", weaponDBID = 101 } },
           weaponDBID = 101,
@@ -422,9 +422,9 @@ describe("StrikePlanner", function()
         runProcess(config, makePlannerState({ slcm = true }), {})
 
         assert.stub(attackContactsStub).was.called_with({
-          contacts = config.c.subSurface.slcm.targetlist,
+          contacts = config.red.subSurface.slcm.targetlist,
           qty = 8,
-          firingUnits = config.c.subSurface.slcm.submarines,
+          firingUnits = config.red.subSurface.slcm.submarines,
           weaponDBID = 202,
         })
       end)

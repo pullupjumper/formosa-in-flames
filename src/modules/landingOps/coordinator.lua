@@ -41,8 +41,8 @@ local function processTaoyuanTemporarySetup(config, landingState, zone, currentT
     return
   end
 
-  AmphibiousLogistics.transferAndAssignTransportAircraft(config.c.amphibOps.transportAircraft)
-  StrikePlanner.addReconEntry(landingState.recon, config.c.recon.templates.GJ11_RECON)
+  AmphibiousLogistics.transferAndAssignTransportAircraft(config.red.amphibOps.transportAircraft)
+  StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates.GJ11_RECON)
 end
 
 ---Process a single operational zone through all amphibious phases
@@ -55,8 +55,8 @@ local function processZone(tickCtx, zone, operation)
   local zoneState = landingState.amphibOps.zoneStates[zone.name]
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
-      and GameUtils.isAfterStartTime(config.c.triggers.amphibiousOps.startTime) then
-    local done = ShipMovement.moveToStagingArea(config.c.amphibOps, landingState.amphibOps.calculationResult,
+      and GameUtils.isAfterStartTime(config.red.triggers.amphibiousOps.startTime) then
+    local done = ShipMovement.moveToStagingArea(config.red.amphibOps, landingState.amphibOps.calculationResult,
       filteredShips, operation)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
@@ -82,11 +82,11 @@ local function processZone(tickCtx, zone, operation)
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT then
     local contactCount = AmphibiousAssault.countContactsInArea(contacts, operation.airLandingZone)
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
-    local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.c.amphibOps.periodSec
+    local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.red.amphibOps.periodSec
 
     if shouldLaunch then
       local ok = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
-          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.c.amphibOps.sags)
+          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.red.amphibOps.sags)
 
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
@@ -112,7 +112,7 @@ end
 local function processCargoRetransfer(tickCtx)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local currentTime, filteredShips = tickCtx.currentTime, tickCtx.filteredShips
-  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
     local zoneState = landingState.amphibOps.zoneStates[zone.name]
     if zoneState.airlandingMissionStartTime ~= nil then
       local elapsed = currentTime - zoneState.airlandingMissionStartTime
@@ -131,7 +131,7 @@ end
 ---@param amphibOps SBJ__AmphibOpsContext Amphibious operations context
 ---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
 local function hasAllZonesArrived(config, amphibOps)
-  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
+  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
     local zoneState = amphibOps.zoneStates[zone.name]
     if not zoneState or not ARRIVED_PHASES[zoneState.phase] then
       return false
@@ -162,16 +162,16 @@ local function evaluateFireSupportGate(config, landingState)
   end
 
   local report = landingState.ground and
-      MissileSystem.getAmmoInventory(landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.ENEMY)
+      MissileSystem.getAmmoInventory(landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.RED)
   if not report then return end
 
-  if report.total.percentage < config.c.amphibOps.fireSupportHoldThreshold then
+  if report.total.percentage < config.red.amphibOps.fireSupportHoldThreshold then
     amphib.fireSupportOnHold = true
     Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line("HOLD", {
       scope = "fireSupportGate",
       reason = "srbm_low",
       total = report.total.percentage,
-      threshold = config.c.amphibOps.fireSupportHoldThreshold,
+      threshold = config.red.amphibOps.fireSupportHoldThreshold,
       firing = report.firing.percentage,
       resupply = report.resupply.percentage,
       depot = report.ammo.percentage
@@ -192,8 +192,8 @@ function Coordinator.process(config, landingState, params)
     currentTime = params.currentTime,
     filteredShips = params.filteredShips
   }
-  for _, zone in ipairs(config.c.amphibOps.operationalZones) do
-    local operation = findOperationByName(config.c.amphibOps.operations, zone.name)
+  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
+    local operation = findOperationByName(config.red.amphibOps.operations, zone.name)
 
     if operation then
       processZone(tickCtx, zone, operation)

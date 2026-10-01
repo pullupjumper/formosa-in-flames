@@ -31,7 +31,7 @@ targetingProcess 負責 Kill Chain 的 Find → Fix → Target → Assess 階段
 | ASM | 反艦飛彈模式匹配 | 反艦飛彈陣地 |
 | C2 | 指揮所模式匹配 | 衡山指揮所 |
 
-Airfield 與 Port 類別需同時滿足「設施模式匹配」與「距離在基地/港口附近（`distanceThreshold`）」兩個條件。掃描結果儲存至 `saveData.c.targetlist`。
+Airfield 與 Port 類別需同時滿足「設施模式匹配」與「距離在基地/港口附近（`distanceThreshold`）」兩個條件。掃描結果儲存至 `saveData.red.targetlist`。
 
 ---
 
@@ -53,14 +53,14 @@ Airfield 與 Port 類別需同時滿足「設施模式匹配」與「距離在�
 ### SIGINT 測向邏輯（findRadioDirection）
 
 1. 合併地面目標與 C2 設施
-2. 對每個目標計算與 `saveData.c.sigint.transmissions` 中各無線電源的距離
+2. 對每個目標計算與 `saveData.red.sigint.transmissions` 中各無線電源的距離
 3. 僅保留距離 <= `maxRange` 且偵測次數 > `maxCount` 的目標
 
 ---
 
 ## 固定目標查詢（filterTargetsByTypeAndBase）
 
-從 `saveData.c.targetlist` 中，依據 `queryParams` 進行精確查詢：
+從 `saveData.red.targetlist` 中，依據 `queryParams` 進行精確查詢：
 
 - `baseName`（可選）：匹配目標 `name` 中的基地名稱
 - `subTypes`：匹配目標 `subType` 中的設施類型

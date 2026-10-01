@@ -8,7 +8,7 @@
 
 ## 概述
 
-`airTaskingOrder` 是 Strike Planner 的空中打擊執行層，處理 `saveData.c.air.airTaskingOrder` 內所有 `isActivated == true` 且尚未完成的 Wave。模組不負責產生 Wave；靜態資料可由初始化流程寫入，動態資料則由 [atoBuilder](atoBuilder.md) 插入。
+`airTaskingOrder` 是 Strike Planner 的空中打擊執行層，處理 `saveData.red.air.airTaskingOrder` 內所有 `isActivated == true` 且尚未完成的 Wave。模組不負責產生 Wave；靜態資料可由初始化流程寫入，動態資料則由 [atoBuilder](atoBuilder.md) 插入。
 
 每次呼叫 `airStrike()` 時，模組會依序推進各 Package 的生命週期。若時間到達掛彈窗口，先對基地內符合 `unitDBID` 的飛機設定 `loadoutID`；掛彈完成且最早出發角色達到出擊窗口後，才建立任務、排程偵察 UAV、指派目標與派遣飛機。
 
@@ -22,7 +22,7 @@
 
 | 名稱 | 類型 | 用途 |
 |---|---|---|
-| `config.c.air.timing.assignmentSafetyMargin` | `number` | 掛彈與 assign 必須早於預估起飛時間的安全秒數。 |
+| `config.red.air.timing.assignmentSafetyMargin` | `number` | 掛彈與 assign 必須早於預估起飛時間的安全秒數。 |
 | `PACKAGE_ROLE_ORDER` | `string[]` | ATO Package 會依序處理 `tanker`、`striker`、`escort`、`wildWeasel`、`jammer`。 |
 | `LOG_SCOPE`／`LOG_ACTION` | string | report 的 scope `airTaskingOrder` 與 action `Execute packages`。 |
 
@@ -88,13 +88,13 @@ flowchart TD
 
 掛彈開始時間由所有角色中最早的 `startTime` 減去 `packageData.timeToReady` 得出；標準 package 必須提供 `timeToReady`，執行層僅為舊存檔或非標準資料保留 9 分鐘 fallback。`ensureLoadoutStartTime()` 會將計算結果快取到 `packageData.loadoutStatus.loadoutStartTime`。
 
-`isTimeToStartLoadout()` 會以 `config.c.air.timing.assignmentSafetyMargin` 作為提前檢查量；舊 save/config 結構缺少此欄位時 fallback 為 300 秒。到點後 `setLoadoutForRole()` 會讀取角色基地 `baseGUID` 的 `embarkedUnits.Aircraft`，挑選 DBID 符合 `unitDBID` 的飛機，呼叫 `GameApi.ScenEdit_SetLoadout()` 設定 `LoadoutID` 與 `TimeToReady_Minutes`。
+`isTimeToStartLoadout()` 會以 `config.red.air.timing.assignmentSafetyMargin` 作為提前檢查量；舊 save/config 結構缺少此欄位時 fallback 為 300 秒。到點後 `setLoadoutForRole()` 會讀取角色基地 `baseGUID` 的 `embarkedUnits.Aircraft`，挑選 DBID 符合 `unitDBID` 的飛機，呼叫 `GameApi.ScenEdit_SetLoadout()` 設定 `LoadoutID` 與 `TimeToReady_Minutes`。
 
 `startLoadoutForPackage()` 會更新 `loadoutStatus.isLoadoutInitiated`、`loadoutInitiatedTime` 與 `expectedReadyTime`。後續 tick 由 `isLoadoutReady()` 判斷 `expectedReadyTime` 是否已到。
 
 ### 任務建立與派遣
 
-`createPackageMission()` 以 `constants.SIDES.ENEMY` 建立尚未排程的任務，並使用角色的 `missionCreationParams` 與 `emcon`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。完成目標與單元指派後，`setPackageMissionSchedules()` 才設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`endtime` 與排程欄位，避免 CMO 在掛載或 assign 完成前依 TOS/TOT 自動產生起飛時間。
+`createPackageMission()` 以 `constants.SIDES.RED` 建立尚未排程的任務，並使用角色的 `missionCreationParams` 與 `emcon`；strike 任務會額外透過 `GameApi.ScenEdit_SetDoctrine()` 關閉 `automatic_evasion`。完成目標與單元指派後，`setPackageMissionSchedules()` 才設定 `OnDeactivateDelete`、`OnDeactivateRTB`、`endtime` 與排程欄位，避免 CMO 在掛載或 assign 完成前依 TOS/TOT 自動產生起飛時間。
 
 排程欄位互斥：角色有 `timeOnStation` 時只設定 `TimeOnTargetStation`；否則才以 `startTime` 設定 `TakeOffTime`。`startTime` 在 TOS 模式下只作為內部掛載與 assign 的保守預估起飛時間，不會寫入 CMO。
 
@@ -112,13 +112,13 @@ flowchart TD
 
 ### 偵察 UAV 排程
 
-若 Package 帶有 `reconUAV`，任務建立後 `scheduleReconUAV()` 會安排一架打擊後偵察 UAV。當 `reconUAV.takeoffTime` 尚未預先設定時，模組以 striker 任務結束時間、`config.c.ground.missileSystemTypes.srbm.reloadTime` 與 UAV 航程飛行時間推算起飛時間：
+若 Package 帶有 `reconUAV`，任務建立後 `scheduleReconUAV()` 會安排一架打擊後偵察 UAV。當 `reconUAV.takeoffTime` 尚未預先設定時，模組以 striker 任務結束時間、`config.red.ground.missileSystemTypes.srbm.reloadTime` 與 UAV 航程飛行時間推算起飛時間：
 
 ```text
-takeoffTime = striker.endTime + config.c.ground.missileSystemTypes.srbm.reloadTime - flightTime
+takeoffTime = striker.endTime + config.red.ground.missileSystemTypes.srbm.reloadTime - flightTime
 ```
 
-接著把這個起飛時間當作 `startTime`，委派給 [`Recon.addEntry(saveData.c.recon, reconUAV, takeoffTime)`](recon.md)。實際的空窗檢查、deep copy、欄位重設（`hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`）、`endTime = takeoffTime + flightTime` 計算與寫入佇列，全部由 `addEntry` 完成；`scheduleReconUAV()` 只負責推算起飛時間並回傳 `addEntry` 給出的 entry（或 `nil`）。
+接著把這個起飛時間當作 `startTime`，委派給 [`Recon.addEntry(saveData.red.recon, reconUAV, takeoffTime)`](recon.md)。實際的空窗檢查、deep copy、欄位重設（`hasLaunched = false`、`isFinished = false`、`trackingTargetGUID = nil`）、`endTime = takeoffTime + flightTime` 計算與寫入佇列，全部由 `addEntry` 完成；`scheduleReconUAV()` 只負責推算起飛時間並回傳 `addEntry` 給出的 entry（或 `nil`）。
 
 偵察排程是有條件且不阻塞打擊流程：
 
@@ -150,7 +150,7 @@ takeoffTime = striker.endTime + config.c.ground.missileSystemTypes.srbm.reloadTi
 ## saveData 結構
 
 ```text
-saveData.c
+saveData.red
 ├── air
 │   ├── enabled: boolean
 │   └── airTaskingOrder: table<string, SBJ__Wave>
@@ -188,14 +188,14 @@ saveData.c
 
 | 路徑 | 操作 | 說明 |
 |---|---|---|
-| `saveData.c.air.airTaskingOrder` | read | `airStrike()` 掃描所有已啟動且未完成的 Wave。 |
+| `saveData.red.air.airTaskingOrder` | read | `airStrike()` 掃描所有已啟動且未完成的 Wave。 |
 | `package.loadoutStatus.loadoutStartTime` | write | `ensureLoadoutStartTime()` 快取掛彈開始時間。 |
 | `package.loadoutStatus.isLoadoutInitiated` | write | `startLoadoutForPackage()` 標記掛彈流程已啟動。 |
 | `package.loadoutStatus.loadoutInitiatedTime` | write | 記錄實際啟動掛彈的 scenario timestamp。 |
 | `package.loadoutStatus.expectedReadyTime` | write | 記錄預期掛彈完成 timestamp。 |
 | `package.hasLaunched` | write | `processWave()` 在 package 成功 launch 後標記。 |
 | `wave.hasLaunched` | write | `airStrike()` 在所有 packages 都已 launch 後標記。 |
-| `saveData.c.recon.queue` | write | `scheduleReconUAV()` 透過 `Recon.addEntry()` 間接新增打擊後偵察 entry。 |
+| `saveData.red.recon.queue` | write | `scheduleReconUAV()` 透過 `Recon.addEntry()` 間接新增打擊後偵察 entry。 |
 
 ---
 
@@ -205,7 +205,7 @@ saveData.c
 |---|---|---|---|---|
 | `AirTaskingOrder.process(config, saveData)` | `SBJ__Config`, `SBJ__SaveData` | 無 | `StrikePlanner.process()` → `src/scripts/china/scheduledStrikePlanner.lua` | 掃描已啟動 ATO Wave，推進 Package 掛彈、任務建立、目標指派、單元派遣與 report 輸出。 |
 
-`StrikePlanner.process` 會在 `saveData.c.air.enabled == true` 時呼叫 `AirTaskingOrder.process(config, saveData)`。同一個排程 tick 也會先處理 dynamic ATO insertion，因此動態插入且已啟動的 Wave 可在後續 ATO 執行階段被推進。
+`StrikePlanner.process` 會在 `saveData.red.air.enabled == true` 時呼叫 `AirTaskingOrder.process(config, saveData)`。同一個排程 tick 也會先處理 dynamic ATO insertion，因此動態插入且已啟動的 Wave 可在後續 ATO 執行階段被推進。
 
 ---
 
@@ -219,7 +219,7 @@ saveData.c
 | `src.utils.logFormat` | 透過 `LogFormat.report` 收集並輸出 `[OK]` / `[SKIP]` / `[FAIL]` 行。 |
 | `src.modules.assignMission` | 從基地派遣 embarked aircraft 至任務。 |
 | `src.modules.strikePlanner.recon` | 透過 `Recon.addEntry()` 將打擊後偵察 UAV 排入偵察佇列。 |
-| `src.core.constants` | 使用 `SIDES.ENEMY`、`TAGS.AIR`、`TIME_FORMATS`。 |
+| `src.core.constants` | 使用 `SIDES.RED`、`TAGS.AIR`、`TIME_FORMATS`。 |
 
 ---
 
@@ -227,11 +227,11 @@ saveData.c
 
 | 類型 | 路徑 | 用途 |
 |---|---|---|
-| `config` | `config.c.ground.missileSystemTypes.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
+| `config` | `config.red.ground.missileSystemTypes.srbm.reloadTime` | 推算打擊後偵察 UAV 起飛時間。 |
 | `config` | `config.aircraftReadySec` | Package template 會用它填入必填的 `timeToReady`；本模組執行時讀取的是 `packageData.timeToReady`。 |
-| `config` | `config.c.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
-| `config` | `config.c.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
-| `constants` | `constants.SIDES.ENEMY` | 建立 China side 任務、設定 doctrine、建立 flight plan。 |
+| `config` | `config.red.packageTemplates.*.target.minTargetCount` | 上游 `atoBuilder` 建立 Wave 前用來過濾目標數不足的 Package；本模組僅把 executable package 內的值輸出為 log `required`。 |
+| `config` | `config.red.packageTemplates.*.reconUAV` | 進入 executable package 後由 `scheduleReconUAV()` 用於打擊後偵察排程。 |
+| `constants` | `constants.SIDES.RED` | 建立 China side 任務、設定 doctrine、建立 flight plan。 |
 | `constants` | `constants.TAGS.AIR` | ATO report 的模組 tag。 |
 | `constants` | `constants.TIME_FORMATS` | CMO 任務時間欄位附加格式。 |
 

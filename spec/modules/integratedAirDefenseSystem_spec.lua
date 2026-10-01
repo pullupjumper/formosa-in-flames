@@ -133,9 +133,9 @@ describe("IntegratedAirDefenseSystem", function()
     it("should disable linked units and remove c2 context", function()
       local radar = makeUnit({ guid = "RAD-1" })
       local sam = makeUnit({ guid = "SAM-1" })
-      local c2 = makeUnit({ guid = "C2-1", name = "C2 Node", side = constants.SIDES.ENEMY })
+      local c2 = makeUnit({ guid = "C2-1", name = "C2 Node", side = constants.SIDES.RED })
       local saveData = {
-        c = {
+        red = {
           iads = {
             c2 = {
               ["C2-1"] = {
@@ -156,7 +156,7 @@ describe("IntegratedAirDefenseSystem", function()
 
       IntegratedAirDefenseSystem.processC2Disruption(saveData, c2)
 
-      assert.is_nil(saveData.c.iads.c2["C2-1"])
+      assert.is_nil(saveData.red.iads.c2["C2-1"])
       assert.stub(stubSetUnit).was.called(2)
       assert.stub(stubSetUnit).was.called_with({ guid = "RAD-1", outofcomms = true })
       assert.stub(stubSetUnit).was.called_with({ guid = "SAM-1", outofcomms = true })
@@ -164,8 +164,8 @@ describe("IntegratedAirDefenseSystem", function()
 
     -- Negative: no-op when guid not found in any context
     it("should not disable any unit when c2 guid is not tracked", function()
-      local c2 = makeUnit({ guid = "C2-MISSING", side = constants.SIDES.PLAYER })
-      local saveData = { t = { iads = { c2 = {}, rocc = {}, taaoc = {} } } }
+      local c2 = makeUnit({ guid = "C2-MISSING", side = constants.SIDES.BLUE })
+      local saveData = { blue = { iads = { c2 = {}, rocc = {}, taaoc = {} } } }
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
 
       IntegratedAirDefenseSystem.processC2Disruption(saveData, c2)
@@ -179,7 +179,7 @@ describe("IntegratedAirDefenseSystem", function()
   -- ============================================================================
 
   describe("processUnitDestruction", function()
-    local cfg = { c = { iads = { radarDistanceNm = 100 } } }
+    local cfg = { red = { iads = { radarDistanceNm = 100 } } }
 
     ---Create one C2 node covering area A-1 with the given sam and radar entries
     ---@param overrides? table
@@ -204,30 +204,30 @@ describe("IntegratedAirDefenseSystem", function()
     it("should stop tracking a destroyed Taiwan SAM under its ROCC node", function()
       local destroyed = makeDestroyedUnit({
         guid = "SAM-9",
-        side = constants.SIDES.PLAYER,
+        side = constants.SIDES.BLUE,
         dbid = constants.PLATFORMS
             .PAC3
       })
       local saveData = {
-        t = { iads = { rocc = { ["C2-A"] = makeC2Node({ sam = { ["SAM-9"] = { guid = "SAM-9" } } }) }, taaoc = {} } },
+        blue = { iads = { rocc = { ["C2-A"] = makeC2Node({ sam = { ["SAM-9"] = { guid = "SAM-9" } } }) }, taaoc = {} } },
       }
 
       local handled = IntegratedAirDefenseSystem.processUnitDestruction(cfg, saveData, destroyed)
 
       assert.is_true(handled)
-      assert.is_nil(saveData.t.iads.rocc["C2-A"].sam["SAM-9"])
+      assert.is_nil(saveData.blue.iads.rocc["C2-A"].sam["SAM-9"])
     end)
 
     -- Positive: an MRADS leaves its TAAOC node, not the ROCC one
     it("should stop tracking a destroyed MRADS under its TAAOC node", function()
       local destroyed = makeDestroyedUnit({
         guid = "TC2-9",
-        side = constants.SIDES.PLAYER,
+        side = constants.SIDES.BLUE,
         dbid = constants.PLATFORMS
             .TC2
       })
       local saveData = {
-        t = {
+        blue = {
           iads = {
             rocc = { ["C2-A"] = makeC2Node({ sam = { ["TC2-9"] = { guid = "TC2-9" } } }) },
             taaoc = { ["C2-A"] = makeC2Node({ sam = { ["TC2-9"] = { guid = "TC2-9" } } }) },
@@ -237,16 +237,16 @@ describe("IntegratedAirDefenseSystem", function()
 
       IntegratedAirDefenseSystem.processUnitDestruction(cfg, saveData, destroyed)
 
-      assert.is_nil(saveData.t.iads.taaoc["C2-A"].sam["TC2-9"])
-      assert.is_not_nil(saveData.t.iads.rocc["C2-A"].sam["TC2-9"])
+      assert.is_nil(saveData.blue.iads.taaoc["C2-A"].sam["TC2-9"])
+      assert.is_not_nil(saveData.blue.iads.rocc["C2-A"].sam["TC2-9"])
     end)
 
     -- Positive: a lost China radar leaves its C2 node and wakes the nearest dedicated radar before a closer SAM
     it("should activate nearest dedicated radar first when a China radar is destroyed", function()
       local destroyed = makeDestroyedUnit({
-        guid = "RAD-X", side = constants.SIDES.ENEMY, dbid = constants.PLATFORMS.JY26, latitude = 10, longitude = 20,
+        guid = "RAD-X", side = constants.SIDES.RED, dbid = constants.PLATFORMS.JY26, latitude = 10, longitude = 20,
       })
-      local saveData = { c = { iads = { c2 = { ["C2-A"] = makeC2Node({ radar = { ["RAD-X"] = { guid = "RAD-X" } } }) } } } }
+      local saveData = { red = { iads = { c2 = { ["C2-A"] = makeC2Node({ radar = { ["RAD-X"] = { guid = "RAD-X" } } }) } } } }
       local radarA = makeUnit({ guid = "RAD-A", name = "JY-26", dbid = constants.PLATFORMS.JY26 })
       local samA = makeUnit({ guid = "SAM-A", name = "HQ-22", dbid = constants.PLATFORMS.HQ22 })
 
@@ -266,7 +266,7 @@ describe("IntegratedAirDefenseSystem", function()
       local handled = IntegratedAirDefenseSystem.processUnitDestruction(cfg, saveData, destroyed)
 
       assert.is_true(handled)
-      assert.is_nil(saveData.c.iads.c2["C2-A"].radar["RAD-X"])
+      assert.is_nil(saveData.red.iads.c2["C2-A"].radar["RAD-X"])
       assert.stub(stubSetEmcon).was.called_with("Unit", "RAD-A", "Radar=Active")
     end)
 
@@ -274,11 +274,11 @@ describe("IntegratedAirDefenseSystem", function()
     it("should not activate any radar when all candidates are out of range", function()
       local destroyed = makeDestroyedUnit({
         guid = "SAM-X",
-        side = constants.SIDES.ENEMY,
+        side = constants.SIDES.RED,
         dbid = constants.PLATFORMS
             .HQ22
       })
-      local saveData = { c = { iads = { c2 = {} } } }
+      local saveData = { red = { iads = { c2 = {} } } }
       local radarA = makeUnit({ guid = "RAD-A", dbid = constants.PLATFORMS.JY26 })
 
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return { { guid = "RAD-A" } } end }))
@@ -293,22 +293,22 @@ describe("IntegratedAirDefenseSystem", function()
 
     -- Negative: a unit that is not an IADS radar or SAM is left to the caller
     it("should report a non-IADS unit as not handled", function()
-      local destroyed = makeUnit({ side = constants.SIDES.PLAYER, dbid = 1001 })
-      local saveData = { t = { iads = { rocc = {}, taaoc = {} } } }
+      local destroyed = makeUnit({ side = constants.SIDES.BLUE, dbid = 1001 })
+      local saveData = { blue = { iads = { rocc = {}, taaoc = {} } } }
 
       assert.is_false(IntegratedAirDefenseSystem.processUnitDestruction(cfg, saveData, destroyed))
     end)
 
     -- Boundary: keeps data when unit is outside all areas
     it("should keep context unchanged when destroyed unit is outside areas", function()
-      local destroyed = makeUnit({ guid = "RAD-2", side = constants.SIDES.PLAYER, dbid = constants.PLATFORMS.FPS117 })
+      local destroyed = makeUnit({ guid = "RAD-2", side = constants.SIDES.BLUE, dbid = constants.PLATFORMS.FPS117 })
       local saveData = {
-        t = { iads = { rocc = { ["C2-A"] = makeC2Node({ radar = { ["RAD-2"] = { guid = "RAD-2" } } }) }, taaoc = {} } },
+        blue = { iads = { rocc = { ["C2-A"] = makeC2Node({ radar = { ["RAD-2"] = { guid = "RAD-2" } } }) }, taaoc = {} } },
       }
 
       IntegratedAirDefenseSystem.processUnitDestruction(cfg, saveData, destroyed)
 
-      assert.are.equal("RAD-2", saveData.t.iads.rocc["C2-A"].radar["RAD-2"].guid)
+      assert.are.equal("RAD-2", saveData.blue.iads.rocc["C2-A"].radar["RAD-2"].guid)
     end)
   end)
 
@@ -329,7 +329,7 @@ describe("IntegratedAirDefenseSystem", function()
       if overrides then
         for k, v in pairs(overrides) do iads[k] = v end
       end
-      return { c = { iads = iads } }
+      return { red = { iads = iads } }
     end
 
     -- Positive: old facilities go before one new group is created per deployment
@@ -342,7 +342,7 @@ describe("IntegratedAirDefenseSystem", function()
           { name = "Sector B", areas = {}, pos = { latitude = 3, longitude = 4 } },
         },
       })
-      local saveData = { c = { iads = {} } }
+      local saveData = { red = { iads = {} } }
 
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return { { guid = "F-1" }, { guid = "F-2" } } end }))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -356,7 +356,7 @@ describe("IntegratedAirDefenseSystem", function()
       IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
 
       assert.stub(stubDelete).was.called(1)
-      assert.stub(stubDelete).was.called_with({ side = constants.SIDES.ENEMY, guid = "F-1" })
+      assert.stub(stubDelete).was.called_with({ side = constants.SIDES.RED, guid = "F-1" })
       assert.stub(stubCreate).was.called(2)
     end)
 
@@ -382,7 +382,7 @@ describe("IntegratedAirDefenseSystem", function()
         inArea = function(_, area) return area == areaA end,
       })
       local filtered = { { guid = "C2-FAC-1" }, { guid = "SAM-1" }, { guid = "RAD-1" } }
-      local saveData = { c = { iads = {} } }
+      local saveData = { red = { iads = {} } }
 
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return filtered end }))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
@@ -400,7 +400,7 @@ describe("IntegratedAirDefenseSystem", function()
         saveData
       )
 
-      local c2Map = saveData.c.iads.c2
+      local c2Map = saveData.red.iads.c2
       assert.are.equal("C2 Facility/Sector A", c2Map["C2-FAC-1"].name)
       assert.are.equal("SAM-1", c2Map["C2-FAC-1"].sam["SAM-1"].name)
       assert.are.equal("RAD-1", c2Map["C2-FAC-1"].radar["RAD-1"].name)
@@ -414,7 +414,7 @@ describe("IntegratedAirDefenseSystem", function()
           { name = "Sector B", areas = {}, pos = { latitude = 3, longitude = 4 } },
         },
       })
-      local saveData = { c = { iads = {} } }
+      local saveData = { red = { iads = {} } }
 
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return {} end }))
       local stubCreate = trackStub(stub(GameUtils, "createRandomUnits").returns({}))
@@ -426,14 +426,14 @@ describe("IntegratedAirDefenseSystem", function()
 
     -- Boundary: without a facility list nothing is deleted and old C2 nodes are dropped
     it("should clear c2 context and delete nothing when facility list is unavailable", function()
-      local saveData = { c = { iads = { c2 = { stale = {} } } } }
+      local saveData = { red = { iads = { c2 = { stale = {} } } } }
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return nil end }))
       local stubDelete = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
 
       IntegratedAirDefenseSystem.deployC2Facilities(makeConfig(), saveData)
 
       assert.stub(stubDelete).was_not.called()
-      assert.are.same({}, saveData.c.iads.c2)
+      assert.are.same({}, saveData.red.iads.c2)
     end)
   end)
 
@@ -470,7 +470,7 @@ describe("IntegratedAirDefenseSystem", function()
 
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return filtered end }))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(a, b)
-        if b == constants.SIDES.PLAYER then
+        if b == constants.SIDES.BLUE then
           if a == "ROCC-Node" then return roccNode end
           if a == "TAAOC-Node" then return taaocNode end
         end
@@ -481,18 +481,18 @@ describe("IntegratedAirDefenseSystem", function()
       end))
 
       local config = {
-        t = {
+        blue = {
           iads = {
             rocc = { makeDescriptor({ name = "ROCC-Node", areas = { areaA } }) },
             taaoc = { makeDescriptor({ name = "TAAOC-Node", areas = { areaA } }) },
           },
         },
       }
-      local saveData = { t = { iads = { enabled = true, rocc = {}, taaoc = {} } } }
+      local saveData = { blue = { iads = { enabled = true, rocc = {}, taaoc = {} } } }
 
-      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.PLAYER)
+      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
-      local iadsCtx = saveData.t.iads
+      local iadsCtx = saveData.blue.iads
       assert.are.equal("PAC3", iadsCtx.rocc["ROCC-1"].sam["PAC3-1"].name)
       assert.are.equal("FPS117", iadsCtx.rocc["ROCC-1"].radar["FPS-1"].name)
       assert.are.equal("TC2", iadsCtx.taaoc["TAAOC-1"].sam["TC2-1"].name)
@@ -501,22 +501,22 @@ describe("IntegratedAirDefenseSystem", function()
 
     -- Positive: China builds C2 nodes rather than ROCC/TAAOC ones
     it("should build China's c2 map from its own IADS config", function()
-      local config = { c = { iads = { c2Deployments = {}, c2FacilityDBIDs = {} } } }
-      local saveData = { c = { iads = { enabled = true } } }
+      local config = { red = { iads = { c2Deployments = {}, c2FacilityDBIDs = {} } } }
+      local saveData = { red = { iads = { enabled = true } } }
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return {} end }))
 
-      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.ENEMY)
+      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.RED)
 
-      assert.are.same({}, saveData.c.iads.c2)
+      assert.are.same({}, saveData.red.iads.c2)
     end)
 
     -- Negative: a disabled IADS is not built at all
     it("should not scan units when the side's IADS is disabled", function()
-      local config = { t = { iads = {} } }
-      local saveData = { t = { iads = { enabled = false } } }
+      local config = { blue = { iads = {} } }
+      local saveData = { blue = { iads = { enabled = false } } }
       local getSideStub = trackStub(stub(GameApi, "VP_GetSide"))
 
-      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.PLAYER)
+      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
       assert.stub(getSideStub).was_not.called()
     end)
@@ -524,13 +524,13 @@ describe("IntegratedAirDefenseSystem", function()
     -- Boundary: returns immediately when player side has no facilities
     it("should keep context unchanged when no facility units are found", function()
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return nil end }))
-      local config = { t = { iads = { rocc = {}, taaoc = {} } } }
-      local saveData = { t = { iads = { enabled = true, rocc = {}, taaoc = {} } } }
+      local config = { blue = { iads = { rocc = {}, taaoc = {} } } }
+      local saveData = { blue = { iads = { enabled = true, rocc = {}, taaoc = {} } } }
 
-      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.PLAYER)
+      IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
-      assert.is_nil(next(saveData.t.iads.rocc))
-      assert.is_nil(next(saveData.t.iads.taaoc))
+      assert.is_nil(next(saveData.blue.iads.rocc))
+      assert.is_nil(next(saveData.blue.iads.taaoc))
     end)
   end)
 end)

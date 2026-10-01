@@ -49,7 +49,7 @@ describe("LandingOps", function()
     local ship = {
       guid = "SHIP-001",
       name = "Ship",
-      side = constants.SIDES.ENEMY,
+      side = constants.SIDES.RED,
       dbid = constants.PLATFORMS.TYPE_052D,
       group = { name = "SAG Alpha" },
       latitude = 25.0,
@@ -109,14 +109,14 @@ describe("LandingOps", function()
   ---@param amphibOpsConfig table
   ---@return table
   local function makeConfig(amphibOpsConfig)
-    return { c = { amphibOps = amphibOpsConfig } }
+    return { red = { amphibOps = amphibOpsConfig } }
   end
 
   ---Create save data holding China's amphibious state
   ---@param amphibOps table
   ---@return table
   local function makeSaveData(amphibOps)
-    return { c = { amphibOps = amphibOps, recon = {}, ground = {} } }
+    return { red = { amphibOps = amphibOps, recon = {}, ground = {} } }
   end
 
   -- ============================================================================
@@ -132,7 +132,7 @@ describe("LandingOps", function()
 
       LandingOps.init(makeConfig(cfg), saveData)
 
-      assert.stub(stubCalc).was.called_with(cfg, saveData.c.amphibOps.calculationResult)
+      assert.stub(stubCalc).was.called_with(cfg, saveData.red.amphibOps.calculationResult)
     end)
   end)
 
@@ -156,7 +156,7 @@ describe("LandingOps", function()
 
       local args = stubProcess.calls[1].vals
       assert.are.same(config, args[1])
-      assert.are.same(saveData.c.amphibOps, args[2].amphibOps)
+      assert.are.same(saveData.red.amphibOps, args[2].amphibOps)
       assert.are.same(contacts, args[3].contacts)
       assert.are.equal(100, args[3].currentTime)
       assert.are.same(filteredShips, args[3].filteredShips)
@@ -271,7 +271,7 @@ describe("LandingOps", function()
       assert.is_nil(ship.course)
       assert.are.equal(0, ship.manualSpeed)
       assert.is_true(ship.holdposition)
-      assert.are.equal("BRIDGE-001", saveData.c.amphibOps.barges[ship.guid].bridgeGUID)
+      assert.are.equal("BRIDGE-001", saveData.red.amphibOps.barges[ship.guid].bridgeGUID)
       assert.stub(stubHasBridge).was.called(1)
       assert.stub(stubIsBridgeDestroyed).was.called(1)
       assert.stub(stubAddUnit).was.called(1)
@@ -300,8 +300,8 @@ describe("LandingOps", function()
       local result = LandingOps.offloadVehicles(makeConfig(cfg), saveData, ship)
 
       assert.is_true(result)
-      assert.stub(stubHasBridge).was.called_with(saveData.c.amphibOps.barges, ship)
-      assert.stub(stubIsBridgeDestroyed).was.called_with(saveData.c.amphibOps.barges, ship)
+      assert.stub(stubHasBridge).was.called_with(saveData.red.amphibOps.barges, ship)
+      assert.stub(stubIsBridgeDestroyed).was.called_with(saveData.red.amphibOps.barges, ship)
       assert.stub(stubGetUnit).was.called_with(roro.guid)
       assert.stub(stubGetZone).was.called_with({ operationalZones = { zone } }, ship, roro)
       assert.stub(stubOffload).was.called_with({

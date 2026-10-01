@@ -1224,7 +1224,7 @@ describe("AtoBuilder", function()
 
     local plannerState = makePlannerState({ reconEntry })
     local config = makeConfig()
-    config.c.air.minimumStrengthRatio = 1
+    config.red.air.minimumStrengthRatio = 1
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1246,7 +1246,7 @@ describe("AtoBuilder", function()
 
     local plannerState = makePlannerState({ reconEntry })
     local config = makeConfig()
-    config.c.air.minimumStrengthRatio = 0.25
+    config.red.air.minimumStrengthRatio = 0.25
 
     stubClock(1000)
     attachOperation(reconEntry, operation)
@@ -1631,7 +1631,7 @@ describe("AtoBuilder", function()
     local config = makeConfig()
 
     trackStub(stub(GameApi, "ScenEdit_CurrentTime")
-      .returns(1000 + config.c.recon.observationWindowSec + 1))
+      .returns(1000 + config.red.recon.observationWindowSec + 1))
     trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(1000))
     attachOperation(reconEntry, operation)
 

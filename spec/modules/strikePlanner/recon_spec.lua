@@ -150,12 +150,12 @@ describe("Recon", function()
   ---@return SBJ__Config
   local function makeConfig(overrides)
     local cfg = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    cfg.c.recon.strikeMappings = {
+    cfg.red.recon.strikeMappings = {
       C2_NORTH_TARGETING = {
         { name = "GND/STRIKE/C2/N/1", type = "ground" },
       },
     }
-    cfg.c.recon.frontlineRedirect = {
+    cfg.red.recon.frontlineRedirect = {
       enabled = false,
       attritionThresholdPct = 50,
       frontlineBaseNames = {},
@@ -163,8 +163,8 @@ describe("Recon", function()
         { fromPrefix = "AIR/STRIKE/AB/W/", toPrefix = "AIR/STRIKE/AB/W/AAR/", type = "air" },
       },
     }
-    cfg.c.packageTemplates = {}
-    cfg.c.fireSupportTaskTemplates = {
+    cfg.red.packageTemplates = {}
+    cfg.red.fireSupportTaskTemplates = {
       STRIKE_C2_2 = { {
         name = "FST-C2-2",
         firingUnits = {},
@@ -501,10 +501,10 @@ describe("Recon", function()
     end)
 
     -- Boundary: the base lookup is delegated wholesale to the GameApi wrapper, which already
-    -- falls back from GUID to name against constants.SIDES.ENEMY. Retrying here would only
+    -- falls back from GUID to name against constants.SIDES.RED. Retrying here would only
     -- double the failed calls and their error tracebacks.
     -- Boundary: the base lookup is delegated wholesale to the GameApi wrapper, which already
-    -- falls back from GUID to name against constants.SIDES.ENEMY. Retrying here would only
+    -- falls back from GUID to name against constants.SIDES.RED. Retrying here would only
     -- double the failed calls and their error tracebacks.
     it("should look the base up exactly once and not retry per side", function()
       local uav = makeUnit({ guid = "UAV-001" })
@@ -1349,9 +1349,9 @@ describe("Recon", function()
   -- ============================================================================
 
   describe("initQueue", function()
-    -- Positive: a UAV authored straight into config.c.recon.queue carries its own timings and
+    -- Positive: a UAV authored straight into config.red.recon.queue carries its own timings and
     -- must reach processQueue as a fully initialized entry, without going through addEntry
-    -- Positive: a UAV authored straight into config.c.recon.queue carries its own timings and
+    -- Positive: a UAV authored straight into config.red.recon.queue carries its own timings and
     -- must reach processQueue fully initialized, without going through addEntry
     it("should initialize a UAV authored directly in the config queue", function()
       local reconConfig = {

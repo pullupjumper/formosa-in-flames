@@ -4,7 +4,7 @@
 
 > Source: `src/modules/integratedAirDefenseSystem.lua`
 
-責任摘要：維護 `saveData.c.iads` 與 `saveData.t.iads` 的 C2/ROCC/TAAOC 關聯，並對單位摧毀事件執行通聯與防空網重配置。
+責任摘要：維護 `saveData.red.iads` 與 `saveData.blue.iads` 的 C2/ROCC/TAAOC 關聯，並對單位摧毀事件執行通聯與防空網重配置。
 
 ---
 
@@ -14,7 +14,7 @@
 
 毀傷處理由 score event scripts 觸發。當 C2 類節點被摧毀，模組會將其轄下 radar/sam 標記為 `outofcomms`；當一般 radar/sam 被摧毀，則只從對應 context 移除該節點，並視情況啟用最近備援雷達。
 
-特殊動作 `addC2Facilities.lua` 會呼叫本模組先刪再建 C2 設施，最後重建 `saveData.c.iads.c2` 對應。
+特殊動作 `addC2Facilities.lua` 會呼叫本模組先刪再建 C2 設施，最後重建 `saveData.red.iads.c2` 對應。
 
 ---
 
@@ -24,7 +24,7 @@
 2. **局部毀傷同步**：`removeDestroyedUnitContextFromIADS` 以 `destroyedUnit:inArea(area)` 判斷命中 C2 區域後，從 `sam` 或 `radar` map 移除。
 3. **備援雷達啟用**：`activateNearestRadar` 先找專用雷達（JY-26/YLC-8B），找不到才退而求其次選 SAM 雷達（HQ-22/S300/S400/HQ-12）。
 4. **中國 C2 建模**：`initC2FacilitiesContext` 先選每個 deployment 的隨機 C2 設施，再將同區域 SAM/雷達掛入該 C2。
-5. **台灣 IADS 建模**：`initIADSContexts` 依 `config.t.iads.rocc/taaoc` 描述區域與節點名稱，關聯對應平台到 ROCC 或 TAAOC context。
+5. **台灣 IADS 建模**：`initIADSContexts` 依 `config.blue.iads.rocc/taaoc` 描述區域與節點名稱，關聯對應平台到 ROCC 或 TAAOC context。
 
 ---
 
@@ -85,18 +85,18 @@ SBJ__C2Context
 
 | 路徑 | 用途 |
 |---|---|
-| `config.c.iads.radarDistanceNm` | `activateNearestRadar` 的搜尋距離上限（由呼叫端傳入） |
-| `config.c.iads.c2FacilityDBIDs` | 新增/初始化/刪除中國 C2 設施時的 DBID 白名單 |
-| `config.c.iads.randomRadiusNm` | C2 設施隨機部署半徑 |
-| `config.c.iads.c2Deployments` | 中國 C2 佈署點（座標、區域、名稱） |
-| `config.t.iads.rocc` | 台灣 ROCC 節點描述 |
-| `config.t.iads.taaoc` | 台灣 TAAOC 節點描述 |
+| `config.red.iads.radarDistanceNm` | `activateNearestRadar` 的搜尋距離上限（由呼叫端傳入） |
+| `config.red.iads.c2FacilityDBIDs` | 新增/初始化/刪除中國 C2 設施時的 DBID 白名單 |
+| `config.red.iads.randomRadiusNm` | C2 設施隨機部署半徑 |
+| `config.red.iads.c2Deployments` | 中國 C2 佈署點（座標、區域、名稱） |
+| `config.blue.iads.rocc` | 台灣 ROCC 節點描述 |
+| `config.blue.iads.taaoc` | 台灣 TAAOC 節點描述 |
 
 ### constants
 
 | 路徑 | 用途 |
 |---|---|
-| `constants.SIDES.ENEMY` / `constants.SIDES.PLAYER` | 陣營側查詢與刪除 |
+| `constants.SIDES.RED` / `constants.SIDES.BLUE` | 陣營側查詢與刪除 |
 | `constants.UNIT_TYPES.FACILITY` | 設施類型篩選 |
 | `constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM` | 模組日誌標籤 |
 | `constants.PLATFORMS.JY26` / `YLC8B` | 專用雷達 |

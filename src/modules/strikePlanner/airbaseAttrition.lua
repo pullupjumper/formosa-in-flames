@@ -12,10 +12,10 @@ local AirbaseAttrition = {}
 ---Aircraft count as combat-capable iff both they and their home base are alive; destroyed base zeroes the wing.
 ---@param deployments SBJ__AirbaseDeploymentDescriptor[] Airbase deployment descriptors
 ---@param baseNames string[] Airbase names to query (empty array yields a zero summary)
----@param sideName? string Side name to enumerate aircraft from (default: constants.SIDES.ENEMY)
+---@param sideName? string Side name to enumerate aircraft from (default: constants.SIDES.RED)
 ---@return SBJ__AirbaseAttritionResult # Per-base details and overall attrition summary
 function AirbaseAttrition.calculate(deployments, baseNames, sideName)
-  sideName = sideName or constants.SIDES.ENEMY
+  sideName = sideName or constants.SIDES.RED
 
   -- Phase 1: Build lookup tables.
   -- descriptorByName: translate user-supplied baseName -> descriptor.

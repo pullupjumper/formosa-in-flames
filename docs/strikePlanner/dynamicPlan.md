@@ -25,7 +25,7 @@ flowchart LR
 
 `DynamicPlan.evaluateTargets(config, saveData, contacts, operationType, template)` 依 descriptor 的 `templateField`（`packages` 或 `fireSupportTasks`）走訪 template，對每一筆呼叫 `TargetingProcess.processTargets(config, saveData, contacts, entry.target, template.isFirstWave)`。目標數達到 `entry.target.minTargetCount` 的那筆才進結果。
 
-`processTargets` 的第二個回傳值是追蹤請求。`evaluateTargets` 把**每一筆** entry 的請求收齊（未達門檻的也算），迴圈結束後呼叫一次 `Recon.trackTargets(saveData.c.recon, requests)`。recon queue 的寫入因此只發生在 [recon](recon.md)。
+`processTargets` 的第二個回傳值是追蹤請求。`evaluateTargets` 把**每一筆** entry 的請求收齊（未達門檻的也算），迴圈結束後呼叫一次 `Recon.trackTargets(saveData.red.recon, requests)`。recon queue 的寫入因此只發生在 [recon](recon.md)。
 
 回傳兩個值：
 
@@ -81,8 +81,8 @@ flowchart LR
 
 | 路徑 | 行為 |
 |---|---|
-| `saveData.c.air.airTaskingOrder[name]` 或 `saveData.c.ground.fireSupportPlan[name]` | `insert` 寫入 `buildPlan` 的回傳值，由 descriptor 決定哪一張表 |
-| `saveData.c.dynamicOperations.generatedOperations[air\|ground][name]` | `insert` 登記 |
+| `saveData.red.air.airTaskingOrder[name]` 或 `saveData.red.ground.fireSupportPlan[name]` | `insert` 寫入 `buildPlan` 的回傳值，由 descriptor 決定哪一張表 |
+| `saveData.red.dynamicOperations.generatedOperations[air\|ground][name]` | `insert` 登記 |
 
 不碰遊戲狀態；目標評估透過 [targetingProcess](targetingProcess.md) 讀 contacts。
 

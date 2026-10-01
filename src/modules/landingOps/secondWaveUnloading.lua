@@ -33,7 +33,7 @@ local DEFAULT_CARGO_TYPE = "Facility"
 ---@param unit CMO__Unit Barge unit to calculate course for
 ---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
 local function createCourseForBarge(zone, unit)
-  local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.ENEMY, area = zone.offloadArea })
+  local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.RED, area = zone.offloadArea })
 
   if not points then
     return nil
@@ -194,7 +194,7 @@ local function createOffloadedVehicle(ship, item, location, index)
   local unitType = CARGO_TYPE_MAP[item.type] or DEFAULT_CARGO_TYPE
 
   local vehicle = GameApi.ScenEdit_AddUnit({
-    side      = constants.SIDES.ENEMY,
+    side      = constants.SIDES.RED,
     type      = unitType,
     latitude  = location.latitude,
     longitude = location.longitude,

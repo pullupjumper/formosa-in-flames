@@ -33,25 +33,25 @@ describe("ConfigCodeGenerator", function()
     it("should emit ammunitions, resupplyUnits and firingUnits blocks for a system", function()
       local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())
 
-      assert.is_truthy(configStr:find("config.c.ground.missileSystemTypes.mlrs.ammunitions = {", 1, true))
-      assert.is_truthy(configStr:find("config.c.ground.missileSystemTypes.mlrs.resupplyUnits = {", 1, true))
-      assert.is_truthy(configStr:find("config.c.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
+      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.ammunitions = {", 1, true))
+      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {", 1, true))
+      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
     end)
 
     -- Positive: side name resolves to side field
-    it("should use side field t for Taiwan", function()
+    it("should use side field blue for Taiwan", function()
       local _, _, configStr = ConfigCodeGenerator.format("Taiwan", buildMlrsConfig())
 
-      assert.is_truthy(configStr:find("config.t.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
+      assert.is_truthy(configStr:find("config.blue.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
     end)
 
     -- Positive: wpn values are rewritten as weaponCountDefault references
     it("should reference weaponCountDefault with multiplier and divisor", function()
       local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())
 
-      assert.is_truthy(configStr:find("weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,", 1, true))
-      assert.is_truthy(configStr:find("weaponCountDefault = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault / 2,", 1, true))
-      assert.is_truthy(configStr:find("weaponCountCurrent = config.c.ground.missileSystemTypes.mlrs.weaponCountDefault,", 1, true))
+      assert.is_truthy(configStr:find("weaponCountCurrent = config.red.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,", 1, true))
+      assert.is_truthy(configStr:find("weaponCountDefault = config.red.ground.missileSystemTypes.mlrs.weaponCountDefault / 2,", 1, true))
+      assert.is_truthy(configStr:find("weaponCountCurrent = config.red.ground.missileSystemTypes.mlrs.weaponCountDefault,", 1, true))
     end)
 
     -- Positive: constants and thresholds are emitted as references
@@ -61,7 +61,7 @@ describe("ConfigCodeGenerator", function()
       assert.is_truthy(configStr:find("state = constants.MISSILE_SYSTEM_STATE.STATIC,", 1, true))
       assert.is_truthy(configStr:find("weaponDBID = constants.WEAPONS.FD280,", 1, true))
       assert.is_truthy(configStr:find("dbid = constants.PLATFORMS.PHL16,", 1, true))
-      assert.is_truthy(configStr:find("ammoThreshold = config.c.ground.missileSystemTypes.mlrs.ammoThreshold,", 1, true))
+      assert.is_truthy(configStr:find("ammoThreshold = config.red.ground.missileSystemTypes.mlrs.ammoThreshold,", 1, true))
     end)
 
     -- Positive: missileSystem is quoted and follows dbid

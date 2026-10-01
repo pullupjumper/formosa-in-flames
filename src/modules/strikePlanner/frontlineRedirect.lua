@@ -33,9 +33,9 @@ end
 ---@return SBJ__ReconStrikeMapping[] # Original or rewritten mappings
 function FrontlineRedirect.updateMappings(config, reconCtx, strikeMappings)
   if reconCtx.frontlineRedirected and
-      config.c.recon.frontlineRedirect and
-      config.c.recon.frontlineRedirect.mappings then
-    return buildRewrittenMappings(strikeMappings, config.c.recon.frontlineRedirect.mappings)
+      config.red.recon.frontlineRedirect and
+      config.red.recon.frontlineRedirect.mappings then
+    return buildRewrittenMappings(strikeMappings, config.red.recon.frontlineRedirect.mappings)
   end
 
   return strikeMappings
@@ -56,12 +56,12 @@ function FrontlineRedirect.evaluate(config, reconCtx)
     return true, nil
   end
 
-  local cfg = config.c.recon.frontlineRedirect
+  local cfg = config.red.recon.frontlineRedirect
   if not cfg or not cfg.enabled then
     return false, nil
   end
 
-  local summary = AirbaseAttrition.calculate(config.c.air.deployedACs, cfg.frontlineBaseNames)
+  local summary = AirbaseAttrition.calculate(config.red.air.deployedACs, cfg.frontlineBaseNames)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
     reconCtx.frontlineRedirected = true

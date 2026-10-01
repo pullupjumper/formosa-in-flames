@@ -13,12 +13,12 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 
 ### 系統能力
 
-- 偵察資產生命週期管理：UAV、衛星、SIGINT 偵察項目可排入 `saveData.c.recon.queue`
+- 偵察資產生命週期管理：UAV、衛星、SIGINT 偵察項目可排入 `saveData.red.recon.queue`
 - 動態作戰排程：偵察完成後建立 `reconTriggeredOperationBatches`，同時掛載 air/ground operations
 - 空中打擊生成：依 `SBJ__WaveTemplate` 評估目標、檢查飛機可用性、產生 ATO Wave
 - 空中打擊執行：管理 Package 掛彈、任務建立、目標指派、飛機派遣與打擊後偵察
 - 火力支援生成與執行：建立 FSEM，協調 TEL/發射單元移動、射擊與再補給
-- 目標掃描與 BDA：維護 `saveData.c.targetlist`，並依任務波次過濾已摧毀或已評估目標
+- 目標掃描與 BDA：維護 `saveData.red.targetlist`，並依任務波次過濾已摧毀或已評估目標
 
 ### F2T2EA Kill Chain 對應
 
@@ -56,7 +56,7 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 
 | 模組 | 原始碼 | 職責 |
 |---|---|---|
-| — | `init.lua` | 開局初始化與每輪 phase 協調（唯一知道哪個 `saveData.c.*` slice 餵哪個 phase） |
+| — | `init.lua` | 開局初始化與每輪 phase 協調（唯一知道哪個 `saveData.red.*` slice 餵哪個 phase） |
 | [targetingProcess](targetingProcess.md) | `targetingProcess.lua` | 目標掃描、分類、動態篩選與 BDA 評估 |
 | [recon](recon.md) | `recon.lua` | UAV/衛星偵察生命週期管理，並協調動態作戰排程 |
 | [operationScheduler](operationScheduler.md) | `operationScheduler.lua` | 偵察完成後建立 recon-triggered air/ground operations |
@@ -173,7 +173,7 @@ flowchart LR
 ### 靜態計畫資料
 
 ```
-saveData.c
+saveData.red
 ├── air
 │   ├── enabled: boolean
 │   └── airTaskingOrder: table<string, SBJ__Wave>
@@ -198,7 +198,7 @@ saveData.c
 ### 動態作戰資料
 
 ```
-saveData.c.dynamicOperations
+saveData.red.dynamicOperations
 ├── enabled: boolean
 ├── generatedOperations: SBJ__GeneratedOperationsTracker
 │   ├── air: table<string, boolean>
@@ -216,7 +216,7 @@ saveData.c.dynamicOperations
 ### 偵察資料
 
 ```
-saveData.c.recon
+saveData.red.recon
 ├── enabled: boolean
 ├── frontlineRedirected: boolean   -- sticky；前線打擊包改用 AAR 編組後恆為 true
 └── queue: SBJ__ReconQueueEntry[]
@@ -289,24 +289,24 @@ flowchart BT
 
 | 設定路徑 | 用途 |
 |---|---|
-| `config.c.ground.missileSystemTypes.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
-| `config.c.recon.strikeMappings` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
-| `config.c.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
-| `config.c.recon.observationWindowSec` | 動態作戰的觀測窗長度；`atoBuilder` 與 `fsemBuilder` 共用，窗內重試、逾時把 operation 移出 batch |
-| `config.c.packageTemplates` | 空中打擊包模板；`operationScheduler` 建立 air operation template，`atoBuilder` 轉為 Wave |
-| `config.c.fireSupportTaskTemplates` | 火力支援任務模板；`operationScheduler` 建立 ground operation template，`fsemBuilder` 轉為 FSEM |
-| `config.c.air.minimumStrengthRatio` | 動態打擊包的最低出擊兵力比例；低於門檻整包跳過，達到就以現有兵力出擊（預設 `0.5`） |
-| `config.c.air.deployedACs` | 機場部署描述子；`airbaseAttrition` 以此建立計畫駐機基線 |
-| `config.c.sigint.maxRangeNm` | SIGINT 最大偵測距離 |
-| `config.c.sigint.maxCount` | SIGINT 偵測次數門檻 |
-| `config.c.targetScanning` | 目標掃描配置（距離門檻、機場/港口清單、模式匹配） |
+| `config.red.ground.missileSystemTypes.srbm.reloadTime` | SRBM 再裝填時間；`airTaskingOrder` 用來推算打擊後偵察 UAV 起飛時間 |
+| `config.red.recon.strikeMappings` | 偵察目標到打擊任務的映射表；所有偵察類型皆依 `reconObjectiveId` 索引 |
+| `config.red.recon.frontlineRedirect` | 前線基地損耗達門檻時自動改寫打擊 mapping 名稱（搭配 AAR 編組） |
+| `config.red.recon.observationWindowSec` | 動態作戰的觀測窗長度；`atoBuilder` 與 `fsemBuilder` 共用，窗內重試、逾時把 operation 移出 batch |
+| `config.red.packageTemplates` | 空中打擊包模板；`operationScheduler` 建立 air operation template，`atoBuilder` 轉為 Wave |
+| `config.red.fireSupportTaskTemplates` | 火力支援任務模板；`operationScheduler` 建立 ground operation template，`fsemBuilder` 轉為 FSEM |
+| `config.red.air.minimumStrengthRatio` | 動態打擊包的最低出擊兵力比例；低於門檻整包跳過，達到就以現有兵力出擊（預設 `0.5`） |
+| `config.red.air.deployedACs` | 機場部署描述子；`airbaseAttrition` 以此建立計畫駐機基線 |
+| `config.red.sigint.maxRangeNm` | SIGINT 最大偵測距離 |
+| `config.red.sigint.maxCount` | SIGINT 偵測次數門檻 |
+| `config.red.targetScanning` | 目標掃描配置（距離門檻、機場/港口清單、模式匹配） |
 | `config.aircraftReadySec` | 所有空中打擊 template 必填的 `timeToReady` 來源，進入 Package 後由 ATO 掛彈流程使用 |
 
 ### constants.lua（不可變常數）
 
 | 常數路徑 | 用途 |
 |---|---|
-| `constants.SIDES.ENEMY` | Strike Planner 對 CMO 任務、reference point、contacts 的 China side 名稱 |
+| `constants.SIDES.RED` | Strike Planner 對 CMO 任務、reference point、contacts 的 China side 名稱 |
 | `constants.UNIT_TYPES.AIRCRAFT` | `airbaseAttrition` 列舉指定 side aircraft 時使用 |
 | `constants.TAGS.AIR` | ATO 執行層資訊 log tag |
 | `constants.TAGS.DYNAMIC_OPERATIONS` | 動態 ATO/FSP 與偵察排程 log tag |

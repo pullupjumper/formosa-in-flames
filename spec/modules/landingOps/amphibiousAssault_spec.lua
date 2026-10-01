@@ -101,7 +101,7 @@ describe("AmphibiousAssault", function()
   ---@return table
   local function makeSaveData(overrides)
     local sd = {
-      c = {
+      red = {
         amphibOps = {
           airlandingMissionStartTime = nil,
         },
@@ -527,12 +527,12 @@ describe("AmphibiousAssault", function()
 
   describe("countUnitsInEachArea", function()
     local config = {
-      c = { amphibOps = { operationalZones = { makeZone({ name = "A", casArea = "CAS-A" }), makeZone({ name = "B", casArea = "CAS-B" }) } } }
+      red = { amphibOps = { operationalZones = { makeZone({ name = "A", casArea = "CAS-A" }), makeZone({ name = "B", casArea = "CAS-B" }) } } }
     }
 
     ---Stub China's units; each unit is a makeUnit override table
     ---@param units table[] Units China owns
-    local function stubChinaUnits(units)
+    local function stubRedUnits(units)
       local byGuid = {}
       local sideUnits = {}
       for _, overrides in ipairs(units) do
@@ -550,7 +550,7 @@ describe("AmphibiousAssault", function()
 
     -- Positive: counts each type only in the zone whose CAS area holds the unit
     it("should count unit types separately for each zone", function()
-      stubChinaUnits({
+      stubRedUnits({
         { guid = "U-1", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
         { guid = "U-2", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
         { guid = "U-3", dbid = constants.PLATFORMS.MC, inArea = inCasArea("CAS-B") },
@@ -566,7 +566,7 @@ describe("AmphibiousAssault", function()
 
     -- Negative: platforms outside the landed unit list are not counted
     it("should ignore platforms that are not landed unit types", function()
-      stubChinaUnits({ { guid = "U-1", dbid = constants.PLATFORMS.TYPE_071, inArea = inCasArea("CAS-A") } })
+      stubRedUnits({ { guid = "U-1", dbid = constants.PLATFORMS.TYPE_071, inArea = inCasArea("CAS-A") } })
 
       local result = AmphibiousAssault.countUnitsInEachArea(config)
 

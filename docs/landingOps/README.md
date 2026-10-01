@@ -127,7 +127,7 @@ stateDiagram-v2
 ### 兩棲作戰狀態
 
 ```
-saveData.c.amphibOps
+saveData.red.amphibOps
 ├── startTime: string                    -- 作戰開始時間
 ├── isTesting: boolean                   -- 測試模式（瞬間移動）
 ├── fireSupportOnHold?: boolean          -- 火力支援暫停旗標（coordinator 維護）
@@ -198,17 +198,17 @@ flowchart BT
 
 | 設定路徑 | 用途 |
 |---|---|
-| `config.c.amphibOps.periodSec` | 突擊等待超時時間（秒） |
-| `config.c.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且各 zone 尚未到位即啟動火力支援暫停閘門 |
-| `config.c.amphibOps.cargo` | 各艦型貨物清單（依艦型索引） |
-| `config.c.amphibOps.transferCargo` | 轉移用貨物清單（依作戰群組索引） |
-| `config.c.amphibOps.missionStartTime` | 各載具類型任務延遲時間 |
-| `config.c.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
-| `config.c.amphibOps.operations` | 作戰區域定義（集結區→錨泊區） |
-| `config.c.amphibOps.operationalZones` | 作戰區設定（錨泊區、泛水編波區、任務） |
-| `config.c.amphibOps.transportAircraft` | 運輸機配置（空降部隊） |
-| `config.c.amphibOps.sags` | SAG 護航編隊描述符 |
-| `config.c.triggers.amphibiousOps.startTime` | 兩棲作戰觸發開始時間 |
+| `config.red.amphibOps.periodSec` | 突擊等待超時時間（秒） |
+| `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且各 zone 尚未到位即啟動火力支援暫停閘門 |
+| `config.red.amphibOps.cargo` | 各艦型貨物清單（依艦型索引） |
+| `config.red.amphibOps.transferCargo` | 轉移用貨物清單（依作戰群組索引） |
+| `config.red.amphibOps.missionStartTime` | 各載具類型任務延遲時間 |
+| `config.red.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
+| `config.red.amphibOps.operations` | 作戰區域定義（集結區→錨泊區） |
+| `config.red.amphibOps.operationalZones` | 作戰區設定（錨泊區、泛水編波區、任務） |
+| `config.red.amphibOps.transportAircraft` | 運輸機配置（空降部隊） |
+| `config.red.amphibOps.sags` | SAG 護航編隊描述符 |
+| `config.red.triggers.amphibiousOps.startTime` | 兩棲作戰觸發開始時間 |
 
 ### constants.lua（不可變常數）
 
@@ -229,7 +229,7 @@ flowchart BT
 | `constants.PLATFORMS.BRIDGE` | 後勤浮橋設施 DBID |
 | `constants.PLATFORMS.HPJ_38` | H/PJ-38 130mm 艦砲武器 ID |
 | `constants.AMPHIBIOUS_PHASES.*` | 作戰階段列舉（MOVING / WAITING_ARRIVAL / WAITING_ASSAULT / WAITING_SECOND_WAVE / COMPLETED） |
-| `constants.SIDES.ENEMY` | 中國陣營名稱 |
+| `constants.SIDES.RED` | 中國陣營名稱 |
 | `constants.CONTACT_TYPES.FACILITY_MOBILE` | 可移動設施接觸類型 |
 | `constants.PLATFORM_TYPES.AIRCRAFT` | 航空器平台類型 |
 | `constants.PLATFORM_TYPES.BOATS` | 氣墊船平台類型 |

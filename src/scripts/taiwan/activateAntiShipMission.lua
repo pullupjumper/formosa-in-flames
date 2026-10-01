@@ -2,7 +2,7 @@ local PersistentState = require("src.core.persistentState")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
-local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.PLAYER)
+local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.BLUE)
 local event = GameApi.ScenEdit_EventX()
 local temp = {}
 
@@ -11,15 +11,15 @@ local function setAntiShipMissionStartTime()
   local antiShipStartTime = os.date(constants.DATE_FORMAT, currentTime)
   local reconStartTime3 = os.date(constants.DATE_FORMAT, (currentTime + 10 * 60))
   local asuwAgainstACVStartTime = os.date(constants.DATE_FORMAT, (currentTime + 40 * 60))
-  GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/SHIP/W/1").starttime = antiShipStartTime
-  GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/SHIP/W/2").starttime = reconStartTime3
-  GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/ACV/W").starttime = asuwAgainstACVStartTime
-  GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "ASUW/ACV/PENGHU").starttime = asuwAgainstACVStartTime
-  GameApi.ScenEdit_GetMission(constants.SIDES.PLAYER, "RECON/3").starttime = reconStartTime3
+  GameApi.ScenEdit_GetMission(constants.SIDES.BLUE, "ASUW/SHIP/W/1").starttime = antiShipStartTime
+  GameApi.ScenEdit_GetMission(constants.SIDES.BLUE, "ASUW/SHIP/W/2").starttime = reconStartTime3
+  GameApi.ScenEdit_GetMission(constants.SIDES.BLUE, "ASUW/ACV/W").starttime = asuwAgainstACVStartTime
+  GameApi.ScenEdit_GetMission(constants.SIDES.BLUE, "ASUW/ACV/PENGHU").starttime = asuwAgainstACVStartTime
+  GameApi.ScenEdit_GetMission(constants.SIDES.BLUE, "RECON/3").starttime = reconStartTime3
 end
 
 PersistentState.update(function(saveData)
-  local trigger = PersistentState.ground(saveData, constants.SIDES.PLAYER).missileSystemTypes.ascm.test
+  local trigger = PersistentState.ground(saveData, constants.SIDES.BLUE).missileSystemTypes.ascm.test
 
   if trigger.isAntishipMissionActivated == false and contacts ~= nil then
     for _, value in ipairs(contacts) do

@@ -731,7 +731,7 @@ describe("FsemBuilder", function()
 
         local config = makeConfig()
         local triggerTime = 1000
-        local pastDeadline = triggerTime + config.c.recon.observationWindowSec + 1
+        local pastDeadline = triggerTime + config.red.recon.observationWindowSec + 1
 
         trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(pastDeadline))
         trackStub(stub(Utils, "parseDatetimeToTimestamp").returns(triggerTime))
@@ -878,7 +878,7 @@ describe("FsemBuilder", function()
       -- Boundary: age exactly at the threshold does not retire, units stay assigned
       it("should keep matrix active and units assigned at exactly the stale boundary", function()
         local config = makeConfig()
-        local currentTime = 1000 + config.c.recon.fsemStaleAfterSec
+        local currentTime = 1000 + config.red.recon.fsemStaleAfterSec
 
         local operation = makeOperation()
         local reconEntry = makeReconEntry()
@@ -905,7 +905,7 @@ describe("FsemBuilder", function()
       -- Positive: stale FSEM retired and its units re-assigned end to end
       it("should retire stale FSEM and let a new operation reuse its firing units", function()
         local config = makeConfig()
-        local staleAfterSec = config.c.recon.fsemStaleAfterSec
+        local staleAfterSec = config.red.recon.fsemStaleAfterSec
 
         local operation1 = makeOperation()
         local operation2 = makeOperation()
@@ -955,7 +955,7 @@ describe("FsemBuilder", function()
       -- targets vanished never fires, so no other path releases its firing units.
       it("should retire stale FSEM even when no ground operation is pending", function()
         local config = makeConfig()
-        local currentTime = 1000 + config.c.recon.fsemStaleAfterSec + 1
+        local currentTime = 1000 + config.red.recon.fsemStaleAfterSec + 1
 
         local matrix = makeActiveMatrix({ createdAt = 1000 })
         local plannerState = makePlannerState({
@@ -982,7 +982,7 @@ describe("FsemBuilder", function()
       -- Negative: legacy matrix without createdAt never goes stale
       it("should never retire matrices without createdAt", function()
         local config = makeConfig()
-        local farFuture = 1000 + config.c.recon.fsemStaleAfterSec * 10
+        local farFuture = 1000 + config.red.recon.fsemStaleAfterSec * 10
 
         local operation = makeOperation()
         local reconEntry = makeReconEntry()
@@ -1007,7 +1007,7 @@ describe("FsemBuilder", function()
       -- Positive: retire starts the stow countdown only for deployed non-SAM units
       it("should stamp stowStartTime on deployed units when retiring, skipping SAM and existing countdowns", function()
         local config = makeConfig()
-        local currentTime = 1000 + config.c.recon.fsemStaleAfterSec + 1
+        local currentTime = 1000 + config.red.recon.fsemStaleAfterSec + 1
 
         local operation = makeOperation()
         local reconEntry = makeReconEntry()

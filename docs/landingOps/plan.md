@@ -8,7 +8,7 @@
 
 ## 現狀問題
 
-目前 `saveData.c.amphibOps` 使用扁平的 boolean flag 控制所有 zone 的統一流程：
+目前 `saveData.red.amphibOps` 使用扁平的 boolean flag 控制所有 zone 的統一流程：
 
 ```
 isShipsStartedMoving → isWaitingForShipArrival → isWaitingForAmphibiousAssault → isWaitingForSecondWaveUnloading
@@ -48,17 +48,17 @@ MOVING → WAITING_ARRIVAL → WAITING_ASSAULT → WAITING_SECOND_WAVE → COMPL
 
 ```lua
 -- 刪除
-saveData.c.amphibOps.isShipsStartedMoving = true
-saveData.c.amphibOps.isWaitingForShipArrival = false
-saveData.c.amphibOps.isWaitingForAmphibiousAssault = false
-saveData.c.amphibOps.isWaitingForSecondWaveUnloading = false
-saveData.c.amphibOps.amphibiousAssaultStartTime = nil
-saveData.c.amphibOps.airlandingMissionStartTime = nil
+saveData.red.amphibOps.isShipsStartedMoving = true
+saveData.red.amphibOps.isWaitingForShipArrival = false
+saveData.red.amphibOps.isWaitingForAmphibiousAssault = false
+saveData.red.amphibOps.isWaitingForSecondWaveUnloading = false
+saveData.red.amphibOps.amphibiousAssaultStartTime = nil
+saveData.red.amphibOps.airlandingMissionStartTime = nil
 
 -- 新增
-saveData.c.amphibOps.zoneStates = {}
-for _, zone in ipairs(config.c.amphibOps.operationalZones) do
-  saveData.c.amphibOps.zoneStates[zone.name] = {
+saveData.red.amphibOps.zoneStates = {}
+for _, zone in ipairs(config.red.amphibOps.operationalZones) do
+  saveData.red.amphibOps.zoneStates[zone.name] = {
     phase = constants.AMPHIBIOUS_PHASES.MOVING,
     amphibiousAssaultStartTime = nil,
     airlandingMissionStartTime = nil,
@@ -66,10 +66,10 @@ for _, zone in ipairs(config.c.amphibOps.operationalZones) do
 end
 
 -- 保持不變
-saveData.c.amphibOps.startTime = config.c.triggers.amphibiousOps.startTime
-saveData.c.amphibOps.isTesting = true
-saveData.c.amphibOps.calculationResult = {}
-saveData.c.amphibOps.barges = {}
+saveData.red.amphibOps.startTime = config.red.triggers.amphibiousOps.startTime
+saveData.red.amphibOps.isTesting = true
+saveData.red.amphibOps.calculationResult = {}
+saveData.red.amphibOps.barges = {}
 ```
 
 ### 3. 設定變更 — `config.lua`
@@ -100,14 +100,14 @@ saveData.c.amphibOps.barges = {}
 }
 ```
 
-SAG 詳細描述符維持在 `config.c.amphibOps.sags` 作為 lookup table，各模組依 `sagNames` 查找。
+SAG 詳細描述符維持在 `config.red.amphibOps.sags` 作為 lookup table，各模組依 `sagNames` 查找。
 
 ### 4. 驅動層重寫 — `landingCheck.lua`
 
 新增 local helper 函數 `findOperationByName`，並改寫為 per-zone 迴圈 + phase enum 驅動：
 
 ```lua
-local amphibOpsConfig = config.c.amphibOps
+local amphibOpsConfig = config.red.amphibOps
 
 ---@param operations SBJ__AmphibiousOperationDescriptor[]
 ---@param name string
@@ -120,12 +120,12 @@ local function findOperationByName(operations, name)
 end
 
 for _, zone in ipairs(amphibOpsConfig.operationalZones) do
-  local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+  local zoneState = saveData.red.amphibOps.zoneStates[zone.name]
   local operation = findOperationByName(amphibOpsConfig.operations, zone.name)
 
   -- Phase 1: 艦隊移動
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
-      and GameUtils.isAfterStartTime(saveData.c.amphibOps.startTime) then
+      and GameUtils.isAfterStartTime(saveData.red.amphibOps.startTime) then
     local done = ShipMovement.moveToStagingArea(amphibOpsConfig, saveData, filteredShips, operation)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
@@ -147,7 +147,7 @@ for _, zone in ipairs(amphibOpsConfig.operationalZones) do
 
         -- GJ-11 偵察任務：暫時只對 Taoyuan 執行
         if zone.name == "Taoyuan" then
-          local entry = Utils.deepCopy(config.c.recon.templates.GJ11_RECON)
+          local entry = Utils.deepCopy(config.red.recon.templates.GJ11_RECON)
           ---@cast entry SBJ__ReconQueueEntry
           local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
           local endTime = currentTime + flightTime
@@ -156,7 +156,7 @@ for _, zone in ipairs(amphibOpsConfig.operationalZones) do
           entry.hasLaunched = false
           entry.isFinished = false
           entry.trackingTargetGUID = nil
-          table.insert(saveData.c.recon.queue, entry)
+          table.insert(saveData.red.recon.queue, entry)
         end
       end
     end
@@ -198,7 +198,7 @@ end
 
 -- 貨物重新裝載（保持獨立，遍歷所有 zone）
 for _, zone in ipairs(amphibOpsConfig.operationalZones) do
-  local zoneState = saveData.c.amphibOps.zoneStates[zone.name]
+  local zoneState = saveData.red.amphibOps.zoneStates[zone.name]
   if zoneState.airlandingMissionStartTime ~= nil then
     local elapsed = currentTime - zoneState.airlandingMissionStartTime
     if elapsed >= (3600 * 2) then
@@ -233,7 +233,7 @@ end
 | `setLandingMissionStartTime` | `(amphibOpsConfig, saveData)` | `(zone, saveData, zoneState)` |
 | `setCoursesForLSTs` | `(amphibOpsConfig, units)` | `(zone, units, operation, sagLookup)` |
 
-- `setLandingMissionStartTime`：`airlandingMissionStartTime` 寫入 `zoneState` 而非 `saveData.c.amphibOps`
+- `setLandingMissionStartTime`：`airlandingMissionStartTime` 寫入 `zoneState` 而非 `saveData.red.amphibOps`
 - `setCoursesForLSTs`：只處理該 zone 的 `lstAnchorageArea` 內的 LST；依 `operation.sagNames` 從 `sagLookup` 查找對應 SAG 並設定航向
 
 #### shipMovement.lua
@@ -261,7 +261,7 @@ SAG 護航編隊改為 per-zone，依各 zone 的階段執行：
 - `operations` 中新增 `sagNames` 欄位，建立 SAG 與 zone 的對應
 - **Phase 1**（`shipMovement.moveToStagingArea`）：依 `operation.sagNames` 只處理該 zone 的 SAG，移動至錨泊區
 - **Phase 3**（`amphibiousAssault.setCoursesForLSTs`）：接收 `operation` 和 `sagLookup`，依 `operation.sagNames` 查找 SAG 並設定前往兩棲載具集結區的航向
-- SAG 詳細描述符維持在 `config.c.amphibOps.sags` 作為 lookup table
+- SAG 詳細描述符維持在 `config.red.amphibOps.sags` 作為 lookup table
 
 ### 7. 測試更新
 

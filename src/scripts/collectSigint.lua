@@ -4,6 +4,6 @@ local config = require("src.core.config")
 local constants = require("src.core.constants")
 
 PersistentState.update(function(saveData)
-  Sigint.processSide(config, saveData, constants.SIDES.ENEMY)
-  Sigint.processSide(config, saveData, "US")
+  Sigint.processSide(config, saveData, constants.SIDES.RED)
+  Sigint.processSide(config, saveData, constants.SIDES.ALLY)
 end)

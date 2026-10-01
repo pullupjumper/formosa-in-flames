@@ -5,4 +5,4 @@ local config = require("src.core.config")
 UnitGenerator.removeLandingShips()
 
 -- Add new landing ships
-UnitGenerator.addLandingShips(config.c.amphibOps)
+UnitGenerator.addLandingShips(config.red.amphibOps)

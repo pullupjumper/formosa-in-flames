@@ -35,7 +35,7 @@ describe("FrontlineRedirect", function()
   ---@return SBJ__Config
   local function makeConfig(redirectOverrides)
     local cfg = Utils.deepCopy(BaseConfig)
-    cfg.c.air.deployedACs = {
+    cfg.red.air.deployedACs = {
       {
         name = "Frontline Base",
         baseGUID = "BASE-FRONT",
@@ -49,7 +49,7 @@ describe("FrontlineRedirect", function()
         } }
       }
     }
-    cfg.c.recon.frontlineRedirect = {
+    cfg.red.recon.frontlineRedirect = {
       enabled = true,
       attritionThresholdPct = 50,
       frontlineBaseNames = { "Frontline Base" },
@@ -59,7 +59,7 @@ describe("FrontlineRedirect", function()
     }
     if redirectOverrides then
       for k, v in pairs(redirectOverrides) do
-        cfg.c.recon.frontlineRedirect[k] = v
+        cfg.red.recon.frontlineRedirect[k] = v
       end
     end
     return cfg

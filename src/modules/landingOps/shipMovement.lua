@@ -365,7 +365,7 @@ local function getStartingReferencePoint(area, key)
   end
 
   local points = GameApi.ScenEdit_GetReferencePoints({
-    side = constants.SIDES.ENEMY, area = startingPointArea
+    side = constants.SIDES.RED, area = startingPointArea
   })
 
   if not points or not points[1] then

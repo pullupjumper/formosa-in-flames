@@ -42,7 +42,7 @@ commsLevel = initialComms + jammerImpact + AEWSupport + ROCCSupport
 
 ## 干擾策略（Strategy Pattern）
 
-透過 `config.c.commsJamming.mode` 選擇干擾模式：
+透過 `config.red.commsJamming.mode` 選擇干擾模式：
 
 | 模式 | 函數 | 判定邏輯 |
 |---|---|---|
@@ -121,7 +121,7 @@ flowchart TD
 `findSAMAndRadar` 遍歷 IADS 結構蒐集所有防空單元：
 
 ```
-saveData.t.iads
+saveData.blue.iads
 ├── rocc → sam[] + radar[]
 └── taaoc → sam[]
 ```

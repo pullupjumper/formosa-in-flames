@@ -21,18 +21,18 @@ local PLA_SAM_DBIDS = {
   [constants.PLATFORMS.HQ22] = true,
 }
 
-local TAIWAN_SAM_DBIDS = {
+local BLUE_SAM_DBIDS = {
   [constants.PLATFORMS.CUSTOMED_TK3] = true,
   [constants.PLATFORMS.CUSTOMED_SAM] = true,
   [constants.PLATFORMS.PAC3] = true,
 }
 
-local TAIWAN_MRAD_DBIDS = {
+local BLUE_MRAD_DBIDS = {
   [constants.PLATFORMS.TC2] = true,
   [constants.PLATFORMS.SKY_GUARD] = true,
 }
 
-local TAIWAN_RADAR_DBIDS = {
+local BLUE_RADAR_DBIDS = {
   [constants.PLATFORMS.FPS117] = true,
   [constants.PLATFORMS.TPS43F] = true,
   [constants.PLATFORMS.HR3000] = true,
@@ -40,7 +40,7 @@ local TAIWAN_RADAR_DBIDS = {
 }
 
 ---Taiwan SAM platforms keyed by their WCS setting menu id
-local TAIWAN_SAM_DBIDS_BY_MENU_ID = {
+local BLUE_SAM_DBIDS_BY_MENU_ID = {
   pac23 = constants.PLATFORMS.PAC3,
   skybow3 = constants.PLATFORMS.CUSTOMED_TK3,
   tc2 = constants.PLATFORMS.TC2,
@@ -91,21 +91,21 @@ end
 ---@param dbid number The DBID to check
 ---@return boolean Whether the DBID corresponds to a MRADS unit
 local function isMRADS(dbid)
-  return TAIWAN_MRAD_DBIDS[dbid]
+  return BLUE_MRAD_DBIDS[dbid]
 end
 
 ---Returns whether the given DBID corresponds to a Taiwan radar unit
 ---@param dbid number The DBID to check
 ---@return boolean Whether the DBID corresponds to a Taiwan radar unit
-local function isTaiwanRadar(dbid)
-  return TAIWAN_RADAR_DBIDS[dbid]
+local function isBlueRadar(dbid)
+  return BLUE_RADAR_DBIDS[dbid]
 end
 
 ---Returns whether the given DBID corresponds to a Taiwan SAM unit
 ---@param dbid number The DBID to check
 ---@return boolean Whether the DBID corresponds to a Taiwan SAM unit
-local function isTaiwanSAM(dbid)
-  return TAIWAN_SAM_DBIDS[dbid]
+local function isBlueSAM(dbid)
+  return BLUE_SAM_DBIDS[dbid]
 end
 
 ---Apply the WCS setting menu's per-SAM-type doctrine to matching units
@@ -114,7 +114,7 @@ end
 ---@param units {guid: string}[] Candidate units; only those matching an item's platform are changed
 function IntegratedAirDefenseSystem.setSamDoctrine(doctrineItems, units)
   for _, item in ipairs(doctrineItems) do
-    local dbid = TAIWAN_SAM_DBIDS_BY_MENU_ID[item.id]
+    local dbid = BLUE_SAM_DBIDS_BY_MENU_ID[item.id]
     local wcs = item.weaponsFree and constants.WCS.TIGHT or constants.WCS.HOLD
     local emissionFlag = item.weaponsFree and 1 or 0
 
@@ -181,12 +181,12 @@ end
 ---@param config SBJ__Config Configuration parameters containing the radar distance threshold
 ---@param destroyedRadar CMO__Unit The destroyed radar whose position is used as reference point for finding nearest backup
 local function activateNearestRadar(config, destroyedRadar)
-  local sideUnits = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local sideUnits = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
   if not sideUnits then
     return
   end
 
-  local temp = { unit = nil, distance = config.c.iads.radarDistanceNm }
+  local temp = { unit = nil, distance = config.red.iads.radarDistanceNm }
   local latitude = destroyedRadar.latitude
   local longitude = destroyedRadar.longitude
 
@@ -252,9 +252,9 @@ function IntegratedAirDefenseSystem.processUnitDestruction(config, saveData, uni
   elseif dbid == constants.PLATFORMS.JY26 or dbid == constants.PLATFORMS.YLC8B then
     removeDestroyedUnitFromC2(iadsCtx.c2, C2_KEYS.RADAR, unit)
     activateNearestRadar(config, unit)
-  elseif isTaiwanRadar(dbid) then
+  elseif isBlueRadar(dbid) then
     removeDestroyedUnitFromC2(iadsCtx.rocc, C2_KEYS.RADAR, unit)
-  elseif isTaiwanSAM(dbid) then
+  elseif isBlueSAM(dbid) then
     removeDestroyedUnitFromC2(iadsCtx.rocc, C2_KEYS.SAM, unit)
   elseif isMRADS(dbid) then
     removeDestroyedUnitFromC2(iadsCtx.taaoc, C2_KEYS.SAM, unit)
@@ -274,7 +274,7 @@ local function addC2Facilities(iadsConfig)
       dbids = iadsConfig.c2FacilityDBIDs,
       count = 3,
       randomRadiusNm = iadsConfig.randomRadiusNm,
-      sideName = constants.SIDES.ENEMY,
+      sideName = constants.SIDES.RED,
       unitType = constants.UNIT_TYPES.FACILITY,
       unitname = "Suspected C2 Facility#",
       autodetectable = true
@@ -293,7 +293,7 @@ end
 ---@param iadsConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
 ---@param iadsCtx SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
 local function initC2FacilitiesContext(iadsConfig, iadsCtx)
-  local sideUnits = GameApi.VP_GetSide({ name = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local sideUnits = GameApi.VP_GetSide({ name = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
   iadsCtx.c2 = {}
 
   if not sideUnits then
@@ -395,7 +395,7 @@ end
 ---@param iadsConfig SBJ__IADSFactionConfig IADS configuration for faction
 ---@param iadsCtx SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
 local function initIADSContexts(iadsConfig, iadsCtx)
-  local sideUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local sideUnits = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not sideUnits then
     return
@@ -405,11 +405,11 @@ local function initIADSContexts(iadsConfig, iadsCtx)
     local actualUnit = GameApi.ScenEdit_GetUnit(sideUnit.guid)
 
     for _, descriptor in pairs(iadsConfig.rocc) do
-      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, constants.SIDES.PLAYER)
+      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, constants.SIDES.BLUE)
 
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
-          if isTaiwanSAM(actualUnit.dbid) then
+          if isBlueSAM(actualUnit.dbid) then
             if not iadsCtx.rocc[c2.guid] then
               initC2Context(iadsCtx.rocc, descriptor, c2.guid, "rocc")
             end
@@ -425,7 +425,7 @@ local function initIADSContexts(iadsConfig, iadsCtx)
             }
           end
 
-          if isTaiwanRadar(actualUnit.dbid) then
+          if isBlueRadar(actualUnit.dbid) then
             if not iadsCtx.rocc[c2.guid] then
               initC2Context(iadsCtx.rocc, descriptor, c2.guid, "rocc")
             end
@@ -445,7 +445,7 @@ local function initIADSContexts(iadsConfig, iadsCtx)
     end
 
     for _, descriptor in pairs(iadsConfig.taaoc) do
-      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, constants.SIDES.PLAYER)
+      local c2 = GameApi.ScenEdit_GetUnit(descriptor.name, constants.SIDES.BLUE)
 
       for _, area in ipairs(descriptor.areas) do
         if actualUnit and actualUnit:inArea(area) and c2 then
@@ -473,7 +473,7 @@ end
 ---Remove C2 facility units from scenario by deleting units matching configured DBIDs
 ---@param iadsConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
 local function removeC2Facilities(iadsConfig)
-  local sideUnits = GameApi.VP_GetSide({ name = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local sideUnits = GameApi.VP_GetSide({ name = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
 
   if not sideUnits then
@@ -486,7 +486,7 @@ local function removeC2Facilities(iadsConfig)
     if actualUnit then
       for _, dbid in ipairs(iadsConfig.c2FacilityDBIDs) do
         if actualUnit.dbid == dbid then
-          GameApi.ScenEdit_DeleteUnit({ side = constants.SIDES.ENEMY, guid = actualUnit.guid })
+          GameApi.ScenEdit_DeleteUnit({ side = constants.SIDES.RED, guid = actualUnit.guid })
           removedCount = removedCount + 1
           break
         end
@@ -501,11 +501,11 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; China's IADS C2 map is rebuilt
 function IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
-  local iadsConfig = config.c.iads
+  local iadsConfig = config.red.iads
 
   removeC2Facilities(iadsConfig)
   addC2Facilities(iadsConfig)
-  initC2FacilitiesContext(iadsConfig, PersistentState.iads(saveData, constants.SIDES.ENEMY))
+  initC2FacilitiesContext(iadsConfig, PersistentState.iads(saveData, constants.SIDES.RED))
 end
 
 ---Build a side's IADS node contexts when its IADS is enabled
@@ -520,7 +520,7 @@ function IntegratedAirDefenseSystem.initSide(config, saveData, sideName)
   end
 
   local iadsConfig = config[GameUtils.getCachedSideConfig(sideName).field].iads
-  if sideName == constants.SIDES.PLAYER then
+  if sideName == constants.SIDES.BLUE then
     initIADSContexts(iadsConfig, iadsCtx)
   else
     initC2FacilitiesContext(iadsConfig, iadsCtx)

@@ -33,7 +33,7 @@ describe("PackageTiming", function()
   local ANCHOR = 1770000000
   -- Placeholder datetime string; its literal value is irrelevant under the stub.
   local ANCHOR_STR = "2026-02-14 00:00:00"
-  local TIMING = BaseConfig.c.air.timing
+  local TIMING = BaseConfig.red.air.timing
 
   -- ============================================================================
   -- Shared Mock Data Builders
@@ -343,8 +343,8 @@ describe("PackageTiming", function()
     local firstTakeoff = baseTimestamp + 10000
     local strikeInterval = 10 * 60
     local config = makeConfig()
-    config.c.air.timing.cruiseSpeed.combatAircraft = 300
-    config.c.air.timing.flightTimeSafetyMargin = 2 * 60
+    config.red.air.timing.cruiseSpeed.combatAircraft = 300
+    config.red.air.timing.flightTimeSafetyMargin = 2 * 60
 
     -- Real datetime parsing round-trips the takeoff anchor string set below.
     trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(baseTimestamp))
@@ -373,8 +373,8 @@ describe("PackageTiming", function()
     local firstTakeoffTime = Utils.parseDatetimeToTimestamp(firstPackage.striker.startTime)
     local secondTimeOnTarget = Utils.parseDatetimeToTimestamp(secondPackage.striker.timeOnStation)
     -- Previous striker flew BASE-1 (200nm range - 50nm weapon = 150nm) at 300kn + safety margin.
-    local previousFlightTime = math.ceil((150 / config.c.air.timing.cruiseSpeed.combatAircraft) * 3600)
-      + config.c.air.timing.flightTimeSafetyMargin
+    local previousFlightTime = math.ceil((150 / config.red.air.timing.cruiseSpeed.combatAircraft) * 3600)
+      + config.red.air.timing.flightTimeSafetyMargin
     assert.are.equal(previousFlightTime + strikeInterval, secondTimeOnTarget - firstTakeoffTime)
   end)
 

@@ -8,7 +8,7 @@
 
 ## 概述
 
-`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不建立 CMO mission，也不派遣飛機，而是從 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 找出尚未執行且已到觸發時間的 `air` operation，把其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，寫入 `saveData.c.air.airTaskingOrder`。真正建立任務、指派飛機的是後續 tick 才跑的 [airTaskingOrder](airTaskingOrder.md)。
+`atoBuilder` 是 Strike Planner 的動態空中打擊生成層。它不建立 CMO mission，也不派遣飛機，而是從 `saveData.red.dynamicOperations.reconTriggeredOperationBatches` 找出尚未執行且已到觸發時間的 `air` operation，把其中的 `SBJ__WaveTemplate` 轉成執行態 `SBJ__Wave`，寫入 `saveData.red.air.airTaskingOrder`。真正建立任務、指派飛機的是後續 tick 才跑的 [airTaskingOrder](airTaskingOrder.md)。
 
 模組的主要工作分成三段：先透過 [targetingProcess](targetingProcess.md) 依每個 package 的 target template 取得可打擊目標；再檢查各角色基地是否有足夠且未被任務占用的指定 DBID 飛機，並支援 `baseGUIDCandidates` 跨基地 fallback；最後委派 [packageTiming](packageTiming.md) 依支援角色飛行時間、striker 武器射程與 `strikeInterval` 產生所有角色的 `startTime` / `endTime`。
 
@@ -76,7 +76,7 @@ flowchart TD
 
 ### 觀察窗與重試
 
-觸發時間到達後，operation 進入 `config.c.recon.observationWindowSec` 長度的觀察窗，窗口起點是 `operationBatch.time + operationBatch.delay`。窗口狀態由 [operationBatch](operationBatch.md) 判定，air 與 ground 共用同一套判定與同一個設定值；本模組只提供 `RETRYABLE_REASON`。
+觸發時間到達後，operation 進入 `config.red.recon.observationWindowSec` 長度的觀察窗，窗口起點是 `operationBatch.time + operationBatch.delay`。窗口狀態由 [operationBatch](operationBatch.md) 判定，air 與 ground 共用同一套判定與同一個設定值；本模組只提供 `RETRYABLE_REASON`。
 
 | 狀態 | 行為 |
 |---|---|
@@ -116,7 +116,7 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 預約 key       = baseGUID .. "#" .. unitDBID
 可用餘額 spare = getFreeAircraftCount(cache, baseGUID, unitDBID) - reservedAircraft[key]
 
-接受條件： spare >= roleData.unitCount * config.c.air.minimumStrengthRatio
+接受條件： spare >= roleData.unitCount * config.red.air.minimumStrengthRatio
 預訂量：   math.min(spare, roleData.unitCount)
 ```
 
@@ -124,7 +124,7 @@ striker -> escort -> wildWeasel -> jammer -> tanker
 
 候選基地通過門檻時，模組把 `roleData.baseGUID` 改寫為實際選定基地，並把預訂量累加到 package 專用的暫存表。**只有所有已設定角色都通過驗證時**，暫存預約才會提交至 `reservedAircraft`；任一角色失敗就丟棄整包暫存，避免未執行的 package 占用後續 package 的飛機。`roleData.unitCount` 不會因未達滿編而改寫，實際派遣數仍由下游 [airTaskingOrder](airTaskingOrder.md) 依可用飛機處理。
 
-`collectReservedAircraft()` 另外掃描既有 `saveData.c.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
+`collectReservedAircraft()` 另外掃描既有 `saveData.red.air.airTaskingOrder`，統計所有 `isActivated == true`、`hasLaunched ~= true` 且 package 尚未 launched 的 role `unitCount`，避免動態插入時和既有 active Wave 重複占用機隊。
 
 若 tanker 的 `missionCreationParams` 使用陣列，建立 Wave 前會額外驗證陣列非空、任務名稱有效且不重複，以及 `unitCount` 可被任務數整除。機隊容量與預訂量仍使用 tanker 的總 `unitCount`，不會因任務拆分而重複計算。
 
@@ -182,8 +182,8 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 路徑或 API | 行為 |
 |---|---|
-| `saveData.c.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時透過 `DynamicPlan.add()` 寫入新的 `SBJ__Wave`。 |
-| `saveData.c.dynamicOperations.generatedOperations.air[wave.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
+| `saveData.red.air.airTaskingOrder[wave.name]` | 成功建立 Wave 時透過 `DynamicPlan.add()` 寫入新的 `SBJ__Wave`。 |
+| `saveData.red.dynamicOperations.generatedOperations.air[wave.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
 | `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 | `roleData.baseGUID` | 機隊驗證選定候選基地時，就地改寫拷貝後的 package template。 |
 
@@ -201,7 +201,7 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 呼叫者 | 觸發 |
 |---|---|
-| `StrikePlanner.process()` | `src/modules/strikePlanner/init.lua`；`saveData.c.dynamicOperations.enabled` 時在 `FsemBuilder.build` 之後呼叫本模組。 |
+| `StrikePlanner.process()` | `src/modules/strikePlanner/init.lua`；`saveData.red.dynamicOperations.enabled` 時在 `FsemBuilder.build` 之後呼叫本模組。 |
 | `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 `StrikePlanner.process`。 |
 | [airTaskingOrder](airTaskingOrder.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active Wave。 |
 
@@ -213,11 +213,11 @@ log 分成 `dynamicAirOperations` 與 `dynamicAirTiming` 兩份 report，tag 都
 
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
-| `config` | `config.c.air.minimumStrengthRatio` | 基地至少要能供應該角色幾成的請求架數才接受；預設 `0.5`。 |
-| `config` | `config.c.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [fsemBuilder](fsemBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
+| `config` | `config.red.air.minimumStrengthRatio` | 基地至少要能供應該角色幾成的請求架數才接受；預設 `0.5`。 |
+| `config` | `config.red.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [fsemBuilder](fsemBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | 兩份 report 的 log tag。 |
 
-以下設定不由本模組讀取，但會影響它產出的 Wave：`config.c.packageTemplates`（[operationScheduler](operationScheduler.md) 據此建立 air operation template，最終攜帶 `SBJ__WaveTemplate` 進入本模組）、`config.c.air.timing` 與 package template 的 `timeToReady`（本模組把 `config` 原樣轉交 [packageTiming](packageTiming.md) 消費）。
+以下設定不由本模組讀取，但會影響它產出的 Wave：`config.red.packageTemplates`（[operationScheduler](operationScheduler.md) 據此建立 air operation template，最終攜帶 `SBJ__WaveTemplate` 進入本模組）、`config.red.air.timing` 與 package template 的 `timeToReady`（本模組把 `config` 原樣轉交 [packageTiming](packageTiming.md) 消費）。
 
 ---
 

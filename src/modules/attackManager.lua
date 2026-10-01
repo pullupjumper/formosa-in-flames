@@ -277,7 +277,7 @@ function AttackManager.attackContacts(params)
   local qty = params.qty or 1
   local firingUnits = params.firingUnits
   local weaponDBID = params.weaponDBID
-  local sideName = params.sideName or constants.SIDES.ENEMY
+  local sideName = params.sideName or constants.SIDES.RED
 
   for _, contact in ipairs(contacts) do
     totalAmmoAllocated = totalAmmoAllocated

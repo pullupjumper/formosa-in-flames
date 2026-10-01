@@ -83,8 +83,8 @@ describe("TargetingProcess", function()
   local function makeScanConfig(overrides)
     local config = {
       distanceThreshold = 5,
-      taiwanAirBases = { "Hsinchu", "Taoyuan" },
-      taiwanPorts = { "Keelung" },
+      blueAirBases = { "Hsinchu", "Taoyuan" },
+      bluePorts = { "Keelung" },
       targetCategories = {
         airfield = {
           runwayPattern = "Runway %(%d+m%)",
@@ -152,8 +152,8 @@ describe("TargetingProcess", function()
   local function makeConfig(overrides)
     overrides = overrides or {}
     local config = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    config.c.sigint.maxRangeNm = overrides.maxRange or 50
-    config.c.sigint.maxCount = overrides.maxCount or 3
+    config.red.sigint.maxRangeNm = overrides.maxRange or 50
+    config.red.sigint.maxCount = overrides.maxCount or 3
     return config
   end
 

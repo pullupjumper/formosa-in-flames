@@ -192,8 +192,8 @@ describe("CommsJamming", function()
   ---@return table
   local function makeSaveData(jammingState, enabled)
     return {
-      c = { commsJamming = { enabled = enabled ~= false, jammers = jammingState.jammers } },
-      t = {
+      red = { commsJamming = { enabled = enabled ~= false, jammers = jammingState.jammers } },
+      blue = {
         iads = jammingState.iads,
         air = { ac = jammingState.aircraft, aew = jammingState.aew },
       },
@@ -223,7 +223,7 @@ describe("CommsJamming", function()
     ---@param jammingConfig table China commsJamming config section
     ---@param jammingState table Slices built by makeJammingState
     local function runCommsJamming(jammingConfig, jammingState)
-      local cfg = { c = { commsJamming = jammingConfig } }
+      local cfg = { red = { commsJamming = jammingConfig } }
       CommsJamming.process(cfg, makeSaveData(jammingState))
     end
 
@@ -234,7 +234,7 @@ describe("CommsJamming", function()
     -- Negative: a disabled jamming side does nothing at all
     it("should not touch any unit when comms jamming is disabled", function()
       local jammingState = makeJammingState({ jammers = { ["J-001"] = makeJammerCtx({ guid = "J-001" }) } })
-      local cfg = { c = { commsJamming = commsJammingConfig } }
+      local cfg = { red = { commsJamming = commsJammingConfig } }
 
       local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
@@ -1171,12 +1171,12 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.is_not_nil(saveData.c.commsJamming.jammers["Y9-001"])
-      assert.are.equal("Y9-001", saveData.c.commsJamming.jammers["Y9-001"].guid)
-      assert.are.equal(40, saveData.c.commsJamming.jammers["Y9-001"].commsLevel)
-      assert.are.equal(40, saveData.c.commsJamming.jammers["Y9-001"].commsBase)
-      assert.are.equal(30, saveData.c.commsJamming.jammers["Y9-001"].commsThreshold)
-      assert.are.equal(0, saveData.c.commsJamming.jammers["Y9-001"].outofcomms)
+      assert.is_not_nil(saveData.red.commsJamming.jammers["Y9-001"])
+      assert.are.equal("Y9-001", saveData.red.commsJamming.jammers["Y9-001"].guid)
+      assert.are.equal(40, saveData.red.commsJamming.jammers["Y9-001"].commsLevel)
+      assert.are.equal(40, saveData.red.commsJamming.jammers["Y9-001"].commsBase)
+      assert.are.equal(30, saveData.red.commsJamming.jammers["Y9-001"].commsThreshold)
+      assert.are.equal(0, saveData.red.commsJamming.jammers["Y9-001"].outofcomms)
     end)
 
     -- Positive: creates context for J-15D aircraft
@@ -1193,8 +1193,8 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.is_not_nil(saveData.c.commsJamming.jammers["J15D-001"])
-      assert.are.equal("J15D-001", saveData.c.commsJamming.jammers["J15D-001"].guid)
+      assert.is_not_nil(saveData.red.commsJamming.jammers["J15D-001"])
+      assert.are.equal("J15D-001", saveData.red.commsJamming.jammers["J15D-001"].guid)
     end)
 
     -- Positive: creates context for J-16D aircraft
@@ -1211,8 +1211,8 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.is_not_nil(saveData.c.commsJamming.jammers["J16D-001"])
-      assert.are.equal("J16D-001", saveData.c.commsJamming.jammers["J16D-001"].guid)
+      assert.is_not_nil(saveData.red.commsJamming.jammers["J16D-001"])
+      assert.are.equal("J16D-001", saveData.red.commsJamming.jammers["J16D-001"].guid)
     end)
 
     -- Negative: a disabled jamming side registers no jammers
@@ -1222,7 +1222,7 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.stub(getSideStub).was_not.called_with({ side = constants.SIDES.ENEMY })
+      assert.stub(getSideStub).was_not.called_with({ side = constants.SIDES.RED })
     end)
 
     -- Negative: skips non-EW aircraft
@@ -1239,7 +1239,7 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.is_nil(saveData.c.commsJamming.jammers["F16-001"])
+      assert.is_nil(saveData.red.commsJamming.jammers["F16-001"])
     end)
 
     -- Negative: handles nil aircraft list
@@ -1252,7 +1252,7 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.are.equal(0, Utils.getCount(saveData.c.commsJamming.jammers))
+      assert.are.equal(0, Utils.getCount(saveData.red.commsJamming.jammers))
     end)
 
     -- Negative: skips unresolvable units
@@ -1264,7 +1264,7 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.are.equal(0, Utils.getCount(saveData.c.commsJamming.jammers))
+      assert.are.equal(0, Utils.getCount(saveData.red.commsJamming.jammers))
     end)
 
     -- Positive: creates contexts for multiple EW aircraft types
@@ -1295,10 +1295,10 @@ describe("CommsJamming", function()
 
       CommsJamming.init(config, saveData)
 
-      assert.is_not_nil(saveData.c.commsJamming.jammers["Y9-001"])
-      assert.is_not_nil(saveData.c.commsJamming.jammers["J15D-001"])
-      assert.is_not_nil(saveData.c.commsJamming.jammers["J16D-001"])
-      assert.is_nil(saveData.c.commsJamming.jammers["F16-001"])
+      assert.is_not_nil(saveData.red.commsJamming.jammers["Y9-001"])
+      assert.is_not_nil(saveData.red.commsJamming.jammers["J15D-001"])
+      assert.is_not_nil(saveData.red.commsJamming.jammers["J16D-001"])
+      assert.is_nil(saveData.red.commsJamming.jammers["F16-001"])
     end)
   end)
 
@@ -1318,7 +1318,7 @@ describe("CommsJamming", function()
     -- Positive: E-2K goes to AEW, other aircraft go to AC, both with comms defaults
     it("should split AEW from other aircraft and apply comms defaults", function()
       local saveData = makeSaveData(makeJammingState())
-      local defaults = config.c.commsJamming.aircraftDefaults
+      local defaults = config.red.commsJamming.aircraftDefaults
       local units = {
         ["E2K-1"] = makeUnit({ guid = "E2K-1", type = constants.UNIT_TYPES.AIRCRAFT, dbid = constants.PLATFORMS.E2K }),
         ["F16-1"] = makeUnit({ guid = "F16-1", type = constants.UNIT_TYPES.AIRCRAFT, dbid = 1 }),
@@ -1330,8 +1330,8 @@ describe("CommsJamming", function()
 
       CommsJamming.updateTargetAircraft(config, saveData)
 
-      local aircraftCtx = saveData.t.air
-      assert.stub(getSideStub).was.called_with({ side = constants.SIDES.PLAYER })
+      local aircraftCtx = saveData.blue.air
+      assert.stub(getSideStub).was.called_with({ side = constants.SIDES.BLUE })
       assert.are.equal(1, Utils.getCount(aircraftCtx.aew))
       assert.are.equal(1, Utils.getCount(aircraftCtx.ac))
       assert.is_not_nil(aircraftCtx.aew["E2K-1"])
@@ -1347,8 +1347,8 @@ describe("CommsJamming", function()
 
       CommsJamming.updateTargetAircraft(config, saveData)
 
-      assert.are.same({}, saveData.t.air.aew)
-      assert.are.same({}, saveData.t.air.ac)
+      assert.are.same({}, saveData.blue.air.aew)
+      assert.are.same({}, saveData.blue.air.ac)
     end)
   end)
 

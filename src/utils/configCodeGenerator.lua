@@ -5,6 +5,7 @@
 ---and config sections whenever the scenario layout changes.
 
 local constants = require("src.core.constants")
+local GameUtils = require("src.utils.gameUtils")
 
 local ConfigCodeGenerator = {}
 
@@ -500,7 +501,7 @@ local function getOrderedFiringUnitFields(unit)
 end
 
 ---Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitionMap absent
----@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
+---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
 ---@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
 ---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
 ---@return string|nil # Serialized block, or nil when ammunitionMap is nil
@@ -511,8 +512,10 @@ local function formatAmmunitionsBlock(configPath, ammunitionMap, weaponCountDefa
     local ammo = ammunitionMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
-    lines[#lines + 1] = "    weaponCountCurrent = " .. formatWeaponCountRef(ammo.weaponCountCurrent, weaponCountDefault, configPath) .. ","
-    lines[#lines + 1] = "    weaponCountDefault = " .. formatWeaponCountRef(ammo.weaponCountDefault, weaponCountDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountCurrent = " ..
+    formatWeaponCountRef(ammo.weaponCountCurrent, weaponCountDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountDefault = " ..
+    formatWeaponCountRef(ammo.weaponCountDefault, weaponCountDefault, configPath) .. ","
     lines[#lines + 1] = "  },"
   end
   lines[#lines + 1] = "}"
@@ -520,7 +523,7 @@ local function formatAmmunitionsBlock(configPath, ammunitionMap, weaponCountDefa
 end
 
 ---Emit the `config.{...}.resupplyUnits = { ... }` block, or nil if resupplyUnits absent
----@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
+---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
 ---@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil Resupply units keyed by unit name
 ---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
 ---@param ctx SBJ__FieldSerializerContext Shared context for operationalArea/state serialization
@@ -532,8 +535,10 @@ local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCount
     local unit = resupplyUnitMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
-    lines[#lines + 1] = "    weaponCountCurrent = " .. formatWeaponCountRef(unit.weaponCountCurrent, weaponCountDefault, configPath) .. ","
-    lines[#lines + 1] = "    weaponCountDefault = " .. formatWeaponCountRef(unit.weaponCountDefault, weaponCountDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountCurrent = " ..
+    formatWeaponCountRef(unit.weaponCountCurrent, weaponCountDefault, configPath) .. ","
+    lines[#lines + 1] = "    weaponCountDefault = " ..
+    formatWeaponCountRef(unit.weaponCountDefault, weaponCountDefault, configPath) .. ","
     lines[#lines + 1] = "    unitCount = " .. tostring(unit.unitCount) .. ","
     lines[#lines + 1] = "    operationalArea = " .. formatField("operationalArea", unit.operationalArea, ctx) .. ","
     lines[#lines + 1] = "    state = " .. formatField("state", unit.state, ctx) .. ","
@@ -553,7 +558,7 @@ local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCount
 end
 
 ---Emit the `config.{...}.firingUnits = { ... }` block
----@param configPath string Config path prefix (e.g. "config.c.ground.missileSystemTypes.mlrs")
+---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
 ---@param firingUnitMap table<string, SBJ__FiringUnitDescriptor> Firing units keyed by unit name
 ---@param ctx SBJ__FieldSerializerContext Shared context for per-field constant lookup
 ---@return string # Serialized `config.{...}.firingUnits = { ... }` block
@@ -572,7 +577,7 @@ local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
 end
 
 ---Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
----@param sideField string Side config field key ("c" / "t" / "u")
+---@param sideField SBJ__SideKey Side config field key ("red" / "blue" / "ally")
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Source ground-force config to serialize
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
 ---@return string # Concatenated ammunitions/resupplyUnits/firingUnits blocks separated by newlines
@@ -592,7 +597,8 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
       ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
       local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.weaponCountDefault)
       if ammoBlock then blocks[#blocks + 1] = ammoBlock end
-      local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.weaponCountDefault, ctx)
+      local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.weaponCountDefault,
+        ctx)
       if resBlock then blocks[#blocks + 1] = resBlock end
       blocks[#blocks + 1] = formatFiringUnitsBlock(ctx.configPath, sysConfig.firingUnits, ctx)
     end
@@ -601,30 +607,17 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   return table.concat(blocks, "\n")
 end
 
----Resolve side name to its config field key
----@param sideName string Side name ("China", "Taiwan", "US")
----@return string # Config field key ("c" / "t" / "u")
-local function resolveSideField(sideName)
-  if sideName == constants.SIDES.ENEMY then
-    return "c"
-  elseif sideName == "US" then
-    return "u"
-  else
-    return "t"
-  end
-end
-
 ---Generate Lua source-code strings from ground-force configuration
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
 ---`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
----Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.c.ground.missileSystemTypes)
+---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.red.ground.missileSystemTypes)
 ---@param sideName string Side name ("China", "Taiwan")
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
 ---@return string areasStr constants.AREAS code
 ---@return string opAreasStr constants.OPERATIONAL_AREAS code
 ---@return string configStr config blocks with constant references
 function ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
-  local sideField = resolveSideField(sideName)
+  local sideField = GameUtils.getCachedSideConfig(sideName).field
   local uniqueAreas, opAreaMap = collectUniqueAreas(missileSystemConfigMap)
   local areasStr, areaRefMap = formatAreasCode(uniqueAreas)
   local opAreasStr = formatOpAreasCode(uniqueAreas, areaRefMap)

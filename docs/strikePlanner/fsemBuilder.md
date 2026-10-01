@@ -2,13 +2,13 @@
 
 > 原始碼：`src/modules/strikePlanner/fsemBuilder.lua`
 
-**職責**：退役過期的 active FSEM，並在偵察觸發的觀察窗內把 ground operation 轉成 FSEM 寫入 `saveData.c.ground.fireSupportPlan`。
+**職責**：退役過期的 active FSEM，並在偵察觸發的觀察窗內把 ground operation 轉成 FSEM 寫入 `saveData.red.ground.fireSupportPlan`。
 
 ---
 
 ## 概述
 
-`fsemBuilder` 是 Strike Planner 的動態地面打擊生成層，對應空中側的 [atoBuilder](atoBuilder.md)。它不發射任何武器，只消費 `saveData.c.dynamicOperations.reconTriggeredOperationBatches` 中尚未執行的 `ground` operation，依即時 contacts 與 FSEM template 產出 `SBJ__FireSupportExecutionMatrix`，交由 [fireSupportPlan](fireSupportPlan.md) 在後續 tick 執行。
+`fsemBuilder` 是 Strike Planner 的動態地面打擊生成層，對應空中側的 [atoBuilder](atoBuilder.md)。它不發射任何武器，只消費 `saveData.red.dynamicOperations.reconTriggeredOperationBatches` 中尚未執行的 `ground` operation，依即時 contacts 與 FSEM template 產出 `SBJ__FireSupportExecutionMatrix`，交由 [fireSupportPlan](fireSupportPlan.md) 在後續 tick 執行。
 
 模組以觀察窗控制重試。operation 在窗內每個 tick 重新評估目標與發射單元；只是目標不足或發射單元暫時被佔用時保持 pending，等下一個 tick 再試。窗外逾時或遇到終止性失敗則把 operation 從 batch 移除。`operation.executed` 因此只代表「FSEM 真的插進計畫了」，不代表任務發射過。
 
@@ -82,7 +82,7 @@ flowchart TD
 | `firingAvailable` | 通過驗證、已寫入 FST 的數量。 |
 | `firingAssigned` | 被其他 active FSEM 或本趟先前的 FST 佔用；等前一個 FSEM 完成或退役即可。 |
 | `firingUnitNotFound` | CMO 裡已無此單位，通常是被摧毀。template 的發射單元名單需要檢討。 |
-| `firingContextNotFound` | `saveData.c.ground.missileSystemTypes[<missileSystemType>].firingUnits` 缺這個 key；多半是 template 名稱與 saveData 初始化不一致。 |
+| `firingContextNotFound` | `saveData.red.ground.missileSystemTypes[<missileSystemType>].firingUnits` 缺這個 key；多半是 template 名稱與 saveData 初始化不一致。 |
 | `firingBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
 | `firingLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
 
@@ -118,7 +118,7 @@ flowchart TD
 
 | 項目 | 行為 |
 |---|---|
-| 判定條件 | `matrix.isActivated and not matrix.isFinished`，且 `currentTime - matrix.createdAt > config.c.recon.fsemStaleAfterSec`。缺 `createdAt` 的舊存檔永不過期。 |
+| 判定條件 | `matrix.isActivated and not matrix.isFinished`，且 `currentTime - matrix.createdAt > config.red.recon.fsemStaleAfterSec`。缺 `createdAt` 的舊存檔永不過期。 |
 | 退役動作 | 設 `matrix.isFinished = true`。matrix 保留在 FSP 內供命名唯一性檢查，不刪除。 |
 | 單元處置 | 掃描未完成的 FST，呼叫 `MissileSystem.startStow(..., { onlyDeployed = true })`：非 SAM 且已離開隱蔽區（`STATIC`／`REPOSITIONING`）的發射單元啟動 stow 倒數，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
 | 日誌 | 每退役一個 matrix 輸出一列 `[WARN] matrix=<name> reason=fsem_stale_timeout ageSec=<age>`。 |
@@ -162,10 +162,10 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 路徑或 API | 行為 |
 |---|---|
-| `saveData.c.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.add()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
-| `saveData.c.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
-| `saveData.c.ground.missileSystemTypes[<missileSystemType>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
-| `saveData.c.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
+| `saveData.red.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.add()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
+| `saveData.red.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
+| `saveData.red.ground.missileSystemTypes[<missileSystemType>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
+| `saveData.red.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
 | `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 
 本模組**不寫任何遊戲狀態**，只透過 `GameApi.ScenEdit_CurrentTime()` 取時間、`GameApi.ScenEdit_GetUnit()` 讀發射單元。
@@ -182,7 +182,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 呼叫者 | 觸發 |
 |---|---|
-| `StrikePlanner.process()` | `src/modules/strikePlanner/init.lua`；`saveData.c.dynamicOperations.enabled` 時在 `AtoBuilder.build` 之前呼叫本模組，不檢查回傳值。 |
+| `StrikePlanner.process()` | `src/modules/strikePlanner/init.lua`；`saveData.red.dynamicOperations.enabled` 時在 `AtoBuilder.build` 之前呼叫本模組，不檢查回傳值。 |
 | `src/scripts/china/scheduledStrikePlanner.lua` | 定時腳本呼叫 `StrikePlanner.process`。 |
 | [fireSupportPlan](fireSupportPlan.md) | 不呼叫本模組；它在後續 tick 執行本模組插入的 active FSEM。 |
 
@@ -194,14 +194,14 @@ SAM 任務依慣例排除在 stow 之外。
 
 | 類型 | 路徑 | 使用方式 |
 |---|---|---|
-| `config` | `config.c.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [atoBuilder](atoBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
-| `config` | `config.c.recon.fsemStaleAfterSec` | FSEM 退役時限，目前配置為 `30 * 60` 秒，刻意與觀察窗對齊（競爭中的 operation 最多等 30 分鐘）並與 `config.c.ground.missileSystemTypes.srbm.contactAge` 一致（更舊的目標資料本來就過期）。 |
+| `config` | `config.red.recon.observationWindowSec` | 動態作戰觀察窗長度，與 [atoBuilder](atoBuilder.md) 共用；目前配置為 `30 * 60` 秒。 |
+| `config` | `config.red.recon.fsemStaleAfterSec` | FSEM 退役時限，目前配置為 `30 * 60` 秒，刻意與觀察窗對齊（競爭中的 operation 最多等 30 分鐘）並與 `config.red.ground.missileSystemTypes.srbm.contactAge` 一致（更舊的目標資料本來就過期）。 |
 | `constants` | `constants.MISSILE_SYSTEM_STATE.HIDE` | 發射單元必須處於此狀態才可被選用。 |
 | `constants` | `constants.MISSILE_SYSTEM_STATE.STATIC`／`REPOSITIONING` | 構成 `STOW_ON_RETIRE_STATE`。 |
 | `constants` | `constants.DATE_FORMAT` | FST `startTime` 的 UTC 格式。 |
 | `constants` | `constants.TAGS.DYNAMIC_OPERATIONS` | report 的 log tag。 |
 
-`config` 也被原樣轉交 [targetingProcess](targetingProcess.md) 消費。以下設定不由本模組讀取，但決定它產出什麼：`config.c.fireSupportTaskTemplates`（[operationScheduler](operationScheduler.md) 據此組出攜帶 FST 清單的 `SBJ__FireSupportExecutionMatrixTemplate`）。
+`config` 也被原樣轉交 [targetingProcess](targetingProcess.md) 消費。以下設定不由本模組讀取，但決定它產出什麼：`config.red.fireSupportTaskTemplates`（[operationScheduler](operationScheduler.md) 據此組出攜帶 FST 清單的 `SBJ__FireSupportExecutionMatrixTemplate`）。
 
 ---
 

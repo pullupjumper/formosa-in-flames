@@ -11,29 +11,18 @@ local UNIT_CREATION = {
 }
 
 ---Get or create cached side configuration
----Returns side configuration with field identifier, enemy side mapping, and display name
----@param sideName string Side name ('China', 'US', or other)
----@return SBJ__SideConfig # Side configuration with field, enemySide, and displayName
+---Returns the saved-data/config field key and the opposing side for a side name
+---Sides other than RED and ALLY resolve to BLUE
+---@param sideName string Side name (one of constants.SIDES)
+---@return SBJ__SideConfig # Side configuration with field and enemySide
 function GameUtils.getCachedSideConfig(sideName)
   if not sideConfigCache[sideName] then
-    if sideName == constants.SIDES.ENEMY then
-      sideConfigCache[sideName] = {
-        field = "c",
-        enemySide = constants.SIDES.PLAYER,
-        displayName = constants.SIDES.ENEMY
-      }
-    elseif sideName == "US" then
-      sideConfigCache[sideName] = {
-        field = "u",
-        enemySide = constants.SIDES.ENEMY,
-        displayName = "United States"
-      }
+    if sideName == constants.SIDES.RED then
+      sideConfigCache[sideName] = { field = "red", enemySide = constants.SIDES.BLUE }
+    elseif sideName == constants.SIDES.ALLY then
+      sideConfigCache[sideName] = { field = "ally", enemySide = constants.SIDES.RED }
     else
-      sideConfigCache[sideName] = {
-        field = "t",
-        enemySide = constants.SIDES.ENEMY,
-        displayName = sideName
-      }
+      sideConfigCache[sideName] = { field = "blue", enemySide = constants.SIDES.RED }
     end
   end
   return sideConfigCache[sideName]
@@ -375,7 +364,7 @@ function GameUtils.tryAddUnit(params, opts)
         type = constants.UNIT_TYPES.FACILITY,
         unitname = params.name,
         dbid = params.unitDBID,
-        side = constants.SIDES.ENEMY,
+        side = constants.SIDES.RED,
         latitude = point.latitude,
         longitude = point.longitude,
         autodetectable = false

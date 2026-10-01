@@ -488,7 +488,7 @@ function CommsJamming.process(config, saveData)
     return
   end
 
-  local commsJammingConfig = config.c.commsJamming
+  local commsJammingConfig = config.red.commsJamming
   local jammers = findJammers(jammingState.jammers)
   local unitCtxMap, targetCount = findSAMAndRadar(jammingState.iads)
 
@@ -519,8 +519,8 @@ local function initJammers(config, saveData)
     return
   end
 
-  local aircraftDefaults = config.c.commsJamming.aircraftDefaults
-  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  local aircraftDefaults = config.red.commsJamming.aircraftDefaults
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not filteredUnits then
     return
@@ -548,12 +548,12 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; Taiwan land-based AC/AEW maps are replaced
 function CommsJamming.updateTargetAircraft(config, saveData)
-  local aircraftCtx = PersistentState.aircraft(saveData, constants.SIDES.PLAYER)
-  local aircraftDefaults = config.c.commsJamming.aircraftDefaults
+  local aircraftCtx = PersistentState.aircraft(saveData, constants.SIDES.BLUE)
+  local aircraftDefaults = config.red.commsJamming.aircraftDefaults
   aircraftCtx.aew = {}
   aircraftCtx.ac = {}
 
-  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
   if not filteredUnits then
     return
   end

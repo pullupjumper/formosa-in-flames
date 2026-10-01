@@ -13,13 +13,13 @@ local SYSTEMS = constants.MISSILE_SYSTEM_TYPES
 
 ---Enemy unit groups each SIGINT collector listens to, in collection order
 local SIGINT_TARGETS = {
-  [constants.SIDES.ENEMY] = {
-    side = constants.SIDES.PLAYER,
+  [constants.SIDES.RED] = {
+    side = constants.SIDES.BLUE,
     systems = { SYSTEMS.SRBM, SYSTEMS.GLCM, SYSTEMS.MLRS, SYSTEMS.ASCM },
     iadsNodes = { "rocc", "taaoc" },
   },
-  US = {
-    side = constants.SIDES.ENEMY,
+  [constants.SIDES.ALLY] = {
+    side = constants.SIDES.RED,
     systems = { SYSTEMS.MLRS, SYSTEMS.SRBM, SYSTEMS.GLCM },
     iadsNodes = { "c2" },
   },
@@ -58,21 +58,21 @@ end
 ---@param state SBJ__SaveData
 ---@return SBJ__TargetEntry[]
 function PersistentState.targetlist(state)
-  return state.c.targetlist
+  return state.red.targetlist
 end
 
 ---China recon slice
 ---@param state SBJ__SaveData
 ---@return SBJ__ReconContext
 function PersistentState.recon(state)
-  return state.c.recon
+  return state.red.recon
 end
 
 ---China CSG land-attack cruise missile slice
 ---@param state SBJ__SaveData
 ---@return SBJ__LACMContext
 function PersistentState.lacm(state)
-  return state.c.surface.lacm
+  return state.red.surface.lacm
 end
 
 ---Runway repair slice for a side
@@ -138,13 +138,13 @@ end
 ---@param state SBJ__SaveData
 ---@return SBJ__CommsJammingState
 function PersistentState.commsJamming(state)
-  local taiwanAircraft = PersistentState.aircraft(state, constants.SIDES.PLAYER)
+  local blueAircraft = PersistentState.aircraft(state, constants.SIDES.BLUE)
   return {
-    enabled = state.c.commsJamming.enabled,
-    jammers = state.c.commsJamming.jammers,
-    iads = PersistentState.iads(state, constants.SIDES.PLAYER),
-    aircraft = taiwanAircraft.ac,
-    aew = taiwanAircraft.aew,
+    enabled = state.red.commsJamming.enabled,
+    jammers = state.red.commsJamming.jammers,
+    iads = PersistentState.iads(state, constants.SIDES.BLUE),
+    aircraft = blueAircraft.ac,
+    aew = blueAircraft.aew,
   }
 end
 
@@ -153,28 +153,28 @@ end
 ---@return SBJ__LandingOpsState
 function PersistentState.landingOps(state)
   return {
-    amphibOps = state.c.amphibOps,
+    amphibOps = state.red.amphibOps,
     recon = PersistentState.recon(state),
-    ground = PersistentState.ground(state, constants.SIDES.ENEMY),
+    ground = PersistentState.ground(state, constants.SIDES.RED),
   }
 end
 
----Slices the China strike planner reads and mutates: targets, recon, dynamic operations,
+---Slices the red side strike planner reads and mutates: targets, recon, dynamic operations,
 ---ATO, FSP, cruise missile salvos, and the landing ops fire-support hold
 ---@param state SBJ__SaveData
 ---@return SBJ__StrikePlannerState
 function PersistentState.strikePlanner(state)
-  local china = state.c
+  local red = state.red
   return {
     targetlist = PersistentState.targetlist(state),
-    transmissions = PersistentState.sigint(state, constants.SIDES.ENEMY).transmissions,
+    transmissions = PersistentState.sigint(state, constants.SIDES.RED).transmissions,
     recon = PersistentState.recon(state),
-    dynamicOperations = china.dynamicOperations,
-    air = china.air,
-    ground = PersistentState.ground(state, constants.SIDES.ENEMY),
+    dynamicOperations = red.dynamicOperations,
+    air = red.air,
+    ground = PersistentState.ground(state, constants.SIDES.RED),
     lacm = PersistentState.lacm(state),
-    slcm = china.subSurface.slcm,
-    fireSupportOnHold = china.amphibOps.fireSupportOnHold == true,
+    slcm = red.subSurface.slcm,
+    fireSupportOnHold = red.amphibOps.fireSupportOnHold == true,
   }
 end
 

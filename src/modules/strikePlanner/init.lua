@@ -25,10 +25,10 @@ local WZ8_RECON_CHANCE = 0.5
 function StrikePlanner.init(config, saveData)
   local plannerState = PersistentState.strikePlanner(saveData)
 
-  TargetingProcess.findTargets(constants.SIDES.ENEMY, config.c.targetScanning, plannerState.targetlist)
+  TargetingProcess.findTargets(constants.SIDES.RED, config.red.targetScanning, plannerState.targetlist)
 
   if plannerState.recon.enabled then
-    Recon.initQueue(config.c.recon, plannerState.recon)
+    Recon.initQueue(config.red.recon, plannerState.recon)
   end
 end
 
@@ -58,7 +58,7 @@ local function processRecon(config, plannerState)
   })
 
   if math.random() > WZ8_RECON_CHANCE then
-    Recon.addEntry(plannerState.recon, config.c.recon.templates.WZ8_RECON_ISLAND)
+    Recon.addEntry(plannerState.recon, config.red.recon.templates.WZ8_RECON_ISLAND)
   end
 end
 
@@ -73,7 +73,7 @@ local function launchLACMSalvo(config, plannerState)
   -- LACM element is committed at all.
   if not lacmCtx.enabled
       or lacmCtx.hasLaunched
-      or not GameUtils.isAfterStartTime(config.c.triggers.launchLACM.startTime) then
+      or not GameUtils.isAfterStartTime(config.red.triggers.launchLACM.startTime) then
     return
   end
 
@@ -82,15 +82,15 @@ local function launchLACMSalvo(config, plannerState)
   for _, guid in ipairs(GameApi.ScenEdit_GetUnit(LACM_GROUP_NAME).group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
     if unit and unit.dbid == constants.PLATFORMS.TYPE_055 then
-      table.insert(ships, { guid = guid, weaponDBID = config.c.surface.lacm.weaponDBID })
+      table.insert(ships, { guid = guid, weaponDBID = config.red.surface.lacm.weaponDBID })
     end
   end
 
   AttackManager.attackContacts({
-    contacts = config.c.surface.lacm.targetlist,
+    contacts = config.red.surface.lacm.targetlist,
     qty = LACM_SALVO_QTY,
     firingUnits = ships,
-    weaponDBID = config.c.surface.lacm.weaponDBID
+    weaponDBID = config.red.surface.lacm.weaponDBID
   })
   lacmCtx.hasLaunched = true
 end
@@ -101,11 +101,11 @@ end
 local function launchSLCMSalvo(config, plannerState)
   local slcmCtx = plannerState.slcm
 
-  if not slcmCtx.enabled or not GameUtils.isAfterStartTime(config.c.triggers.launchSLCM.startTime) then
+  if not slcmCtx.enabled or not GameUtils.isAfterStartTime(config.red.triggers.launchSLCM.startTime) then
     return
   end
 
-  for _, submarine in pairs(config.c.subSurface.slcm.submarines) do
+  for _, submarine in pairs(config.red.subSurface.slcm.submarines) do
     local actualUnit = GameApi.ScenEdit_GetUnit(submarine.name)
 
     if actualUnit then
@@ -119,10 +119,10 @@ local function launchSLCMSalvo(config, plannerState)
   end
 
   AttackManager.attackContacts({
-    contacts = config.c.subSurface.slcm.targetlist,
+    contacts = config.red.subSurface.slcm.targetlist,
     qty = SLCM_SALVO_QTY,
-    firingUnits = config.c.subSurface.slcm.submarines,
-    weaponDBID = config.c.subSurface.slcm.weaponDBID
+    firingUnits = config.red.subSurface.slcm.submarines,
+    weaponDBID = config.red.subSurface.slcm.weaponDBID
   })
 
   slcmCtx.enabled = false
@@ -147,7 +147,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; China's strike planner slices are mutated
 function StrikePlanner.process(config, saveData)
-  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
+  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.RED)
   if not contacts then
     Logger.error("contacts is nil")
     return

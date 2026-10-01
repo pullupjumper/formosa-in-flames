@@ -16,20 +16,20 @@ local LandingOps = {}
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; China's amphibious calculation result is filled
 function LandingOps.init(config, saveData)
-  ShipMovement.calculateDestination(config.c.amphibOps, PersistentState.landingOps(saveData).amphibOps.calculationResult)
+  ShipMovement.calculateDestination(config.red.amphibOps, PersistentState.landingOps(saveData).amphibOps.calculationResult)
 end
 
 ---Process all landing operation phases for the current event tick
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data; China's amphibious, recon, and ground slices are mutated
 function LandingOps.process(config, saveData)
-  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
+  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.RED)
   if not contacts then
     Logger.error("contacts is nil")
     return
   end
 
-  local filteredShips = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.SHIP)
+  local filteredShips = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.SHIP)
   if not filteredShips then
     Logger.error("filteredShips is nil")
     return
@@ -58,7 +58,7 @@ function LandingOps.launchACV(config, ship)
     return false
   end
 
-  local zone = AmphibiousAssault.getShipZone(config.c.amphibOps, ship)
+  local zone = AmphibiousAssault.getShipZone(config.red.amphibOps, ship)
   if not zone then
     return false
   end
@@ -102,7 +102,7 @@ function LandingOps.offloadVehicles(config, saveData, ship)
     ship.holdposition = true
 
     local bridge = GameApi.ScenEdit_AddUnit({
-      side = constants.SIDES.ENEMY,
+      side = constants.SIDES.RED,
       type = constants.UNIT_TYPES.FACILITY,
       latitude = ship.latitude,
       longitude = ship.longitude,
@@ -122,7 +122,7 @@ function LandingOps.offloadVehicles(config, saveData, ship)
       local roro = GameApi.ScenEdit_GetUnit(guid)
 
       if roro then
-        local zone = SecondWaveUnloading.getBargeROROZone(config.c.amphibOps, ship, roro)
+        local zone = SecondWaveUnloading.getBargeROROZone(config.red.amphibOps, ship, roro)
 
         if zone then
           SecondWaveUnloading.offloadVehicles({
@@ -155,12 +155,12 @@ function LandingOps.neutralizeAirlandingZone(config, ship)
     return false
   end
 
-  local sagConfig = config.c.amphibOps.sags[ship.group.name]
+  local sagConfig = config.red.amphibOps.sags[ship.group.name]
   if not sagConfig then
     return false
   end
 
-  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.ENEMY)
+  local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.RED)
   if not contacts then
     return false
   end

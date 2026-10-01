@@ -191,9 +191,9 @@ local function createShipsByType(position, shipType, formationCtx)
       name = "Type 075",
       cargo = cargoMap.type075,
       embarkedUnits = {
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
     type071 = {
@@ -201,8 +201,8 @@ local function createShipsByType(position, shipType, formationCtx)
       name = "Type 071",
       cargo = cargoMap.type071,
       embarkedUnits = {
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
     type076 = {
@@ -210,10 +210,10 @@ local function createShipsByType(position, shipType, formationCtx)
       name = "Type 076",
       cargo = cargoMap.type075,
       embarkedUnits = {
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
-        { side = constants.SIDES.ENEMY, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
     barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge", cargo = nil, embarkedUnits = nil },
@@ -236,7 +236,7 @@ local function createShipsByType(position, shipType, formationCtx)
   }
 
   local unitDescriptor = {
-    side = constants.SIDES.ENEMY,
+    side = constants.SIDES.RED,
     type = constants.UNIT_TYPES.SHIP,
     name = shipConfig.name,
     dbid = shipConfig.dbid,
@@ -253,7 +253,7 @@ end
 ---@param sideName string Side name ('China' | 'Taiwan')
 ---@return SBJ__ShipFormationDescriptor[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
-  if sideName == constants.SIDES.ENEMY then
+  if sideName == constants.SIDES.RED then
     return {
       {
         dbid = sagDescriptor.unitMap.type052d.dbid,
@@ -483,7 +483,7 @@ function UnitGenerator.createCSG(csgDescriptor)
     centerPoint = csgDescriptor.from.pos,
     heading = csgDescriptor.from.heading,
     groupName = csgDescriptor.groupName,
-    sideName = constants.SIDES.ENEMY,
+    sideName = constants.SIDES.RED,
     shipTypes = getCSGShipConfiguration(csgDescriptor)
   }
 
@@ -506,7 +506,7 @@ function UnitGenerator.createCSG(csgDescriptor)
 
     for _, area in ipairs(referenceAreas) do
       GameApi.ScenEdit_SetReferencePoint({
-        side = constants.SIDES.ENEMY,
+        side = constants.SIDES.RED,
         area = area,
         relativeTo = csg.guid,
         bearingtype = 1
@@ -548,11 +548,11 @@ end
 ---@param sideName string Side name
 ---@return boolean # Whether successful
 function UnitGenerator.addSubmarines(config, sideName)
-  if sideName ~= constants.SIDES.ENEMY then
+  if sideName ~= constants.SIDES.RED then
     return true -- Currently only supports Chinese submarines
   end
 
-  for _, unit in pairs(config.c.subSurface.slcm.submarines) do
+  for _, unit in pairs(config.red.subSurface.slcm.submarines) do
     local actualUnit = GameApi.ScenEdit_GetUnit(unit.name, sideName)
 
     if actualUnit then
@@ -563,7 +563,7 @@ function UnitGenerator.addSubmarines(config, sideName)
       centerPoint = unit.from.pos,
       dbids = { constants.PLATFORMS.TYPE_093B },
       count = 1,
-      randomRadiusNm = config.c.subSurface.slcm.randomRadiusNm,
+      randomRadiusNm = config.red.subSurface.slcm.randomRadiusNm,
       sideName = sideName,
       unitType = constants.UNIT_TYPES.SUBMARINE,
       unitname = unit.name,
@@ -586,7 +586,7 @@ function UnitGenerator.addSubmarines(config, sideName)
       GameApi.ScenEdit_AddReloadsToUnit({
         side = sideName,
         guid = addedUnit.guid,
-        wpn_dbid = config.c.subSurface.slcm.weaponDBID,
+        wpn_dbid = config.red.subSurface.slcm.weaponDBID,
         number = 8,
       })
     else
@@ -671,7 +671,7 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
   for _, descriptor in ipairs(descriptors) do
     for _, areaDescriptor in ipairs(descriptor.from.areas) do
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints({
-        side = constants.SIDES.ENEMY, area = areaDescriptor.startingPoints.type075
+        side = constants.SIDES.RED, area = areaDescriptor.startingPoints.type075
       })[1]
 
       -- Calculate starting positions for various ships
@@ -705,7 +705,7 @@ end
 ---Remove landing ships
 ---@return boolean # Whether successful
 function UnitGenerator.removeLandingShips()
-  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.SHIP)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.SHIP)
 
   if not filteredUnits then
     return false
@@ -730,7 +730,7 @@ function UnitGenerator.removeLandingShips()
     if unit then
       for _, dbid in ipairs(landingShipDBIDs) do
         if unit.dbid == dbid then
-          GameApi.ScenEdit_DeleteUnit({ side = constants.SIDES.ENEMY, guid = unit.guid })
+          GameApi.ScenEdit_DeleteUnit({ side = constants.SIDES.RED, guid = unit.guid })
           removedCount = removedCount + 1
           break
         end

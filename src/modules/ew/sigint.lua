@@ -123,7 +123,7 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
   end
 
   -- Check for C2 facilities (always emit, no movement check needed as they are fixed buildings)
-  for _, dbid in ipairs(config.c.iads.c2FacilityDBIDs) do
+  for _, dbid in ipairs(config.red.iads.c2FacilityDBIDs) do
     if unit.dbid == dbid then
       return true, "C2 facility (always emitting)"
     end
@@ -465,7 +465,7 @@ end
 ---@return number # Number of reconnaissance aircraft initialized
 function Sigint.initSide(config, saveData, sideName)
   local sigintCtx = PersistentState.sigint(saveData, sideName)
-  local aircraftDefaults = config.c.commsJamming.aircraftDefaults
+  local aircraftDefaults = config.red.commsJamming.aircraftDefaults
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
   if not sigintCtx.enabled then

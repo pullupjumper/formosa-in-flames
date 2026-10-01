@@ -5,7 +5,7 @@ local Utils = require("src.utils.utils")
 local unit = GameApi.ScenEdit_UnitX()
 
 PersistentState.read(function(saveData)
-  if unit and config.c.recon.isTesting then
+  if unit and config.red.recon.isTesting then
     for _, entity in ipairs(PersistentState.recon(saveData).queue) do
       if entity.unitGUID == unit.guid then
         local course = Utils.deepCopy(entity.course)

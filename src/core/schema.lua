@@ -230,7 +230,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__FrontlineRedirectConfig: table
 ---@field enabled boolean Whether the redirect mechanism is active
 ---@field attritionThresholdPct number Aggregated attrition percentage that triggers redirect (0-100)
----@field frontlineBaseNames string[] Frontline airbase names (must match config.c.air.deployedACs[].name)
+---@field frontlineBaseNames string[] Frontline airbase names (must match config.red.air.deployedACs[].name)
 ---@field mappings SBJ__StrikeMappingRewriteRule[] Strike mapping rewrites applied once redirect is active
 
 ---Reconnaissance configuration
@@ -290,11 +290,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field taaoc? SBJ__C2Descriptor[] TAAOC descriptors
 ---@field rocc? SBJ__C2Descriptor[] ROCC descriptors
 
----China faction configuration
----@class SBJ__ChinaConfig: table
+---Red side configuration (script-driven attacker)
+---@class SBJ__RedConfig: table
 ---@field triggers SBJ__TriggerConfig Trigger timing configuration
 ---@field targetScanning SBJ__TargetScanningConfig Target scanning configuration
----@field repairRunway SBJ__ChinaRunwayRepairConfig Runway repair configuration
+---@field repairRunway SBJ__RedRunwayRepairConfig Runway repair configuration
 ---@field sigint SBJ__SIGINTConfig SIGINT configuration
 ---@field iads SBJ__IADSConfig IADS configuration
 ---@field commsJamming SBJ__CommsJammingConfig Communications jamming configuration
@@ -308,17 +308,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field fireSupportTaskTemplates table<string, SBJ__FireSupportTaskTemplate[]> Fire support task templates
 ---@field packageTemplates table<string, SBJ__PackageTemplate[]> Air package templates
 
----Taiwan faction configuration
----@class SBJ__TaiwanConfig: table
+---Blue side configuration (player defender)
+---@class SBJ__BlueConfig: table
 ---@field gnssJamming SBJ__GNSSJammingConfig GNSS jamming configuration
 ---@field ground SBJ__GroundConfig Ground force configuration
 ---@field iads SBJ__IADSFactionConfig IADS configuration
----@field repairRunway SBJ__TaiwanRunwayRepairConfig Runway repair configuration
+---@field repairRunway SBJ__BlueRunwayRepairConfig Runway repair configuration
 ---@field air SBJ__AirOperationsConfig Air operations configuration
 ---@field surface SBJ__SurfaceOperationsConfig Surface operations configuration
 
----US faction configuration
----@class SBJ__USConfig: table
+---Ally side configuration (supports blue)
+---@class SBJ__AllyConfig: table
 ---@field sigint SBJ__SIGINTConfig SIGINT configuration
 
 ---Scoring system configuration
@@ -350,11 +350,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field difficulty string Difficulty level
 ---@field logging SBJ__LoggingConfig Logging configuration
 ---@field aircraftReadySec number Ready time for aircraft after landing and for package templates (seconds)
----@field c SBJ__ChinaConfig China faction configuration
----@field t SBJ__TaiwanConfig Taiwan faction configuration
----@field u SBJ__USConfig US faction configuration
+---@field red SBJ__RedConfig Red side configuration
+---@field blue SBJ__BlueConfig Blue side configuration
+---@field ally SBJ__AllyConfig Ally side configuration
 ---@field score SBJ__ScoringConfig Scoring system configuration
----@field [SBJ__SideKey] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig
+---@field [SBJ__SideKey] SBJ__RedConfig|SBJ__BlueConfig|SBJ__AllyConfig
 
 ---GNSS jamming context managing GNSS denial operations state
 ---@class SBJ__GNSSJammingContext: table
@@ -373,8 +373,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__SubsurfaceOperationsContext: table
 ---@field slcm SBJ__SLCMContext Submarine-launched cruise missile context
 
----China faction saved data structure
----@class SBJ__ChinaSaveData: table
+---Red side saved data structure
+---@class SBJ__RedSaveData: table
 ---@field targetlist SBJ__TargetEntry[] Target list for strike planning
 ---@field sigint SBJ__SIGINTContext Signals intelligence context
 ---@field iads SBJ__IADSContext Integrated Air Defense System context
@@ -389,24 +389,24 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field dynamicOperations SBJ__DynamicOperationsContext Dynamic operations context
 
----Taiwan faction saved data structure
----@class SBJ__TaiwanSaveData: table
+---Blue side saved data structure
+---@class SBJ__BlueSaveData: table
 ---@field ground SBJ__GroundContext Ground force systems context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air SBJ__AircraftSliceContext Aircraft context
 ---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
 
----US faction saved data structure
----@class SBJ__USSaveData: table
+---Ally side saved data structure
+---@class SBJ__AllySaveData: table
 ---@field sigint SBJ__SIGINTContext Signals intelligence context
 
 ---Saved data structure for persistent state
 ---@class SBJ__SaveData: table
----@field c SBJ__ChinaSaveData China faction data
----@field t SBJ__TaiwanSaveData Taiwan faction data
----@field u SBJ__USSaveData US faction data
----@field [SBJ__SideKey] SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData
+---@field red SBJ__RedSaveData Red side data
+---@field blue SBJ__BlueSaveData Blue side data
+---@field ally SBJ__AllySaveData Ally side data
+---@field [SBJ__SideKey] SBJ__RedSaveData|SBJ__BlueSaveData|SBJ__AllySaveData
 
 
 -- ============================================================================
@@ -416,9 +416,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Side configuration for faction settings
 ---@class SBJ__SideConfig: table
----@field field SBJ__SideKey Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
+---@field field SBJ__SideKey Side field identifier ("red", "blue" or "ally")
 ---@field enemySide string Enemy side name
----@field displayName string Human-readable side name
 
 
 -- ============================================================================
@@ -1191,8 +1190,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Target scanning configuration for contact categorization
 ---@class SBJ__TargetScanningConfig: table
 ---@field distanceThreshold number Maximum distance threshold in nautical miles for base/port proximity matching
----@field taiwanAirBases string[] Array of Taiwan airbase names to scan for
----@field taiwanPorts string[] Array of Taiwan port names to scan for
+---@field blueAirBases string[] Array of Taiwan airbase names to scan for
+---@field bluePorts string[] Array of Taiwan port names to scan for
 ---@field targetCategories SBJ__TargetCategoryPatternConfig Pattern configurations for each target category
 
 ---Target entry representing a scanned and categorized target
@@ -1276,7 +1275,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field qty? integer The number of salvos to launch (default: 1)
 ---@field firingUnits SBJ__FiringUnit[] A table of firing units to use for the attack
 ---@field weaponDBID? number The weapon DBID to use for the attack; nil uses the firing unit's default weapon
----@field sideName? string The side to use for the attack (default: constants.SIDES.ENEMY)
+---@field sideName? string The side to use for the attack (default: constants.SIDES.RED)
 
 ---Inputs for attacking one contact
 ---@class SBJ__AttackContactParams: table
@@ -1327,11 +1326,11 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field isFinished boolean Whether the mission has settled
 ---@field hasScheduledOperations boolean Whether follow-on operations were queued; never cleared, unlike isFinished
 
----UAV reconnaissance blueprint held in config.c.recon.templates
+---UAV reconnaissance blueprint held in config.red.recon.templates
 ---Carries no timings: addEntry resolves those when the entry is queued.
 ---@class SBJ__ReconUAVTemplate: table
 ---@field type "UAV" Platform discriminator
----@field templateId string Unique identifier matching its key in config.c.recon.templates; used to detect duplicate queue entries
+---@field templateId string Unique identifier matching its key in config.red.recon.templates; used to detect duplicate queue entries
 ---@field reconObjectiveId? string Recon objective used to schedule follow-on strike mappings; omit for recon that does not trigger strikes
 ---@field baseGUID string Base GUID where the UAV is stationed
 ---@field unitDBID number Platform database ID of the unit launched from baseGUID
@@ -1340,7 +1339,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field trackingSpeed? number Desired speed in knots while shadowing a contact; falls back to speed when the tracking airframe is the launched one
 ---@field isTracking? boolean Whether this mission may be handed a tracking target
 
----UAV blueprint plus resolved timings, as authored directly in config.c.recon.queue
+---UAV blueprint plus resolved timings, as authored directly in config.red.recon.queue
 ---Recon.addEntry produces this shape too, by computing the timings from the course.
 ---@class SBJ__ReconUAVDescriptor: SBJ__ReconUAVTemplate
 ---@field takeoffTime string Scheduled takeoff time in format "YYYY-MM-DD HH:MM:SS"
@@ -1352,7 +1351,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unitGUID? string Unit being monitored: the launched aircraft, or the WZ-8 it released
 ---@field trackingTargetGUID? string Target contact GUID being shadowed
 
----Satellite or SIGINT pass as authored in config.c.recon.queue
+---Satellite or SIGINT pass as authored in config.red.recon.queue
 ---These have no launch phase, so the plan needs nothing beyond its objective and timing.
 ---@class SBJ__ReconPassiveDescriptor: table
 ---@field type "satellite"|"SIGINT" Platform discriminator
@@ -1362,7 +1361,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Satellite or SIGINT pass once queued
 ---@class SBJ__ReconPassiveEntry: SBJ__ReconPassiveDescriptor, SBJ__ReconRunState
 
----Union of what config.c.recon.queue holds before initQueue runs
+---Union of what config.red.recon.queue holds before initQueue runs
 ---@alias SBJ__ReconQueueDescriptor SBJ__ReconUAVDescriptor|SBJ__ReconPassiveDescriptor
 
 ---Union of every queued reconnaissance entry
@@ -1402,7 +1401,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Per-type facts that let the scheduler and DynamicPlan stay generic over air and ground
 ---Owned by OperationType; every air/ground dispatch reads one of these instead of branching on the type string.
 ---@class SBJ__OperationTypeDescriptor: table
----@field templateSource string Key under config.c holding the templates ("packageTemplates" or "fireSupportTaskTemplates")
+---@field templateSource string Key under config.red holding the templates ("packageTemplates" or "fireSupportTaskTemplates")
 ---@field templateField string Array field inside an operation template ("packages" or "fireSupportTasks")
 ---@field registryKey string Key under generatedOperations that tracks names of this type
 ---@field resolvePlan fun(plannerState: SBJ__StrikePlannerState): table<string, any> The plan table generated operations are inserted into
@@ -1694,12 +1693,12 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field startTime number|nil Repair operation start timestamp, nil if not yet started
 
 ---China runway repair configuration
----@class SBJ__ChinaRunwayRepairConfig: table
+---@class SBJ__RedRunwayRepairConfig: table
 ---@field percentagePerHour number Repair percentage per hour
 ---@field runwayDBIDs number[] List of runway database IDs to repair
 
 ---Taiwan runway repair configuration
----@class SBJ__TaiwanRunwayRepairConfig: table
+---@class SBJ__BlueRunwayRepairConfig: table
 ---@field percentagePerHour number Repair percentage per hour
 ---@field airBases string[] List of Taiwan airbases with runways to repair
 ---@field runwaySubTypes string[] Array of runway facility sub-type patterns to match

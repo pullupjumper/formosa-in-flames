@@ -108,11 +108,11 @@ describe("GnssJamming", function()
   end
 
   ---Create a config object with the gnssJamming section
-  ---@param sideField? string Side field key ("c", "t", "u")
+  ---@param sideField? string Side field key ("red", "blue", "ally")
   ---@param gnssOverrides? table Overrides for gnssJamming config
   ---@return table
   local function makeConfig(sideField, gnssOverrides)
-    sideField = sideField or "t"
+    sideField = sideField or "blue"
     local cfg = {}
     cfg[sideField] = { gnssJamming = makeGnssJammingConfig(gnssOverrides) }
     return cfg
@@ -153,9 +153,8 @@ describe("GnssJamming", function()
     local cachedSideConfigStub
     before_each(function()
       cachedSideConfigStub = trackStub(stub(GameUtils, "getCachedSideConfig").returns({
-        field = "t",
+        field = "blue",
         enemySide = "China",
-        displayName = "Taiwan",
       }))
     end)
 
@@ -358,9 +357,8 @@ describe("GnssJamming", function()
       -- Positive: works correctly with China side config
       it("should use correct side config field for China", function()
         cachedSideConfigStub.returns({
-          field = "c",
+          field = "red",
           enemySide = "Taiwan",
-          displayName = "China",
         })
 
         local weapon = makeWeaponUnit({ dbid = 1001 })
@@ -373,7 +371,7 @@ describe("GnssJamming", function()
           return 50
         end))
 
-        local config = makeConfig("c")
+        local config = makeConfig("red")
         local result = GnssJamming.processJamming(config, "China")
 
         assert.is_true(result)
@@ -488,9 +486,8 @@ describe("GnssJamming", function()
   describe("addGnssJammer", function()
     before_each(function()
       trackStub(stub(GameUtils, "getCachedSideConfig").returns({
-        field = "c",
+        field = "red",
         enemySide = "Taiwan",
-        displayName = "China",
       }))
     end)
 
@@ -573,9 +570,8 @@ describe("GnssJamming", function()
   describe("deploySide", function()
     before_each(function()
       trackStub(stub(GameUtils, "getCachedSideConfig").returns({
-        field = "c",
+        field = "red",
         enemySide = "Taiwan",
-        displayName = "China",
       }))
     end)
 
@@ -589,7 +585,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameUtils, "tryAddUnit").returns(nil, nil))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      GnssJamming.deploySide(makeConfig("c", { jammers = { ["Jammer A"] = descriptor } }), "China")
+      GnssJamming.deploySide(makeConfig("red", { jammers = { ["Jammer A"] = descriptor } }), "China")
 
       assert.stub(removeZoneStub).was.called(1)
       assert.stub(deleteUnitStub).was.called_with({ side = "China", unitname = "Jammer A" })
@@ -612,7 +608,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local count = GnssJamming.deploySide(makeConfig("c", { jammers = descriptors }), "China")
+      local count = GnssJamming.deploySide(makeConfig("red", { jammers = descriptors }), "China")
 
       assert.are.equal(2, count)
     end)
@@ -637,7 +633,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_AddZone"))
       trackStub(stub(GameUtils, "setUnitEntersAreaEvent").returns(true))
 
-      local count = GnssJamming.deploySide(makeConfig("c", { jammers = descriptors }), "China")
+      local count = GnssJamming.deploySide(makeConfig("red", { jammers = descriptors }), "China")
 
       assert.are.equal(1, count)
     end)
@@ -655,7 +651,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "ScenEdit_SetEMCON"))
       trackStub(stub(GameUtils, "createArea").returns(false))
 
-      local count = GnssJamming.deploySide(makeConfig("c", { jammers = descriptors }), "China")
+      local count = GnssJamming.deploySide(makeConfig("red", { jammers = descriptors }), "China")
 
       assert.are.equal(0, count)
     end)
@@ -665,7 +661,7 @@ describe("GnssJamming", function()
       trackStub(stub(GameApi, "VP_GetSide").returns(makeSideObj()))
       local tryAddUnitStub = trackStub(stub(GameUtils, "tryAddUnit"))
 
-      local count = GnssJamming.deploySide(makeConfig("c", { jammers = {} }), "China")
+      local count = GnssJamming.deploySide(makeConfig("red", { jammers = {} }), "China")
 
       assert.are.equal(0, count)
       assert.stub(tryAddUnitStub).was_not.called()
@@ -681,7 +677,7 @@ describe("GnssJamming", function()
     ---@param jammerDescriptorMap table
     ---@return table
     local function makeJammerConfig(jammerDescriptorMap)
-      return makeConfig("c", { jammers = jammerDescriptorMap })
+      return makeConfig("red", { jammers = jammerDescriptorMap })
     end
 
     local destroyedJammer = { side = "China", name = "alpha" }

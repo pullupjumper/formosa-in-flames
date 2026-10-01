@@ -132,7 +132,7 @@ describe("Sigint", function()
   ---@return table
   local function makeConfig(overrides)
     local cfg = {
-      c = {
+      red = {
         iads = {
           c2FacilityDBIDs = { 3730, 177 },
         },
@@ -251,7 +251,7 @@ describe("Sigint", function()
     ---Run China's SIGINT collection over one emitter group
     ---@param unitContexts table
     ---@return luassert.spy emittersStub
-    local function runChina(unitContexts)
+    local function runRed(unitContexts)
       local emittersStub = trackStub(stub(PersistentState, "sigintEmitters")).returns({ unitContexts })
       Sigint.processSide(cfg, saveData, "China")
       return emittersStub
@@ -259,14 +259,13 @@ describe("Sigint", function()
 
     before_each(function()
       cfg = makeConfig()
-      cfg.c.sigint = makeSigintConfig()
+      cfg.red.sigint = makeSigintConfig()
       sigintCtx = makeSigintContext()
-      saveData = { c = { sigint = sigintCtx } }
+      saveData = { red = { sigint = sigintCtx } }
 
       trackStub(stub(GameUtils, "getCachedSideConfig")).returns({
-        field = "c",
+        field = "red",
         enemySide = "Taiwan",
-        displayName = "China",
       })
     end)
 
@@ -279,7 +278,7 @@ describe("Sigint", function()
       it("should collect the side's emitters when SIGINT is enabled", function()
         stubUnits({})
 
-        local emittersStub = runChina({})
+        local emittersStub = runRed({})
 
         assert.stub(emittersStub).was.called_with(saveData, "China")
       end)
@@ -288,7 +287,7 @@ describe("Sigint", function()
       it("should skip collection when SIGINT is disabled", function()
         sigintCtx.enabled = false
 
-        local emittersStub = runChina({})
+        local emittersStub = runRed({})
 
         assert.stub(emittersStub).was_not.called()
       end)
@@ -306,7 +305,7 @@ describe("Sigint", function()
         stubFix({ latitude = 25.01, longitude = 121.01 })
         stubLowRandom()
 
-        runChina({ ["C2-UNIT-001"] = makeC2Ctx({ guid = "C2-UNIT-001" }) })
+        runRed({ ["C2-UNIT-001"] = makeC2Ctx({ guid = "C2-UNIT-001" }) })
 
         local transmission = sigintCtx.transmissions["C2-UNIT-001"]
         assert.are.equal(25.01, transmission.latitude)
@@ -320,7 +319,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({ ["BUNKER-001"] = makeC2Ctx({ guid = "BUNKER-001", name = "TAAOC Bravo" }) })
+        runRed({ ["BUNKER-001"] = makeC2Ctx({ guid = "BUNKER-001", name = "TAAOC Bravo" }) })
 
         assert.is_not_nil(sigintCtx.transmissions["BUNKER-001"])
       end)
@@ -332,7 +331,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({ ["C2F-001"] = makeC2Ctx({ guid = "C2F-001", name = "ROCC Bravo" }) })
+        runRed({ ["C2F-001"] = makeC2Ctx({ guid = "C2F-001", name = "ROCC Bravo" }) })
 
         assert.is_not_nil(sigintCtx.transmissions["C2F-001"])
       end)
@@ -345,7 +344,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({ ["TEL-001"] = makeFiringUnitCtx({ guid = "TEL-001", name = "TEL Battery Alpha" }) })
+        runRed({ ["TEL-001"] = makeFiringUnitCtx({ guid = "TEL-001", name = "TEL Battery Alpha" }) })
 
         assert.is_not_nil(sigintCtx.transmissions["TEL-001"])
       end)
@@ -358,7 +357,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({ ["FU-LOOKUP-001"] = makeFiringUnitCtx({ guid = "FU-LOOKUP-001", name = "TEL Lookup" }) })
+        runRed({ ["FU-LOOKUP-001"] = makeFiringUnitCtx({ guid = "FU-LOOKUP-001", name = "TEL Lookup" }) })
 
         assert.stub(getUnitStub).was.called_with("TEL Lookup", "Taiwan")
       end)
@@ -370,7 +369,7 @@ describe("Sigint", function()
         local barkStub = stubFix({ latitude = 25.6, longitude = 121.6 })
         stubLowRandom()
 
-        runChina({ ["C2-SHOW-001"] = makeC2Ctx({ guid = "C2-SHOW-001", msg = "ROCC detected" }) })
+        runRed({ ["C2-SHOW-001"] = makeC2Ctx({ guid = "C2-SHOW-001", msg = "ROCC detected" }) })
 
         assert.stub(barkStub).was.called_with(121.6, 25.6, "ROCC detected", 255, 255, 255, true, true, 4, 16)
       end)
@@ -381,7 +380,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runChina({ ["TEL-002"] = makeFiringUnitCtx({ guid = "TEL-002", name = "TEL Battery Bravo" }) })
+        runRed({ ["TEL-002"] = makeFiringUnitCtx({ guid = "TEL-002", name = "TEL Battery Bravo" }) })
 
         assert.is_nil(sigintCtx.transmissions["TEL-002"])
       end)
@@ -392,7 +391,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runChina({ ["TEL-STOP-001"] = makeFiringUnitCtx({ guid = "TEL-STOP-001", name = "TEL Stopped" }) })
+        runRed({ ["TEL-STOP-001"] = makeFiringUnitCtx({ guid = "TEL-STOP-001", name = "TEL Stopped" }) })
 
         assert.is_nil(sigintCtx.transmissions["TEL-STOP-001"])
       end)
@@ -403,7 +402,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runChina({
+        runRed({
           ["TEL-NORL-001"] = makeFiringUnitCtx({
             guid = "TEL-NORL-001",
             name = "TEL NoRL",
@@ -421,7 +420,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runChina({ ["TEL-003"] = makeFiringUnitCtx({ guid = "TEL-003", name = "TEL Battery Charlie" }) })
+        runRed({ ["TEL-003"] = makeFiringUnitCtx({ guid = "TEL-003", name = "TEL Battery Charlie" }) })
 
         assert.is_nil(sigintCtx.transmissions["TEL-003"])
       end)
@@ -432,7 +431,7 @@ describe("Sigint", function()
         local rangeStub = trackStub(stub(GameApi, "Tool_Range"))
         stubLowRandom()
 
-        runChina({ ["MISSING-001"] = makeFiringUnitCtx({ guid = "MISSING-001", name = "Missing Unit" }) })
+        runRed({ ["MISSING-001"] = makeFiringUnitCtx({ guid = "MISSING-001", name = "Missing Unit" }) })
 
         assert.stub(rangeStub).was_not.called()
         assert.are.same({}, sigintCtx.transmissions)
@@ -444,7 +443,7 @@ describe("Sigint", function()
         trackStub(stub(GameApi, "ScenEdit_CurrentTime")).returns(1000)
         stubLowRandom()
 
-        runChina({ ["C2-UNIT-002"] = makeC2Ctx({ guid = "C2-UNIT-002" }) })
+        runRed({ ["C2-UNIT-002"] = makeC2Ctx({ guid = "C2-UNIT-002" }) })
 
         assert.is_nil(sigintCtx.transmissions["C2-UNIT-002"])
       end)
@@ -464,7 +463,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({ ["C2-PROB-001"] = makeC2Ctx({ guid = "C2-PROB-001" }) })
+        runRed({ ["C2-PROB-001"] = makeC2Ctx({ guid = "C2-PROB-001" }) })
 
         local transmission = sigintCtx.transmissions["C2-PROB-001"]
         return transmission and transmission.confidence
@@ -477,14 +476,14 @@ describe("Sigint", function()
 
       -- Positive: exponential decay between threshold and max range
       it("should detect with decayed confidence for mid-range distance", function()
-        cfg.c.sigint.maxDetectionRange = { 500, 500 }
+        cfg.red.sigint.maxDetectionRange = { 500, 500 }
 
         assert.are.equal(math.exp((-1 / 450) * (150 ^ 0.8)), detectC2At(150))
       end)
 
       -- Positive: farther targets get lower confidence
       it("should give a farther target lower confidence than a closer one", function()
-        cfg.c.sigint.maxDetectionRange = { 500, 500 }
+        cfg.red.sigint.maxDetectionRange = { 500, 500 }
         stubUnits({
           makeUnit({ guid = "C2-NEAR", dbid = constants.PLATFORMS.C2 }),
           makeUnit({ guid = "C2-FAR", dbid = constants.PLATFORMS.C2 }),
@@ -493,7 +492,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({
+        runRed({
           ["C2-NEAR"] = makeC2Ctx({ guid = "C2-NEAR" }),
           ["C2-FAR"] = makeC2Ctx({ guid = "C2-FAR" }),
         })
@@ -503,14 +502,14 @@ describe("Sigint", function()
 
       -- Positive: missing thresholds fall back to the built-in defaults
       it("should use default threshold when SIGINT config omits it", function()
-        cfg.c.sigint = { maxCount = 3, detectionSkipProbability = -1 }
+        cfg.red.sigint = { maxCount = 3, detectionSkipProbability = -1 }
 
         assert.are.equal(1.0, detectC2At(30))
       end)
 
       -- Negative: no detection beyond max range
       it("should not detect when distance exceeds max detection range", function()
-        cfg.c.sigint.maxDetectionRange = { 100, 100 }
+        cfg.red.sigint.maxDetectionRange = { 100, 100 }
 
         assert.is_nil(detectC2At(200))
       end)
@@ -527,7 +526,7 @@ describe("Sigint", function()
 
       -- Boundary: max range itself is out of reach
       it("should not detect when distance equals max detection range", function()
-        cfg.c.sigint.maxDetectionRange = { 200, 200 }
+        cfg.red.sigint.maxDetectionRange = { 200, 200 }
 
         assert.is_nil(detectC2At(200))
       end)
@@ -553,7 +552,7 @@ describe("Sigint", function()
       it("should create transmission record on first detection", function()
         stubC2Hit(makeUnit({ guid = "C2-REC-001", dbid = constants.PLATFORMS.C2 }))
 
-        runChina({ ["C2-REC-001"] = makeC2Ctx({ guid = "C2-REC-001", name = "ROCC Test" }) })
+        runRed({ ["C2-REC-001"] = makeC2Ctx({ guid = "C2-REC-001", name = "ROCC Test" }) })
 
         local transmission = sigintCtx.transmissions["C2-REC-001"]
         assert.are.equal("ROCC Test", transmission.name)
@@ -569,7 +568,7 @@ describe("Sigint", function()
           guid = "C2-INC-001", currentDetectionLevel = 2, detectionCount = 2,
         })
 
-        runChina({ ["C2-INC-001"] = makeC2Ctx({ guid = "C2-INC-001" }) })
+        runRed({ ["C2-INC-001"] = makeC2Ctx({ guid = "C2-INC-001" }) })
 
         local transmission = sigintCtx.transmissions["C2-INC-001"]
         assert.are.equal(3, transmission.currentDetectionLevel)
@@ -583,7 +582,7 @@ describe("Sigint", function()
           guid = "C2-AUTO-001", currentDetectionLevel = 3, detectionCount = 3,
         })
 
-        runChina({ ["C2-AUTO-001"] = makeC2Ctx({ guid = "C2-AUTO-001" }) })
+        runRed({ ["C2-AUTO-001"] = makeC2Ctx({ guid = "C2-AUTO-001" }) })
 
         assert.is_true(sigintCtx.transmissions["C2-AUTO-001"].autodetectable)
         assert.stub(setUnitStub).was.called_with({ guid = "C2-AUTO-001", autodetectable = true })
@@ -600,7 +599,7 @@ describe("Sigint", function()
           guid = "C2-GRP-001", currentDetectionLevel = 3, detectionCount = 3,
         })
 
-        runChina({ ["C2-GRP-001"] = makeC2Ctx({ guid = "C2-GRP-001" }) })
+        runRed({ ["C2-GRP-001"] = makeC2Ctx({ guid = "C2-GRP-001" }) })
 
         assert.stub(setUnitStub).was.called(2)
         assert.stub(setUnitStub).was.called_with({ guid = "MEMBER-A", autodetectable = true })
@@ -611,7 +610,7 @@ describe("Sigint", function()
       it("should classify TAAOC unit as C2 type in transmission record", function()
         stubC2Hit(makeUnit({ guid = "TAAOC-001", dbid = constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION }))
 
-        runChina({ ["TAAOC-001"] = makeC2Ctx({ guid = "TAAOC-001", name = "TAAOC Echo" }) })
+        runRed({ ["TAAOC-001"] = makeC2Ctx({ guid = "TAAOC-001", name = "TAAOC Echo" }) })
 
         assert.are.equal("C2", sigintCtx.transmissions["TAAOC-001"].type)
       end)
@@ -624,7 +623,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runChina({ ["MOB-TYPE-001"] = makeFiringUnitCtx({ guid = "MOB-TYPE-001", name = "TEL Mobile Type" }) })
+        runRed({ ["MOB-TYPE-001"] = makeFiringUnitCtx({ guid = "MOB-TYPE-001", name = "TEL Mobile Type" }) })
 
         assert.are.equal("mobile", sigintCtx.transmissions["MOB-TYPE-001"].type)
       end)
@@ -638,7 +637,7 @@ describe("Sigint", function()
         -- No recon aircraft means no detection is possible
         sigintCtx.reconAircraft = {}
 
-        runChina({ ["C2-DEC-001"] = makeC2Ctx({ guid = "C2-DEC-001" }) })
+        runRed({ ["C2-DEC-001"] = makeC2Ctx({ guid = "C2-DEC-001" }) })
 
         assert.are.equal(2, sigintCtx.transmissions["C2-DEC-001"].currentDetectionLevel)
       end)
@@ -654,7 +653,7 @@ describe("Sigint", function()
         })
         sigintCtx.reconAircraft = {}
 
-        runChina({ ["C2-RESET-001"] = makeC2Ctx({ guid = "C2-RESET-001" }) })
+        runRed({ ["C2-RESET-001"] = makeC2Ctx({ guid = "C2-RESET-001" }) })
 
         assert.is_false(sigintCtx.transmissions["C2-RESET-001"].autodetectable)
         assert.stub(setUnitStub).was.called_with({ guid = "C2-RESET-001", autodetectable = false })

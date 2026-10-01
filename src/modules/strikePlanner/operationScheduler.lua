@@ -56,7 +56,7 @@ local function buildNextOperation(operation, config)
   local nextName = baseName .. (tonumber(currentWaveNumber) + 1)
 
   ---@type SBJ__PackageTemplate[]|SBJ__FireSupportTaskTemplate[]|nil
-  local resolvedTemplate = config.c[typeTraits.templateSource][buildTemplateKey(nextName)]
+  local resolvedTemplate = config.red[typeTraits.templateSource][buildTemplateKey(nextName)]
   local resolvedName = nextName
   local status = NEXT_OPERATION_STATUS.FOUND_NEXT
 
@@ -106,7 +106,7 @@ local function buildFirstWaveOperation(strikeMapping, processingCtx)
   end
 
   local config = processingCtx.config
-  local template = config.c[typeTraits.templateSource][buildTemplateKey(strikeMapping.name)]
+  local template = config.red[typeTraits.templateSource][buildTemplateKey(strikeMapping.name)]
   if not template then
     return nil, {
       tag = "ERROR",
@@ -249,7 +249,7 @@ local function buildOperationsForReconObjective(processingCtx, reconEntry)
     return operations, results
   end
 
-  local strikeMappings = processingCtx.config.c.recon.strikeMappings[reconEntry.reconObjectiveId]
+  local strikeMappings = processingCtx.config.red.recon.strikeMappings[reconEntry.reconObjectiveId]
   if not strikeMappings then
     table.insert(results, {
       tag = "SKIP",

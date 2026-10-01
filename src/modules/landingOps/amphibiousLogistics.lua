@@ -235,12 +235,12 @@ local function createSingleCargoMission(platformType, zone, missionName)
   local reason
 
   if not GameApi.ScenEdit_AddMission(
-        constants.SIDES.ENEMY, missionName, MISSION_TYPE.CARGO, { zone = descriptor.zone }) then
+        constants.SIDES.RED, missionName, MISSION_TYPE.CARGO, { zone = descriptor.zone }) then
     reason = "add_mission_failed"
-  elseif not GameApi.ScenEdit_SetMission(constants.SIDES.ENEMY, missionName, descriptor.settings) then
+  elseif not GameApi.ScenEdit_SetMission(constants.SIDES.RED, missionName, descriptor.settings) then
     reason = "set_mission_failed"
   elseif not GameApi.ScenEdit_SetDoctrine(
-        { side = constants.SIDES.ENEMY, mission = missionName }, { automatic_evasion = false }) then
+        { side = constants.SIDES.RED, mission = missionName }, { automatic_evasion = false }) then
     reason = "set_doctrine_failed"
   end
 

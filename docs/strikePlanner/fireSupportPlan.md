@@ -2,13 +2,13 @@
 
 > 原始碼：`src/modules/strikePlanner/fireSupportPlan.lua`
 
-**職責**：執行 `saveData.c.ground.fireSupportPlan` 內已啟動的 FSEM，協調發射單元部署、打擊執行、任務完成狀態與集中式日誌輸出。
+**職責**：執行 `saveData.red.ground.fireSupportPlan` 內已啟動的 FSEM，協調發射單元部署、打擊執行、任務完成狀態與集中式日誌輸出。
 
 ---
 
 ## 概述
 
-`fireSupportPlan` 是 Strike Planner 的地面 Engage 執行器。它不負責產生目標或建立 FSEM，而是讀取已存在於 `saveData.c.ground.fireSupportPlan` 的火力支援執行矩陣，逐一處理已啟動且未完成的矩陣。
+`fireSupportPlan` 是 Strike Planner 的地面 Engage 執行器。它不負責產生目標或建立 FSEM，而是讀取已存在於 `saveData.red.ground.fireSupportPlan` 的火力支援執行矩陣，逐一處理已啟動且未完成的矩陣。
 
 模組的核心流程分成部署與打擊兩段。部署階段只處理尚未完成且已達 `startTime` 的 FST，檢查發射單元實體、飛彈系統狀態與彈量；只有目前需要處理的發射單元都進入 `STATIC` 狀態後，才會進入打擊階段。打擊階段會呼叫 `AttackManager.attackContacts()`，成功發射後標記 FST 完成，並在非 SAM 任務上寫入 `stowStartTime`，讓 missileSystem 狀態機接手後續收車與再補給流程。
 
@@ -36,7 +36,7 @@
 `processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 會由 `deploySingleFiringUnit()` 取得實體單位與 runtime context：
 
 1. `GameApi.ScenEdit_GetUnit(firingUnit.name)` 取得 CMO 實體單位。
-2. `MissileSystem.getFiringUnitContext(saveData.c.ground, task.missileSystemType, firingUnit.name)` 取得 runtime context。實體或 context 任一不存在，都視同陣亡、從 FST 移除。
+2. `MissileSystem.getFiringUnitContext(saveData.red.ground, task.missileSystemType, firingUnit.name)` 取得 runtime context。實體或 context 任一不存在，都視同陣亡、從 FST 移除。
 3. `MissileSystem.sendToFiringPoint()` 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。
 
 若任一 firing unit 尚未就位，該 FST 會被列入 pending 結果，並在日誌中輸出 `reason=firing_units_not_in_position` 與單位名稱。
@@ -50,7 +50,7 @@
 | `not task.isFinished` | 任務尚未完成。 |
 | `GameUtils.isAfterStartTime(task.startTime)` | 已達任務啟動時間。 |
 
-`fireSupportPlan` 執行期不再檢查 `task.target.minTargetCount`。目標數量門檻是在上游建立 FSEM 時處理：`TargetingProcess.processTargets()` 產生候選目標，`DynamicPlan.evaluateTargets()` 以 `taskTemplate.target.minTargetCount` 決定該 FST 是否可被建成 executable task。本模組假設寫入 `saveData.c.ground.fireSupportPlan` 的 FST 已完成目標篩選，只把 `task.target.list` 交給 `AttackManager.attackContacts()`。
+`fireSupportPlan` 執行期不再檢查 `task.target.minTargetCount`。目標數量門檻是在上游建立 FSEM 時處理：`TargetingProcess.processTargets()` 產生候選目標，`DynamicPlan.evaluateTargets()` 以 `taskTemplate.target.minTargetCount` 決定該 FST 是否可被建成 executable task。本模組假設寫入 `saveData.red.ground.fireSupportPlan` 的 FST 已完成目標篩選，只把 `task.target.list` 交給 `AttackManager.attackContacts()`。
 
 符合條件後會呼叫：
 
@@ -69,7 +69,7 @@ AttackManager.attackContacts({
 成功發射後，模組呼叫：
 
 ```lua
-MissileSystem.startStow(saveData.c.ground, task.missileSystemType, task.firingUnits)
+MissileSystem.startStow(saveData.red.ground, task.missileSystemType, task.firingUnits)
 ```
 
 由 missileSystem 替每個 firing unit 啟動 stow 倒數。已有倒數的不覆寫；SAM 任務整批略過，因為 SAM firing unit 不走打擊後 stow 流程。
@@ -100,7 +100,7 @@ MissileSystem.startStow(saveData.c.ground, task.missileSystemType, task.firingUn
 ```mermaid
 flowchart TD
     START["FireSupportPlan.process(saveData)"]
-    LOOP["遍歷 saveData.c.ground.fireSupportPlan"]
+    LOOP["遍歷 saveData.red.ground.fireSupportPlan"]
     ACTIVE{"FSEM isActivated<br/>且未 isFinished?"}
     PROCESS["processActiveMatrix()"]
     DEPLOY_TASK["遍歷已達 startTime 的 FST"]
@@ -153,7 +153,7 @@ flowchart TD
 ## saveData 結構
 
 ```text
-saveData.c.ground
+saveData.red.ground
 ├── enabled: boolean
 ├── fireSupportPlan: table<string, SBJ__FireSupportExecutionMatrix>
 │   └── <matrixName>
@@ -188,28 +188,28 @@ saveData.c.ground
 
 | 路徑 | 操作 | 說明 |
 |---|---|---|
-| `saveData.c.ground.fireSupportPlan` | read | `process()` 遍歷所有 FSEM。 |
+| `saveData.red.ground.fireSupportPlan` | read | `process()` 遍歷所有 FSEM。 |
 | `matrix.allFiringUnitsInPosition` | write | `processActiveMatrix()` 寫入部署階段結果。 |
 | `task.isFinished` | write | `startFireSupportTasks()` 在成功發射後標記完成。 |
 | `matrix.isFinished` | write | `process()` 在所有 FST 完成後標記 FSEM 完成。 |
 | `task.target.list` | read | `startFireSupportTasks()` 交給 `AttackManager.attackContacts()` 作為目標 GUID 清單。 |
-| `saveData.c.ground.missileSystemTypes.<system>.firingUnits.<name>.stowStartTime` | write | 非 SAM 任務成功發射後啟動 stow 倒數。 |
+| `saveData.red.ground.missileSystemTypes.<system>.firingUnits.<name>.stowStartTime` | write | 非 SAM 任務成功發射後啟動 stow 倒數。 |
 
 ---
 
 ## `config` 參考
 
-`fireSupportPlan.lua` 不直接 `require("src.core.config")`，但它讀寫的 `saveData.c.ground.missileSystemTypes.<system>` 由 `src/core/saveData.lua` 依 `config.c.ground.*` 初始化。
+`fireSupportPlan.lua` 不直接 `require("src.core.config")`，但它讀寫的 `saveData.red.ground.missileSystemTypes.<system>` 由 `src/core/saveData.lua` 依 `config.red.ground.*` 初始化。
 
 | config 路徑 | 間接用途 |
 |---|---|
 | `config.logging.modules[constants.TAGS.GROUND]` | 控制 `constants.TAGS.GROUND` 日誌是否 verbose。 |
-| `config.c.ground.missileSystemTypes.<system>.reloadTime` | 初始化 `saveData.c.ground.missileSystemTypes.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
-| `config.c.ground.missileSystemTypes.<system>.stowTime` | 初始化 `saveData.c.ground.missileSystemTypes.<system>.stowTime`，供打擊後 stow 視窗使用。 |
-| `config.c.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitContext` 後由 `MissileSystem.isLowAmmo()` 使用。 |
-| `config.c.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitContext` 後用於彈量檢查與發射單元武器設定。 |
-| `config.c.fireSupportTaskTemplates.*.target.minTargetCount` | 上游 `fsemBuilder` 建立 FSEM 前用來過濾目標數不足的 FST；本模組執行時不直接讀取。 |
-| `config.c.fireSupportTaskTemplates.*.target.ammoPerTarget` | 進入 executable FST 後成為 `task.target.ammoPerTarget`，本模組傳給 `AttackManager.attackContacts()` 的 `qty`。 |
+| `config.red.ground.missileSystemTypes.<system>.reloadTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
+| `config.red.ground.missileSystemTypes.<system>.stowTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.stowTime`，供打擊後 stow 視窗使用。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitContext` 後由 `MissileSystem.isLowAmmo()` 使用。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitContext` 後用於彈量檢查與發射單元武器設定。 |
+| `config.red.fireSupportTaskTemplates.*.target.minTargetCount` | 上游 `fsemBuilder` 建立 FSEM 前用來過濾目標數不足的 FST；本模組執行時不直接讀取。 |
+| `config.red.fireSupportTaskTemplates.*.target.ammoPerTarget` | 進入 executable FST 後成為 `task.target.ammoPerTarget`，本模組傳給 `AttackManager.attackContacts()` 的 `qty`。 |
 
 ---
 
@@ -233,7 +233,7 @@ saveData.c.ground
 
 | 呼叫者 | 條件 | 說明 |
 |---|---|---|
-| `StrikePlanner.process(config, saveData, contacts)` | `saveData.c.ground.enabled == true` | `src/modules/strikePlanner/init.lua` 每輪最後一段執行 FSP；由 `src/scripts/china/scheduledStrikePlanner.lua` 定時觸發，同一輪腳本結束時會儲存 `SaveData`。 |
+| `StrikePlanner.process(config, saveData, contacts)` | `saveData.red.ground.enabled == true` | `src/modules/strikePlanner/init.lua` 每輪最後一段執行 FSP；由 `src/scripts/china/scheduledStrikePlanner.lua` 定時觸發，同一輪腳本結束時會儲存 `SaveData`。 |
 
 ---
 
@@ -253,8 +253,8 @@ saveData.c.ground
 
 | 文件 | 關係 |
 |---|---|
-| [fsemBuilder](fsemBuilder.md) | 動態產生 FSEM 並插入 `saveData.c.ground.fireSupportPlan`，由本模組後續執行。 |
-| [operationScheduler](operationScheduler.md) | 從偵察觸發的 strike mapping 建立 ground operation，並掛入 `config.c.fireSupportTaskTemplates` 對應的 FST template。 |
+| [fsemBuilder](fsemBuilder.md) | 動態產生 FSEM 並插入 `saveData.red.ground.fireSupportPlan`，由本模組後續執行。 |
+| [operationScheduler](operationScheduler.md) | 從偵察觸發的 strike mapping 建立 ground operation，並掛入 `config.red.fireSupportTaskTemplates` 對應的 FST template。 |
 | [targetingProcess](targetingProcess.md) | 提供動態 FSEM 生成時的目標評估；本模組只消耗已寫入 FST 的 target list。 |
 | [missileSystem](../missileSystem/README.md) | 管理 firing unit 狀態機、移動、stow 與 reload。 |
 | [attackManager](../attackManager.md) | 實際執行 `attackContacts()` 發射流程。 |

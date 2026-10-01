@@ -70,7 +70,7 @@ describe("AttackManager", function()
     local unit = {
       guid = "UNIT-001",
       name = "Unit One",
-      side = constants.SIDES.ENEMY,
+      side = constants.SIDES.RED,
     }
     if overrides then
       for k, v in pairs(overrides) do
@@ -107,7 +107,7 @@ describe("AttackManager", function()
     -- Positive: allocates ammo from a single unit on the requested side
     it("should attack contact with single unit and allocate requested ammo", function()
       local contact = makeContact()
-      local unit = makeUnit({ name = "Shooter A", guid = "UNIT-A", side = constants.SIDES.PLAYER })
+      local unit = makeUnit({ name = "Shooter A", guid = "UNIT-A", side = constants.SIDES.BLUE })
       local firingUnits = { { name = "Shooter A", weaponDBID = 1001 } }
 
       local stubGetContact = trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
@@ -124,11 +124,11 @@ describe("AttackManager", function()
         contacts = { contact.guid },
         qty = 3,
         firingUnits = firingUnits,
-        sideName = constants.SIDES.PLAYER,
+        sideName = constants.SIDES.BLUE,
       })
 
       assert.are.equal(3, result)
-      assert.stub(stubGetContact).was.called_with(constants.SIDES.PLAYER, contact.guid)
+      assert.stub(stubGetContact).was.called_with(constants.SIDES.BLUE, contact.guid)
       assert.stub(stubAttack).was.called_with("UNIT-A", contact.guid, {
         mode = "1",
         qty = 3,
@@ -295,7 +295,7 @@ describe("AttackManager", function()
         firingUnits = { { name = "U1", weaponDBID = 1001 } },
       })
 
-      assert.stub(stubGetContact).was.called_with(constants.SIDES.ENEMY, "C-3")
+      assert.stub(stubGetContact).was.called_with(constants.SIDES.RED, "C-3")
     end)
 
     -- Negative: returns zero when no contacts are provided

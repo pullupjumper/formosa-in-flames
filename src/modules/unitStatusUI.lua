@@ -21,7 +21,7 @@ end
 
 ---Display HTML dialog for EMCON settings configuration
 function UnitStatusUI.buildWcsSettingTable()
-  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.PLAYER }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
   if not filteredUnits then
     return
@@ -133,7 +133,7 @@ end
 
 ---Create JSON string for SIGINT transmission data
 ---@param saveData SBJ__SaveData Saved game data
----@param sideName string Side name ('China' or "US")
+---@param sideName string Side name (constants.SIDES.RED or constants.SIDES.ALLY)
 ---@return string # JSON formatted signal data
 local function createSignalDataString(saveData, sideName)
   local rows = {}
@@ -207,11 +207,11 @@ end
 local function createAmphibiousTaskForceLocationDataString(config)
   local data = {}
 
-  for _, op in ipairs(config.c.amphibOps.operations) do
+  for _, op in ipairs(config.red.amphibOps.operations) do
     local item = { name = op.name, waypoints = {} }
 
     local point = GameApi.ScenEdit_GetReferencePoint({
-      side = constants.SIDES.ENEMY,
+      side = constants.SIDES.RED,
       name = op.from.areas[1].startingPoints.type075[1],
     })
 
@@ -219,10 +219,10 @@ local function createAmphibiousTaskForceLocationDataString(config)
       table.insert(item.waypoints, { latitude = point.latitude, longitude = point.longitude })
     end
 
-    for _, opZone in ipairs(config.c.amphibOps.operationalZones) do
+    for _, opZone in ipairs(config.red.amphibOps.operationalZones) do
       if op.name == opZone.name then
         local destination = GameApi.ScenEdit_GetReferencePoint({
-          side = constants.SIDES.ENEMY,
+          side = constants.SIDES.RED,
           name = opZone.boat.zone[1],
         })
 
@@ -240,13 +240,13 @@ end
 
 ---Per-side content of the status dashboard
 local STATUS_UI_SIDES = {
-  [constants.SIDES.ENEMY] = {
-    signalSide = constants.SIDES.ENEMY,
+  [constants.SIDES.RED] = {
+    signalSide = constants.SIDES.RED,
     c2Types = { "c2" },
     showsLandedUnits = true
   },
-  [constants.SIDES.PLAYER] = {
-    signalSide = "US",
+  [constants.SIDES.BLUE] = {
+    signalSide = constants.SIDES.ALLY,
     c2Types = { "rocc", "taaoc" },
     showsLandedUnits = false
   }
@@ -258,7 +258,7 @@ local STATUS_UI_SIDES = {
 ---@param config SBJ__Config Configuration table
 ---@param sideName string Side name ('China' or 'Taiwan')
 function UnitStatusUI.createUI(config, sideName)
-  local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.PLAYER]
+  local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.BLUE]
 
   PersistentState.read(function(saveData)
     local batteryRows = MissileSystem.buildBatteryStatusRows(config, saveData, sideName)
@@ -298,7 +298,7 @@ local function updateFromSetupResult(config, saveData, sideName, result)
   if airbaseDeploymentDescriptors and #airbaseDeploymentDescriptors > 0 then
     UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 
-    if sideName == constants.SIDES.PLAYER then
+    if sideName == constants.SIDES.BLUE then
       CommsJamming.updateTargetAircraft(config, saveData)
     end
   end

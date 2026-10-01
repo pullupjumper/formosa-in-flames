@@ -296,20 +296,20 @@ describe("MissileSystem", function()
   ---@return table config, table saveData
   local function makeSides()
     local config = {
-      c = {
+      red = {
         ground = {
           missileSystemTypes = { id = "c-cfg" },
           policy = { isAuto = true, hideOnEnterHA = true, hideResupplyOnRLNoMeeting = true }
         }
       },
-      t = {
+      blue = {
         ground = {
           missileSystemTypes = { id = "t-cfg" },
           policy = { isAuto = false, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
         }
       }
     }
-    local saveData = { c = { ground = { id = "c-ctx" } }, t = { ground = { id = "t-ctx" } } }
+    local saveData = { red = { ground = { id = "c-ctx" } }, blue = { ground = { id = "t-ctx" } } }
     return config, saveData
   end
 
@@ -323,14 +323,14 @@ describe("MissileSystem", function()
       local config, saveData = makeSides()
       local processStub = trackStub(MissileSystem, "process")
 
-      MissileSystem.processSide(config, saveData, constants.SIDES.ENEMY)
-      MissileSystem.processSide(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.processSide(config, saveData, constants.SIDES.RED)
+      MissileSystem.processSide(config, saveData, constants.SIDES.BLUE)
 
       assert.stub(processStub).was.called(2)
-      assert.stub(processStub).was.called_with(saveData.c.ground, config.c.ground.missileSystemTypes, true,
-        constants.SIDES.ENEMY)
-      assert.stub(processStub).was.called_with(saveData.t.ground, config.t.ground.missileSystemTypes, false,
-        constants.SIDES.PLAYER)
+      assert.stub(processStub).was.called_with(saveData.red.ground, config.red.ground.missileSystemTypes, true,
+        constants.SIDES.RED)
+      assert.stub(processStub).was.called_with(saveData.blue.ground, config.blue.ground.missileSystemTypes, false,
+        constants.SIDES.BLUE)
     end)
   end)
 
@@ -342,12 +342,12 @@ describe("MissileSystem", function()
     -- Positive: an enabled side builds contexts from its own ground config into its own slice
     it("should init contexts from the side's ground config when the side is enabled", function()
       local config, saveData = makeSides()
-      saveData.t.ground.enabled = true
+      saveData.blue.ground.enabled = true
       local contextStub = trackStub(Context, "initMissileSystemContexts")
 
-      MissileSystem.initSide(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
-      assert.stub(contextStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
+      assert.stub(contextStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground)
     end)
 
     -- Negative: a disabled side builds nothing
@@ -355,7 +355,7 @@ describe("MissileSystem", function()
       local config, saveData = makeSides()
       local contextStub = trackStub(Context, "initMissileSystemContexts")
 
-      MissileSystem.initSide(config, saveData, constants.SIDES.ENEMY)
+      MissileSystem.initSide(config, saveData, constants.SIDES.RED)
 
       assert.stub(contextStub).was_not.called()
     end)
@@ -372,10 +372,10 @@ describe("MissileSystem", function()
       local addStub = trackStub(Deployment, "addMissileSystems")
       local contextStub = trackStub(Context, "initMissileSystemContexts")
 
-      MissileSystem.deploySide(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
 
-      assert.stub(addStub).was.called_with(config.t.ground.missileSystemTypes, constants.SIDES.PLAYER)
-      assert.stub(contextStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
+      assert.stub(addStub).was.called_with(config.blue.ground.missileSystemTypes, constants.SIDES.BLUE)
+      assert.stub(contextStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground)
     end)
   end)
 
@@ -389,9 +389,9 @@ describe("MissileSystem", function()
       local config, saveData = makeSides()
       local seedStub = trackStub(Context, "ensureGroundState")
 
-      MissileSystem.ensureGroundState(config, saveData, constants.SIDES.PLAYER)
+      MissileSystem.ensureGroundState(config, saveData, constants.SIDES.BLUE)
 
-      assert.stub(seedStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground)
+      assert.stub(seedStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground)
     end)
   end)
 
@@ -408,11 +408,11 @@ describe("MissileSystem", function()
       local buildLayoutsStub = trackStub(SetupLayout, "buildLayouts").returns(layouts)
       local redeployStub = trackStub(MissileSystem, "redeploy")
 
-      MissileSystem.redeployFromSetup(config, saveData, constants.SIDES.PLAYER, entries)
+      MissileSystem.redeployFromSetup(config, saveData, constants.SIDES.BLUE, entries)
 
       assert.stub(buildLayoutsStub).was.called_with(entries)
-      assert.stub(redeployStub).was.called_with(config.t.ground.missileSystemTypes, saveData.t.ground,
-        constants.SIDES.PLAYER, layouts)
+      assert.stub(redeployStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
+        constants.SIDES.BLUE, layouts)
     end)
   end)
 
@@ -427,10 +427,10 @@ describe("MissileSystem", function()
       local rows = { srbm = { id = "row" } }
       local rowsStub = trackStub(SetupLayout, "buildSetupMenuRows").returns(rows)
 
-      local result = MissileSystem.buildSetupMenuRows(config, constants.SIDES.PLAYER)
+      local result = MissileSystem.buildSetupMenuRows(config, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(config.t.ground.missileSystemTypes, constants.SIDES.PLAYER)
+      assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, constants.SIDES.BLUE)
     end)
   end)
 
@@ -446,10 +446,10 @@ describe("MissileSystem", function()
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(4200)
       local rowsStub = trackStub(StatusView, "buildBatteryStatusRows").returns(rows)
 
-      local result = MissileSystem.buildBatteryStatusRows(config, saveData, constants.SIDES.PLAYER)
+      local result = MissileSystem.buildBatteryStatusRows(config, saveData, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(saveData.t.ground, config.t.ground.missileSystemTypes, 4200)
+      assert.stub(rowsStub).was.called_with(saveData.blue.ground, config.blue.ground.missileSystemTypes, 4200)
     end)
   end)
 
@@ -461,10 +461,10 @@ describe("MissileSystem", function()
     -- Positive: side comes from the triggering unit, switches come from that side's policy
     it("should run a China unit against the China slice, contacts and policy", function()
       local config, saveData = makeSides()
-      local unit = { name = "FU1", guid = "guid-fu1", side = constants.SIDES.ENEMY }
+      local unit = { name = "FU1", guid = "guid-fu1", side = constants.SIDES.RED }
       local event = { triggers = { { UnitEntersArea = { Description = "(China) Arrive in HA - 1 - AreaA" } } } }
       local firingUnitCtx = { name = "FU1" }
-      saveData.c.ground = {
+      saveData.red.ground = {
         missileSystemTypes = {
           [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = {} }
         }
@@ -477,7 +477,7 @@ describe("MissileSystem", function()
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)
 
-      assert.stub(getContactsStub).was.called_with(constants.SIDES.ENEMY)
+      assert.stub(getContactsStub).was.called_with(constants.SIDES.RED)
       assert.stub(dropContactStub).was.called(1)
       assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, true)
     end)
@@ -485,11 +485,11 @@ describe("MissileSystem", function()
     -- Positive: a Taiwan unit gets the manual policy and the Taiwan slice
     it("should use the Taiwan slice and manual policy for a Taiwan unit", function()
       local config, saveData = makeSides()
-      local unit = { name = "RS1", guid = "guid-rs1", side = constants.SIDES.PLAYER }
+      local unit = { name = "RS1", guid = "guid-rs1", side = constants.SIDES.BLUE }
       local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in AHA - 1 - AreaA" } } } }
 
       local systemCtx = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
-      saveData.t.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemCtx } }
+      saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemCtx } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
       trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
@@ -603,8 +603,8 @@ describe("MissileSystem", function()
         }
       }
       local saveData = {
-        c = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } },
-        t = {
+        red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } },
+        blue = {
           ground = {
             missileSystemTypes = {
               mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
@@ -613,7 +613,7 @@ describe("MissileSystem", function()
           },
         },
       }
-      local unit = { name = "Ammo Depot Alpha", side = constants.SIDES.PLAYER }
+      local unit = { name = "Ammo Depot Alpha", side = constants.SIDES.BLUE }
 
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 
@@ -631,8 +631,8 @@ describe("MissileSystem", function()
 
     -- Negative: a unit no system tracks is ignored without logging
     it("should return false and stay silent for an untracked unit", function()
-      local saveData = { c = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } } }
-      local unit = { name = "Random Truck", side = constants.SIDES.ENEMY }
+      local saveData = { red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } } }
+      local unit = { name = "Random Truck", side = constants.SIDES.RED }
 
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 

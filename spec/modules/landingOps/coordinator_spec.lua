@@ -101,7 +101,7 @@ describe("LandingOps Coordinator", function()
   ---@return table
   local function makeConfig(overrides)
     local config = {
-      c = {
+      red = {
         amphibOps = {
           operationalZones = { makeZone() },
           operations = { makeOperation() },
@@ -277,14 +277,14 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubTransferTransportAircraft).was.called(1)
-      assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.c.recon.templates.GJ11_RECON)
+      assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.red.recon.templates.GJ11_RECON)
     end)
 
     -- Negative: non-Taoyuan zones skip transport-aircraft transfer and recon insertion
     it("should not run Taoyuan temporary setup for a non-Taoyuan zone", function()
       local config = makeConfig()
-      config.c.amphibOps.operationalZones = { makeZone({ name = "Tainan" }) }
-      config.c.amphibOps.operations = { makeOperation({ name = "Tainan" }) }
+      config.red.amphibOps.operationalZones = { makeZone({ name = "Tainan" }) }
+      config.red.amphibOps.operations = { makeOperation({ name = "Tainan" }) }
       local landingState = makeLandingState()
       landingState.amphibOps.zoneStates = {
         Tainan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
@@ -339,7 +339,7 @@ describe("LandingOps Coordinator", function()
     -- Negative: logs an error when zone operation mapping is missing
     it("should log an error when no matching operation exists for a zone", function()
       local config = makeConfig({
-        c = {
+        red = {
           amphibOps = {
             operationalZones = { makeZone({ name = "Kaohsiung" }) },
             operations = { makeOperation({ name = "Taoyuan" }) },
@@ -411,9 +411,9 @@ describe("LandingOps Coordinator", function()
       ---@param overrides? table
       local function makeGateConfig(overrides)
         local cfg = makeConfig()
-        cfg.c.amphibOps.fireSupportHoldThreshold = 50
+        cfg.red.amphibOps.fireSupportHoldThreshold = 50
         if overrides then
-          for k, v in pairs(overrides) do cfg.c.amphibOps[k] = v end
+          for k, v in pairs(overrides) do cfg.red.amphibOps[k] = v end
         end
         return cfg
       end
@@ -455,8 +455,8 @@ describe("LandingOps Coordinator", function()
       -- Positive: RESUME releases hold once all zones reach WAITING_ASSAULT or later
       it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
         local cfg = makeGateConfig()
-        cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-        cfg.c.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
+        cfg.red.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
+        cfg.red.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
         local landingState = makeGateLandingState()
         landingState.amphibOps.fireSupportOnHold = true
         landingState.amphibOps.zoneStates = {
@@ -472,8 +472,8 @@ describe("LandingOps Coordinator", function()
       -- Negative: RESUME requires ALL zones; one straggler keeps hold engaged
       it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
         local cfg = makeGateConfig()
-        cfg.c.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-        cfg.c.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
+        cfg.red.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
+        cfg.red.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
         local landingState = makeGateLandingState()
         landingState.amphibOps.fireSupportOnHold = true
         landingState.amphibOps.zoneStates = {

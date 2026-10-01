@@ -13,8 +13,8 @@ local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 
 if config.isSaved then
-  MissileSystem.ensureGroundState(config, saveData, constants.SIDES.ENEMY)
-  MissileSystem.ensureGroundState(config, saveData, constants.SIDES.PLAYER)
+  MissileSystem.ensureGroundState(config, saveData, constants.SIDES.RED)
+  MissileSystem.ensureGroundState(config, saveData, constants.SIDES.BLUE)
   PersistentState.reset(saveData)
 end
 
@@ -99,14 +99,14 @@ runInit(function(state)
   StrikePlanner.init(config, state)
   RunwayRepairment.init(config, state)
 
-  IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.PLAYER)
-  IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.ENEMY)
+  IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.BLUE)
+  IntegratedAirDefenseSystem.initSide(config, state, constants.SIDES.RED)
 
-  Sigint.initSide(config, state, "US")
-  Sigint.initSide(config, state, constants.SIDES.ENEMY)
+  Sigint.initSide(config, state, constants.SIDES.ALLY)
+  Sigint.initSide(config, state, constants.SIDES.RED)
 
-  MissileSystem.initSide(config, state, constants.SIDES.ENEMY)
-  MissileSystem.initSide(config, state, constants.SIDES.PLAYER)
+  MissileSystem.initSide(config, state, constants.SIDES.RED)
+  MissileSystem.initSide(config, state, constants.SIDES.BLUE)
 
   if config.isDevMode then
     Logger.log(constants.TAGS.INIT, "Init data and save.")

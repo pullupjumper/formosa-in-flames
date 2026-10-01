@@ -106,7 +106,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `attackContacts(opts)` | `opts.contacts`, `opts.qty`, `opts.firingUnits`, `opts.weaponDBID`, `opts.sideName` | `integer` | 迭代多目標（逐一交給私有 `attackContact`，並承接它回傳的下一輪索引），累計總發射量；`sideName` 預設 `constants.SIDES.ENEMY` |
+| `attackContacts(opts)` | `opts.contacts`, `opts.qty`, `opts.firingUnits`, `opts.weaponDBID`, `opts.sideName` | `integer` | 迭代多目標（逐一交給私有 `attackContact`，並承接它回傳的下一輪索引），累計總發射量；`sideName` 預設 `constants.SIDES.RED` |
 
 ---
 
@@ -117,7 +117,7 @@ flowchart TD
 - `src.utils.gameApi`：`ScenEdit_GetContact`、`ScenEdit_GetUnit`、`ScenEdit_GetDoctrine`、`ScenEdit_WeaponAllocation`、`ScenEdit_AttackContact`
 - `src.utils.gameUtils`：`getWeaponInfo`
 - `src.utils.logger`：`log` / `error`
-- `src.core.constants`：`TAGS.ATTACK_MANAGER`、`SIDES.ENEMY`
+- `src.core.constants`：`TAGS.ATTACK_MANAGER`、`SIDES.RED`
 
 ### 主要上游呼叫者
 
@@ -138,7 +138,7 @@ flowchart TD
 | 路徑 | 用途 |
 |---|---|
 | `constants.TAGS.ATTACK_MANAGER` | 記錄不可發射原因（彈量不足、分配已滿、目標已足量） |
-| `constants.SIDES.ENEMY` | `attackContacts` 的預設 `sideName`（`China`） |
+| `constants.SIDES.RED` | `attackContacts` 的預設 `sideName`（`China`） |
 
 ### saveData
 

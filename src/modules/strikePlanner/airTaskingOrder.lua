@@ -72,7 +72,7 @@ end
 ---@param config SBJ__Config Global configuration
 ---@return number # Assignment safety margin in seconds
 local function resolveAssignmentSafetyMargin(config)
-  local airConfig = config.c.air
+  local airConfig = config.red.air
   local timingConfig = airConfig and airConfig.timing
   return timingConfig and timingConfig.assignmentSafetyMargin or (5 * 60)
 end
@@ -161,11 +161,11 @@ end
 ---@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
 ---@return CMO__Mission|nil # Created mission object, or nil on failure
 local function createPackageMission(roleData, missionCreationParams)
-  local mission = GameUtils.createMission(constants.SIDES.ENEMY, missionCreationParams, { emcon = roleData.emcon })
+  local mission = GameUtils.createMission(constants.SIDES.RED, missionCreationParams, { emcon = roleData.emcon })
 
   if mission and missionCreationParams.type == "strike" then
     GameApi.ScenEdit_SetDoctrine(
-      { side = constants.SIDES.ENEMY, mission = mission.name },
+      { side = constants.SIDES.RED, mission = mission.name },
       { automatic_evasion = false }
     )
   end
@@ -378,7 +378,7 @@ local function assignNonTankerUnitsToMission(role, roleData)
 
   if role ~= "striker" then
     GameApi.ScenEdit_CreateMissionFlightPlan(
-      constants.SIDES.ENEMY,
+      constants.SIDES.RED,
       roleData.missionCreationParams.name,
       {}
     )
@@ -433,7 +433,7 @@ local function scheduleReconUAV(config, plannerState, packageData)
 
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
   local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
-      config.c.ground.missileSystemTypes.srbm.reloadTime -
+      config.red.ground.missileSystemTypes.srbm.reloadTime -
       flightTime
   local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
   return Recon.addEntry(plannerState.recon, packageData.reconUAV, takeoffTimeStr)

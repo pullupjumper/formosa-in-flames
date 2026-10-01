@@ -12,26 +12,26 @@ local RunwayRepairment = {}
 ---@param config SBJ__Config Global configuration with runway DBIDs and air base lists
 ---@param saveData SBJ__SaveData Persistent save data; both sides' runway repair lists are filled
 function RunwayRepairment.init(config, saveData)
-  local taiwanRunways = PersistentState.runwayRepair(saveData, constants.SIDES.PLAYER).runways
-  local chinaRunways = PersistentState.runwayRepair(saveData, constants.SIDES.ENEMY).runways
+  local blueRunways = PersistentState.runwayRepair(saveData, constants.SIDES.BLUE).runways
+  local redRunways = PersistentState.runwayRepair(saveData, constants.SIDES.RED).runways
 
   -- Initialize Taiwan runways from targetlist
-  local taiwanAirBases = {}
-  for _, baseName in ipairs(config.t.repairRunway.airBases) do
-    table.insert(taiwanAirBases, { baseName = baseName, subTypes = config.t.repairRunway.runwaySubTypes })
+  local blueAirBases = {}
+  for _, baseName in ipairs(config.blue.repairRunway.airBases) do
+    table.insert(blueAirBases, { baseName = baseName, subTypes = config.blue.repairRunway.runwaySubTypes })
   end
 
-  local runwayGUIDs = StrikePlanner.filterTargetsByTypeAndBase(PersistentState.targetlist(saveData), taiwanAirBases)
+  local runwayGUIDs = StrikePlanner.filterTargetsByTypeAndBase(PersistentState.targetlist(saveData), blueAirBases)
 
   for _, guid in ipairs(runwayGUIDs) do
-    local contact = GameApi.ScenEdit_GetContact(constants.SIDES.ENEMY, guid)
+    local contact = GameApi.ScenEdit_GetContact(constants.SIDES.RED, guid)
     if contact then
-      table.insert(taiwanRunways, { guid = contact.actualunitid, startTime = nil })
+      table.insert(blueRunways, { guid = contact.actualunitid, startTime = nil })
     end
   end
 
   -- Initialize China runways from facility units
-  local facilities = GameApi.VP_GetSide({ side = constants.SIDES.ENEMY }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  local facilities = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
   if not facilities then return end
 
   for _, u in ipairs(facilities) do
@@ -39,9 +39,9 @@ function RunwayRepairment.init(config, saveData)
 
     if actualUnit then
       -- Check if unit DBID matches any runway DBID in config
-      for _, runwayDBID in ipairs(config.c.repairRunway.runwayDBIDs) do
+      for _, runwayDBID in ipairs(config.red.repairRunway.runwayDBIDs) do
         if actualUnit.dbid == runwayDBID then
-          table.insert(chinaRunways, { guid = actualUnit.guid, startTime = nil })
+          table.insert(redRunways, { guid = actualUnit.guid, startTime = nil })
           break
         end
       end

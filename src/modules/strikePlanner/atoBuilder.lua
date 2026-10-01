@@ -287,7 +287,7 @@ local function buildExecutablePackages(plannerState, waveTemplate, targetsByPack
   local context = {
     reservedAircraft = collectReservedAircraft(plannerState),
     freeAircraftCache = passCtx.freeAircraftCache,
-    minimumStrengthRatio = passCtx.config.c.air.minimumStrengthRatio
+    minimumStrengthRatio = passCtx.config.red.air.minimumStrengthRatio
   }
   local totalTargets = 0
   local previousPackage = nil
@@ -481,7 +481,7 @@ function AtoBuilder.build(config, plannerState, contacts)
 
   local result = OperationBatch.process(plannerState.dynamicOperations.reconTriggeredOperationBatches, "air", {
     currentTime = GameApi.ScenEdit_CurrentTime(),
-    windowSec = config.c.recon.observationWindowSec,
+    windowSec = config.red.recon.observationWindowSec,
     retryableReasonSet = RETRYABLE_REASON,
     tryInsert = function(batchedOp)
       return processAirOperation(plannerState, batchedOp, passCtx)

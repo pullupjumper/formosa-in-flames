@@ -2,47 +2,47 @@ local constants = require("src.core.constants")
 ---@diagnostic disable: missing-fields
 ---@class SBJ__SaveData
 local saveData = {}
-saveData.c = {}
-saveData.c.targetlist = {}
-saveData.t = {}
-saveData.u = {}
+saveData.red = {}
+saveData.red.targetlist = {}
+saveData.blue = {}
+saveData.ally = {}
 
 
 -- ============================================================================
 -- SIGINT (China)
 -- ============================================================================
 
-saveData.c.sigint = {}
-saveData.c.sigint.enabled = true
-saveData.c.sigint.reconAircraft = {}
-saveData.c.sigint.transmissions = {}
+saveData.red.sigint = {}
+saveData.red.sigint.enabled = true
+saveData.red.sigint.reconAircraft = {}
+saveData.red.sigint.transmissions = {}
 
 
 -- ============================================================================
 -- IADS (China)
 -- ============================================================================
 
-saveData.c.iads = {}
-saveData.c.iads.enabled = true
-saveData.c.iads.c2 = {}
+saveData.red.iads = {}
+saveData.red.iads.enabled = true
+saveData.red.iads.c2 = {}
 
 
 -- ============================================================================
 -- Communications Jamming (China)
 -- ============================================================================
 
-saveData.c.commsJamming = {}
-saveData.c.commsJamming.enabled = true
-saveData.c.commsJamming.jammers = {}
+saveData.red.commsJamming = {}
+saveData.red.commsJamming.enabled = true
+saveData.red.commsJamming.jammers = {}
 
 
 -- ============================================================================
 -- GPS Jamming (China)
 -- ============================================================================
 
-saveData.c.gnssJamming = {}
-saveData.c.gnssJamming.enabled = true
-saveData.c.gnssJamming.jammers = {}
+saveData.red.gnssJamming = {}
+saveData.red.gnssJamming.enabled = true
+saveData.red.gnssJamming.jammers = {}
 
 
 -- ============================================================================
@@ -50,76 +50,76 @@ saveData.c.gnssJamming.jammers = {}
 -- Per-system missile state is seeded by MissileSystem.ensureGroundState
 -- ============================================================================
 
-saveData.c.ground = {}
-saveData.c.ground.missileSystemTypes = {}
+saveData.red.ground = {}
+saveData.red.ground.missileSystemTypes = {}
 
 
 -- ============================================================================
 -- Reconnaissance (China)
 -- ============================================================================
 
-saveData.c.recon = {}
-saveData.c.recon.enabled = true
-saveData.c.recon.queue = {}
-saveData.c.recon.frontlineRedirected = false
+saveData.red.recon = {}
+saveData.red.recon.enabled = true
+saveData.red.recon.queue = {}
+saveData.red.recon.frontlineRedirected = false
 
 -- ============================================================================
 -- Fire Support Plan (China)
 -- ============================================================================
 
-saveData.c.ground.enabled = true
-saveData.c.ground.fireSupportPlan = {}
+saveData.red.ground.enabled = true
+saveData.red.ground.fireSupportPlan = {}
 
 
 -- ============================================================================
 -- Air Tasking Order (China)
 -- ============================================================================
 
-saveData.c.air = {}
-saveData.c.air.enabled = true
-saveData.c.air.airTaskingOrder = {}
+saveData.red.air = {}
+saveData.red.air.enabled = true
+saveData.red.air.airTaskingOrder = {}
 
 
 -- ============================================================================
 -- Amphibious Operations (China)
 -- ============================================================================
 
-saveData.c.amphibOps = {}
-saveData.c.amphibOps.zoneStates = {
+saveData.red.amphibOps = {}
+saveData.red.amphibOps.zoneStates = {
   Taoyuan = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
   Sishu   = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
   Penghu  = { phase = constants.AMPHIBIOUS_PHASES.MOVING },
 }
-saveData.c.amphibOps.calculationResult = {}
-saveData.c.amphibOps.barges = {}
+saveData.red.amphibOps.calculationResult = {}
+saveData.red.amphibOps.barges = {}
 
 
 -- ============================================================================
 -- Land Attack Cruise Missiles - Surface Launch (China)
 -- ============================================================================
 
-saveData.c.surface = {}
-saveData.c.surface.lacm = {}
-saveData.c.surface.lacm.enabled = false
-saveData.c.surface.lacm.hasLaunched = false
+saveData.red.surface = {}
+saveData.red.surface.lacm = {}
+saveData.red.surface.lacm.enabled = false
+saveData.red.surface.lacm.hasLaunched = false
 
 
 -- ============================================================================
 -- Submarine-Launched Cruise Missiles (China)
 -- ============================================================================
 
-saveData.c.subSurface = {}
-saveData.c.subSurface.slcm = {}
-saveData.c.subSurface.slcm.enabled = true
+saveData.red.subSurface = {}
+saveData.red.subSurface.slcm = {}
+saveData.red.subSurface.slcm.enabled = true
 
 
 -- ============================================================================
 -- Runway Repair (China)
 -- ============================================================================
 
-saveData.c.repairRunway = {}
-saveData.c.repairRunway.enabled = false
-saveData.c.repairRunway.runways = {}
+saveData.red.repairRunway = {}
+saveData.red.repairRunway.enabled = false
+saveData.red.repairRunway.runways = {}
 
 
 -- ============================================================================
@@ -127,11 +127,11 @@ saveData.c.repairRunway.runways = {}
 -- Per-system missile state is seeded by MissileSystem.ensureGroundState
 -- ============================================================================
 
-saveData.t.ground = {}
-saveData.t.ground.enabled = true
-saveData.t.ground.missileSystemTypes = {}
-saveData.t.ground.missileSystemTypes.ascm = {}
-saveData.t.ground.missileSystemTypes.ascm.test = {
+saveData.blue.ground = {}
+saveData.blue.ground.enabled = true
+saveData.blue.ground.missileSystemTypes = {}
+saveData.blue.ground.missileSystemTypes.ascm = {}
+saveData.blue.ground.missileSystemTypes.ascm.test = {
   isAntishipMissionActivated = false,
   nai1 = constants.AREAS.groundAscmTestNai1,
   nai2 = constants.AREAS.groundAscmTestNai2,
@@ -144,59 +144,59 @@ saveData.t.ground.missileSystemTypes.ascm.test = {
 -- Runway Repair (Taiwan)
 -- ============================================================================
 
-saveData.t.repairRunway = {}
-saveData.t.repairRunway.enabled = false
-saveData.t.repairRunway.runways = {}
+saveData.blue.repairRunway = {}
+saveData.blue.repairRunway.enabled = false
+saveData.blue.repairRunway.runways = {}
 
 
 -- ============================================================================
 -- IADS (Taiwan)
 -- ============================================================================
 
-saveData.t.iads = {}
-saveData.t.iads.enabled = true
-saveData.t.iads.rocc = {}
-saveData.t.iads.taaoc = {}
+saveData.blue.iads = {}
+saveData.blue.iads.enabled = true
+saveData.blue.iads.rocc = {}
+saveData.blue.iads.taaoc = {}
 
 
 -- ============================================================================
 -- Aircraft (Taiwan)
 -- ============================================================================
 
-saveData.t.air = {}
-saveData.t.air.aew = {}
-saveData.t.air.ac = {}
+saveData.blue.air = {}
+saveData.blue.air.aew = {}
+saveData.blue.air.ac = {}
 
 
 -- ============================================================================
 -- GPS Jamming (Taiwan)
 -- ============================================================================
 
-saveData.t.gnssJamming = {}
-saveData.t.gnssJamming.enabled = true
-saveData.t.gnssJamming.jammers = {}
+saveData.blue.gnssJamming = {}
+saveData.blue.gnssJamming.enabled = true
+saveData.blue.gnssJamming.jammers = {}
 
 
 -- ============================================================================
 -- SIGINT (US)
 -- ============================================================================
 
-saveData.u.sigint = {}
-saveData.u.sigint.enabled = true
-saveData.u.sigint.reconAircraft = {}
-saveData.u.sigint.transmissions = {}
+saveData.ally.sigint = {}
+saveData.ally.sigint.enabled = true
+saveData.ally.sigint.reconAircraft = {}
+saveData.ally.sigint.transmissions = {}
 
 
 -- ============================================================================
 -- Dynamic Operations (China)
 -- ============================================================================
 
-saveData.c.dynamicOperations = {}
-saveData.c.dynamicOperations.enabled = true
-saveData.c.dynamicOperations.generatedOperations = {
+saveData.red.dynamicOperations = {}
+saveData.red.dynamicOperations.enabled = true
+saveData.red.dynamicOperations.generatedOperations = {
   air = {},   -- Track generated air operations
   ground = {} -- Track generated ground operations
 }
-saveData.c.dynamicOperations.reconTriggeredOperationBatches = {}
+saveData.red.dynamicOperations.reconTriggeredOperationBatches = {}
 
 return saveData
