@@ -112,7 +112,7 @@ end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
 ---@param groundCtx SBJ__GroundContext Ground force runtime context
----@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
+---@param missileSystemType SBJ__MissileSystemTypeKey Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string Side name used to resolve firing units in game state
 ---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
 function MissileSystem.getAmmoInventory(groundCtx, missileSystemType, sideName)
@@ -130,7 +130,7 @@ end
 ---@param firingUnitName string Firing unit name used as context key
 ---@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
 function MissileSystem.getFiringUnitContext(groundCtx, missileSystemType, firingUnitName)
-  local systemCtx = groundCtx.missileSystemTypes[string.lower(missileSystemType)]
+  local systemCtx = groundCtx.missileSystemTypes[string.lower(missileSystemType)] --[[@as SBJ__MissileSystemContext?]]
   return systemCtx and systemCtx.firingUnits and systemCtx.firingUnits[firingUnitName]
 end
 
@@ -253,8 +253,10 @@ end
 ---@param sideName string Side name (China or Taiwan)
 ---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
 function MissileSystem.buildSetupMenuRows(config, sideName)
-  return SetupLayout.buildSetupMenuRows(config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
-    sideName)
+  return SetupLayout.buildSetupMenuRows(
+    config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    sideName
+  )
 end
 
 ---Add a side's missile system units and build their runtime contexts from config
@@ -272,7 +274,7 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param sideName string Side name (China or Taiwan)
----@param systemTypes string[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
+---@param systemTypes SBJ__MissileSystemTypeKey[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
 ---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
 function MissileSystem.buildBatteryStatusRows(config, saveData, sideName, systemTypes)
   return StatusView.buildBatteryStatusRows(

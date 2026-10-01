@@ -10,6 +10,7 @@ local constants = require("src.core.constants")
 local AtoBuilder = {}
 
 local PACKAGE_ROLES = { "striker", "escort", "wildWeasel", "jammer", "tanker" }
+---@cast PACKAGE_ROLES SBJ__RoleKey[]
 
 -- Scope and action values shared by every summary this module emits
 local LOG_SCOPE = "dynamicAirOperations"
@@ -49,7 +50,7 @@ end
 ---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
 local function addPackageAircraft(packageData, reservedAircraftMap)
   for _, role in ipairs(PACKAGE_ROLES) do
-    local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
+    local roleData = packageData[role]
 
     if roleData then
       local key = buildReservationKey(roleData.baseGUID, roleData.unitDBID)
@@ -130,7 +131,7 @@ end
 ---Validate aircraft availability and resolve baseGUID via fallback candidates
 ---Mutates roleData.baseGUID and context.reservedAircraft when a candidate clears the ratio.
 ---@param roleData SBJ__MissionDeploymentDescriptor Role configuration; mutated in place on success
----@param role string Role name for error messages (e.g., "striker", "escort", "SEAD")
+---@param role SBJ__RoleKey Role name for error messages (e.g., "striker", "escort", "SEAD")
 ---@param packageIndex integer Package index for error messages
 ---@param context SBJ__AircraftValidationContext Aircraft validation state; mutated on success
 ---@return boolean success true if a base with sufficient aircraft was found
@@ -352,7 +353,7 @@ local function collectWaveTimingResults(wave)
 
   for packageIndex, packageData in ipairs(wave.packages) do
     for _, role in ipairs(PACKAGE_ROLES) do
-      local roleData = packageData[role] --[[@as SBJ__MissionDeploymentDescriptor]]
+      local roleData = packageData[role]
 
       if roleData then
         table.insert(timingResults, {

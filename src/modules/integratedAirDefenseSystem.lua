@@ -46,9 +46,15 @@ local TAIWAN_SAM_DBIDS_BY_MENU_ID = {
   tc2 = constants.PLATFORMS.TC2,
 }
 
+local C2_KEYS = {
+  RADAR = "radar",
+  SAM = "sam",
+}
+---@cast C2_KEYS table<string, SBJ__C2UnitKey>
+
 ---Disable units under C2 node by setting them out of communications
 ---@param c2Ctx SBJ__C2Context The C2 context containing the units to disable
----@param type string Unit type to disable ('radar' or 'sam')
+---@param type SBJ__C2UnitKey Unit type to disable ('radar' or 'sam')
 local function disableUnitsUnderC2Node(c2Ctx, type)
   local ctxMap = c2Ctx[type]
 
@@ -133,23 +139,23 @@ function IntegratedAirDefenseSystem.processC2Disruption(saveData, c2)
 
   -- Check China C2 nodes
   if iadsCtx.c2 and iadsCtx.c2[c2.guid] then
-    disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], "radar")
-    disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], "sam")
+    disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], C2_KEYS.RADAR)
+    disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], C2_KEYS.SAM)
     iadsCtx.c2[c2.guid] = nil
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s C2 is destroyed")
   end
 
   -- Check Taiwan ROCC nodes
   if iadsCtx.rocc and iadsCtx.rocc[c2.guid] then
-    disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], "radar")
-    disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], "sam")
+    disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], C2_KEYS.RADAR)
+    disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], C2_KEYS.SAM)
     iadsCtx.rocc[c2.guid] = nil
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s ROCC is destroyed")
   end
 
   -- Check Taiwan TAAOC nodes
   if iadsCtx.taaoc and iadsCtx.taaoc[c2.guid] then
-    disableUnitsUnderC2Node(iadsCtx.taaoc[c2.guid], "sam")
+    disableUnitsUnderC2Node(iadsCtx.taaoc[c2.guid], C2_KEYS.SAM)
     iadsCtx.taaoc[c2.guid] = nil
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s TAAOC is destroyed")
   end
@@ -157,7 +163,7 @@ end
 
 ---Remove destroyed unit from IADS tracking by clearing its data from C2 context
 ---@param c2TypeCtx table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.c2, IADSContext.rocc, or IADSContext.taaoc)
----@param type string Unit type ('radar' or 'sam')
+---@param type SBJ__C2UnitKey Unit type ('radar' or 'sam')
 ---@param destroyedUnit CMO__Unit The destroyed radar or SAM unit to remove from tracking
 local function removeDestroyedUnitFromC2(c2TypeCtx, type, destroyedUnit)
   -- Iterate through all C2 nodes to check if destroyed unit is within their coverage areas
@@ -241,17 +247,17 @@ function IntegratedAirDefenseSystem.processUnitDestruction(config, saveData, uni
   local dbid = unit.dbid
 
   if isPLASAM(dbid) then
-    removeDestroyedUnitFromC2(iadsCtx.c2, "sam", unit)
+    removeDestroyedUnitFromC2(iadsCtx.c2, C2_KEYS.SAM, unit)
     activateNearestRadar(config, unit)
   elseif dbid == constants.PLATFORMS.JY26 or dbid == constants.PLATFORMS.YLC8B then
-    removeDestroyedUnitFromC2(iadsCtx.c2, "radar", unit)
+    removeDestroyedUnitFromC2(iadsCtx.c2, C2_KEYS.RADAR, unit)
     activateNearestRadar(config, unit)
   elseif isTaiwanRadar(dbid) then
-    removeDestroyedUnitFromC2(iadsCtx.rocc, "radar", unit)
+    removeDestroyedUnitFromC2(iadsCtx.rocc, C2_KEYS.RADAR, unit)
   elseif isTaiwanSAM(dbid) then
-    removeDestroyedUnitFromC2(iadsCtx.rocc, "sam", unit)
+    removeDestroyedUnitFromC2(iadsCtx.rocc, C2_KEYS.SAM, unit)
   elseif isMRADS(dbid) then
-    removeDestroyedUnitFromC2(iadsCtx.taaoc, "sam", unit)
+    removeDestroyedUnitFromC2(iadsCtx.taaoc, C2_KEYS.SAM, unit)
   else
     return false
   end

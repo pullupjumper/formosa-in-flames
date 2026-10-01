@@ -74,7 +74,7 @@ end
 ---Create JSON string for C2 system status data
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
----@param types string[] C2 node types to include
+---@param types SBJ__C2TypeKey[] C2 node types to include
 ---@return string # JSON formatted C2 status data
 local function createC2NodeDataString(saveData, sideName, types)
   local iads = PersistentState.iads(saveData, sideName)
@@ -239,7 +239,6 @@ local function createAmphibiousTaskForceLocationDataString(config)
 end
 
 ---Per-side content of the status dashboard
----@type table<string, {signalSide: string, systemTypes: string[], c2Types: string[], showsLandedUnits: boolean}>
 local STATUS_UI_SIDES = {
   [constants.SIDES.ENEMY] = {
     signalSide = constants.SIDES.ENEMY,
@@ -267,6 +266,8 @@ local STATUS_UI_SIDES = {
     showsLandedUnits = false
   }
 }
+---@cast STATUS_UI_SIDES table<string, {signalSide: string, systemTypes: SBJ__MissileSystemTypeKey[], c2Types: SBJ__C2TypeKey[], showsLandedUnits: boolean}>
+
 
 ---Create comprehensive status UI with multi-tab military dashboard
 ---@param config SBJ__Config Configuration table

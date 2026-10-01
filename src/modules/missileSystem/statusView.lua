@@ -37,7 +37,7 @@ end
 ---Build battery status rows grouped by resupply unit name
 ---@param groundCtx SBJ__GroundContext Side ground force runtime context
 ---@param missileSystemTypeConfig SBJ__MissileSystemTypeConfig Side ground force configuration
----@param systemTypes string[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
+---@param systemTypes SBJ__MissileSystemTypeKey[] Missile system types to include (constants.MISSILE_SYSTEM_TYPES values)
 ---@param currentTime number Current scenario time in seconds
 ---@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
 function StatusView.buildBatteryStatusRows(groundCtx, missileSystemTypeConfig, systemTypes, currentTime)

@@ -211,6 +211,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
 
+---@class SBJ__MissileSystemTypeKey: table
+
 ---Missile system type configuration, keyed by type
 ---@class SBJ__MissileSystemTypeConfig: table
 ---@field mlrs SBJ__MissileSystemConfig MLRS configuration
@@ -219,7 +221,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field mrbm? SBJ__MissileSystemConfig MRBM configuration (China only)
 ---@field ascm SBJ__MissileSystemConfig ASCM configuration (Taiwan only)
 ---@field sam? SBJ__MissileSystemConfig SAM configuration (Taiwan only)
----@field [SBJ__MissileSystemConfig] SBJ__MissileSystemConfig
+---@field [SBJ__MissileSystemTypeKey] SBJ__MissileSystemConfig
 
 ---Ground force configuration
 ---@class SBJ__GroundConfig: table
@@ -257,7 +259,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AirTimingConfig: table
 ---@field assignmentSafetyMargin number Seconds reserved between assignment completion and planned takeoff
 ---@field flightTimeSafetyMargin number Extra seconds added to estimated transit time
----@field supportLeadTime table<string, number> Support-role arrival lead time before striker TOT
+---@field supportLeadTime table<SBJ__RoleKey, number> Support-role arrival lead time before striker TOT
 ---@field tankerSetupTime number Seconds tanker should be on station before the earliest receiver arrives
 ---@field tankerUnresolvedArrivalLeadTime number Tanker lead time before striker TOT when receiver arrival cannot be resolved
 ---@field unresolvedFlightTime { striker: number, support: number } Fallback flight times when route data cannot be resolved
@@ -351,6 +353,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field undergroundShelterIsDestroyed number Penalty for destroying shelter
 ---@field destroyingCivilianFacility number Penalty for destroying civilian facility
 
+---@class SBJ__SideKey: table
+
 ---Global configuration data structure
 ---@class SBJ__Config: table
 ---@field version string Version of the game
@@ -363,7 +367,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field t SBJ__TaiwanConfig Taiwan faction configuration
 ---@field u SBJ__USConfig US faction configuration
 ---@field score SBJ__ScoringConfig Scoring system configuration
----@field [SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig|SBJ__ScoringConfig
+---@field [SBJ__SideKey] SBJ__ChinaConfig|SBJ__TaiwanConfig|SBJ__USConfig
 
 ---GNSS jamming context managing GNSS denial operations state
 ---@class SBJ__GNSSJammingContext: table
@@ -415,7 +419,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field c SBJ__ChinaSaveData China faction data
 ---@field t SBJ__TaiwanSaveData Taiwan faction data
 ---@field u SBJ__USSaveData US faction data
----@field [SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData] SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData
+---@field [SBJ__SideKey] SBJ__ChinaSaveData|SBJ__TaiwanSaveData|SBJ__USSaveData
 
 
 -- ============================================================================
@@ -425,7 +429,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Side configuration for faction settings
 ---@class SBJ__SideConfig: table
----@field field "c"|"t"|"u" Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
+---@field field SBJ__SideKey Side field identifier ("c" for China, "u" for US, "t" for Taiwan)
 ---@field enemySide string Enemy side name
 ---@field displayName string Human-readable side name
 
@@ -1005,6 +1009,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field glcm SBJ__MissileSystemContext Ground-Launched Cruise Missile system
 ---@field ascm SBJ__MissileSystemContext Anti-Ship Cruise Missile system
 ---@field sam? SBJ__MissileSystemContext Surface-to-Air Missile system
+---@field [SBJ__MissileSystemTypeKey] SBJ__MissileSystemContext
 
 ---Ground context base - common missile systems for all ground operations
 ---@class SBJ__GroundContext: table
@@ -1309,7 +1314,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---One receiver role's inputs for tanker arrival timing
 ---@class SBJ__ReceiverContext: table
----@field role string Receiver role name
+---@field role SBJ__RoleKey Receiver role name
 ---@field receiver SBJ__MissionDeploymentDescriptor Receiver role deployment descriptor
 ---@field receiverTiming SBJ__RoleTiming Calculated receiver timing
 
@@ -1515,6 +1520,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field strikeInterval number Strike interval time (seconds)
 ---@field packages SBJ__PackageTemplate[] ATO package array
 
+---@class SBJ__RoleKey: table
+
 ---Package template for air operation coordination
 ---@class SBJ__PackageTemplate: SBJ__Task
 ---@field striker? SBJ__MissionDeploymentDescriptor Main striker configuration
@@ -1524,7 +1531,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field tanker? SBJ__TankerMissionDeploymentDescriptor Tanker configuration
 ---@field reconUAV? SBJ__ReconUAVTemplate Reconnaissance UAV configuration
 ---@field timeToReady number Ready time in seconds
----@field [SBJ__MissionDeploymentDescriptor] SBJ__MissionDeploymentDescriptor
+---@field [SBJ__RoleKey] SBJ__MissionDeploymentDescriptor
 
 ---Loadout status tracking for mission preparation
 ---@class SBJ__LoadoutStatus: table
@@ -1641,6 +1648,10 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field outofcomms number Radar out of communications threshold
 ---@field EMCONSetting? string EMCON setting for radar
 
+---@class SBJ__C2UnitKey: table
+
+---@class SBJ__C2TypeKey: table
+
 ---Command and Control (C2) context data structure
 ---@class SBJ__C2Context: table
 ---@field name string C2 node name
@@ -1649,7 +1660,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field areas table<number, string[]> Associated operational areas
 ---@field sam table<string, SBJ__RadarContext> Surface-to-Air Missile systems
 ---@field radar? table<string, SBJ__RadarContext> Radar systems
----@field [string] table<string, SBJ__RadarContext>
+---@field [SBJ__C2UnitKey] table<string, SBJ__RadarContext>
 
 ---C2 node deployment descriptor
 ---Defines how to create and deploy a single Command and Control node
@@ -1674,7 +1685,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field rocc? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID
 ---@field taaoc? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID
 ---@field enabled boolean Whether IADS is activated
----@field [string] table<string, SBJ__C2Context>
+---@field [SBJ__C2TypeKey] table<string, SBJ__C2Context>
 
 -- ============================================================================
 -- Aircraft & Communications Tracking

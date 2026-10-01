@@ -11,6 +11,7 @@ local AirTaskingOrder = {}
 
 -- Tanker missions must be prepared before receiver missions.
 local PACKAGE_ROLE_ORDER = { "tanker", "striker", "escort", "wildWeasel", "jammer" }
+---@cast PACKAGE_ROLE_ORDER SBJ__RoleKey[]
 
 -- Scope and action values for the report this module emits
 local LOG_SCOPE = "airTaskingOrder"
@@ -27,7 +28,6 @@ local function calculateLoadoutStartTime(packageData)
   local earliestStartTimestamp = nil
 
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
     if roleData and roleData.startTime then
@@ -126,7 +126,6 @@ local function startLoadoutForPackage(packageData)
   local timeToReady = packageData.timeToReady or (9 * 60)
 
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
     if roleData and roleData.loadoutID then
@@ -199,7 +198,7 @@ local function createTankerMissions(roleData, createdMissionMap)
 end
 
 ---Create and register one non-tanker role mission
----@param role string Package role name
+---@param role SBJ__RoleKey Package role name
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
 ---@param createdMissionMap table<string, CMO__Mission> Mission registry
 ---@return boolean # True when mission creation may continue
@@ -216,7 +215,7 @@ local function createNonTankerMission(role, roleData, createdMissionMap)
 end
 
 ---Create missions for one package role
----@param role string Package role name
+---@param role SBJ__RoleKey Package role name
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
 ---@param createdMissionMap table<string, CMO__Mission> Mission registry
 ---@return boolean # True when critical mission creation succeeded
@@ -237,7 +236,6 @@ local function createPackageMissions(packageData)
   local createdMissionMap = {}
 
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
     if roleData and not createMissionsForRole(role, roleData, createdMissionMap) then
@@ -277,7 +275,6 @@ end
 ---@param createdMissionMap table<string, CMO__Mission> Created missions indexed by mission name
 local function setPackageMissionSchedules(packageData, createdMissionMap)
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
     if roleData then
@@ -369,7 +366,7 @@ local function assignTankerUnitsToMissions(roleData)
 end
 
 ---Assign units for a non-tanker role and prepare support flight plans
----@param role string Package role name
+---@param role SBJ__RoleKey Package role name
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
 ---@return boolean # True when striker units were assigned
 local function assignNonTankerUnitsToMission(role, roleData)
@@ -391,7 +388,7 @@ local function assignNonTankerUnitsToMission(role, roleData)
 end
 
 ---Assign units for one package role
----@param role string Package role name
+---@param role SBJ__RoleKey Package role name
 ---@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
 ---@return boolean # True when striker units were assigned
 local function assignUnitsForRole(role, roleData)
@@ -410,7 +407,6 @@ local function assignPackageUnits(packageData)
   local isStrikerAssigned = false
 
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
-    ---@type SBJ__MissionDeploymentDescriptor|nil
     local roleData = packageData[role]
 
     if roleData and assignUnitsForRole(role, roleData) then
@@ -436,7 +432,8 @@ local function scheduleReconUAV(config, plannerState, packageData)
   end
 
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(packageData.reconUAV.course, packageData.reconUAV.speed)
-  local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) + config.c.ground.missileSystemTypes.srbm.reloadTime -
+  local takeoffTime = Utils.parseDatetimeToTimestamp(packageData.striker.endTime) +
+      config.c.ground.missileSystemTypes.srbm.reloadTime -
       flightTime
   local takeoffTimeStr = os.date(constants.DATE_FORMAT, takeoffTime) --[[@as string]]
   return Recon.addEntry(plannerState.recon, packageData.reconUAV, takeoffTimeStr)
