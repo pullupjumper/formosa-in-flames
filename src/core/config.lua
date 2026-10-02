@@ -4,8 +4,7 @@ local constants = require("src.core.constants")
 local config = {}
 
 config.version = "1.0.0"
-config.isDevMode = true
-config.isSaved = true
+config.isEditMode = true
 config.difficulty = "normal"
 
 -- Logging configuration

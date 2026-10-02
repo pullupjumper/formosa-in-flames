@@ -5,26 +5,29 @@ RUN_TEST=false
 SKIP_NPM=false
 SKIP_LUAMIN=false
 SKIP_INJECT=false
+PLAY_MODE=false
 VERBOSE=false
 EXCLUDE_PATTERNS=()
 SCEN_PATH="/mnt/c/Program Files (x86)/Steam/steamapps/common/Command - Modern Operations/Scenarios/Formosa in Flames, 2027 (v0.32) (db v516).scen"
 
 # 1. 處理參數
-while getopts "nlhtivx:s:" opt; do
+while getopts "nlhtipvx:s:" opt; do
   case $opt in
     t) RUN_TEST=true ;;
     n) SKIP_NPM=true ;;
     l) SKIP_LUAMIN=true ;;
     i) SKIP_INJECT=true ;;
+    p) PLAY_MODE=true ;;
     v) VERBOSE=true ;;
     x) EXCLUDE_PATTERNS+=("$OPTARG") ;;
     s) SCEN_PATH="$OPTARG" ;;
     h)
-      echo "Usage: ./build.sh [-t] [-n] [-l] [-i] [-v] [-x pattern] [-s scen_path] [-h]"
+      echo "Usage: ./build.sh [-t] [-n] [-l] [-i] [-p] [-v] [-x pattern] [-s scen_path] [-h]"
       echo "  -t  run tests (Lua busted + frontend vitest)"
       echo "  -n  skip npm run build (do not rebuild frontend)"
       echo "  -l  skip luamin (do not minify Lua)"
       echo "  -i  skip injecting into the scen file"
+      echo "  -p  play build: config.isEditMode=false (default is edit mode)"
       echo "  -v  verbose: print per-file details"
       echo "  -x  exclude Lua files from merge (repeatable, glob supported)"
       echo "  -s  scen file to inject into; overwritten in place, .bak kept (default: $SCEN_PATH)"
@@ -91,6 +94,14 @@ done
 [ "$VERBOSE" = true ] && PYTHON_ARGS+=(--verbose)
 
 python3 tools/build_lua_scenario.py "${PYTHON_ARGS[@]}" || fail "Lua merge failed"
+
+if [ "$PLAY_MODE" = true ]; then
+    sed -i 's/^config\.isEditMode = true$/config.isEditMode = false/' slim/main.lua
+    grep -q '^config\.isEditMode = false$' slim/main.lua || fail "isEditMode override not applied"
+    ok "play build (isEditMode=false)"
+else
+    ok "edit build (isEditMode=true)"
+fi
 
 # 階段 4: Luamin
 stage 4 "Luamin minify (slim/_main.lua)"

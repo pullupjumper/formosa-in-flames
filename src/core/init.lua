@@ -12,7 +12,7 @@ local RunwayRepairment = require("src.modules.runwayRepairment")
 local GameApi = require("src.utils.gameApi")
 local PersistentState = require("src.core.persistentState")
 
-if config.isSaved then
+if config.isEditMode then
   MissileSystem.ensureGroundState(config, saveData, constants.SIDES.RED)
   MissileSystem.ensureGroundState(config, saveData, constants.SIDES.BLUE)
   PersistentState.reset(saveData)
@@ -84,10 +84,7 @@ local function initSpecialActions()
   end
 end
 
--- isDevMode decides whether the one-time init below is persisted
-local runInit = config.isDevMode and PersistentState.update or PersistentState.read
-
-runInit(function(state)
+PersistentState.update(function(state)
   if #PersistentState.targetlist(state) > 0 then
     return
   end
@@ -108,11 +105,7 @@ runInit(function(state)
   MissileSystem.initSide(config, state, constants.SIDES.RED)
   MissileSystem.initSide(config, state, constants.SIDES.BLUE)
 
-  if config.isDevMode then
-    Logger.log(constants.TAGS.INIT, "Init data and save.")
-  else
-    Logger.log(constants.TAGS.INIT, "Does not init data.")
-  end
+  Logger.log(constants.TAGS.INIT, "Init data and save.")
 end)
 
 -- the following forces have been placed under your command:

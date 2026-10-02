@@ -345,8 +345,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Global configuration data structure
 ---@class SBJ__Config: table
 ---@field version string Version of the game
----@field isDevMode boolean Development mode flag
----@field isSaved boolean Save game flag
+---@field isEditMode boolean Reset saved state on every load so init reruns; build.sh -p sets false for play
 ---@field difficulty string Difficulty level
 ---@field logging SBJ__LoggingConfig Logging configuration
 ---@field aircraftReadySec number Ready time for aircraft after landing and for package templates (seconds)
