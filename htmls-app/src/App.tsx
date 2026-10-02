@@ -30,6 +30,12 @@ function App() {
           >
             Unit Status
           </a>
+          <a
+            href={getPageUrl('add-units-menu')}
+            className="rounded bg-accent-blue px-4 py-2 text-sm text-white hover:bg-accent-blue-hover"
+          >
+            Add Units
+          </a>
         </div>
       </div>
     </div>

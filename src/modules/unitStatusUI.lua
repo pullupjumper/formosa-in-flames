@@ -159,6 +159,12 @@ local function getSetupMenuTemplate()
   return [[]]
 end
 
+---Get HTML template for the add-units menu
+---@return string # Add-units menu template
+local function getAddUnitsMenuTemplate()
+  return [[]]
+end
+
 ---Create JSON string for GPS jamming unit data
 ---@param config SBJ__Config Saved game data containing GPS jamming state
 ---@param sideName string Side name ('China' or 'Taiwan')
@@ -346,6 +352,103 @@ function UnitStatusUI.createSetupMenu(config, sideName)
       updateFromSetupResult(config, saveData, sideName, result)
     end
   end)
+end
+
+---Same units as each side's `addXXX` special action scripts, in the order they run
+---@type table<string, SBJ__AddUnitAction[]>
+local ADD_UNIT_ACTIONS = {
+  [constants.SIDES.RED] = {
+    { id = "addACs", label = "Add aircraft", run = function(config)
+      UnitGenerator.addAircraft(config.red.air.deployedACs)
+    end },
+    { id = "addC2Facilities", label = "Add C2 facilities", run = function(config)
+      PersistentState.update(function(saveData)
+        IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
+      end)
+    end },
+    { id = "addCSG", label = "Add CSG", run = function(config)
+      UnitGenerator.createCSG(config.red.surface.lacm.csg)
+    end },
+    { id = "addGnssJammers", label = "Add GNSS jammers", run = function(config)
+      GnssJamming.deploySide(config, constants.SIDES.RED)
+    end },
+    { id = "addLandingShips", label = "Add landing ships", run = function(config)
+      UnitGenerator.removeLandingShips()
+      UnitGenerator.addLandingShips(config.red.amphibOps)
+    end },
+    { id = "addSAGs", label = "Add SAGs", run = function(config)
+      UnitGenerator.createSAGs(constants.SIDES.RED, config.red.amphibOps.sags)
+    end },
+    { id = "addSubmarines", label = "Add submarines", run = function(config)
+      UnitGenerator.addSubmarines(config, constants.SIDES.RED)
+    end },
+    { id = "addMissileSystems", label = "Add missile systems", run = function(config)
+      PersistentState.update(function(saveData)
+        MissileSystem.deploySide(config, saveData, constants.SIDES.RED)
+      end)
+    end },
+  },
+  [constants.SIDES.BLUE] = {
+    { id = "addACs", label = "Add aircraft", run = function(config)
+      PersistentState.update(function(saveData)
+        UnitGenerator.addAircraft(config.blue.air.deployedACs)
+        CommsJamming.updateTargetAircraft(config, saveData)
+      end)
+    end },
+    { id = "addDeployedShipsAtPort", label = "Add deployed ships at port", run = function(config)
+      UnitGenerator.addDeployedShipsAtPort(constants.SIDES.BLUE, config.blue.surface.deployedShips)
+    end },
+    { id = "addSAGs", label = "Add SAGs", run = function(config)
+      UnitGenerator.createSAGs(constants.SIDES.BLUE, config.blue.surface.sags)
+    end },
+    { id = "addMissileSystems", label = "Add missile systems", run = function(config)
+      PersistentState.update(function(saveData)
+        MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
+      end)
+    end },
+  },
+}
+
+---Run the ticked add-units actions in menu order
+---@param config SBJ__Config Configuration table
+---@param sideName string Side name ('China' or 'Taiwan')
+---@param actionIds string[] Ids submitted by the page
+local function runAddUnitActions(config, sideName, actionIds)
+  local chosen = {}
+  for _, id in ipairs(actionIds) do
+    chosen[id] = true
+  end
+
+  for _, action in ipairs(ADD_UNIT_ACTIONS[sideName] or {}) do
+    if chosen[action.id] then
+      action.run(config)
+    end
+  end
+end
+
+---Show the add-units menu and run what the player ticked
+---@param config SBJ__Config Configuration table
+---@param sideName string Side name ('China' or 'Taiwan')
+function UnitStatusUI.createAddUnitsMenu(config, sideName)
+  local rows = {}
+  for _, action in ipairs(ADD_UNIT_ACTIONS[sideName] or {}) do
+    table.insert(rows, { id = action.id, label = action.label })
+  end
+
+  local msg = string.format(getAddUnitsMenuTemplate(), gKH.json.stringify(rows), sideName)
+  local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+
+  if not (form["pressed"] == "Done" and form["selectedActions"]) then
+    return
+  end
+
+  local jsonStr = form["selectedActions"]:gsub("^'", ""):gsub("'$", "")
+  local result = gKH.json.parse(jsonStr)
+  ---@cast result SBJ__AddUnitsMenuResult
+
+  if result and result.actionIds then
+    runAddUnitActions(config, sideName, result.actionIds)
+  end
 end
 
 return UnitStatusUI

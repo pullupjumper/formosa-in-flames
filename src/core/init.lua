@@ -49,23 +49,13 @@ end
 
 local function initSpecialActions()
   local actions = {
-    { path = "src\\scripts\\china\\specialActions\\addACs.lua",                  actionName = "Add aircraft" },
-    { path = "src\\scripts\\china\\specialActions\\addC2Facilities.lua",         actionName = "Add C2 facilities" },
-    { path = "src\\scripts\\china\\specialActions\\addCSG.lua",                  actionName = "Add CSG" },
-    { path = "src\\scripts\\china\\specialActions\\addGnssJammers.lua",          actionName = "Add GNSS jammers" },
-    { path = "src\\scripts\\china\\specialActions\\addLandingShips.lua",         actionName = "Add landing ships" },
-    { path = "src\\scripts\\china\\specialActions\\addSAGs.lua",                 actionName = "Add SAGs" },
-    { path = "src\\scripts\\china\\specialActions\\addSubmarines.lua",           actionName = "Add submarines" },
-    { path = "src\\scripts\\china\\specialActions\\unitStatusMenu.lua",          actionName = "Unit status menu" },
-    { path = "src\\scripts\\china\\specialActions\\addMissileSystems.lua",       actionName = "Add missile systems" },
-    { path = "src\\scripts\\china\\specialActions\\setupMenu.lua",               actionName = "Setup menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\addACs.lua",                 actionName = "Add aircraft" },
-    { path = "src\\scripts\\taiwan\\specialActions\\addDeployedShipsAtPort.lua", actionName = "Add deployed ships at port" },
-    { path = "src\\scripts\\taiwan\\specialActions\\addSAGs.lua",                actionName = "Add SAGs" },
-    { path = "src\\scripts\\taiwan\\specialActions\\wcsSettingMenu.lua",         actionName = "WCS setting menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\unitStatusMenu.lua",         actionName = "Unit status menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\setupMenu.lua",              actionName = "Setup menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\addMissileSystems.lua",      actionName = "Add missile systems" },
+    { path = "src\\scripts\\china\\specialActions\\unitStatusMenu.lua",    actionName = "Unit status menu" },
+    { path = "src\\scripts\\china\\specialActions\\setupMenu.lua",         actionName = "Setup menu" },
+    { path = "src\\scripts\\china\\specialActions\\addUnitsMenu.lua",      actionName = "Add units menu" },
+    { path = "src\\scripts\\taiwan\\specialActions\\wcsSettingMenu.lua",   actionName = "WCS setting menu" },
+    { path = "src\\scripts\\taiwan\\specialActions\\unitStatusMenu.lua",   actionName = "Unit status menu" },
+    { path = "src\\scripts\\taiwan\\specialActions\\setupMenu.lua",        actionName = "Setup menu" },
+    { path = "src\\scripts\\taiwan\\specialActions\\addUnitsMenu.lua",     actionName = "Add units menu" },
   }
 
   for _, action in ipairs(actions) do

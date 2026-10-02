@@ -1,0 +1,18 @@
+<!doctype html>
+<html class="dark" lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Units</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <input type="hidden" id="selectedActions" name="selectedActions" />
+    <!-- Data injection point - Python script will replace the placeholders -->
+    <script id="inject-data">
+      window.__INJECT_ADD_UNIT_ACTIONS__ = `[]`;
+      window.__INJECT_SIDE_NAME__ = `Taiwan`;
+    </script>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

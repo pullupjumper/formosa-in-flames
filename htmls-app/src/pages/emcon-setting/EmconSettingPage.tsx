@@ -16,8 +16,10 @@ const INITIAL_DOCTRINE: DoctrineEntry[] = [
 
 function EmconSettingPage() {
   const [doctrine, setDoctrine] = useState<DoctrineEntry[]>(INITIAL_DOCTRINE);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleToggle = (id: string) => {
+    setSubmitted(false);
     setDoctrine((prev) =>
       prev.map((entry) => (entry.id === id ? { ...entry, weaponsFree: !entry.weaponsFree } : entry))
     );
@@ -30,9 +32,8 @@ function EmconSettingPage() {
         weaponsFree: entry.weaponsFree,
       })),
     };
-    writeHostInput('emconData', exportData);
+    setSubmitted(writeHostInput('emconData', exportData));
     console.log('Doctrine Configuration:', exportData);
-    alert('Doctrine configuration submitted');
   };
 
   return (
@@ -63,6 +64,11 @@ function EmconSettingPage() {
         >
           Submit Configuration
         </button>
+        {submitted && (
+          <p className="mt-3 text-center text-xs text-status-warning">
+            Configuration saved. Press Done to apply it.
+          </p>
+        )}
       </div>
     </PageShell>
   );

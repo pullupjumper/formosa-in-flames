@@ -195,4 +195,59 @@ describe("UnitStatusUI", function()
       assert.stub(dialogStub).was.called(1)
     end)
   end)
+
+  -- ============================================================================
+  -- createAddUnitsMenu
+  -- ============================================================================
+  describe("createAddUnitsMenu", function()
+    local config = { blue = { surface = { sags = {} } } }
+    local sagStub
+    local csgStub
+
+    before_each(function()
+      sagStub = trackStub(stub(UnitGenerator, "createSAGs"))
+      csgStub = trackStub(stub(UnitGenerator, "createCSG"))
+    end)
+
+    ---@param ids string
+    local function submit(ids)
+      dialogStub.returns({ pressed = "Done", selectedActions = "'{\"actionIds\":" .. ids .. "}'" })
+    end
+
+    -- Positive: only the ticked action runs
+    it("should run only the ticked actions", function()
+      submit('["addSAGs"]')
+
+      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+
+      assert.stub(sagStub).was.called(1)
+    end)
+
+    -- Negative: nothing ticked
+    it("should run nothing for an empty selection", function()
+      submit("[]")
+
+      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+
+      assert.stub(sagStub).was_not.called()
+    end)
+
+    -- Negative: id belongs to the other side
+    it("should ignore ids the side does not offer", function()
+      submit('["addCSG"]')
+
+      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+
+      assert.stub(csgStub).was_not.called()
+    end)
+
+    -- Negative: dialog closed without Done
+    it("should do nothing when the dialog is dismissed", function()
+      dialogStub.returns({})
+
+      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+
+      assert.stub(sagStub).was_not.called()
+    end)
+  end)
 end)

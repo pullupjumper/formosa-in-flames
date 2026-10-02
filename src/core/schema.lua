@@ -1757,6 +1757,16 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
 ---@field missileSystems SBJ__MissileSystemSetupEntry[] TEL missile system deployment configurations with tactical areas and paths
 
+---One `addXXX` option in the add-units menu
+---@class SBJ__AddUnitAction: table
+---@field id string Stable id sent back by the page
+---@field label string Text shown next to the checkbox
+---@field run fun(config: SBJ__Config) Add the units
+
+---Add-units menu result containing the ticked action ids
+---@class SBJ__AddUnitsMenuResult: table
+---@field actionIds string[] Ids of the `addXXX` actions to run
+
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table
 ---@field doctrine {id: string, weaponsFree: boolean}[] SAM system deployment configurations

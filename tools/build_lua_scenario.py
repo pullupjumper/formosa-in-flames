@@ -105,6 +105,14 @@ HTML_INJECTION_SPECS: Tuple[HtmlInjectionSpec, ...] = (
         ),
     ),
     HtmlInjectionSpec(
+        html_filename="add-units-menu.html",
+        function_name="getAddUnitsMenuTemplate",
+        placeholders=(
+            "__INJECT_ADD_UNIT_ACTIONS__",
+            "__INJECT_SIDE_NAME__",
+        ),
+    ),
+    HtmlInjectionSpec(
         html_filename="emcon-setting.html",
         function_name="getWCSSettingTemplate",
     ),

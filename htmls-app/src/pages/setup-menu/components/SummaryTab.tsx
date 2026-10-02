@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type {
   BudgetState,
@@ -100,6 +101,8 @@ export function SummaryTab({
     0
   );
 
+  const [submitted, setSubmitted] = useState(false);
+
   const handleExport = () => {
     const result = toSetupResult({
       budget,
@@ -108,9 +111,8 @@ export function SummaryTab({
       deployedJammers,
       deployedMissileSystems,
     });
-    writeHostInput('summaryData', result);
+    setSubmitted(writeHostInput('summaryData', result));
     console.log('Export data:', result);
-    alert('Configuration exported to console');
   };
 
   return (
@@ -185,6 +187,11 @@ export function SummaryTab({
       >
         Submit Configuration
       </button>
+      {submitted && (
+        <p className="mt-3 text-center text-xs text-status-warning">
+          Configuration saved. Press Done to apply it.
+        </p>
+      )}
     </div>
   );
 }
