@@ -29,8 +29,8 @@ import {
   selectSelectedUnitKey,
   selectSelectedJammerIndex,
   selectRelocatingJammerIndex,
-} from './deploymentMode';
-import type { DeploymentMode } from './deploymentMode';
+} from '../deploymentMode';
+import type { DeploymentMode } from '../deploymentMode';
 import { useDeploymentPreviews } from './useDeploymentPreviews';
 
 /**

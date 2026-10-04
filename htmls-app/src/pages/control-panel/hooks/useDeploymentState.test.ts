@@ -13,8 +13,8 @@ import {
   formatAreaLabel,
   isMissileMode,
   isSameArea,
-} from '@/pages/control-panel/hooks/deploymentMode';
-import type { DeploymentMode } from '@/pages/control-panel/hooks/deploymentMode';
+} from '@/pages/control-panel/deploymentMode';
+import type { DeploymentMode } from '@/pages/control-panel/deploymentMode';
 import { getAreaLabel } from '@/constants/deployment';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { createSeededRandom } from '@/utils/random';
