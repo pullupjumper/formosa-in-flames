@@ -104,14 +104,6 @@ export interface AmphibiousLocation {
   waypoints: Coordinate[];
 }
 
-export interface SetupMenuData {
-  airbases: Airbase[];
-  jammers: Jammer[];
-  missileSystems: MissileSystems;
-  sideName: string;
-  amphibiousLocations: AmphibiousLocation[];
-}
-
 // ============================================================================
 // HOST RESULT (what `summaryData` sends back to unitStatusUI.lua)
 // Field names mirror `SBJ__SetupResult` in schema.lua and must not change.

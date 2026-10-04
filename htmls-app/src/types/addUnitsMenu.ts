@@ -4,12 +4,6 @@ export interface AddUnitAction {
   label: string;
 }
 
-/** Root payload injected by `addUnitsMenu.lua`. */
-export interface AddUnitsMenuData {
-  sideName: string;
-  actions: AddUnitAction[];
-}
-
 /** What `selectedActions` sends back to `addUnitsMenu.lua`. */
 export interface AddUnitsMenuResult {
   actionIds: string[];

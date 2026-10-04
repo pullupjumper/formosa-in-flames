@@ -2,22 +2,13 @@ import { useMemo, useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/DeploymentMap';
 import { buildMissileGroups } from '@pages/control-panel/missileGroups';
 import { flattenC2Nodes } from '@/utils/c2';
-import { parseInjectedJSON } from '@/utils/inject';
-import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
 import type { Coordinate } from '@/types/geo';
-import type {
-  Airbase,
-  BudgetState,
-  Jammer,
-  MissileDeployment,
-  MissileSystems,
-} from '@/types/setupMenu';
-import type { C2Data, LandingUnitsData, MissileSystemData, SignalData } from '@/types/unitStatus';
+import type { Airbase, BudgetState, MissileDeployment } from '@/types/setupMenu';
 import { toSetupResult } from '@/utils/setupMenuPayload';
-import { writeHostInput } from '@/utils/inject';
 import { toEmconResult } from '@/utils/emcon';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../c2Nodes';
 import { buildLauncherStatusMap } from '../launcherStatus';
+import { submitDeployment, type ControlPanelPayload } from '../controlPanelPayload';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
 import { Panel } from './Panel';
 import { JammerPanel } from './JammerPanel';
@@ -40,16 +31,12 @@ const MAX_SIDEBAR_WIDTH = 900;
 const DEFAULT_SIDEBAR_WIDTH = 650;
 
 interface ControlDeploymentTabProps {
-  missileSystems: MissileSystems;
+  /** Injected payload; its airbases are the untouched budget floor. See AircraftPanel. */
+  payload: ControlPanelPayload;
   airbases: Airbase[];
-  /** Untouched injected airbases, used as the budget floor. See AircraftPanel. */
-  baselineAirbases: Airbase[];
-  jammers: Jammer[];
   budget: BudgetState;
   deployedSystems: Map<string, MissileDeployment>;
   deployedJammers: Map<number, Coordinate>;
-  shouldValidateTaiwanBoundary: boolean;
-  sideName: string;
   onDeploySystem: (key: string, data: MissileDeployment) => void;
   onUndeploySystem: (key: string) => void;
   onDeployJammer: (index: number, position: Coordinate) => void;
@@ -66,15 +53,11 @@ interface ControlDeploymentTabProps {
  * launchers, aircraft), map on the right. Same hooks as the setup menu's tab.
  */
 export function ControlDeploymentTab({
-  missileSystems,
+  payload,
   airbases,
-  baselineAirbases,
-  jammers,
   budget,
   deployedSystems,
   deployedJammers,
-  shouldValidateTaiwanBoundary,
-  sideName,
   onDeploySystem,
   onUndeploySystem,
   onDeployJammer,
@@ -84,6 +67,8 @@ export function ControlDeploymentTab({
   showLandingUnits,
   isDeploymentLocked,
 }: ControlDeploymentTabProps) {
+  const { missileSystems, jammers, sideName, signals, landingUnits } = payload;
+  const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
   const deployment = useDeploymentState({
     jammers,
     deployedSystems,
@@ -115,10 +100,8 @@ export function ControlDeploymentTab({
       deployedMissileSystems: deployedSystems,
     });
     const doctrine = toEmconResult(samUnits);
-    const isDeploymentWritten = writeHostInput('summaryData', result);
-    const isDoctrineWritten = writeHostInput('emconData', doctrine);
     console.log('Export data:', result, doctrine);
-    if (isDeploymentWritten && isDoctrineWritten) setSubmittedInputs(resultInputs);
+    if (submitDeployment(result, doctrine)) setSubmittedInputs(resultInputs);
   };
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
@@ -134,32 +117,11 @@ export function ControlDeploymentTab({
   const deployedLaunchers = launcherGroups.reduce((sum, group) => sum + group.deployedCount, 0);
   const totalLaunchers = launcherGroups.reduce((sum, group) => sum + group.units.length, 0);
 
-  const [c2Data] = useState(() =>
-    parseInjectedJSON<C2Data>(window.__INJECT_C2__, UNIT_STATUS_DATA.c2, 'C2')
-  );
-  const [signals] = useState(() =>
-    parseInjectedJSON<SignalData[]>(window.__INJECT_SIGNALS__, UNIT_STATUS_DATA.signals, 'SIGNALS')
-  );
-  const [launcherStatus] = useState(() =>
-    buildLauncherStatusMap(
-      parseInjectedJSON<MissileSystemData>(
-        window.__INJECT_LAUNCHERS__,
-        UNIT_STATUS_DATA.launchers,
-        'LAUNCHERS'
-      )
-    )
-  );
-  const [landingUnits] = useState(() =>
-    parseInjectedJSON<LandingUnitsData>(
-      window.__INJECT_LANDING_UNITS__,
-      UNIT_STATUS_DATA.landingUnits,
-      'LANDING_UNITS'
-    )
-  );
+  const [launcherStatus] = useState(() => buildLauncherStatusMap(payload.launcherData));
   const c2Nodes = useMemo(() => {
     const samLaunchers = missileGroups.find((group) => group.category === SAM_CATEGORY)?.units;
-    return buildC2NodeViews(flattenC2Nodes(c2Data), samLaunchers ?? []);
-  }, [c2Data, missileGroups]);
+    return buildC2NodeViews(flattenC2Nodes(payload.c2Data), samLaunchers ?? []);
+  }, [payload.c2Data, missileGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
   const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
   const samUnits = collectSamUnits(shownC2Nodes);
@@ -237,7 +199,7 @@ export function ControlDeploymentTab({
         >
           <AircraftBasesPanel
             airbases={airbases}
-            baselineAirbases={baselineAirbases}
+            baselineAirbases={payload.airbases}
             budget={budget}
             onBudgetChange={onBudgetChange}
             onUpdateAirbase={onUpdateAirbase}

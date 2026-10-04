@@ -1,67 +1,30 @@
 import type { Coordinate } from '@/types/geo';
 import type {
   Airbase,
-  AmphibiousLocation,
   Jammer,
   MissileDeployment,
   MissileSystems,
   MovementPaths,
   OperationalArea,
-  SetupMenuData,
   SetupResult,
   BudgetState,
 } from '@/types/setupMenu';
-import { parseInjectedJSON, readInjectedString } from '@/utils/inject';
-import {
-  AIRBASES_DATA,
-  JAMMERS_DATA,
-  MISSILE_SYSTEMS_DATA,
-  AMPHIBIOUS_LOCATION_DATA,
-} from '@/data/setupMenuData';
 import { makeUnitKey } from '@/utils/map';
 import { calculateCentroid } from '@/utils/geo';
 
 /**
- * The one place that knows the shape of what `unitStatusUI.lua` injects into
- * the setup menu and what it reads back from `summaryData`.
+ * Shape conversion between the Lua payload and the map-side deployment
+ * (`controlPanelPayload.ts` owns the `window` reads and host writes).
  *
- * Import side: `readSetupMenuData` + `fromOperationalArea`.
+ * Import side: `fromOperationalArea` + `buildInjectedDeployments`.
  * Export side: `toSetupResult`.
- * Both are pure apart from the `window` read, so a round-trip test can pin the
- * payload convention without a browser.
+ * Both are pure, so a round-trip test can pin the payload convention without
+ * a browser.
  */
-
-declare global {
-  interface Window {
-    __INJECT_JAMMERS__?: string;
-    __INJECT_AIRBASES__?: string;
-    __INJECT_MISSILE_SYSTEMS__?: string;
-    __INJECT_SIDE_NAME__?: string;
-    __INJECT_AMPHIBIOUS_LOCATIONS__?: string;
-  }
-}
 
 // ============================================================================
 // IMPORT
 // ============================================================================
-export function readSetupMenuData(): SetupMenuData {
-  return {
-    airbases: parseInjectedJSON<Airbase[]>(window.__INJECT_AIRBASES__, AIRBASES_DATA, 'AIRBASES'),
-    jammers: parseInjectedJSON<Jammer[]>(window.__INJECT_JAMMERS__, JAMMERS_DATA, 'JAMMERS'),
-    missileSystems: parseInjectedJSON<MissileSystems>(
-      window.__INJECT_MISSILE_SYSTEMS__,
-      MISSILE_SYSTEMS_DATA,
-      'MISSILE_SYSTEMS'
-    ),
-    sideName: readInjectedString(window.__INJECT_SIDE_NAME__, 'Taiwan'),
-    amphibiousLocations: parseInjectedJSON<AmphibiousLocation[]>(
-      window.__INJECT_AMPHIBIOUS_LOCATIONS__,
-      AMPHIBIOUS_LOCATION_DATA,
-      'AMPHIBIOUS_LOCATIONS'
-    ),
-  };
-}
-
 /**
  * Rebuild the map-side deployment for a unit the scenario already placed, so it
  * renders and rotates exactly like a player-placed one.

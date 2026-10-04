@@ -2,23 +2,22 @@ import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { Airbase, MissileDeployment } from '@/types/setupMenu';
 import { CONFIG } from '@/constants/setupMenu';
-import { readSetupMenuData, buildInjectedDeployments } from '@/utils/setupMenuPayload';
+import { buildInjectedDeployments } from '@/utils/setupMenuPayload';
 import { createBudgetState } from '@/utils/budgetLedger';
+import type { ControlPanelPayload } from '../controlPanelPayload';
 
 /**
- * Deployment state shared by every page built on the setup menu's Deployment
- * tab: the injected payload, the loadout budget, and what the player has
- * deployed so far. Lives above the tabs so it survives switching between them.
+ * Deployment state for the Deployment tab: the loadout budget and what the
+ * player has deployed so far, seeded from the injected payload. Lives above the tabs so it survives switching between them.
  */
-export function useSetupMenuState() {
+export function useSetupMenuState(payload: ControlPanelPayload) {
   const [budget, setBudget] = useState(() => createBudgetState(CONFIG.INITIAL_SCORE));
-  const [injectedData] = useState(readSetupMenuData);
-  const [airbases, setAirbases] = useState(() => structuredClone(injectedData.airbases));
+  const [airbases, setAirbases] = useState(() => structuredClone(payload.airbases));
   const [deployedJammers, setDeployedJammers] = useState<Map<number, Coordinate>>(new Map());
   // Units the scenario already placed start out deployed; the injected payload
   // is read once, so seeding state here replaces a setState-in-effect.
   const [deployedMissileSystems, setDeployedMissileSystems] = useState(() =>
-    buildInjectedDeployments(injectedData.missileSystems)
+    buildInjectedDeployments(payload.missileSystems)
   );
 
   const updateAirbase = useCallback((index: number, updater: (base: Airbase) => Airbase) => {
@@ -52,7 +51,6 @@ export function useSetupMenuState() {
   }, []);
 
   return {
-    injectedData,
     budget,
     setBudget,
     airbases,
