@@ -4,7 +4,7 @@ import { PageShell, type PageTab } from '@/components/PageShell';
 import { useActionSelection } from '@pages/control-panel/hooks/useActionSelection';
 import { MechanicsTab } from '@pages/control-panel/components/MechanicsTab';
 import { OpordTab } from '@pages/control-panel/components/OpordTab';
-import { useSetupMenuState } from '@pages/control-panel/hooks/useSetupMenuState';
+import { useDeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
 import { AddUnitsTab } from './components/AddUnitsTab';
 import { ControlDeploymentTab } from './components/ControlDeploymentTab';
 import { resolveControlPanelView } from './controlPanelMode';
@@ -30,7 +30,7 @@ function ControlPanelPage() {
   const view = resolveControlPanelView(payload.mode);
   const tabs = view.showAddUnits ? ALL_TABS : ALL_TABS.filter((tab) => tab.id !== 'add-units');
   const [activeTab, setActiveTab] = useState<ControlPanelTabId>('opord');
-  const state = useSetupMenuState(payload);
+  const session = useDeploymentSession(payload);
   const { sideName } = payload;
 
   // Selection lives above the tabs so it survives switching away and back
@@ -58,18 +58,9 @@ function ControlPanelPage() {
       {activeTab === 'deployment' && (
         <ControlDeploymentTab
           payload={payload}
-          airbases={state.airbases}
-          budget={state.budget}
-          deployedSystems={state.deployedMissileSystems}
-          deployedJammers={state.deployedJammers}
+          session={session}
           showLandingUnits={view.showLandingUnits}
           isDeploymentLocked={view.isDeploymentLocked}
-          onDeploySystem={state.deployMissileSystem}
-          onUndeploySystem={state.undeployMissileSystem}
-          onDeployJammer={state.deployJammer}
-          onUndeployJammer={state.undeployJammer}
-          onBudgetChange={state.setBudget}
-          onUpdateAirbase={state.updateAirbase}
         />
       )}
       {view.showAddUnits && activeTab === 'add-units' && (

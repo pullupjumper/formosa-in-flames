@@ -2,13 +2,12 @@ import { useMemo, useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/DeploymentMap';
 import { buildMissileGroups } from '@pages/control-panel/missileGroups';
 import { flattenC2Nodes } from '@/utils/c2';
-import type { Coordinate } from '@/types/geo';
-import type { Airbase, BudgetState, MissileDeployment } from '@/types/setupMenu';
 import { toSetupResult } from '@/utils/setupMenuPayload';
 import { toEmconResult } from '@/utils/emcon';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../c2Nodes';
 import { buildLauncherStatusMap } from '../launcherStatus';
 import { submitDeployment, type ControlPanelPayload } from '../controlPanelPayload';
+import type { DeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
 import { Panel } from './Panel';
 import { JammerPanel } from './JammerPanel';
@@ -31,16 +30,8 @@ const DEFAULT_SIDEBAR_WIDTH = 650;
 interface ControlDeploymentTabProps {
   /** Injected payload; its airbases are the untouched budget floor. See BaseEditor. */
   payload: ControlPanelPayload;
-  airbases: Airbase[];
-  budget: BudgetState;
-  deployedSystems: Map<string, MissileDeployment>;
-  deployedJammers: Map<number, Coordinate>;
-  onDeploySystem: (key: string, data: MissileDeployment) => void;
-  onUndeploySystem: (key: string) => void;
-  onDeployJammer: (index: number, position: Coordinate) => void;
-  onUndeployJammer: (index: number) => void;
-  onBudgetChange: (next: BudgetState) => void;
-  onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
+  /** What the player has deployed and spent so far; lives above the tabs */
+  session: DeploymentSession;
   showLandingUnits: boolean;
   /** Deployment was already submitted once: jammers, launchers and aircraft are read-only */
   isDeploymentLocked: boolean;
@@ -48,24 +39,23 @@ interface ControlDeploymentTabProps {
 
 /**
  * Deployment tab, AIP-terminal style: stacked panels on the left (jammers,
- * launchers, aircraft), map on the right. Same hooks as the setup menu's tab.
+ * launchers, aircraft), map on the right.
  */
 export function ControlDeploymentTab({
   payload,
-  airbases,
-  budget,
-  deployedSystems,
-  deployedJammers,
-  onDeploySystem,
-  onUndeploySystem,
-  onDeployJammer,
-  onUndeployJammer,
-  onBudgetChange,
-  onUpdateAirbase,
+  session,
   showLandingUnits,
   isDeploymentLocked,
 }: ControlDeploymentTabProps) {
   const { missileSystems, jammers, sideName, signals, landingUnits } = payload;
+  const {
+    airbases,
+    budget,
+    deployedMissileSystems: deployedSystems,
+    deployedJammers,
+    setBudget: onBudgetChange,
+    updateAirbase: onUpdateAirbase,
+  } = session;
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
   const deployment = useDeploymentState({
     jammers,
@@ -73,10 +63,10 @@ export function ControlDeploymentTab({
     deployedJammers,
     shouldValidateTaiwanBoundary,
     isLocked: isDeploymentLocked,
-    onDeploySystem,
-    onUndeploySystem,
-    onDeployJammer,
-    onUndeployJammer,
+    onDeploySystem: session.deployMissileSystem,
+    onUndeploySystem: session.undeployMissileSystem,
+    onDeployJammer: session.deployJammer,
+    onUndeployJammer: session.undeployJammer,
   });
   const { isPlacementActive, coordinates, status } = deployment;
 

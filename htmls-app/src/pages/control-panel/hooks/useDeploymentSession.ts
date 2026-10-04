@@ -10,7 +10,7 @@ import type { ControlPanelPayload } from '../controlPanelPayload';
  * Deployment state for the Deployment tab: the loadout budget and what the
  * player has deployed so far, seeded from the injected payload. Lives above the tabs so it survives switching between them.
  */
-export function useSetupMenuState(payload: ControlPanelPayload) {
+export function useDeploymentSession(payload: ControlPanelPayload) {
   const [budget, setBudget] = useState(() => createBudgetState(CONFIG.INITIAL_SCORE));
   const [airbases, setAirbases] = useState(() => structuredClone(payload.airbases));
   const [deployedJammers, setDeployedJammers] = useState<Map<number, Coordinate>>(new Map());
@@ -63,3 +63,5 @@ export function useSetupMenuState(payload: ControlPanelPayload) {
     undeployMissileSystem,
   };
 }
+
+export type DeploymentSession = ReturnType<typeof useDeploymentSession>;
