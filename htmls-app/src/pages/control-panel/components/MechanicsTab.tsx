@@ -38,7 +38,6 @@ const COLOR = {
 const SCREENSHOT = {
   positionLayout: 'https://i.meee.com.tw/sXUai33.png',
   loadCargo: 'https://i.meee.com.tw/cwclF0T.png',
-  unitStatus: 'https://i.meee.com.tw/ZcDqg1m.png',
 } as const;
 
 // ============================================================================
@@ -188,34 +187,32 @@ export function MechanicsTab() {
           </Section>
 
           {/* ---------------------------------------------------------------- */}
-          <Section title="4. CHECK THE UNIT STATUS PAGE">
+          <Section title="4. CHECK BATTERY STATUS">
             <Paragraph>
-              Open the Unit Status page and switch to the <Term>MISSILE SYSTEMS</Term> tab to see
-              what every battery is doing instead of clicking through units one by one.
+              Open the <Term>Deployment</Term> tab and click a battery in the{' '}
+              <Term>Missile Launchers</Term> panel to see what it is doing instead of clicking
+              through units one by one.
             </Paragraph>
-            <Figure caption="Fig 3. Unit Status -- MISSILE SYSTEMS tab.">
-              <Screenshot src={SCREENSHOT.unitStatus} alt="Unit Status missile systems tab" />
-            </Figure>
             <Panel>
               <List>
                 <li>
-                  <Term>Firing Unit State</Term> -- whether the battery is hiding, in position, or
-                  reloading, with its reload progress.
+                  <Term>FIRING</Term> -- whether the battery is hiding, in position, or reloading,
+                  with its reload progress.
                 </li>
                 <li>
-                  <Term>Resupply Unit State</Term> -- the same for the ammo truck serving it.
+                  <Term>RESUPPLY</Term> -- the same for the ammo truck serving it.
                 </li>
                 <li>
-                  <Term>Missiles (Ammo)</Term> -- what the truck is still carrying.
+                  <Term>MISSILES (AMMO)</Term> -- what the truck is still carrying.
                 </li>
                 <li>
-                  <Term>Missiles (AHA)</Term> -- remaining stock at the depot.
+                  <Term>MISSILES (AHA)</Term> -- remaining stock at the depot.
                 </li>
               </List>
             </Panel>
             <Paragraph>
               Depot feeds truck, truck feeds launcher. A zero anywhere in that chain means a battery
-              goes quiet soon -- this page is where you spot it early.
+              goes quiet soon -- this panel is where you spot it early.
             </Paragraph>
           </Section>
         </main>
