@@ -11,9 +11,10 @@ React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Use
 
 ### Project Structure
 - `types/` — type definitions only (values live in `constants/`)
-- `pages/` — each page has its own `main.tsx` entry point
+- `pages/` — each page has its own `main.tsx` entry point. Logic that only serves that page's screens (view models, mode reducers, payload reads) sits in the page folder, next to its `components/` and `hooks/`
 - `components/` — shared React components
-- `utils/` — utility functions (e.g., `geo.ts` owns all coordinate helpers)
+- `utils/` — utility functions that make no assumption about a page (e.g., `geo.ts` owns all coordinate helpers). If it would only make sense on one page's screen, it belongs in that page folder
+- `hooks/` (inside a page) — React hooks only (`useX.ts`); pure reducers and selectors go next to them, not inside
 - `constants/` — runtime constants and CONFIG objects
 - `data/` — mock data for development
 - `index.css` — Tailwind @theme custom colors
