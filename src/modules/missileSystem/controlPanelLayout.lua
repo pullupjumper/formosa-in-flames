@@ -2,14 +2,14 @@ local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Utils = require("src.utils.utils")
 
-local SetupLayout = {}
+local ControlPanelLayout = {}
 
----Position types whose zones are resolved to vertices for the setup menu
+---Position types whose zones are resolved to vertices for the control panel
 local SETUP_POSITION_TYPES = { "HA", "FP", "RL", "AHA", "SHRL" }
 ---@cast SETUP_POSITION_TYPES SBJ__PositionType[]
 
----Turn a setup menu path into a fast-moving course
----@param path SBJ__MovementPath Path drawn in the setup menu
+---Turn a control panel path into a fast-moving course
+---@param path SBJ__MovementPath Path drawn in the control panel
 ---@return CMO__Waypoint[] # Waypoints at fast speed and flank throttle
 local function buildCourse(path)
   local course = {}
@@ -26,8 +26,8 @@ local function buildCourse(path)
   return course
 end
 
----Build a battery layout from one setup menu entry
----@param entry SBJ__MissileSystemSetupEntry Battery placement submitted by the setup menu
+---Build a battery layout from one control panel entry
+---@param entry SBJ__MissileSystemResult Battery placement submitted by the control panel
 ---@param areaName string Name for the new operational area
 ---@return SBJ__MissileSystemLayout # Layout accepted by MissileSystem.redeploy
 local function buildLayout(entry, areaName)
@@ -55,10 +55,10 @@ local function buildLayout(entry, areaName)
   }
 end
 
----Build battery layouts from setup menu entries, giving each a random operational area name
----@param entries SBJ__MissileSystemSetupEntry[] Battery placements submitted by the setup menu
+---Build battery layouts from control panel entries, giving each a random operational area name
+---@param entries SBJ__MissileSystemResult[] Battery placements submitted by the control panel
 ---@return SBJ__MissileSystemLayout[] # Layouts accepted by MissileSystem.redeploy
-function SetupLayout.buildLayouts(entries)
+function ControlPanelLayout.buildLayouts(entries)
   local layouts = {}
 
   for _, entry in ipairs(entries) do
@@ -85,11 +85,11 @@ local function resolveVertices(sideName, area)
   return vertices
 end
 
----Build the setup menu's missile system rows, with zone names resolved to vertices
+---Build the control panel's missile system rows, with zone names resolved to vertices
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Side ground force configuration; left untouched
 ---@param sideName string Side owning the reference points
 ---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
-function SetupLayout.buildSetupMenuRows(missileSystemConfigMap, sideName)
+function ControlPanelLayout.buildMissileSystemRows(missileSystemConfigMap, sideName)
   local rows = {}
 
   for key, system in pairs(missileSystemConfigMap) do
@@ -129,4 +129,4 @@ function SetupLayout.buildSetupMenuRows(missileSystemConfigMap, sideName)
   return rows
 end
 
-return SetupLayout
+return ControlPanelLayout

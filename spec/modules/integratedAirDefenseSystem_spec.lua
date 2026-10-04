@@ -83,8 +83,6 @@ describe("IntegratedAirDefenseSystem", function()
   describe("setSamDoctrine", function()
     local setDoctrineStub
     local setEmissionStub
-    local candidates = { { guid = "PAC-1" }, { guid = "TC2-1" }, { guid = "GONE" } }
-
     before_each(function()
       local units = {
         ["PAC-1"] = makeUnit({ guid = "PAC-1", dbid = constants.PLATFORMS.PAC3 }),
@@ -95,9 +93,9 @@ describe("IntegratedAirDefenseSystem", function()
       setEmissionStub = trackStub(stub(GameApi, "ScenEdit_SetUnitIntermittentEmissionConfig"))
     end)
 
-    -- Positive: only the chosen SAM type is changed, and it wakes on threat
-    it("should set WCS tight and wake emissions for weapons-free SAM types", function()
-      IntegratedAirDefenseSystem.setSamDoctrine({ { id = "pac23", weaponsFree = true } }, candidates)
+    -- Positive: only the named SAM is changed, and it wakes on threat
+    it("should set WCS tight and wake emissions for a weapons-free SAM", function()
+      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "PAC-1", name = "PAC-3", weaponFree = true } })
 
       assert.stub(setDoctrineStub).was.called(1)
       assert.stub(setDoctrineStub).was.called_with({ guid = "PAC-1" },
@@ -108,7 +106,7 @@ describe("IntegratedAirDefenseSystem", function()
 
     -- Positive: weapons hold keeps emissions asleep
     it("should set WCS hold and keep emissions asleep when weapons are not free", function()
-      IntegratedAirDefenseSystem.setSamDoctrine({ { id = "tc2", weaponsFree = false } }, candidates)
+      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "TC2-1", name = "TC-2", weaponFree = false } })
 
       assert.stub(setDoctrineStub).was.called_with({ guid = "TC2-1" },
         { weapon_control_status_air = constants.WCS.HOLD })
@@ -116,9 +114,9 @@ describe("IntegratedAirDefenseSystem", function()
         { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 })
     end)
 
-    -- Negative: unknown menu ids touch nothing
-    it("should ignore unknown SAM menu ids", function()
-      IntegratedAirDefenseSystem.setSamDoctrine({ { id = "nope", weaponsFree = true } }, candidates)
+    -- Negative: destroyed units (unknown guid) touch nothing
+    it("should ignore SAM units that no longer exist", function()
+      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "GONE", name = "Dead SAM", weaponFree = true } })
 
       assert.stub(setDoctrineStub).was_not.called()
     end)

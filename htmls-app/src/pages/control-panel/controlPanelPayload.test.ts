@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { MOCK_ADD_UNIT_ACTIONS } from '@/data/addUnitsMenuData';
-import { AIRBASES_DATA } from '@/data/setupMenuData';
+import { AIRBASES_DATA } from '@/data/controlPanelData';
 import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
 import {
   readControlPanelPayload,

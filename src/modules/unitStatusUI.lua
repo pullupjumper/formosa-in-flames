@@ -192,12 +192,12 @@ local STATUS_UI_SIDES = {
 ---@cast STATUS_UI_SIDES table<string, {signalSide: string, c2Types: SBJ__C2TypeKey[], showsLandedUnits: boolean}>
 
 
----Apply the setup menu's submitted deployments: GNSS jammers, then aircraft, then missile batteries
+---Apply the control panel's submitted deployments: GNSS jammers, then aircraft, then missile batteries
 ---@param config SBJ__Config Configuration table; the side's ground config is mutated by battery redeploys
 ---@param saveData SBJ__SaveData Persistent save data; mutated
 ---@param sideName string Side name ('China' or 'Taiwan')
----@param result SBJ__SetupResult Parsed setup menu submission
-local function updateFromSetupResult(config, saveData, sideName, result)
+---@param result SBJ__ControlPanelResult Parsed control panel submission
+local function updateFromControlPanelResult(config, saveData, sideName, result)
   local jammerDescriptors = result.jammers
   local airbaseDeploymentDescriptors = result.airbases
   local missileSystems = result.missileSystems
@@ -218,7 +218,7 @@ local function updateFromSetupResult(config, saveData, sideName, result)
   end
 
   if missileSystems and #missileSystems > 0 then
-    MissileSystem.redeployFromSetup(config, saveData, sideName, missileSystems)
+    MissileSystem.redeployFromControlPanel(config, saveData, sideName, missileSystems)
   end
 end
 
@@ -372,12 +372,8 @@ end
 ---Apply the SAM doctrine the control panel submitted to the Taiwan facilities
 ---@param doctrine SBJ__EmconResult|nil Parsed emconData
 local function applySamDoctrine(doctrine)
-  if not (doctrine and doctrine.sams and #doctrine.sams > 0) then
-    return
-  end
-  local facilities = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.FACILITY)
-  if facilities then
-    IntegratedAirDefenseSystem.setSamDoctrine(doctrine.sams, facilities)
+  if doctrine and doctrine.sams and #doctrine.sams > 0 then
+    IntegratedAirDefenseSystem.setSamDoctrine(doctrine.sams)
   end
 end
 
@@ -401,7 +397,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
       getControlPanelTemplate(),
       createGnssJammerDataString(config, sideName),
       createDeployedAircraftDataString(config, sideName),
-      gKH.json.stringify(MissileSystem.buildSetupMenuRows(config, sideName)),
+      gKH.json.stringify(MissileSystem.buildMissileSystemRows(config, sideName)),
       sideName,
       gKH.json.stringify(buildAddUnitRows(sideName)),
       createAmphibiousTaskForceLocationDataString(config),
@@ -422,14 +418,14 @@ function UnitStatusUI.createControlPanel(config, sideName)
     return
   end
 
-  local setupResult = parseFormJson(form["summaryData"])
-  if setupResult then
-    ---@cast setupResult SBJ__SetupResult
+  local controlPanelResult = parseFormJson(form["summaryData"])
+  if controlPanelResult then
+    ---@cast controlPanelResult SBJ__ControlPanelResult
     PersistentState.update(function(saveData)
       if not isEditMode and PersistentState.deploymentLocked(saveData, sideName) then
         return
       end
-      updateFromSetupResult(config, saveData, sideName, setupResult)
+      updateFromControlPanelResult(config, saveData, sideName, controlPanelResult)
       if not isEditMode then
         PersistentState.lockDeployment(saveData, sideName)
       end

@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/setupMenu';
+import type { MissileDeployment, TacticalAreas } from '@/types/controlPanel';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInTaiwan } from '@/utils/geo';
 import { AREA_CONFIG, DEPLOYMENT_MAX_ATTEMPTS } from './config';

@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import type { Airbase } from '@/types/setupMenu';
+import type { Airbase } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from './icons';
 

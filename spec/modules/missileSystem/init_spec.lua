@@ -11,7 +11,7 @@ local Deployment = require("src.modules.missileSystem.deployment")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Context = require("src.modules.missileSystem.context")
 local StatusView = require("src.modules.missileSystem.statusView")
-local SetupLayout = require("src.modules.missileSystem.setupLayout")
+local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
@@ -396,19 +396,19 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- redeployFromSetup
+  -- redeployFromControlPanel
   -- ============================================================================
 
-  describe("redeployFromSetup", function()
+  describe("redeployFromControlPanel", function()
     -- Positive: setup entries become layouts that redeploy the side's config and slice
     it("should redeploy the side with layouts built from the setup entries", function()
       local config, saveData = makeSides()
       local entries = { { unitname = "FU-1" } }
       local layouts = { { unitname = "FU-1" } }
-      local buildLayoutsStub = trackStub(SetupLayout, "buildLayouts").returns(layouts)
+      local buildLayoutsStub = trackStub(ControlPanelLayout, "buildLayouts").returns(layouts)
       local redeployStub = trackStub(MissileSystem, "redeploy")
 
-      MissileSystem.redeployFromSetup(config, saveData, constants.SIDES.BLUE, entries)
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 
       assert.stub(buildLayoutsStub).was.called_with(entries)
       assert.stub(redeployStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
@@ -417,17 +417,17 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- buildSetupMenuRows
+  -- buildMissileSystemRows
   -- ============================================================================
 
-  describe("buildSetupMenuRows", function()
+  describe("buildMissileSystemRows", function()
     -- Positive: rows come from the side's ground config
     it("should return the setup rows built from the side's ground config", function()
       local config = makeSides()
       local rows = { srbm = { id = "row" } }
-      local rowsStub = trackStub(SetupLayout, "buildSetupMenuRows").returns(rows)
+      local rowsStub = trackStub(ControlPanelLayout, "buildMissileSystemRows").returns(rows)
 
-      local result = MissileSystem.buildSetupMenuRows(config, constants.SIDES.BLUE)
+      local result = MissileSystem.buildMissileSystemRows(config, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
       assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, constants.SIDES.BLUE)

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, Jammer } from '@/types/setupMenu';
+import type { MissileDeployment, Jammer } from '@/types/controlPanel';
 import { useDeploymentState } from '@/pages/control-panel/hooks/useDeploymentState';
 import type { UseDeploymentStateParams } from '@/pages/control-panel/hooks/useDeploymentState';
 import {

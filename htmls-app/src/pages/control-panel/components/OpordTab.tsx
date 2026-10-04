@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Marker, Polyline, Circle } from 'react-leaflet';
 import type { LatLngTuple, PathOptions } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { AmphibiousLocation, ForceImage } from '@/types/setupMenu';
+import type { AmphibiousLocation, ForceImage } from '@/types/controlPanel';
 import { MapShell, createImageIcon } from '@/components/Map';
 import {
   Section,

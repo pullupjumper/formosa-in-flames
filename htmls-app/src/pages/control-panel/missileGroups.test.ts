@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { MissileDeployment, MissileSystems } from '@/types/setupMenu';
+import type { MissileDeployment, MissileSystems } from '@/types/controlPanel';
 import { buildMissileGroups } from '@/pages/control-panel/missileGroups';
 
 // ============================================================================

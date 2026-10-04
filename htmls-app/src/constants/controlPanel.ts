@@ -1,5 +1,5 @@
-// Setup Menu constants (tuning values and static geometry). Types live in
-// `types/setupMenu.ts`; this file holds runtime values only.
+// Control Panel constants (tuning values and static geometry). Types live in
+// `types/controlPanel.ts`; this file holds runtime values only.
 
 export const CONFIG = {
   LOADOUT_COST: 100,

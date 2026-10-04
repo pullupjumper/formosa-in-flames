@@ -39,13 +39,6 @@ local BLUE_RADAR_DBIDS = {
   [constants.PLATFORMS.GE592] = true,
 }
 
----Taiwan SAM platforms keyed by their WCS setting menu id
-local BLUE_SAM_DBIDS_BY_MENU_ID = {
-  pac23 = constants.PLATFORMS.PAC3,
-  skybow3 = constants.PLATFORMS.CUSTOMED_TK3,
-  tc2 = constants.PLATFORMS.TC2,
-}
-
 local C2_KEYS = {
   RADAR = "radar",
   SAM = "sam",
@@ -108,25 +101,21 @@ local function isBlueSAM(dbid)
   return BLUE_SAM_DBIDS[dbid]
 end
 
----Apply the WCS setting menu's per-SAM-type doctrine to matching units
+---Apply the control panel's weapons control choice to each named SAM unit
 ---Weapons free sets WCS tight and wakes emissions on threat; otherwise WCS hold and emissions stay asleep.
----@param doctrineItems {id: string, weaponsFree: boolean}[] Per-SAM-type choices from the WCS setting menu
----@param units {guid: string}[] Candidate units; only those matching an item's platform are changed
-function IntegratedAirDefenseSystem.setSamDoctrine(doctrineItems, units)
-  for _, item in ipairs(doctrineItems) do
-    local dbid = BLUE_SAM_DBIDS_BY_MENU_ID[item.id]
-    local wcs = item.weaponsFree and constants.WCS.TIGHT or constants.WCS.HOLD
-    local emissionFlag = item.weaponsFree and 1 or 0
+---@param entries SBJ__SamDoctrineEntry[] SAM units with the weapons control status the player chose
+function IntegratedAirDefenseSystem.setSamDoctrine(entries)
+  for _, entry in ipairs(entries) do
+    local unit = GameApi.ScenEdit_GetUnit(entry.guid)
 
-    for _, u in ipairs(units) do
-      local unit = GameApi.ScenEdit_GetUnit(u.guid)
+    if unit then
+      local wcs = entry.weaponFree and constants.WCS.TIGHT or constants.WCS.HOLD
+      local emissionFlag = entry.weaponFree and 1 or 0
 
-      if unit and unit.dbid == dbid then
-        GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = wcs })
-        GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
-          { WakeWhenDetectingThreat = emissionFlag, UseEmissionInterval = emissionFlag }
-        )
-      end
+      GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = wcs })
+      GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
+        { WakeWhenDetectingThreat = emissionFlag, UseEmissionInterval = emissionFlag }
+      )
     end
   end
 end

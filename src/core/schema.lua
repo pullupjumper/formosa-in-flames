@@ -1744,7 +1744,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
 ---Battery placement submitted by the control panel
----@class SBJ__MissileSystemSetupEntry: table
+---@class SBJ__MissileSystemResult: table
 ---@field key string Control panel row key
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field category string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
@@ -1753,11 +1753,18 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field tacticalAreas SBJ__TacticalAreas Drawn zones
 ---@field paths SBJ__MovementPaths Drawn movement paths
 
+---Point budget the player spent in the control panel
+---@class SBJ__BudgetResult: table
+---@field initial number Points available at the start
+---@field used number Points spent
+---@field remaining number Points left
+
 ---Control panel deployment result containing user selections
----@class SBJ__SetupResult: table
+---@class SBJ__ControlPanelResult: table
+---@field budget SBJ__BudgetResult Point budget the player spent
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
----@field missileSystems SBJ__MissileSystemSetupEntry[] TEL missile system deployment configurations with tactical areas and paths
+---@field missileSystems SBJ__MissileSystemResult[] TEL missile system deployment configurations with tactical areas and paths
 
 ---One `addXXX` option in the add-units menu
 ---@class SBJ__AddUnitAction: table
@@ -1769,9 +1776,15 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__AddUnitsMenuResult: table
 ---@field actionIds string[] Ids of the `addXXX` actions to run
 
+---Weapons control choice for one live SAM unit
+---@class SBJ__SamDoctrineEntry: table
+---@field guid string SAM unit GUID
+---@field name string SAM unit name
+---@field weaponFree boolean True for weapons free, false for hold fire
+
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table
----@field sams {name: string, guid: string, weaponsFree: boolean}[] SAM system deployment configurations
+---@field sams SBJ__SamDoctrineEntry[] SAM units with the weapons control status the player chose
 
 -- ============================================================================
 -- Ground Operations (Fire Support) - FSEM Builder

@@ -1,4 +1,4 @@
-// Setup Menu Types
+// Control Panel Types
 //
 // Field names on the injected payload types (`Airbase`, `Jammer`,
 // `OperationalArea`, ...) are dictated by `unitStatusUI.lua` and must not be
@@ -106,7 +106,7 @@ export interface AmphibiousLocation {
 
 // ============================================================================
 // HOST RESULT (what `summaryData` sends back to unitStatusUI.lua)
-// Field names mirror `SBJ__SetupResult` in schema.lua and must not change.
+// Field names mirror `SBJ__ControlPanelResult` in schema.lua and must not change.
 // ============================================================================
 export interface BudgetResult {
   initial: number;
@@ -132,7 +132,7 @@ export interface MissileSystemResult {
   paths: MovementPaths;
 }
 
-export interface SetupResult {
+export interface ControlPanelResult {
   budget: BudgetResult;
   airbases: Airbase[];
   jammers: JammerResult[];

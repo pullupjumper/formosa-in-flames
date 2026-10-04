@@ -1,4 +1,4 @@
-import type { Airbase, Jammer, MissileSystems, AmphibiousLocation } from '@/types/setupMenu';
+import type { Airbase, Jammer, MissileSystems, AmphibiousLocation } from '@/types/controlPanel';
 
 // ============================================================================
 // JAMMERS DATA

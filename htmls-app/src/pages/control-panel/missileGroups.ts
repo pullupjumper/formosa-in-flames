@@ -1,4 +1,4 @@
-import type { MissileSystems, MissileDeployment } from '@/types/setupMenu';
+import type { MissileSystems, MissileDeployment } from '@/types/controlPanel';
 import { getWeaponSystemName, buildUnitKey } from '@/utils/map';
 
 /**

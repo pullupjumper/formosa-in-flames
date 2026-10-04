@@ -1,4 +1,4 @@
-import type { BudgetState } from '@/types/setupMenu';
+import type { BudgetState } from '@/types/controlPanel';
 
 /**
  * Pure loadout-budget rules. The page owns one `BudgetState`; every change goes

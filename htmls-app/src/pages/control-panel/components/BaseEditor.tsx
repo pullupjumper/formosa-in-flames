@@ -1,5 +1,5 @@
-import type { Airbase, BudgetState } from '@/types/setupMenu';
-import { CONFIG } from '@/constants/setupMenu';
+import type { Airbase, BudgetState } from '@/types/controlPanel';
+import { CONFIG } from '@/constants/controlPanel';
 import { settleQuantityChange } from '@/utils/budgetLedger';
 
 // ============================================================================

@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import type { ForceImage } from '@/types/setupMenu';
+import type { ForceImage } from '@/types/controlPanel';
 
 // ============================================================================
 // LAUNCHER ICONS — NATO symbols shared by the map markers and the sidebar cards

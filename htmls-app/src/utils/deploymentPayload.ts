@@ -6,9 +6,9 @@ import type {
   MissileSystems,
   MovementPaths,
   OperationalArea,
-  SetupResult,
+  ControlPanelResult,
   BudgetState,
-} from '@/types/setupMenu';
+} from '@/types/controlPanel';
 import { buildUnitKey } from '@/utils/map';
 import { calculateCentroid } from '@/utils/geo';
 
@@ -17,7 +17,7 @@ import { calculateCentroid } from '@/utils/geo';
  * (`controlPanelPayload.ts` owns the `window` reads and host writes).
  *
  * Import side: `fromOperationalArea` + `buildInjectedDeployments`.
- * Export side: `toSetupResult`.
+ * Export side: `toControlPanelResult`.
  * Both are pure, so a round-trip test can pin the payload convention without
  * a browser.
  */
@@ -108,7 +108,7 @@ export function toExportPaths(paths: MovementPaths): MovementPaths {
   };
 }
 
-export interface ToSetupResultParams {
+export interface ToControlPanelResultParams {
   budget: BudgetState;
   airbases: Airbase[];
   jammers: Jammer[];
@@ -116,13 +116,13 @@ export interface ToSetupResultParams {
   deployedMissileSystems: Map<string, MissileDeployment>;
 }
 
-export function toSetupResult({
+export function toControlPanelResult({
   budget,
   airbases,
   jammers,
   deployedJammers,
   deployedMissileSystems,
-}: ToSetupResultParams): SetupResult {
+}: ToControlPanelResultParams): ControlPanelResult {
   return {
     budget: { initial: budget.total, used: budget.used, remaining: budget.current },
     airbases,

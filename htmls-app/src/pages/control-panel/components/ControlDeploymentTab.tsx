@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/DeploymentMap';
 import { buildMissileGroups } from '@pages/control-panel/missileGroups';
-import { toSetupResult } from '@/utils/deploymentPayload';
+import { toControlPanelResult } from '@/utils/deploymentPayload';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../c2Nodes';
 import { buildLauncherStatusMap } from '../launcherStatus';
 import { submitDeployment, type ControlPanelPayload } from '../controlPanelPayload';
@@ -79,7 +79,7 @@ export function ControlDeploymentTab({
     submittedInputs !== null && submittedInputs.every((input, i) => input === resultInputs[i]);
 
   const handleSubmit = () => {
-    const result = toSetupResult({
+    const result = toControlPanelResult({
       budget,
       airbases,
       jammers,

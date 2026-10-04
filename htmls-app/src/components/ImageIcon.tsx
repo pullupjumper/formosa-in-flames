@@ -1,4 +1,4 @@
-import type { ForceImage } from '@/types/setupMenu';
+import type { ForceImage } from '@/types/controlPanel';
 
 interface ImageIconProps {
   image: ForceImage;

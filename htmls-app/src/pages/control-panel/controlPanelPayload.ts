@@ -4,8 +4,8 @@ import type {
   AmphibiousLocation,
   Jammer,
   MissileSystems,
-  SetupResult,
-} from '@/types/setupMenu';
+  ControlPanelResult,
+} from '@/types/controlPanel';
 import type { C2Data, LandingUnitsData, MissileSystemData, SignalData } from '@/types/unitStatus';
 import { MOCK_ADD_UNIT_ACTIONS } from '@/data/addUnitsMenuData';
 import {
@@ -13,7 +13,7 @@ import {
   JAMMERS_DATA,
   MISSILE_SYSTEMS_DATA,
   AMPHIBIOUS_LOCATION_DATA,
-} from '@/data/setupMenuData';
+} from '@/data/controlPanelData';
 import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
 import type { SamDoctrineEntry } from './c2Nodes';
 import {
@@ -125,7 +125,7 @@ export interface EmconResult {
 }
 
 /** Deployment and SAM doctrine are one submission: both inputs or neither counts. */
-export function submitDeployment(result: SetupResult, doctrine: EmconResult): boolean {
+export function submitDeployment(result: ControlPanelResult, doctrine: EmconResult): boolean {
   const isDeploymentWritten = writeHostInput('summaryData', result);
   const isDoctrineWritten = writeHostInput('emconData', doctrine);
   return isDeploymentWritten && isDoctrineWritten;

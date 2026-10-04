@@ -1,6 +1,6 @@
 import type { LatLng, LatLngExpression } from 'leaflet';
 import type { Coordinate, CoordinateOffset } from '@/types/geo';
-import { CONFIG } from '@/constants/setupMenu';
+import { CONFIG } from '@/constants/controlPanel';
 
 /**
  * Coordinate helpers that every layer shares. Pure functions over

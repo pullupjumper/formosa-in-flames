@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/setupMenu';
+import type { MissileDeployment } from '@/types/controlPanel';
 import { resolveOpeningAngle } from '@/utils/map';
 import { previewDeployment, previewRelocation, previewRotation } from '@/utils/deploymentGeometry';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';

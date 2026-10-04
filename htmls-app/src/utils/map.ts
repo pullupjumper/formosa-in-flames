@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import { CONFIG } from '@/constants/setupMenu';
+import { CONFIG } from '@/constants/controlPanel';
 
 /**
  * Suggest which way a U-shape should open at a position: toward the coast the

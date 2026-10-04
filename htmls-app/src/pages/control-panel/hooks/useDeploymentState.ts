@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, Jammer } from '@/types/setupMenu';
+import type { MissileDeployment, Jammer } from '@/types/controlPanel';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { calculateBearing, isPointInTaiwan } from '@/utils/geo';
 import { resolveOpeningAngle } from '@/utils/map';

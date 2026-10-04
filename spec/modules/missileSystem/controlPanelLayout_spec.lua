@@ -1,10 +1,10 @@
--- MissileSystem SetupLayout Unit Tests
-local SetupLayout = require("src.modules.missileSystem.setupLayout")
+-- MissileSystem ControlPanelLayout Unit Tests
+local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
-describe("MissileSystem SetupLayout", function()
+describe("MissileSystem ControlPanelLayout", function()
   ---@type luassert.spy[]
   local activeStubs
 
@@ -31,7 +31,7 @@ describe("MissileSystem SetupLayout", function()
   -- Shared mock data builders
   -- ============================================================================
 
-  ---Create a one-waypoint setup menu path
+  ---Create a one-waypoint control panel path
   ---@param latitude number Distinguishes paths in assertions
   ---@return table
   local function makePath(latitude)
@@ -47,7 +47,7 @@ describe("MissileSystem SetupLayout", function()
     }
   end
 
-  ---Create a setup menu battery entry with two fire points
+  ---Create a control panel battery entry with two fire points
   ---@param overrides? table
   ---@return table
   local function makeEntry(overrides)
@@ -107,7 +107,7 @@ describe("MissileSystem SetupLayout", function()
     it("should turn every path into a fast course paired with its zone", function()
       trackStub(stub(Utils, "buildRandomText").returns("ABC"))
 
-      local layouts = SetupLayout.buildLayouts({ makeEntry() })
+      local layouts = ControlPanelLayout.buildLayouts({ makeEntry() })
 
       assert.are.same({
         {
@@ -134,7 +134,7 @@ describe("MissileSystem SetupLayout", function()
     it("should build one named layout per entry", function()
       local buildRandomTextStub = trackStub(stub(Utils, "buildRandomText").returns("AAA"))
 
-      local layouts = SetupLayout.buildLayouts({ makeEntry(), makeEntry({ unitname = "FU-2" }) })
+      local layouts = ControlPanelLayout.buildLayouts({ makeEntry(), makeEntry({ unitname = "FU-2" }) })
 
       assert.are.equal(2, #layouts)
       assert.are.equal("FU-2", layouts[2].unitname)
@@ -143,15 +143,15 @@ describe("MissileSystem SetupLayout", function()
 
     -- Boundary: nothing submitted means nothing to redeploy
     it("should return no layouts for no entries", function()
-      assert.are.same({}, SetupLayout.buildLayouts({}))
+      assert.are.same({}, ControlPanelLayout.buildLayouts({}))
     end)
   end)
 
   -- ============================================================================
-  -- buildSetupMenuRows
+  -- buildMissileSystemRows
   -- ============================================================================
 
-  describe("buildSetupMenuRows", function()
+  describe("buildMissileSystemRows", function()
     before_each(function()
       trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").invokes(function(selector)
         if selector.area[1] == "rp-1" then
@@ -164,9 +164,9 @@ describe("MissileSystem SetupLayout", function()
       end))
     end)
 
-    -- Positive: the setup menu only needs firing units
+    -- Positive: the control panel only needs firing units
     it("should drop resupply units and ammunitions from the copy", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildMissileSystemRows(makeMissileSystemConfigMap(), "Taiwan")
 
       assert.is_nil(rows.srbm.resupplyUnits)
       assert.is_nil(rows.srbm.ammunitions)
@@ -175,7 +175,7 @@ describe("MissileSystem SetupLayout", function()
 
     -- Positive: zone names become numeric vertices the menu can draw
     it("should resolve zone and mask names to numeric vertices", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildMissileSystemRows(makeMissileSystemConfigMap(), "Taiwan")
       local operationalArea = rows.srbm.firingUnits.fu.operationalArea
 
       assert.are.same({ { latitude = 25.5, longitude = 121.5 } }, operationalArea.HA[1].area)
@@ -186,7 +186,7 @@ describe("MissileSystem SetupLayout", function()
     it("should leave the source config untouched", function()
       local missileSystemConfigMap = makeMissileSystemConfigMap()
 
-      SetupLayout.buildSetupMenuRows(missileSystemConfigMap, "Taiwan")
+      ControlPanelLayout.buildMissileSystemRows(missileSystemConfigMap, "Taiwan")
 
       assert.are.same({ "rp-1" }, missileSystemConfigMap.srbm.firingUnits.fu.operationalArea.HA[1].area)
       assert.is_not_nil(missileSystemConfigMap.srbm.resupplyUnits)
@@ -194,14 +194,14 @@ describe("MissileSystem SetupLayout", function()
 
     -- Boundary: reference points that no longer exist keep their names
     it("should keep zone names that resolve to no vertices", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildMissileSystemRows(makeMissileSystemConfigMap(), "Taiwan")
 
       assert.are.same({ "rp-missing" }, rows.srbm.firingUnits.fu.operationalArea.FP[1].area)
     end)
 
     -- Boundary: an unresolved mask leaves no U-shape rather than an empty one
     it("should not set U-shape vertices when the mask does not resolve", function()
-      local rows = SetupLayout.buildSetupMenuRows(makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), "Taiwan")
+      local rows = ControlPanelLayout.buildMissileSystemRows(makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), "Taiwan")
 
       assert.is_nil(rows.srbm.firingUnits.fu.operationalArea.uShapeVertices)
     end)

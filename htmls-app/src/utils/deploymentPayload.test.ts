@@ -3,14 +3,14 @@ import {
   buildInjectedDeployments,
   fromOperationalArea,
   toExportPaths,
-  toSetupResult,
+  toControlPanelResult,
 } from '@/utils/deploymentPayload';
 import { createBudgetState } from '@/utils/budgetLedger';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
-import { MISSILE_SYSTEMS_DATA, JAMMERS_DATA } from '@/data/setupMenuData';
-import type { OperationalArea } from '@/types/setupMenu';
+import { MISSILE_SYSTEMS_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
+import type { OperationalArea } from '@/types/controlPanel';
 
 const [CATEGORY, SYSTEM] = Object.entries(MISSILE_SYSTEMS_DATA)[0];
 const [UNIT_NAME, UNIT] = Object.entries(SYSTEM.firingUnits)[0];
@@ -69,7 +69,7 @@ describe('toExportPaths', () => {
   });
 });
 
-describe('toSetupResult', () => {
+describe('toControlPanelResult', () => {
   it('uses the Lua field names and the trimmed paths', () => {
     const rng = createSeededRandom(7);
     const generated = generateDeploymentData({
@@ -82,7 +82,7 @@ describe('toSetupResult', () => {
     });
     expect(generated).not.toBeNull();
 
-    const result = toSetupResult({
+    const result = toControlPanelResult({
       budget: createBudgetState(1000),
       airbases: [],
       jammers: JAMMERS_DATA,
@@ -112,7 +112,7 @@ describe('toSetupResult', () => {
       validateTaiwanBoundary: false,
       rng,
     })!;
-    const exported = toSetupResult({
+    const exported = toControlPanelResult({
       budget: createBudgetState(0),
       airbases: [],
       jammers: [],

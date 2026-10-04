@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/setupMenu';
+import type { MissileDeployment, TacticalAreas } from '@/types/controlPanel';
 import type { RelocatingArea, SquareAreaType } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInPolygon, calculateCentroid } from '@/utils/geo';

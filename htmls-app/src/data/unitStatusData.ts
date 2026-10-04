@@ -41,7 +41,7 @@ export const SIGNALS_DATA: SignalData[] = [
 // MISSILE SYSTEM DATA (Mobile Launchers)
 // ============================================================================
 export const LAUNCHERS_DATA: MissileSystemData = {
-  // Names match the setup-menu mock so the control panel cards show their status
+  // Names match the control panel mock so the control panel cards show their status
   'Ammo Sec, Rocket Arty Coy, 58th Arty Command': [
     {
       name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',

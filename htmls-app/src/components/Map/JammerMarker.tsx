@@ -2,7 +2,7 @@ import { memo, useMemo, useCallback } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { Jammer } from '@/types/setupMenu';
+import type { Jammer } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { RangeCircle } from './primitives';
 import { EW_ICON_URL, EW_ICON_SIZE } from './icons';

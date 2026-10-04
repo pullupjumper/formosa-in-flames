@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { Airbase, MissileDeployment, Jammer } from '@/types/setupMenu';
+import type { Airbase, MissileDeployment, Jammer } from '@/types/controlPanel';
 import type { SignalData } from '@/types/unitStatus';
 import {
   BaseMap,

@@ -63,7 +63,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
 | Page directory | `kebab-case/` | `pages/control-panel/` |
 | Test | `*.test.ts` next to its subject | `utils/geo.test.ts` |
 
-`types/` holds types only; runtime values live in `constants/` (e.g. `CONFIG` in `constants/setupMenu.ts`).
+`types/` holds types only; runtime values live in `constants/` (e.g. `CONFIG` in `constants/controlPanel.ts`).
 
 ### Types
 
