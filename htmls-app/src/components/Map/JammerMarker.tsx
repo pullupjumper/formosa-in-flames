@@ -5,12 +5,13 @@ import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/setupMenu';
 import { toLeafletLatLng } from '@/utils/geo';
 import { RangeCircle } from './primitives';
+import { EW_ICON_URL, EW_ICON_SIZE } from './icons';
 
 // EW unit icon
 const EW_ICON = L.icon({
-  iconUrl: 'https://i.meee.com.tw/LO1UNjw.png',
-  iconSize: [25, 15],
-  iconAnchor: [25 / 2, 15 / 2],
+  iconUrl: EW_ICON_URL,
+  iconSize: [EW_ICON_SIZE.width, EW_ICON_SIZE.height],
+  iconAnchor: [EW_ICON_SIZE.width / 2, EW_ICON_SIZE.height / 2],
   popupAnchor: [0, -15],
 });
 

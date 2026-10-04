@@ -4,7 +4,9 @@ local constants = require("src.core.constants")
 local saveData = {}
 saveData.red = {}
 saveData.red.targetlist = {}
+saveData.red.deploymentLocked = false
 saveData.blue = {}
+saveData.blue.deploymentLocked = false
 saveData.ally = {}
 
 

@@ -34,6 +34,7 @@ export interface C2Unit {
   isOutOfComms: boolean;
   EMCONSetting: string;
   isDestroyed: boolean;
+  weaponFree: boolean;
 }
 
 export interface C2Node {

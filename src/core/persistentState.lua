@@ -54,6 +54,21 @@ function PersistentState.reset(defaults)
   gKH.State.SaveTableToKey(defaults, SAVE_KEY)
 end
 
+---Whether the side's one-time play-mode deployment was already submitted
+---@param state SBJ__SaveData
+---@param sideName string China or Taiwan
+---@return boolean
+function PersistentState.deploymentLocked(state, sideName)
+  return state[GameUtils.getCachedSideConfig(sideName).field].deploymentLocked == true
+end
+
+---Mark the side's deployment as submitted so the control panel refuses another one
+---@param state SBJ__SaveData Mutated
+---@param sideName string China or Taiwan
+function PersistentState.lockDeployment(state, sideName)
+  state[GameUtils.getCachedSideConfig(sideName).field].deploymentLocked = true
+end
+
 ---China fixed-target list built at init by the strike planner
 ---@param state SBJ__SaveData
 ---@return SBJ__TargetEntry[]

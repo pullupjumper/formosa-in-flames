@@ -36,6 +36,12 @@ function App() {
           >
             Add Units
           </a>
+          <a
+            href={getPageUrl('control-panel')}
+            className="rounded bg-accent-blue px-4 py-2 text-sm text-white hover:bg-accent-blue-hover"
+          >
+            Control Panel
+          </a>
         </div>
       </div>
     </div>

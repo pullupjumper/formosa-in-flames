@@ -85,12 +85,17 @@ function MapCursorStyle({ cursor }: { cursor: string }) {
 function MapResizeHandler() {
   const map = useMap();
 
+  // Leaflet does not notice container resizes (window or a dragged splitter) on its own
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(container);
+    const timeout = setTimeout(() => map.invalidateSize(), 100);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeout);
+    };
   }, [map]);
 
   return null;

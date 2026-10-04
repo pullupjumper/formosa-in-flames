@@ -13,64 +13,6 @@ local constants = require("src.core.constants")
 
 local UnitStatusUI = {}
 
----Generate HTML template for WCS settings UI
----@return string # HTML string representing the WCS settings page
-local function getWCSSettingTemplate()
-  return [[]]
-end
-
----Display HTML dialog for EMCON settings configuration
-function UnitStatusUI.buildWcsSettingTable()
-  local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.FACILITY)
-
-  if not filteredUnits then
-    return
-  end
-
-  local htmlTemplate = getWCSSettingTemplate()
-  local msg = string.format(htmlTemplate)
-  local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-
-  if form["pressed"] and form["pressed"] == "Done" then
-    local jsonStr = form["emconData"]:gsub("^'", ""):gsub("'$", "")
-    local result = gKH.json.parse(jsonStr)
-    ---@cast result SBJ__EmconResult
-
-    if result.doctrine and #result.doctrine > 0 then
-      IntegratedAirDefenseSystem.setSamDoctrine(result.doctrine, filteredUnits)
-    end
-  end
-end
-
----Create JSON string for base ammunition inventory data
----@param config SBJ__Config Configuration table
----@param sideName string Side name ('China' or 'Taiwan')
----@return string # JSON formatted ammunition inventory data
-local function createMagazineDataString(config, sideName)
-  local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local field = sideConfig.field
-  local rows = {}
-  local descriptors = config[field].air.deployedACs
-
-  for _, descriptor in ipairs(descriptors) do
-    local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
-
-    if base and descriptor.loadouts then
-      local obj = { name = descriptor.name, wpns = {} }
-
-      for _, magazine in ipairs(base.magazines) do
-        for _, wpn in ipairs(magazine.mag_weapons) do
-          table.insert(obj.wpns, { name = wpn.wpn_name, currWpn = wpn.wpn_current })
-        end
-      end
-
-      table.insert(rows, obj)
-    end
-  end
-
-  return gKH.json.stringify(rows)
-end
-
 ---Create JSON string for C2 system status data
 ---@param saveData SBJ__SaveData Saved game data
 ---@param sideName string Side name ('China' or 'Taiwan')
@@ -97,13 +39,15 @@ local function createC2NodeDataString(saveData, sideName, types)
           for _, SAMCtx in pairs(C2Ctx.sam) do
             local unit = GameApi.ScenEdit_GetUnit(SAMCtx.guid)
             local isDestroyed = unit == nil
+            local doctrine = GameApi.ScenEdit_GetDoctrine(SAMCtx.guid)
             rows[type][C2Ctx.guid]["SAM"][SAMCtx.guid] = {
               name = SAMCtx.name,
               OODADetection = tostring(SAMCtx.currOODA.detection) .. "/" .. tostring(SAMCtx.OODA.detection),
               OODATargeting = tostring(SAMCtx.currOODA.targeting) .. "/" .. tostring(SAMCtx.OODA.targeting),
               isOutOfComms = SAMCtx.isOutOfComms,
               EMCONSetting = SAMCtx.EMCONSetting,
-              isDestroyed = isDestroyed
+              isDestroyed = isDestroyed,
+              weaponFree = doctrine.weapon_control_status_air == constants.WCS.HOLD and false or true,
             }
           end
         end
@@ -147,21 +91,9 @@ local function createSignalDataString(saveData, sideName)
   return gKH.json.stringify(rows)
 end
 
----Get HTML template for comprehensive status dashboard with tabbed interface
----@return string # Complete HTML template with placeholders for data injection
-local function getHTMLTemplate()
-  return [[]]
-end
-
----Get HTML template for interactive deployment setup menu
----@return string # Setup menu template
-local function getSetupMenuTemplate()
-  return [[]]
-end
-
----Get HTML template for the add-units menu
----@return string # Add-units menu template
-local function getAddUnitsMenuTemplate()
+---Get HTML template for the control panel (deployment, signals, C2 and add-units in one page)
+---@return string # Control panel template
+local function getControlPanelTemplate()
   return [[]]
 end
 
@@ -260,30 +192,6 @@ local STATUS_UI_SIDES = {
 ---@cast STATUS_UI_SIDES table<string, {signalSide: string, c2Types: SBJ__C2TypeKey[], showsLandedUnits: boolean}>
 
 
----Create comprehensive status UI with multi-tab military dashboard
----@param config SBJ__Config Configuration table
----@param sideName string Side name ('China' or 'Taiwan')
-function UnitStatusUI.createUI(config, sideName)
-  local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.BLUE]
-
-  PersistentState.read(function(saveData)
-    local batteryRows = MissileSystem.buildBatteryStatusRows(config, saveData, sideName)
-    local landingUnitsString = view.showsLandedUnits
-        and gKH.json.stringify(LandingOps.countUnitsInEachArea(config))
-        or "{}"
-
-    local msg = string.format(
-      getHTMLTemplate(),
-      createSignalDataString(saveData, view.signalSide),
-      gKH.json.stringify(batteryRows),
-      createC2NodeDataString(saveData, sideName, view.c2Types),
-      createMagazineDataString(config, sideName),
-      landingUnitsString
-    )
-    GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-  end)
-end
-
 ---Apply the setup menu's submitted deployments: GNSS jammers, then aircraft, then missile batteries
 ---@param config SBJ__Config Configuration table; the side's ground config is mutated by battery redeploys
 ---@param saveData SBJ__SaveData Persistent save data; mutated
@@ -314,98 +222,106 @@ local function updateFromSetupResult(config, saveData, sideName, result)
   end
 end
 
----Create interactive setup menu for Taiwan deployment planning
----@param config SBJ__Config Configuration table
----@param sideName string Side name (currently only 'Taiwan' is supported)
-function UnitStatusUI.createSetupMenu(config, sideName)
-  PersistentState.update(function(saveData)
-    -- Prepare data for HTML template
-    local gpsJammerDataString = createGnssJammerDataString(config, sideName)
-    local deployedAircraftDataString = createDeployedAircraftDataString(config, sideName)
-    local missileSystemDataString = gKH.json.stringify(MissileSystem.buildSetupMenuRows(config, sideName))
-    local amphibiousLocationsDataString = createAmphibiousTaskForceLocationDataString(config)
-
-    local htmlTemplate = getSetupMenuTemplate()
-    local msg = string.format(
-      htmlTemplate,
-      gpsJammerDataString,
-      deployedAircraftDataString,
-      missileSystemDataString,
-      sideName,
-      amphibiousLocationsDataString
-    )
-
-    -- Display interactive setup dialog
-    local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
-
-    -- Process submitted configuration
-    if form["pressed"] and form["pressed"] == "Done" and form["summaryData"] then
-      -- Parse JSON configuration from form
-      local jsonStr = form["summaryData"]:gsub("^'", ""):gsub("'$", "")
-
-      if jsonStr == nil then
-        return
-      end
-
-      local result = gKH.json.parse(jsonStr)
-      ---@cast result SBJ__SetupResult
-      updateFromSetupResult(config, saveData, sideName, result)
-    end
-  end)
-end
-
 ---Same units as each side's `addXXX` special action scripts, in the order they run
 ---@type table<string, SBJ__AddUnitAction[]>
 local ADD_UNIT_ACTIONS = {
   [constants.SIDES.RED] = {
-    { id = "addACs", label = "Add aircraft", run = function(config)
-      UnitGenerator.addAircraft(config.red.air.deployedACs)
-    end },
-    { id = "addC2Facilities", label = "Add C2 facilities", run = function(config)
-      PersistentState.update(function(saveData)
-        IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
-      end)
-    end },
-    { id = "addCSG", label = "Add CSG", run = function(config)
-      UnitGenerator.createCSG(config.red.surface.lacm.csg)
-    end },
-    { id = "addGnssJammers", label = "Add GNSS jammers", run = function(config)
-      GnssJamming.deploySide(config, constants.SIDES.RED)
-    end },
-    { id = "addLandingShips", label = "Add landing ships", run = function(config)
-      UnitGenerator.removeLandingShips()
-      UnitGenerator.addLandingShips(config.red.amphibOps)
-    end },
-    { id = "addSAGs", label = "Add SAGs", run = function(config)
-      UnitGenerator.createSAGs(constants.SIDES.RED, config.red.amphibOps.sags)
-    end },
-    { id = "addSubmarines", label = "Add submarines", run = function(config)
-      UnitGenerator.addSubmarines(config, constants.SIDES.RED)
-    end },
-    { id = "addMissileSystems", label = "Add missile systems", run = function(config)
-      PersistentState.update(function(saveData)
-        MissileSystem.deploySide(config, saveData, constants.SIDES.RED)
-      end)
-    end },
+    {
+      id = "addACs",
+      label = "Add aircraft",
+      run = function(config)
+        UnitGenerator.addAircraft(config.red.air.deployedACs)
+      end
+    },
+    {
+      id = "addC2Facilities",
+      label = "Add C2 facilities",
+      run = function(config)
+        PersistentState.update(function(saveData)
+          IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
+        end)
+      end
+    },
+    {
+      id = "addCSG",
+      label = "Add CSG",
+      run = function(config)
+        UnitGenerator.createCSG(config.red.surface.lacm.csg)
+      end
+    },
+    {
+      id = "addGnssJammers",
+      label = "Add GNSS jammers",
+      run = function(config)
+        GnssJamming.deploySide(config, constants.SIDES.RED)
+      end
+    },
+    {
+      id = "addLandingShips",
+      label = "Add landing ships",
+      run = function(config)
+        UnitGenerator.removeLandingShips()
+        UnitGenerator.addLandingShips(config.red.amphibOps)
+      end
+    },
+    {
+      id = "addSAGs",
+      label = "Add SAGs",
+      run = function(config)
+        UnitGenerator.createSAGs(constants.SIDES.RED, config.red.amphibOps.sags)
+      end
+    },
+    {
+      id = "addSubmarines",
+      label = "Add submarines",
+      run = function(config)
+        UnitGenerator.addSubmarines(config, constants.SIDES.RED)
+      end
+    },
+    {
+      id = "addMissileSystems",
+      label = "Add missile systems",
+      run = function(config)
+        PersistentState.update(function(saveData)
+          MissileSystem.deploySide(config, saveData, constants.SIDES.RED)
+        end)
+      end
+    },
   },
   [constants.SIDES.BLUE] = {
-    { id = "addACs", label = "Add aircraft", run = function(config)
-      PersistentState.update(function(saveData)
-        UnitGenerator.addAircraft(config.blue.air.deployedACs)
-        CommsJamming.updateTargetAircraft(config, saveData)
-      end)
-    end },
-    { id = "addDeployedShipsAtPort", label = "Add deployed ships at port", run = function(config)
-      UnitGenerator.addDeployedShipsAtPort(constants.SIDES.BLUE, config.blue.surface.deployedShips)
-    end },
-    { id = "addSAGs", label = "Add SAGs", run = function(config)
-      UnitGenerator.createSAGs(constants.SIDES.BLUE, config.blue.surface.sags)
-    end },
-    { id = "addMissileSystems", label = "Add missile systems", run = function(config)
-      PersistentState.update(function(saveData)
-        MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
-      end)
-    end },
+    {
+      id = "addACs",
+      label = "Add aircraft",
+      run = function(config)
+        PersistentState.update(function(saveData)
+          UnitGenerator.addAircraft(config.blue.air.deployedACs)
+          CommsJamming.updateTargetAircraft(config, saveData)
+        end)
+      end
+    },
+    {
+      id = "addDeployedShipsAtPort",
+      label = "Add deployed ships at port",
+      run = function(config)
+        UnitGenerator.addDeployedShipsAtPort(constants.SIDES.BLUE, config.blue.surface.deployedShips)
+      end
+    },
+    {
+      id = "addSAGs",
+      label = "Add SAGs",
+      run = function(config)
+        UnitGenerator.createSAGs(constants.SIDES.BLUE, config.blue.surface.sags)
+      end
+    },
+    {
+      id = "addMissileSystems",
+      label = "Add missile systems",
+      run = function(config)
+        PersistentState.update(function(saveData)
+          MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
+        end)
+      end
+    },
   },
 }
 
@@ -426,28 +342,106 @@ local function runAddUnitActions(config, sideName, actionIds)
   end
 end
 
----Show the add-units menu and run what the player ticked
----@param config SBJ__Config Configuration table
+---Rows the add-units page lists for a side
 ---@param sideName string Side name ('China' or 'Taiwan')
-function UnitStatusUI.createAddUnitsMenu(config, sideName)
+---@return {id: string, label: string}[]
+local function buildAddUnitRows(sideName)
   local rows = {}
   for _, action in ipairs(ADD_UNIT_ACTIONS[sideName] or {}) do
     table.insert(rows, { id = action.id, label = action.label })
   end
+  return rows
+end
 
-  local msg = string.format(getAddUnitsMenuTemplate(), gKH.json.stringify(rows), sideName)
-  local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+---Parse a hidden-input value the page wrote, or nil when the page never wrote it.
+---CMO returns an untouched input as an empty string, which the JSON parser rejects.
+---@generic T
+---@param raw string|nil Raw form value, wrapped in single quotes by CMO
+---@return T|nil
+local function parseFormJson(raw)
+  if raw == nil then
+    return nil
+  end
+  local jsonStr = raw:gsub("^'", ""):gsub("'$", "")
+  if jsonStr == "" then
+    return nil
+  end
+  return gKH.json.parse(jsonStr)
+end
 
-  if not (form["pressed"] == "Done" and form["selectedActions"]) then
+---Apply the SAM doctrine the control panel submitted to the Taiwan facilities
+---@param doctrine SBJ__EmconResult|nil Parsed emconData
+local function applySamDoctrine(doctrine)
+  if not (doctrine and doctrine.sams and #doctrine.sams > 0) then
+    return
+  end
+  local facilities = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.FACILITY)
+  if facilities then
+    IntegratedAirDefenseSystem.setSamDoctrine(doctrine.sams, facilities)
+  end
+end
+
+---Show the control panel and apply what the player submitted.
+---In play mode (`config.isEditMode` false) the deployment is accepted once: the first
+---submission locks it, and later ones are ignored. Add-units is edit mode only.
+---@param config SBJ__Config Configuration table
+---@param sideName string Side name ('China' or 'Taiwan')
+function UnitStatusUI.createControlPanel(config, sideName)
+  local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.BLUE]
+  local isEditMode = config.isEditMode == true
+  local msg
+
+  local isLoaded = PersistentState.read(function(saveData)
+    local isLocked = not isEditMode and PersistentState.deploymentLocked(saveData, sideName)
+    local landingUnitsString = view.showsLandedUnits
+        and gKH.json.stringify(LandingOps.countUnitsInEachArea(config))
+        or "{}"
+
+    msg = string.format(
+      getControlPanelTemplate(),
+      createGnssJammerDataString(config, sideName),
+      createDeployedAircraftDataString(config, sideName),
+      gKH.json.stringify(MissileSystem.buildSetupMenuRows(config, sideName)),
+      sideName,
+      gKH.json.stringify(buildAddUnitRows(sideName)),
+      createAmphibiousTaskForceLocationDataString(config),
+      createC2NodeDataString(saveData, sideName, view.c2Types),
+      createSignalDataString(saveData, view.signalSide),
+      gKH.json.stringify(MissileSystem.buildBatteryStatusRows(config, saveData, sideName)),
+      landingUnitsString,
+      tostring(isEditMode),
+      tostring(isLocked)
+    )
+  end)
+  if not isLoaded then
     return
   end
 
-  local jsonStr = form["selectedActions"]:gsub("^'", ""):gsub("'$", "")
-  local result = gKH.json.parse(jsonStr)
-  ---@cast result SBJ__AddUnitsMenuResult
+  local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+  if form["pressed"] ~= "Done" then
+    return
+  end
 
-  if result and result.actionIds then
-    runAddUnitActions(config, sideName, result.actionIds)
+  local setupResult = parseFormJson(form["summaryData"])
+  if setupResult then
+    ---@cast setupResult SBJ__SetupResult
+    PersistentState.update(function(saveData)
+      if not isEditMode and PersistentState.deploymentLocked(saveData, sideName) then
+        return
+      end
+      updateFromSetupResult(config, saveData, sideName, setupResult)
+      if not isEditMode then
+        PersistentState.lockDeployment(saveData, sideName)
+      end
+    end)
+  end
+
+  applySamDoctrine(parseFormJson(form["emconData"]))
+
+  local addUnits = isEditMode and parseFormJson(form["selectedActions"])
+  if addUnits and addUnits.actionIds then
+    ---@cast addUnits SBJ__AddUnitsMenuResult
+    runAddUnitActions(config, sideName, addUnits.actionIds)
   end
 end
 

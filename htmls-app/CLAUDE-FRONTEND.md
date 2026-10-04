@@ -43,7 +43,7 @@ npm run test:watch   # Run Vitest in watch mode
 
 ### Testing
 Vitest + Testing Library (`happy-dom` environment).
-- Test files live next to their subject: `src/utils/geo.test.ts`, `src/pages/setup-menu/hooks/useDeploymentState.test.ts`
+- Test files live next to their subject: `src/utils/geo.test.ts`, `src/pages/control-panel/hooks/useDeploymentState.test.ts`
 - Randomness: Use `createSeededRandom(seed)` from `@/utils/random` so tests are reproducible
 - What to test: pure utilities, geometry invariants, hook state machines
 - What not to test: Leaflet rendering, mock data, presentational-only components
@@ -59,7 +59,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
 | React component | `PascalCase.tsx` | `DeploymentMap.tsx` |
 | Hook | `useX.ts` | `useDeploymentState.ts` |
 | utils / types / data / constants | `camelCase.ts` | `geo.ts`, `deploymentGeometry/` (a folder with an `index.ts` for a multi-file module) |
-| Page directory | `kebab-case/` | `pages/setup-menu/` |
+| Page directory | `kebab-case/` | `pages/control-panel/` |
 | Test | `*.test.ts` next to its subject | `utils/geo.test.ts` |
 
 `types/` holds types only; runtime values live in `constants/` (e.g. `CONFIG` in `constants/setupMenu.ts`).

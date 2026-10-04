@@ -34,6 +34,14 @@ export function readInjectedString(raw: string | undefined, fallback: string): s
   return trimmed ? trimmed : fallback;
 }
 
+/** Read an injected `true` / `false` flag. */
+export function readInjectedBoolean(raw: string | undefined, fallback: boolean): boolean {
+  const trimmed = raw?.trim().toLowerCase();
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  return fallback;
+}
+
 /**
  * Hand a payload back to the CMO host. `UI_CallAdvancedHTMLDialog` returns the
  * value of every named `<input>` in the page, so writing the hidden input is

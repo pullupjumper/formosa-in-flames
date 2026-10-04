@@ -49,13 +49,8 @@ end
 
 local function initSpecialActions()
   local actions = {
-    { path = "src\\scripts\\china\\specialActions\\unitStatusMenu.lua",    actionName = "Unit status menu" },
-    { path = "src\\scripts\\china\\specialActions\\setupMenu.lua",         actionName = "Setup menu" },
-    { path = "src\\scripts\\china\\specialActions\\addUnitsMenu.lua",      actionName = "Add units menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\wcsSettingMenu.lua",   actionName = "WCS setting menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\unitStatusMenu.lua",   actionName = "Unit status menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\setupMenu.lua",        actionName = "Setup menu" },
-    { path = "src\\scripts\\taiwan\\specialActions\\addUnitsMenu.lua",     actionName = "Add units menu" },
+    { path = "src\\scripts\\china\\specialActions\\controlPanel.lua",  actionName = "Control panel" },
+    { path = "src\\scripts\\taiwan\\specialActions\\controlPanel.lua", actionName = "Control panel" },
   }
 
   for _, action in ipairs(actions) do

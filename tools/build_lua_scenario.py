@@ -83,38 +83,22 @@ class HtmlInjectionSpec:
 
 HTML_INJECTION_SPECS: Tuple[HtmlInjectionSpec, ...] = (
     HtmlInjectionSpec(
-        html_filename="unit-status.html",
-        function_name="getHTMLTemplate",
-        placeholders=(
-            "__INJECT_SIGNALS__",
-            "__INJECT_LAUNCHERS__",
-            "__INJECT_C2__",
-            "__INJECT_BASE_WEAPONS__",
-            "__INJECT_LANDING_UNITS__",
-        ),
-    ),
-    HtmlInjectionSpec(
-        html_filename="setup-menu.html",
-        function_name="getSetupMenuTemplate",
+        html_filename="control-panel.html",
+        function_name="getControlPanelTemplate",
         placeholders=(
             "__INJECT_JAMMERS__",
             "__INJECT_AIRBASES__",
             "__INJECT_MISSILE_SYSTEMS__",
             "__INJECT_SIDE_NAME__",
-            "__INJECT_AMPHIBIOUS_LOCATIONS__",
-        ),
-    ),
-    HtmlInjectionSpec(
-        html_filename="add-units-menu.html",
-        function_name="getAddUnitsMenuTemplate",
-        placeholders=(
             "__INJECT_ADD_UNIT_ACTIONS__",
-            "__INJECT_SIDE_NAME__",
+            "__INJECT_AMPHIBIOUS_LOCATIONS__",
+            "__INJECT_C2__",
+            "__INJECT_SIGNALS__",
+            "__INJECT_LAUNCHERS__",
+            "__INJECT_LANDING_UNITS__",
+            "__INJECT_IS_EDIT_MODE__",
+            "__INJECT_IS_DEPLOY_LOCKED__",
         ),
-    ),
-    HtmlInjectionSpec(
-        html_filename="emcon-setting.html",
-        function_name="getWCSSettingTemplate",
     ),
 )
 

@@ -387,6 +387,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field subSurface SBJ__SubsurfaceOperationsContext Subsurface operations context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field dynamicOperations SBJ__DynamicOperationsContext Dynamic operations context
+---@field deploymentLocked boolean Play-mode control panel deployment already submitted
 
 ---Blue side saved data structure
 ---@class SBJ__BlueSaveData: table
@@ -395,6 +396,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air SBJ__AircraftSliceContext Aircraft context
 ---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
+---@field deploymentLocked boolean Play-mode control panel deployment already submitted
 
 ---Ally side saved data structure
 ---@class SBJ__AllySaveData: table
@@ -1741,9 +1743,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field AHA SBJ__MovementPath Ammo Holding Area path: reload point -> ammo holding area
 ---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
----Battery placement submitted by the setup menu
+---Battery placement submitted by the control panel
 ---@class SBJ__MissileSystemSetupEntry: table
----@field key string Setup menu row key
+---@field key string Control panel row key
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field category string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field center CMO__Location Center of the drawn layout
@@ -1751,7 +1753,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field tacticalAreas SBJ__TacticalAreas Drawn zones
 ---@field paths SBJ__MovementPaths Drawn movement paths
 
----Setup menu configuration result containing user selections
+---Control panel deployment result containing user selections
 ---@class SBJ__SetupResult: table
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
@@ -1769,7 +1771,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table
----@field doctrine {id: string, weaponsFree: boolean}[] SAM system deployment configurations
+---@field sams {name: string, guid: string, weaponsFree: boolean}[] SAM system deployment configurations
 
 -- ============================================================================
 -- Ground Operations (Fire Support) - FSEM Builder

@@ -3,12 +3,13 @@ import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { Airbase } from '@/types/setupMenu';
 import { toLeafletLatLng } from '@/utils/geo';
+import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from './icons';
 
 // Airbase icon
 const AIRBASE_ICON = L.icon({
-  iconUrl: 'https://i.meee.com.tw/5afNBSQ.png',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
+  iconUrl: AIRBASE_ICON_URL,
+  iconSize: [AIRBASE_ICON_SIZE.width, AIRBASE_ICON_SIZE.height],
+  iconAnchor: [AIRBASE_ICON_SIZE.width / 2, AIRBASE_ICON_SIZE.height / 2],
   popupAnchor: [0, -10],
 });
 

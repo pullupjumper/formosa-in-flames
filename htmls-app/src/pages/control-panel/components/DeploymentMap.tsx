@@ -1,0 +1,109 @@
+import type { Coordinate } from '@/types/geo';
+import type { Airbase, MissileDeployment, Jammer } from '@/types/setupMenu';
+import type { SignalData } from '@/types/unitStatus';
+import {
+  BaseMap,
+  AirbaseMarkers,
+  SignalMarkers,
+  DeployedMissileSystems,
+  MissileSystemPreview,
+  AreaRelocatePreview,
+  DeployedJammers,
+  JammerRelocatePreview,
+} from '@/components/Map';
+import type { RelocatingArea } from '@/types/deployment';
+import type { DeploymentPreview } from '../hooks/useDeploymentPreviews';
+
+// ============================================================================
+// DeploymentMap — the map layer stack for the Deployment tab
+// ============================================================================
+interface DeploymentMapProps {
+  sideName: string;
+  airbases: Airbase[];
+  jammers: Jammer[];
+  deployedSystems: Map<string, MissileDeployment>;
+  deployedJammers: Map<number, Coordinate>;
+  /** Detected signals shown as suspected C2 markers; the setup menu has none */
+  signals?: SignalData[];
+
+  /** True while some mode owns the next map click; drives cursor and hover */
+  isPlacementActive: boolean;
+  mousePosition: Coordinate | null;
+
+  /** Area currently armed for relocation, highlighted on the map */
+  relocatingArea: RelocatingArea | null;
+  rotatingUnitKey: string | null;
+  /** Jammer index being relocated, null while deploying a fresh one */
+  relocatingJammerIndex: number | null;
+  /** Jammer whose range circle follows the cursor, null outside jammer modes */
+  placingJammerUnit: Jammer | null;
+
+  deployPreview: DeploymentPreview | null;
+  rotationPreview: DeploymentPreview | null;
+  relocatePreviewVertices: Coordinate[] | null;
+
+  onMapClick: (position: Coordinate) => void;
+  onMouseMove: (position: Coordinate) => void;
+  onAreaClick: (area: RelocatingArea) => void;
+  onRotateClick: (unitKey: string) => void;
+  onAirbaseClick?: (index: number) => void;
+  onJammerRelocateClick: (index: number) => void;
+}
+
+export function DeploymentMap({
+  sideName,
+  airbases,
+  jammers,
+  deployedSystems,
+  deployedJammers,
+  signals,
+  isPlacementActive,
+  mousePosition,
+  relocatingArea,
+  rotatingUnitKey,
+  relocatingJammerIndex,
+  placingJammerUnit,
+  deployPreview,
+  rotationPreview,
+  relocatePreviewVertices,
+  onMapClick,
+  onMouseMove,
+  onAreaClick,
+  onRotateClick,
+  onAirbaseClick,
+  onJammerRelocateClick,
+}: DeploymentMapProps) {
+  return (
+    <BaseMap
+      onMapClick={onMapClick}
+      onMouseMove={isPlacementActive ? onMouseMove : undefined}
+      cursorStyle={isPlacementActive ? 'crosshair' : undefined}
+      sideName={sideName}
+    >
+      <AirbaseMarkers airbases={airbases} onAirbaseClick={onAirbaseClick} />
+      <DeployedMissileSystems
+        deployedSystems={deployedSystems}
+        onAreaClick={onAreaClick}
+        onRotateClick={onRotateClick}
+        relocatingArea={relocatingArea}
+        rotatingUnitKey={rotatingUnitKey}
+      />
+      {signals && <SignalMarkers signals={signals} />}
+      <DeployedJammers
+        jammers={jammers}
+        deployedPositions={deployedJammers}
+        relocatingIndex={relocatingJammerIndex}
+        onRelocateClick={onJammerRelocateClick}
+      />
+
+      {placingJammerUnit && mousePosition && (
+        <JammerRelocatePreview radius={placingJammerUnit.radius} position={mousePosition} />
+      )}
+      {relocatePreviewVertices && relocatingArea && (
+        <AreaRelocatePreview vertices={relocatePreviewVertices} areaType={relocatingArea.type} />
+      )}
+      {rotationPreview && <MissileSystemPreview {...rotationPreview} />}
+      {deployPreview && <MissileSystemPreview {...deployPreview} />}
+    </BaseMap>
+  );
+}

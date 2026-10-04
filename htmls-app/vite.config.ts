@@ -9,10 +9,7 @@ const page = process.env.BUILD_PAGE;
 
 // Page configurations: root directory for each page
 const pageConfigs: Record<string, string> = {
-  'setup-menu': resolve(__dirname, 'src/pages/setup-menu'),
-  'emcon-setting': resolve(__dirname, 'src/pages/emcon-setting'),
-  'unit-status': resolve(__dirname, 'src/pages/unit-status'),
-  'add-units-menu': resolve(__dirname, 'src/pages/add-units-menu'),
+  'control-panel': resolve(__dirname, 'src/pages/control-panel'),
 };
 
 const pageRoot = page ? pageConfigs[page] : __dirname;

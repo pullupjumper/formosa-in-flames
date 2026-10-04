@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = resolve(__dirname, '../../src/htmls');
 
-const pages = ['setup-menu', 'emcon-setting', 'unit-status', 'add-units-menu'];
+const pages = ['control-panel'];
 
 // Clean output directory
 if (existsSync(outDir)) {

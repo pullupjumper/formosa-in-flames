@@ -149,24 +149,20 @@
 
 ## 七、UI 層
 
-### 戰情儀表板（unit-status）
+### 控制面板（control-panel）
 
-- ✅ SIGINT無線電訊號表 — 偵測時間戳、次數、信心度、偵測等級
-- ✅ 飛彈系統 — 飛彈發射車與彈藥裝填車單位狀態、飛彈數量、再裝填進度條
-- ✅ C2 節點 — SAM與雷達的失聯狀態、EMCON、是否已被摧毀
-- ✅ 基地彈庫存量
-- ✅ 登陸區敵軍計算
-
-### 佈署規劃選單（setup-menu）
+單一頁面整合原本的戰情儀表板、佈署規劃、武器管制與新增單位選單。
 
 - ✅ OPORD 五段式軍用作戰命令書，含敵軍戰鬥序列、8 項下級部隊任務、MLCOA／MDCOA
 - ✅ 遊戲機制說明
-- ✅ Missile battery、Jammer、陣地部署，戰機掛載部署
-
-### 武器管制選單（emcon-setting）
-
-- ✅ PAC-3／天弓三／TC-2 的 Weapons Free / Hold 切換
-- ✅ 同步調整間歇輻射組態（`WakeWhenDetectingThreat` / `UseEmissionInterval`）
+- ✅ Jammer、Missile battery 陣地部署，戰機掛載部署（地圖操作）
+- ✅ SIGINT無線電訊號表 — 偵測時間戳、次數、信心度、偵測等級
+- ✅ 飛彈發射車狀態 — 單位狀態、飛彈數量、再裝填進度條
+- ✅ C2 節點 — SAM與雷達的失聯狀態、EMCON、是否已被摧毀
+- ✅ SAM Weapons Free / Hold 切換，同步調整間歇輻射組態（`WakeWhenDetectingThreat` / `UseEmissionInterval`）
+- ✅ 登陸區敵軍計算（僅共軍；遊玩模式不顯示）
+- ✅ 新增單位（Add Units）— 加飛機／C2／CSG／干擾機／登陸艦／SAG／潛艦／飛彈系統（僅編輯模式）
+- ✅ 編輯／遊玩模式 — `config.isEditMode = true` 無任何限制；`false`（`bash bin/build.sh -p`）隱藏 Landing Units 與 Add Units，且 Jammer／飛機／飛彈發射車部署只能提交一次，之後鎖定（`saveData.<side>.deploymentLocked`）
 
 ---
 
@@ -174,7 +170,6 @@
 
 ### Special Actions
 
-- ✅ 共軍 10 個手動選單 — Setup、Unit Status、加飛機／C2／CSG／干擾機／登陸艦／SAG／潛艦／飛彈系統
-- ✅ 台軍 7 個手動選單 — Setup、Unit Status、WCS Setting、加飛機／港內艦艇／SAG／飛彈系統
+- ✅ 共軍、台軍各 1 個手動選單 — Control panel
 
 ---

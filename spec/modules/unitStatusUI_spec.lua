@@ -5,7 +5,7 @@ local GnssJamming = require("src.modules.ew.gnssJamming")
 local UnitGenerator = require("src.modules.unitGenerator")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local MissileSystem = require("src.modules.missileSystem.init")
-local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local LandingOps = require("src.modules.landingOps.init")
 local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
@@ -69,185 +69,134 @@ describe("UnitStatusUI", function()
   end
 
   -- ============================================================================
-  -- createSetupMenu
+  -- createControlPanel
   -- ============================================================================
-
-  describe("createSetupMenu", function()
-    local removeJammersStub
-    local addGnssJammerStub
+  describe("createControlPanel", function()
     local addAircraftStub
-    local initTargetAircraftStub
-    local redeployStub
-    local saveData
-
-    ---Make the dialog return a submitted setup form
-    ---@param summaryJson string|nil JSON body of summaryData, nil to omit it
-    ---@param pressed? string Button pressed, defaults to Done
-    local function submit(summaryJson, pressed)
-      dialogStub.returns({
-        pressed = pressed or "Done",
-        summaryData = summaryJson and ("'" .. summaryJson .. "'") or nil
-      })
-    end
-
-    before_each(function()
-      saveData = makeSaveData()
-      trackStub(stub(PersistentState, "update").invokes(function(fn) fn(saveData) end))
-      removeJammersStub = trackStub(stub(GnssJamming, "removeJammers"))
-      addGnssJammerStub = trackStub(stub(GnssJamming, "addGnssJammer"))
-      addAircraftStub = trackStub(stub(UnitGenerator, "addAircraft"))
-      initTargetAircraftStub = trackStub(stub(CommsJamming, "updateTargetAircraft"))
-      redeployStub = trackStub(stub(MissileSystem, "redeployFromSetup"))
-    end)
-
-    -- Positive: every part of the submission reaches its owner
-    it("should apply jammers, aircraft and batteries from a full submission", function()
-      local config = makeConfig()
-      submit([[{"jammers":[{"name":"J-1"},{"name":"J-2"}],"airbases":[{"name":"AB-1"}],"missileSystems":[{"unitname":"FU-1"}]}]])
-
-      UnitStatusUI.createSetupMenu(config, constants.SIDES.BLUE)
-
-      assert.stub(removeJammersStub).was.called_with(constants.SIDES.BLUE, { { name = "J-1" }, { name = "J-2" } })
-      assert.stub(addGnssJammerStub).was.called(2)
-      assert.stub(addAircraftStub).was.called_with({ { name = "AB-1" } })
-      assert.stub(initTargetAircraftStub).was.called_with(config, saveData)
-      assert.stub(redeployStub).was.called_with(config, saveData, constants.SIDES.BLUE, { { unitname = "FU-1" } })
-    end)
-
-    -- Negative: comms jamming targets only Taiwan's aircraft
-    it("should skip comms jamming target registration for China", function()
-      submit([[{"airbases":[{"name":"AB-1"}]}]])
-
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.RED)
-
-      assert.stub(addAircraftStub).was.called(1)
-      assert.stub(initTargetAircraftStub).was_not.called()
-    end)
-
-    -- Negative: closing the dialog any other way discards the form
-    it("should apply nothing when the form is closed without Done", function()
-      submit([[{"airbases":[{"name":"AB-1"}]}]], "Cancel")
-
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.BLUE)
-
-      assert.stub(addAircraftStub).was_not.called()
-    end)
-
-    -- Negative: Done without a summary has nothing to apply
-    it("should apply nothing when the form has no summary", function()
-      submit(nil)
-
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.BLUE)
-
-      assert.stub(addAircraftStub).was_not.called()
-    end)
-
-    -- Boundary: empty lists must not clear existing jammers or redeploy batteries
-    it("should do nothing for an empty submission", function()
-      submit([[{"jammers":[],"airbases":[],"missileSystems":[]}]])
-
-      UnitStatusUI.createSetupMenu(makeConfig(), constants.SIDES.BLUE)
-
-      assert.stub(removeJammersStub).was_not.called()
-      assert.stub(addAircraftStub).was_not.called()
-      assert.stub(redeployStub).was_not.called()
-    end)
-  end)
-
-  -- ============================================================================
-  -- createUI
-  -- ============================================================================
-
-  describe("createUI", function()
-    local batteryStub
+    local sagStub
     local countUnitsStub
     local sigintSpy
     local saveData
 
+    ---@param isEditMode boolean
+    ---@return table
+    local function configFor(isEditMode)
+      local config = makeConfig({ isEditMode = isEditMode })
+      config.blue.surface = { sags = {} }
+      return config
+    end
+
+    ---@param form table
+    local function submit(form)
+      form.pressed = "Done"
+      dialogStub.returns(form)
+    end
+
+    local AIRCRAFT_FORM = { summaryData = "'{\"airbases\":[{\"name\":\"AB-1\"}]}'" }
+
     before_each(function()
       saveData = makeSaveData()
-      trackStub(stub(PersistentState, "read").invokes(function(fn) fn(saveData) end))
+      trackStub(stub(PersistentState, "read").invokes(function(fn) fn(saveData) return true end))
+      trackStub(stub(PersistentState, "update").invokes(function(fn) fn(saveData) end))
+      addAircraftStub = trackStub(stub(UnitGenerator, "addAircraft"))
+      sagStub = trackStub(stub(UnitGenerator, "createSAGs"))
+      trackStub(stub(MissileSystem, "buildBatteryStatusRows").returns({}))
+      countUnitsStub = trackStub(stub(LandingOps, "countUnitsInEachArea").returns({}))
       sigintSpy = trackStub(spy.on(PersistentState, "sigint"))
-      batteryStub = trackStub(stub(MissileSystem, "buildBatteryStatusRows").returns({}))
-      countUnitsStub = trackStub(stub(AmphibiousAssault, "countUnitsInEachArea").returns({}))
+      dialogStub.returns({})
+      trackStub(stub(CommsJamming, "updateTargetAircraft"))
     end)
 
-    -- Positive: China's dashboard adds landed units
+    -- Positive: China's page adds landed units
     it("should show landed units for China", function()
-      UnitStatusUI.createUI(makeConfig(), constants.SIDES.RED)
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.RED)
 
       assert.stub(countUnitsStub).was.called(1)
-      assert.stub(dialogStub).was.called(1)
     end)
 
-    -- Positive: Taiwan's SIGINT tab shows what US collectors heard
+    -- Positive: Taiwan's SIGINT shows what US collectors heard
     it("should read SIGINT from the US side when showing Taiwan", function()
-      UnitStatusUI.createUI(makeConfig(), constants.SIDES.BLUE)
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
 
       assert.spy(sigintSpy).was.called_with(saveData, "US")
     end)
 
-    -- Negative: Taiwan has no landing tab
+    -- Negative: Taiwan has no landing units
     it("should leave out landed units for Taiwan", function()
-      UnitStatusUI.createUI(makeConfig(), constants.SIDES.BLUE)
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
 
       assert.stub(countUnitsStub).was_not.called()
-      assert.stub(dialogStub).was.called(1)
-    end)
-  end)
-
-  -- ============================================================================
-  -- createAddUnitsMenu
-  -- ============================================================================
-  describe("createAddUnitsMenu", function()
-    local config = { blue = { surface = { sags = {} } } }
-    local sagStub
-    local csgStub
-
-    before_each(function()
-      sagStub = trackStub(stub(UnitGenerator, "createSAGs"))
-      csgStub = trackStub(stub(UnitGenerator, "createCSG"))
     end)
 
-    ---@param ids string
-    local function submit(ids)
-      dialogStub.returns({ pressed = "Done", selectedActions = "'{\"actionIds\":" .. ids .. "}'" })
-    end
+    -- Positive: edit mode never locks, so the deployment can be redone
+    it("should apply every submission in edit mode", function()
+      submit(AIRCRAFT_FORM)
 
-    -- Positive: only the ticked action runs
-    it("should run only the ticked actions", function()
-      submit('["addSAGs"]')
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
 
-      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+      assert.stub(addAircraftStub).was.called(2)
+      assert.is_not_true(saveData.blue.deploymentLocked)
+    end)
 
+    -- Positive: play mode accepts the first deployment then locks
+    it("should lock the deployment after the first play mode submission", function()
+      submit(AIRCRAFT_FORM)
+
+      UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
+
+      assert.stub(addAircraftStub).was.called(1)
+      assert.is_true(saveData.blue.deploymentLocked)
+    end)
+
+    -- Negative: a locked deployment ignores later submissions
+    it("should ignore a play mode submission once locked", function()
+      saveData.blue.deploymentLocked = true
+      submit(AIRCRAFT_FORM)
+
+      UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
+
+      assert.stub(addAircraftStub).was_not.called()
+    end)
+
+    -- Negative: the other side's lock is independent
+    it("should not lock the other side", function()
+      submit(AIRCRAFT_FORM)
+
+      UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
+
+      assert.is_not_true(saveData.red.deploymentLocked)
+    end)
+
+    -- Negative: add-units only exists in edit mode
+    it("should run add-units actions only in edit mode", function()
+      submit({ selectedActions = "'{\"actionIds\":[\"addSAGs\"]}'" })
+
+      UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
+      assert.stub(sagStub).was_not.called()
+
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
       assert.stub(sagStub).was.called(1)
     end)
 
-    -- Negative: nothing ticked
-    it("should run nothing for an empty selection", function()
-      submit("[]")
+    -- Boundary: CMO returns inputs the page never wrote as empty strings
+    it("should skip inputs left empty by the page", function()
+      submit({ summaryData = "'{\"airbases\":[{\"name\":\"AB-1\"}]}'", emconData = "", selectedActions = "''" })
 
-      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
 
+      assert.stub(addAircraftStub).was.called(1)
       assert.stub(sagStub).was_not.called()
     end)
 
-    -- Negative: id belongs to the other side
-    it("should ignore ids the side does not offer", function()
-      submit('["addCSG"]')
-
-      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
-
-      assert.stub(csgStub).was_not.called()
-    end)
-
-    -- Negative: dialog closed without Done
-    it("should do nothing when the dialog is dismissed", function()
+    -- Negative: dismissing the dialog neither applies nor locks
+    it("should neither apply nor lock when the dialog is dismissed", function()
       dialogStub.returns({})
 
-      UnitStatusUI.createAddUnitsMenu(config, constants.SIDES.BLUE)
+      UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
 
-      assert.stub(sagStub).was_not.called()
+      assert.stub(addAircraftStub).was_not.called()
+      assert.is_not_true(saveData.blue.deploymentLocked)
     end)
   end)
 end)

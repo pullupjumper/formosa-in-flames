@@ -16,6 +16,14 @@
   --color-accent-blue: #137cbd;
   --color-accent-blue-hover: #2b95d6;
 
+  /* Control panel (AIP-style) surfaces: pane < panel < card */
+  --color-aip-pane: #1e2a36;
+  --color-aip-panel: #263645;
+  --color-aip-card: #2f4152;
+  --color-aip-card-border: #4b6277;
+  --color-aip-border: #394e61;
+  --color-aip-link: #4c9be8;
+
   --color-status-success: #0f9960;
   --color-status-danger: #db3737;
   --color-status-warning: #d9822b;
@@ -55,4 +63,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #5c7080;
 }
-

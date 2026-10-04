@@ -3,14 +3,14 @@ import { CircleMarker, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, ForceImage, TacticalAreas } from '@/types/setupMenu';
+import type { MissileDeployment, TacticalAreas } from '@/types/setupMenu';
 import type { AreaType, RelocatingArea } from '@/types/deployment';
 import { CONFIG } from '@/constants/setupMenu';
 import { getAreaColor } from '@/constants/deployment';
 import { canInteractArea, getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
 import { TacticalPolygon, RangeCircle, ZoomGate, DETAIL_MIN_ZOOM } from './primitives';
-import { createImageIcon } from './icons';
+import { createImageIcon, ICON_IMAGES, getLauncherImage } from './icons';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 
 // ============================================================================
@@ -49,20 +49,6 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
   fillColor: getAreaColor('ushape'),
   fillOpacity: 1,
   weight: 2,
-};
-
-// ============================================================================
-// ICON
-// ============================================================================
-const MISSILE_ICON_URL = 'https://i.meee.com.tw/suDq81b.png';
-const SAM_ICON_URL = 'https://i.meee.com.tw/PCUEceO.png';
-const ATP_ICON_URL = 'https://i.meee.com.tw/t9aLh0K.png';
-const MSL_ICON_URL = 'https://i.meee.com.tw/lrsJGwE.png';
-const ICON_IMAGES: Record<string, ForceImage> = {
-  sam: { url: SAM_ICON_URL, label: 'SAM', width: 25, height: 15 },
-  ssm: { url: MISSILE_ICON_URL, label: 'SSM', width: 25, height: 15 },
-  atp: { url: ATP_ICON_URL, label: 'ATP', width: 25 * 1.5, height: 15 * 1.5 },
-  msl: { url: MSL_ICON_URL, label: 'MSL', width: 25 * 1.3, height: 15 * 1.3 },
 };
 
 // ============================================================================
@@ -168,10 +154,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [tacticalAreas.reloadArea]
   );
 
-  const icon = useMemo(
-    () => createImageIcon(category === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.ssm),
-    [category]
-  );
+  const icon = useMemo(() => createImageIcon(getLauncherImage(category)), [category]);
 
   // Fallback if no tactical areas
   if (!tacticalAreas.uShapeVertices || tacticalAreas.uShapeVertices.length === 0) {

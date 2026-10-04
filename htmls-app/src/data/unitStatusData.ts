@@ -41,10 +41,35 @@ export const SIGNALS_DATA: SignalData[] = [
 // MISSILE SYSTEM DATA (Mobile Launchers)
 // ============================================================================
 export const LAUNCHERS_DATA: MissileSystemData = {
+  // Names match the setup-menu mock so the control panel cards show their status
+  'Ammo Sec, Rocket Arty Coy, 58th Arty Command': [
+    {
+      name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+      missileSystemType: 'sam',
+      firingUnitState: 'STATIC',
+      resupplyUnitState: 'RELOAD',
+      firingUnitReloadTime: 0,
+      defaultReloadTime: 10,
+      resupplyUnitReloadTime: 4,
+      missilesInAmmoVehicles: 12,
+      missilesInAHA: 40,
+    },
+    {
+      name: 'Rocket Arty Coy, 58th Arty Command',
+      missileSystemType: 'srbm',
+      firingUnitState: 'HIDE',
+      resupplyUnitState: 'STATIC',
+      firingUnitReloadTime: 6,
+      defaultReloadTime: 10,
+      resupplyUnitReloadTime: 0,
+      missilesInAmmoVehicles: 6,
+      missilesInAHA: 18,
+    },
+  ],
   'Area A': [
     {
-      name: 'Launcher 1',
-      missileSystemType: 'Type 1',
+      name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+      missileSystemType: 'sam',
       firingUnitState: 'STATIC',
       resupplyUnitState: 'STATIC',
       firingUnitReloadTime: 10,
@@ -54,8 +79,19 @@ export const LAUNCHERS_DATA: MissileSystemData = {
       missilesInAHA: 10,
     },
     {
-      name: 'Launcher 2',
-      missileSystemType: 'Type 1',
+      name: 'Rocket Arty Coy, 58th Arty Command',
+      missileSystemType: 'srbm',
+      firingUnitState: 'STATIC',
+      resupplyUnitState: 'STATIC',
+      firingUnitReloadTime: 10,
+      defaultReloadTime: 100,
+      resupplyUnitReloadTime: 20,
+      missilesInAmmoVehicles: 5,
+      missilesInAHA: 10,
+    },
+    {
+      name: '1st Hai Feng Shore-based ASM MOB Sqn',
+      missileSystemType: 'ascm',
       firingUnitState: 'STATIC',
       resupplyUnitState: 'STATIC',
       firingUnitReloadTime: 10,
@@ -82,6 +118,16 @@ export const C2_DATA: C2Data = {
         isOutOfComms: false,
         EMCONSetting: 'Radar=Passive',
         isDestroyed: false,
+        weaponFree: false,
+      },
+      'XXXXXX-222': {
+        name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+        OODADetection: '15/15',
+        OODATargeting: '5/5',
+        isOutOfComms: false,
+        EMCONSetting: 'Radar=Passive',
+        isDestroyed: false,
+        weaponFree: false,
       },
     },
   },
@@ -96,6 +142,7 @@ export const C2_DATA: C2Data = {
         isOutOfComms: false,
         EMCONSetting: 'Radar=Passive',
         isDestroyed: false,
+        weaponFree: false,
       },
       'X58F5H-0HMT5ODVUIBFJ': {
         name: 'SAM Bn (HQ-22)',
@@ -104,6 +151,7 @@ export const C2_DATA: C2Data = {
         isOutOfComms: false,
         EMCONSetting: 'Radar=Passive',
         isDestroyed: false,
+        weaponFree: false,
       },
     },
   },
