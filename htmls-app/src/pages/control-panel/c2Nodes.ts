@@ -2,7 +2,7 @@ import type { C2Data, C2Node, C2Unit } from '@/types/unitStatus';
 import type { MissileGroupUnit } from '@pages/control-panel/missileGroups';
 
 /**
- * View model for the C2 Nodes panel: each node with its radar and SAM units,
+ * View model for the C2 Nodes section: each node with its radar and SAM units,
  * and the launcher a SAM unit can be deployed through when the missile system
  * list knows it too.
  */

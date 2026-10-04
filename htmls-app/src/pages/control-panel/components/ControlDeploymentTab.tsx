@@ -8,14 +8,14 @@ import { submitDeployment, type ControlPanelPayload } from '../controlPanelPaylo
 import type { DeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
 import { Panel } from './Panel';
-import { JammerPanel } from './JammerPanel';
-import { LandingUnitsPanel } from './LandingUnitsPanel';
+import { JammerSection } from './JammerSection';
+import { LandingUnitsSection } from './LandingUnitsSection';
 import { MapStatusBar } from './MapStatusBar';
 import { SubmitBar } from './SubmitBar';
-import { SignalPanel } from './SignalPanel';
-import { C2NodesPanel } from './C2NodesPanel';
-import { AircraftBasesPanel } from './AircraftBasesPanel';
-import { LauncherPanel } from './LauncherPanel';
+import { SignalSection } from './SignalSection';
+import { C2NodesSection } from './C2NodesSection';
+import { AircraftBasesSection } from './AircraftBasesSection';
+import { LauncherSection } from './LauncherSection';
 import { ResizeHandle } from './ResizeHandle';
 
 // SAM launchers are deployed from their C2 node card, not the launcher list
@@ -125,7 +125,7 @@ export function ControlDeploymentTab({
           locked={isDeploymentLocked}
           badge={`${deployedJammers.size}/${jammers.length}`}
         >
-          <JammerPanel
+          <JammerSection
             jammers={jammers}
             deployedJammers={deployedJammers}
             expandedJammerIndex={deployment.expandedJammerIndex}
@@ -137,7 +137,7 @@ export function ControlDeploymentTab({
         </Panel>
 
         <Panel title="C2 Nodes" badge={`${c2Nodes.length}`}>
-          <C2NodesPanel
+          <C2NodesSection
             nodes={shownC2Nodes}
             samWeaponsFree={samUnits.length > 0 && samUnits.every((sam) => sam.weaponFree)}
             onSamWeaponsFreeChange={setSamWeaponsFree}
@@ -152,12 +152,12 @@ export function ControlDeploymentTab({
         </Panel>
 
         <Panel title="Signals" badge={`${signals.length}`}>
-          <SignalPanel signals={signals} />
+          <SignalSection signals={signals} />
         </Panel>
 
         {showLandingUnits && (
           <Panel title="Landing Units" badge={`${Object.keys(landingUnits).length}`}>
-            <LandingUnitsPanel landingUnits={landingUnits} />
+            <LandingUnitsSection landingUnits={landingUnits} />
           </Panel>
         )}
 
@@ -166,7 +166,7 @@ export function ControlDeploymentTab({
           locked={isDeploymentLocked}
           badge={`${deployedLaunchers}/${totalLaunchers}`}
         >
-          <LauncherPanel
+          <LauncherSection
             missileGroups={launcherGroups}
             launcherStatus={launcherStatus}
             expandedUnitKey={deployment.expandedUnitKey}
@@ -182,7 +182,7 @@ export function ControlDeploymentTab({
           locked={isDeploymentLocked}
           badge={`Budget ${budget.current}`}
         >
-          <AircraftBasesPanel
+          <AircraftBasesSection
             airbases={airbases}
             baselineAirbases={payload.airbases}
             budget={budget}

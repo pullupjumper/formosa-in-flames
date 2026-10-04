@@ -4,13 +4,13 @@ import { ICON_IMAGES } from '@/components/Map';
 import { formatTimestamp } from '@/utils/format';
 
 // ============================================================================
-// SignalPanel — one suspected C2 card per detected signal
+// SignalSection — one suspected C2 card per detected signal
 // ============================================================================
-interface SignalPanelProps {
+interface SignalSectionProps {
   signals: SignalData[];
 }
 
-export function SignalPanel({ signals }: SignalPanelProps) {
+export function SignalSection({ signals }: SignalSectionProps) {
   if (signals.length === 0) {
     return <div className="text-xs italic text-text-secondary">No signal data available</div>;
   }

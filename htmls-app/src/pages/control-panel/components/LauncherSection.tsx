@@ -6,9 +6,9 @@ import { getLauncherStatus, type LauncherStatusMap } from '../launcherStatus';
 import { LauncherStatusDetails } from './LauncherStatusDetails';
 
 // ============================================================================
-// LauncherPanel — missile launcher groups for the control panel
+// LauncherSection — missile launcher groups for the control panel
 // ============================================================================
-interface LauncherPanelProps {
+interface LauncherSectionProps {
   missileGroups: MissileGroup[];
   launcherStatus: LauncherStatusMap;
   expandedUnitKey: string | null;
@@ -19,7 +19,7 @@ interface LauncherPanelProps {
   onCancelSelection: () => void;
 }
 
-export function LauncherPanel({
+export function LauncherSection({
   missileGroups,
   launcherStatus,
   expandedUnitKey,
@@ -27,7 +27,7 @@ export function LauncherPanel({
   onUnitSelect,
   onUndeploy,
   onCancelSelection,
-}: LauncherPanelProps) {
+}: LauncherSectionProps) {
   if (missileGroups.length === 0) {
     return (
       <div className="text-xs italic text-text-secondary">No missile system units available</div>

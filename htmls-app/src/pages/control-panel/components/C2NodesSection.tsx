@@ -9,9 +9,9 @@ import { SamDoctrineToggle } from './SamDoctrineToggle';
 import { TreeRow } from './TreeRow';
 
 // ============================================================================
-// C2NodesPanel — C2 nodes on the left, their radar and SAM units on the right
+// C2NodesSection — C2 nodes on the left, their radar and SAM units on the right
 // ============================================================================
-interface C2NodesPanelProps {
+interface C2NodesSectionProps {
   nodes: C2NodeView[];
   samWeaponsFree: boolean;
   onSamWeaponsFreeChange: (weaponsFree: boolean) => void;
@@ -25,7 +25,7 @@ interface C2NodesPanelProps {
   onCancelSelection: () => void;
 }
 
-export function C2NodesPanel({
+export function C2NodesSection({
   nodes,
   samWeaponsFree,
   onSamWeaponsFreeChange,
@@ -36,7 +36,7 @@ export function C2NodesPanel({
   onUnitSelect,
   onUndeploy,
   onCancelSelection,
-}: C2NodesPanelProps) {
+}: C2NodesSectionProps) {
   return (
     <div>
       <SamDoctrineToggle weaponsFree={samWeaponsFree} onChange={onSamWeaponsFreeChange} />
@@ -81,7 +81,7 @@ export function C2NodesPanel({
 // ChildCard — deployable when the SAM has a launcher, plain otherwise
 // ============================================================================
 interface ChildCardProps extends Omit<
-  C2NodesPanelProps,
+  C2NodesSectionProps,
   'nodes' | 'samWeaponsFree' | 'onSamWeaponsFreeChange'
 > {
   child: C2Child;

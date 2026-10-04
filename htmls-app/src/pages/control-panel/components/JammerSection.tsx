@@ -1,12 +1,12 @@
 import type { Coordinate } from '@/types/geo';
-import type { Jammer } from '@/types/setupMenu';
+import type { Jammer } from '@/types/controlPanel';
 import { EW_ICON_URL, EW_ICON_SIZE } from '@/components/Map';
 import { DeployableUnitCard } from '@pages/control-panel/components/DeployableUnitCard';
 
 // ============================================================================
-// JammerPanel — GPS jammer cards for the control panel
+// JammerSection — GPS jammer cards for the control panel
 // ============================================================================
-interface JammerPanelProps {
+interface JammerSectionProps {
   jammers: Jammer[];
   deployedJammers: Map<number, Coordinate>;
   expandedJammerIndex: number | null;
@@ -17,7 +17,7 @@ interface JammerPanelProps {
   onCancelSelection: () => void;
 }
 
-export function JammerPanel({
+export function JammerSection({
   jammers,
   deployedJammers,
   expandedJammerIndex,
@@ -25,7 +25,7 @@ export function JammerPanel({
   onJammerSelect,
   onUndeployJammer,
   onCancelSelection,
-}: JammerPanelProps) {
+}: JammerSectionProps) {
   if (jammers.length === 0) {
     return <div className="text-xs italic text-text-secondary">No jammer units available</div>;
   }

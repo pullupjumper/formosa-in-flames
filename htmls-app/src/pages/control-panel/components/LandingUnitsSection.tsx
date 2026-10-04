@@ -5,13 +5,13 @@ import { InfoCard } from './InfoCard';
 import { TreeRow } from './TreeRow';
 
 // ============================================================================
-// LandingUnitsPanel — landing areas on the left, their unit counts on the right
+// LandingUnitsSection — landing areas on the left, their unit counts on the right
 // ============================================================================
-interface LandingUnitsPanelProps {
+interface LandingUnitsSectionProps {
   landingUnits: LandingUnitsData;
 }
 
-export function LandingUnitsPanel({ landingUnits }: LandingUnitsPanelProps) {
+export function LandingUnitsSection({ landingUnits }: LandingUnitsSectionProps) {
   const areas = Object.entries(landingUnits || {});
 
   if (areas.length === 0) {

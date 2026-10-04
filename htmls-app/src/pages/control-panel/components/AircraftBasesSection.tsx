@@ -1,11 +1,11 @@
-import type { Airbase, BudgetState } from '@/types/setupMenu';
+import type { Airbase, BudgetState } from '@/types/controlPanel';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/Map';
 import { BaseEditor } from '@pages/control-panel/components/BaseEditor';
 
 // ============================================================================
-// AircraftBasesPanel — budget plus one loadout card per airbase
+// AircraftBasesSection — budget plus one loadout card per airbase
 // ============================================================================
-interface AircraftBasesPanelProps {
+interface AircraftBasesSectionProps {
   airbases: Airbase[];
   /** Untouched injected airbases, used as the budget floor. See BaseEditor. */
   baselineAirbases: Airbase[];
@@ -15,14 +15,14 @@ interface AircraftBasesPanelProps {
   onError: (message: string) => void;
 }
 
-export function AircraftBasesPanel({
+export function AircraftBasesSection({
   airbases,
   baselineAirbases,
   budget,
   onBudgetChange,
   onUpdateAirbase,
   onError,
-}: AircraftBasesPanelProps) {
+}: AircraftBasesSectionProps) {
   return (
     <div>
       <BudgetMeter budget={budget} />
