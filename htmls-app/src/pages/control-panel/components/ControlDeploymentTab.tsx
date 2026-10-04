@@ -29,7 +29,7 @@ const MAX_SIDEBAR_WIDTH = 900;
 const DEFAULT_SIDEBAR_WIDTH = 650;
 
 interface ControlDeploymentTabProps {
-  /** Injected payload; its airbases are the untouched budget floor. See AircraftPanel. */
+  /** Injected payload; its airbases are the untouched budget floor. See BaseEditor. */
   payload: ControlPanelPayload;
   airbases: Airbase[];
   budget: BudgetState;
@@ -181,10 +181,8 @@ export function ControlDeploymentTab({
           <LauncherPanel
             missileGroups={launcherGroups}
             launcherStatus={launcherStatus}
-            collapsedCategories={deployment.collapsedCategories}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
-            onToggleCategory={deployment.toggleCategory}
             onUnitSelect={deployment.handleUnitSelect}
             onUndeploy={deployment.handleUndeploy}
             onCancelSelection={deployment.handleCancelSelect}

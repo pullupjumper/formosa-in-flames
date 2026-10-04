@@ -99,9 +99,7 @@ export function useDeploymentState({
 
   // Sidebar presentation state, independent of the mode machine
   const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [expandedJammerIndex, setExpandedJammerIndex] = useState<number | null>(null);
-  const [isJammersCollapsed, setIsJammersCollapsed] = useState(false);
 
   const lastMouseMoveRef = useRef(0);
   const isPlacementActive = isPlacementMode(mode);
@@ -335,13 +333,6 @@ export function useDeploymentState({
     setStatus(DEFAULT_STATUS);
   }, []);
 
-  /** Drops a pending mode without overwriting a real result in the status line */
-  const clearPlacement = useCallback(() => {
-    if (modeRef.current.kind === 'idle') return;
-    dispatch({ type: 'reset' });
-    setStatus(DEFAULT_STATUS);
-  }, []);
-
   // Cross-mode arbitration lives in these handlers, not in Leaflet hit-testing:
   // react-leaflet only reads `interactive` when it constructs a layer, so
   // toggling that prop on a mounted Polygon/Marker has no effect. A layer that
@@ -435,49 +426,6 @@ export function useDeploymentState({
     setStatus(message);
   }, []);
 
-  // ============================================================================
-  // Sidebar Collapse
-  // ============================================================================
-  const toggleCategory = useCallback(
-    (category: string) => {
-      const willCollapse = !collapsedCategories.has(category);
-
-      setCollapsedCategories((prev) => {
-        const next = new Set(prev);
-        if (willCollapse) next.add(category);
-        else next.delete(category);
-        return next;
-      });
-
-      if (!willCollapse) return;
-
-      // Collapsing hides the per-unit controls, so drop any pending sidebar
-      // state in this category that would otherwise become unreachable.
-      if (expandedUnitKey && deployedSystems.get(expandedUnitKey)?.category === category) {
-        setExpandedUnitKey(null);
-      }
-      if (mode.kind === 'deploy' && mode.unit.category === category) {
-        dispatch({ type: 'reset' });
-        setStatus(DEFAULT_STATUS);
-      }
-    },
-    [collapsedCategories, expandedUnitKey, deployedSystems, mode]
-  );
-
-  const toggleJammers = useCallback(() => {
-    const willCollapse = !isJammersCollapsed;
-    setIsJammersCollapsed(willCollapse);
-    if (!willCollapse) return;
-
-    setExpandedJammerIndex(null);
-    // Same reasoning as toggleCategory: a pending selection would lose its
-    // Cancel button. Relocation is driven from the map, so it survives.
-    if (mode.kind === 'placeJammer' && !mode.isRelocate) {
-      dispatch({ type: 'reset' });
-      setStatus(DEFAULT_STATUS);
-    }
-  }, [isJammersCollapsed, mode]);
-
   // ESC cancels whichever mode currently owns the map click. Keyed on whether a
   // mode is live rather than on `mode` itself, so sweeping a rotation angle does
   // not re-register the listener on every mouse move.
@@ -522,9 +470,7 @@ export function useDeploymentState({
 
     // Sidebar
     expandedUnitKey,
-    collapsedCategories,
     expandedJammerIndex,
-    isJammersCollapsed,
 
     // Derived
     relocatingArea,
@@ -550,9 +496,6 @@ export function useDeploymentState({
     // Always live
     handleMouseMove,
     handleCancelSelect,
-    clearPlacement,
-    toggleCategory,
-    toggleJammers,
     handleAircraftError,
   };
 }

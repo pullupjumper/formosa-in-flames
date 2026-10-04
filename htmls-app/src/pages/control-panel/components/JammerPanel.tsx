@@ -36,7 +36,6 @@ export function JammerPanel({
         const deployment = deployedJammers.get(index);
         return (
           <DeployableUnitCard
-            variant="aip"
             icon={
               <img
                 src={EW_ICON_URL}

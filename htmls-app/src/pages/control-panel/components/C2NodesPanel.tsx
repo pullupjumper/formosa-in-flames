@@ -119,7 +119,6 @@ function ChildCard({
 
   return (
     <DeployableUnitCard
-      variant="aip"
       name={launcher.name}
       icon={icon}
       details={details}

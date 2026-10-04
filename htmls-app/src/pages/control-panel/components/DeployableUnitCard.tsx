@@ -3,11 +3,7 @@ import type { ReactNode } from 'react';
 // ============================================================================
 // DeployableUnitCard — shared sidebar card for jammers and missile systems
 // ============================================================================
-export type CardVariant = 'default' | 'aip';
-
 interface DeployableUnitCardProps {
-  /** `aip` is the control panel's AIP-terminal palette */
-  variant?: CardVariant;
   name: string;
   /** Optional symbol shown left of the name and details */
   icon?: ReactNode;
@@ -23,22 +19,10 @@ interface DeployableUnitCardProps {
   onCancelSelection: () => void;
 }
 
-const CARD_TONES: Record<
-  CardVariant,
-  { shape: string; idle: string; selected: string; deployed: string }
-> = {
-  default: {
-    shape: 'rounded-sm',
-    idle: 'border-dark-border bg-dark-hover hover:bg-dark-border',
-    selected: 'border-accent-blue bg-accent-blue/20',
-    deployed: 'border-status-success border-l-4 bg-status-success/10',
-  },
-  aip: {
-    shape: '',
-    idle: 'border-aip-card-border bg-aip-card hover:border-aip-link',
-    selected: 'border-aip-link bg-aip-card',
-    deployed: 'border-aip-card-border border-l-4 border-l-status-success bg-aip-card',
-  },
+const CARD_TONES = {
+  idle: 'border-aip-card-border bg-aip-card hover:border-aip-link',
+  selected: 'border-aip-link bg-aip-card',
+  deployed: 'border-aip-card-border border-l-4 border-l-status-success bg-aip-card',
 };
 
 /**
@@ -46,7 +30,6 @@ const CARD_TONES: Record<
  * Deployed cards reveal their Cancel Deployment button only when expanded.
  */
 export function DeployableUnitCard({
-  variant = 'default',
   name,
   icon,
   details,
@@ -58,11 +41,10 @@ export function DeployableUnitCard({
   onCancelDeployment,
   onCancelSelection,
 }: DeployableUnitCardProps) {
-  const tone = CARD_TONES[variant];
   return (
     <div
-      className={`cursor-pointer border p-2.5 text-xs transition-colors ${tone.shape} ${
-        isDeployed ? tone.deployed : isSelected ? tone.selected : tone.idle
+      className={`cursor-pointer border p-2.5 text-xs transition-colors ${
+        isDeployed ? CARD_TONES.deployed : isSelected ? CARD_TONES.selected : CARD_TONES.idle
       }`}
       onClick={onSelect}
     >

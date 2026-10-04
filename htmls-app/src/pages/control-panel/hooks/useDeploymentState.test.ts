@@ -5,10 +5,6 @@ import type { MissileDeployment, Jammer } from '@/types/setupMenu';
 import { useDeploymentState } from '@/pages/control-panel/hooks/useDeploymentState';
 import type { UseDeploymentStateParams } from '@/pages/control-panel/hooks/useDeploymentState';
 import {
-  useAircraftPanel,
-  AIRCRAFT_PANEL_STATUS,
-} from '@/pages/control-panel/hooks/useAircraftPanel';
-import {
   deploymentModeReducer,
   IDLE_STATE,
   DEFAULT_STATUS,
@@ -70,15 +66,14 @@ beforeEach(() => {
 });
 
 /**
- * Mirrors DeploymentTab: the deployment state machine plus the aircraft panel
- * wired to it, so the one-way coupling between them is under test too.
+ * Mirrors DeploymentTab: the deployment state machine, rendered on its own.
  */
 function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
   // One stream per hook instance, created outside the render callback so the
   // reference stays stable and the sequence is not reset on every render.
   const rng = createSeededRandom(SEED);
-  return renderHook(() => {
-    const deployment = useDeploymentState({
+  return renderHook(() =>
+    useDeploymentState({
       jammers: JAMMERS,
       deployedSystems: new Map(),
       deployedJammers: new Map(),
@@ -86,14 +81,8 @@ function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
       rng,
       ...handlers,
       ...overrides,
-    });
-    const aircraft = useAircraftPanel({
-      status: deployment.status,
-      isPlacementActive: deployment.isPlacementActive,
-      onEnterPanel: deployment.clearPlacement,
-    });
-    return { ...deployment, ...aircraft };
-  });
+    })
+  );
 }
 
 /** Asserts the active mode and narrows it for the caller's follow-up checks */
@@ -252,14 +241,12 @@ describe('deploymentModeReducer', () => {
 // INITIAL STATE
 // ============================================================================
 describe('useDeploymentState initial state', () => {
-  it('starts idle on the aircraft panel', () => {
+  it('starts idle', () => {
     const { result } = setup();
     expectIdle(result.current.mode);
     expect(result.current.mousePosition).toBeNull();
     expect(result.current.isPlacementActive).toBe(false);
     expect(result.current.status).toBe(DEFAULT_STATUS);
-    // The generic hint is replaced while the aircraft panel is showing.
-    expect(result.current.displayStatus).toBe(AIRCRAFT_PANEL_STATUS);
   });
 });
 
@@ -291,12 +278,6 @@ describe('isLocked', () => {
     expect(handlers.onUndeployJammer).not.toHaveBeenCalled();
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expect(handlers.onDeployJammer).not.toHaveBeenCalled();
-  });
-
-  it('still lets the user open the sidebar groups', () => {
-    const { result } = setup({ isLocked: true });
-    act(() => result.current.toggleCategory('ascm'));
-    expect(result.current.collapsedCategories.has('ascm')).toBe(true);
   });
 });
 
@@ -415,38 +396,6 @@ describe('mode arbitration', () => {
     const { result } = setup();
     act(() => result.current.handleRotateClick(UNIT_KEY));
     expectIdle(result.current.mode);
-  });
-
-  it('suppresses airbase selection while a placement mode owns the map click', () => {
-    const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleAirbaseClick(2));
-    expect(result.current.selectedBaseIndex).toBeNull();
-
-    act(() => result.current.handleCancelSelect());
-    act(() => result.current.handleAirbaseClick(2));
-    expect(result.current.selectedBaseIndex).toBe(2);
-    expect(result.current.sidebarPanel).toBe('aircraft');
-  });
-
-  it('clears pending modes when switching back to the aircraft panel', () => {
-    const { result } = setup();
-    act(() => result.current.handleSidebarPanelChange('ground'));
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.handleSidebarPanelChange('aircraft'));
-
-    expectIdle(result.current.mode);
-    expect(result.current.isPlacementActive).toBe(false);
-    expect(result.current.status).toBe(DEFAULT_STATUS);
-  });
-
-  it('keeps a real result in the status line when no mode was pending', () => {
-    const { result } = setup();
-    act(() => result.current.handleUndeploy(UNIT_KEY, UNIT_NAME));
-    act(() => result.current.handleSidebarPanelChange('ground'));
-    act(() => result.current.handleSidebarPanelChange('aircraft'));
-
-    expect(result.current.status).toContain(UNIT_NAME);
   });
 });
 
@@ -713,50 +662,6 @@ describe('preview data', () => {
     act(() => result.current.handleJammerSelect(0));
     expect(result.current.mousePosition).toBeNull();
     expect(result.current.previewData).toBeNull();
-  });
-});
-
-// ============================================================================
-// SIDEBAR COLLAPSE
-// ============================================================================
-describe('sidebar collapse', () => {
-  it('drops a pending selection in the collapsed category', () => {
-    const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.toggleCategory('ascm'));
-
-    expect(result.current.collapsedCategories.has('ascm')).toBe(true);
-    expectIdle(result.current.mode);
-    expect(result.current.status).toBe(DEFAULT_STATUS);
-  });
-
-  it('keeps a selection in a different category', () => {
-    const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
-    act(() => result.current.toggleCategory('sam'));
-
-    expectMode(result.current.mode, 'deploy');
-  });
-
-  it('drops a pending jammer deployment when the jammer list collapses', () => {
-    const { result } = setup();
-    act(() => result.current.handleJammerSelect(0));
-    act(() => result.current.toggleJammers());
-
-    expect(result.current.isJammersCollapsed).toBe(true);
-    expectIdle(result.current.mode);
-  });
-
-  it('keeps a map-driven jammer relocation when the list collapses', () => {
-    const deployedJammers = new Map([[0, INLAND]]);
-    const { result } = setup({ deployedJammers });
-    act(() => result.current.handleJammerRelocateClick(0));
-    act(() => result.current.toggleJammers());
-
-    expect(expectMode(result.current.mode, 'placeJammer')).toMatchObject({
-      index: 0,
-      isRelocate: true,
-    });
   });
 });
 

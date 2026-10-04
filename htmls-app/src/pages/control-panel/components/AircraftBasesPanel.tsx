@@ -1,13 +1,13 @@
 import type { Airbase, BudgetState } from '@/types/setupMenu';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/Map';
-import { BaseEditor } from '@pages/control-panel/components/AircraftPanel';
+import { BaseEditor } from '@pages/control-panel/components/BaseEditor';
 
 // ============================================================================
 // AircraftBasesPanel — budget plus one loadout card per airbase
 // ============================================================================
 interface AircraftBasesPanelProps {
   airbases: Airbase[];
-  /** Untouched injected airbases, used as the budget floor. See AircraftPanel. */
+  /** Untouched injected airbases, used as the budget floor. See BaseEditor. */
   baselineAirbases: Airbase[];
   budget: BudgetState;
   onBudgetChange: (next: BudgetState) => void;
@@ -47,7 +47,6 @@ export function AircraftBasesPanel({
                 <div className="font-semibold">{base.name}</div>
               </div>
               <BaseEditor
-                variant="aip"
                 base={base}
                 baseline={baselineAirbases[index]}
                 baseIndex={index}
