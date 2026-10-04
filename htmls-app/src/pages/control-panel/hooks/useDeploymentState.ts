@@ -51,6 +51,9 @@ function formatPosition(position: Coordinate): string {
   return `${position.latitude.toFixed(4)}°, ${position.longitude.toFixed(4)}°`;
 }
 
+/** Stands in for every handler that would change a deployment while locked */
+const noop = () => {};
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -59,6 +62,11 @@ export interface UseDeploymentStateParams {
   deployedSystems: Map<string, MissileDeployment>;
   deployedJammers: Map<number, Coordinate>;
   shouldValidateTaiwanBoundary: boolean;
+  /**
+   * Deployment was already submitted: every handler that selects, places,
+   * moves or removes a unit is inert. Cancel and the status line still work.
+   */
+  isLocked?: boolean;
   onDeploySystem: (key: string, data: MissileDeployment) => void;
   onUndeploySystem: (key: string) => void;
   onDeployJammer: (index: number, position: Coordinate) => void;
@@ -78,6 +86,7 @@ export function useDeploymentState({
   deployedSystems,
   deployedJammers,
   shouldValidateTaiwanBoundary,
+  isLocked = false,
   onDeploySystem,
   onUndeploySystem,
   onDeployJammer,
@@ -528,20 +537,22 @@ export function useDeploymentState({
     relocatePreviewVertices,
     rotationPreviewData,
 
-    // Handlers
-    handleMapClick,
+    // Handlers that edit a deployment: inert while locked
+    handleMapClick: isLocked ? noop : handleMapClick,
+    handleUnitSelect: isLocked ? noop : handleUnitSelect,
+    handleUndeploy: isLocked ? noop : handleUndeploy,
+    handleAreaClick: isLocked ? noop : handleAreaClick,
+    handleRotateClick: isLocked ? noop : handleRotateClick,
+    handleJammerSelect: isLocked ? noop : handleJammerSelect,
+    handleJammerRelocateClick: isLocked ? noop : handleJammerRelocateClick,
+    handleUndeployJammer: isLocked ? noop : handleUndeployJammer,
+
+    // Always live
     handleMouseMove,
-    handleUnitSelect,
     handleCancelSelect,
     clearPlacement,
-    handleUndeploy,
     toggleCategory,
     toggleJammers,
-    handleAreaClick,
-    handleRotateClick,
-    handleJammerSelect,
-    handleJammerRelocateClick,
-    handleUndeployJammer,
     handleAircraftError,
   };
 }

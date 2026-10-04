@@ -24,8 +24,6 @@ import { ResizeHandle } from './ResizeHandle';
 // SAM launchers are deployed from their C2 node card, not the launcher list
 const SAM_CATEGORY = 'sam';
 
-const noop = () => {};
-
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 900;
 const DEFAULT_SIDEBAR_WIDTH = 650;
@@ -74,6 +72,7 @@ export function ControlDeploymentTab({
     deployedSystems,
     deployedJammers,
     shouldValidateTaiwanBoundary,
+    isLocked: isDeploymentLocked,
     onDeploySystem,
     onUndeploySystem,
     onDeployJammer,
@@ -158,8 +157,8 @@ export function ControlDeploymentTab({
             samCategory={SAM_CATEGORY}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
-            onUnitSelect={isDeploymentLocked ? noop : deployment.handleUnitSelect}
-            onUndeploy={isDeploymentLocked ? noop : deployment.handleUndeploy}
+            onUnitSelect={deployment.handleUnitSelect}
+            onUndeploy={deployment.handleUndeploy}
             onCancelSelection={deployment.handleCancelSelect}
           />
         </Panel>
@@ -236,11 +235,11 @@ export function ControlDeploymentTab({
           deployPreview={deployment.previewData}
           rotationPreview={deployment.rotationPreviewData}
           relocatePreviewVertices={deployment.relocatePreviewVertices}
-          onMapClick={isDeploymentLocked ? noop : deployment.handleMapClick}
+          onMapClick={deployment.handleMapClick}
           onMouseMove={deployment.handleMouseMove}
-          onAreaClick={isDeploymentLocked ? noop : deployment.handleAreaClick}
-          onRotateClick={isDeploymentLocked ? noop : deployment.handleRotateClick}
-          onJammerRelocateClick={isDeploymentLocked ? noop : deployment.handleJammerRelocateClick}
+          onAreaClick={deployment.handleAreaClick}
+          onRotateClick={deployment.handleRotateClick}
+          onJammerRelocateClick={deployment.handleJammerRelocateClick}
         />
       </div>
     </div>

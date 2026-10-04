@@ -264,6 +264,43 @@ describe('useDeploymentState initial state', () => {
 });
 
 // ============================================================================
+// LOCK
+// ============================================================================
+describe('isLocked', () => {
+  it('ignores every handler that edits a deployment', () => {
+    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({
+      isLocked: true,
+      deployedSystems,
+      deployedJammers: new Map([[0, INLAND]]),
+    });
+
+    act(() => {
+      result.current.handleUnitSelect('ascm_other', 'Other', 'ascm');
+      result.current.handleJammerSelect(1);
+      result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' });
+      result.current.handleRotateClick(UNIT_KEY);
+      result.current.handleJammerRelocateClick(0);
+      result.current.handleUndeploy(UNIT_KEY, UNIT_NAME);
+      result.current.handleUndeployJammer(0);
+      result.current.handleMapClick(INLAND);
+    });
+
+    expectIdle(result.current.mode);
+    expect(handlers.onUndeploySystem).not.toHaveBeenCalled();
+    expect(handlers.onUndeployJammer).not.toHaveBeenCalled();
+    expect(handlers.onDeploySystem).not.toHaveBeenCalled();
+    expect(handlers.onDeployJammer).not.toHaveBeenCalled();
+  });
+
+  it('still lets the user open the sidebar groups', () => {
+    const { result } = setup({ isLocked: true });
+    act(() => result.current.toggleCategory('ascm'));
+    expect(result.current.collapsedCategories.has('ascm')).toBe(true);
+  });
+});
+
+// ============================================================================
 // MODE ARBITRATION
 // ============================================================================
 describe('mode arbitration', () => {
