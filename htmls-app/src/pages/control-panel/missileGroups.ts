@@ -1,5 +1,5 @@
 import type { MissileSystems, MissileDeployment } from '@/types/setupMenu';
-import { getWeaponSystemName, makeUnitKey } from '@/utils/map';
+import { getWeaponSystemName, buildUnitKey } from '@/utils/map';
 
 /**
  * Flattens the injected `MissileSystems` payload into the shape the sidebar
@@ -35,7 +35,7 @@ export interface MissileGroup {
 // ============================================================================
 export function buildMissileGroups(
   missileSystems: MissileSystems,
-  deployedSystems: Map<string, MissileDeployment>
+  deployedMissileSystems: Map<string, MissileDeployment>
 ): MissileGroup[] {
   const groups: MissileGroup[] = [];
 
@@ -45,8 +45,8 @@ export function buildMissileGroups(
 
     const weaponName = getWeaponSystemName(category);
     const units = Object.entries(firingUnits).map(([unitName, unit]) => {
-      const unitKey = makeUnitKey(category, unitName);
-      const deployment = deployedSystems.get(unitKey);
+      const unitKey = buildUnitKey(category, unitName);
+      const deployment = deployedMissileSystems.get(unitKey);
       return {
         unitKey,
         name: unit.name,

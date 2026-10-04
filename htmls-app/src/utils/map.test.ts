@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveOpeningAngle,
   getWeaponSystemName,
-  makeUnitKey,
+  buildUnitKey,
   canInteractArea,
 } from '@/utils/map';
 
@@ -45,21 +45,29 @@ describe('getWeaponSystemName', () => {
 
 describe('unit keys', () => {
   it('joins the category and the unit name', () => {
-    expect(makeUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
+    expect(buildUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
   });
 });
 
 describe('canInteractArea', () => {
   it('is inert without a handler', () => {
-    expect(canInteractArea(false, false, false)).toBe(false);
+    expect(
+      canInteractArea({ hasHandler: false, isAnyRelocating: false, isThisRelocating: false })
+    ).toBe(false);
   });
 
   it('accepts every area while nothing is armed', () => {
-    expect(canInteractArea(true, false, false)).toBe(true);
+    expect(
+      canInteractArea({ hasHandler: true, isAnyRelocating: false, isThisRelocating: false })
+    ).toBe(true);
   });
 
   it('only the armed area responds while relocating', () => {
-    expect(canInteractArea(true, true, true)).toBe(true);
-    expect(canInteractArea(true, true, false)).toBe(false);
+    expect(
+      canInteractArea({ hasHandler: true, isAnyRelocating: true, isThisRelocating: true })
+    ).toBe(true);
+    expect(
+      canInteractArea({ hasHandler: true, isAnyRelocating: true, isThisRelocating: false })
+    ).toBe(false);
   });
 });

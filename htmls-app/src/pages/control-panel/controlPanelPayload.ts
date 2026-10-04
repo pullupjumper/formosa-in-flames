@@ -15,7 +15,7 @@ import {
   AMPHIBIOUS_LOCATION_DATA,
 } from '@/data/setupMenuData';
 import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
-import type { EmconResult } from '@/utils/emcon';
+import type { SamDoctrineEntry } from './c2Nodes';
 import {
   parseInjectedJSON,
   readInjectedBoolean,
@@ -115,6 +115,15 @@ export function readControlPanelPayload(): ControlPanelPayload {
 // ============================================================================
 // WRITE
 // ============================================================================
+/**
+ * SAM weapons-control choice, written to `emconData`. Each entry names a live
+ * SAM unit by GUID, so the host can apply it without guessing which platform a
+ * menu id stood for. Units that were never switched carry the status they had.
+ */
+export interface EmconResult {
+  sams: SamDoctrineEntry[];
+}
+
 /** Deployment and SAM doctrine are one submission: both inputs or neither counts. */
 export function submitDeployment(result: SetupResult, doctrine: EmconResult): boolean {
   const isDeploymentWritten = writeHostInput('summaryData', result);

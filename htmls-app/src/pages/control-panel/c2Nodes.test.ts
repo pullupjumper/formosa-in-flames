@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { C2Node, C2Unit } from '@/types/unitStatus';
+import type { C2Data, C2Unit } from '@/types/unitStatus';
 import type { MissileGroupUnit } from '@pages/control-panel/missileGroups';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from './c2Nodes';
 
@@ -27,7 +27,7 @@ function launcher(unitKey: string, name: string, guid: string): MissileGroupUnit
 // ============================================================================
 describe('buildC2NodeViews', () => {
   it('lists radar before SAM units under each node', () => {
-    const nodes: Record<string, C2Node> = {
+    const nodes: C2Data = {
       n1: {
         name: 'C2 One',
         radar: { r1: c2Unit('Radar A') },
@@ -45,21 +45,21 @@ describe('buildC2NodeViews', () => {
   });
 
   it('pairs a SAM unit with its launcher by GUID', () => {
-    const nodes: Record<string, C2Node> = { n1: { name: 'C2', SAM: { g1: c2Unit('Renamed') } } };
+    const nodes: C2Data = { n1: { name: 'C2', SAM: { g1: c2Unit('Renamed') } } };
     const launchers = [launcher('sam_a', 'Original', 'g1')];
 
     expect(buildC2NodeViews(nodes, launchers)[0].children[0].launcher?.unitKey).toBe('sam_a');
   });
 
   it('falls back to the unit name when no GUID matches', () => {
-    const nodes: Record<string, C2Node> = { n1: { name: 'C2', SAM: { gX: c2Unit('Same Name') } } };
+    const nodes: C2Data = { n1: { name: 'C2', SAM: { gX: c2Unit('Same Name') } } };
     const launchers = [launcher('sam_a', 'Same Name', 'g1')];
 
     expect(buildC2NodeViews(nodes, launchers)[0].children[0].launcher?.unitKey).toBe('sam_a');
   });
 
   it('leaves SAM units without a launcher as plain cards', () => {
-    const nodes: Record<string, C2Node> = { n1: { name: 'C2', SAM: { g1: c2Unit('Unknown') } } };
+    const nodes: C2Data = { n1: { name: 'C2', SAM: { g1: c2Unit('Unknown') } } };
 
     expect(
       buildC2NodeViews(nodes, [launcher('sam_a', 'Other', 'g9')])[0].children[0].launcher
@@ -67,7 +67,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('never gives one launcher to two SAM units', () => {
-    const nodes: Record<string, C2Node> = {
+    const nodes: C2Data = {
       n1: { name: 'C2', SAM: { g1: c2Unit('Twin'), g2: c2Unit('Twin') } },
     };
 
@@ -80,7 +80,7 @@ describe('buildC2NodeViews', () => {
 describe('collectSamUnits', () => {
   it('lists live SAM units with their GUID, name and weapons status', () => {
     const destroyed = { ...c2Unit('Dead SAM'), isDestroyed: true };
-    const nodes: Record<string, C2Node> = {
+    const nodes: C2Data = {
       n1: {
         name: 'C2',
         radar: { r1: c2Unit('Radar A') },
@@ -95,7 +95,7 @@ describe('collectSamUnits', () => {
 });
 
 describe('applySamWeaponsFree', () => {
-  const nodes: Record<string, C2Node> = {
+  const nodes: C2Data = {
     n1: {
       name: 'C2',
       radar: { r1: { ...c2Unit('Radar A'), weaponFree: false } },

@@ -9,7 +9,7 @@ import type {
   SetupResult,
   BudgetState,
 } from '@/types/setupMenu';
-import { makeUnitKey } from '@/utils/map';
+import { buildUnitKey } from '@/utils/map';
 import { calculateCentroid } from '@/utils/geo';
 
 /**
@@ -77,7 +77,7 @@ export function buildInjectedDeployments(
   for (const [category, system] of Object.entries(missileSystems)) {
     for (const [unitName, unit] of Object.entries(system.firingUnits ?? {})) {
       deployments.set(
-        makeUnitKey(category, unitName),
+        buildUnitKey(category, unitName),
         fromOperationalArea(category, unitName, unit.operationalArea)
       );
     }

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { Airbase, MissileDeployment } from '@/types/setupMenu';
 import { CONFIG } from '@/constants/setupMenu';
-import { buildInjectedDeployments } from '@/utils/setupMenuPayload';
+import { buildInjectedDeployments } from '@/utils/deploymentPayload';
 import { createBudgetState } from '@/utils/budgetLedger';
 import type { ControlPanelPayload } from '../controlPanelPayload';
 

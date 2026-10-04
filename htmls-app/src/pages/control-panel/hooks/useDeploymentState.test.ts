@@ -66,7 +66,7 @@ beforeEach(() => {
 });
 
 /**
- * Mirrors DeploymentTab: the deployment state machine, rendered on its own.
+ * Mirrors ControlDeploymentTab: the deployment state machine, rendered on its own.
  */
 function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
   // One stream per hook instance, created outside the render callback so the
@@ -75,7 +75,7 @@ function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
   return renderHook(() =>
     useDeploymentState({
       jammers: JAMMERS,
-      deployedSystems: new Map(),
+      deployedMissileSystems: new Map(),
       deployedJammers: new Map(),
       shouldValidateTaiwanBoundary: true,
       rng,
@@ -255,10 +255,10 @@ describe('useDeploymentState initial state', () => {
 // ============================================================================
 describe('isLocked', () => {
   it('ignores every handler that edits a deployment', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({
       isLocked: true,
-      deployedSystems,
+      deployedMissileSystems,
       deployedJammers: new Map([[0, INLAND]]),
     });
 
@@ -299,8 +299,8 @@ describe('mode arbitration', () => {
   });
 
   it('expands an already deployed unit instead of arming a placement', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
 
     act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
     expectIdle(result.current.mode);
@@ -331,8 +331,8 @@ describe('mode arbitration', () => {
   });
 
   it('drops a pending unit selection when an area relocation starts', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleUnitSelect('ascm_OTHER', 'Other', 'ascm'));
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
 
@@ -343,8 +343,8 @@ describe('mode arbitration', () => {
   });
 
   it('toggles area relocation off when the same area is clicked again', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     const area = { unitKey: UNIT_KEY, type: 'fp' as const, fpIndex: 1 };
 
     act(() => result.current.handleAreaClick(area));
@@ -355,8 +355,8 @@ describe('mode arbitration', () => {
   });
 
   it('ignores an area click while a jammer is being placed', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleJammerSelect(0));
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
 
@@ -364,8 +364,8 @@ describe('mode arbitration', () => {
   });
 
   it('ignores a rotate click while a jammer is being placed', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleJammerSelect(0));
     act(() => result.current.handleRotateClick(UNIT_KEY));
 
@@ -381,8 +381,8 @@ describe('mode arbitration', () => {
   });
 
   it('replaces area relocation with rotation', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
     act(() => result.current.handleRotateClick(UNIT_KEY));
 
@@ -413,8 +413,8 @@ describe('ESC cancellation', () => {
   });
 
   it('cancels area relocation', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'reload' }));
     pressEscape();
 
@@ -423,8 +423,8 @@ describe('ESC cancellation', () => {
   });
 
   it('cancels rotation', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleRotateClick(UNIT_KEY));
     pressEscape();
 
@@ -443,8 +443,8 @@ describe('ESC cancellation', () => {
   });
 
   it('reads the mode at key-press time, not at listener registration', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     // The listener is keyed on "a mode is live", so this switch does not
     // re-register it — the message still has to follow the current mode.
     act(() => result.current.handleUnitSelect('ascm_OTHER', 'Other', 'ascm'));
@@ -545,8 +545,8 @@ describe('handleMapClick', () => {
   });
 
   it('ignores a rotation click before an angle has been swept', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleRotateClick(UNIT_KEY));
     act(() => result.current.handleMapClick(INLAND));
 
@@ -555,8 +555,8 @@ describe('handleMapClick', () => {
   });
 
   it('commits a rotation once an angle has been previewed', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleRotateClick(UNIT_KEY));
     act(() => result.current.handleMouseMove({ ...INLAND, longitude: INLAND.longitude - 0.2 }));
     expect(result.current.rotationPreviewData).not.toBeNull();
@@ -570,8 +570,8 @@ describe('handleMapClick', () => {
 
   it('relocates a hide area and reports the move', () => {
     const deployment = makeDeployment();
-    const deployedSystems = new Map([[UNIT_KEY, deployment]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, deployment]]);
+    const { result } = setup({ deployedMissileSystems });
     const target = deployment.tacticalAreas.hideArea![0];
 
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
@@ -589,11 +589,11 @@ describe('handleMapClick', () => {
   });
 
   it('leaves relocation mode when the unit disappeared underneath it', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result, rerender } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result, rerender } = setup({ deployedMissileSystems });
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
 
-    deployedSystems.delete(UNIT_KEY);
+    deployedMissileSystems.delete(UNIT_KEY);
     rerender();
     act(() => result.current.handleMapClick(INLAND));
 
@@ -635,8 +635,8 @@ describe('preview data', () => {
   });
 
   it('follows the cursor while relocating an area', () => {
-    const deployedSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedSystems });
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const { result } = setup({ deployedMissileSystems });
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
     act(() => result.current.handleMouseMove({ ...INLAND, latitude: INLAND.latitude + 0.01 }));
 

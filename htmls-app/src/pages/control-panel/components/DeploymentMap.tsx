@@ -21,10 +21,10 @@ interface DeploymentMapProps {
   sideName: string;
   airbases: Airbase[];
   jammers: Jammer[];
-  deployedSystems: Map<string, MissileDeployment>;
+  deployedMissileSystems: Map<string, MissileDeployment>;
   deployedJammers: Map<number, Coordinate>;
-  /** Detected signals shown as suspected C2 markers; the setup menu has none */
-  signals?: SignalData[];
+  /** Detected signals shown as suspected C2 markers */
+  signals: SignalData[];
 
   /** True while some mode owns the next map click; drives cursor and hover */
   isPlacementActive: boolean;
@@ -46,7 +46,6 @@ interface DeploymentMapProps {
   onMouseMove: (position: Coordinate) => void;
   onAreaClick: (area: RelocatingArea) => void;
   onRotateClick: (unitKey: string) => void;
-  onAirbaseClick?: (index: number) => void;
   onJammerRelocateClick: (index: number) => void;
 }
 
@@ -54,7 +53,7 @@ export function DeploymentMap({
   sideName,
   airbases,
   jammers,
-  deployedSystems,
+  deployedMissileSystems,
   deployedJammers,
   signals,
   isPlacementActive,
@@ -70,7 +69,6 @@ export function DeploymentMap({
   onMouseMove,
   onAreaClick,
   onRotateClick,
-  onAirbaseClick,
   onJammerRelocateClick,
 }: DeploymentMapProps) {
   return (
@@ -80,15 +78,15 @@ export function DeploymentMap({
       cursorStyle={isPlacementActive ? 'crosshair' : undefined}
       sideName={sideName}
     >
-      <AirbaseMarkers airbases={airbases} onAirbaseClick={onAirbaseClick} />
+      <AirbaseMarkers airbases={airbases} />
       <DeployedMissileSystems
-        deployedSystems={deployedSystems}
+        deployedMissileSystems={deployedMissileSystems}
         onAreaClick={onAreaClick}
         onRotateClick={onRotateClick}
         relocatingArea={relocatingArea}
         rotatingUnitKey={rotatingUnitKey}
       />
-      {signals && <SignalMarkers signals={signals} />}
+      <SignalMarkers signals={signals} />
       <DeployedJammers
         jammers={jammers}
         deployedPositions={deployedJammers}

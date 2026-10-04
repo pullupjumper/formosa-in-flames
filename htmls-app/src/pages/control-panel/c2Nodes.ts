@@ -1,5 +1,4 @@
-import type { C2Node, C2Unit } from '@/types/unitStatus';
-import type { SamDoctrineEntry } from '@/utils/emcon';
+import type { C2Data, C2Node, C2Unit } from '@/types/unitStatus';
 import type { MissileGroupUnit } from '@pages/control-panel/missileGroups';
 
 /**
@@ -19,6 +18,13 @@ export interface C2Child {
   launcher: MissileGroupUnit | null;
 }
 
+/** One live SAM unit and its weapons control status, as written to `emconData`. */
+export interface SamDoctrineEntry {
+  guid: string;
+  name: string;
+  weaponFree: boolean;
+}
+
 export interface C2NodeView {
   key: string;
   name: string;
@@ -29,14 +35,32 @@ export interface C2NodeView {
 // BUILDER
 // ============================================================================
 /**
+ * Flatten injected C2 data into `guid -> node`. Accepts both direct nodes
+ * `{ ROCC: {...}, TAAOC: {...} }` and the Lua payload's wrapped groups
+ * `{ rocc: { guid1: {...}, guid2: {...} } }`.
+ */
+function flattenC2Nodes(data: C2Data): Record<string, C2Node> {
+  const flatNodes: Record<string, C2Node> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value && typeof value === 'object' && 'name' in value) {
+      flatNodes[key] = value as C2Node;
+    } else if (value && typeof value === 'object') {
+      for (const [subKey, subValue] of Object.entries(value as Record<string, C2Node>)) {
+        flatNodes[subKey] = subValue;
+      }
+    }
+  }
+
+  return flatNodes;
+}
+
+/**
  * Pair every SAM unit with its launcher: by GUID first (the C2 payload keys SAM
  * units by game GUID), then by name. A launcher backs at most one SAM unit so
  * two cards never drive the same deployment.
  */
-export function buildC2NodeViews(
-  nodes: Record<string, C2Node>,
-  samLaunchers: MissileGroupUnit[]
-): C2NodeView[] {
+export function buildC2NodeViews(c2Data: C2Data, samLaunchers: MissileGroupUnit[]): C2NodeView[] {
   const claimed = new Set<string>();
 
   const findLauncher = (guid: string, name: string): MissileGroupUnit | null => {
@@ -48,7 +72,7 @@ export function buildC2NodeViews(
     return launcher;
   };
 
-  return Object.entries(nodes).map(([key, node]) => {
+  return Object.entries(flattenC2Nodes(c2Data)).map(([key, node]) => {
     const children: C2Child[] = [];
 
     for (const [guid, unit] of Object.entries(node.radar ?? {})) {

@@ -36,7 +36,7 @@ import { useDeploymentPreviews } from './useDeploymentPreviews';
 /**
  * Interaction state for the Deployment tab: which mode owns the next map click,
  * what the hover preview shows, and the status line. Kept apart from
- * DeploymentTab's markup so the mode arbitration can be exercised without
+ * ControlDeploymentTab's markup so the mode arbitration can be exercised without
  * mounting Leaflet.
  */
 
@@ -59,7 +59,7 @@ const noop = () => {};
 // ============================================================================
 export interface UseDeploymentStateParams {
   jammers: Jammer[];
-  deployedSystems: Map<string, MissileDeployment>;
+  deployedMissileSystems: Map<string, MissileDeployment>;
   deployedJammers: Map<number, Coordinate>;
   shouldValidateTaiwanBoundary: boolean;
   /**
@@ -83,7 +83,7 @@ export interface UseDeploymentStateParams {
 // ============================================================================
 export function useDeploymentState({
   jammers,
-  deployedSystems,
+  deployedMissileSystems,
   deployedJammers,
   shouldValidateTaiwanBoundary,
   isLocked = false,
@@ -115,10 +115,10 @@ export function useDeploymentState({
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
-  const deployedSystemsRef = useRef(deployedSystems);
+  const deployedSystemsRef = useRef(deployedMissileSystems);
   useEffect(() => {
-    deployedSystemsRef.current = deployedSystems;
-  }, [deployedSystems]);
+    deployedSystemsRef.current = deployedMissileSystems;
+  }, [deployedMissileSystems]);
   const jammersRef = useRef(jammers);
   useEffect(() => {
     jammersRef.current = jammers;
@@ -145,7 +145,7 @@ export function useDeploymentState({
    */
   const applyAngleChange = useCallback(
     (unitKey: string, newAngle: number): boolean => {
-      const deployment = deployedSystems.get(unitKey);
+      const deployment = deployedMissileSystems.get(unitKey);
       if (!deployment) return false;
 
       const rotated = rotateDeployment({
@@ -159,7 +159,7 @@ export function useDeploymentState({
       onDeploySystem(unitKey, rotated);
       return true;
     },
-    [deployedSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
+    [deployedMissileSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
   );
 
   // ============================================================================
@@ -189,7 +189,7 @@ export function useDeploymentState({
 
   const commitRotation = useCallback(
     (unitKey: string, angle: number) => {
-      const label = deployedSystems.get(unitKey)?.unitName ?? unitKey;
+      const label = deployedMissileSystems.get(unitKey)?.unitName ?? unitKey;
       if (!applyAngleChange(unitKey, angle)) {
         // Stay in rotation mode: the unit keeps its old angle and the user can
         // sweep to another one without restarting.
@@ -199,12 +199,12 @@ export function useDeploymentState({
       setStatus(`Angle set to ${angle}° for ${label}`);
       dispatch({ type: 'reset' });
     },
-    [deployedSystems, applyAngleChange]
+    [deployedMissileSystems, applyAngleChange]
   );
 
   const commitAreaRelocation = useCallback(
     (area: RelocatingArea, position: Coordinate) => {
-      const deployment = deployedSystems.get(area.unitKey);
+      const deployment = deployedMissileSystems.get(area.unitKey);
       if (!deployment) {
         dispatch({ type: 'reset' });
         return;
@@ -226,7 +226,7 @@ export function useDeploymentState({
       setStatus(`${formatAreaLabel(area)} relocated for ${deployment.unitName}`);
       dispatch({ type: 'reset' });
     },
-    [deployedSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
+    [deployedMissileSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
   );
 
   const commitDeployment = useCallback(
@@ -311,7 +311,7 @@ export function useDeploymentState({
    */
   const handleUnitSelect = useCallback(
     (unitKey: string, unitName: string, category: string) => {
-      if (deployedSystems.has(unitKey)) {
+      if (deployedMissileSystems.has(unitKey)) {
         setExpandedUnitKey((current) => (current === unitKey ? null : unitKey));
         return;
       }
@@ -325,7 +325,7 @@ export function useDeploymentState({
       dispatch({ type: 'selectUnit', unit: { key: unitKey, name: unitName, category }, offsets });
       setStatus(`${unitName} selected - Click map to deploy`);
     },
-    [deployedSystems, rng]
+    [deployedMissileSystems, rng]
   );
 
   const handleCancelSelect = useCallback(() => {
@@ -446,7 +446,7 @@ export function useDeploymentState({
   const { previewData, relocatePreviewVertices, rotationPreviewData } = useDeploymentPreviews({
     mode,
     mousePosition,
-    deployedSystems,
+    deployedMissileSystems,
     shouldValidateTaiwanBoundary,
     rng,
   });

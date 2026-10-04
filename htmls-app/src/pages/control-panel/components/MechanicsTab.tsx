@@ -20,7 +20,7 @@ import {
 
 // ============================================================================
 // POSITION PALETTE
-// Mirrors the Tailwind @theme colors used across the setup menu.
+// Mirrors the Tailwind @theme colors used across the control panel.
 // ============================================================================
 const COLOR = {
   blue: '#137cbd',

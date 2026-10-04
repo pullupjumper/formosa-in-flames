@@ -23,9 +23,9 @@ export function getWeaponSystemName(category: string): string {
 
 /**
  * Build the key identifying a firing unit inside a weapon category.
- * Deployment maps are keyed by this string throughout the setup menu.
+ * Deployment maps are keyed by this string throughout the control panel.
  */
-export function makeUnitKey(category: string, unitName: string): string {
+export function buildUnitKey(category: string, unitName: string): string {
   return `${category}_${unitName}`;
 }
 
@@ -33,12 +33,18 @@ export function makeUnitKey(category: string, unitName: string): string {
  * Whether a click on a tactical area should do anything: nothing while another
  * area is armed for relocation, everything when idle.
  */
-export function canInteractArea(
-  hasHandler: boolean,
-  isAnyRelocating: boolean,
-  isThisAreaRelocating: boolean
-): boolean {
+export interface CanInteractAreaParams {
+  hasHandler: boolean;
+  isAnyRelocating: boolean;
+  isThisRelocating: boolean;
+}
+
+export function canInteractArea({
+  hasHandler,
+  isAnyRelocating,
+  isThisRelocating,
+}: CanInteractAreaParams): boolean {
   if (!hasHandler) return false;
   if (!isAnyRelocating) return true;
-  return isThisAreaRelocating;
+  return isThisRelocating;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTimestamp, calculateProgress, isDataEmpty } from '@/utils/format';
+import { formatTimestamp, calculateProgress } from '@/utils/format';
 
 describe('formatTimestamp', () => {
   it('formats a Unix timestamp in UTC', () => {
@@ -32,20 +32,5 @@ describe('calculateProgress', () => {
 
   it('does not clamp above 100', () => {
     expect(calculateProgress(3, 2)).toBe(150);
-  });
-});
-
-describe('isDataEmpty', () => {
-  it.each([undefined, null, 0, '', [], {}])('treats %o as empty', (value) => {
-    expect(isDataEmpty(value)).toBe(true);
-  });
-
-  it.each([[[1]], [{ a: 1 }]])('treats %o as non-empty', (value) => {
-    expect(isDataEmpty(value)).toBe(false);
-  });
-
-  it('treats a non-empty primitive as empty (no container to inspect)', () => {
-    expect(isDataEmpty('text')).toBe(true);
-    expect(isDataEmpty(42)).toBe(true);
   });
 });

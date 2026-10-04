@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/DeploymentMap';
 import { buildMissileGroups } from '@pages/control-panel/missileGroups';
-import { flattenC2Nodes } from '@/utils/c2';
-import { toSetupResult } from '@/utils/setupMenuPayload';
-import { toEmconResult } from '@/utils/emcon';
+import { toSetupResult } from '@/utils/deploymentPayload';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../c2Nodes';
 import { buildLauncherStatusMap } from '../launcherStatus';
 import { submitDeployment, type ControlPanelPayload } from '../controlPanelPayload';
@@ -51,7 +49,7 @@ export function ControlDeploymentTab({
   const {
     airbases,
     budget,
-    deployedMissileSystems: deployedSystems,
+    deployedMissileSystems,
     deployedJammers,
     setBudget: onBudgetChange,
     updateAirbase: onUpdateAirbase,
@@ -59,7 +57,7 @@ export function ControlDeploymentTab({
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
   const deployment = useDeploymentState({
     jammers,
-    deployedSystems,
+    deployedMissileSystems,
     deployedJammers,
     shouldValidateTaiwanBoundary,
     isLocked: isDeploymentLocked,
@@ -75,7 +73,7 @@ export function ControlDeploymentTab({
 
   // The host input holds the last submitted result; it goes stale as soon as any
   // input of that result changes, so remember which inputs it was built from
-  const resultInputs = [budget, airbases, deployedJammers, deployedSystems, samWeaponsFree];
+  const resultInputs = [budget, airbases, deployedJammers, deployedMissileSystems, samWeaponsFree];
   const [submittedInputs, setSubmittedInputs] = useState<unknown[] | null>(null);
   const isSubmitted =
     submittedInputs !== null && submittedInputs.every((input, i) => input === resultInputs[i]);
@@ -86,9 +84,9 @@ export function ControlDeploymentTab({
       airbases,
       jammers,
       deployedJammers,
-      deployedMissileSystems: deployedSystems,
+      deployedMissileSystems,
     });
-    const doctrine = toEmconResult(samUnits);
+    const doctrine = { sams: samUnits };
     console.log('Export data:', result, doctrine);
     if (submitDeployment(result, doctrine)) setSubmittedInputs(resultInputs);
   };
@@ -96,8 +94,8 @@ export function ControlDeploymentTab({
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
   const missileGroups = useMemo(
-    () => buildMissileGroups(missileSystems, deployedSystems),
-    [missileSystems, deployedSystems]
+    () => buildMissileGroups(missileSystems, deployedMissileSystems),
+    [missileSystems, deployedMissileSystems]
   );
   const launcherGroups = useMemo(
     () => missileGroups.filter((group) => group.category !== SAM_CATEGORY),
@@ -109,7 +107,7 @@ export function ControlDeploymentTab({
   const [launcherStatus] = useState(() => buildLauncherStatusMap(payload.launcherData));
   const c2Nodes = useMemo(() => {
     const samLaunchers = missileGroups.find((group) => group.category === SAM_CATEGORY)?.units;
-    return buildC2NodeViews(flattenC2Nodes(payload.c2Data), samLaunchers ?? []);
+    return buildC2NodeViews(payload.c2Data, samLaunchers ?? []);
   }, [payload.c2Data, missileGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
   const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
@@ -211,7 +209,7 @@ export function ControlDeploymentTab({
           sideName={sideName}
           airbases={airbases}
           jammers={jammers}
-          deployedSystems={deployedSystems}
+          deployedMissileSystems={deployedMissileSystems}
           deployedJammers={deployedJammers}
           signals={signals}
           isPlacementActive={isPlacementActive}

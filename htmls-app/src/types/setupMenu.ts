@@ -180,8 +180,6 @@ export interface MissileDeployment {
   paths: MovementPaths;
 }
 
-export type SetupMenuTabId = 'opord' | 'mechanics' | 'deployment' | 'summary';
-
 export interface ForceImage {
   url: string | null;
   label: string;

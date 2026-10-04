@@ -25,13 +25,3 @@ export function calculateProgress(current: number, total: number): number {
   if (total <= 0) return 0;
   return Math.round((current / total) * 100);
 }
-
-/**
- * Check if data is empty
- */
-export function isDataEmpty(data: unknown): boolean {
-  if (!data) return true;
-  if (Array.isArray(data)) return data.length === 0;
-  if (typeof data === 'object') return Object.keys(data).length === 0;
-  return true;
-}

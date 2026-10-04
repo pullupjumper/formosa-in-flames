@@ -17,7 +17,7 @@ export type { DeploymentPreview } from '@/utils/deploymentGeometry';
 export interface UseDeploymentPreviewsParams {
   mode: DeploymentMode;
   mousePosition: Coordinate | null;
-  deployedSystems: Map<string, MissileDeployment>;
+  deployedMissileSystems: Map<string, MissileDeployment>;
   shouldValidateTaiwanBoundary: boolean;
   rng: RandomSource;
 }
@@ -25,7 +25,7 @@ export interface UseDeploymentPreviewsParams {
 export function useDeploymentPreviews({
   mode,
   mousePosition,
-  deployedSystems,
+  deployedMissileSystems,
   shouldValidateTaiwanBoundary,
   rng,
 }: UseDeploymentPreviewsParams) {
@@ -38,17 +38,17 @@ export function useDeploymentPreviews({
 
   const relocatePreviewVertices = useMemo<Coordinate[] | null>(() => {
     if (mode.kind !== 'relocateArea' || !mousePosition) return null;
-    const deployment = deployedSystems.get(mode.area.unitKey);
+    const deployment = deployedMissileSystems.get(mode.area.unitKey);
     if (!deployment) return null;
     return previewRelocation(deployment, mode.area, mousePosition);
-  }, [mode, mousePosition, deployedSystems]);
+  }, [mode, mousePosition, deployedMissileSystems]);
 
   const rotationPreviewData = useMemo<DeploymentPreview | null>(() => {
     if (mode.kind !== 'rotate' || mode.previewAngle === null) return null;
-    const deployment = deployedSystems.get(mode.unitKey);
+    const deployment = deployedMissileSystems.get(mode.unitKey);
     if (!deployment) return null;
     return previewRotation(deployment, mode.previewAngle, shouldValidateTaiwanBoundary, rng);
-  }, [mode, deployedSystems, shouldValidateTaiwanBoundary, rng]);
+  }, [mode, deployedMissileSystems, shouldValidateTaiwanBoundary, rng]);
 
   return { previewData, relocatePreviewVertices, rotationPreviewData };
 }

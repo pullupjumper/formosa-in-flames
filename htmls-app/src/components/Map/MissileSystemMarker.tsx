@@ -109,7 +109,11 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 
   const areaClickHandler = useCallback(
     (type: AreaType, fpIndex?: number) =>
-      canInteractArea(Boolean(onAreaClick), isAnyRelocating, isAreaRelocating(type, fpIndex))
+      canInteractArea({
+        hasHandler: Boolean(onAreaClick),
+        isAnyRelocating,
+        isThisRelocating: isAreaRelocating(type, fpIndex),
+      })
         ? () => onAreaClick?.({ unitKey, type, fpIndex })
         : undefined,
     [onAreaClick, isAnyRelocating, isAreaRelocating, unitKey]
@@ -327,7 +331,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 // DeployedMissileSystems Component
 // ============================================================================
 interface DeployedMissileSystemsProps {
-  deployedSystems: Map<string, MissileDeployment>;
+  deployedMissileSystems: Map<string, MissileDeployment>;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
   relocatingArea?: RelocatingArea | null;
@@ -335,7 +339,7 @@ interface DeployedMissileSystemsProps {
 }
 
 export function DeployedMissileSystems({
-  deployedSystems,
+  deployedMissileSystems,
   onAreaClick,
   onRotateClick,
   relocatingArea,
@@ -345,7 +349,7 @@ export function DeployedMissileSystems({
 
   return (
     <>
-      {Array.from(deployedSystems.entries()).map(([unitKey, data]) => (
+      {Array.from(deployedMissileSystems.entries()).map(([unitKey, data]) => (
         <MissileSystemMarker
           key={unitKey}
           unitKey={unitKey}
