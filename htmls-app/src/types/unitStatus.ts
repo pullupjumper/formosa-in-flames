@@ -13,7 +13,7 @@ export interface SignalData {
   currentDetectionLevel?: number;
 }
 
-export interface MissileSystemUnit {
+export interface BatteryStatus {
   name: string;
   missileSystemType: string;
   firingUnitState: string;
@@ -24,8 +24,6 @@ export interface MissileSystemUnit {
   missilesInAmmoVehicles: number;
   missilesInAHA: number;
 }
-
-export type MissileSystemData = Record<string, MissileSystemUnit[]>;
 
 export interface C2Unit {
   name: string;
@@ -60,7 +58,7 @@ export type LandingUnitsData = Record<string, Record<string, number>>;
 
 export interface UnitStatusData {
   signals: SignalData[];
-  launchers: MissileSystemData;
+  batteryStatuses: BatteryStatus[];
   c2: C2Data;
   baseWeapons: Base[];
   landingUnits: LandingUnitsData;

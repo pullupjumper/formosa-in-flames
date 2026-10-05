@@ -2,9 +2,9 @@ import { ImageIcon } from '@/components/ImageIcon';
 import { ICON_IMAGES } from '@/components/Map';
 import { DeployableUnitCard } from '@pages/control-panel/components/DeployableUnitCard';
 import type { C2Child, C2NodeView } from '../c2Nodes';
-import { getLauncherStatus, type LauncherStatusMap } from '../launcherStatus';
+import { getBatteryStatus, type BatteryStatusMap } from '../batteryStatus';
 import { InfoCard } from './InfoCard';
-import { LauncherStatusDetails } from './LauncherStatusDetails';
+import { BatteryStatusDetails } from './BatteryStatusDetails';
 import { SamDoctrineToggle } from './SamDoctrineToggle';
 import { TreeRow } from './TreeRow';
 
@@ -15,8 +15,8 @@ interface C2NodesSectionProps {
   nodes: C2NodeView[];
   samWeaponsFree: boolean;
   onSamWeaponsFreeChange: (weaponsFree: boolean) => void;
-  launcherStatus: LauncherStatusMap;
-  /** Weapon category the SAM launchers are deployed under */
+  batteryStatusMap: BatteryStatusMap;
+  /** Weapon category the SAM batteries are deployed under */
   samCategory: string;
   expandedUnitKey: string | null;
   selectedUnitKey: string | null;
@@ -29,7 +29,7 @@ export function C2NodesSection({
   nodes,
   samWeaponsFree,
   onSamWeaponsFreeChange,
-  launcherStatus,
+  batteryStatusMap,
   samCategory,
   expandedUnitKey,
   selectedUnitKey,
@@ -59,7 +59,7 @@ export function C2NodesSection({
               node: (
                 <ChildCard
                   child={child}
-                  launcherStatus={launcherStatus}
+                  batteryStatusMap={batteryStatusMap}
                   samCategory={samCategory}
                   expandedUnitKey={expandedUnitKey}
                   selectedUnitKey={selectedUnitKey}
@@ -78,7 +78,7 @@ export function C2NodesSection({
 }
 
 // ============================================================================
-// ChildCard — deployable when the SAM has a launcher, plain otherwise
+// ChildCard — deployable when the SAM has a battery, plain otherwise
 // ============================================================================
 interface ChildCardProps extends Omit<
   C2NodesSectionProps,
@@ -89,7 +89,7 @@ interface ChildCardProps extends Omit<
 
 function ChildCard({
   child,
-  launcherStatus,
+  batteryStatusMap,
   samCategory,
   expandedUnitKey,
   selectedUnitKey,
@@ -97,37 +97,37 @@ function ChildCard({
   onUndeploy,
   onCancelSelection,
 }: ChildCardProps) {
-  const { unit, launcher, type } = child;
-  const launcherState = launcher
-    ? getLauncherStatus(launcherStatus, samCategory, launcher.name)
+  const { unit, battery, type } = child;
+  const batteryStatus = battery
+    ? getBatteryStatus(batteryStatusMap, samCategory, battery.name)
     : undefined;
   // Status stays folded until the card is clicked open
   const isOpen =
-    launcher !== null &&
-    (selectedUnitKey === launcher.unitKey || expandedUnitKey === launcher.unitKey);
+    battery !== null &&
+    (selectedUnitKey === battery.unitKey || expandedUnitKey === battery.unitKey);
   const details = (
     <>
       <UnitDetails type={type} unit={unit} />
-      {isOpen && launcherState && <LauncherStatusDetails status={launcherState} />}
+      {isOpen && batteryStatus && <BatteryStatusDetails status={batteryStatus} />}
     </>
   );
   const icon = type === 'SAM' ? <ImageIcon image={ICON_IMAGES.sam} /> : undefined;
 
-  if (!launcher) {
+  if (!battery) {
     return <InfoCard name={unit.name} icon={icon} details={details} />;
   }
 
   return (
     <DeployableUnitCard
-      name={launcher.name}
+      name={battery.name}
       icon={icon}
       details={details}
-      deployedSummary={`✓ Deployed | Angle: ${launcher.openingAngle}°`}
-      isDeployed={launcher.isDeployed}
-      isSelected={selectedUnitKey === launcher.unitKey}
-      isExpanded={expandedUnitKey === launcher.unitKey}
-      onSelect={() => onUnitSelect(launcher.unitKey, launcher.name, samCategory)}
-      onCancelDeployment={() => onUndeploy(launcher.unitKey, launcher.name)}
+      deployedSummary={`✓ Deployed | Angle: ${battery.openingAngle}°`}
+      isDeployed={battery.isDeployed}
+      isSelected={selectedUnitKey === battery.unitKey}
+      isExpanded={expandedUnitKey === battery.unitKey}
+      onSelect={() => onUnitSelect(battery.unitKey, battery.name, samCategory)}
+      onCancelDeployment={() => onUndeploy(battery.unitKey, battery.name)}
       onCancelSelection={onCancelSelection}
     />
   );

@@ -1,16 +1,16 @@
 import { ImageIcon } from '@/components/ImageIcon';
-import { getLauncherImage } from '@/components/Map';
+import { getBatteryImage } from '@/components/Map';
 import { DeployableUnitCard } from '@pages/control-panel/components/DeployableUnitCard';
 import type { MissileGroup } from '@pages/control-panel/missileGroups';
-import { getLauncherStatus, type LauncherStatusMap } from '../launcherStatus';
-import { LauncherStatusDetails } from './LauncherStatusDetails';
+import { getBatteryStatus, type BatteryStatusMap } from '../batteryStatus';
+import { BatteryStatusDetails } from './BatteryStatusDetails';
 
 // ============================================================================
-// LauncherSection — missile launcher groups for the control panel
+// BatterySection — missile battery groups for the control panel
 // ============================================================================
-interface LauncherSectionProps {
+interface BatterySectionProps {
   missileGroups: MissileGroup[];
-  launcherStatus: LauncherStatusMap;
+  batteryStatusMap: BatteryStatusMap;
   expandedUnitKey: string | null;
   /** Missile unit armed for deployment, null when no deploy mode is live */
   selectedUnitKey: string | null;
@@ -19,15 +19,15 @@ interface LauncherSectionProps {
   onCancelSelection: () => void;
 }
 
-export function LauncherSection({
+export function BatterySection({
   missileGroups,
-  launcherStatus,
+  batteryStatusMap,
   expandedUnitKey,
   selectedUnitKey,
   onUnitSelect,
   onUndeploy,
   onCancelSelection,
-}: LauncherSectionProps) {
+}: BatterySectionProps) {
   if (missileGroups.length === 0) {
     return (
       <div className="text-xs italic text-text-secondary">No missile system units available</div>
@@ -41,12 +41,12 @@ export function LauncherSection({
           <DeployableUnitCard
             key={unit.unitKey}
             name={unit.name}
-            icon={<ImageIcon image={getLauncherImage(group.category)} />}
+            icon={<ImageIcon image={getBatteryImage(group.category)} />}
             details={
-              <LauncherDetails
+              <BatteryDetails
                 group={group}
                 unit={unit}
-                launcherStatus={launcherStatus}
+                batteryStatusMap={batteryStatusMap}
                 isOpen={selectedUnitKey === unit.unitKey || expandedUnitKey === unit.unitKey}
               />
             }
@@ -64,23 +64,23 @@ export function LauncherSection({
   );
 }
 
-function LauncherDetails({
+function BatteryDetails({
   group,
   unit,
-  launcherStatus,
+  batteryStatusMap,
   isOpen,
 }: {
   group: MissileGroup;
   unit: MissileGroup['units'][number];
-  launcherStatus: LauncherStatusMap;
+  batteryStatusMap: BatteryStatusMap;
   /** Status stays folded until the card is clicked open */
   isOpen: boolean;
 }) {
-  const status = getLauncherStatus(launcherStatus, group.category, unit.name);
+  const status = getBatteryStatus(batteryStatusMap, group.category, unit.name);
   return (
     <>
       <div>SYSTEM: {group.systemName}</div>
-      {isOpen && status && <LauncherStatusDetails status={status} />}
+      {isOpen && status && <BatteryStatusDetails status={status} />}
     </>
   );
 }

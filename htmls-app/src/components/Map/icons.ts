@@ -2,7 +2,7 @@ import L from 'leaflet';
 import type { ForceImage } from '@/types/controlPanel';
 
 // ============================================================================
-// LAUNCHER ICONS — NATO symbols shared by the map markers and the sidebar cards
+// BATTERY ICONS — NATO symbols shared by the map markers and the sidebar cards
 // ============================================================================
 const MISSILE_ICON_URL = 'https://i.meee.com.tw/suDq81b.png';
 const SAM_ICON_URL = 'https://i.meee.com.tw/PCUEceO.png';
@@ -24,8 +24,8 @@ export const AIRBASE_ICON_SIZE = { width: 16, height: 16 };
 export const EW_ICON_URL = 'https://i.meee.com.tw/LO1UNjw.png';
 export const EW_ICON_SIZE = { width: 25, height: 15 };
 
-/** Symbol for a launcher's weapon category: SAM gets its own, everything else is SSM */
-export function getLauncherImage(category: string): ForceImage {
+/** Symbol for a battery's weapon category: SAM gets its own, everything else is SSM */
+export function getBatteryImage(category: string): ForceImage {
   return category === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.ssm;
 }
 

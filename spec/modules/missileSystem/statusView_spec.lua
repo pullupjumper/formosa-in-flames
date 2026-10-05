@@ -57,22 +57,22 @@ describe("MissileSystem StatusView", function()
 
   local missileSystemConfigMap = { srbm = { reloadTime = 1800 }, mlrs = { reloadTime = 600 } }
 
-  ---Build rows for SRBM and return the FU-1 row
+  ---Build statuses for SRBM and return the FU-1 status
   ---@param groundCtx table
   ---@param now number
   ---@return table
   local function buildRow(groundCtx, now)
-    return StatusView.buildBatteryStatusRows(groundCtx, missileSystemConfigMap, now)["RS-1"][1]
+    return StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, now)[1]
   end
 
   -- ============================================================================
-  -- buildBatteryStatusRows
+  -- buildBatteryStatuses
   -- ============================================================================
 
-  describe("buildBatteryStatusRows", function()
-    -- Positive: one row per firing unit, under its resupply unit
-    it("should group firing unit rows under their resupply unit", function()
-      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), missileSystemConfigMap, 1120)
+  describe("buildBatteryStatuses", function()
+    -- Positive: one status per firing unit
+    it("should build one status per firing unit", function()
+      local rows = StatusView.buildBatteryStatuses(makeGroundCtx(), missileSystemConfigMap, 1120)
 
       assert.are.same({
         {
@@ -86,14 +86,14 @@ describe("MissileSystem StatusView", function()
           resupplyUnitReloadTime = 0,
           defaultReloadTime = 30
         }
-      }, rows["RS-1"])
+      }, rows)
     end)
 
-    -- Positive: the UI table lists idle resupply units too
-    it("should keep an empty row list for resupply units without a firing unit", function()
-      local rows = StatusView.buildBatteryStatusRows(makeGroundCtx(), missileSystemConfigMap, 1120)
+    -- Positive: idle resupply units have no firing unit, so they produce no status
+    it("should skip resupply units without a firing unit", function()
+      local rows = StatusView.buildBatteryStatuses(makeGroundCtx(), missileSystemConfigMap, 1120)
 
-      assert.are.same({}, rows["RS-2"])
+      assert.are.equal(1, #rows)
     end)
 
     -- Positive: every known state has its own label
@@ -114,11 +114,11 @@ describe("MissileSystem StatusView", function()
     end)
 
     -- Negative: a ground context without any missile system state produces no rows
-    it("should return no rows when there are no system contexts", function()
+    it("should return no statuses when there are no system contexts", function()
       local groundCtx = makeGroundCtx()
       groundCtx.missileSystemTypes = {}
 
-      local rows = StatusView.buildBatteryStatusRows(groundCtx, missileSystemConfigMap, 1120)
+      local rows = StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, 1120)
 
       assert.are.same({}, rows)
     end)

@@ -34,34 +34,22 @@ local function calculateReloadMinutes(reloadStartTime, currentTime)
   return minutes
 end
 
----Build battery status rows grouped by resupply unit name
+---Build one status per battery (a firing unit plus its paired resupply unit)
 ---@param groundCtx SBJ__GroundContext Side ground force runtime context
 ---@param missileSystemConfigMap table<string,SBJ__MissileSystemConfig> Side ground force configuration
 ---@param currentTime number Current scenario time in seconds
----@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
-function StatusView.buildBatteryStatusRows(groundCtx, missileSystemConfigMap, currentTime)
-  local rows = {}
-  local typeCtxs = groundCtx.missileSystemTypes
+---@return SBJ__BatteryStatus[] # One status per battery
+function StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, currentTime)
+  local statuses = {}
 
-  for missileSystemType, _ in pairs(typeCtxs) do
-    local resupplyUnitCtxs = typeCtxs[missileSystemType] and typeCtxs[missileSystemType].resupplyUnits
+  for missileSystemType, missileSystemCtx in pairs(groundCtx.missileSystemTypes) do
+    local firingUnitCtxs = missileSystemCtx.firingUnits
 
-    if resupplyUnitCtxs then
-      for key, _ in pairs(resupplyUnitCtxs) do
-        rows[key] = {}
-      end
-    end
-  end
-
-  for missileSystemType, _ in pairs(typeCtxs) do
-    local missileSystemCtx = typeCtxs[missileSystemType]
-    local firingUnitCtxs = missileSystemCtx and missileSystemCtx.firingUnits
-
-    if missileSystemCtx and firingUnitCtxs then
+    if firingUnitCtxs then
       for _, firingUnitCtx in pairs(firingUnitCtxs) do
         local resupplyUnitCtx = missileSystemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
 
-        table.insert(rows[firingUnitCtx.resupplyUnit], {
+        table.insert(statuses, {
           name = firingUnitCtx.name,
           missileSystemType = missileSystemType,
           firingUnitState = formatState(firingUnitCtx.state),
@@ -75,7 +63,8 @@ function StatusView.buildBatteryStatusRows(groundCtx, missileSystemConfigMap, cu
       end
     end
   end
-  return rows
+
+  return statuses
 end
 
 return StatusView

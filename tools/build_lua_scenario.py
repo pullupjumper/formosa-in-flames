@@ -94,7 +94,7 @@ HTML_INJECTION_SPECS: Tuple[HtmlInjectionSpec, ...] = (
             "__INJECT_AMPHIBIOUS_LOCATIONS__",
             "__INJECT_C2__",
             "__INJECT_SIGNALS__",
-            "__INJECT_LAUNCHERS__",
+            "__INJECT_BATTERY_STATUSES__",
             "__INJECT_LANDING_UNITS__",
             "__INJECT_IS_EDIT_MODE__",
             "__INJECT_IS_DEPLOY_LOCKED__",

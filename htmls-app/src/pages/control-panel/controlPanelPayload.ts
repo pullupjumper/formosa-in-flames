@@ -6,7 +6,7 @@ import type {
   MissileSystems,
   ControlPanelResult,
 } from '@/types/controlPanel';
-import type { C2Data, LandingUnitsData, MissileSystemData, SignalData } from '@/types/unitStatus';
+import type { BatteryStatus, C2Data, LandingUnitsData, SignalData } from '@/types/unitStatus';
 import { MOCK_ADD_UNIT_ACTIONS } from '@/data/addUnitsMenuData';
 import {
   AIRBASES_DATA,
@@ -44,7 +44,7 @@ declare global {
     __INJECT_AMPHIBIOUS_LOCATIONS__?: string;
     __INJECT_C2__?: string;
     __INJECT_SIGNALS__?: string;
-    __INJECT_LAUNCHERS__?: string;
+    __INJECT_BATTERY_STATUSES__?: string;
     __INJECT_LANDING_UNITS__?: string;
     __INJECT_IS_EDIT_MODE__?: string;
     __INJECT_IS_DEPLOY_LOCKED__?: string;
@@ -63,7 +63,7 @@ export interface ControlPanelPayload {
   amphibiousLocations: AmphibiousLocation[];
   c2Data: C2Data;
   signals: SignalData[];
-  launcherData: MissileSystemData;
+  batteryStatuses: BatteryStatus[];
   landingUnits: LandingUnitsData;
   addUnitActions: AddUnitAction[];
 }
@@ -94,10 +94,10 @@ export function readControlPanelPayload(): ControlPanelPayload {
       UNIT_STATUS_DATA.signals,
       'SIGNALS'
     ),
-    launcherData: parseInjectedJSON<MissileSystemData>(
-      window.__INJECT_LAUNCHERS__,
-      UNIT_STATUS_DATA.launchers,
-      'LAUNCHERS'
+    batteryStatuses: parseInjectedJSON<BatteryStatus[]>(
+      window.__INJECT_BATTERY_STATUSES__,
+      UNIT_STATUS_DATA.batteryStatuses,
+      'BATTERY_STATUSES'
     ),
     landingUnits: parseInjectedJSON<LandingUnitsData>(
       window.__INJECT_LANDING_UNITS__,

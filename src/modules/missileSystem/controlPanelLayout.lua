@@ -89,7 +89,7 @@ end
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Side ground force configuration; left untouched
 ---@param sideName string Side owning the reference points
 ---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
-function ControlPanelLayout.buildMissileSystemRows(missileSystemConfigMap, sideName)
+function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, sideName)
   local rows = {}
 
   for key, system in pairs(missileSystemConfigMap) do

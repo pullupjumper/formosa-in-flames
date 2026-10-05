@@ -190,7 +190,7 @@ export function MechanicsTab() {
           <Section title="4. CHECK BATTERY STATUS">
             <Paragraph>
               Open the <Term>Deployment</Term> tab and click a battery in the{' '}
-              <Term>Missile Launchers</Term> panel to see what it is doing instead of clicking
+              <Term>Missile Batteries</Term> panel to see what it is doing instead of clicking
               through units one by one.
             </Paragraph>
             <Panel>

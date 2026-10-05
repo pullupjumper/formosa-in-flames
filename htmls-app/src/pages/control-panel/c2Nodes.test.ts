@@ -18,7 +18,7 @@ function c2Unit(name: string): C2Unit {
   };
 }
 
-function launcher(unitKey: string, name: string, guid: string): MissileGroupUnit {
+function battery(unitKey: string, name: string, guid: string): MissileGroupUnit {
   return { unitKey, name, guid, isDeployed: false, openingAngle: null };
 }
 
@@ -44,36 +44,36 @@ describe('buildC2NodeViews', () => {
     ]);
   });
 
-  it('pairs a SAM unit with its launcher by GUID', () => {
+  it('pairs a SAM unit with its battery by GUID', () => {
     const nodes: C2Data = { n1: { name: 'C2', SAM: { g1: c2Unit('Renamed') } } };
-    const launchers = [launcher('sam_a', 'Original', 'g1')];
+    const batteries = [battery('sam_a', 'Original', 'g1')];
 
-    expect(buildC2NodeViews(nodes, launchers)[0].children[0].launcher?.unitKey).toBe('sam_a');
+    expect(buildC2NodeViews(nodes, batteries)[0].children[0].battery?.unitKey).toBe('sam_a');
   });
 
   it('falls back to the unit name when no GUID matches', () => {
     const nodes: C2Data = { n1: { name: 'C2', SAM: { gX: c2Unit('Same Name') } } };
-    const launchers = [launcher('sam_a', 'Same Name', 'g1')];
+    const batteries = [battery('sam_a', 'Same Name', 'g1')];
 
-    expect(buildC2NodeViews(nodes, launchers)[0].children[0].launcher?.unitKey).toBe('sam_a');
+    expect(buildC2NodeViews(nodes, batteries)[0].children[0].battery?.unitKey).toBe('sam_a');
   });
 
-  it('leaves SAM units without a launcher as plain cards', () => {
+  it('leaves SAM units without a battery as plain cards', () => {
     const nodes: C2Data = { n1: { name: 'C2', SAM: { g1: c2Unit('Unknown') } } };
 
-    expect(
-      buildC2NodeViews(nodes, [launcher('sam_a', 'Other', 'g9')])[0].children[0].launcher
-    ).toBe(null);
+    expect(buildC2NodeViews(nodes, [battery('sam_a', 'Other', 'g9')])[0].children[0].battery).toBe(
+      null
+    );
   });
 
-  it('never gives one launcher to two SAM units', () => {
+  it('never gives one battery to two SAM units', () => {
     const nodes: C2Data = {
       n1: { name: 'C2', SAM: { g1: c2Unit('Twin'), g2: c2Unit('Twin') } },
     };
 
-    const children = buildC2NodeViews(nodes, [launcher('sam_a', 'Twin', 'gZ')])[0].children;
+    const children = buildC2NodeViews(nodes, [battery('sam_a', 'Twin', 'gZ')])[0].children;
 
-    expect(children.map((child) => child.launcher?.unitKey ?? null)).toEqual(['sam_a', null]);
+    expect(children.map((child) => child.battery?.unitKey ?? null)).toEqual(['sam_a', null]);
   });
 });
 

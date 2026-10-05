@@ -1,21 +1,18 @@
 import { calculateProgress } from '@/utils/format';
-import type { LauncherStatus } from '../launcherStatus';
+import type { BatteryStatus } from '@/types/unitStatus';
 
 // ============================================================================
-// LauncherStatusDetails — live battery status lines for a launcher card
+// BatteryStatusDetails — live battery status lines for a battery card
 // ============================================================================
-interface LauncherStatusDetailsProps {
-  status: LauncherStatus;
+interface BatteryStatusDetailsProps {
+  status: BatteryStatus;
 }
 
-export function LauncherStatusDetails({ status }: LauncherStatusDetailsProps) {
+export function BatteryStatusDetails({ status }: BatteryStatusDetailsProps) {
   return (
     <div className="mt-1.5 space-y-1.5 border-t border-aip-card-border/60 pt-1.5">
       <div>
         FIRING: {status.firingUnitState} | RESUPPLY: {status.resupplyUnitState}
-      </div>
-      <div className="truncate" title={status.resupplyUnitName}>
-        RESUPPLY UNIT: {status.resupplyUnitName}
       </div>
       <ReloadBar
         label="FIRING RELOAD"

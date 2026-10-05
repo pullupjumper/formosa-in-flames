@@ -10,7 +10,7 @@ import { getAreaColor } from '@/constants/deployment';
 import { canInteractArea, getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
 import { TacticalPolygon, RangeCircle, ZoomGate, DETAIL_MIN_ZOOM } from './primitives';
-import { createImageIcon, ICON_IMAGES, getLauncherImage } from './icons';
+import { createImageIcon, ICON_IMAGES, getBatteryImage } from './icons';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 
 // ============================================================================
@@ -158,7 +158,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [tacticalAreas.reloadArea]
   );
 
-  const icon = useMemo(() => createImageIcon(getLauncherImage(category)), [category]);
+  const icon = useMemo(() => createImageIcon(getBatteryImage(category)), [category]);
 
   // Fallback if no tactical areas
   if (!tacticalAreas.uShapeVertices || tacticalAreas.uShapeVertices.length === 0) {

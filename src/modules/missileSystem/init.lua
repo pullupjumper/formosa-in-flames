@@ -252,8 +252,8 @@ end
 ---@param config SBJ__Config Global configuration table
 ---@param sideName string Side name (China or Taiwan)
 ---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
-function MissileSystem.buildMissileSystemRows(config, sideName)
-  return ControlPanelLayout.buildMissileSystemRows(
+function MissileSystem.buildDeploymentSystems(config, sideName)
+  return ControlPanelLayout.buildDeploymentSystems(
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
     sideName
   )
@@ -270,13 +270,13 @@ function MissileSystem.deploySide(config, saveData, sideName)
   Context.initMissileSystemContexts(missileSystemConfigMap, PersistentState.ground(saveData, sideName))
 end
 
----Build a side's battery status rows for the status UI, grouped by resupply unit name
+---Build a side's battery statuses for the control panel, one per battery (firing unit plus its paired resupply unit)
 ---@param config SBJ__Config Global configuration table
 ---@param saveData SBJ__SaveData Persistent save data
 ---@param sideName string Side name (China or Taiwan)
----@return table<string, SBJ__BatteryStatusRow[]> # Firing unit rows keyed by their resupply unit name
-function MissileSystem.buildBatteryStatusRows(config, saveData, sideName)
-  return StatusView.buildBatteryStatusRows(
+---@return SBJ__BatteryStatus[] # One status per battery
+function MissileSystem.buildBatteryStatuses(config, saveData, sideName)
+  return StatusView.buildBatteryStatuses(
     PersistentState.ground(saveData, sideName),
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
     GameApi.ScenEdit_CurrentTime()

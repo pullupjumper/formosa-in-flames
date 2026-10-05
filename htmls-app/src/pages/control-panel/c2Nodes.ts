@@ -3,7 +3,7 @@ import type { MissileGroupUnit } from '@pages/control-panel/missileGroups';
 
 /**
  * View model for the C2 Nodes section: each node with its radar and SAM units,
- * and the launcher a SAM unit can be deployed through when the missile system
+ * and the battery a SAM unit can be deployed through when the missile system
  * list knows it too.
  */
 
@@ -14,8 +14,8 @@ export interface C2Child {
   key: string;
   type: 'SAM' | 'Radar';
   unit: C2Unit;
-  /** Matching missile launcher, present only for SAM units that can be deployed */
-  launcher: MissileGroupUnit | null;
+  /** Matching missile battery, present only for SAM units that can be deployed */
+  battery: MissileGroupUnit | null;
 }
 
 /** One live SAM unit and its weapons control status, as written to `emconData`. */
@@ -56,30 +56,30 @@ function flattenC2Nodes(data: C2Data): Record<string, C2Node> {
 }
 
 /**
- * Pair every SAM unit with its launcher: by GUID first (the C2 payload keys SAM
- * units by game GUID), then by name. A launcher backs at most one SAM unit so
+ * Pair every SAM unit with its battery: by GUID first (the C2 payload keys SAM
+ * units by game GUID), then by name. A battery backs at most one SAM unit so
  * two cards never drive the same deployment.
  */
-export function buildC2NodeViews(c2Data: C2Data, samLaunchers: MissileGroupUnit[]): C2NodeView[] {
+export function buildC2NodeViews(c2Data: C2Data, samBatteries: MissileGroupUnit[]): C2NodeView[] {
   const claimed = new Set<string>();
 
-  const findLauncher = (guid: string, name: string): MissileGroupUnit | null => {
-    const launcher =
-      samLaunchers.find((unit) => unit.guid === guid && !claimed.has(unit.unitKey)) ??
-      samLaunchers.find((unit) => unit.name === name && !claimed.has(unit.unitKey)) ??
+  const findBattery = (guid: string, name: string): MissileGroupUnit | null => {
+    const battery =
+      samBatteries.find((unit) => unit.guid === guid && !claimed.has(unit.unitKey)) ??
+      samBatteries.find((unit) => unit.name === name && !claimed.has(unit.unitKey)) ??
       null;
-    if (launcher) claimed.add(launcher.unitKey);
-    return launcher;
+    if (battery) claimed.add(battery.unitKey);
+    return battery;
   };
 
   return Object.entries(flattenC2Nodes(c2Data)).map(([key, node]) => {
     const children: C2Child[] = [];
 
     for (const [guid, unit] of Object.entries(node.radar ?? {})) {
-      children.push({ key: guid, type: 'Radar', unit, launcher: null });
+      children.push({ key: guid, type: 'Radar', unit, battery: null });
     }
     for (const [guid, unit] of Object.entries(node.SAM ?? {})) {
-      children.push({ key: guid, type: 'SAM', unit, launcher: findLauncher(guid, unit.name) });
+      children.push({ key: guid, type: 'SAM', unit, battery: findBattery(guid, unit.name) });
     }
 
     return { key, name: node.name, children };

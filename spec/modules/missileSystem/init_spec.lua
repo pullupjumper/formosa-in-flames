@@ -417,17 +417,17 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- buildMissileSystemRows
+  -- buildDeploymentSystems
   -- ============================================================================
 
-  describe("buildMissileSystemRows", function()
+  describe("buildDeploymentSystems", function()
     -- Positive: rows come from the side's ground config
-    it("should return the setup rows built from the side's ground config", function()
+    it("should return the deployment systems built from the side's ground config", function()
       local config = makeSides()
       local rows = { srbm = { id = "row" } }
-      local rowsStub = trackStub(ControlPanelLayout, "buildMissileSystemRows").returns(rows)
+      local rowsStub = trackStub(ControlPanelLayout, "buildDeploymentSystems").returns(rows)
 
-      local result = MissileSystem.buildMissileSystemRows(config, constants.SIDES.BLUE)
+      local result = MissileSystem.buildDeploymentSystems(config, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
       assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, constants.SIDES.BLUE)
@@ -435,18 +435,18 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- buildBatteryStatusRows
+  -- buildBatteryStatuses
   -- ============================================================================
 
-  describe("buildBatteryStatusRows", function()
+  describe("buildBatteryStatuses", function()
     -- Positive: the side's slice and config are read at the current game time
-    it("should build status rows from the side's slice and config at the current time", function()
+    it("should build battery statuses from the side's slice and config at the current time", function()
       local config, saveData = makeSides()
-      local rows = { RS1 = {} }
+      local rows = { { name = "FU-1" } }
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(4200)
-      local rowsStub = trackStub(StatusView, "buildBatteryStatusRows").returns(rows)
+      local rowsStub = trackStub(StatusView, "buildBatteryStatuses").returns(rows)
 
-      local result = MissileSystem.buildBatteryStatusRows(config, saveData, constants.SIDES.BLUE)
+      local result = MissileSystem.buildBatteryStatuses(config, saveData, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
       assert.stub(rowsStub).was.called_with(saveData.blue.ground, config.blue.ground.missileSystemTypes, 4200)

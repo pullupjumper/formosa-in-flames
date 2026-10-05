@@ -3,7 +3,7 @@ import { DeploymentMap } from '@pages/control-panel/components/DeploymentMap';
 import { buildMissileGroups } from '@pages/control-panel/missileGroups';
 import { toControlPanelResult } from '@/utils/deploymentPayload';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../c2Nodes';
-import { buildLauncherStatusMap } from '../launcherStatus';
+import { buildBatteryStatusMap } from '../batteryStatus';
 import { submitDeployment, type ControlPanelPayload } from '../controlPanelPayload';
 import type { DeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
@@ -15,10 +15,10 @@ import { SubmitBar } from './SubmitBar';
 import { SignalSection } from './SignalSection';
 import { C2NodesSection } from './C2NodesSection';
 import { AircraftBasesSection } from './AircraftBasesSection';
-import { LauncherSection } from './LauncherSection';
+import { BatterySection } from './BatterySection';
 import { ResizeHandle } from './ResizeHandle';
 
-// SAM launchers are deployed from their C2 node card, not the launcher list
+// SAM batteries are deployed from their C2 node card, not the battery list
 const SAM_CATEGORY = 'sam';
 
 const MIN_SIDEBAR_WIDTH = 300;
@@ -31,13 +31,13 @@ interface ControlDeploymentTabProps {
   /** What the player has deployed and spent so far; lives above the tabs */
   session: DeploymentSession;
   showLandingUnits: boolean;
-  /** Deployment was already submitted once: jammers, launchers and aircraft are read-only */
+  /** Deployment was already submitted once: jammers, batteries and aircraft are read-only */
   isDeploymentLocked: boolean;
 }
 
 /**
  * Deployment tab, AIP-terminal style: stacked panels on the left (jammers,
- * launchers, aircraft), map on the right.
+ * batteries, aircraft), map on the right.
  */
 export function ControlDeploymentTab({
   payload,
@@ -97,17 +97,17 @@ export function ControlDeploymentTab({
     () => buildMissileGroups(missileSystems, deployedMissileSystems),
     [missileSystems, deployedMissileSystems]
   );
-  const launcherGroups = useMemo(
+  const batteryGroups = useMemo(
     () => missileGroups.filter((group) => group.category !== SAM_CATEGORY),
     [missileGroups]
   );
-  const deployedLaunchers = launcherGroups.reduce((sum, group) => sum + group.deployedCount, 0);
-  const totalLaunchers = launcherGroups.reduce((sum, group) => sum + group.units.length, 0);
+  const deployedBatteries = batteryGroups.reduce((sum, group) => sum + group.deployedCount, 0);
+  const totalBatteries = batteryGroups.reduce((sum, group) => sum + group.units.length, 0);
 
-  const [launcherStatus] = useState(() => buildLauncherStatusMap(payload.launcherData));
+  const [batteryStatusMap] = useState(() => buildBatteryStatusMap(payload.batteryStatuses));
   const c2Nodes = useMemo(() => {
-    const samLaunchers = missileGroups.find((group) => group.category === SAM_CATEGORY)?.units;
-    return buildC2NodeViews(payload.c2Data, samLaunchers ?? []);
+    const samBatteries = missileGroups.find((group) => group.category === SAM_CATEGORY)?.units;
+    return buildC2NodeViews(payload.c2Data, samBatteries ?? []);
   }, [payload.c2Data, missileGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
   const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
@@ -141,7 +141,7 @@ export function ControlDeploymentTab({
             nodes={shownC2Nodes}
             samWeaponsFree={samUnits.length > 0 && samUnits.every((sam) => sam.weaponFree)}
             onSamWeaponsFreeChange={setSamWeaponsFree}
-            launcherStatus={launcherStatus}
+            batteryStatusMap={batteryStatusMap}
             samCategory={SAM_CATEGORY}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
@@ -162,13 +162,13 @@ export function ControlDeploymentTab({
         )}
 
         <Panel
-          title="Missile Launchers"
+          title="Missile Batteries"
           locked={isDeploymentLocked}
-          badge={`${deployedLaunchers}/${totalLaunchers}`}
+          badge={`${deployedBatteries}/${totalBatteries}`}
         >
-          <LauncherSection
-            missileGroups={launcherGroups}
-            launcherStatus={launcherStatus}
+          <BatterySection
+            missileGroups={batteryGroups}
+            batteryStatusMap={batteryStatusMap}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}

@@ -904,8 +904,8 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field operationalArea SBJ__OperationalArea New operational area for the firing unit and its resupply unit
 
----One firing unit row in the status UI battery table, built by MissileSystem.buildBatteryStatusRows
----@class SBJ__BatteryStatusRow: table
+---One battery's status in the control panel (a firing unit plus its paired resupply unit), built by MissileSystem.buildBatteryStatuses
+---@class SBJ__BatteryStatus: table
 ---@field name string Firing unit name
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field firingUnitState string Firing unit state label

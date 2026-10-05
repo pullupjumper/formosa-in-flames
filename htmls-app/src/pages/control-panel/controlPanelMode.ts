@@ -11,7 +11,7 @@ export interface ControlPanelMode {
 export interface ControlPanelView {
   showLandingUnits: boolean;
   showAddUnits: boolean;
-  /** Jammer, launcher and aircraft deployment can no longer be changed */
+  /** Jammer, battery and aircraft deployment can no longer be changed */
   isDeploymentLocked: boolean;
 }
 

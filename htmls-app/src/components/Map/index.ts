@@ -10,7 +10,7 @@ export { SignalMarkers } from './SignalMarker';
 export { MapShell } from './primitives';
 export {
   createImageIcon,
-  getLauncherImage,
+  getBatteryImage,
   ICON_IMAGES,
   EW_ICON_URL,
   EW_ICON_SIZE,

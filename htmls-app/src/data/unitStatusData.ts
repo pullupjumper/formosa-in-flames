@@ -1,6 +1,6 @@
 import type {
   SignalData,
-  MissileSystemData,
+  BatteryStatus,
   C2Data,
   Base,
   LandingUnitsData,
@@ -38,70 +38,66 @@ export const SIGNALS_DATA: SignalData[] = [
 ];
 
 // ============================================================================
-// MISSILE SYSTEM DATA (Mobile Launchers)
+// BATTERY STATUS DATA
 // ============================================================================
-export const LAUNCHERS_DATA: MissileSystemData = {
+export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
   // Names match the control panel mock so the control panel cards show their status
-  'Ammo Sec, Rocket Arty Coy, 58th Arty Command': [
-    {
-      name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
-      missileSystemType: 'sam',
-      firingUnitState: 'STATIC',
-      resupplyUnitState: 'RELOAD',
-      firingUnitReloadTime: 0,
-      defaultReloadTime: 10,
-      resupplyUnitReloadTime: 4,
-      missilesInAmmoVehicles: 12,
-      missilesInAHA: 40,
-    },
-    {
-      name: 'Rocket Arty Coy, 58th Arty Command',
-      missileSystemType: 'srbm',
-      firingUnitState: 'HIDE',
-      resupplyUnitState: 'STATIC',
-      firingUnitReloadTime: 6,
-      defaultReloadTime: 10,
-      resupplyUnitReloadTime: 0,
-      missilesInAmmoVehicles: 6,
-      missilesInAHA: 18,
-    },
-  ],
-  'Area A': [
-    {
-      name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
-      missileSystemType: 'sam',
-      firingUnitState: 'STATIC',
-      resupplyUnitState: 'STATIC',
-      firingUnitReloadTime: 10,
-      defaultReloadTime: 100,
-      resupplyUnitReloadTime: 20,
-      missilesInAmmoVehicles: 5,
-      missilesInAHA: 10,
-    },
-    {
-      name: 'Rocket Arty Coy, 58th Arty Command',
-      missileSystemType: 'srbm',
-      firingUnitState: 'STATIC',
-      resupplyUnitState: 'STATIC',
-      firingUnitReloadTime: 10,
-      defaultReloadTime: 100,
-      resupplyUnitReloadTime: 20,
-      missilesInAmmoVehicles: 5,
-      missilesInAHA: 10,
-    },
-    {
-      name: '1st Hai Feng Shore-based ASM MOB Sqn',
-      missileSystemType: 'ascm',
-      firingUnitState: 'STATIC',
-      resupplyUnitState: 'STATIC',
-      firingUnitReloadTime: 10,
-      defaultReloadTime: 100,
-      resupplyUnitReloadTime: 20,
-      missilesInAmmoVehicles: 5,
-      missilesInAHA: 10,
-    },
-  ],
-};
+  {
+    name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+    missileSystemType: 'sam',
+    firingUnitState: 'STATIC',
+    resupplyUnitState: 'RELOAD',
+    firingUnitReloadTime: 0,
+    defaultReloadTime: 10,
+    resupplyUnitReloadTime: 4,
+    missilesInAmmoVehicles: 12,
+    missilesInAHA: 40,
+  },
+  {
+    name: 'Rocket Arty Coy, 58th Arty Command',
+    missileSystemType: 'srbm',
+    firingUnitState: 'HIDE',
+    resupplyUnitState: 'STATIC',
+    firingUnitReloadTime: 6,
+    defaultReloadTime: 10,
+    resupplyUnitReloadTime: 0,
+    missilesInAmmoVehicles: 6,
+    missilesInAHA: 18,
+  },
+  {
+    name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+    missileSystemType: 'sam',
+    firingUnitState: 'STATIC',
+    resupplyUnitState: 'STATIC',
+    firingUnitReloadTime: 10,
+    defaultReloadTime: 100,
+    resupplyUnitReloadTime: 20,
+    missilesInAmmoVehicles: 5,
+    missilesInAHA: 10,
+  },
+  {
+    name: 'Rocket Arty Coy, 58th Arty Command',
+    missileSystemType: 'srbm',
+    firingUnitState: 'STATIC',
+    resupplyUnitState: 'STATIC',
+    firingUnitReloadTime: 10,
+    defaultReloadTime: 100,
+    resupplyUnitReloadTime: 20,
+    missilesInAmmoVehicles: 5,
+    missilesInAHA: 10,
+  },
+  {
+    name: '1st Hai Feng Shore-based ASM MOB Sqn',
+    missileSystemType: 'ascm',
+    firingUnitState: 'STATIC',
+    resupplyUnitState: 'STATIC',
+    firingUnitReloadTime: 10,
+    defaultReloadTime: 100,
+    resupplyUnitReloadTime: 20,
+    missilesInAmmoVehicles: 5,
+    missilesInAHA: 10,
+  },
+];
 
 // ============================================================================
 // C2 NODES DATA
@@ -206,7 +202,7 @@ export const LANDING_UNITS_DATA: LandingUnitsData = {
 // ============================================================================
 export const UNIT_STATUS_DATA: UnitStatusData = {
   signals: SIGNALS_DATA,
-  launchers: LAUNCHERS_DATA,
+  batteryStatuses: BATTERY_STATUSES_DATA,
   c2: C2_DATA,
   baseWeapons: BASE_WEAPONS_DATA,
   landingUnits: LANDING_UNITS_DATA,
