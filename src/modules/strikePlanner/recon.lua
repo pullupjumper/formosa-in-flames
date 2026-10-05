@@ -26,7 +26,7 @@ local WZ8_INITIAL_SPEED = 3300
 -- ============================================================================
 
 ---Launch units from a base with specified parameters
----@param params SBJ__LaunchUnitsParams Base, course and unit filter of the launch
+---@param params SBJ__LaunchUnitsParams
 ---@return CMO__Unit[] # Returns array of launched unit objects (empty if none launched)
 local function launchUnits(params)
   local baseGUID, course, unitCount = params.baseGUID, params.course, params.unitCount
@@ -69,8 +69,8 @@ end
 
 ---Remove a partially configured WZ-8 and report why it was abandoned
 ---A drone that never received its course would otherwise fly on at its spawn speed.
----@param wz8GUID string GUID of the drone to delete
----@param reason string Snake_case failure reason for the log row
+---@param wz8GUID string
+---@param reason string
 ---@return nil # Always nil, so callers can tail-return it
 local function abortWZ8Launch(wz8GUID, reason)
   GameApi.ScenEdit_DeleteUnit({ guid = wz8GUID })
@@ -87,7 +87,7 @@ end
 ---Create a fully configured WZ-8 reconnaissance drone at the H-6N's position
 ---Any failure after the unit exists deletes it; the H-6N only hands off on success.
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
----@param course CMO__Waypoint[] The reconnaissance course for WZ-8
+---@param course CMO__Waypoint[]
 ---@return CMO__Unit|nil # Returns the WZ-8 unit if successfully launched, nil otherwise
 local function createWZ8(h6n, course)
   local wz8 = GameApi.ScenEdit_AddUnit({
@@ -129,7 +129,7 @@ end
 ---Release a WZ-8 from an H-6N flying a recon entry and hand the entry over to it
 ---Only the unsettled entry is matched: a settled entry may still hold this airframe's
 ---GUID from an earlier sortie whose WZ-8 release failed.
----@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
+---@param reconCtx SBJ__ReconContext
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@return CMO__Unit|nil # The launched WZ-8, or nil when no entry is flying this H-6N or the launch failed
 function Recon.launchWZ8(reconCtx, h6n)
@@ -180,7 +180,7 @@ end
 ---Point a shadowing UAV at its target's latest known position
 ---The course holds a single waypoint, so the next update waits until the UAV reaches it.
 ---@param entry SBJ__ReconUAVEntry Queue entry (UAV only, tracking target assigned)
----@param reconUnit CMO__Unit The unit currently flying this entry
+---@param reconUnit CMO__Unit
 ---@return boolean isUpdated Whether the course was successfully updated
 ---@return SBJ__LogResult result Tracking outcome row
 local function updateTrackingCourse(entry, reconUnit)
@@ -223,9 +223,9 @@ end
 
 ---Settle reconnaissance mission and conditionally schedule next operations
 ---Scheduling fires at most once per entry, gated by hasScheduledOperations.
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
----@param entry SBJ__ReconQueueEntry Queue entry
----@param success boolean Mission success status
+---@param processingCtx SBJ__ReconQueueProcessingContext
+---@param entry SBJ__ReconQueueEntry
+---@param success boolean
 local function settleReconMission(processingCtx, entry, success)
   if entry.isFinished then
     return
@@ -242,7 +242,7 @@ local function settleReconMission(processingCtx, entry, success)
 end
 
 ---Determine outcome when UAV is destroyed or missing
----@param entry SBJ__ReconUAVEntry Queue entry
+---@param entry SBJ__ReconUAVEntry
 ---@param isEndTimeReached boolean Whether endTime was reached before destruction
 ---@return boolean success Whether mission should be considered successful
 ---@return SBJ__LogResult result Destruction outcome row
@@ -262,8 +262,8 @@ end
 
 ---Resolve the next action after a UAV has finished its course and reached endTime
 ---A tracking failure still settles the mission: the recon leg itself succeeded.
----@param entry SBJ__ReconUAVEntry Queue entry
----@param reconUnit CMO__Unit The unit currently flying this entry
+---@param entry SBJ__ReconUAVEntry
+---@param reconUnit CMO__Unit
 ---@return boolean shouldSettle Whether the mission should be settled as successful
 ---@return SBJ__LogResult result Post-course outcome row
 local function resolvePostCourseUAVAction(entry, reconUnit)
@@ -287,8 +287,8 @@ local function resolvePostCourseUAVAction(entry, reconUnit)
 end
 
 ---Process a single UAV reconnaissance queue entry through its full lifecycle
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
----@param entry SBJ__ReconUAVEntry UAV queue entry to process
+---@param processingCtx SBJ__ReconQueueProcessingContext
+---@param entry SBJ__ReconUAVEntry
 ---@return SBJ__LogResult|nil # Outcome row, or nil if no logging needed
 local function processUAVEntry(processingCtx, entry)
   -- Phase 1: Launch reconnaissance units when time comes
@@ -338,8 +338,8 @@ local function processUAVEntry(processingCtx, entry)
 end
 
 ---Process a single satellite or SIGINT queue entry, which settles purely on the clock
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
----@param entry SBJ__ReconPassiveEntry Satellite or SIGINT queue entry to process
+---@param processingCtx SBJ__ReconQueueProcessingContext
+---@param entry SBJ__ReconPassiveEntry
 ---@return SBJ__LogResult|nil # Outcome row, or nil if no logging needed
 local function processPassiveEntry(processingCtx, entry)
   if entry.isFinished then
@@ -362,8 +362,8 @@ end
 
 ---Check if any UAV in the queue is already tracking the specified target
 ---A settled entry does not count: processQueue skips it, so its GUID is stale.
----@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
----@param targetGUID string Target contact GUID to check
+---@param queue SBJ__ReconQueueEntry[]
+---@param targetGUID string
 ---@return boolean # True if target is already being tracked by an active UAV
 local function isTargetAlreadyTracked(queue, targetGUID)
   for _, entry in ipairs(queue) do
@@ -379,8 +379,8 @@ local function isTargetAlreadyTracked(queue, targetGUID)
 end
 
 ---Find a queue entry by its assigned unit GUID
----@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
----@param unitGUID string Unit GUID to search for
+---@param queue SBJ__ReconQueueEntry[]
+---@param unitGUID string
 ---@return SBJ__ReconUAVEntry|nil # Matching queue entry or nil
 local function findQueueEntryByUnitGUID(queue, unitGUID)
   for _, entry in ipairs(queue) do
@@ -393,8 +393,8 @@ end
 
 ---Check whether one UAV is already shadowing a target
 ---A settled entry does not count: its airframe is free to take a new target.
----@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
----@param unitGUID string Unit GUID of the UAV to test
+---@param queue SBJ__ReconQueueEntry[]
+---@param unitGUID string
 ---@return boolean # True when the UAV is committed to an active tracking target
 local function isUAVAlreadyTracking(queue, unitGUID)
   local entry = findQueueEntryByUnitGUID(queue, unitGUID)
@@ -403,10 +403,10 @@ end
 
 ---Find the closest available UAV of specified type within tracking distance
 ---A UAV shadowing another target is skipped: assignTrackingMission would drop it.
----@param queue SBJ__ReconQueueEntry[] Reconnaissance queue entries
----@param sideUnits CMO__SideUnit[] Side units collection to search
----@param uavDBID number UAV platform database ID to filter by
----@param target CMO__Contact Target contact to measure distance from
+---@param queue SBJ__ReconQueueEntry[]
+---@param sideUnits CMO__SideUnit[]
+---@param uavDBID number
+---@param target CMO__Contact
 ---@return CMO__Unit|nil # Closest available UAV or nil if none found
 local function findClosestUAV(queue, sideUnits, uavDBID, target)
   local uav = nil
@@ -434,8 +434,8 @@ end
 
 ---Assign a tracking mission to a queue entry
 ---Clears isFinished to resume the entry; hasScheduledOperations is left set on purpose.
----@param queueEntry SBJ__ReconUAVEntry Queue entry to assign tracking to
----@param targetGUID string Target contact GUID to track
+---@param queueEntry SBJ__ReconUAVEntry
+---@param targetGUID string
 local function assignTrackingMission(queueEntry, targetGUID)
   queueEntry.isTracking = true
   queueEntry.trackingTargetGUID = targetGUID
@@ -448,7 +448,7 @@ end
 
 ---Process reconnaissance queue managing UAV launch, flight monitoring, and mission completion
 ---Success requires UAV to complete course and reach endTime; failure if destroyed before endTime
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
+---@param processingCtx SBJ__ReconQueueProcessingContext
 function Recon.processQueue(processingCtx)
   local config = processingCtx.config
   local reconCtx = processingCtx.reconCtx
@@ -484,10 +484,10 @@ end
 ---Assign UAV to track a specific target contact
 ---Finds available UAV of specified type and assigns it to shadow the target
 ---Callers must skip targets that are already tracked (see isTargetAlreadyTracked).
----@param reconCtx SBJ__ReconContext Reconnaissance context for tracking UAV assignments
----@param sideUnits CMO__SideUnit[] Side units collection to search for available UAVs
----@param uavDBID number UAV platform database ID to filter by
----@param target CMO__Contact Target contact to track
+---@param reconCtx SBJ__ReconContext
+---@param sideUnits CMO__SideUnit[]
+---@param uavDBID number
+---@param target CMO__Contact
 ---@return boolean # True if UAV was assigned to track target, false otherwise
 local function trackTarget(reconCtx, sideUnits, uavDBID, target)
   local uav = findClosestUAV(reconCtx.queue, sideUnits, uavDBID, target)
@@ -528,8 +528,8 @@ end
 ---Each target is checked against the queue before the side sweep, and the sweep runs at most
 ---once per call: the atoBuilder observation window re-evaluates targets every tick, so an
 ---already-shadowed target must cost nothing.
----@param reconCtx SBJ__ReconContext Reconnaissance context for tracking UAV assignments
----@param requests SBJ__TrackingRequestEntry[] Tracking requests from TargetingProcess.processTargets
+---@param reconCtx SBJ__ReconContext
+---@param requests SBJ__TrackingRequestEntry[]
 function Recon.trackTargets(reconCtx, requests)
   local aircraft
   for _, request in ipairs(requests) do
@@ -549,8 +549,8 @@ end
 
 ---Turn the configured queue plans into runtime entries
 ---Deep-copied so the config table stays pristine across scenario reloads.
----@param reconConfig SBJ__ReconConfig Reconnaissance configuration holding the queue plans
----@param reconCtx SBJ__ReconContext Reconnaissance context receiving the initialized queue
+---@param reconConfig SBJ__ReconConfig
+---@param reconCtx SBJ__ReconContext
 function Recon.initQueue(reconConfig, reconCtx)
   local entries = Utils.deepCopy(reconConfig.queue)
 
@@ -571,7 +571,7 @@ end
 
 ---Locate the queue entries bracketing current time by endTime
 ---Scans the reconnaissance queue for the entry whose endTime most recently passed and the next upcoming one.
----@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
+---@param reconCtx SBJ__ReconContext
 ---@return SBJ__ReconQueueEntry|nil mostRecentEntry Entry with the latest endTime at or before current time
 ---@return SBJ__ReconQueueEntry|nil nextEntry Entry with the earliest endTime after current time
 local function findSatellitePassWindow(reconCtx)
@@ -603,10 +603,10 @@ end
 
 ---Find an unfinished UAV entry from the same template already covering the time window
 ---The window spans (mostRecentEntry.endTime, nextEntry.endTime]; both takeoffTime and endTime must fall within it.
----@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
----@param templateId string Template identifier matched against each queued UAV entry
+---@param reconCtx SBJ__ReconContext
+---@param templateId string
 ---@param mostRecentEntry SBJ__ReconQueueEntry|nil Entry bounding the window start (nil treats start as unbounded)
----@param nextEntry SBJ__ReconQueueEntry Entry bounding the window end
+---@param nextEntry SBJ__ReconQueueEntry
 ---@return SBJ__ReconQueueEntry|nil entry Matching UAV entry or nil if none covers the window
 local function findMatchingUAVEntry(reconCtx, templateId, mostRecentEntry, nextEntry)
   -- Window bounds are loop invariants and parseDatetimeToTimestamp is not cheap.
@@ -633,8 +633,8 @@ end
 
 ---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
 ---Skips insertion when a matching UAV already exists, or when the flight would end after the next scheduled endTime.
----@param reconCtx SBJ__ReconContext Reconnaissance context (queue mutated on success)
----@param entryTemplate SBJ__ReconUAVTemplate UAV entry template to instantiate
+---@param reconCtx SBJ__ReconContext
+---@param entryTemplate SBJ__ReconUAVTemplate
 ---@param startTime string|nil Timestamp or datetime string for the start time of the entry
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
 function Recon.addEntry(reconCtx, entryTemplate, startTime)

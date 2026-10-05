@@ -22,7 +22,7 @@ local LOG_ACTION = "Execute packages"
 -- ============================================================================
 
 ---Calculate the start time for weapon loading
----@param packageData SBJ__Package The strike package containing flight group data
+---@param packageData SBJ__Package
 ---@return number|nil # Unix timestamp for when loadout should start, or nil if cannot be calculated
 local function calculateLoadoutStartTime(packageData)
   local earliestStartTimestamp = nil
@@ -47,7 +47,7 @@ local function calculateLoadoutStartTime(packageData)
 end
 
 ---Ensure loadout start time is calculated and cached
----@param packageData SBJ__Package The strike package to initialize
+---@param packageData SBJ__Package
 local function ensureLoadoutStartTime(packageData)
   local loadoutStatus = packageData.loadoutStatus
   if not loadoutStatus.loadoutStartTime then
@@ -56,7 +56,7 @@ local function ensureLoadoutStartTime(packageData)
 end
 
 ---Check if it's time to start weapon loading
----@param packageData SBJ__Package The strike package to check
+---@param packageData SBJ__Package
 ---@param assignmentSafetyMargin number Seconds reserved before planned takeoff
 ---@return boolean # True if current time has reached or passed the loadout start time
 local function isTimeToStartLoadout(packageData, assignmentSafetyMargin)
@@ -69,7 +69,7 @@ local function isTimeToStartLoadout(packageData, assignmentSafetyMargin)
 end
 
 ---Resolve the assignment safety margin with legacy fallback
----@param config SBJ__Config Global configuration
+---@param config SBJ__Config
 ---@return number # Assignment safety margin in seconds
 local function resolveAssignmentSafetyMargin(config)
   local airConfig = config.red.air
@@ -82,7 +82,7 @@ end
 -- ============================================================================
 
 ---Set loadout for a single role's aircraft at their base
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param roleData SBJ__MissionDeploymentDescriptor
 ---@param timeToReady number Time to ready in seconds
 local function setLoadoutForRole(roleData, timeToReady)
   local loadoutID = roleData.loadoutID
@@ -121,7 +121,7 @@ local function setLoadoutForRole(roleData, timeToReady)
 end
 
 ---Set weapon loadouts for all flight groups and update loadout status
----@param packageData SBJ__Package The strike package containing flight group configurations
+---@param packageData SBJ__Package
 local function startLoadoutForPackage(packageData)
   local timeToReady = packageData.timeToReady or (9 * 60)
 
@@ -141,7 +141,7 @@ local function startLoadoutForPackage(packageData)
 end
 
 ---Check if weapon loading is complete
----@param packageData SBJ__Package The strike package to check
+---@param packageData SBJ__Package
 ---@return boolean # True if loadout has been initiated and expected ready time has passed
 local function isLoadoutReady(packageData)
   local loadoutStatus = packageData.loadoutStatus
@@ -157,8 +157,8 @@ end
 -- ============================================================================
 
 ---Create one unscheduled mission for a package role
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
----@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
+---@param roleData SBJ__MissionDeploymentDescriptor
+---@param missionCreationParams SBJ__MissionCreationParams
 ---@return CMO__Mission|nil # Created mission object, or nil on failure
 local function createPackageMission(roleData, missionCreationParams)
   local mission = GameUtils.createMission(constants.SIDES.RED, missionCreationParams, { emcon = roleData.emcon })
@@ -174,9 +174,9 @@ local function createPackageMission(roleData, missionCreationParams)
 end
 
 ---Store a created mission by its configured name
----@param createdMissionMap table<string, CMO__Mission> Mission registry
----@param missionCreationParams SBJ__MissionCreationParams Mission creation parameters
----@param mission CMO__Mission|nil Created mission, if any
+---@param createdMissionMap table<string, CMO__Mission>
+---@param missionCreationParams SBJ__MissionCreationParams
+---@param mission CMO__Mission|nil
 local function addCreatedMission(createdMissionMap, missionCreationParams, mission)
   if not mission then
     return
@@ -186,8 +186,8 @@ local function addCreatedMission(createdMissionMap, missionCreationParams, missi
 end
 
 ---Create and register all missions configured for a tanker role
----@param roleData SBJ__TankerMissionDeploymentDescriptor Tanker deployment descriptor
----@param createdMissionMap table<string, CMO__Mission> Mission registry
+---@param roleData SBJ__TankerMissionDeploymentDescriptor
+---@param createdMissionMap table<string, CMO__Mission>
 local function createTankerMissions(roleData, createdMissionMap)
   local missionParamsEntries = TankerMission.normalizeCreationParams(roleData.missionCreationParams)
 
@@ -198,9 +198,9 @@ local function createTankerMissions(roleData, createdMissionMap)
 end
 
 ---Create and register one non-tanker role mission
----@param role SBJ__RoleKey Package role name
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
----@param createdMissionMap table<string, CMO__Mission> Mission registry
+---@param role SBJ__RoleKey
+---@param roleData SBJ__MissionDeploymentDescriptor
+---@param createdMissionMap table<string, CMO__Mission>
 ---@return boolean # True when mission creation may continue
 local function createNonTankerMission(role, roleData, createdMissionMap)
   local missionCreationParams = roleData.missionCreationParams
@@ -215,9 +215,9 @@ local function createNonTankerMission(role, roleData, createdMissionMap)
 end
 
 ---Create missions for one package role
----@param role SBJ__RoleKey Package role name
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
----@param createdMissionMap table<string, CMO__Mission> Mission registry
+---@param role SBJ__RoleKey
+---@param roleData SBJ__MissionDeploymentDescriptor
+---@param createdMissionMap table<string, CMO__Mission>
 ---@return boolean # True when critical mission creation succeeded
 local function createMissionsForRole(role, roleData, createdMissionMap)
   if role == "tanker" then
@@ -229,7 +229,7 @@ local function createMissionsForRole(role, roleData, createdMissionMap)
 end
 
 ---Create all missions for a package, abort if striker creation fails
----@param packageData SBJ__Package Package data
+---@param packageData SBJ__Package
 ---@return boolean success True if all critical missions created successfully
 ---@return table<string, CMO__Mission> createdMissionMap Created missions indexed by mission name
 local function createPackageMissions(packageData)
@@ -251,8 +251,8 @@ end
 -- ============================================================================
 
 ---Apply one role schedule after aircraft assignment has completed
----@param mission CMO__Mission Mission object to schedule
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param mission CMO__Mission
+---@param roleData SBJ__MissionDeploymentDescriptor
 local function setMissionSchedule(mission, roleData)
   mission.OnDeactivateDelete = true
   mission.OnDeactivateRTB = true
@@ -271,8 +271,8 @@ local function setMissionSchedule(mission, roleData)
 end
 
 ---Apply schedules to all created missions after unit assignment
----@param packageData SBJ__Package Package data
----@param createdMissionMap table<string, CMO__Mission> Created missions indexed by mission name
+---@param packageData SBJ__Package
+---@param createdMissionMap table<string, CMO__Mission>
 local function setPackageMissionSchedules(packageData, createdMissionMap)
   for _, role in ipairs(PACKAGE_ROLE_ORDER) do
     local roleData = packageData[role]
@@ -297,7 +297,7 @@ end
 -- ============================================================================
 
 ---Validate package target data before lifecycle processing
----@param packageData SBJ__Package Package data
+---@param packageData SBJ__Package
 ---@return SBJ__LogResult|nil # Validation failure row, or nil when valid
 local function validatePackageTargets(packageData)
   local targetList = packageData.target.list
@@ -318,7 +318,7 @@ local function validatePackageTargets(packageData)
 end
 
 ---Assign targets to strike mission
----@param packageData SBJ__Package Package data with target list
+---@param packageData SBJ__Package
 ---@return boolean # True if targets successfully assigned
 local function assignTargetsToMission(packageData)
   local targetList = packageData.target.list
@@ -334,9 +334,9 @@ end
 -- ============================================================================
 
 ---Assign units from one role to one mission
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
----@param missionName string Mission name
----@param unitCount integer Number of units to assign
+---@param roleData SBJ__MissionDeploymentDescriptor
+---@param missionName string
+---@param unitCount integer
 ---@return string[]|nil # Assigned unit GUIDs
 local function assignRoleUnitsToMission(roleData, missionName, unitCount)
   return AssignMission.assignEmbarkedUnitToStrikeMission({
@@ -349,7 +349,7 @@ local function assignRoleUnitsToMission(roleData, missionName, unitCount)
 end
 
 ---Assign tanker units evenly across all configured tanker missions
----@param roleData SBJ__TankerMissionDeploymentDescriptor Tanker deployment descriptor
+---@param roleData SBJ__TankerMissionDeploymentDescriptor
 local function assignTankerUnitsToMissions(roleData)
   local missionParamsEntries = TankerMission.normalizeCreationParams(roleData.missionCreationParams)
   local missionCount = #missionParamsEntries
@@ -366,8 +366,8 @@ local function assignTankerUnitsToMissions(roleData)
 end
 
 ---Assign units for a non-tanker role and prepare support flight plans
----@param role SBJ__RoleKey Package role name
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param role SBJ__RoleKey
+---@param roleData SBJ__MissionDeploymentDescriptor
 ---@return boolean # True when striker units were assigned
 local function assignNonTankerUnitsToMission(role, roleData)
   local assignedUnitGUIDs = assignRoleUnitsToMission(
@@ -388,8 +388,8 @@ local function assignNonTankerUnitsToMission(role, roleData)
 end
 
 ---Assign units for one package role
----@param role SBJ__RoleKey Package role name
----@param roleData SBJ__MissionDeploymentDescriptor Role deployment descriptor
+---@param role SBJ__RoleKey
+---@param roleData SBJ__MissionDeploymentDescriptor
 ---@return boolean # True when striker units were assigned
 local function assignUnitsForRole(role, roleData)
   if role == "tanker" then
@@ -401,7 +401,7 @@ local function assignUnitsForRole(role, roleData)
 end
 
 ---Assign all units in the package to their respective missions
----@param packageData SBJ__Package The strike package containing unit assignment data
+---@param packageData SBJ__Package
 ---@return boolean # True if the primary striker units were successfully assigned
 local function assignPackageUnits(packageData)
   local isStrikerAssigned = false
@@ -422,9 +422,9 @@ end
 -- ============================================================================
 
 ---Schedule reconnaissance UAV if configured in package
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param packageData SBJ__Package Package data with optional reconUAV
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param packageData SBJ__Package
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
 local function scheduleReconUAV(config, plannerState, packageData)
   if not packageData.reconUAV then
@@ -444,7 +444,7 @@ end
 -- ============================================================================
 
 ---Advance package preparation until mission assignment may begin
----@param packageData SBJ__Package Package data
+---@param packageData SBJ__Package
 ---@param assignmentSafetyMargin number Assignment safety margin in seconds
 ---@return boolean isReadyForAssignment Whether mission assignment may begin
 ---@return SBJ__LogResult|nil preparationResult Interim row, or nil while waiting
@@ -480,7 +480,7 @@ local function updatePackagePreparation(packageData, assignmentSafetyMargin)
 end
 
 ---Create missions and assign package targets and units
----@param packageData SBJ__Package Package data
+---@param packageData SBJ__Package
 ---@return table<string, CMO__Mission>|nil createdMissionMap Created missions, or nil on failure
 ---@return SBJ__LogResult|nil failureResult Failure row, or nil on success
 local function createAndAssignPackageMissions(packageData)
@@ -517,10 +517,10 @@ local function createAndAssignPackageMissions(packageData)
 end
 
 ---Apply schedules and build a successful package launch result
----@param config SBJ__Config Global configuration
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param packageData SBJ__Package Package data
----@param createdMissionMap table<string, CMO__Mission> Created missions
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param packageData SBJ__Package
+---@param createdMissionMap table<string, CMO__Mission>
 ---@return SBJ__LogResult # Successful launch row
 local function completePackageLaunch(config, plannerState, packageData, createdMissionMap)
   setPackageMissionSchedules(packageData, createdMissionMap)
@@ -545,9 +545,9 @@ end
 
 ---Processes a single strike package through its complete lifecycle
 ---Returns structured status for centralized logging in the public API
----@param config SBJ__Config The global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param packageData SBJ__Package The strike package data to process
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param packageData SBJ__Package
 ---@return boolean launched Whether package was successfully launched
 ---@return SBJ__LogResult|nil result Processed package row, or nil when nothing should be logged
 local function processPackage(config, plannerState, packageData)
@@ -577,7 +577,7 @@ end
 -- ============================================================================
 
 ---Checks if all packages in a wave have been launched
----@param waveData SBJ__Wave The wave containing multiple strike packages
+---@param waveData SBJ__Wave
 ---@return boolean # True if all packages in the wave have been launched
 local function isWaveFinished(waveData)
   for _, packageData in ipairs(waveData.packages) do
@@ -590,10 +590,10 @@ end
 
 ---Process packages in a wave, launching at most one per tick
 ---Returns processed package results for centralized logging in the public API
----@param config SBJ__Config The global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param waveName string The wave identifier used for logging
----@param waveData SBJ__Wave The wave containing strike packages
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param waveName string
+---@param waveData SBJ__Wave
 ---@return SBJ__LogResult[] # Processed package rows from this wave
 local function processWave(config, plannerState, waveName, waveData)
   ---@type SBJ__LogResult[]
@@ -627,8 +627,8 @@ end
 
 ---The main entry point for air strikes
 ---Iterates through ATO waves and packages, processing each strike package sequentially
----@param config SBJ__Config The global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
 function AirTaskingOrder.process(config, plannerState)
   local report = LogFormat.report(constants.TAGS.AIR, LOG_SCOPE, LOG_ACTION)
 

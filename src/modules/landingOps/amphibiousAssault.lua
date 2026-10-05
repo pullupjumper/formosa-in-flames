@@ -55,7 +55,7 @@ local MISSION_CATEGORIES = { "transportHelicopter", "boat", "attackHelicopter" }
 -- ============================================================================
 
 ---Check if unit is a Landing Ship Tank (excludes auxiliary vessels)
----@param unit CMO__Unit Ship unit to check
+---@param unit CMO__Unit
 ---@return boolean # True if unit is an LST (not RORO or Barge)
 local function isLST(unit)
   return not NON_LST_NAMES[unit.name]
@@ -67,8 +67,8 @@ end
 
 ---Set start time for a single landing mission
 ---Calculates start time relative to current time and updates the mission
----@param mission SBJ__LandingMissionDescriptor Mission descriptor with delay offset
----@param currentTime number Current scenario time in seconds
+---@param mission SBJ__LandingMissionDescriptor
+---@param currentTime number
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setMissionStartTime(mission, currentTime)
   local startTime = os.date(constants.DATE_FORMAT, (currentTime + mission.startTime))
@@ -84,8 +84,8 @@ end
 
 ---Set start times for all missions in a single zone
 ---Iterates transport helicopter, boat, and attack helicopter missions
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param currentTime number Current scenario time in seconds
+---@param zone SBJ__OperationalZoneDescriptor
+---@param currentTime number
 ---@return boolean success True if all missions were set
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function setZoneMissionStartTimes(zone, currentTime)
@@ -111,8 +111,8 @@ end
 
 ---Delete cargo by priority from ship for ACV deployment
 ---Iterates ACV_TYPES in order, allocating remaining slots to each type
----@param ship CMO__Unit Ship to delete cargo from
----@param totalNum number Total number of ACVs to deploy
+---@param ship CMO__Unit
+---@param totalNum number
 ---@return {acvType: {name: string, dbid: number}, count: number}[] # Allocation array
 local function removeCargoByPriority(ship, totalNum)
   local allocations = {}
@@ -131,9 +131,9 @@ local function removeCargoByPriority(ship, totalNum)
 end
 
 ---Spawn a single ACV unit at the specified location
----@param acvType {name: string, dbid: number} ACV type descriptor
----@param location CMO__Location Spawn coordinates
----@param destination CMO__Location[] Course destination waypoints
+---@param acvType {name: string, dbid: number}
+---@param location CMO__Location
+---@param destination CMO__Location[]
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function createSingleACV(acvType, location, destination)
   local addedUnit = GameApi.ScenEdit_AddUnit({
@@ -168,9 +168,9 @@ local function createSingleACV(acvType, location, destination)
 end
 
 ---Spawn every allocated ACV, stopping at the first failure
----@param allocations {acvType: {name: string, dbid: number}, count: number}[] ACV allocations by type
----@param locations CMO__Location[] Spawn coordinates in launch order
----@param destination CMO__Location[] Course destination waypoints
+---@param allocations {acvType: {name: string, dbid: number}, count: number}[]
+---@param locations CMO__Location[]
+---@param destination CMO__Location[]
 ---@return integer|nil count ACVs launched, nil when a spawn failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function createAllocatedACVs(allocations, locations, destination)
@@ -197,8 +197,8 @@ end
 -- ============================================================================
 
 ---Set course for an LST to approach the beach
----@param unit CMO__Unit LST ship unit
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
+---@param unit CMO__Unit
+---@param zone SBJ__OperationalZoneDescriptor
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setCourseForLST(unit, zone)
   local destination = GameApi.World_GetPointFromBearing({
@@ -225,7 +225,7 @@ local function setCourseForLST(unit, zone)
 end
 
 ---Set course for a Surface Action Group
----@param descriptor SBJ__SAGDescriptor SAG descriptor with groupName and destination
+---@param descriptor SBJ__SAGDescriptor
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function setCourseForSAG(descriptor)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
@@ -239,8 +239,8 @@ local function setCourseForSAG(descriptor)
 end
 
 ---Set courses for every LST anchored in a zone, stopping at the first failure
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param zone SBJ__OperationalZoneDescriptor
+---@param units CMO__SideUnit[]
 ---@return boolean success True when no LST failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function setZoneLSTCourses(zone, units)
@@ -263,8 +263,8 @@ local function setZoneLSTCourses(zone, units)
 end
 
 ---Set courses for every SAG in an operation, stopping at the first failure
----@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor with sagNames
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
+---@param operation SBJ__AmphibiousOperationDescriptor
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor>
 ---@return boolean success True when no SAG failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function setOperationSAGCourses(operation, sagDescriptorMap)
@@ -292,8 +292,8 @@ end
 
 ---Set start times for amphibious assault missions in a single operational zone
 ---Configures transport helicopters, landing craft, attack helicopters and records start timestamp
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param zoneState SBJ__ZoneState Per-zone state to record mission start time
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
 ---@return boolean # True if all mission start times were successfully set
 function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
   local currentTime = GameApi.ScenEdit_CurrentTime()
@@ -310,10 +310,10 @@ end
 
 ---Set course for LSTs to approach beach and move SAGs to staging areas
 ---LSTs in anchorage are directed to landing zones; RORO ships and barges remain in anchorage
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
----@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor with sagNames
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor> SAG descriptor lookup table
+---@param zone SBJ__OperationalZoneDescriptor
+---@param units CMO__SideUnit[]
+---@param operation SBJ__AmphibiousOperationDescriptor
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor>
 ---@return boolean # True if all LST courses were successfully set
 function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagDescriptorMap)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set courses for LSTs")
@@ -334,8 +334,8 @@ end
 
 ---Count enemy ground force contacts in the air landing zone
 ---Only counts contacts of type FACILITY_MOBILE to assess landing zone threat level
----@param contacts CMO__Contact[] Contact list from the side
----@param area CMO__ReferencePoint[] Reference points defining the air landing zone
+---@param contacts CMO__Contact[]
+---@param area CMO__ReferencePoint[]
 ---@return integer # Number of enemy ground units in the area
 function AmphibiousAssault.countContactsInArea(contacts, area)
   local count = 0
@@ -348,7 +348,7 @@ function AmphibiousAssault.countContactsInArea(contacts, area)
 end
 
 ---Count landed China units by type in each operational zone's CAS area
----@param config SBJ__Config Configuration table
+---@param config SBJ__Config
 ---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
 function AmphibiousAssault.countUnitsInEachArea(config)
   local unitsFromRed = GameApi.VP_GetSide({ side = constants.SIDES.RED }).units
@@ -380,7 +380,7 @@ end
 
 ---Launch Amphibious Combat Vehicles (ACVs) from an amphibious ship
 ---Spawns ZBD-05 and ZTD-05 amphibious vehicles in formation toward landing zone
----@param params SBJ__ACVDeploymentParams Deployment configuration (ship, bearing, distance, destination)
+---@param params SBJ__ACVDeploymentParams
 ---@return integer|nil # Number of ACVs successfully launched, or nil on failure
 function AmphibiousAssault.launchACV(params)
   local ship = params.ship
@@ -407,7 +407,7 @@ end
 
 ---Check if a ship is a ferry or Landing Ship Tank (LST)
 ---Includes Type 071/072/073 and ferries capable of launching ACVs or beaching
----@param ship CMO__Unit Ship unit to check
+---@param ship CMO__Unit
 ---@return boolean # True if ship is a ferry or LST
 function AmphibiousAssault.isFerryOrLST(ship)
   return FERRY_OR_LST_DBIDS[ship.dbid] == true or ship.name == FERRY_NAME
@@ -415,8 +415,8 @@ end
 
 ---Get the operational zone for a ship based on its location
 ---Matches ship position against ACV deployment areas to retrieve zone-specific configuration
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
----@param ship CMO__Unit Ship unit to locate
+---@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param ship CMO__Unit
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
 function AmphibiousAssault.getShipZone(amphibOpsConfig, ship)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do

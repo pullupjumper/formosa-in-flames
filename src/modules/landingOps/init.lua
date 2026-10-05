@@ -13,15 +13,15 @@ local PersistentState = require("src.core.persistentState")
 local LandingOps = {}
 
 ---Initialize landing operations runtime data
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's amphibious calculation result is filled
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function LandingOps.init(config, saveData)
   ShipMovement.calculateDestination(config.red.amphibOps, PersistentState.landingOps(saveData).amphibOps.calculationResult)
 end
 
 ---Process all landing operation phases for the current event tick
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's amphibious, recon, and ground slices are mutated
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function LandingOps.process(config, saveData)
   local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.RED)
   if not contacts then
@@ -50,8 +50,8 @@ function LandingOps.process(config, saveData)
 end
 
 ---Launch amphibious combat vehicles for a ship when it is in a valid zone
----@param config SBJ__Config Global configuration table
----@param ship CMO__Unit Ship unit from the event context
+---@param config SBJ__Config
+---@param ship CMO__Unit
 ---@return boolean # Whether the launch workflow was handled successfully
 function LandingOps.launchACV(config, ship)
   if not AmphibiousAssault.isFerryOrLST(ship) then
@@ -89,9 +89,9 @@ function LandingOps.launchACV(config, ship)
 end
 
 ---Handle vehicle offloading workflow for barge and RORO event units
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's barge bridges are recorded
----@param ship CMO__Unit Ship unit from the event context
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param ship CMO__Unit
 ---@return boolean # Whether the offload workflow was handled successfully
 function LandingOps.offloadVehicles(config, saveData, ship)
   local barges = PersistentState.landingOps(saveData).amphibOps.barges
@@ -147,8 +147,8 @@ function LandingOps.offloadVehicles(config, saveData, ship)
 end
 
 ---Neutralize airlanding zone contacts with SAG surface fire support
----@param config SBJ__Config Global configuration table
----@param ship CMO__Unit Ship unit from the event context
+---@param config SBJ__Config
+---@param ship CMO__Unit
 ---@return boolean # Whether the neutralization workflow was handled successfully
 function LandingOps.neutralizeAirlandingZone(config, ship)
   if not ship.group or ship.dbid ~= constants.PLATFORMS.TYPE_052D then
@@ -193,7 +193,7 @@ function LandingOps.neutralizeAirlandingZone(config, ship)
 end
 
 ---Count landed China units by type in each operational zone's CAS area
----@param config SBJ__Config Configuration table
+---@param config SBJ__Config
 ---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
 function LandingOps.countUnitsInEachArea(config)
   return AmphibiousAssault.countUnitsInEachArea(config)

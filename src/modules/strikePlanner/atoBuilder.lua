@@ -38,16 +38,16 @@ local RETRYABLE_REASON = {
 
 ---Build the reservation ledger key pairing one base with one airframe type
 ---Keyed per (base, DBID) so booking a base's fighters cannot hide its tankers.
----@param baseGUID string GUID of the air base
----@param unitDBID number|nil Aircraft unit database ID
+---@param baseGUID string
+---@param unitDBID number|nil
 ---@return string # Ledger key
 local function buildReservationKey(baseGUID, unitDBID)
   return baseGUID .. "#" .. tostring(unitDBID)
 end
 
 ---Accumulate reserved aircraft counts for a single package's roles
----@param packageData SBJ__Package The package whose roles are counted
----@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
+---@param packageData SBJ__Package
+---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count
 local function addPackageAircraft(packageData, reservedAircraftMap)
   for _, role in ipairs(PACKAGE_ROLES) do
     local roleData = packageData[role]
@@ -60,8 +60,8 @@ local function addPackageAircraft(packageData, reservedAircraftMap)
 end
 
 ---Accumulate reserved aircraft counts for the not-yet-launched packages of a wave
----@param wave SBJ__Wave The active ATO wave to inspect
----@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count; mutated in place
+---@param wave SBJ__Wave
+---@param reservedAircraftMap table<string, integer> Map of reservation key to reserved count
 local function addWaveAircraft(wave, reservedAircraftMap)
   for _, packageData in ipairs(wave.packages) do
     if not packageData.hasLaunched then
@@ -72,7 +72,7 @@ end
 
 ---Collect the aircraft already committed by active ATO waves
 ---Counts them so a new wave cannot book the same airframes twice.
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
+---@param plannerState SBJ__StrikePlannerState
 ---@return table<string, integer> # Map of reservation key to reserved aircraft count
 local function collectReservedAircraft(plannerState)
   local reservedAircraftMap = {}
@@ -88,7 +88,7 @@ end
 
 ---Read one base's mission-free aircraft, counted per unit DBID
 ---One sweep answers every role, instead of re-reading the list once per DBID.
----@param baseGUID string The GUID of the air base to read
+---@param baseGUID string
 ---@return table<number, integer> # Mission-free aircraft count keyed by unit DBID
 local function getBaseFreeAircraft(baseGUID)
   local freeByDBID = {}
@@ -113,9 +113,9 @@ end
 
 ---Count the mission-free aircraft of one type at one base
 ---Reads each base once per pass; a base that cannot be resolved caches as empty.
----@param freeAircraftCache table<string, table<number, integer>> Pass-scoped free aircraft cache; mutated
----@param baseGUID string The GUID of the air base to check
----@param requiredUnitDBID number The required aircraft unit database ID (DBID) to filter by
+---@param freeAircraftCache table<string, table<number, integer>>
+---@param baseGUID string
+---@param requiredUnitDBID number
 ---@return integer # Mission-free aircraft of that type, before this pass's reservations
 local function getFreeAircraftCount(freeAircraftCache, baseGUID, requiredUnitDBID)
   local freeByDBID = freeAircraftCache[baseGUID]
@@ -130,10 +130,10 @@ end
 
 ---Validate aircraft availability and resolve baseGUID via fallback candidates
 ---Mutates roleData.baseGUID and context.reservedAircraft when a candidate clears the ratio.
----@param roleData SBJ__MissionDeploymentDescriptor Role configuration; mutated in place on success
+---@param roleData SBJ__MissionDeploymentDescriptor
 ---@param role SBJ__RoleKey Role name for error messages (e.g., "striker", "escort", "SEAD")
----@param packageIndex integer Package index for error messages
----@param context SBJ__AircraftValidationContext Aircraft validation state; mutated on success
+---@param packageIndex integer
+---@param context SBJ__AircraftValidationContext
 ---@return boolean success true if a base with sufficient aircraft was found
 ---@return table<string, any>|nil errorFields Log fields describing the best candidate on failure, nil on success
 local function validateAircraftRole(roleData, role, packageIndex, context)
@@ -183,8 +183,8 @@ local function validateAircraftRole(roleData, role, packageIndex, context)
 end
 
 ---Validate multi-mission tanker configuration
----@param tankerData SBJ__TankerMissionDeploymentDescriptor|nil Tanker role configuration
----@param packageIndex integer Package index for error messages
+---@param tankerData SBJ__TankerMissionDeploymentDescriptor|nil
+---@param packageIndex integer
 ---@return boolean success True when tanker mission configuration is valid
 ---@return table<string, any>|nil errorFields Validation log fields, nil on success
 local function validateTankerMissionConfig(tankerData, packageIndex)
@@ -237,9 +237,9 @@ end
 
 ---Check whether one package has sufficient aircraft resources
 ---Commits staged aircraft reservations only when every configured role passes.
----@param packageData SBJ__PackageTemplate Package configuration with target and role requirements
----@param packageIndex integer Index of the package for logging
----@param context SBJ__AircraftValidationContext Aircraft validation state; mutated on success
+---@param packageData SBJ__PackageTemplate
+---@param packageIndex integer
+---@param context SBJ__AircraftValidationContext
 ---@return boolean success true if package is valid and can be executed
 ---@return table<string, any>|nil errorFields Validation log fields, nil on success
 local function validateIndividualPackage(packageData, packageIndex, context)
@@ -275,10 +275,10 @@ end
 
 ---Build executable package templates from evaluated targets and aircraft validation
 ---Mutates copied package templates with target lists and resolved baseGUID values.
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
----@param targetsByPackageIndex table<integer, string[]> Evaluated targets grouped by package index
----@param passCtx SBJ__AtoPassContext Pass-scoped state shared by every operation in this tick; free aircraft cache is mutated
+---@param plannerState SBJ__StrikePlannerState
+---@param waveTemplate SBJ__WaveTemplate
+---@param targetsByPackageIndex table<integer, string[]>
+---@param passCtx SBJ__AtoPassContext
 ---@return SBJ__PackageTemplate[] validPackages Array of validated packages with assigned targets
 ---@return table<string, any> fields Package counters for the operation row
 ---@return SBJ__LogResult[] details One row per package rejected by validation
@@ -329,9 +329,9 @@ end
 -- ============================================================================
 
 ---Build ATO wave structure from template and validated packages
----@param waveTemplate SBJ__WaveTemplate Wave template containing package configurations
----@param waveName string Generated unique wave name
----@param packages SBJ__Package[] Validated packages to insert into the wave
+---@param waveTemplate SBJ__WaveTemplate
+---@param waveName string
+---@param packages SBJ__Package[]
 ---@return SBJ__Wave # Wave structure with all packages and timing applied
 local function buildATOWave(waveTemplate, waveName, packages)
   return {
@@ -346,7 +346,7 @@ end
 
 ---Collect package role timing results for the consolidated timing summary
 ---reconUAV is excluded: PackageTiming never schedules it, so it would read unknown.
----@param wave SBJ__Wave Wave structure with calculated package timings
+---@param wave SBJ__Wave
 ---@return SBJ__LogResult[] # One result per configured package role
 local function collectWaveTimingResults(wave)
   local timingResults = {}
@@ -376,9 +376,9 @@ end
 
 ---Create actual ATO wave from template and evaluation results
 ---Constructs executable packages, calculates timing, and inserts the wave.
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param params SBJ__WaveInsertParams Template, evaluated targets and recon type of the wave to insert
----@param passCtx SBJ__AtoPassContext Pass-scoped state shared by every operation in this tick; free aircraft cache is mutated
+---@param plannerState SBJ__StrikePlannerState
+---@param params SBJ__WaveInsertParams
+---@param passCtx SBJ__AtoPassContext
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
 local function createAndInsertATOWaveFromTemplate(plannerState, params, passCtx)
   local waveTemplate = params.waveTemplate
@@ -420,9 +420,9 @@ end
 -- ============================================================================
 
 ---Process single air operation: evaluate targets, validate packages, insert ATO wave
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param batchedOp SBJ__BatchedOperation Air operation paired with its parent batch
----@param passCtx SBJ__AtoPassContext Pass-scoped state shared by every operation in this tick
+---@param plannerState SBJ__StrikePlannerState
+---@param batchedOp SBJ__BatchedOperation
+---@param passCtx SBJ__AtoPassContext
 ---@return SBJ__AirOperationProcessResult # Outcome of the wave insertion attempt
 local function processAirOperation(plannerState, batchedOp, passCtx)
   local operationBatch = batchedOp.operationBatch
@@ -461,9 +461,9 @@ end
 ---OperationBatch drives the observation window; this module only answers whether a
 ---wave can be inserted right now. Retryable operations stay pending inside the
 ---window; expiry drops them.
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts from the game
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param contacts CMO__Contact[]
 ---@return boolean # True if any air operation was processed and executed, false if disabled or none ready
 function AtoBuilder.build(config, plannerState, contacts)
   if not plannerState.dynamicOperations.enabled then

@@ -66,9 +66,9 @@ local SHIP_TRANSFER_SPECS = {
 -- ============================================================================
 
 ---Collect GUIDs of cargo elements matching a specific DBID up to requested quantity
----@param cargos CMO__Cargo[] Cargo element array from unit
----@param dbid number Target cargo DBID
----@param maxCount number Maximum items to collect
+---@param cargos CMO__Cargo[]
+---@param dbid number
+---@param maxCount number
 ---@return string[] # Array of matching cargo GUIDs
 local function collectMatchingCargos(cargos, dbid, maxCount)
   local guids = {}
@@ -83,9 +83,9 @@ end
 
 ---Transfer cargo from source unit to destination unit
 ---Deletes matching cargo from source and creates matching quantity on destination
----@param fromUnit CMO__Unit|nil Source unit (typically the mother ship)
----@param toUnit CMO__Unit Destination unit (aircraft or boat to receive cargo)
----@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
+---@param fromUnit CMO__Unit|nil
+---@param toUnit CMO__Unit
+---@param cargoItem SBJ__CargoDescriptor
 local function updateCargo(fromUnit, toUnit, cargoItem)
   if fromUnit == nil or
       fromUnit.cargo == nil or
@@ -105,8 +105,8 @@ end
 
 ---Delete specified cargo from a unit
 ---Returns the actual number of items deleted (may be less than requested)
----@param fromUnit CMO__Unit|nil Unit to remove cargo from
----@param cargoItem SBJ__CargoDescriptor Cargo specification (type, DBID, quantity)
+---@param fromUnit CMO__Unit|nil
+---@param cargoItem SBJ__CargoDescriptor
 ---@return integer # Number of cargo items actually deleted
 function AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
   if fromUnit == nil or
@@ -131,9 +131,9 @@ end
 -- ============================================================================
 
 ---Check if an embarked unit matches the target platform specification
----@param unit CMO__Unit Embarked unit to check
----@param platformType string Platform type (Aircraft or Boats)
----@param platformDBID number Target DBID
+---@param unit CMO__Unit
+---@param platformType string
+---@param platformDBID number
 ---@param loadoutDBID number Target loadout (only checked for Aircraft)
 ---@return boolean # True if unit matches
 local function isPlatformMatch(unit, platformType, platformDBID, loadoutDBID)
@@ -148,8 +148,8 @@ end
 
 ---Transfer cargo from base to multiple embarked units matching platform spec
 ---Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
----@param fromUnit string GUID of the base unit containing embarked platforms
----@param params SBJ__TransferCargoParams Embarked platform selector
+---@param fromUnit string
+---@param params SBJ__TransferCargoParams
 ---@param cargoItems table<integer, SBJ__CargoDescriptor[]> Cargo items to transfer (single list or per-unit)
 local function transferCargo(fromUnit, params, cargoItems)
   local platformType, platformDBID = params.platformType, params.platformDBID
@@ -176,7 +176,7 @@ end
 -- ============================================================================
 
 ---Find matching transfer spec for a ship DBID
----@param shipDbid number Ship platform DBID
+---@param shipDbid number
 ---@return {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[], assignments: {platform: string, configKey: string}[]}|nil # Matching spec or nil
 local function findTransferSpec(shipDbid)
   for _, spec in ipairs(SHIP_TRANSFER_SPECS) do
@@ -188,9 +188,9 @@ local function findTransferSpec(shipDbid)
 end
 
 ---Execute cargo transfers for a single ship based on matching spec
----@param shipGuid string Ship GUID
----@param shipDbid number Ship DBID
----@param zone SBJ__OperationalZoneDescriptor Operational zone config
+---@param shipGuid string
+---@param shipDbid number
+---@param zone SBJ__OperationalZoneDescriptor
 local function processShipTransfers(shipGuid, shipDbid, zone)
   local spec = findTransferSpec(shipDbid)
   if not spec then return end
@@ -207,9 +207,9 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
 end
 
 ---Execute mission assignments for a single ship based on matching spec
----@param shipGuid string Ship GUID
----@param shipDbid number Ship DBID
----@param zone SBJ__OperationalZoneDescriptor Operational zone config
+---@param shipGuid string
+---@param shipDbid number
+---@param zone SBJ__OperationalZoneDescriptor
 local function processShipAssignments(shipGuid, shipDbid, zone)
   local spec = findTransferSpec(shipDbid)
   if not spec then return end
@@ -226,8 +226,8 @@ end
 
 ---Create a cargo transport mission with configured doctrine
 ---@param platformType string Platform config key (e.g., "boat", "transportHelicopter")
----@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
----@param missionName string Name for the cargo mission
+---@param zone SBJ__OperationalZoneDescriptor
+---@param missionName string
 ---@return boolean success True if mission was successfully created and configured
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function createSingleCargoMission(platformType, zone, missionName)
@@ -252,7 +252,7 @@ local function createSingleCargoMission(platformType, zone, missionName)
 end
 
 ---Create every cargo mission configured for a zone, stopping at the first failure
----@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
+---@param zone SBJ__OperationalZoneDescriptor
 ---@return boolean success True when every mission was created
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function createZoneCargoMissions(zone)
@@ -278,8 +278,8 @@ end
 
 ---Get units in anchorage area and check their movement status
 ---Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param filteredUnits CMO__SideUnit Unit list from the side (filtered for ships)
+---@param zone SBJ__OperationalZoneDescriptor
+---@param filteredUnits CMO__SideUnit
 ---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
 function AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
   local unitsInAnchorageArea = {}
@@ -305,7 +305,7 @@ end
 
 ---Create cargo transport missions for an operational zone
 ---Sets up ferry missions for landing craft and transport helicopters with configured doctrine
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
+---@param zone SBJ__OperationalZoneDescriptor
 ---@return boolean # True if all cargo missions were successfully created
 function AmphibiousLogistics.createCargoMissions(zone)
   local success, results = createZoneCargoMissions(zone)
@@ -320,8 +320,8 @@ end
 
 ---Transfer cargo to embarked units and assign them to missions
 ---Handles Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param unitsInAnchorageArea CMO__Unit[] Ships in anchorage area
+---@param zone SBJ__OperationalZoneDescriptor
+---@param unitsInAnchorageArea CMO__Unit[]
 ---@return boolean # True if all transfers and assignments completed successfully
 function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
   local report = LogFormat.report(
@@ -341,7 +341,7 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
 end
 
 ---Transfer cargo and assign missions for land-based transport aircraft
----@param transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
+---@param transportAircraft SBJ__TransportAircraftDescriptor[]
 ---@return boolean # True if all transfers and assignments completed successfully
 function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
   local report = LogFormat.report(
@@ -373,8 +373,8 @@ end
 
 ---Re-transfer cargo to embarked units for second wave operations
 ---Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param units CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param zone SBJ__OperationalZoneDescriptor
+---@param units CMO__SideUnit[]
 ---@return boolean # True if all cargo was successfully re-transferred
 function AmphibiousLogistics.retransferCargos(zone, units)
   local report = LogFormat.report(

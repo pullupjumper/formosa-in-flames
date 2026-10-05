@@ -6,8 +6,8 @@ local constants = require("src.core.constants")
 local AttackManager = {}
 
 ---Get total ammunition already allocated for attacking a specific target
----@param contactGUID string The target contact's unique identifier
----@param sideName string The attacking side's name
+---@param contactGUID string
+---@param sideName string
 ---@return integer # Total ammunition currently allocated to attack this target
 local function getAmmoAllocatedForTarget(contactGUID, sideName)
   local totalTargetAmmoCount = 0
@@ -27,13 +27,12 @@ local function getAmmoAllocatedForTarget(contactGUID, sideName)
 end
 
 ---Check if a unit can fire at a contact
----@param unit CMO__Unit The unit to check
----@param contact CMO__Contact The target contact
----@param weaponInfo {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer} Weapon information
----@param totalAmmoRequested integer Total amount of ammunition requested for attack
+---@param unit CMO__Unit
+---@param contact CMO__Contact
+---@param weaponInfo {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer}
+---@param totalAmmoRequested integer
 ---@return boolean # Whether the unit can fire
 local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
-  -- Check if unit is on hold
   local doctrine = GameApi.ScenEdit_GetDoctrine(unit.guid)
 
   if not doctrine then
@@ -46,19 +45,16 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
     return false
   end
 
-  -- Check if we have any weapons available
   if weaponInfo.availableWeapons <= 0 then
     Logger.log(constants.TAGS.ATTACK_MANAGER, "No weapons available, no need to fire more")
     return false
   end
 
-  -- Check if we've reached maximum weapon allocation
   if weaponInfo.assignedWeapons >= weaponInfo.maxWeapons then
     Logger.log(constants.TAGS.ATTACK_MANAGER, "Maximum weapon allocation reached, no need to fire more")
     return false
   end
 
-  -- Check if total weapons already allocated to this target meets requirements
   local totalAmmoAlreadyAllocatedForTarget = getAmmoAllocatedForTarget(contact.guid, unit.side)
 
   if totalAmmoAlreadyAllocatedForTarget >= totalAmmoRequested then
@@ -70,10 +66,10 @@ local function canUnitFire(unit, contact, weaponInfo, totalAmmoRequested)
 end
 
 ---Process a fire unit and attempt to allocate weapons for attack
----@param firingUnit CMO__Unit The fire unit to process
----@param contact CMO__Contact The target contact
----@param request SBJ__GroupAttackRequest Ammunition totals and weapon for this attack
----@param shooterIdx integer Current shooter index
+---@param firingUnit CMO__Unit
+---@param contact CMO__Contact
+---@param request SBJ__GroupAttackRequest
+---@param shooterIdx integer
 ---@return boolean success Whether to advance to next firing unit
 ---@return integer weaponsAllocated Number of weapons allocated
 local function processUnitGroup(firingUnit, contact, request, shooterIdx)
@@ -82,7 +78,6 @@ local function processUnitGroup(firingUnit, contact, request, shooterIdx)
   local ammoAllocated = 0
   local advanceFiringUnit = false
 
-  -- Check if we have a valid unit at the current group index
   if shooterIdx > #firingUnit.group.unitlist then
     return true, 0 -- Move to next battery, no weapons allocated
   end
@@ -94,11 +89,9 @@ local function processUnitGroup(firingUnit, contact, request, shooterIdx)
     return true, 0 -- Unit not found, move to next, no weapons allocated
   end
 
-  -- Find weapon info and check availability
   local weaponInfo = GameUtils.getWeaponInfo(unit, weaponDBID)
   weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
-  -- Check if unit can fire
   if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
     -- Determine how many weapons to allocate for this attack
     local ammoNeeded = totalAmmoRequested - ammoAlreadyAllocated
@@ -128,7 +121,6 @@ local function processUnitGroup(firingUnit, contact, request, shooterIdx)
     end
   end
 
-  -- Check if this was the last unit in the group
   if shooterIdx >= #firingUnit.group.unitlist then
     advanceFiringUnit = true
   end
@@ -137,17 +129,15 @@ local function processUnitGroup(firingUnit, contact, request, shooterIdx)
 end
 
 ---Process a single unit and attempt to allocate weapons for attack
----@param unit CMO__Unit The unit to process
----@param contact CMO__Contact The target contact
----@param totalAmmoRequested integer Total amount of ammunition requested for this attack
----@param weaponDBID number Specific weapon DBID to use
+---@param unit CMO__Unit
+---@param contact CMO__Contact
+---@param totalAmmoRequested integer
+---@param weaponDBID number
 ---@return {ammoAllocated: integer} # Results including allocated weapons
 local function processSingleUnit(unit, contact, totalAmmoRequested, weaponDBID)
-  -- Find weapon info and check availability
   local weaponInfo = GameUtils.getWeaponInfo(unit, weaponDBID)
   weaponDBID = weaponInfo.weaponDBID -- Use found weaponDBID if not provided
 
-  -- Check if unit can fire
   if canUnitFire(unit, contact, weaponInfo, totalAmmoRequested) then
     -- Determine how many weapons to allocate for this attack
     local ammoToAllocate = math.min(totalAmmoRequested, weaponInfo.availableWeapons)
@@ -181,10 +171,10 @@ end
 
 ---Attack a single contact with weapon allocation from firing units
 ---Advances `state` in place so the next contact continues the rotation.
----@param sideName string The side to use for the attack
----@param contactGUID string The target contact to attack
----@param params SBJ__AttackContactParams Ammo, firing units and weapon for this attack
----@param state SBJ__AttackRotationState Firing unit / shooter rotation, updated in place
+---@param sideName string
+---@param contactGUID string
+---@param params SBJ__AttackContactParams
+---@param state SBJ__AttackRotationState
 ---@return integer # Number of weapons launched
 local function attackContact(sideName, contactGUID, params, state)
   local ammoToAllocate = params.ammoToAllocate
@@ -192,7 +182,6 @@ local function attackContact(sideName, contactGUID, params, state)
   local weaponDBID = params.weaponDBID
   local firingUnitIdx = state.firingUnitIdx
   local shooterIdx = state.shooterIdx
-  -- Initialize variables
   local totalAmmoAllocated = 0
   local attemptCount = 0
   local maxAttempts = 50
@@ -221,7 +210,6 @@ local function attackContact(sideName, contactGUID, params, state)
           shooterIdx
         )
 
-        -- Update our tracking variables
         totalAmmoAllocated = totalAmmoAllocated + ammoAllocated
         attemptCount = attemptCount + 1 -- Count each unit processing as one attempt
 
@@ -237,7 +225,6 @@ local function attackContact(sideName, contactGUID, params, state)
           firingUnitIdx = 1
         end
 
-        -- Check if we've allocated enough ammo
         if totalAmmoAllocated >= ammoToAllocate then
           break
         end
@@ -253,7 +240,6 @@ local function attackContact(sideName, contactGUID, params, state)
           firingUnitIdx = 1
         end
 
-        -- Check if we've allocated enough ammo
         if totalAmmoAllocated >= ammoToAllocate then
           break
         end
@@ -268,7 +254,7 @@ local function attackContact(sideName, contactGUID, params, state)
 end
 
 ---Attack multiple contacts with weapon allocation from firing units
----@param params SBJ__AttackContactsParams Attack parameters
+---@param params SBJ__AttackContactsParams
 ---@return integer # Total number of ammunition launched across all contacts
 function AttackManager.attackContacts(params)
   local state = { firingUnitIdx = 1, shooterIdx = 1 }

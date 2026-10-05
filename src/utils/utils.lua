@@ -1,7 +1,7 @@
 local Utils = {}
 
 ---Generate a random string of uppercase letters
----@param numLetters number The number of letters to generate
+---@param numLetters number
 ---@return string # A string containing random uppercase letters
 function Utils.buildRandomText(numLetters)
   local totTxt = ""
@@ -12,7 +12,7 @@ function Utils.buildRandomText(numLetters)
 end
 
 ---Get the count of items in a list
----@param list table The list to count items in
+---@param list table
 ---@return number # The number of items in the list
 function Utils.getCount(list)
   if list == nil then return 0 end
@@ -26,8 +26,8 @@ function Utils.getCount(list)
 end
 
 ---Insert a items of items into another items
----@param items table The items to insert into
----@param newItems table The items of items to insert
+---@param items table
+---@param newItems table
 ---@return table # The updated items with items inserted
 function Utils.addAll(items, newItems)
   local count = Utils.getCount(newItems)
@@ -74,8 +74,8 @@ end
 
 ---Safely call a function with error handling
 ---Example usage: local result, err = Utils.tryCall("MyFunction", MyFunction, arg1, arg2)
----@param funcName string The name of the function being called
----@param func function The function to call
+---@param funcName string
+---@param func function
 ---@param ... any The arguments to pass to the function
 ---@return any|nil result The result of the function call, or nil if an error occurred
 ---@return string|nil err An error message if an error occurred, or nil if the call was successful
@@ -103,8 +103,8 @@ end
 
 ---Calculate arctangent of y/x with proper quadrant handling
 ---Implements atan2 function for Lua (handles all quadrants correctly)
----@param y number Y coordinate
----@param x number X coordinate
+---@param y number
+---@param x number
 ---@return number # Angle in radians (-π to π)
 function Utils.atan2(y, x)
   if x > 0 then
@@ -133,12 +133,10 @@ end
 ---@param coords table<number, {latitude: number, longitude: number}> Array of coordinate points (minimum 4 points required)
 ---@return {latitude: number, longitude: number}|nil # Center point coordinates, or nil if input is invalid
 function Utils.calculateSphericalCenter(coords)
-  -- Check if input is valid
   if not coords or #coords < 4 then
     return nil
   end
 
-  -- Initialize Cartesian coordinate sums
   local xSum = 0
   local ySum = 0
   local zSum = 0
@@ -163,7 +161,6 @@ function Utils.calculateSphericalCenter(coords)
     zSum = zSum + z
   end
 
-  -- Calculate average values
   local count = #coords
   local xAvg = xSum / count
   local yAvg = ySum / count
@@ -182,7 +179,7 @@ end
 
 ---Deep copy a table recursively
 ---@generic T
----@param original T The table to deep copy
+---@param original T
 ---@return T # A deep copy of the original table
 function Utils.deepCopy(original)
   if type(original) ~= "table" then
@@ -198,8 +195,8 @@ function Utils.deepCopy(original)
 end
 
 ---Check if point is within polygon using ray casting algorithm
----@param point CMO__Location Point to check
----@param polygon CMO__Location[] Polygon vertices
+---@param point CMO__Location
+---@param polygon CMO__Location[]
 ---@return boolean # Whether point is inside polygon
 function Utils.isPointInPolygon(point, polygon)
   local minPolygonPoints = 3

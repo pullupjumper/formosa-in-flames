@@ -8,19 +8,19 @@ local BearingOnlyLaunch = {}
 EARTH_RADIUS_NM = 3440.065
 
 ---Convert degrees to radians
----@param degrees number Degrees
+---@param degrees number
 ---@return number # Radians
 local function deg2rad(degrees) return degrees * math.pi / 180 end
 
 ---Convert radians to degrees
----@param radians number Radians
+---@param radians number
 ---@return number # Degrees
 local function rad2deg(radians) return radians * 180 / math.pi end
 
 ---Calculate destination point based on starting point, bearing, and distance
----@param pos CMO__Location Starting point
----@param bearingDeg number Bearing in degrees
----@param distanceNm number Distance in nautical miles
+---@param pos CMO__Location
+---@param bearingDeg number
+---@param distanceNm number
 ---@return CMO__Location # Destination point
 local function calculateDestinationPoint(pos, bearingDeg, distanceNm)
   local bearing = deg2rad(bearingDeg)
@@ -37,10 +37,10 @@ local function calculateDestinationPoint(pos, bearingDeg, distanceNm)
 end
 
 ---Calculate distance between two points using Haversine formula
----@param lat1 number First point latitude
----@param lon1 number First point longitude
----@param lat2 number Second point latitude
----@param lon2 number Second point longitude
+---@param lat1 number
+---@param lon1 number
+---@param lat2 number
+---@param lon2 number
 ---@return number # Distance in nautical miles
 local function calculateHaversineNM(lat1, lon1, lat2, lon2)
   local dLat = deg2rad(lat2 - lat1)
@@ -52,10 +52,10 @@ local function calculateHaversineNM(lat1, lon1, lat2, lon2)
 end
 
 ---Check if path crosses radar circular area using midpoint approximation
----@param startPos {latitude: number, longitude: number} Path start
----@param endPos {latitude: number, longitude: number} Path end
----@param radarPos {latitude: number, longitude: number} Radar position
----@param radarRangeNm number Radar range in nautical miles
+---@param startPos {latitude: number, longitude: number}
+---@param endPos {latitude: number, longitude: number}
+---@param radarPos {latitude: number, longitude: number}
+---@param radarRangeNm number
 ---@return boolean # True if path intersects radar circle
 local function isIntersectingRadarCircle(startPos, endPos, radarPos, radarRangeNm)
   local midLat = (startPos.latitude + endPos.latitude) / 2
@@ -66,7 +66,7 @@ end
 
 
 ---Generate missile paths that avoid radar detection zones
----@param params SBJ__GenerateMissilePathsParams Parameters for generating missile paths
+---@param params SBJ__GenerateMissilePathsParams
 ---@return table<integer, SBJ__MissilePath> # Missile path list with waypoints and launch times
 function BearingOnlyLaunch.buildMissilePaths(params)
   local result = {}

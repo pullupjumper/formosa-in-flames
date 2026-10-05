@@ -43,8 +43,8 @@ end
 ---Example: template "AIR/STRIKE/AB/W/2" + "satellite" -> "AIR/STRIKE/AB/W/2/DYN-SAT-01"
 ---@param templateName string Full operation template name, wave-stage number included (e.g. "AIR/STRIKE/AB/W/2")
 ---@param reconType string Reconnaissance source that triggered the operation (e.g., "satellite", "UAV", "SIGINT")
----@param registrySet table<string, boolean> Generated operation names already handed out for this type
----@param existingPlan table<string, any>|nil Plan table to check for conflicts with static entries
+---@param registrySet table<string, boolean>
+---@param existingPlan table<string, any>|nil
 ---@return string # Generated unique operation name
 local function buildUniqueOperationName(templateName, reconType, registrySet, existingPlan)
   local instancePrefix = templateName .. "/DYN-" .. formatReconSource(reconType) .. "-"
@@ -66,9 +66,9 @@ end
 ---Evaluate targets for every package or task in an operation template
 ---An entry qualifies when it finds at least its minTargetCount targets.
 ---Recon tracking is requested for every entry that raised it, qualified or not.
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param params SBJ__EvaluateTargetsParams Contacts, operation type and the template to evaluate
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param params SBJ__EvaluateTargetsParams
 ---@return table<integer, string[]> targetsByIndex Evaluated targets keyed by entry index, qualified entries only
 ---@return integer qualifiedCount Number of entries with enough targets
 function DynamicPlan.evaluateTargets(config, plannerState, params)
@@ -106,8 +106,8 @@ end
 ---Name, insert and register a generated plan in one step
 ---buildPlan receives the unique name and returns the wave or matrix to store under it.
 ---The name is registered in the same call, so a generated name can never go unregistered.
----@param plannerState SBJ__StrikePlannerState Strike planner state holding the plan tables and the name registry
----@param params SBJ__InsertPlanParams Operation type, template name, recon type and the plan builder
+---@param plannerState SBJ__StrikePlannerState
+---@param params SBJ__InsertPlanParams
 ---@return string # The generated plan name
 function DynamicPlan.add(plannerState, params)
   local descriptor = resolveDescriptor(params.operationType)

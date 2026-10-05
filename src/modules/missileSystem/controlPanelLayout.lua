@@ -9,7 +9,7 @@ local SETUP_POSITION_TYPES = { "HA", "FP", "RL", "AHA", "SHRL" }
 ---@cast SETUP_POSITION_TYPES SBJ__PositionType[]
 
 ---Turn a control panel path into a fast-moving course
----@param path SBJ__MovementPath Path drawn in the control panel
+---@param path SBJ__MovementPath
 ---@return CMO__Waypoint[] # Waypoints at fast speed and flank throttle
 local function buildCourse(path)
   local course = {}
@@ -27,8 +27,8 @@ local function buildCourse(path)
 end
 
 ---Build a battery layout from one control panel entry
----@param entry SBJ__MissileSystemResult Battery placement submitted by the control panel
----@param areaName string Name for the new operational area
+---@param entry SBJ__MissileSystemResult
+---@param areaName string
 ---@return SBJ__MissileSystemLayout # Layout accepted by MissileSystem.redeploy
 local function buildLayout(entry, areaName)
   local tacticalAreas = entry.tacticalAreas
@@ -56,7 +56,7 @@ local function buildLayout(entry, areaName)
 end
 
 ---Build battery layouts from control panel entries, giving each a random operational area name
----@param entries SBJ__MissileSystemResult[] Battery placements submitted by the control panel
+---@param entries SBJ__MissileSystemResult[]
 ---@return SBJ__MissileSystemLayout[] # Layouts accepted by MissileSystem.redeploy
 function ControlPanelLayout.buildLayouts(entries)
   local layouts = {}
@@ -69,8 +69,8 @@ function ControlPanelLayout.buildLayouts(entries)
 end
 
 ---Resolve a zone's reference point names to their vertices
----@param sideName string Side owning the reference points
----@param area string[] Reference point names
+---@param sideName string
+---@param area string[]
 ---@return CMO__Location[] # Vertices, empty when none are found
 local function resolveVertices(sideName, area)
   local vertices = {}
@@ -86,8 +86,8 @@ local function resolveVertices(sideName, area)
 end
 
 ---Build the control panel's missile system rows, with zone names resolved to vertices
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Side ground force configuration; left untouched
----@param sideName string Side owning the reference points
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param sideName string
 ---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
 function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, sideName)
   local rows = {}

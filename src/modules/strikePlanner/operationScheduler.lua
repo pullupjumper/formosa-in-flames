@@ -36,8 +36,8 @@ end
 
 ---Generate the next operation from the given one by incrementing its wave number
 ---Falls back to reusing the current template when no next template is configured.
----@param operation SBJ__Operation Source operation to advance from
----@param config SBJ__Config Configuration data
+---@param operation SBJ__Operation
+---@param config SBJ__Config
 ---@return SBJ__Operation nextOperation Operation for the next wave
 ---@return string status "FOUND_NEXT"|"REUSED_CURRENT"|"PARSE_ERROR"|"UNKNOWN_TYPE"
 local function buildNextOperation(operation, config)
@@ -88,8 +88,8 @@ end
 
 ---Build a single first-wave operation from a strike mapping configuration
 ---Rejects an unresolved template: downstream builders iterate the array unconditionally.
----@param strikeMapping SBJ__ReconStrikeMapping Strike mapping definition
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
+---@param strikeMapping SBJ__ReconStrikeMapping
+---@param processingCtx SBJ__ReconQueueProcessingContext
 ---@return SBJ__Operation|nil operation Built operation, or nil when it cannot be resolved
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function buildFirstWaveOperation(strikeMapping, processingCtx)
@@ -142,8 +142,8 @@ end
 
 ---Advance an existing strike series to its next wave
 ---Every path reports a result, so the caller never has to infer silence.
----@param strikeMapping SBJ__ReconStrikeMapping Strike mapping with template name
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
+---@param strikeMapping SBJ__ReconStrikeMapping
+---@param processingCtx SBJ__ReconQueueProcessingContext
 ---@return SBJ__Operation|nil nextOperation Generated next operation, or nil when none applies
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function buildNextWaveOperation(strikeMapping, processingCtx)
@@ -230,8 +230,8 @@ end
 
 ---Build follow-on operations unlocked by a completed reconnaissance objective
 ---Each objective maps to zero or more air/ground operations.
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
----@param reconEntry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
+---@param processingCtx SBJ__ReconQueueProcessingContext
+---@param reconEntry SBJ__ReconQueueEntry
 ---@return SBJ__Operation[] operations Operations to add to the batch
 ---@return SBJ__LogResult[] results Per-mapping scheduling results for batched output
 local function buildOperationsForReconObjective(processingCtx, reconEntry)
@@ -319,10 +319,10 @@ end
 
 ---Emit batched scheduling logs, routing failures to the error sink
 ---Batch-level metadata lives in the report action so the rollup stays per-mapping.
----@param reconEntry SBJ__ReconQueueEntry Queue entry that triggered scheduling
+---@param reconEntry SBJ__ReconQueueEntry
 ---@param batchSnapshot SBJ__OperationBatchSnapshot Scheduler state snapshot taken before insertion
----@param operations SBJ__Operation[] Operations added to the batch
----@param results SBJ__LogResult[] Per-mapping scheduling results
+---@param operations SBJ__Operation[]
+---@param results SBJ__LogResult[]
 local function logSchedule(reconEntry, batchSnapshot, operations, results)
   local action = "Schedule dynamic operations " .. LogFormat.fields({
     endTime = reconEntry.endTime,
@@ -350,8 +350,8 @@ end
 
 ---Schedule dynamic operations for next wave based on completed reconnaissance
 ---Only called when reconnaissance completes successfully with complete intelligence.
----@param processingCtx SBJ__ReconQueueProcessingContext Shared processing context
----@param reconEntry SBJ__ReconQueueEntry Queue entry with completed reconnaissance data
+---@param processingCtx SBJ__ReconQueueProcessingContext
+---@param reconEntry SBJ__ReconQueueEntry
 function OperationScheduler.schedule(processingCtx, reconEntry)
   local operationBatches = processingCtx.reconTriggeredOperationBatches
   -- Taken before insertion so the log reports the state this scheduling run saw

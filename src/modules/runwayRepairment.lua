@@ -9,8 +9,8 @@ local RunwayRepairment = {}
 ---Initialize runway repair targets for both Taiwan and China
 ---Scans contacts and units to populate runway lists for repair tracking
 ---Taiwan runways are found in China's fixed-target list, so that list must be built first.
----@param config SBJ__Config Global configuration with runway DBIDs and air base lists
----@param saveData SBJ__SaveData Persistent save data; both sides' runway repair lists are filled
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function RunwayRepairment.init(config, saveData)
   local blueRunways = PersistentState.runwayRepair(saveData, constants.SIDES.BLUE).runways
   local redRunways = PersistentState.runwayRepair(saveData, constants.SIDES.RED).runways
@@ -50,8 +50,8 @@ function RunwayRepairment.init(config, saveData)
 end
 
 ---Handle runway damage events and record repair start time
----@param saveData SBJ__SaveData Persistent save data; the damaged runway's side is mutated
----@param unit CMO__Unit The damaged runway unit
+---@param saveData SBJ__SaveData
+---@param unit CMO__Unit
 function RunwayRepairment.processRunwayDamage(saveData, unit)
   local repairCtx = PersistentState.runwayRepair(saveData, unit.side)
   repairCtx.enabled = true
@@ -64,9 +64,9 @@ function RunwayRepairment.processRunwayDamage(saveData, unit)
 end
 
 ---Repair a side's damaged runways by one scheduled increment
----@param config SBJ__Config Configuration containing repair rate settings
----@param saveData SBJ__SaveData Persistent save data
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function RunwayRepairment.repairSide(config, saveData, sideName)
   for _, runway in ipairs(PersistentState.runwayRepair(saveData, sideName).runways) do
     local actualRunway = GameApi.ScenEdit_GetUnit(runway.guid)

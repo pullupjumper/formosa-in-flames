@@ -12,7 +12,7 @@ local CARGO_ENTRY = {
 local WEAPON_CLEAR_AMOUNT = 999
 
 ---Normalize weapon DBID input to a set for fast lookup
----@param weaponDBID number|number[]|nil Weapon DBID(s) to normalize
+---@param weaponDBID number|number[]|nil
 ---@return table<number, boolean> # Set of weapon DBIDs
 local function normalizeWeaponDBIDs(weaponDBID)
   if not weaponDBID then return {} end
@@ -26,10 +26,10 @@ local function normalizeWeaponDBIDs(weaponDBID)
 end
 
 ---Create a cargo proxy unit on a base ship for a given unit DBID
----@param base CMO__Unit Base ship to load cargo onto
----@param unitDbid number Database ID of the unit to add as cargo
----@param idx integer Index position in the cargo list
----@param sideName string Side name
+---@param base CMO__Unit
+---@param unitDbid number
+---@param idx integer
+---@param sideName string
 ---@return CMO__Unit|nil # Cargo proxy unit, or nil if creation failed
 local function createCargoProxy(base, unitDbid, idx, sideName)
   GameApi.ScenEdit_UpdateUnitCargo({
@@ -49,8 +49,8 @@ local function createCargoProxy(base, unitDbid, idx, sideName)
 end
 
 ---Clear all magazines and remove all mounts from a cargo proxy unit
----@param cargo CMO__Unit Cargo proxy unit to strip
----@param sideName string Side name
+---@param cargo CMO__Unit
+---@param sideName string
 local function stripCargoProxyMounts(cargo, sideName)
   GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = cargo.guid })
 
@@ -65,9 +65,9 @@ local function stripCargoProxyMounts(cargo, sideName)
 end
 
 ---Clone mount points from source unit to cargo proxy and tally tracked weapons
----@param sourceUnit CMO__Unit Source unit with mounts to clone
----@param cargo CMO__Unit Cargo proxy unit to receive mounts
----@param weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
+---@param sourceUnit CMO__Unit
+---@param cargo CMO__Unit
+---@param weaponDBIDSet table<number, boolean>
 ---@return table<number, number> # Weapon DBID to current count mapping
 local function countWeaponsAndCloneMounts(sourceUnit, cargo, weaponDBIDSet)
   local weaponCountMap = {}
@@ -94,9 +94,9 @@ end
 
 ---Synchronize weapon reload counts on a cargo proxy unit
 ---Clears all tracked weapon reloads then sets them to actual counts
----@param cargo CMO__Unit Cargo proxy unit
----@param sideName string Side name
----@param weaponCountMap table<number, number> Actual weapon counts (DBID to count)
+---@param cargo CMO__Unit
+---@param sideName string
+---@param weaponCountMap table<number, number>
 local function updateWeaponReloads(cargo, sideName, weaponCountMap)
   for _, mount in ipairs(cargo.mounts) do
     for _, wpn in ipairs(mount.mount_weapons) do
@@ -124,10 +124,10 @@ end
 
 ---Convert a single group member unit to a cargo proxy on a base ship
 ---Creates cargo proxy, resets loadout, clones mounts and weapons, then removes original
----@param base CMO__Unit Base ship to load cargo onto
----@param sourceUnit CMO__Unit Source unit to convert
----@param idx integer Index in group unit list
----@param loadCtx SBJ__CargoLoadContext Weapon set and side shared by every member of the group
+---@param base CMO__Unit
+---@param sourceUnit CMO__Unit
+---@param idx integer
+---@param loadCtx SBJ__CargoLoadContext
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function normalizeGroupMember(base, sourceUnit, idx, loadCtx)
   local weaponDBIDSet, sideName = loadCtx.weaponDBIDSet, loadCtx.sideName
@@ -159,9 +159,9 @@ end
 
 ---Simulate loading ground units onto a ship by creating cargo proxies
 ---Resolves unit group, clones weapon loadouts to cargo proxies, and removes originals
----@param base CMO__Unit Base ship to load cargo onto
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with name and optional weapon DBID
----@param sideName string Side name
+---@param base CMO__Unit
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param sideName string
 function CargoProxy.loadCargo(base, unitCtx, sideName)
   local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.name, sideName)
   if not actualUnit then return end

@@ -68,8 +68,8 @@ local SHIP_ROW_LAYOUT = {
 
 ---Move a ship to a target location with specified speed
 ---In testing mode, teleports the ship directly to the destination
----@param unit CMO__Unit The ship unit to move
----@param location CMO__Location Target destination coordinates
+---@param unit CMO__Unit
+---@param location CMO__Location
 ---@param speed number Ship movement speed in knots
 ---@param isTesting boolean If true, teleports ship instantly for testing
 local function moveShip(unit, location, speed, isTesting)
@@ -87,9 +87,9 @@ local function moveShip(unit, location, speed, isTesting)
 end
 
 ---Set ship position and heading instantly (used in testing mode)
----@param ship CMO__Unit The ship unit to reposition
----@param latitude number|string Latitude coordinate
----@param longitude number|string Longitude coordinate
+---@param ship CMO__Unit
+---@param latitude number|string
+---@param longitude number|string
 ---@param bearing number Ship heading in degrees
 local function setShipPosition(ship, latitude, longitude, bearing)
   GameApi.ScenEdit_SetUnit({
@@ -101,8 +101,8 @@ local function setShipPosition(ship, latitude, longitude, bearing)
 end
 
 ---Calculate a new position from a starting point given bearing and distance
----@param latitude number|string Starting latitude
----@param longitude number|string Starting longitude
+---@param latitude number|string
+---@param longitude number|string
 ---@param bearing number Direction in degrees (0-360)
 ---@param distance number Distance in nautical miles
 ---@return CMO__Location # New position coordinates
@@ -120,8 +120,8 @@ end
 -- ============================================================================
 
 ---Get pre-calculated movement result for an operation
----@param calculationResult table<string, SBJ__OperationZoneCalculationState>|nil Calculation result lookup
----@param operationName string Operation name
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState>|nil
+---@param operationName string
 ---@return table<string, SBJ__ShipCalculationState>|nil result Operation movement result
 ---@return table<string, any>|nil errorFields Log fields describing the failure
 local function getOperationResult(calculationResult, operationName)
@@ -138,9 +138,9 @@ local function getOperationResult(calculationResult, operationName)
 end
 
 ---Move ship to next pre-calculated location and increment index
----@param unit CMO__Unit Ship unit
----@param resultEntry SBJ__ShipCalculationState|nil Calculation result entry
----@param resultKey string Result key used for destination lookup
+---@param unit CMO__Unit
+---@param resultEntry SBJ__ShipCalculationState|nil
+---@param resultKey string
 ---@param params {speed: number, isTesting: boolean} Ship speed in knots and testing mode flag
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveShipToNextLocation(unit, resultEntry, resultKey, params)
@@ -169,10 +169,10 @@ local function moveShipToNextLocation(unit, resultEntry, resultKey, params)
 end
 
 ---Handle Type 071 movement with overflow to LST area
----@param unit CMO__Unit The Type 071 ship
----@param result table<string, SBJ__ShipCalculationState> Full result table
----@param speed number Ship speed
----@param isTesting boolean Testing mode flag
+---@param unit CMO__Unit
+---@param result table<string, SBJ__ShipCalculationState>
+---@param speed number
+---@param isTesting boolean
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveType071(unit, result, speed, isTesting)
   local entry = result.type071
@@ -214,10 +214,10 @@ local function moveType071(unit, result, speed, isTesting)
 end
 
 ---Match ship by DBID or name and move to next location
----@param unit CMO__Unit Ship unit
----@param result table<string, SBJ__ShipCalculationState> Calculation results
----@param speed number Ship speed
----@param isTesting boolean Testing mode flag
+---@param unit CMO__Unit
+---@param result table<string, SBJ__ShipCalculationState>
+---@param speed number
+---@param isTesting boolean
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveMatchingShip(unit, result, speed, isTesting)
   local params = { speed = speed, isTesting = isTesting }
@@ -244,7 +244,7 @@ end
 
 ---Handle Surface Action Group (SAG) movement to anchorage area
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
----@param descriptor SBJ__SAGDescriptor SAG group descriptor with destination and unit list
+---@param descriptor SBJ__SAGDescriptor
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function processSAG(descriptor, isTesting)
@@ -342,8 +342,8 @@ end
 -- ============================================================================
 
 ---Initialize calculation result structure for an operation
----@param operationName string Operation name
----@param calculationResult table<string, SBJ__OperationZoneCalculationState> Target table
+---@param operationName string
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
 local function initOperationResult(operationName, calculationResult)
   if calculationResult[operationName] then return end
   local result = {}
@@ -354,8 +354,8 @@ local function initOperationResult(operationName, calculationResult)
 end
 
 ---Get a required reference point for a ship row
----@param area SBJ__OperationAreaDescriptor Area configuration
----@param key string Starting point key
+---@param area SBJ__OperationAreaDescriptor
+---@param key string
 ---@return CMO__Location|nil point Reference point
 ---@return table<string, any>|nil errorFields Log fields describing the failure
 local function getStartingReferencePoint(area, key)
@@ -376,8 +376,8 @@ local function getStartingReferencePoint(area, key)
 end
 
 ---Calculate starting points for all ship types from two reference points
----@param area SBJ__OperationAreaDescriptor Area configuration with startingPointMap, heading
----@param formationSettings SBJ__AmphibiousFormationConfig Formation distance settings
+---@param area SBJ__OperationAreaDescriptor
+---@param formationSettings SBJ__AmphibiousFormationConfig
 ---@return table<string, CMO__Location>|nil startingPointMap Mapping of key to starting location
 ---@return table<string, any>|nil errorFields Log fields describing the failure
 local function calculateStartingPoints(area, formationSettings)
@@ -412,10 +412,10 @@ local function calculateStartingPoints(area, formationSettings)
 end
 
 ---Generate and append locations for all ship types in an area
----@param opResult table<string, SBJ__ShipCalculationState> Operation result to populate
----@param startingPointMap table<string, CMO__Location> Starting points per ship type
----@param area SBJ__OperationAreaDescriptor Area configuration with heading and shipCounts
----@param horizontalDistance number Horizontal spacing
+---@param opResult table<string, SBJ__ShipCalculationState>
+---@param startingPointMap table<string, CMO__Location>
+---@param area SBJ__OperationAreaDescriptor
+---@param horizontalDistance number
 local function buildAllShipLocations(opResult, startingPointMap, area, horizontalDistance)
   for _, entry in ipairs(ALL_RESULT_KEYS) do
     Utils.addAll(
@@ -432,8 +432,8 @@ end
 
 ---Pre-calculate all destination positions for amphibious assault ships
 ---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration with ship settings
----@param calculationResult table<string, SBJ__OperationZoneCalculationState> Calculation result where calculated positions will be stored
+---@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
 ---@return boolean # True if all destination positions were calculated
 function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
   local formationSettings = amphibOpsConfig.formationSettings
@@ -465,10 +465,10 @@ end
 
 ---Move amphibious assault ships from staging area to designated anchorage positions for a single operation
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
+---@param amphibOpsConfig SBJ__AmphibOpsConfig
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Pre-calculated destination positions indexed by zone name
----@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
----@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor for the target zone
+---@param filteredUnits CMO__SideUnit[]
+---@param operation SBJ__AmphibiousOperationDescriptor
 ---@return boolean # True when all movement orders have been issued
 function ShipMovement.moveToStagingArea(amphibOpsConfig, calculationResult, filteredUnits, operation)
   local formationSettings = amphibOpsConfig.formationSettings

@@ -35,7 +35,7 @@ local REDEPLOY_POSITION_TYPES = {
 }
 
 ---Extract position type token from UnitEntersArea trigger description
----@param event CMO__Event|nil Scenario event object
+---@param event CMO__Event|nil
 ---@return string|nil # Position type token (FP/AHA/HA/RL)
 local function resolvePositionType(event)
   if not event or not event.triggers then
@@ -59,8 +59,8 @@ local function resolvePositionType(event)
 end
 
 ---Drop contact entries that point to the incoming unit
----@param unit CMO__Unit Unit entering area
----@param contacts CMO__Contact[]|nil Contacts list from ScenEdit_GetContacts
+---@param unit CMO__Unit
+---@param contacts CMO__Contact[]|nil
 local function dropUnitContact(unit, contacts)
   if not contacts then
     return
@@ -74,8 +74,8 @@ local function dropUnitContact(unit, contacts)
 end
 
 ---Command firing unit to move to firing point (FP), logging any failure
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param firingUnit CMO__Unit Firing unit group
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
 local function startMoveToFiringPoint(firingUnitCtx, firingUnit)
   local success, errorFields = Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
   if not success and errorFields then
@@ -88,8 +88,8 @@ local function startMoveToFiringPoint(firingUnitCtx, firingUnit)
 end
 
 ---Check if a firing unit is below its own ammunition threshold
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context carrying threshold and weapon DBID
----@param firingUnit CMO__Unit Firing unit group
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
 ---@return boolean # Whether it is low ammunition
 function MissileSystem.isLowAmmo(firingUnitCtx, firingUnit)
   return Ammo.isLowAmmo(firingUnit, firingUnitCtx.ammoThreshold, firingUnitCtx.weaponDBID)
@@ -97,8 +97,8 @@ end
 
 ---Send a firing unit from its hide area to its firing point when it is ready
 ---A unit is ready when it is hiding with enough ammunition; units already out are left alone.
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param firingUnit CMO__Unit Firing unit group
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
 ---@return boolean inPosition Whether the unit is at its firing point
 function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
   if firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.HIDE and
@@ -111,9 +111,9 @@ function MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
 end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
----@param groundCtx SBJ__GroundContext Ground force runtime context
+---@param groundCtx SBJ__GroundContext
 ---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
----@param sideName string Side name used to resolve firing units in game state
+---@param sideName string
 ---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
 function MissileSystem.getAmmoInventory(groundCtx, missileSystemType, sideName)
   local systemCtx = groundCtx.missileSystemTypes[missileSystemType]
@@ -125,9 +125,9 @@ function MissileSystem.getAmmoInventory(groundCtx, missileSystemType, sideName)
 end
 
 ---Resolve a firing unit runtime context by missile system and unit name
----@param groundCtx SBJ__GroundContext Ground force runtime context
+---@param groundCtx SBJ__GroundContext
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitName string Firing unit name used as context key
+---@param firingUnitName string
 ---@return SBJ__FiringUnitContext|nil # Firing unit runtime context, or nil when missing
 function MissileSystem.getFiringUnitContext(groundCtx, missileSystemType, firingUnitName)
   local systemCtx = groundCtx.missileSystemTypes[string.lower(missileSystemType)] --[[@as SBJ__MissileSystemContext?]]
@@ -136,9 +136,9 @@ end
 
 ---Start the stow countdown so the reload cycle sends the firing units back
 ---SAM never stows, and a countdown already running is kept.
----@param groundCtx SBJ__GroundContext Ground force runtime context
+---@param groundCtx SBJ__GroundContext
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnits SBJ__FiringUnit[]|nil Firing units to stow
+---@param firingUnits SBJ__FiringUnit[]|nil
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
 function MissileSystem.startStow(groundCtx, missileSystemType, firingUnits, opts)
   if not missileSystemType or not firingUnits or string.lower(missileSystemType) == constants.MISSILE_SYSTEM_TYPES.SAM then
@@ -158,10 +158,10 @@ function MissileSystem.startStow(groundCtx, missileSystemType, firingUnits, opts
 end
 
 ---Check status of all missile systems and trigger corresponding actions
----@param groundCtx SBJ__GroundContext Ground force runtime context
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration (reload/stow timers per system)
----@param isAuto boolean Whether this side runs in automatic mode
----@param sideName string Side name
+---@param groundCtx SBJ__GroundContext
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param isAuto boolean
+---@param sideName string
 function MissileSystem.process(groundCtx, missileSystemConfigMap, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
@@ -178,9 +178,9 @@ function MissileSystem.process(groundCtx, missileSystemConfigMap, isAuto, sideNa
 end
 
 ---Run one reload/hide cycle for a side, with its policy taken from config
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function MissileSystem.processSide(config, saveData, sideName)
   local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
 
@@ -193,8 +193,8 @@ function MissileSystem.processSide(config, saveData, sideName)
 end
 
 ---Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
----@param saveData SBJ__SaveData Persistent save data; the destroyed unit's side ground slice is mutated
----@param unit CMO__Unit Destroyed unit
+---@param saveData SBJ__SaveData
+---@param unit CMO__Unit
 ---@return boolean processed Whether the unit belonged to a missile system and ammo was adjusted
 function MissileSystem.processSupplyAssetDestruction(saveData, unit)
   local groundCtx = PersistentState.ground(saveData, unit.side)
@@ -222,10 +222,10 @@ function MissileSystem.processSupplyAssetDestruction(saveData, unit)
 end
 
 ---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Side ground force configuration; mutated
----@param groundCtx SBJ__GroundContext Side ground force runtime context
----@param sideName string Side name for zone/trigger/unit ownership
----@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param groundCtx SBJ__GroundContext
+---@param sideName string
+---@param layouts SBJ__MissileSystemLayout[]
 function MissileSystem.redeploy(missileSystemConfigMap, groundCtx, sideName, layouts)
   local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, layouts)
 
@@ -235,10 +235,10 @@ function MissileSystem.redeploy(missileSystemConfigMap, groundCtx, sideName, lay
 end
 
 ---Redeploy a side's batteries to the placements submitted by the control panel
----@param config SBJ__Config Global configuration table; the side's ground config is mutated
----@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
----@param sideName string Side name (China or Taiwan)
----@param entries SBJ__MissileSystemResult[] Battery placements submitted by the control panel
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
+---@param entries SBJ__MissileSystemResult[]
 function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
   MissileSystem.redeploy(
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
@@ -249,8 +249,8 @@ function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entr
 end
 
 ---Build a side's missile system rows for the control panel
----@param config SBJ__Config Global configuration table
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param sideName string
 ---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
 function MissileSystem.buildDeploymentSystems(config, sideName)
   return ControlPanelLayout.buildDeploymentSystems(
@@ -260,9 +260,9 @@ function MissileSystem.buildDeploymentSystems(config, sideName)
 end
 
 ---Add a side's missile system units and build their runtime contexts from config
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function MissileSystem.deploySide(config, saveData, sideName)
   local missileSystemConfigMap = config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
 
@@ -271,9 +271,9 @@ function MissileSystem.deploySide(config, saveData, sideName)
 end
 
 ---Build a side's battery statuses for the control panel, one per battery (firing unit plus its paired resupply unit)
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 ---@return SBJ__BatteryStatus[] # One status per battery
 function MissileSystem.buildBatteryStatuses(config, saveData, sideName)
   return StatusView.buildBatteryStatuses(
@@ -284,9 +284,9 @@ function MissileSystem.buildBatteryStatuses(config, saveData, sideName)
 end
 
 ---Seed a side's default per-system state (name, enabled, empty unit maps) from configuration
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's ground slice is seeded in place
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function MissileSystem.ensureGroundState(config, saveData, sideName)
   Context.ensureGroundState(
     config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
@@ -295,9 +295,9 @@ function MissileSystem.ensureGroundState(config, saveData, sideName)
 end
 
 ---Initialize a side's missile system runtime contexts from configuration when its ground forces are enabled
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's ground slice is mutated
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function MissileSystem.initSide(config, saveData, sideName)
   local groundCtx = PersistentState.ground(saveData, sideName)
   if not groundCtx.enabled then
@@ -309,8 +309,8 @@ function MissileSystem.initSide(config, saveData, sideName)
 end
 
 ---Iterate through enabled missile systems only
----@param groundCtx SBJ__GroundContext Ground force runtime context
----@param callback fun(systemCtx: SBJ__MissileSystemContext, missileSystemType: string) Callback invoked for each enabled system context
+---@param groundCtx SBJ__GroundContext
+---@param callback fun(systemCtx: SBJ__MissileSystemContext, missileSystemType: string)
 local function forEachEnabledSystem(groundCtx, callback)
   for missileSystemType, systemCtx in pairs(groundCtx.missileSystemTypes) do
     if systemCtx.enabled then
@@ -322,9 +322,9 @@ end
 ---Handle entering firing point logic for a single missile system context
 ---Position handlers share one signature so they can be dispatched from a table;
 ---this one has no behavior switches of its own.
----@param missileSystemType string Missile system name
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Triggered unit
+---@param missileSystemType string
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when state changed
 local function processFiringPoint(missileSystemType, systemCtx, unit, moveCtx)
@@ -341,10 +341,10 @@ local function processFiringPoint(missileSystemType, systemCtx, unit, moveCtx)
 end
 
 ---Handle entering hide area logic for a single missile system context
----@param missileSystemType string Missile system name
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionContext Side-specific switches
+---@param missileSystemType string
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
+---@param moveCtx SBJ__MoveToPositionContext
 ---@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
 local function processHideArea(missileSystemType, systemCtx, unit, moveCtx)
   local firingUnitCtx = systemCtx.firingUnits[unit.name]
@@ -374,10 +374,10 @@ local function processHideArea(missileSystemType, systemCtx, unit, moveCtx)
 end
 
 ---Handle reload-point fallback when no meeting occurs
----@param missileSystemType string Missile system name
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionContext Side-specific switches
+---@param missileSystemType string
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
+---@param moveCtx SBJ__MoveToPositionContext
 ---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
 local function processReloadPointNoMeeting(missileSystemType, systemCtx, unit, moveCtx)
   -- Use the manual mode instead of moveCtx so a firing unit drifting through RL during repositioning is not halted.
@@ -427,10 +427,10 @@ local function processReloadPointNoMeeting(missileSystemType, systemCtx, unit, m
 end
 
 ---Handle entering reload point logic for a single missile system context
----@param missileSystemType string Missile system name
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Triggered unit
----@param moveCtx SBJ__MoveToPositionContext Side-specific switches
+---@param missileSystemType string
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
+---@param moveCtx SBJ__MoveToPositionContext
 ---@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
 local function processReloadPoint(missileSystemType, systemCtx, unit, moveCtx)
   local hasMet, firingUnitCtx = Meeting.hasMetResupplyUnit(systemCtx, unit, moveCtx.isAuto)
@@ -471,9 +471,9 @@ end
 ---Handle entering ammo holding area logic for a single missile system context
 ---Position handlers share one signature so they can be dispatched from a table;
 ---this one has no behavior switches of its own.
----@param missileSystemType string Missile system name
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Triggered unit
+---@param missileSystemType string
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
 ---@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
 ---@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
 local function processAmmoHoldingArea(missileSystemType, systemCtx, unit, moveCtx)
@@ -510,7 +510,7 @@ local POSITION_HANDLERS = {
 }
 
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
----@param params SBJ__MoveToPositionEventParams Unit-enter-area event handling options
+---@param params SBJ__MoveToPositionEventParams
 local function processMoveToPositionEvent(params)
   local unit = params.unit
   local moveCtx = params.moveCtx
@@ -540,10 +540,10 @@ local function processMoveToPositionEvent(params)
 end
 
 ---Handle a UnitEntersArea event for the triggering unit's side, with its policy taken from config
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the unit side's ground slice is mutated
----@param unit CMO__Unit Unit that triggered UnitEntersArea
----@param event CMO__Event Event payload from CMO
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param unit CMO__Unit
+---@param event CMO__Event
 function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
   local policy = config[GameUtils.getCachedSideConfig(unit.side).field].ground.policy
 

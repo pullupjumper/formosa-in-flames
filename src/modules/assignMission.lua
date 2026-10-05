@@ -3,9 +3,9 @@ local GameApi = require("src.utils.gameApi")
 local AssignMission = {}
 
 ---Filter embarked platforms by type and database ID
----@param baseUnit CMO__Unit The base unit with embarked units
+---@param baseUnit CMO__Unit
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Boat')
----@param platformDBID number The database ID of the platform to filter
+---@param platformDBID number
 ---@return CMO__Unit[] # A list of filtered embarked units
 local function filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
   local filteredPlatforms = {}
@@ -29,16 +29,16 @@ local function filterEmbarkedPlatforms(baseUnit, platformType, platformDBID)
 end
 
 ---Check if a unit can be assigned to a mission
----@param unit CMO__Unit The unit to check
----@param mission SBJ__LandingMissionDescriptor The mission settings
+---@param unit CMO__Unit
+---@param mission SBJ__LandingMissionDescriptor
 ---@return boolean # True if the unit can be assigned to the mission, false otherwise
 local function canAssignUnitToMission(unit, mission)
   return not unit.mission and (mission.loadoutId == 0 or unit.loadoutdbid == mission.loadoutId)
 end
 
 ---Process mission assignments for filtered platforms
----@param filteredPlatforms table<integer, CMO__Unit> A list of filtered embarked units
----@param mission SBJ__LandingMissionDescriptor The mission to assign units to
+---@param filteredPlatforms table<integer, CMO__Unit>
+---@param mission SBJ__LandingMissionDescriptor
 local function processMissionAssignments(filteredPlatforms, mission)
   local count = 0
 
@@ -58,10 +58,10 @@ local function processMissionAssignments(filteredPlatforms, mission)
 end
 
 ---Assign embarked units to missions
----@param fromUnit string The unit guid with embarked units
+---@param fromUnit string
 ---@param platformType string The type of platform to filter (e.g., 'Aircraft', 'Ship')
----@param platformDBID number The database ID of the platform to filter
----@param missions SBJ__LandingMissionDescriptor[] A list of missions to assign units to
+---@param platformDBID number
+---@param missions SBJ__LandingMissionDescriptor[]
 function AssignMission.assignEmbarkedUnitsToMissions(fromUnit, platformType, platformDBID, missions)
   local base = GameApi.ScenEdit_GetUnit(fromUnit)
 
@@ -77,8 +77,8 @@ function AssignMission.assignEmbarkedUnitsToMissions(fromUnit, platformType, pla
 end
 
 ---Get weapon count for a specific weapon type on a unit
----@param unitGuid string The GUID of the unit
----@param weaponDBID number The database ID of the weapon to filter by
+---@param unitGuid string
+---@param weaponDBID number
 ---@return integer # The count of the specified weapon on the unit's loadout
 local function getWeaponCount(unitGuid, weaponDBID)
   local loadout = GameApi.ScenEdit_GetLoadout(unitGuid)
@@ -102,8 +102,8 @@ local function getWeaponCount(unitGuid, weaponDBID)
 end
 
 ---Check if unit is eligible for strike mission
----@param unit CMO__Unit The unit to check
----@param weaponCount integer The number of specified weapons on the unit
+---@param unit CMO__Unit
+---@param weaponCount integer
 ---@param unitDBID number|nil The database ID of the unit to filter by, or nil for any unit
 ---@return boolean # True if the unit is eligible for the strike mission, false otherwise
 local function isUnitEligibleForStrikeMission(unit, weaponCount, unitDBID)
@@ -111,8 +111,8 @@ local function isUnitEligibleForStrikeMission(unit, weaponCount, unitDBID)
 end
 
 ---Assign embarked units to strike mission
----@param params SBJ__AssignEmbarkedUnitParams Base, unit count, weapon/unit DBID filters and mission name
----@param opts? SBJ__AssignEmbarkedUnitOpts Escort flag
+---@param params SBJ__AssignEmbarkedUnitParams
+---@param opts? SBJ__AssignEmbarkedUnitOpts
 ---@return string[]|nil # A list of assigned units
 function AssignMission.assignEmbarkedUnitToStrikeMission(params, opts)
   local unitCount, weaponDBID, unitDBID = params.unitCount, params.weaponDBID, params.unitDBID

@@ -8,10 +8,10 @@ local Utils = require("src.utils.utils")
 local Deployment = {}
 
 ---Remove missile systems from the game
----@param missileSystemType string Missile system name
----@param role string Unit role
----@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor with removal info
----@param sideName string Side name for unit deletion
+---@param missileSystemType string
+---@param role string
+---@param descriptor SBJ__FiringUnitDescriptor
+---@param sideName string
 ---@return SBJ__LogResult[] # Failure log rows
 local function removeMissileSystem(missileSystemType, role, descriptor, sideName)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.name, sideName)
@@ -43,10 +43,10 @@ local function removeMissileSystem(missileSystemType, role, descriptor, sideName
 end
 
 ---Remove unwanted weapons and redistribute ammo for desired weapon types
----@param addedUnit CMO__Unit Unit to clean up weapons for
----@param weaponDBIDs number[] Desired weapon DBIDs to keep
----@param sideName string Side name
----@param params {system: string, role: string} Missile system name and unit role stamped on every log row
+---@param addedUnit CMO__Unit
+---@param weaponDBIDs number[]
+---@param sideName string
+---@param params {system: string, role: string}
 ---@return SBJ__LogResult[] # Failure log rows
 local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, params)
   local entries = {}
@@ -112,10 +112,10 @@ local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, pa
 end
 
 ---Create firing units according to configuration
----@param missileSystemType string Missile system name
----@param systemConfig SBJ__MissileSystemConfig Weapon system configuration
----@param descriptor SBJ__FiringUnitDescriptor Firing unit descriptor
----@param sideName string Side name for unit creation
+---@param missileSystemType string
+---@param systemConfig SBJ__MissileSystemConfig
+---@param descriptor SBJ__FiringUnitDescriptor
+---@param sideName string
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
@@ -236,9 +236,9 @@ local function addFiringUnit(missileSystemType, systemConfig, descriptor, sideNa
 end
 
 ---Create resupply units according to configuration
----@param missileSystemType string Missile system name
----@param descriptor SBJ__ResupplyUnitDescriptor Resupply unit descriptor
----@param sideName string Side name for unit creation
+---@param missileSystemType string
+---@param descriptor SBJ__ResupplyUnitDescriptor
+---@param sideName string
 ---@return integer created Number of units successfully created
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
@@ -301,10 +301,10 @@ local function addResupplyUnit(missileSystemType, descriptor, sideName)
 end
 
 ---Create ammunition depot unit according to configuration
----@param missileSystemType string Missile system name
----@param systemConfig SBJ__MissileSystemConfig Weapon system configuration
----@param descriptor SBJ__AmmunitionUnitDescriptor Ammunition unit descriptor
----@param sideName string Side name for unit creation
+---@param missileSystemType string
+---@param systemConfig SBJ__MissileSystemConfig
+---@param descriptor SBJ__AmmunitionUnitDescriptor
+---@param sideName string
 ---@return boolean success Whether unit was successfully created
 ---@return SBJ__LogResult[] entries Failure log rows
 local function addAmmunition(missileSystemType, systemConfig, descriptor, sideName)
@@ -357,8 +357,8 @@ local function addAmmunition(missileSystemType, systemConfig, descriptor, sideNa
 end
 
 ---Add missile system units to the game
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force context
----@param sideName string Side name
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param sideName string
 function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
   -- systemHasFailure is derived from the rows each helper produced, so it cannot
   -- drift from them. It only picks the tag of the per-system summary row; the
@@ -424,8 +424,8 @@ end
 ---Point firing and resupply unit descriptors at their new operational areas
 ---Descriptors are replaced with copies rather than edited in place. Layouts naming an
 ---unknown system or firing unit are skipped.
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration; mutated
----@param layouts SBJ__MissileSystemLayout[] Player-chosen operational areas
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param layouts SBJ__MissileSystemLayout[]
 ---@return SBJ__OperationalArea[] operationalAreas New areas that need zones and triggers
 ---@return SBJ__OperationalArea[] operationalAreasToRemove Replaced areas whose zones and triggers must go
 function Deployment.updateLayouts(missileSystemConfigMap, layouts)

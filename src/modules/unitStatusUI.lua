@@ -14,9 +14,9 @@ local constants = require("src.core.constants")
 local UnitStatusUI = {}
 
 ---Create JSON string for C2 system status data
----@param saveData SBJ__SaveData Saved game data
----@param sideName string Side name ('China' or 'Taiwan')
----@param types SBJ__C2TypeKey[] C2 node types to include
+---@param saveData SBJ__SaveData
+---@param sideName string
+---@param types SBJ__C2TypeKey[]
 ---@return string # JSON formatted C2 status data
 local function createC2NodeDataString(saveData, sideName, types)
   local iads = PersistentState.iads(saveData, sideName)
@@ -76,7 +76,7 @@ local function createC2NodeDataString(saveData, sideName, types)
 end
 
 ---Create JSON string for SIGINT transmission data
----@param saveData SBJ__SaveData Saved game data
+---@param saveData SBJ__SaveData
 ---@param sideName string Side name (constants.SIDES.RED or constants.SIDES.ALLY)
 ---@return string # JSON formatted signal data
 local function createSignalDataString(saveData, sideName)
@@ -98,8 +98,8 @@ local function getControlPanelTemplate()
 end
 
 ---Create JSON string for GPS jamming unit data
----@param config SBJ__Config Saved game data containing GPS jamming state
----@param sideName string Side name ('China' or 'Taiwan')
+---@param config SBJ__Config
+---@param sideName string
 ---@return string # JSON formatted GPS jamming unit data
 local function createGnssJammerDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
@@ -116,8 +116,8 @@ local function createGnssJammerDataString(config, sideName)
 end
 
 ---Create JSON string for deployed aircraft data with base coordinates
----@param config SBJ__Config Configuration table containing aircraft deployment data
----@param sideName string Side name ('China' or 'Taiwan')
+---@param config SBJ__Config
+---@param sideName string
 ---@return string # JSON formatted deployed aircraft data with coordinates
 local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
@@ -140,7 +140,7 @@ local function createDeployedAircraftDataString(config, sideName)
 end
 
 ---Collect each amphibious operation's staging point and boat zone as a waypoint route
----@param config SBJ__Config Configuration table
+---@param config SBJ__Config
 ---@return string # JSON formatted amphibious task force location data with coordinates
 local function createAmphibiousTaskForceLocationDataString(config)
   local data = {}
@@ -193,10 +193,10 @@ local STATUS_UI_SIDES = {
 
 
 ---Apply the control panel's submitted deployments: GNSS jammers, then aircraft, then missile batteries
----@param config SBJ__Config Configuration table; the side's ground config is mutated by battery redeploys
----@param saveData SBJ__SaveData Persistent save data; mutated
----@param sideName string Side name ('China' or 'Taiwan')
----@param result SBJ__ControlPanelResult Parsed control panel submission
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
+---@param result SBJ__ControlPanelResult
 local function updateFromControlPanelResult(config, saveData, sideName, result)
   local jammerDescriptors = result.jammers
   local airbaseDeploymentDescriptors = result.airbases
@@ -326,9 +326,9 @@ local ADD_UNIT_ACTIONS = {
 }
 
 ---Run the ticked add-units actions in menu order
----@param config SBJ__Config Configuration table
----@param sideName string Side name ('China' or 'Taiwan')
----@param actionIds string[] Ids submitted by the page
+---@param config SBJ__Config
+---@param sideName string
+---@param actionIds string[]
 local function runAddUnitActions(config, sideName, actionIds)
   local chosen = {}
   for _, id in ipairs(actionIds) do
@@ -343,7 +343,7 @@ local function runAddUnitActions(config, sideName, actionIds)
 end
 
 ---Rows the add-units page lists for a side
----@param sideName string Side name ('China' or 'Taiwan')
+---@param sideName string
 ---@return {id: string, label: string}[]
 local function buildAddUnitRows(sideName)
   local rows = {}
@@ -370,7 +370,7 @@ local function parseFormJson(raw)
 end
 
 ---Apply the SAM doctrine the control panel submitted to the Taiwan facilities
----@param doctrine SBJ__EmconResult|nil Parsed emconData
+---@param doctrine SBJ__EmconResult|nil
 local function applySamDoctrine(doctrine)
   if doctrine and doctrine.sams and #doctrine.sams > 0 then
     IntegratedAirDefenseSystem.setSamDoctrine(doctrine.sams)
@@ -380,8 +380,8 @@ end
 ---Show the control panel and apply what the player submitted.
 ---In play mode (`config.isEditMode` false) the deployment is accepted once: the first
 ---submission locks it, and later ones are ignored. Add-units is edit mode only.
----@param config SBJ__Config Configuration table
----@param sideName string Side name ('China' or 'Taiwan')
+---@param config SBJ__Config
+---@param sideName string
 function UnitStatusUI.createControlPanel(config, sideName)
   local view = STATUS_UI_SIDES[sideName] or STATUS_UI_SIDES[constants.SIDES.BLUE]
   local isEditMode = config.isEditMode == true

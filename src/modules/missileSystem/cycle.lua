@@ -12,10 +12,10 @@ local Cycle = {}
 ---Append a movement command result
 ---Rows carry only unit-level fields; the caller adds the owning system name.
 ---The failing helper supplies its own reason, so no generic one is invented here.
----@param results SBJ__LogResult[] Result list to append to
----@param params {unit: string, action: string} Unit name and snake_case action token
----@param success boolean Whether the command succeeded
----@param errorDetail table<string, any>|nil Log fields describing the failure
+---@param results SBJ__LogResult[]
+---@param params {unit: string, action: string}
+---@param success boolean
+---@param errorDetail table<string, any>|nil
 local function addCommandResult(results, params, success, errorDetail)
   if success then
     table.insert(results, { tag = "OK", fields = { unit = params.unit, action = params.action } })
@@ -26,10 +26,10 @@ local function addCommandResult(results, params, success, errorDetail)
 end
 
 ---Check if firing unit reload conditions are met
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
----@param hasMet boolean Whether firing unit has met with resupply unit
----@param firingUnit CMO__Unit Firing unit group
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param systemConfig SBJ__MissileSystemConfig
+---@param hasMet boolean
+---@param firingUnit CMO__Unit
 ---@return boolean # Whether reload conditions are met
 local function isReadyToReloadFiringUnit(firingUnitCtx, systemConfig, hasMet, firingUnit)
   if firingUnitCtx.reloadStartTime == nil then return false end
@@ -39,9 +39,9 @@ local function isReadyToReloadFiringUnit(firingUnitCtx, systemConfig, hasMet, fi
 end
 
 ---Check if resupply unit reload conditions are met
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
----@param hasMet boolean Whether resupply unit has met with ammunition depot
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param systemConfig SBJ__MissileSystemConfig
+---@param hasMet boolean
 ---@return boolean # Whether reload conditions are met
 local function isReadyToReloadResupplyUnit(resupplyUnitCtx, systemConfig, hasMet)
   if resupplyUnitCtx.reloadStartTime == nil then return false end
@@ -50,10 +50,10 @@ local function isReadyToReloadResupplyUnit(resupplyUnitCtx, systemConfig, hasMet
 end
 
 ---Trigger reload movement when firing unit is static and low on ammo (auto mode only)
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param firingUnit CMO__Unit Firing unit group
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
   local systemConfig, isAuto = runCtx.systemConfig, runCtx.isAuto
@@ -148,10 +148,10 @@ local function startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
 end
 
 ---Complete firing unit reload when conditions are met
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param firingUnit CMO__Unit Firing unit group
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firingUnit)
   local systemConfig, isAuto = runCtx.systemConfig, runCtx.isAuto
@@ -212,10 +212,10 @@ local function completeFiringUnitReload(systemCtx, runCtx, firingUnitCtx, firing
 end
 
 ---Handle firing unit reload cycle: trigger movement and complete reload
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param firingUnit CMO__Unit Firing unit group
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function processFiringUnitReloadCycle(systemCtx, runCtx, firingUnitCtx, firingUnit)
   local results = startReloadMovement(systemCtx, runCtx, firingUnitCtx, firingUnit)
@@ -224,9 +224,9 @@ local function processFiringUnitReloadCycle(systemCtx, runCtx, firingUnitCtx, fi
 end
 
 ---Trigger resupply movement when resupply unit is static and out of ammo (auto mode only)
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param resupplyUnit CMO__Unit Resupply unit group
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param resupplyUnit CMO__Unit
+---@param runCtx SBJ__CycleRunContext
 ---@return SBJ__LogResult[] results Collected structured results
 local function startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx)
   local results = {}
@@ -244,10 +244,10 @@ local function startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx)
 end
 
 ---Complete resupply unit transload when conditions are met
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param resupplyUnit CMO__Unit Resupply unit group
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param resupplyUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit)
   local systemConfig, isAuto = runCtx.systemConfig, runCtx.isAuto
@@ -305,10 +305,10 @@ local function completeResupplyUnitTransload(systemCtx, runCtx, resupplyUnitCtx,
 end
 
 ---Handle resupply unit reload cycle: trigger movement and complete transload
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param resupplyUnit CMO__Unit Resupply unit group
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param resupplyUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function processResupplyUnitReloadCycle(systemCtx, runCtx, resupplyUnitCtx, resupplyUnit)
   local results = startResupplyMovement(resupplyUnitCtx, resupplyUnit, runCtx)
@@ -317,9 +317,9 @@ local function processResupplyUnitReloadCycle(systemCtx, runCtx, resupplyUnitCtx
 end
 
 ---Process all firing units and collect structured results
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param sideName string Side name
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param sideName string
 ---@return SBJ__LogResult[] results Collected structured results
 local function processFiringUnits(systemCtx, runCtx, sideName)
   local results = {}
@@ -334,9 +334,9 @@ local function processFiringUnits(systemCtx, runCtx, sideName)
 end
 
 ---Process all resupply units and collect structured results
----@param systemCtx SBJ__MissileSystemContext Weapon system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param sideName string Side name
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param sideName string
 ---@return SBJ__LogResult[] results Collected structured results
 local function processResupplyUnits(systemCtx, runCtx, sideName)
   local results = {}
@@ -351,9 +351,9 @@ local function processResupplyUnits(systemCtx, runCtx, sideName)
 end
 
 ---Process missile-system reload cycles and return structured results
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param runCtx SBJ__CycleRunContext Per-run settings shared by every unit in this cycle
----@param sideName string Side name
+---@param systemCtx SBJ__MissileSystemContext
+---@param runCtx SBJ__CycleRunContext
+---@param sideName string
 ---@return SBJ__LogResult[] results Collected structured results
 function Cycle.process(systemCtx, runCtx, sideName)
   local results = processFiringUnits(systemCtx, runCtx, sideName)

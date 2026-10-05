@@ -32,8 +32,8 @@ local TARGET_TYPE_WEAPON = 6
 
 
 ---Format GNSS jamming result as key=value fields
----@param status string GNSS jamming result enum value
----@param message string Result message or weapon name
+---@param status string
+---@param message string
 ---@return table<string, string> # Formatted log message
 local function formatGnssResult(status, message)
   if status == GNSS_JAMMING_RESULT.NO_WEAPON then
@@ -71,8 +71,8 @@ end
 
 
 ---Find matching GNSS-guided weapon configuration by DBID
----@param gnssGuidedWeapons SBJ__GNSSJammedWeapon[] List of GNSS-guided weapon configurations
----@param dbid number Weapon database ID to match
+---@param gnssGuidedWeapons SBJ__GNSSJammedWeapon[]
+---@param dbid number
 ---@return SBJ__GNSSJammedWeapon|nil # Matched weapon config or nil
 local function findGnssGuidedWeapon(gnssGuidedWeapons, dbid)
   for _, wpn in ipairs(gnssGuidedWeapons) do
@@ -97,8 +97,8 @@ end
 -- ============================================================================
 
 ---Calculate random coordinate deviation for jamming effect
----@param originalLat number|string Original latitude
----@param originalLon number|string Original longitude
+---@param originalLat number|string
+---@param originalLon number|string
 ---@return number lat Deviated latitude
 ---@return number lon Deviated longitude
 local function calculateDeviation(originalLat, originalLon)
@@ -110,9 +110,9 @@ end
 
 ---Build deviated course and target for the jammed weapon
 ---Replaces terminal waypoint with deviated coordinates, preserving earlier waypoints
----@param weaponUnit CMO__Unit The weapon unit to modify
----@param pos CMO__Location Deviated point
----@param waypointCount number Number of waypoints in original course
+---@param weaponUnit CMO__Unit
+---@param pos CMO__Location
+---@param waypointCount number
 local function buildDeviatedCourse(weaponUnit, pos, waypointCount)
   local deviatedTarget = { latitude = pos.latitude, longitude = pos.longitude, guid = "BOL" }
   local terminalPoint = { latitude = pos.latitude, longitude = pos.longitude, TypeOf = "TerminalPoint" }
@@ -133,7 +133,7 @@ end
 
 ---Attempt GNSS jamming on the event weapon
 ---Orchestrates weapon resolution, matching, resistance roll, and course deviation
----@param gnssGuidedWeapons SBJ__GNSSJammedWeapon[] List of GNSS-guided weapon configs
+---@param gnssGuidedWeapons SBJ__GNSSJammedWeapon[]
 ---@return string status JAMMING_RESULT enum value
 ---@return string message Human-readable description
 local function rollJamming(gnssGuidedWeapons)
@@ -176,10 +176,10 @@ end
 -- ============================================================================
 
 ---Create a circular jamming zone around a jammer unit with event trigger
----@param unit CMO__Unit The GNSS jammer unit
----@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration descriptor
----@param point CMO__Location Center point for the jamming zone
----@param sideName string Side name that owns the jammer
+---@param unit CMO__Unit
+---@param descriptor SBJ__GNSSJammerDescriptor
+---@param point CMO__Location
+---@param sideName string
 ---@return boolean # Whether the jamming zone was successfully created
 local function createJammingZone(unit, descriptor, point, sideName)
   local enemySideName = GameUtils.getCachedSideConfig(sideName).enemySide
@@ -213,10 +213,10 @@ end
 
 
 ---Clean up zone resources (reference points, zone, event trigger)
----@param sideObj CMO__Side Side object that owns the zone
----@param zone CMO__Zone The zone object to remove
----@param sideName string Side name
----@param zoneName string Zone description for event removal
+---@param sideObj CMO__Side
+---@param zone CMO__Zone
+---@param sideName string
+---@param zoneName string
 ---@return boolean # Whether cleanup was successful
 local function removeZoneResources(sideObj, zone, sideName, zoneName)
   local myz = sideObj:getstandardzone(zone.guid)
@@ -236,8 +236,8 @@ end
 
 
 ---Delete a jammer unit by name
----@param unitName string Unit name to delete
----@param sideName string Side name that owns the unit
+---@param unitName string
+---@param sideName string
 local function removeJammerUnit(unitName, sideName)
   GameApi.ScenEdit_DeleteUnit({ side = sideName, unitname = unitName })
 end
@@ -245,8 +245,8 @@ end
 
 ---Add all GNSS jammers for a side
 ---Creates multiple GNSS jammer units at randomized positions and sets up their jamming zones
----@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
----@param sideName string Side name that will own the jammers
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor>
+---@param sideName string
 ---@return number # Number of jammers successfully created
 local function addGnssJammers(jammerDescriptorMap, sideName)
   local successCount = 0
@@ -295,8 +295,8 @@ end
 
 ---Process GNSS jamming for weapons entering jamming zone
 ---Called from 'Unit Enters Area' event trigger
----@param config SBJ__Config Configuration object containing GNSS jamming settings
----@param sideName string Enemy side name whose weapons are being jammed
+---@param config SBJ__Config
+---@param sideName string
 ---@return boolean # Whether jamming was successfully applied
 function GnssJamming.processJamming(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
@@ -318,8 +318,8 @@ end
 
 ---Add a single GNSS jammer
 ---Creates a GNSS jammer unit at the specified location and sets up its jamming zone
----@param sideName string Side name that will own the jammer
----@param descriptor SBJ__GNSSJammerDescriptor Jammer configuration
+---@param sideName string
+---@param descriptor SBJ__GNSSJammerDescriptor
 ---@return boolean success Whether jammer was successfully created
 ---@return CMO__Unit|nil unit The created jammer unit
 function GnssJamming.addGnssJammer(sideName, descriptor)
@@ -356,8 +356,8 @@ function GnssJamming.addGnssJammer(sideName, descriptor)
 end
 
 ---Remove all GNSS jammers for a side
----@param sideName string Side name that owns the jammers
----@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor> Collection of jammer descriptors
+---@param sideName string
+---@param jammerDescriptorMap table<string, SBJ__GNSSJammerDescriptor>
 ---@return number # Number of jammers successfully removed
 function GnssJamming.removeJammers(sideName, jammerDescriptorMap)
   local sideObj = GameApi.VP_GetSide({ name = sideName })
@@ -390,8 +390,8 @@ function GnssJamming.removeJammers(sideName, jammerDescriptorMap)
 end
 
 ---Replace a side's GNSS jammers with fresh ones at the positions in its config
----@param config SBJ__Config Global configuration table
----@param sideName string Side name that owns the jammers
+---@param config SBJ__Config
+---@param sideName string
 ---@return number # Number of jammers successfully created
 function GnssJamming.deploySide(config, sideName)
   local jammerDescriptorMap = config[GameUtils.getCachedSideConfig(sideName).field].gnssJamming.jammers
@@ -402,8 +402,8 @@ end
 
 ---Remove the jamming zone of a destroyed GNSS jammer
 ---Does NOT delete the jammer unit, only the zone and event
----@param config SBJ__Config Global configuration table holding each side's jammer descriptors
----@param unit CMO__Unit The destroyed jammer unit
+---@param config SBJ__Config
+---@param unit CMO__Unit
 ---@return boolean # Whether the zone was successfully removed
 function GnssJamming.processJammerDestruction(config, unit)
   local sideName = unit.side

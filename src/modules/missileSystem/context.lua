@@ -3,8 +3,8 @@ local Utils = require("src.utils.utils")
 local Context = {}
 
 ---Handle logic when resupply unit is destroyed
----@param unit CMO__Unit Destroyed unit
----@param systemCtx SBJ__MissileSystemContext Weapon system context
+---@param unit CMO__Unit
+---@param systemCtx SBJ__MissileSystemContext
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
 function Context.processSupplyAssetDestruction(unit, systemCtx)
@@ -57,8 +57,8 @@ end
 
 ---Fill the default per-system state for every system in config
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
----@param groundCtx SBJ__GroundContext Ground force state to seed in place
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param groundCtx SBJ__GroundContext
 function Context.ensureGroundState(missileSystemConfigMap, groundCtx)
   groundCtx.missileSystemTypes = groundCtx.missileSystemTypes or {}
   for system, _ in pairs(missileSystemConfigMap) do
@@ -75,8 +75,8 @@ function Context.ensureGroundState(missileSystemConfigMap, groundCtx)
 end
 
 ---Initialize missile system runtime contexts from configuration
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
----@param groundCtx SBJ__GroundContext Ground force runtime context
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param groundCtx SBJ__GroundContext
 function Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
   for system, systemConfig in pairs(missileSystemConfigMap) do
     local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)

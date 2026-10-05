@@ -14,7 +14,7 @@ local ZONE_COLORS = {
 }
 
 ---Get area color code based on position type
----@param positionType string Position type identifier (RL/HA/AHA/MASK/FP)
+---@param positionType string
 ---@return string # Hexadecimal color code
 local function getOperationalAreaColor(positionType)
   local colorMap = {
@@ -28,7 +28,7 @@ local function getOperationalAreaColor(positionType)
 end
 
 ---Get zone configuration based on zone type
----@param zoneType integer Zone type identifier (STANDARD/CUSTOM_ENVIRONMENT)
+---@param zoneType integer
 ---@return table<string, function> # Zone configuration table with getSide, getEntries, and getZone functions
 local function getZoneConfig(zoneType)
   local zoneConfigMap = {
@@ -48,8 +48,8 @@ local function getZoneConfig(zoneType)
 end
 
 ---Build event names and trigger prefixes for a side
----@param sideName string Side name
----@param positionTypes string[] Position types
+---@param sideName string
+---@param positionTypes string[]
 ---@return string[] eventNames Array of event names
 local function buildEventAndTriggerNames(sideName, positionTypes)
   local eventNames = {}
@@ -60,8 +60,8 @@ local function buildEventAndTriggerNames(sideName, positionTypes)
 end
 
 ---Check whether candidate area matches expected RP area
----@param candidate CMO__Zone|CMO__TriggerResult|nil Zone or trigger object containing an area field
----@param expectedArea string[]|nil Expected reference point names to compare against
+---@param candidate CMO__Zone|CMO__TriggerResult|nil
+---@param expectedArea string[]|nil
 ---@return boolean # True if candidate area matches expected area
 local function hasSameArea(candidate, expectedArea)
   return candidate ~= nil
@@ -70,8 +70,8 @@ local function hasSameArea(candidate, expectedArea)
 end
 
 ---Get all positions in an area, including any mask area
----@param area SBJ__OperationalArea Area containing position types and an optional mask
----@param posTypes string[] Position type keys used to look up positions in each operational area
+---@param area SBJ__OperationalArea
+---@param posTypes string[]
 ---@return SBJ__Position[] # Positions from the area and mask, if present
 local function getPositionsIncludingMask(area, posTypes)
   local positions = {}
@@ -88,9 +88,9 @@ local function getPositionsIncludingMask(area, posTypes)
 end
 
 ---Iterate over each position in the operational areas and call the callback
----@param operationalAreas SBJ__OperationalArea[] Operational areas providing position and mask areas to match
----@param posTypes string[] Position type keys used to look up positions in each operational area
----@param callback fun(position: SBJ__Position) Callback function to call for each position
+---@param operationalAreas SBJ__OperationalArea[]
+---@param posTypes string[]
+---@param callback fun(position: SBJ__Position)
 local function forEachPosition(operationalAreas, posTypes, callback)
   for _, area in ipairs(operationalAreas) do
     for _, position in ipairs(getPositionsIncludingMask(area, posTypes)) do
@@ -100,8 +100,8 @@ local function forEachPosition(operationalAreas, posTypes, callback)
 end
 
 ---Find zones whose areas match the given position area
----@param positionArea string[] Area of the position to match
----@param zoneEntries { guid: string, name: string, description: string }[] Available zone entry descriptors to inspect
+---@param positionArea string[]
+---@param zoneEntries { guid: string, name: string, description: string }[]
 ---@param getZone fun(description: string): CMO__Zone|nil Function to get a zone by its description
 ---@return CMO__Zone|nil Matching zone
 local function findMatchingZone(positionArea, zoneEntries, getZone)
@@ -115,8 +115,8 @@ local function findMatchingZone(positionArea, zoneEntries, getZone)
 end
 
 ---Find a trigger whose area matches the given position area
----@param positionArea string[] Area of the position to match
----@param triggers table[] Available triggers to inspect
+---@param positionArea string[]
+---@param triggers table[]
 ---@param triggerType string Trigger type key used to look up the trigger's area
 ---@return table|nil Matching trigger
 local function findMatchingTrigger(positionArea, triggers, triggerType)
@@ -132,9 +132,9 @@ local function findMatchingTrigger(positionArea, triggers, triggerType)
 end
 
 ---Collect zones whose areas match any position or mask area
----@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas providing position and mask areas to match
----@param posTypes string[] Position type keys used to look up positions in each operational area
----@param zoneEntries { guid: string, name: string, description: string }[] Available zone entry descriptors to inspect
+---@param operationalAreasToRemove SBJ__OperationalArea[]
+---@param posTypes string[]
+---@param zoneEntries { guid: string, name: string, description: string }[]
 ---@param getZone fun(description: string): CMO__Zone|nil Function used to resolve a zone object from its description
 ---@return CMO__Zone[] # Zones matched for removal
 local function collectZonesToRemove(operationalAreasToRemove, posTypes, zoneEntries, getZone)
@@ -151,10 +151,10 @@ local function collectZonesToRemove(operationalAreasToRemove, posTypes, zoneEntr
 end
 
 ---Collect triggers whose areas match any position area
----@param event CMO__Event Event object containing triggers to inspect
----@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas providing reference position areas
----@param posTypes string[] Position type keys used to look up positions in each operational area
----@param triggerType string Trigger type key to inspect on each event trigger
+---@param event CMO__Event
+---@param operationalAreasToRemove SBJ__OperationalArea[]
+---@param posTypes string[]
+---@param triggerType string
 ---@return table[] # Triggers matched for removal
 local function collectTriggersToRemove(event, operationalAreasToRemove, posTypes, triggerType)
   local triggersToRemove = {}
@@ -170,10 +170,10 @@ local function collectTriggersToRemove(event, operationalAreasToRemove, posTypes
 end
 
 ---Remove zones matching specified operational area position keys
----@param posTypes string[] Position type keys used to locate areas within operational areas
+---@param posTypes string[]
 ---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas whose position and mask areas should be removed
 ---@param zoneType integer Zone type to remove (`STANDARD` or `CUSTOM_ENVIRONMENT`)
----@param sideName string Side name used to resolve or delete side-owned zones
+---@param sideName string
 ---@return integer # Number of zones successfully removed
 ---@return boolean # True if all removals succeeded, false if any removal failed
 local function removeZones(posTypes, operationalAreasToRemove, zoneType, sideName)
@@ -204,8 +204,8 @@ local function removeZones(posTypes, operationalAreasToRemove, zoneType, sideNam
 end
 
 ---Remove event triggers whose areas match specified operational area position keys
----@param eventNames string[] Array of event names to search for triggers
----@param posTypes string[] Position type keys used to locate areas within operational areas
+---@param eventNames string[]
+---@param posTypes string[]
 ---@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas whose position areas should be removed
 ---@param triggerType string Trigger type key to filter by (for example `UnitEntersArea`)
 ---@return integer # Total number of triggers successfully removed
@@ -249,7 +249,7 @@ local function removeEventTriggers(eventNames, posTypes, operationalAreasToRemov
 end
 
 ---Add a unit-enters-area trigger to the specified event
----@param params SBJ__AddTriggerParams Trigger creation options
+---@param params SBJ__AddTriggerParams
 ---@return boolean success Whether trigger was successfully added
 ---@return string? reason Failure reason if trigger creation failed
 local function addTriggerToEvent(params)
@@ -294,8 +294,8 @@ local function addTriggerToEvent(params)
 end
 
 ---Remove bunkers from the operational area
----@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove bunkers from
----@param sideName string Side name for cleanup operations
+---@param operationalAreasToRemove SBJ__OperationalArea[]
+---@param sideName string
 ---@return number removedBunkerCount Number of bunkers removed
 ---@return boolean allSuccessful Whether all bunkers were successfully removed
 local function removeBunkers(operationalAreasToRemove, sideName)
@@ -329,9 +329,9 @@ local function removeBunkers(operationalAreasToRemove, sideName)
 end
 
 ---Clean up existing zones and event triggers for missile system
----@param posTypes string[] Position types to clean up
----@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove triggers for
----@param sideName string Side name for cleanup operations
+---@param posTypes string[]
+---@param operationalAreasToRemove SBJ__OperationalArea[]
+---@param sideName string
 ---@return integer removedTriggerCount Number of removed triggers
 ---@return boolean triggerCleanupSuccessful Whether trigger cleanup fully succeeded
 ---@return integer removedZoneCount Number of removed zones
@@ -348,8 +348,8 @@ local function removeExistingTriggersAndZones(posTypes, operationalAreasToRemove
 end
 
 ---Add custom environment zone for terrain masking
----@param operationalArea SBJ__OperationalArea Operational area configuration
----@param sideName string Side name for zone ownership
+---@param operationalArea SBJ__OperationalArea
+---@param sideName string
 ---@return boolean # Whether zone was successfully created
 local function addCustomEnvironmentZone(operationalArea, sideName)
   local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.STANDARD, {
@@ -367,8 +367,8 @@ local function addCustomEnvironmentZone(operationalArea, sideName)
   return false
 end
 
----@param operationalArea SBJ__OperationalArea Operational area configuration
----@param sideName string Side name for zone ownership
+---@param operationalArea SBJ__OperationalArea
+---@param sideName string
 ---@return boolean # Whether zone was successfully created
 local function addBunkers(operationalArea, sideName)
   if not operationalArea.shelterPoints then return false end
@@ -390,10 +390,10 @@ local function addBunkers(operationalArea, sideName)
 end
 
 ---Create position triggers for an operational area
----@param operationalArea SBJ__OperationalArea Operational area configuration
----@param positionTypes string[] Position types to create
----@param enemySide string Enemy side name
----@param sideName string Owner side name
+---@param operationalArea SBJ__OperationalArea
+---@param positionTypes string[]
+---@param enemySide string
+---@param sideName string
 ---@return integer created Number of triggers created
 ---@return integer failed Number of triggers failed
 ---@return SBJ__LogResult[] failResults Failure detail rows
@@ -434,10 +434,10 @@ local function createPositionTriggers(operationalArea, positionTypes, enemySide,
 end
 
 ---Initialize event triggers and zones for missile system operational areas
----@param operationalAreas SBJ__OperationalArea[] Array of operational area configurations
----@param operationalAreasToRemove SBJ__OperationalArea[] Operational areas to remove triggers for
----@param positionTypes string[] Position type identifiers (RL/HA/AHA/FP)
----@param sideName string Side name for zone/trigger ownership
+---@param operationalAreas SBJ__OperationalArea[]
+---@param operationalAreasToRemove SBJ__OperationalArea[]
+---@param positionTypes string[]
+---@param sideName string
 function Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
 

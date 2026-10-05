@@ -28,14 +28,14 @@ local AREA_NAME_PREFIXES = {
 local POSITION_TYPE_ORDER = { "RL", "HA", "FP", "AHA" }
 
 ---Serialize coordinate value (string or number) to Lua code
----@param val string|number Raw coordinate value; strings are quoted verbatim, numbers stringified
+---@param val string|number
 ---@return string # Lua literal ready for source emission
 local function formatCoord(val)
   return type(val) == "string" and ('"' .. val .. '"') or tostring(val)
 end
 
 ---Serialize string array on single line
----@param arr string[] Strings to quote and join in output order
+---@param arr string[]
 ---@return string # Inline `{ "a", "b", ... }` Lua literal
 local function formatStringArray(arr)
   local parts = {}
@@ -44,14 +44,14 @@ local function formatStringArray(arr)
 end
 
 ---Serialize waypoint to inline Lua code
----@param wp CMO__Waypoint Waypoint carrying latitude/longitude fields
+---@param wp CMO__Waypoint
 ---@return string # Inline `{ latitude = ..., longitude = ..., }` literal
 local function formatWaypoint(wp)
   return "{ latitude = " .. formatCoord(wp.latitude) .. ", longitude = " .. formatCoord(wp.longitude) .. ", }"
 end
 
 ---Resolve operational area key name from name field or constants reverse-lookup
----@param opArea SBJ__OperationalArea Operational area table to identify
+---@param opArea SBJ__OperationalArea
 ---@return string|nil # Key name with `#` stripped, or nil when not found in constants
 local function resolveOpAreaKey(opArea)
   if opArea.name then
@@ -67,9 +67,9 @@ local function resolveOpAreaKey(opArea)
 end
 
 ---Recursive Lua value serializer with operationalArea replacement
----@param value any Value to serialize
----@param level integer Indentation level
----@param opAreaMap table<table, string> Maps operationalArea table refs to constant key names
+---@param value any
+---@param level integer
+---@param opAreaMap table<table, string>
 ---@return string # Serialized Lua expression with nested tables indented by `level`
 local function formatValue(value, level, opAreaMap)
   local pad = string.rep("  ", level)
@@ -123,9 +123,9 @@ local function formatValue(value, level, opAreaMap)
 end
 
 ---Serialize weaponCountCurrent/weaponCountDefault value as configPath reference when possible
----@param value number Ammunition count value
+---@param value number
 ---@param weaponCountDefault number System's default weapon count
----@param configPath string Config path prefix
+---@param configPath string
 ---@return string # Serialized expression string
 local function formatWeaponCountRef(value, weaponCountDefault, configPath)
   if weaponCountDefault and weaponCountDefault > 0 and value > 0 then
@@ -154,10 +154,10 @@ local function buildReverseMap(tbl)
 end
 
 ---Collect unique operational areas from a unit collection into shared accumulators
----@param unitMap table<string, {operationalArea: SBJ__OperationalArea}> Units keyed by name
----@param opAreaMap table<table, string> Maps opArea refs to keys (mutated)
----@param seenKeySet table<string, boolean> Already-seen keys (mutated)
----@param uniqueAreas {key: string, opArea: SBJ__OperationalArea}[] Accumulator (mutated)
+---@param unitMap table<string, {operationalArea: SBJ__OperationalArea}>
+---@param opAreaMap table<table, string>
+---@param seenKeySet table<string, boolean>
+---@param uniqueAreas {key: string, opArea: SBJ__OperationalArea}[]
 local function collectOpAreasFromUnits(unitMap, opAreaMap, seenKeySet, uniqueAreas)
   for _, unit in pairs(unitMap) do
     local opArea = unit.operationalArea
@@ -175,7 +175,7 @@ local function collectOpAreasFromUnits(unitMap, opAreaMap, seenKeySet, uniqueAre
 end
 
 ---Phase 1: Collect unique operational areas from all firing/resupply units
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force config to scan
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@return {key: string, opArea: SBJ__OperationalArea}[] uniqueAreas Sorted by key
 ---@return table<table, string> opAreaMap Maps opArea refs to constant key names
 local function collectUniqueAreas(missileSystemConfigMap)
@@ -242,7 +242,7 @@ local POSITION_EMITTERS = {
 }
 
 ---Resolve the AREAS constant reference for the i-th position under emitter
----@param emitter SBJ__OpAreaPositionEmitter Emitter describing field and subkey lookup
+---@param emitter SBJ__OpAreaPositionEmitter
 ---@param i integer Position index (1-based)
 ---@param key string Operational-area key (e.g. "ANW")
 ---@param areaRefMap table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
@@ -255,10 +255,10 @@ end
 
 ---Emit one position block (single- or multi-position) into opLines
 ---Skips silently if the first position has no resolvable AREAS reference
----@param opLines string[] Output accumulator (mutated)
----@param emitter SBJ__OpAreaPositionEmitter Emitter describing field and areaRefMap subkey lookup
----@param positions SBJ__Position[] Position list from opArea[emitter.field]
----@param params SBJ__PositionBlockParams Operational-area key and AREAS lookup
+---@param opLines string[]
+---@param emitter SBJ__OpAreaPositionEmitter
+---@param positions SBJ__Position[]
+---@param params SBJ__PositionBlockParams
 local function formatPositionBlock(opLines, emitter, positions, params)
   local key, areaRefMap = params.key, params.map
   if not resolveAreaRef(emitter, 1, key, areaRefMap) then return end
@@ -352,8 +352,8 @@ local function getSortedStringKeys(tbl)
 end
 
 ---Serialize a MissileSystemState enum value to its constant reference
----@param value any Field value (expected number)
----@param ctx SBJ__FieldSerializerContext Shared serializer context
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string|nil # Constant reference, or nil to fall through to default
 local function formatStateField(value, ctx)
   if type(value) ~= "number" then return nil end
@@ -362,8 +362,8 @@ local function formatStateField(value, ctx)
 end
 
 ---Serialize an operationalArea table to its OPERATIONAL_AREAS reference
----@param value any Field value (expected opArea table)
----@param ctx SBJ__FieldSerializerContext Shared serializer context
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string|nil # Constant reference, or nil to fall through to default
 local function formatOperationalAreaField(value, ctx)
   if type(value) ~= "table" then return nil end
@@ -372,8 +372,8 @@ local function formatOperationalAreaField(value, ctx)
 end
 
 ---Serialize a weapon DBID (scalar or array) to WEAPONS constant reference(s)
----@param value any Field value (expected number or number[])
----@param ctx SBJ__FieldSerializerContext Shared serializer context
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string|nil # Constant reference or inline table, or nil to fall through
 local function formatWeaponDBIDField(value, ctx)
   if type(value) == "number" then
@@ -393,15 +393,15 @@ end
 
 ---Serialize ammoThreshold as a configPath reference (value ignored)
 ---@param _ any Unused; threshold value lives in config, not inlined
----@param ctx SBJ__FieldSerializerContext Shared serializer context
+---@param ctx SBJ__FieldSerializerContext
 ---@return string # `configPath.ammoThreshold` expression
 local function formatAmmoThresholdField(_, ctx)
   return ctx.configPath .. ".ammoThreshold"
 end
 
 ---Serialize a platform DBID to its PLATFORMS constant reference
----@param value any Field value (expected number)
----@param ctx SBJ__FieldSerializerContext Shared serializer context
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string|nil # Constant reference, or nil to fall through to default
 local function formatDbidField(value, ctx)
   if type(value) ~= "number" then return nil end
@@ -410,8 +410,8 @@ local function formatDbidField(value, ctx)
 end
 
 ---Serialize mountDescriptors by structural match against MOUNT_DESCRIPTORS constants
----@param value any Field value (expected {dbid:number, mountCount:integer}[])
----@param ctx SBJ__FieldSerializerContext Shared serializer context
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string|nil # Constant reference if match found, nested table otherwise, or nil if not a table
 local function formatMountDescriptorsField(value, ctx)
   if type(value) ~= "table" then return nil end
@@ -443,8 +443,8 @@ local FIELD_SERIALIZERS = {
 }
 
 ---Fallback serializer used when no field-specific serializer applies
----@param value any Field value of unknown type
----@param ctx SBJ__FieldSerializerContext Shared context (used for nested opAreaMap lookups)
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string # Quoted string, primitive tostring, or fully serialized table
 local function formatDefaultValue(value, ctx)
   if type(value) == "string" then return string.format("%q", value) end
@@ -453,9 +453,9 @@ local function formatDefaultValue(value, ctx)
 end
 
 ---Resolve a firingUnit field to its serialized Lua expression
----@param field string Field name used to dispatch into FIELD_SERIALIZERS
----@param value any Field value to serialize
----@param ctx SBJ__FieldSerializerContext Shared context forwarded to the chosen serializer
+---@param field string
+---@param value any
+---@param ctx SBJ__FieldSerializerContext
 ---@return string # Serialized Lua expression for the field value
 local function formatField(field, value, ctx)
   local serializer = FIELD_SERIALIZERS[field]
@@ -502,7 +502,7 @@ end
 
 ---Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitionMap absent
 ---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
----@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil Ammunition units keyed by unit name
+---@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil
 ---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
 ---@return string|nil # Serialized block, or nil when ammunitionMap is nil
 local function formatAmmunitionsBlock(configPath, ammunitionMap, weaponCountDefault)
@@ -524,9 +524,9 @@ end
 
 ---Emit the `config.{...}.resupplyUnits = { ... }` block, or nil if resupplyUnits absent
 ---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
----@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil Resupply units keyed by unit name
+---@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil
 ---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
----@param ctx SBJ__FieldSerializerContext Shared context for operationalArea/state serialization
+---@param ctx SBJ__FieldSerializerContext
 ---@return string|nil # Serialized block, or nil when resupplyUnitMap is nil
 local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCountDefault, ctx)
   if not resupplyUnitMap then return nil end
@@ -559,8 +559,8 @@ end
 
 ---Emit the `config.{...}.firingUnits = { ... }` block
 ---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
----@param firingUnitMap table<string, SBJ__FiringUnitDescriptor> Firing units keyed by unit name
----@param ctx SBJ__FieldSerializerContext Shared context for per-field constant lookup
+---@param firingUnitMap table<string, SBJ__FiringUnitDescriptor>
+---@param ctx SBJ__FieldSerializerContext
 ---@return string # Serialized `config.{...}.firingUnits = { ... }` block
 local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
   local lines = { configPath .. ".firingUnits = {" }
@@ -577,8 +577,8 @@ local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
 end
 
 ---Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
----@param sideField SBJ__SideKey Side config field key ("red" / "blue" / "ally")
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Source ground-force config to serialize
+---@param sideField SBJ__SideKey
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
 ---@return string # Concatenated ammunitions/resupplyUnits/firingUnits blocks separated by newlines
 local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
@@ -611,8 +611,8 @@ end
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
 ---`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
 ---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.red.ground.missileSystemTypes)
----@param sideName string Side name ("China", "Taiwan")
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
+---@param sideName string
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@return string areasStr constants.AREAS code
 ---@return string opAreasStr constants.OPERATIONAL_AREAS code
 ---@return string configStr config blocks with constant references
@@ -637,7 +637,7 @@ end
 
 ---Print one marked section so tools/apply_generated_config.py can lift it out of the CMO Lua log
 ---@param name string Section name (matches `-- START: <name>` marker, or `CONFIG_<field>`)
----@param body string Section content
+---@param body string
 local function printSection(name, body)
   print("@@GEN_BEGIN " .. name .. "\n" .. body .. "\n@@GEN_END " .. name)
 end
@@ -645,8 +645,8 @@ end
 ---Print the generated code into the CMO Lua log, wrapped in markers
 ---Run `python tools/apply_generated_config.py` afterwards to write it into constants.lua / config.lua
 ---Example: ConfigCodeGenerator.dump("China", config.red.ground.missileSystemTypes)
----@param sideName string Side name ("China", "Taiwan")
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig> Ground force configuration
+---@param sideName string
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 function ConfigCodeGenerator.dump(sideName, missileSystemConfigMap)
   local field = GameUtils.getCachedSideConfig(sideName).field
   local tag = SIDE_BLOCK_TAGS[field]

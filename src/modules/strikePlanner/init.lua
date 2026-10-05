@@ -20,8 +20,8 @@ local WZ8_RECON_CHANCE = 0.5
 
 ---Initialize the strike planner state at scenario start
 ---Builds the persistent target list first, then the recon queue when recon is enabled.
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's target list and recon queue are filled
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function StrikePlanner.init(config, saveData)
   local plannerState = PersistentState.strikePlanner(saveData)
 
@@ -33,9 +33,9 @@ function StrikePlanner.init(config, saveData)
 end
 
 ---Insert dynamic FSEM and ATO operations built from current contacts
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts from the game
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param contacts CMO__Contact[]
 local function processDynamicOperations(config, plannerState, contacts)
   if not plannerState.dynamicOperations.enabled then return end
 
@@ -44,8 +44,8 @@ local function processDynamicOperations(config, plannerState, contacts)
 end
 
 ---Advance the recon queue and occasionally schedule an extra WZ-8 island sortie
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
 local function processRecon(config, plannerState)
   if not plannerState.recon.enabled then return end
 
@@ -63,8 +63,8 @@ local function processRecon(config, plannerState)
 end
 
 ---Fire the one-shot LACM salvo from the CSG Type 055s once its start time passes
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
 local function launchLACMSalvo(config, plannerState)
   local lacmCtx = plannerState.lacm
 
@@ -96,8 +96,8 @@ local function launchLACMSalvo(config, plannerState)
 end
 
 ---Surface the SLCM submarines to launch depth and fire the one-shot salvo
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
 local function launchSLCMSalvo(config, plannerState)
   local slcmCtx = plannerState.slcm
 
@@ -129,8 +129,8 @@ local function launchSLCMSalvo(config, plannerState)
 end
 
 ---Advance active FSPs and ATO waves, including any inserted earlier this tick
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
 local function processActivePlans(config, plannerState)
   if plannerState.ground.enabled then
     FireSupportPlan.process(plannerState)
@@ -144,8 +144,8 @@ end
 ---Run one strike planner tick
 ---Order matters: dynamic plans are inserted before recon settles its queue, and
 ---execution runs last so plans inserted this tick can start in the same tick.
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's strike planner slices are mutated
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function StrikePlanner.process(config, saveData)
   local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.RED)
   if not contacts then
@@ -162,7 +162,7 @@ function StrikePlanner.process(config, saveData)
 end
 
 ---Release a WZ-8 from an H-6N flying a recon entry and hand the entry over to it
----@param reconCtx SBJ__ReconContext Reconnaissance context containing the queue
+---@param reconCtx SBJ__ReconContext
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@return CMO__Unit|nil # The launched WZ-8, or nil when no entry is flying this H-6N or the launch failed
 function StrikePlanner.launchWZ8(reconCtx, h6n)
@@ -170,8 +170,8 @@ function StrikePlanner.launchWZ8(reconCtx, h6n)
 end
 
 ---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
----@param reconCtx SBJ__ReconContext Reconnaissance context (queue mutated on success)
----@param entryTemplate SBJ__ReconUAVTemplate UAV entry template to instantiate
+---@param reconCtx SBJ__ReconContext
+---@param entryTemplate SBJ__ReconUAVTemplate
 ---@param startTime string|nil Timestamp or datetime string for the start time of the entry
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
 function StrikePlanner.addReconEntry(reconCtx, entryTemplate, startTime)
@@ -179,8 +179,8 @@ function StrikePlanner.addReconEntry(reconCtx, entryTemplate, startTime)
 end
 
 ---Filter targets by type and base name
----@param targetlist SBJ__TargetEntry[] Array of target objects with name, subType, and guid properties
----@param queryParams SBJ__TargetQueryEntry[] Array of query parameters with baseName (optional) and subTypes (array)
+---@param targetlist SBJ__TargetEntry[]
+---@param queryParams SBJ__TargetQueryEntry[]
 ---@return string[] # Array of target GUIDs matching query criteria
 function StrikePlanner.filterTargetsByTypeAndBase(targetlist, queryParams)
   return TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)

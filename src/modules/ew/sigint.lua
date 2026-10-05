@@ -47,7 +47,7 @@ local SIGINT_RESULT_TAGS = {
 ---Calculate signal deviation distance for SIGINT detection position randomization
 ---Uses complex formula to simulate signal triangulation error based on distance
 ---@param baseDistance number Base distance between detector and target (nautical miles)
----@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides)
+---@param config SBJ__SIGINTConfig|nil
 ---@return number # Distance from actual position (nautical miles)
 local function calculateSignalDeviation(baseDistance, config)
   config = config or {}
@@ -72,7 +72,7 @@ end
 ---Uses exponential decay model: P(x) = e^(-k*x^p) where k=1/450, p=0.8
 ---@internal Exposed for testing
 ---@param distance number Distance in nautical miles
----@param config SBJ__SIGINTConfig|nil Detection configuration
+---@param config SBJ__SIGINTConfig|nil
 ---@return number # Value between 0 and 1
 local function calculateDetectionProbability(distance, config)
   config = config or {}
@@ -96,7 +96,7 @@ end
 -- ============================================================================
 
 ---Classify unit type based on context name
----@param unitCtxName string Unit context name
+---@param unitCtxName string
 ---@return string # UNIT_TYPE enum value
 local function resolveUnitType(unitCtxName)
   if string.find(unitCtxName, "ROCC") or string.find(unitCtxName, "TAAOC") then
@@ -106,10 +106,10 @@ local function resolveUnitType(unitCtxName)
 end
 
 ---Check if unit is emitting signal with enhanced logic
----@param config SBJ__Config Configuration object
----@param unit CMO__Unit Unit object
+---@param config SBJ__Config
+---@param unit CMO__Unit
 ---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit data (Battery units check movement, C2 units always emit)
----@param enemySide string Enemy side name
+---@param enemySide string
 ---@return boolean isEmitting Whether unit is emitting signal
 ---@return string reason Reason for emission status
 local function isUnitEmitting(config, unit, unitCtx, enemySide)
@@ -157,8 +157,8 @@ end
 -- ============================================================================
 
 ---Resolve actual unit from unit context
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit context
----@param enemySide string Enemy side name
+---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context
+---@param enemySide string
 ---@return CMO__Unit|nil # Resolved unit or nil if not found
 local function resolveUnit(unitCtx, enemySide)
   if unitCtx.weaponDBID then
@@ -180,10 +180,10 @@ local function buildUndetectedResult()
 end
 
 ---Attempt SIGINT detection against an enemy unit using all airborne recon aircraft
----@param sigintCtx SBJ__SIGINTContext SIGINT context containing reconnaissance aircraft
----@param enemyGUID string Enemy unit GUID to detect
----@param isEmitting boolean Whether target unit is currently emitting signals
----@param config SBJ__SIGINTConfig|nil Detection configuration (optional overrides for thresholds)
+---@param sigintCtx SBJ__SIGINTContext
+---@param enemyGUID string
+---@param isEmitting boolean
+---@param config SBJ__SIGINTConfig|nil
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
 local function rollDetection(sigintCtx, enemyGUID, isEmitting, config)
   local enemy = GameApi.ScenEdit_GetUnit(enemyGUID)
@@ -234,9 +234,9 @@ local function rollDetection(sigintCtx, enemyGUID, isEmitting, config)
 end
 
 ---Show detection notification on the map
----@param pos { latitude: number, longitude: number } Position for notification
----@param notification string Notification message to display
----@param config SBJ__SIGINTConfig|nil Detection configuration
+---@param pos { latitude: number, longitude: number }
+---@param notification string
+---@param config SBJ__SIGINTConfig|nil
 local function createDetectionNotification(pos, notification, config)
   config = config or {}
   local defaultDisplay = config.defaultDisplay or {}
@@ -269,8 +269,8 @@ end
 
 ---Update unit autodetectable state for SIGINT targets
 ---If unit is in a group, updates all group members; otherwise updates individual unit
----@param unit CMO__Unit Unit object to update (can be group leader or individual unit)
----@param isAutodetectable boolean Target autodetectable state (true = can be auto-detected by enemy)
+---@param unit CMO__Unit
+---@param isAutodetectable boolean
 local function updateAutodetectableState(unit, isAutodetectable)
   if unit.group then
     for _, guid in ipairs(unit.group.unitlist) do
@@ -284,8 +284,8 @@ end
 ---Update or create transmission record after successful SIGINT detection
 ---Creates new transmission record if first detection, otherwise updates existing record
 ---Increments currentDetectionLevel and checks autodetectable threshold
----@param sigintCtx SBJ__SIGINTContext SIGINT context to update transmission records
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit context data with metadata
+---@param sigintCtx SBJ__SIGINTContext
+---@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context
 ---@param hit SBJ__SIGINTHit Detected unit paired with its detection result
 ---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
@@ -313,7 +313,6 @@ local function updateTransmissionData(sigintCtx, unitCtx, hit, maxCount)
     sigintCtx.transmissions[unit.guid] = transmission
   end
 
-  -- Update transmission data
   transmission.latitude = result.latitude
   transmission.longitude = result.longitude
   transmission.lastDetected = result.timestamp
@@ -339,7 +338,7 @@ end
 ---Handle undetected case for SIGINT target
 ---Decrements currentDetectionLevel when unit is not detected, simulating signal fade
 ---Resets autodetectable state to false if currently autodetectable
----@param sigintCtx SBJ__SIGINTContext SIGINT context containing transmission records
+---@param sigintCtx SBJ__SIGINTContext
 ---@param unit CMO__Unit Unit object that was not detected this cycle
 ---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
@@ -369,10 +368,10 @@ end
 
 ---Enhanced SIGINT detection handler
 ---Monitors several unit context groups, consolidating results and log output
----@param config SBJ__Config Configuration object
----@param saveData SBJ__SaveData Persistent save data; the side's SIGINT slice is mutated
----@param sideName string Side name (used to determine enemy side for area checks)
----@param isShown boolean Whether to show detection notifications on map
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
+---@param isShown boolean
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
 local function collectSigint(config, saveData, sideName, isShown)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
@@ -411,14 +410,12 @@ local function collectSigint(config, saveData, sideName, isShown)
 
       totalProcessed = totalProcessed + 1
 
-      -- Check if unit is emitting
       local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
 
       -- Perform SIGINT detection
       local result = rollDetection(sigintCtx, actualUnit.guid, isEmitting, sigintConfig)
       resultMap[actualUnit.guid] = result
 
-      -- Update transmission data based on result
       if result.isDetected then
         totalDetected = totalDetected + 1
         local status = updateTransmissionData(sigintCtx, unitCtx, { unit = actualUnit, result = result }, maxCount)
@@ -445,9 +442,9 @@ local function collectSigint(config, saveData, sideName, isShown)
 end
 
 ---Collect SIGINT for a collecting side when its SIGINT is enabled
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's SIGINT slice is mutated
----@param sideName string Collecting side name (China or US)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function Sigint.processSide(config, saveData, sideName)
   local sigintCtx = PersistentState.sigint(saveData, sideName)
   if not sigintCtx.enabled then
@@ -459,9 +456,9 @@ end
 
 ---Initialize reconnaissance aircraft contexts for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's SIGINT recon aircraft map is filled
----@param sideName string Side name to scan for reconnaissance aircraft (China or US)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 ---@return number # Number of reconnaissance aircraft initialized
 function Sigint.initSide(config, saveData, sideName)
   local sigintCtx = PersistentState.sigint(saveData, sideName)

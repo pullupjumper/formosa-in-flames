@@ -20,10 +20,10 @@ local FORMATION = {
 }
 
 ---Calculate formation position
----@param centerPoint CMO__Location Center point coordinates
----@param heading number Heading angle
----@param distance number Distance
----@param angle number Angle offset
+---@param centerPoint CMO__Location
+---@param heading number
+---@param distance number
+---@param angle number
 ---@return CMO__Location|nil # Calculated position {latitude: number, longitude: number}
 local function calculateFormationPosition(centerPoint, heading, distance, angle)
   return GameApi.World_GetPointFromBearing({
@@ -35,8 +35,8 @@ local function calculateFormationPosition(centerPoint, heading, distance, angle)
 end
 
 ---Batch delete units in group
----@param groupName string Group name
----@param sideName string Side name
+---@param groupName string
+---@param sideName string
 ---@return boolean # Whether cleanup was successful
 local function removeExistingGroup(groupName, sideName)
   local group = GameApi.ScenEdit_GetUnit(groupName, sideName)
@@ -49,8 +49,8 @@ local function removeExistingGroup(groupName, sideName)
 end
 
 ---Add embarked units (advanced version, supports mission assignment)
----@param embarkedUnits SBJ__EmbarkedUnit[] List of embarked units
----@param baseGUID string Base unit GUID
+---@param embarkedUnits SBJ__EmbarkedUnit[]
+---@param baseGUID string
 local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGUID)
   for _, embarkedUnit in ipairs(embarkedUnits) do
     for _, loadout in ipairs(embarkedUnit.loadouts) do
@@ -78,9 +78,9 @@ local function addEmbarkedUnitsAdvanced(embarkedUnits, baseGUID)
 end
 
 ---Add units by reference point
----@param params SBJ__LinearPlacementParams Linear placement parameters
----@param unitDescriptor SBJ__UnitDescriptor Unit descriptor
----@param embarkedUnits SBJ__EmbarkedUnit[]|nil Embarked units
+---@param params SBJ__LinearPlacementParams
+---@param unitDescriptor SBJ__UnitDescriptor
+---@param embarkedUnits SBJ__EmbarkedUnit[]|nil
 local function addUnitsByRP(params, unitDescriptor, embarkedUnits)
   local locations = GameUtils.buildLocations(params)
 
@@ -111,9 +111,9 @@ local function addUnitsByRP(params, unitDescriptor, embarkedUnits)
 end
 
 ---Calculate ship positions
----@param firstRp CMO__Location First reference point
----@param verticalHeading number Vertical heading
----@param verticalDistance number Vertical distance
+---@param firstRp CMO__Location
+---@param verticalHeading number
+---@param verticalDistance number
 ---@return table<string, CMO__Location> # Positions of various ship types
 local function calculateShipPositions(firstRp, verticalHeading, verticalDistance)
   local positions = {}
@@ -179,9 +179,9 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
 end
 
 ---Create ships by type
----@param position CMO__Location Position
----@param shipType SBJ__AmphibiousShipType Ship type
----@param formationCtx SBJ__ShipFormationContext Area, operation, layout and cargo shared by every ship type
+---@param position CMO__Location
+---@param shipType SBJ__AmphibiousShipType
+---@param formationCtx SBJ__ShipFormationContext
 local function createShipsByType(position, shipType, formationCtx)
   local areaDescriptor, descriptor = formationCtx.areaDescriptor, formationCtx.descriptor
   local shipSettings, cargoMap = formationCtx.shipSettings, formationCtx.cargoMap
@@ -249,8 +249,8 @@ local function createShipsByType(position, shipType, formationCtx)
 end
 
 ---Get SAG formation configuration
----@param sagDescriptor SBJ__SAGDescriptor Configuration object
----@param sideName string Side name ('China' | 'Taiwan')
+---@param sagDescriptor SBJ__SAGDescriptor
+---@param sideName string
 ---@return SBJ__ShipFormationDescriptor[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
   if sideName == constants.SIDES.RED then
@@ -312,7 +312,7 @@ local function getSAGShipConfiguration(sagDescriptor, sideName)
 end
 
 ---Get CSG formation configuration
----@param csgDescriptor SBJ__CSGDescriptor Configuration object
+---@param csgDescriptor SBJ__CSGDescriptor
 ---@return SBJ__ShipFormationDescriptor[] # CSG ship formation specification list
 local function getCSGShipConfiguration(csgDescriptor)
   return {
@@ -363,7 +363,7 @@ local function getCSGShipConfiguration(csgDescriptor)
 end
 
 ---Create formation ships
----@param formationConfig SBJ__SAGFormationConfig Formation configuration
+---@param formationConfig SBJ__SAGFormationConfig
 ---@return boolean # Whether successful
 local function createShipFormation(formationConfig)
   -- Clean up existing group
@@ -372,7 +372,6 @@ local function createShipFormation(formationConfig)
   local createdUnits = {}
   local leader = nil
 
-  -- Create ships at various positions
   for _, shipConfig in ipairs(formationConfig.shipTypes) do
     local position = calculateFormationPosition(
       formationConfig.centerPoint,
@@ -405,7 +404,6 @@ local function createShipFormation(formationConfig)
         leader = unit
       end
 
-      -- Add embarked units
       if shipConfig.embarkedUnits then
         addEmbarkedUnitsAdvanced(shipConfig.embarkedUnits, unit.guid)
       end
@@ -438,8 +436,8 @@ local function createShipFormation(formationConfig)
 end
 
 ---Create SAG formations
----@param sideName string Side name
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor> Configuration object
+---@param sideName string
+---@param sagDescriptorMap table<string, SBJ__SAGDescriptor>
 ---@return boolean # Whether successful
 function UnitGenerator.createSAGs(sideName, sagDescriptorMap)
   for _, sagDescriptor in pairs(sagDescriptorMap) do
@@ -476,7 +474,7 @@ function UnitGenerator.createSAGs(sideName, sagDescriptorMap)
 end
 
 ---Create CSG formation
----@param csgDescriptor SBJ__CSGDescriptor Configuration object
+---@param csgDescriptor SBJ__CSGDescriptor
 ---@return boolean # Whether successful
 function UnitGenerator.createCSG(csgDescriptor)
   local formationConfig = {
@@ -493,7 +491,6 @@ function UnitGenerator.createCSG(csgDescriptor)
     return false
   end
 
-  -- Set reference points
   local csg = GameApi.ScenEdit_GetUnit(csgDescriptor.groupName)
   if csg then
     local referenceAreas = {
@@ -521,8 +518,8 @@ function UnitGenerator.createCSG(csgDescriptor)
 end
 
 ---Add ships deployed at ports
----@param sideName string Side name
----@param descriptors SBJ__AirbaseDeploymentDescriptor Configuration object
+---@param sideName string
+---@param descriptors SBJ__AirbaseDeploymentDescriptor
 ---@return boolean # Whether successful
 function UnitGenerator.addDeployedShipsAtPort(sideName, descriptors)
   for _, descriptor in ipairs(descriptors) do
@@ -544,8 +541,8 @@ function UnitGenerator.addDeployedShipsAtPort(sideName, descriptors)
 end
 
 ---Add submarines
----@param config SBJ__Config Configuration object
----@param sideName string Side name
+---@param config SBJ__Config
+---@param sideName string
 ---@return boolean # Whether successful
 function UnitGenerator.addSubmarines(config, sideName)
   if sideName ~= constants.SIDES.RED then
@@ -600,7 +597,7 @@ function UnitGenerator.addSubmarines(config, sideName)
 end
 
 ---Remove base magazines
----@param baseGUID string Base GUID
+---@param baseGUID string
 ---@return boolean # Whether successful
 local function removeMagazinesByBaseGUID(baseGUID)
   local base = GameApi.ScenEdit_GetUnit(baseGUID)
@@ -623,7 +620,7 @@ local function removeMagazinesByBaseGUID(baseGUID)
 end
 
 ---Add aircraft to airbases with specified loadouts and embarked units
----@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configuration list
+---@param airbaseDeploymentDescriptors SBJ__AirbaseDeploymentDescriptor[]
 ---@return boolean # Whether aircraft addition was successful
 function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
   for _, descriptor in ipairs(airbaseDeploymentDescriptors) do
@@ -661,7 +658,7 @@ function UnitGenerator.addAircraft(airbaseDeploymentDescriptors)
 end
 
 ---Add landing ships
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operations configuration containing ship settings and cargo
+---@param amphibOpsConfig SBJ__AmphibOpsConfig
 ---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(amphibOpsConfig)
   local descriptors = amphibOpsConfig.operations
@@ -674,11 +671,9 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
         side = constants.SIDES.RED, area = areaDescriptor.startingPoints.type075
       })[1]
 
-      -- Calculate starting positions for various ships
       local positions = calculateShipPositions(firstRp075, areaDescriptor.heading.vertical, layoutConfig
         .verticalDistance)
 
-      -- Create various ship types
       ---@type SBJ__ShipFormationContext
       local formationCtx = {
         areaDescriptor = areaDescriptor,

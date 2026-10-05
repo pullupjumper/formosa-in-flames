@@ -11,7 +11,7 @@ local STATE_LABELS = {
 }
 
 ---Convert a missile system state enum to its display label
----@param state missileSystemState Missile system state enum value
+---@param state missileSystemState
 ---@return string # STATIC/REPOSITIONING/HIDE/RELOAD, or UNKNOWN
 local function formatState(state)
   return STATE_LABELS[state] or "UNKNOWN"
@@ -19,7 +19,7 @@ end
 
 ---Calculate minutes elapsed since a reload started
 ---@param reloadStartTime number|nil Reload start time in seconds, nil when not reloading
----@param currentTime number Current scenario time in seconds
+---@param currentTime number
 ---@return number # Elapsed minutes rounded to 2 decimal places, never negative; 0 when not reloading
 local function calculateReloadMinutes(reloadStartTime, currentTime)
   if reloadStartTime == nil then
@@ -35,9 +35,9 @@ local function calculateReloadMinutes(reloadStartTime, currentTime)
 end
 
 ---Build one status per battery (a firing unit plus its paired resupply unit)
----@param groundCtx SBJ__GroundContext Side ground force runtime context
----@param missileSystemConfigMap table<string,SBJ__MissileSystemConfig> Side ground force configuration
----@param currentTime number Current scenario time in seconds
+---@param groundCtx SBJ__GroundContext
+---@param missileSystemConfigMap table<string,SBJ__MissileSystemConfig>
+---@param currentTime number
 ---@return SBJ__BatteryStatus[] # One status per battery
 function StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, currentTime)
   local statuses = {}

@@ -79,8 +79,8 @@ local RECON_TRACKING_CONFIG = {
 -- ============================================================================
 
 ---Check if location is within threshold distance from contact
----@param location CMO__Location|nil Base location coordinates
----@param guid string Contact GUID
+---@param location CMO__Location|nil
+---@param guid string
 ---@param threshold number Distance threshold in nautical miles
 ---@return boolean # True if within threshold, false otherwise
 local function isNearby(location, guid, threshold)
@@ -97,7 +97,7 @@ local function isNearby(location, guid, threshold)
 end
 
 ---Empty an array in place so holders of the same table see the change
----@param list any[] Array to clear
+---@param list any[]
 local function removeAll(list)
   for i = #list, 1, -1 do
     list[i] = nil
@@ -105,8 +105,8 @@ local function removeAll(list)
 end
 
 ---Initialize location map for bases or ports from contacts
----@param contacts CMO__Contact[] Array of contacts
----@param locationNames string[] Array of location names to find
+---@param contacts CMO__Contact[]
+---@param locationNames string[]
 ---@return table<string, CMO__Location> # Map of location names to coordinates
 local function buildLocationMap(contacts, locationNames)
   local locationMap = {}
@@ -128,10 +128,10 @@ local function buildLocationMap(contacts, locationNames)
 end
 
 ---Match contact against airfield-related patterns
----@param contact CMO__Contact Contact to match
----@param baseLocationMap table<string, CMO__Location> Map of base locations
+---@param contact CMO__Contact
+---@param baseLocationMap table<string, CMO__Location>
 ---@param threshold number Distance threshold in nautical miles
----@param patterns SBJ__AirfieldPatternConfig Airfield pattern configuration
+---@param patterns SBJ__AirfieldPatternConfig
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findAirfieldTarget(contact, baseLocationMap, threshold, patterns)
   local isAirfieldFacility =
@@ -163,10 +163,10 @@ local function findAirfieldTarget(contact, baseLocationMap, threshold, patterns)
 end
 
 ---Match contact against port-related patterns
----@param contact CMO__Contact Contact to match
----@param portLocationMap table<string, CMO__Location> Map of port locations
+---@param contact CMO__Contact
+---@param portLocationMap table<string, CMO__Location>
 ---@param threshold number Distance threshold in nautical miles
----@param patterns SBJ__PortPatternConfig Port pattern configuration
+---@param patterns SBJ__PortPatternConfig
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findPortTarget(contact, portLocationMap, threshold, patterns)
   if string.find(contact.type_description, patterns.pierPattern) then
@@ -186,9 +186,9 @@ local function findPortTarget(contact, portLocationMap, threshold, patterns)
 end
 
 ---Match contact against standalone target patterns (Radar, SAM, ASM, C2)
----@param description string Contact type description
----@param guid string Contact GUID
----@param patterns SBJ__TargetCategoryPatternConfig Target category patterns configuration
+---@param description string
+---@param guid string
+---@param patterns SBJ__TargetCategoryPatternConfig
 ---@return SBJ__TargetEntry|nil # Target entry or nil if no match
 local function findStandaloneTarget(description, guid, patterns)
   for _, rule in ipairs(STANDALONE_TARGET_RULES) do
@@ -210,9 +210,9 @@ end
 
 ---Scan and categorize contacts into a target list
 ---Results replace the contents of targetlist in place so the persisted table stays the same
----@param sideName string Side name to get contacts from (e.g., 'China')
----@param scanConfig SBJ__TargetScanningConfig Target scanning configuration with distanceThreshold, blueAirBases, bluePorts, and targetCategories
----@param targetlist SBJ__TargetEntry[] Persisted target list, cleared and refilled
+---@param sideName string
+---@param scanConfig SBJ__TargetScanningConfig
+---@param targetlist SBJ__TargetEntry[]
 function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
   local contacts = GameApi.ScenEdit_GetContacts(sideName)
 
@@ -224,7 +224,6 @@ function TargetingProcess.findTargets(sideName, scanConfig, targetlist)
 
   local threshold = scanConfig.distanceThreshold
 
-  -- Initialize location maps for bases and ports
   local baseLocationMap = buildLocationMap(contacts, scanConfig.blueAirBases)
   local portLocationMap = buildLocationMap(contacts, scanConfig.bluePorts)
   removeAll(targetlist)
@@ -271,8 +270,8 @@ end
 -- ============================================================================
 
 ---Filter contacts matching predicate within target areas
----@param contacts CMO__Contact[] Contacts to filter
----@param areas string[][] Target area definitions
+---@param contacts CMO__Contact[]
+---@param areas string[][]
 ---@param predicate fun(contact: CMO__Contact): boolean Matching predicate (may have side effects)
 ---@return string[] # GUIDs of matching contacts
 local function filterContactsInAreas(contacts, areas, predicate)
@@ -289,7 +288,7 @@ end
 
 ---Find ground targets (infantry or mobile vehicles) within specified areas
 ---Marks matched contacts with hostile posture; filters out contacts older than contactAge
----@param params SBJ__FilterParams Filter parameters containing contacts and task information
+---@param params SBJ__FilterParams
 ---@return string[] # Array of ground unit GUIDs found in target areas
 local function findGroundTargets(params)
   local contactAge = params.task.target.contactAge
@@ -304,7 +303,7 @@ local function findGroundTargets(params)
 end
 
 ---Find airborne early warning aircraft (P-3C, E-2K) within specified areas
----@param params SBJ__FilterParams Filter parameters with contacts, task, and config
+---@param params SBJ__FilterParams
 ---@return string[] # Array of airborne early warning aircraft GUIDs
 local function findAirborne(params)
   local contactAge = params.task.target.contactAge
@@ -321,7 +320,7 @@ end
 
 ---Analyze radar emissions to identify SAM systems
 ---Detects Taiwanese SAM radar emissions (TK-3, TK-2, PAC-3, TC-2) within contact age limit
----@param params SBJ__FilterParams Filter parameters with contacts, task, and sensor configuration
+---@param params SBJ__FilterParams
 ---@return string[] # Array of SAM system GUIDs with active radar emissions
 local function evaluateEmissions(params)
   local contactAge = params.task.target.contactAge
@@ -337,7 +336,7 @@ end
 
 ---Find Command and Control (C2) facilities
 ---Identifies ROCC and TAAOC command centers within target areas, filtered by contactAge
----@param params SBJ__FilterParams Filter parameters containing contacts and task information
+---@param params SBJ__FilterParams
 ---@return string[] # Array of C2 facility GUIDs (ROCC/TAAOC)
 local function findC2(params)
   local contactAge = params.task.target.contactAge
@@ -356,7 +355,7 @@ end
 
 ---Find naval targets (ships) within specified areas
 ---Identifies naval contacts within contact age limit
----@param params SBJ__FilterParams Filter parameters with contacts and task
+---@param params SBJ__FilterParams
 ---@return string[] # Array of naval target GUIDs
 local function findNavalTargets(params)
   local contacts = params.contacts
@@ -371,9 +370,9 @@ local function findNavalTargets(params)
 end
 
 ---Check if target is within range of a radio transmission source
----@param config SBJ__Config Global configuration with SIGINT range and count thresholds
+---@param config SBJ__Config
 ---@param distance number Distance in nautical miles to radio source
----@param transmission SBJ__RadioTransmissionContext Transmission data with current detection level (count) and other properties
+---@param transmission SBJ__RadioTransmissionContext
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
   return distance <= config.red.sigint.maxRangeNm and transmission.currentDetectionLevel > config.red.sigint.maxCount
@@ -381,9 +380,9 @@ end
 
 ---Filter targets that are within range of SIGINT-detected radio sources
 ---Cross-references contacts with SIGINT transmissions
----@param config SBJ__Config Global configuration with SIGINT parameters
----@param transmissions table<string, SBJ__RadioTransmissionContext> SIGINT transmission records
----@param contacts string[] Array of contact GUIDs to evaluate
+---@param config SBJ__Config
+---@param transmissions table<string, SBJ__RadioTransmissionContext>
+---@param contacts string[]
 ---@return string[] # Array of contact GUIDs near radio sources
 local function filterTargetsWithinRangeOfRadioSource(config, transmissions, contacts)
   local targets = {}
@@ -407,7 +406,7 @@ end
 
 ---Find targets by radio direction (SIGINT-based targeting)
 ---Combines mobile targets and C2 units, filters by proximity to radio transmissions
----@param params SBJ__FilterParams Filter parameters with contacts, task, config, and transmissions
+---@param params SBJ__FilterParams
 ---@return string[] # Array of target GUIDs near radio sources
 local function findRadioDirection(params)
   local contacts = params.contacts
@@ -434,7 +433,7 @@ end
 
 ---Evaluate if a target is valid for strike based on damage and detection status
 ---Checks BDA (Battle Damage Assessment), contact age, and special helipad conditions
----@param target CMO__Contact Contact object to evaluate
+---@param target CMO__Contact
 ---@param contactAge number Maximum acceptable contact age in seconds
 ---@param isFirstWave boolean If true, accepts all targets; if false, applies BDA filtering
 ---@return boolean # True if target is valid for strike
@@ -468,7 +467,7 @@ end
 
 ---Assess target damage status (Battle Damage Assessment)
 ---Filters target list based on BDA, excluding heavily damaged targets (unless first wave)
----@param task SBJ__Task Task containing target list and contact age parameters
+---@param task SBJ__Task
 ---@param isFirstWave boolean If true, includes all targets; if false, filters by damage status
 ---@return string[] # Array of target GUIDs that passed BDA evaluation
 local function evaluateTargetsDamage(task, isFirstWave)
@@ -494,8 +493,8 @@ end
 -- ============================================================================
 
 ---Filter targets by type and base name
----@param targetlist SBJ__TargetEntry[] Array of target objects with name, subType, and guid properties
----@param queryParams SBJ__TargetQueryEntry[] Array of query parameters with baseName (optional) and subTypes (array)
+---@param targetlist SBJ__TargetEntry[]
+---@param queryParams SBJ__TargetQueryEntry[]
 ---@return string[] # Array of target GUIDs matching query criteria
 function TargetingProcess.filterTargetsByTypeAndBase(targetlist, queryParams)
   local selectedTargetlist = {}
@@ -539,9 +538,9 @@ local FILTERS = {
 
 ---Build the recon tracking request a filter's results call for
 ---Only resolves the target; whether a UAV is actually sent is up to Recon.trackTargets.
----@param params SBJ__FilterParams Filter parameters with contacts
----@param filterName string Name of the filter that produced targets
----@param targetGUIDs string[] Array of target GUIDs from the filter
+---@param params SBJ__FilterParams
+---@param filterName string
+---@param targetGUIDs string[]
 ---@return SBJ__TrackingRequestEntry|nil # Request for the lead target, nil when the filter needs no tracking
 local function buildTrackingRequest(params, filterName, targetGUIDs)
   local trackingConfig = RECON_TRACKING_CONFIG[filterName]
@@ -558,10 +557,10 @@ local function buildTrackingRequest(params, filterName, targetGUIDs)
 end
 
 ---Build filter parameters for dynamic target filtering
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts
----@param targetConfig SBJ__TargetTemplate Target configuration with filterNames, areas, contactAge, minTargetCount
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param contacts CMO__Contact[]
+---@param targetConfig SBJ__TargetTemplate
 ---@return SBJ__FilterParams # Filter parameters for filter functions
 local function buildFilterParams(config, plannerState, contacts, targetConfig)
   ---@type SBJ__FilterParams
@@ -583,10 +582,10 @@ local function buildFilterParams(config, plannerState, contacts, targetConfig)
 end
 
 ---Process dynamic targets using filter functions
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param contacts CMO__Contact[] Available sensor contacts
----@param targetConfig SBJ__TargetTemplate Target configuration with filterNames
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param contacts CMO__Contact[]
+---@param targetConfig SBJ__TargetTemplate
 ---@return string[] strikeTargets Array of target GUIDs matching the filter criteria
 ---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the results call for
 local function processDynamicTargets(config, plannerState, contacts, targetConfig)
@@ -619,9 +618,9 @@ local function processDynamicTargets(config, plannerState, contacts, targetConfi
 end
 
 ---Process fixed targets using BDA assessment
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param targetConfig SBJ__TargetTemplate Target configuration with objs, contactAge, minTargetCount
----@param isFirstWave boolean Whether this is the first wave
+---@param plannerState SBJ__StrikePlannerState
+---@param targetConfig SBJ__TargetTemplate
+---@param isFirstWave boolean
 ---@return string[] # Array of target GUIDs that passed BDA assessment
 local function processFixedTargets(plannerState, targetConfig, isFirstWave)
   if not targetConfig.objs then
@@ -653,10 +652,10 @@ end
 
 ---Process targets by routing to dynamic or fixed target processing
 ---Never touches the recon queue; the caller hands trackingRequests to Recon.trackTargets.
----@param config SBJ__Config Global configuration table
----@param plannerState SBJ__StrikePlannerState Strike planner state slices
----@param params SBJ__ProcessTargetsParams Available contacts and the target configuration
----@param opts? SBJ__ProcessTargetsOpts First-wave flag
+---@param config SBJ__Config
+---@param plannerState SBJ__StrikePlannerState
+---@param params SBJ__ProcessTargetsParams
+---@param opts? SBJ__ProcessTargetsOpts
 ---@return string[] targets Array of target GUIDs
 ---@return SBJ__TrackingRequestEntry[] trackingRequests Recon tracking the targets call for; always empty for fixed targets
 function TargetingProcess.processTargets(config, plannerState, params, opts)

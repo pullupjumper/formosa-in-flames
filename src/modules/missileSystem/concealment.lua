@@ -6,8 +6,8 @@ local CargoProxy = require("src.modules.missileSystem.cargoProxy")
 local Concealment = {}
 
 ---Check if a unit is already loaded in the building's cargo
----@param building CMO__Unit Building to check for cargo
----@param unitGUID? string GUID of the unit to find in cargo
+---@param building CMO__Unit
+---@param unitGUID? string
 ---@return boolean # Whether the unit is loaded in the building
 local function isHideSiteOccupied(building, unitGUID)
   if not building.cargo or not building.cargo[1] or not building.cargo[1].cargo then
@@ -28,8 +28,8 @@ local function isHideSiteOccupied(building, unitGUID)
 end
 
 ---Find buildings within the mask area for TEL concealment
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
----@param sideName string Side name
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param sideName string
 ---@return CMO__Unit[]|nil # Array of building units or nil
 local function findBuildingsInMaskArea(unitCtx, sideName)
   local side = GameApi.VP_GetSide({ name = sideName })
@@ -68,8 +68,8 @@ local function getRandomBuilding(buildings)
 end
 
 ---Unload firing unit group from hide area buildings
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
----@param unit CMO__Unit Firing unit to unload
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unit CMO__Unit
 ---@return boolean success Whether unload was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.moveFromHideArea(unitCtx, unit)
@@ -98,8 +98,8 @@ end
 ---Load firing unit into a random building within mask area
 ---Failure fields omit the unit name because every caller already labels the row
 ---with the unit it was acting on.
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext Unit context with operational area
----@param unit CMO__Unit Firing unit to hide
+---@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unit CMO__Unit
 ---@return boolean success Whether hide was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.hideUnit(unitCtx, unit)

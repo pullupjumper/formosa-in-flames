@@ -9,8 +9,8 @@ local FrontlineRedirect = {}
 
 ---Apply mapping name rewrites for frontline redirect
 ---Returns a deep-copied list to avoid mutating shared strike mappings in config.
----@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list (not mutated)
----@param rules SBJ__StrikeMappingRewriteRule[] Rewrite rules
+---@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list
+---@param rules SBJ__StrikeMappingRewriteRule[]
 ---@return SBJ__ReconStrikeMapping[] # Copy with names rewritten where applicable
 local function buildRewrittenMappings(strikeMappings, rules)
   local result = Utils.deepCopy(strikeMappings)
@@ -27,9 +27,9 @@ local function buildRewrittenMappings(strikeMappings, rules)
 end
 
 ---Apply configured frontline redirect mappings when sticky redirect is active
----@param config SBJ__Config Configuration data
----@param reconCtx SBJ__ReconContext Reconnaissance context
----@param strikeMappings SBJ__ReconStrikeMapping[] Original mapping list
+---@param config SBJ__Config
+---@param reconCtx SBJ__ReconContext
+---@param strikeMappings SBJ__ReconStrikeMapping[]
 ---@return SBJ__ReconStrikeMapping[] # Original or rewritten mappings
 function FrontlineRedirect.updateMappings(config, reconCtx, strikeMappings)
   if reconCtx.frontlineRedirected and
@@ -47,8 +47,8 @@ end
 
 ---Decide whether frontline strike packages should be redirected to rear bases with AAR
 ---Sticky: mutates reconCtx.frontlineRedirected on first trigger; skips recompute thereafter.
----@param config SBJ__Config Configuration data
----@param reconCtx SBJ__ReconContext Reconnaissance context (mutated when redirect triggers)
+---@param config SBJ__Config
+---@param reconCtx SBJ__ReconContext
 ---@return boolean isRedirected Whether redirect is active after this evaluation
 ---@return table<string, any>|nil activationFields Non-nil only on the tick redirect just activated; caller should log it
 function FrontlineRedirect.evaluate(config, reconCtx)

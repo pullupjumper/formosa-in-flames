@@ -6,8 +6,8 @@ local Shared = require("src.modules.missileSystem.shared")
 local Ammo = {}
 
 ---Transfer ammunition from ammunition depot to resupply unit
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param ammoDepotCtx SBJ__AmmunitionContext Ammunition depot context
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param ammoDepotCtx SBJ__AmmunitionContext
 function Ammo.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
   if ammoDepotCtx.weaponCountCurrent > 0 and resupplyUnitCtx.weaponCountCurrent < resupplyUnitCtx.weaponCountDefault then
     local deficit = resupplyUnitCtx.weaponCountDefault - resupplyUnitCtx.weaponCountCurrent
@@ -21,9 +21,9 @@ function Ammo.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
 end
 
 ---Reload ammunition for a single unit
----@param unit CMO__Unit|nil Unit object
----@param weaponDBID number|number[] Weapon database ID(s)
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
+---@param unit CMO__Unit|nil
+---@param weaponDBID number|number[]
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
 ---@return integer # Total ammunition consumed
 local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
   if not unit then return 0 end
@@ -46,10 +46,10 @@ local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
 end
 
 ---Execute reload for firing unit
----@param firingUnitCtx SBJ__FiringUnitContext Firing unit context
----@param resupplyUnitCtx SBJ__ResupplyUnitContext Resupply unit context
----@param weaponDBID number|number[] Weapon database ID(s)
----@param sideName string Side name
+---@param firingUnitCtx SBJ__FiringUnitContext
+---@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param weaponDBID number|number[]
+---@param sideName string
 ---@return integer # Total ammunition loaded
 function Ammo.reloadFiringUnit(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName)
   local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
@@ -68,9 +68,9 @@ function Ammo.reloadFiringUnit(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideN
 end
 
 ---Check if unit/group ammunition is below specified percentage
----@param firingUnit CMO__Unit Unit or group object
----@param percentage number|nil Percentage threshold
----@param weaponDBID number|number[]|nil Weapon database ID(s)
+---@param firingUnit CMO__Unit
+---@param percentage number|nil
+---@param weaponDBID number|number[]|nil
 ---@return boolean # Whether it is low ammunition
 function Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
   if not percentage or not weaponDBID then
@@ -99,8 +99,8 @@ function Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
 end
 
 ---Compute usage percentage rounded to integer; returns 0 when max is 0 to avoid divide-by-zero
----@param current number Current ammunition count
----@param max number Maximum ammunition count
+---@param current number
+---@param max number
 ---@return integer # Percentage in 0-100 range, rounded to nearest integer
 local function calculatePercentage(current, max)
   if max == 0 then return 0 end
@@ -108,8 +108,8 @@ local function calculatePercentage(current, max)
 end
 
 ---Sum ammunition across all firing units of a missile system by querying live game state
----@param firingUnitMap table<string, SBJ__FiringUnitContext> Firing unit contexts keyed by name
----@param sideName string Side name for ScenEdit_GetUnit lookup
+---@param firingUnitMap table<string, SBJ__FiringUnitContext>
+---@param sideName string
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countFiringUnits(firingUnitMap, sideName)
   local subtotal = { current = 0, max = 0, percentage = 0 }
@@ -137,7 +137,7 @@ local function countFiringUnits(firingUnitMap, sideName)
 end
 
 ---Sum ammunition across context-tracked units (resupply trucks or ammo depots)
----@param contextMap table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext> Contexts with weaponCountCurrent/weaponCountDefault
+---@param contextMap table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext>
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countContextUnits(contextMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
@@ -152,8 +152,8 @@ local function countContextUnits(contextMap)
 end
 
 ---Calculate ammunition inventory across firing units, resupply units, and ammo depots
----@param systemCtx SBJ__MissileSystemContext Missile system runtime context
----@param sideName string Side name used to resolve firing units in game state
+---@param systemCtx SBJ__MissileSystemContext
+---@param sideName string
 ---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
 function Ammo.getInventory(systemCtx, sideName)
   local firing = countFiringUnits(systemCtx.firingUnits, sideName)

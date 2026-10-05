@@ -7,13 +7,12 @@ Logger.inGame = type(ScenEdit_SpecialMessage) == "userdata"
 
 
 ---Print formatted box message to player
----@param sideName string The side the message is visible to (sidename may also be used)
+---@param sideName string
 ---@param ... string Variable number of string arguments to be printed inside the box
 local function logBox(sideName, ...)
   -- Collect all string parameters into array
   local strings = { ... }
 
-  -- Find the length of the longest string
   local maxLen = 0
   for _, str in ipairs(strings) do
     if #str > maxLen then
@@ -21,13 +20,10 @@ local function logBox(sideName, ...)
     end
   end
 
-  -- Calculate border width
   -- local width = 70
 
-  -- Build top and bottom border: continuous -
   -- local border = string.rep(" ", width)
 
-  -- Build middle lines
   local middleLines = {}
   for _, str in ipairs(strings) do
     local middle = "  " .. str
@@ -41,9 +37,8 @@ local function logBox(sideName, ...)
   ScenEdit_SpecialMessage(sideName, boxString)
 end
 
---- Helper function to print a log message
----@param message string Log message
----@param level string Log level
+---@param message string
+---@param level string
 local function logMessage(message, level)
   if Logger.inGame then
     logBox("playerside", string.format("[%s] %s", level, message))
@@ -53,8 +48,8 @@ local function logMessage(message, level)
 end
 
 ---Log with module name and verbose check
----@param moduleNameOrMessage string Module name or message to log
----@param message? string Log message
+---@param moduleNameOrMessage string
+---@param message? string
 function Logger.log(moduleNameOrMessage, message)
   local moduleConfig = config.logging and config.logging.modules and config.logging.modules[moduleNameOrMessage]
 
@@ -67,13 +62,13 @@ function Logger.log(moduleNameOrMessage, message)
 end
 
 ---Error logging (always output, no verbose check)
----@param message string Error message
+---@param message string
 function Logger.error(message)
   logMessage(message, "ERROR")
 end
 
 ---Warning logging (similar to error, always output)
----@param message string Warning message
+---@param message string
 function Logger.warn(message)
   logMessage(message, "WARN")
 end

@@ -29,8 +29,8 @@ local DEFAULT_CARGO_TYPE = "Facility"
 
 ---Calculate course for barge to reach offload area
 ---Projects barge position onto LST approach bearing line using spherical geometry
----@param zone SBJ__OperationalZoneDescriptor Operation zone with offload area and LST settings
----@param unit CMO__Unit Barge unit to calculate course for
+---@param zone SBJ__OperationalZoneDescriptor
+---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
 local function createCourseForBarge(zone, unit)
   local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.RED, area = zone.offloadArea })
@@ -75,8 +75,8 @@ end
 
 ---Calculate course for RORO ship to follow barge to beach
 ---Returns two-waypoint course: first at LST approach distance, second at barge destination
----@param zone SBJ__OperationalZoneDescriptor Operation zone with LST settings
----@param unit CMO__Unit RORO ship unit to calculate course for
+---@param zone SBJ__OperationalZoneDescriptor
+---@param unit CMO__Unit
 ---@param bargeDest CMO__Waypoint[] Barge's destination waypoint
 ---@return CMO__Waypoint[]|nil # Two-waypoint course (approach, then barge position), or nil on error
 local function createCourseForRORO(zone, unit, bargeDest)
@@ -100,8 +100,8 @@ end
 
 ---Process a barge unit for second wave unloading
 ---Creates course, sets speed, and registers barge in the barge registry
----@param unit CMO__Unit Barge unit to process
----@param zone SBJ__OperationalZoneDescriptor Operation zone descriptor
+---@param unit CMO__Unit
+---@param zone SBJ__OperationalZoneDescriptor
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return CMO__Waypoint[]|nil dest Barge destination for RORO pairing, nil when the course failed
 ---@return SBJ__LogResult result Deferred log result describing the outcome
@@ -126,8 +126,8 @@ end
 
 ---Pair a RORO ship with a barge for logistics chain
 ---Registers RORO under barge's roros list and sets RORO course
----@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor } RORO entry
----@param bargeEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] } Barge entry
+---@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }
+---@param bargeEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function pairROROWithBarge(roroEntry, bargeEntry, barges)
@@ -164,8 +164,8 @@ end
 -- ============================================================================
 
 ---Extract cargo items from ship up to specified count
----@param ship CMO__Unit Ship to extract cargo from
----@param num number Maximum number of items to extract
+---@param ship CMO__Unit
+---@param num number
 ---@return { guid: string, dbid: number, name: string, type: number }[] # Extracted cargo items
 local function resolveCargoItems(ship, num)
   local cargoItems = {}
@@ -184,10 +184,10 @@ local function resolveCargoItems(ship, num)
 end
 
 ---Spawn a single offloaded vehicle at the specified location
----@param ship CMO__Unit Ship to delete cargo from
----@param item { guid: string, dbid: number, name: string, type: number } Cargo item to spawn
----@param location CMO__Location Spawn coordinates
----@param index integer Position in the offload sequence
+---@param ship CMO__Unit
+---@param item { guid: string, dbid: number, name: string, type: number }
+---@param location CMO__Location
+---@param index integer
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function createOffloadedVehicle(ship, item, location, index)
   ship:deleteUnitCargo(item.guid)
@@ -216,9 +216,9 @@ local function createOffloadedVehicle(ship, item, location, index)
 end
 
 ---Spawn every extracted cargo item, stopping at the first failure
----@param ship CMO__Unit Ship to offload from
----@param cargoItems { guid: string, dbid: number, name: string, type: number }[] Cargo items to spawn
----@param locations CMO__Location[] Spawn coordinates aligned with cargoItems
+---@param ship CMO__Unit
+---@param cargoItems { guid: string, dbid: number, name: string, type: number }[]
+---@param locations CMO__Location[]
 ---@return integer|nil count Vehicles offloaded, nil when a spawn failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function createOffloadedVehicles(ship, cargoItems, locations)
@@ -243,7 +243,7 @@ end
 ---Check if a barge's logistics bridge has been destroyed
 ---Returns true if bridge GUID exists but unit is destroyed
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
----@param ship CMO__Unit Barge ship to check
+---@param ship CMO__Unit
 ---@return boolean # True if bridge was created but is now destroyed
 function SecondWaveUnloading.isBridgeDestroyed(barges, ship)
   if barges[ship.guid] and barges[ship.guid].bridgeGUID then
@@ -262,7 +262,7 @@ end
 ---Check if a barge has an extended logistics bridge
 ---Bridge is created when barge reaches offload position for vehicle transfer operations
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
----@param ship CMO__Unit Barge ship to check
+---@param ship CMO__Unit
 ---@return boolean # True if barge has an active bridge GUID
 function SecondWaveUnloading.hasExtendedBridge(barges, ship)
   return barges[ship.guid].bridgeGUID ~= nil
@@ -270,9 +270,9 @@ end
 
 ---Get the operational zone for a barge-RORO pair
 ---Checks if both units are in same ACV area and within 1nm of each other
----@param amphibOpsConfig SBJ__AmphibOpsConfig Amphibious operation configuration
----@param barge CMO__Unit Barge ship
----@param roro CMO__Unit RORO ship
+---@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param barge CMO__Unit
+---@param roro CMO__Unit
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
 function SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, barge, roro)
   for _, zone in ipairs(amphibOpsConfig.operationalZones) do
@@ -292,9 +292,9 @@ end
 
 ---Initiate second wave unloading operations for a single zone
 ---Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
+---@param zone SBJ__OperationalZoneDescriptor
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
----@param filteredUnits CMO__SideUnit[] Unit list from the side (filtered for ships)
+---@param filteredUnits CMO__SideUnit[]
 ---@return boolean # True if second wave unloading successfully started
 function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnits)
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
@@ -338,7 +338,7 @@ end
 
 ---Offload vehicles from ship cargo to the beach
 ---Deletes cargo from ship and spawns facility units in line formation at calculated positions
----@param params SBJ__VehicleOffloadParams Offload parameters (ship, number, bearing, distances)
+---@param params SBJ__VehicleOffloadParams
 ---@return integer|nil # Number of vehicles successfully offloaded, or nil on error
 function SecondWaveUnloading.offloadVehicles(params)
   local ship = params.ship

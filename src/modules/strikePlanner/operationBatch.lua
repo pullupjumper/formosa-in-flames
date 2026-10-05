@@ -19,8 +19,8 @@ local OBSERVATION_STATE = {
 -- ============================================================================
 
 ---Iterate all operations across reconnaissance-triggered operation batches
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param callback fun(operation: SBJ__Operation, operationBatch: SBJ__ReconTriggeredOperationBatch) Called for each operation
+---@param batches SBJ__ReconTriggeredOperationBatch[]
+---@param callback fun(operation: SBJ__Operation, operationBatch: SBJ__ReconTriggeredOperationBatch)
 local function forEachOperation(batches, callback)
   for _, operationBatch in ipairs(batches) do
     if operationBatch.operations then
@@ -32,8 +32,8 @@ local function forEachOperation(batches, callback)
 end
 
 ---Return the first operation across all batches that satisfies the predicate
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param predicate fun(operation: SBJ__Operation): boolean Match test applied to each operation
+---@param batches SBJ__ReconTriggeredOperationBatch[]
+---@param predicate fun(operation: SBJ__Operation): boolean
 ---@return SBJ__Operation|nil # First matching operation, or nil when none matches
 local function findFirstOperation(batches, predicate)
   local found
@@ -49,9 +49,9 @@ local function findFirstOperation(batches, predicate)
 end
 
 ---Test whether an operation carries the given template name and type
----@param operation SBJ__Operation Operation to test
----@param templateName string Exact template name to match
----@param operationType string Operation type to match
+---@param operation SBJ__Operation
+---@param templateName string
+---@param operationType string
 ---@return boolean # True when both the type and the template name match
 local function isTemplateMatch(operation, templateName, operationType)
   return operation.type == operationType
@@ -60,7 +60,7 @@ local function isTemplateMatch(operation, templateName, operationType)
 end
 
 ---Collect the unexecuted operations of one type, each paired with its parent batch
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@param batches SBJ__ReconTriggeredOperationBatch[]
 ---@param operationType string Operation type to filter ("air" or "ground")
 ---@return SBJ__BatchedOperation[] # Matching operations paired with their parent batches
 local function filterOperationsByType(batches, operationType)
@@ -89,7 +89,7 @@ end
 ---Close a batch once every operation in it has executed
 ---A batch emptied by abandonment counts as completed.
 ---Side effect: sets operationBatch.executed = true when completed.
----@param operationBatch SBJ__ReconTriggeredOperationBatch Operation batch with operations array
+---@param operationBatch SBJ__ReconTriggeredOperationBatch
 ---@return boolean # Whether all operations are completed
 local function settleBatch(operationBatch)
   if not operationBatch.operations then
@@ -108,8 +108,8 @@ end
 
 ---Mark operation as executed and update parent operation batch status
 ---Executed means the plan was inserted; failures go through abandonOperation instead.
----@param operationBatch SBJ__ReconTriggeredOperationBatch Parent operation batch
----@param operation SBJ__Operation Operation that was executed
+---@param operationBatch SBJ__ReconTriggeredOperationBatch
+---@param operation SBJ__Operation
 local function setOperationExecuted(operationBatch, operation)
   operation.executed = true
 
@@ -118,8 +118,8 @@ end
 
 ---Drop an operation the builder has given up on from its parent batch
 ---Removing rather than marking lets OperationScheduler re-open the same wave later.
----@param operationBatch SBJ__ReconTriggeredOperationBatch Parent operation batch
----@param operation SBJ__Operation Operation to drop
+---@param operationBatch SBJ__ReconTriggeredOperationBatch
+---@param operation SBJ__Operation
 ---@return boolean # True when the operation was found and removed
 local function abandonOperation(operationBatch, operation)
   if not operationBatch.operations then
@@ -141,9 +141,9 @@ end
 
 ---Evaluate the observation window state of a recon-triggered operation batch
 ---Opens at operationBatch.time + delay; air and ground builders share the schedule.
----@param currentTime integer Current scenario time in unix timestamp
----@param operationBatch SBJ__ReconTriggeredOperationBatch Reconnaissance-triggered operation batch
----@param windowSec number Observation window duration in seconds
+---@param currentTime integer
+---@param operationBatch SBJ__ReconTriggeredOperationBatch
+---@param windowSec number
 ---@return string # Observation state from OBSERVATION_STATE
 local function evaluateObservationWindow(currentTime, operationBatch, windowSec)
   local triggerTime = Utils.parseDatetimeToTimestamp(operationBatch.time) + (operationBatch.delay or 0)
@@ -164,9 +164,9 @@ end
 
 ---Append a batch of operations unlocked by one completed reconnaissance entry
 ---The batch is stamped with the entry's end time and type; builders label rows with type@time.
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance; mutated
----@param reconEntry SBJ__ReconQueueEntry Queue entry whose completion unlocked the operations
----@param operations SBJ__Operation[] Operations to execute once the observation window opens
+---@param batches SBJ__ReconTriggeredOperationBatch[]
+---@param reconEntry SBJ__ReconQueueEntry
+---@param operations SBJ__Operation[]
 function OperationBatch.add(batches, reconEntry, operations)
   table.insert(batches, {
     time = reconEntry.endTime,
@@ -186,8 +186,8 @@ end
 ---retryable reason keeps it pending inside the window, anything else drops it from its
 ---batch so OperationScheduler re-opens the same wave instead of advancing past it.
 ---Operations not yet due are skipped silently and produce no entry.
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance; mutated
----@param operationType SBJ__OperationType Operation type to process
+---@param batches SBJ__ReconTriggeredOperationBatch[]
+---@param operationType SBJ__OperationType
 ---@param params SBJ__OperationBatchRunParams Tick inputs and the builder's insertion attempt
 ---@return SBJ__OperationBatchRunResult # Whether anything executed, plus one entry per attempted operation
 function OperationBatch.process(batches, operationType, params)
@@ -241,8 +241,8 @@ end
 -- ============================================================================
 
 ---Check whether the exact template name is already in the batches, executed or not
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param templateName string Exact template name to match
+---@param batches SBJ__ReconTriggeredOperationBatch[]
+---@param templateName string
 ---@param operationType string Operation type ("air" or "ground")
 ---@return boolean # True when the operation has been scheduled at some point
 function OperationBatch.isScheduled(batches, templateName, operationType)
@@ -252,8 +252,8 @@ function OperationBatch.isScheduled(batches, templateName, operationType)
 end
 
 ---Check whether the exact template name is scheduled but has not executed yet
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@param templateName string Exact template name to match
+---@param batches SBJ__ReconTriggeredOperationBatch[]
+---@param templateName string
 ---@param operationType string Operation type ("air" or "ground")
 ---@return boolean # True when a matching unexecuted operation is already queued
 function OperationBatch.isPending(batches, templateName, operationType)
@@ -264,7 +264,7 @@ end
 
 ---Find the highest-numbered executed operation of a numbered series
 ---Ties on wave number fall back to the later batch time.
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@param batches SBJ__ReconTriggeredOperationBatch[]
 ---@param seriesPrefix string Template name prefix ending with "/", e.g. "AIR/STRIKE/AB/W/"
 ---@param operationType string Operation type ("air" or "ground")
 ---@return SBJ__Operation|nil # Latest executed operation, or nil when the series has none
@@ -313,7 +313,7 @@ end
 
 ---Snapshot the most recent batch's operations by type and the next batch time
 ---Selects by elapsed batch time only; execution status is deliberately not consulted.
----@param batches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
+---@param batches SBJ__ReconTriggeredOperationBatch[]
 ---@return SBJ__OperationBatchSnapshot # Operations classified by type, next batch time, and most recent batch time
 function OperationBatch.findMostRecentSnapshot(batches)
   ---@type SBJ__OperationBatchSnapshot

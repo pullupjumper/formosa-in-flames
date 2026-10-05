@@ -5,8 +5,8 @@ local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = {}
 
 ---Find the area where the unit is located within RL areas
----@param unit CMO__Unit Unit object
----@param operationalArea SBJ__OperationalArea Position information table
+---@param unit CMO__Unit
+---@param operationalArea SBJ__OperationalArea
 ---@return string[]|nil # Area reference points or nil
 function Meeting.findUnitArea(unit, operationalArea)
   for _, pos in ipairs(operationalArea.RL) do
@@ -19,8 +19,8 @@ function Meeting.findUnitArea(unit, operationalArea)
 end
 
 ---Check if a unit state is valid for meeting in the given mode
----@param state integer Unit state
----@param isAuto boolean Whether in automatic mode
+---@param state integer
+---@param isAuto boolean
 ---@return boolean # Whether the state allows meeting
 local function isValidStateForMeeting(state, isAuto)
   if not isAuto then
@@ -30,8 +30,8 @@ local function isValidStateForMeeting(state, isAuto)
 end
 
 ---Resolve the firing/resupply context pair from either end's unit name
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unitName string Name of the triggering unit (firing or resupply)
+---@param systemCtx SBJ__MissileSystemContext
+---@param unitName string
 ---@return SBJ__FiringUnitContext|nil firingUnitCtx Firing unit context of the pair
 ---@return SBJ__ResupplyUnitContext|nil resupplyUnitCtx Resupply unit context of the pair
 local function resolvePair(systemCtx, unitName)
@@ -53,8 +53,8 @@ local function resolvePair(systemCtx, unitName)
 end
 
 ---Resolve the CMO unit for a context, reusing the triggering unit when names match
----@param unitCtx SBJ__UnitBase Context with a name field
----@param triggeringUnit CMO__Unit Unit that triggered the event
+---@param unitCtx SBJ__UnitBase
+---@param triggeringUnit CMO__Unit
 ---@return CMO__Unit|nil # CMO unit or nil if lookup fails
 local function resolveCmoUnit(unitCtx, triggeringUnit)
   if unitCtx.name == triggeringUnit.name then
@@ -64,9 +64,9 @@ local function resolveCmoUnit(unitCtx, triggeringUnit)
 end
 
 ---Check if firing unit and its paired resupply unit have met in a shared RL area
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Triggering unit (either firing or resupply)
----@param isAuto boolean Whether the run is automatic
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
+---@param isAuto boolean
 ---@return boolean hasMet Whether the pair has met with reload required
 ---@return SBJ__FiringUnitContext|nil firingUnitCtx Firing unit context targeted for reload
 function Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
@@ -100,9 +100,9 @@ function Meeting.hasMetResupplyUnit(systemCtx, unit, isAuto)
 end
 
 ---Check if resupply unit has met with ammunition depot in a shared AHA
----@param systemCtx SBJ__MissileSystemContext Missile system context
----@param unit CMO__Unit Unit to check
----@param isAuto boolean Whether the run is automatic
+---@param systemCtx SBJ__MissileSystemContext
+---@param unit CMO__Unit
+---@param isAuto boolean
 ---@return boolean hasMet Whether units have met
 ---@return SBJ__ResupplyUnitContext|nil resupplyUnitCtx The matched resupply unit context
 function Meeting.hasMetAmmoDepot(systemCtx, unit, isAuto)

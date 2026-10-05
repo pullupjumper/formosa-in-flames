@@ -21,8 +21,8 @@ local ARRIVED_PHASES = {
 }
 
 ---Find an operation descriptor by zone name
----@param operations SBJ__AmphibiousOperationDescriptor[] Operation descriptors to search
----@param name string Zone name to match
+---@param operations SBJ__AmphibiousOperationDescriptor[]
+---@param name string
 ---@return SBJ__AmphibiousOperationDescriptor|nil # Matched descriptor, or nil if not found
 local function findOperationByName(operations, name)
   for _, op in ipairs(operations) do
@@ -32,10 +32,10 @@ local function findOperationByName(operations, name)
 end
 
 ---Handle temporary Taoyuan-only loading and reconnaissance setup
----@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param currentTime number Current scenario time in seconds
+---@param config SBJ__Config
+---@param landingState SBJ__LandingOpsState
+---@param zone SBJ__OperationalZoneDescriptor
+---@param currentTime number
 local function processTaoyuanTemporarySetup(config, landingState, zone, currentTime)
   if zone.name ~= "Taoyuan" then
     return
@@ -46,9 +46,9 @@ local function processTaoyuanTemporarySetup(config, landingState, zone, currentT
 end
 
 ---Process a single operational zone through all amphibious phases
----@param tickCtx SBJ__LandingTickContext Inputs shared by every phase in this tick
----@param zone SBJ__OperationalZoneDescriptor Operational zone descriptor
----@param operation SBJ__AmphibiousOperationDescriptor Operation descriptor for the zone
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param operation SBJ__AmphibiousOperationDescriptor
 local function processZone(tickCtx, zone, operation)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local contacts, currentTime, filteredShips = tickCtx.contacts, tickCtx.currentTime, tickCtx.filteredShips
@@ -108,7 +108,7 @@ local function processZone(tickCtx, zone, operation)
 end
 
 ---Handle periodic cargo retransfer for zones with active airlanding missions
----@param tickCtx SBJ__LandingTickContext Inputs shared by every phase in this tick
+---@param tickCtx SBJ__LandingTickContext
 local function processCargoRetransfer(tickCtx)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local currentTime, filteredShips = tickCtx.currentTime, tickCtx.filteredShips
@@ -127,8 +127,8 @@ local function processCargoRetransfer(tickCtx)
 end
 
 ---Check whether all configured operational zones have reached staging waters
----@param config SBJ__Config Global configuration table
----@param amphibOps SBJ__AmphibOpsContext Amphibious operations context
+---@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsContext
 ---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
 local function hasAllZonesArrived(config, amphibOps)
   for _, zone in ipairs(config.red.amphibOps.operationalZones) do
@@ -144,8 +144,8 @@ end
 ---Hold engages when ammo drops below threshold while at least one zone has not yet arrived;
 ---hold releases unconditionally once every zone reaches WAITING_ASSAULT or later (phase machine
 ---is monotonic, so the release latches naturally).
----@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
+---@param config SBJ__Config
+---@param landingState SBJ__LandingOpsState
 local function evaluateFireSupportGate(config, landingState)
   local amphib = landingState.amphibOps
   local arrived = hasAllZonesArrived(config, amphib)
@@ -180,9 +180,9 @@ local function evaluateFireSupportGate(config, landingState)
 end
 
 ---Process all landing operation phases for the current event tick
----@param config SBJ__Config Global configuration table
----@param landingState SBJ__LandingOpsState Amphibious, recon, and ground force slices
----@param params SBJ__LandingTickParams Contacts, current time and ships for this tick
+---@param config SBJ__Config
+---@param landingState SBJ__LandingOpsState
+---@param params SBJ__LandingTickParams
 function Coordinator.process(config, landingState, params)
   ---@type SBJ__LandingTickContext
   local tickCtx = {

@@ -108,7 +108,7 @@ end
 
 ---Format a single value for key=value output
 ---Collapses whitespace and quotes the value when it would break field parsing.
----@param value any Value to format
+---@param value any
 ---@return string # Field value, quoted only when required
 local function formatFieldValue(value)
   if type(value) == "boolean" then
@@ -126,7 +126,7 @@ end
 
 ---Rank a field key into an ordering tier
 ---Lead fields first, unlisted fields alphabetically, outcome fields last.
----@param key string Field key
+---@param key string
 ---@return integer tier Ordering tier, lower sorts first
 ---@return integer|nil rank Rank inside the tier, nil for unlisted fields
 local function getFieldTier(key)
@@ -140,8 +140,8 @@ local function getFieldTier(key)
 end
 
 ---Compare two field keys by tier, then rank, then alphabetically
----@param left string First field key
----@param right string Second field key
+---@param left string
+---@param right string
 ---@return boolean # True when left sorts before right
 local function compareFieldKeys(left, right)
   local leftTier, leftRank = getFieldTier(left)
@@ -207,7 +207,7 @@ end
 ---Check whether a batch of rows contains a failure
 ---Callers that report success through their return value derive the answer from
 ---the rows instead of carrying a flag that could drift from them.
----@param rows SBJ__LogResult[] Rows collected during a pass
+---@param rows SBJ__LogResult[]
 ---@return boolean # True when at least one row is tagged FAIL
 function LogFormat.hasFailure(rows)
   for _, row in ipairs(rows) do
@@ -226,8 +226,8 @@ end
 ---Format a single report row
 ---Tags are padded so the field columns line up for the common statuses.
 ---@param tag string Status tag with or without square brackets
----@param fields table<string, any> Field values keyed by field name
----@param indent string Leading whitespace establishing the nesting level
+---@param fields table<string, any>
+---@param indent string
 ---@return string # Formatted row
 local function formatRow(tag, fields, indent)
   return string.format("%s%-6s %s", indent, "[" .. normalizeTag(tag) .. "]", LogFormat.fields(fields))
@@ -237,7 +237,7 @@ end
 ---Carries no indent: report rows nest under a header, a lone event does not.
 ---The scope belongs in fields like any other key.
 ---@param tag string Status tag with or without square brackets
----@param fields table<string, any> Field values keyed by field name
+---@param fields table<string, any>
 ---@return string # Formatted row
 function LogFormat.line(tag, fields)
   return formatRow(tag, fields, "")
@@ -245,7 +245,7 @@ end
 
 ---Format the non-zero status counts for a report header
 ---Detail rows are excluded, so total counts the items the pass handled.
----@param rows SBJ__LogResult[] Parent rows routed to one sink
+---@param rows SBJ__LogResult[]
 ---@return string # Rollup fragment such as "total=2 ok=1 skip=1"
 local function formatRollup(rows)
   local counts = {}
@@ -265,9 +265,9 @@ local function formatRollup(rows)
 end
 
 ---Render one report sink into its header, rows and nested detail rows
----@param scope string Scope label
----@param action string Action description
----@param rows SBJ__LogResult[] Parent rows routed to this sink
+---@param scope string
+---@param action string
+---@param rows SBJ__LogResult[]
 ---@return string # Formatted section
 local function formatSection(scope, action, rows)
   local lines = { string.format("%s: %s | %s", scope, action, formatRollup(rows)) }
@@ -288,7 +288,7 @@ end
 ---and stays silent when a sink has nothing to report.
 ---@param logTag string Module tag from constants.TAGS used for the info log
 ---@param scope string Scope label such as "dynamicAirOperations" or "zone=Taoyuan"
----@param action string Action description shared by both sinks
+---@param action string
 ---@return SBJ__LogReport # Collector accepting rows until emit
 function LogFormat.report(logTag, scope, action)
   local rows = {}
@@ -296,7 +296,7 @@ function LogFormat.report(logTag, scope, action)
 
   ---Buffer one row plus the detail rows nested under it
   ---@param tag string Status tag with or without square brackets
-  ---@param fields table<string, any>|nil Field values keyed by field name
+  ---@param fields table<string, any>|nil
   ---@param details? SBJ__LogResult[] Rows indented under this one, nil when there are none
   function report.add(tag, fields, details)
     table.insert(rows, { tag = tag, fields = fields or {}, details = details })

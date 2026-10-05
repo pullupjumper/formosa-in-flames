@@ -46,7 +46,7 @@ local C2_KEYS = {
 ---@cast C2_KEYS table<string, SBJ__C2UnitKey>
 
 ---Disable units under C2 node by setting them out of communications
----@param c2Ctx SBJ__C2Context The C2 context containing the units to disable
+---@param c2Ctx SBJ__C2Context
 ---@param type SBJ__C2UnitKey Unit type to disable ('radar' or 'sam')
 local function disableUnitsUnderC2Node(c2Ctx, type)
   local ctxMap = c2Ctx[type]
@@ -67,35 +67,35 @@ local function disableUnitsUnderC2Node(c2Ctx, type)
 end
 
 ---Returns whether the given DBID corresponds to a PLA SAM unit
----@param dbid number The DBID to check
+---@param dbid number
 ---@return boolean Whether the DBID corresponds to a PLA SAM unit
 local function isPLASAM(dbid)
   return PLA_SAM_DBIDS[dbid]
 end
 
 ---Returns whether the given DBID corresponds to a radar unit
----@param dbid number The DBID to check
+---@param dbid number
 ---@return boolean Whether the DBID corresponds to a radar unit
 local function isPLARadar(dbid)
   return PLA_RADAR_DBIDS[dbid]
 end
 
 ---Returns whether the given DBID corresponds to a MRADS unit
----@param dbid number The DBID to check
+---@param dbid number
 ---@return boolean Whether the DBID corresponds to a MRADS unit
 local function isMRADS(dbid)
   return BLUE_MRAD_DBIDS[dbid]
 end
 
 ---Returns whether the given DBID corresponds to a Taiwan radar unit
----@param dbid number The DBID to check
+---@param dbid number
 ---@return boolean Whether the DBID corresponds to a Taiwan radar unit
 local function isBlueRadar(dbid)
   return BLUE_RADAR_DBIDS[dbid]
 end
 
 ---Returns whether the given DBID corresponds to a Taiwan SAM unit
----@param dbid number The DBID to check
+---@param dbid number
 ---@return boolean Whether the DBID corresponds to a Taiwan SAM unit
 local function isBlueSAM(dbid)
   return BLUE_SAM_DBIDS[dbid]
@@ -103,7 +103,7 @@ end
 
 ---Apply the control panel's weapons control choice to each named SAM unit
 ---Weapons free sets WCS tight and wakes emissions on threat; otherwise WCS hold and emissions stay asleep.
----@param entries SBJ__SamDoctrineEntry[] SAM units with the weapons control status the player chose
+---@param entries SBJ__SamDoctrineEntry[]
 function IntegratedAirDefenseSystem.setSamDoctrine(entries)
   for _, entry in ipairs(entries) do
     local unit = GameApi.ScenEdit_GetUnit(entry.guid)
@@ -121,12 +121,11 @@ function IntegratedAirDefenseSystem.setSamDoctrine(entries)
 end
 
 ---Process command and control disruption when C2 node is destroyed
----@param saveData SBJ__SaveData Persistent save data; the C2 node's side IADS slice is mutated
----@param c2 CMO__Unit The destroyed command and control node unit
+---@param saveData SBJ__SaveData
+---@param c2 CMO__Unit
 function IntegratedAirDefenseSystem.processC2Disruption(saveData, c2)
   local iadsCtx = PersistentState.iads(saveData, c2.side)
 
-  -- Check China C2 nodes
   if iadsCtx.c2 and iadsCtx.c2[c2.guid] then
     disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], C2_KEYS.RADAR)
     disableUnitsUnderC2Node(iadsCtx.c2[c2.guid], C2_KEYS.SAM)
@@ -134,7 +133,6 @@ function IntegratedAirDefenseSystem.processC2Disruption(saveData, c2)
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s C2 is destroyed")
   end
 
-  -- Check Taiwan ROCC nodes
   if iadsCtx.rocc and iadsCtx.rocc[c2.guid] then
     disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], C2_KEYS.RADAR)
     disableUnitsUnderC2Node(iadsCtx.rocc[c2.guid], C2_KEYS.SAM)
@@ -142,7 +140,6 @@ function IntegratedAirDefenseSystem.processC2Disruption(saveData, c2)
     Logger.log(constants.TAGS.INTEGRATED_AIR_DEFENSE_SYSTEM, c2.name .. "'s ROCC is destroyed")
   end
 
-  -- Check Taiwan TAAOC nodes
   if iadsCtx.taaoc and iadsCtx.taaoc[c2.guid] then
     disableUnitsUnderC2Node(iadsCtx.taaoc[c2.guid], C2_KEYS.SAM)
     iadsCtx.taaoc[c2.guid] = nil
@@ -153,9 +150,8 @@ end
 ---Remove destroyed unit from IADS tracking by clearing its data from C2 context
 ---@param c2TypeCtx table<string, SBJ__C2Context> C2 type context (e.g., IADSContext.c2, IADSContext.rocc, or IADSContext.taaoc)
 ---@param type SBJ__C2UnitKey Unit type ('radar' or 'sam')
----@param destroyedUnit CMO__Unit The destroyed radar or SAM unit to remove from tracking
+---@param destroyedUnit CMO__Unit
 local function removeDestroyedUnitFromC2(c2TypeCtx, type, destroyedUnit)
-  -- Iterate through all C2 nodes to check if destroyed unit is within their coverage areas
   for _, ctx in pairs(c2TypeCtx) do
     for _, area in pairs(ctx.areas) do
       if destroyedUnit:inArea(area) and c2TypeCtx[ctx.guid] then
@@ -167,7 +163,7 @@ local function removeDestroyedUnitFromC2(c2TypeCtx, type, destroyedUnit)
 end
 
 ---Activate China's nearest backup radar when a radar is destroyed to maintain coverage
----@param config SBJ__Config Configuration parameters containing the radar distance threshold
+---@param config SBJ__Config
 ---@param destroyedRadar CMO__Unit The destroyed radar whose position is used as reference point for finding nearest backup
 local function activateNearestRadar(config, destroyedRadar)
   local sideUnits = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
@@ -227,9 +223,9 @@ local function activateNearestRadar(config, destroyedRadar)
 end
 
 ---Stop tracking a destroyed radar or SAM under its C2 node; a lost China radar or SAM wakes the nearest backup radar
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the unit's side IADS slice is mutated
----@param unit CMO__Unit The destroyed unit
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param unit CMO__Unit
 ---@return boolean handled Whether the unit was an IADS radar or SAM
 function IntegratedAirDefenseSystem.processUnitDestruction(config, saveData, unit)
   local iadsCtx = PersistentState.iads(saveData, unit.side)
@@ -255,7 +251,7 @@ function IntegratedAirDefenseSystem.processUnitDestruction(config, saveData, uni
 end
 
 ---Add C2 facility units at random positions within configured areas
----@param iadsConfig SBJ__IADSConfig IADS configuration containing C2 settings, facility DBIDs, and deployment parameters
+---@param iadsConfig SBJ__IADSConfig
 local function addC2Facilities(iadsConfig)
   for _, setting in ipairs(iadsConfig.c2Deployments) do
     local units = GameUtils.createRandomUnits({
@@ -279,8 +275,8 @@ local function addC2Facilities(iadsConfig)
 end
 
 ---Initialize C2 facilities context for China's IADS with radar and SAM associations
----@param iadsConfig SBJ__IADSConfig IADS-specific configuration with C2 settings and deployment areas
----@param iadsCtx SBJ__IADSContext IADS context object that will be populated with C2 node data and associated units
+---@param iadsConfig SBJ__IADSConfig
+---@param iadsCtx SBJ__IADSContext
 local function initC2FacilitiesContext(iadsConfig, iadsCtx)
   local sideUnits = GameApi.VP_GetSide({ name = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
   iadsCtx.c2 = {}
@@ -321,7 +317,6 @@ local function initC2FacilitiesContext(iadsConfig, iadsCtx)
     end
   end
 
-  -- Initialize SAM and radar systems
   for _, sideUnit in ipairs(sideUnits) do
     local actualUnit = GameApi.ScenEdit_GetUnit(sideUnit.guid)
 
@@ -362,9 +357,9 @@ local function initC2FacilitiesContext(iadsConfig, iadsCtx)
 end
 
 ---Initialize C2 context for a specific C2 facility unit
----@param c2Ctx table<string, SBJ__C2Context> C2 context mapping to be populated with C2 node data
----@param c2Descriptor SBJ__C2Descriptor C2 descriptor containing name and deployment areas
----@param c2GUID string GUID of the C2 facility unit being initialized
+---@param c2Ctx table<string, SBJ__C2Context>
+---@param c2Descriptor SBJ__C2Descriptor
+---@param c2GUID string
 ---@param c2Type string C2 type ('c2', 'rocc', or 'taaoc') determining which sub-tables to initialize
 local function initC2Context(c2Ctx, c2Descriptor, c2GUID, c2Type)
   c2Ctx[c2GUID] = {
@@ -381,8 +376,8 @@ local function initC2Context(c2Ctx, c2Descriptor, c2GUID, c2Type)
 end
 
 ---Initialize command and control contexts for Taiwan's ROCC and TAAOC systems
----@param iadsConfig SBJ__IADSFactionConfig IADS configuration for faction
----@param iadsCtx SBJ__IADSContext IADS context object containing pre-configured ROCC and TAAOC nodes to populate with units
+---@param iadsConfig SBJ__IADSFactionConfig
+---@param iadsCtx SBJ__IADSContext
 local function initIADSContexts(iadsConfig, iadsCtx)
   local sideUnits = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.FACILITY)
 
@@ -460,7 +455,7 @@ local function initIADSContexts(iadsConfig, iadsCtx)
 end
 
 ---Remove C2 facility units from scenario by deleting units matching configured DBIDs
----@param iadsConfig SBJ__IADSConfig IADS configuration containing C2 facility DBIDs to identify units for removal
+---@param iadsConfig SBJ__IADSConfig
 local function removeC2Facilities(iadsConfig)
   local sideUnits = GameApi.VP_GetSide({ name = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.FACILITY)
   local removedCount = 0
@@ -487,8 +482,8 @@ local function removeC2Facilities(iadsConfig)
 end
 
 ---Replace China's C2 facilities with fresh ones and rebuild the C2 node contexts over them
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's IADS C2 map is rebuilt
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function IntegratedAirDefenseSystem.deployC2Facilities(config, saveData)
   local iadsConfig = config.red.iads
 
@@ -499,9 +494,9 @@ end
 
 ---Build a side's IADS node contexts when its IADS is enabled
 ---Taiwan links SAMs and radars to its ROCC/TAAOC nodes; China picks C2 facilities as its nodes.
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; the side's IADS slice is filled
----@param sideName string Side name (China or Taiwan)
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string
 function IntegratedAirDefenseSystem.initSide(config, saveData, sideName)
   local iadsCtx = PersistentState.iads(saveData, sideName)
   if not iadsCtx.enabled then

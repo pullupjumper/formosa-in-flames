@@ -56,15 +56,15 @@ end
 
 ---Whether the side's one-time play-mode deployment was already submitted
 ---@param state SBJ__SaveData
----@param sideName string China or Taiwan
+---@param sideName string
 ---@return boolean
 function PersistentState.deploymentLocked(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].deploymentLocked == true
 end
 
 ---Mark the side's deployment as submitted so the control panel refuses another one
----@param state SBJ__SaveData Mutated
----@param sideName string China or Taiwan
+---@param state SBJ__SaveData
+---@param sideName string
 function PersistentState.lockDeployment(state, sideName)
   state[GameUtils.getCachedSideConfig(sideName).field].deploymentLocked = true
 end
@@ -92,7 +92,7 @@ end
 
 ---Runway repair slice for a side
 ---@param state SBJ__SaveData
----@param sideName string China or Taiwan
+---@param sideName string
 ---@return SBJ__RunwayRepairmentContext
 function PersistentState.runwayRepair(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].repairRunway
@@ -100,7 +100,7 @@ end
 
 ---Aircraft slice (AC and AEW) for a side
 ---@param state SBJ__SaveData
----@param sideName string China or Taiwan
+---@param sideName string
 ---@return SBJ__AircraftSliceContext
 function PersistentState.aircraft(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].air
@@ -108,7 +108,7 @@ end
 
 ---Ground force (missile system) slice for a side
 ---@param state SBJ__SaveData
----@param sideName string China or Taiwan
+---@param sideName string
 ---@return SBJ__GroundContext|SBJ__StrikingGroundContext
 function PersistentState.ground(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].ground
@@ -116,7 +116,7 @@ end
 
 ---SIGINT slice for a collecting side
 ---@param state SBJ__SaveData
----@param sideName string China or US
+---@param sideName string
 ---@return SBJ__SIGINTContext
 function PersistentState.sigint(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].sigint
@@ -124,7 +124,7 @@ end
 
 ---Enemy unit context groups a SIGINT collector monitors
 ---@param state SBJ__SaveData
----@param collectorSide string China or US
+---@param collectorSide string
 ---@return table<string, SBJ__FiringUnitContext|SBJ__C2Context>[]
 function PersistentState.sigintEmitters(state, collectorSide)
   local targets = SIGINT_TARGETS[collectorSide]
@@ -143,7 +143,7 @@ end
 
 ---IADS slice for a side
 ---@param state SBJ__SaveData
----@param sideName string China or Taiwan
+---@param sideName string
 ---@return SBJ__IADSContext
 function PersistentState.iads(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].iads

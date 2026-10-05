@@ -63,7 +63,7 @@ local jammingStrategies = {
 -- ============================================================================
 
 ---Get distance-based modifier category
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication jamming parameters
+---@param commsJammingConfig SBJ__CommsJammingConfig
 ---@param distance number Distance in nautical miles
 ---@return string|nil # Distance category ('close', 'medium', 'far', 'distant') or nil if out of range
 local function getDistanceCategory(commsJammingConfig, distance)
@@ -84,9 +84,9 @@ end
 
 
 ---Calculate jammer impact on communication modifier
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters
----@param jammerMap table<string, SBJ__AircraftContext> Jammer contexts from saveData
----@param affectedUnitGUID string GUID of the affected unit
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param jammerMap table<string, SBJ__AircraftContext>
+---@param affectedUnitGUID string
 ---@return number # Jammer impact on communication modifier
 local function calculateJammerImpact(commsJammingConfig, jammerMap, affectedUnitGUID)
   local impact = 0
@@ -105,9 +105,9 @@ end
 
 
 ---Calculate AEW support contribution to communication modifier
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing AEW support parameters
----@param aewContextMap table<string, SBJ__AircraftContext> AEW aircraft contexts
----@param affectedUnitGUID string GUID of the affected unit
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param aewContextMap table<string, SBJ__AircraftContext>
+---@param affectedUnitGUID string
 ---@return number # AEW support contribution
 local function calculateAEWSupport(commsJammingConfig, aewContextMap, affectedUnitGUID)
   local support = 0
@@ -133,9 +133,9 @@ end
 
 ---Calculate ROCC support contribution to communication modifier
 ---Only the first valid ROCC is used for calculation
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing ROCC support parameters
----@param roccContextMap table<string, SBJ__C2Context> ROCC C2 contexts
----@param affectedUnitGUID string GUID of the affected unit
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param roccContextMap table<string, SBJ__C2Context>
+---@param affectedUnitGUID string
 ---@return number # ROCC support contribution
 local function calculateROCCSupport(commsJammingConfig, roccContextMap, affectedUnitGUID)
   for _, C2Ctx in pairs(roccContextMap) do
@@ -159,9 +159,9 @@ end
 
 
 ---Calculate communication modifier for affected unit based on jammers and support systems
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication jamming parameters
----@param jammingState SBJ__CommsJammingState Jammer, AEW, and IADS contexts
----@param affectedUnitGUID string GUID of the unit whose communication level is being calculated
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param jammingState SBJ__CommsJammingState
+---@param affectedUnitGUID string
 ---@return integer # The calculated communication modifier
 local function getCommsLevel(commsJammingConfig, jammingState, affectedUnitGUID)
   local commModifier = commsJammingConfig.initialComms
@@ -178,7 +178,7 @@ end
 -- ============================================================================
 
 ---Check if a number is a valid (non-NaN) number
----@param value number The number to check
+---@param value number
 ---@return boolean # True if the number is valid
 local function isValidNumber(value)
   return value == value
@@ -186,7 +186,7 @@ end
 
 
 ---Calculate omnidirectional jamming effectiveness based on distance
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing effectiveness formula
+---@param commsJammingConfig SBJ__CommsJammingConfig
 ---@param distance number Distance between jammer and target in nautical miles
 ---@return number|nil # Effectiveness value (0-1) or nil if out of effective range
 local function calculateOmnidirectionalEffectiveness(commsJammingConfig, distance)
@@ -207,8 +207,8 @@ end
 
 
 ---Calculate directional jamming effectiveness based on bearing alignment
----@param jammer CMO__Unit The jamming aircraft unit
----@param targetGUID string GUID of the target unit
+---@param jammer CMO__Unit
+---@param targetGUID string
 ---@param distance number Distance between jammer and target
 ---@return boolean # Whether directional jamming is effective
 local function calculateDirectionalEffectiveness(jammer, targetGUID, distance)
@@ -222,9 +222,9 @@ end
 
 ---Apply jamming state transition to an affected unit
 ---Handles: successful jamming, resistance, cooldown transition, and cooldown recovery
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming time parameters
----@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context
----@param shouldJam boolean Whether the jamming attempt should succeed
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param affectedUnitCtx SBJ__RadarContext
+---@param shouldJam boolean
 ---@return string # JAMMING_RESULT enum value
 local function updateJammingState(commsJammingConfig, affectedUnitCtx, shouldJam)
   if affectedUnitCtx.isOutOfComms ~= false then
@@ -262,9 +262,9 @@ end
 
 
 ---Apply omnidirectional communication jamming effects to a unit with pre-calculated distance
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters
+---@param commsJammingConfig SBJ__CommsJammingConfig
 ---@param entry { unitCtx: SBJ__RadarContext, distance: number } Target unit context with pre-calculated distance
----@param jammer CMO__Unit The jamming aircraft unit
+---@param jammer CMO__Unit
 ---@return string # JAMMING_RESULT enum value
 omnidirectionalJammingWithDistance = function(commsJammingConfig, entry, jammer)
   local effectiveness = calculateOmnidirectionalEffectiveness(commsJammingConfig, entry.distance)
@@ -275,9 +275,9 @@ end
 
 
 ---Apply directional communication jamming effects to a unit with pre-calculated distance
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters
+---@param commsJammingConfig SBJ__CommsJammingConfig
 ---@param entry { unitCtx: SBJ__RadarContext, distance: number } Target unit context with pre-calculated distance
----@param jammer CMO__Unit The jamming aircraft unit
+---@param jammer CMO__Unit
 ---@return string # JAMMING_RESULT enum value
 directionalJammingWithDistance = function(commsJammingConfig, entry, jammer)
   local shouldJam = calculateDirectionalEffectiveness(jammer, entry.unitCtx.guid, entry.distance)
@@ -291,8 +291,8 @@ end
 -- ============================================================================
 
 ---Recover communications for a jammed unit based on recovery time configuration
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing recovery time parameters
----@param affectedUnitCtx SBJ__RadarContext The radar/SAM unit context to recover communications for
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param affectedUnitCtx SBJ__RadarContext
 local function recoverComms(commsJammingConfig, affectedUnitCtx)
   if affectedUnitCtx.isOutOfComms then
     if affectedUnitCtx.outofcomms <= math.random(commsJammingConfig.recoveryTime.min, commsJammingConfig.recoveryTime.max) then
@@ -337,7 +337,7 @@ end
 
 
 ---Collect all SAM and radar units from IADS systems for jamming operations
----@param iadsCtx SBJ__IADSContext IADS context containing ROCC and TAAOC command structures with their managed units
+---@param iadsCtx SBJ__IADSContext
 ---@return table<string, SBJ__RadarContext> unitCtxs Map of unit GUIDs to radar/SAM unit contexts for jamming targets
 ---@return integer unitCount Total number of collected units
 local function findSAMAndRadar(iadsCtx)
@@ -371,7 +371,7 @@ end
 -- ============================================================================
 
 ---Recover communications for all tracked units
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing recovery time parameters
+---@param commsJammingConfig SBJ__CommsJammingConfig
 ---@param unitCtxMap table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
 local function recoverAllComms(commsJammingConfig, unitCtxMap)
   for _, ctx in pairs(unitCtxMap) do
@@ -381,8 +381,8 @@ end
 
 
 ---Process jamming cycle for all jammers against all targets
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing jamming parameters
----@param jammers CMO__Unit[] List of active jammer units
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param jammers CMO__Unit[]
 ---@param unitCtxMap table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
 ---@return integer totalAttempts Total jamming attempts made
 ---@return integer totalJammed Total units processed
@@ -435,8 +435,8 @@ end
 
 
 ---Process aircraft communications quality and trigger RTB for degraded aircraft
----@param commsJammingConfig SBJ__CommsJammingConfig Configuration containing communication parameters
----@param jammingState SBJ__CommsJammingState Jammer, aircraft, AEW, and IADS contexts
+---@param commsJammingConfig SBJ__CommsJammingConfig
+---@param jammingState SBJ__CommsJammingState
 ---@return integer processed Total aircraft processed
 ---@return integer rtbCount Total aircraft ordered RTB
 ---@return SBJ__LogResult[] results RTB detail rows for batch logging
@@ -480,8 +480,8 @@ end
 
 ---Run one China comms jamming tick when comms jamming is enabled
 ---Processes jamming effects on SAM/radar systems and monitors aircraft communication quality
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China jammers, Taiwan IADS and aircraft are mutated
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function CommsJamming.process(config, saveData)
   local jammingState = PersistentState.commsJamming(saveData)
   if not jammingState.enabled then
@@ -511,8 +511,8 @@ function CommsJamming.process(config, saveData)
 end
 
 ---Register China's electronic warfare aircraft as jammers when comms jamming is enabled
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; China's jammer map is filled
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 local function initJammers(config, saveData)
   local jammingState = PersistentState.commsJamming(saveData)
   if not jammingState.enabled then
@@ -545,8 +545,8 @@ end
 
 ---Register Taiwan land-based aircraft as comms jamming targets, splitting AEW from other aircraft
 ---Existing entries are discarded so the registry matches the aircraft currently in play.
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data; Taiwan land-based AC/AEW maps are replaced
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function CommsJamming.updateTargetAircraft(config, saveData)
   local aircraftCtx = PersistentState.aircraft(saveData, constants.SIDES.BLUE)
   local aircraftDefaults = config.red.commsJamming.aircraftDefaults
@@ -591,16 +591,16 @@ function CommsJamming.updateTargetAircraft(config, saveData)
 end
 
 ---Initialize comms jamming state: China jammers and Taiwan target aircraft
----@param config SBJ__Config Global configuration table
----@param saveData SBJ__SaveData Persistent save data
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 function CommsJamming.init(config, saveData)
   initJammers(config, saveData)
   CommsJamming.updateTargetAircraft(config, saveData)
 end
 
 ---Forget a destroyed unit wherever comms jamming tracks it: China jammers, Taiwan aircraft or AEW
----@param saveData SBJ__SaveData Persistent save data; comms jamming slices are mutated
----@param unit CMO__Unit Destroyed unit
+---@param saveData SBJ__SaveData
+---@param unit CMO__Unit
 function CommsJamming.removeDestroyedUnit(saveData, unit)
   local jammingState = PersistentState.commsJamming(saveData)
   local guid = unit.guid

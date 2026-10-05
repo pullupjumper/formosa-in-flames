@@ -55,7 +55,7 @@ local function calculateDistance(lat1, lon1, lat2, lon2)
 end
 
 ---Calculate total path distance and transit time for a route
----@param waypoints CMO__TableOfWaypoints Array of waypoints defining the route
+---@param waypoints CMO__TableOfWaypoints
 ---@param speedKnots number Transit speed in knots
 ---@return number totalDistance Total path distance in nautical miles
 ---@return number totalTime Total transit time in seconds
@@ -85,7 +85,6 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
     totalDistance = totalDistance + distance
   end
 
-  -- Calculate time in seconds
   -- Time = Distance / Speed (in hours), then convert to seconds
   local totalTime = math.floor((totalDistance / speedKnots) * 3600) + 120
 
@@ -93,8 +92,8 @@ function GameUtils.calculatePathDistanceAndTime(waypoints, speedKnots)
 end
 
 ---Generate a random position within a circular area around a center point
----@param xLatitude number|string Center point latitude
----@param xLongitude number|string Center point longitude
+---@param xLatitude number|string
+---@param xLongitude number|string
 ---@param maxRadius number Maximum radius for random positioning (nautical miles)
 ---@return CMO__Location|nil # Random position within the circle, or nil if generation fails
 local function calculateCircularRandomPosition(xLatitude, xLongitude, maxRadius)
@@ -155,8 +154,8 @@ function GameUtils.buildLocations(params)
 end
 
 ---Create a reference point area in the specified shape (circle or square)
----@param position CMO__Location Center position for the area
----@param params SBJ__AreaParams Area configuration (shape, side, distance, etc.)
+---@param position CMO__Location
+---@param params SBJ__AreaParams
 ---@return table<integer, CMO__ReferencePoint>|boolean # Array of reference point names forming the area, or false if creation fails
 function GameUtils.createArea(position, params)
   local side = params.side
@@ -216,7 +215,7 @@ end
 
 ---Check if current scenario time has reached or passed the specified start time
 ---@param time string|number A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
----@param advanceSeconds? number Optional seconds to advance the check time (makes condition trigger earlier)
+---@param advanceSeconds? number
 ---@return boolean # True if current time >= start time (adjusted by advanceSeconds if provided)
 function GameUtils.isAfterStartTime(time, advanceSeconds)
   local result = GameApi.ScenEdit_CurrentTime()
@@ -244,9 +243,9 @@ end
 
 ---Create a new mission with specified parameters and optional EMCON settings
 ---Combines mission creation, configuration, and EMCON setup in a single operation
----@param sideName string Side name that owns the mission
----@param params SBJ__MissionCreationParams Mission name, type and configuration options
----@param opts? SBJ__CreateMissionOpts Optional EMCON settings
+---@param sideName string
+---@param params SBJ__MissionCreationParams
+---@param opts? SBJ__CreateMissionOpts
 ---@return CMO__Mission|nil # Created mission object, or nil if any step fails
 function GameUtils.createMission(sideName, params, opts)
   local name = params.name
@@ -279,8 +278,8 @@ end
 
 ---Creates, updates, or removes a "Unit Enters Area" event trigger in the CMO scenario
 ---Sets up event system that executes Lua script when units matching filter enter/exit specified area
----@param params SBJ__UnitEntersAreaEventParams Event name, mode, filter, area and script
----@param opts? SBJ__UnitEntersAreaEventOpts Exit / repeatable / active flags
+---@param params SBJ__UnitEntersAreaEventParams
+---@param opts? SBJ__UnitEntersAreaEventOpts
 ---@return boolean # True if operation succeeded, false if any API call failed
 function GameUtils.setUnitEntersAreaEvent(params, opts)
   opts = opts or {}
@@ -291,7 +290,6 @@ function GameUtils.setUnitEntersAreaEvent(params, opts)
   local isActive = opts.isActive ~= false
 
   if mode == "add" then
-    -- Create the trigger component that monitors unit movement
     local result = GameApi.ScenEdit_SetTrigger({
       description = name .. "",
       mode = "add",
@@ -305,7 +303,6 @@ function GameUtils.setUnitEntersAreaEvent(params, opts)
       return false
     end
 
-    -- Create the action component that executes the specified Lua script
     local actionResult = GameApi.ScenEdit_SetAction({
       mode = "add",
       type = "LuaScript",
@@ -317,7 +314,6 @@ function GameUtils.setUnitEntersAreaEvent(params, opts)
       return false
     end
 
-    -- Create the event and link the trigger and action together
     GameApi.ScenEdit_SetEvent(name, { mode = "add", IsRepeatable = isRepeatable, isActive = isActive, isShown = true })
     GameApi.ScenEdit_SetEventTrigger(name, { mode = "add", name = name .. "" })
     GameApi.ScenEdit_SetEventAction(name, { mode = "add", name = name .. "" })
@@ -350,8 +346,8 @@ end
 
 ---Attempts to add a unit to the scenario with retry logic and random positioning
 ---Retries with different random positions within circular area up to max attempts if creation fails
----@param params SBJ__TryAddUnitParams Unit name, center position, random radius and DBID
----@param opts? SBJ__TryAddUnitOpts Retry settings
+---@param params SBJ__TryAddUnitParams
+---@param opts? SBJ__TryAddUnitOpts
 ---@return CMO__Unit|nil unit The created unit object if successful, nil if all attempts failed
 ---@return CMO__Location|nil point The final position where unit was placed, nil if creation failed
 function GameUtils.tryAddUnit(params, opts)
@@ -380,8 +376,8 @@ function GameUtils.tryAddUnit(params, opts)
 end
 
 ---Attempt to create a single unit (with retry mechanism)
----@param unitDescriptor CMO__SetUnitDescriptor Unit descriptor
----@param maxAttempts integer|nil Maximum number of attempts
+---@param unitDescriptor CMO__SetUnitDescriptor
+---@param maxAttempts integer|nil
 ---@return CMO__Unit|nil # Created unit if successful, nil if all attempts failed
 function GameUtils.tryCreateUnit(unitDescriptor, maxAttempts)
   maxAttempts = maxAttempts or UNIT_CREATION.MAX_ATTEMPTS
@@ -401,7 +397,7 @@ function GameUtils.tryCreateUnit(unitDescriptor, maxAttempts)
 end
 
 ---Create units at random positions
----@param descriptor SBJ__RandomUnitsDescriptor Configuration parameters
+---@param descriptor SBJ__RandomUnitsDescriptor
 ---@return CMO__Unit|CMO__Unit[] # Created units (single unit if count=1, array otherwise)
 function GameUtils.createRandomUnits(descriptor)
   local units = {}
@@ -450,7 +446,7 @@ end
 ---Extract unit type from unit name and convert to subordinate echelon
 ---Searches through comma-separated parts sequentially until unit type is found
 ---Converts to subordinate echelon: Bde->Bn, Bn->Coy, Coy/Sqn->Plt
----@param unitName string Unit name
+---@param unitName string
 ---@return string|nil # Converted unit type (Bn/Coy/Plt), or nil if not found
 function GameUtils.resolveUnitType(unitName)
   -- Iterate through each comma-separated part
@@ -497,7 +493,7 @@ function GameUtils.formatOrdinalUnitName(num, unitType, suffix)
 end
 
 ---Converts a zone to an array of reference points
----@param zone CMO__Zone|CMO__TriggerResult Zone table
+---@param zone CMO__Zone|CMO__TriggerResult
 ---@return string[] # Array of reference points
 function GameUtils.normalizeToRPArray(zone)
   local rps = {}
@@ -511,8 +507,8 @@ function GameUtils.normalizeToRPArray(zone)
 end
 
 ---Check whether two RP arrays contain the same string items regardless of order
----@param rpArray1 string[] First RP array
----@param rpArray2 string[] Second RP array
+---@param rpArray1 string[]
+---@param rpArray2 string[]
 ---@return boolean # True if both arrays have identical length and matching items
 function GameUtils.isSameRPArray(rpArray1, rpArray2)
   if #rpArray1 ~= #rpArray2 then
@@ -541,8 +537,8 @@ function GameUtils.isSameRPArray(rpArray1, rpArray2)
 end
 
 ---Remove all reference points from a zone
----@param sideName string Side name for deletion context
----@param zone CMO__Zone Zone object containing reference points
+---@param sideName string
+---@param zone CMO__Zone
 ---@return boolean # Whether all reference points were successfully removed
 function GameUtils.removeRPs(sideName, zone)
   local rps = GameUtils.normalizeToRPArray(zone)
@@ -557,9 +553,9 @@ end
 
 ---Check if point is within defined area using reference points
 ---Converts reference point names to polygon coordinates and performs point-in-polygon test
----@param sideName string Side name (used to retrieve reference points)
----@param point CMO__Location|nil Point to check
----@param area string[] Array of reference point names defining the polygon boundary
+---@param sideName string
+---@param point CMO__Location|nil
+---@param area string[]
 ---@return boolean # True if point is inside the area, false otherwise
 function GameUtils.isInArea(sideName, point, area)
   local minPolygonPoints = 3
@@ -586,8 +582,8 @@ function GameUtils.isInArea(sideName, point, area)
 end
 
 ---Get weapon information for a unit
----@param unit CMO__Unit The unit to check
----@param weaponDBID number|nil Specific weapon DBID to look for
+---@param unit CMO__Unit
+---@param weaponDBID number|nil
 ---@return {weaponDBID: number, mountDBID: number, availableWeapons: integer, maxWeapons: integer, assignedWeapons: integer} # Weapon information
 function GameUtils.getWeaponInfo(unit, weaponDBID)
   local availableWeapons = 0

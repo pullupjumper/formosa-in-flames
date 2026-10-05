@@ -5,22 +5,22 @@
 
 ---Display weapon allocation from attacker to target
 ---Supply attacker GUID and contact GUID to see salvos between units
----@param attackerGUID string The GUID of the attacker unit
----@param contactGUID string The GUID of the target contact
----@param attackingSideGUID string The GUID of the attacking side
+---@param attackerGUID string
+---@param contactGUID string
+---@param attackingSideGUID string
 ---@return table<integer, { weapon: integer, qtyFired: integer, shooter: string, target: string, qtyAssigned: integer, weaponName: string }>|nil # Returns a weapon allocation table
 function ScenEdit_WeaponAllocation(attackerGUID, contactGUID, attackingSideGUID) end
 
 ---Create a new flight plan for a mission
----@param sideName string The mission side
----@param missionName string The mission name or GUID
----@param opts CMO__FlightPlanOptions The options for the flight plan
+---@param sideName string
+---@param missionName string
+---@param opts CMO__FlightPlanOptions
 ---@return table<number, any>|nil # Returns all the flights on the mission (currently only returns the first flight, will be fixed in an upcoming release)
 function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 
 ---Get a zone by name or GUID
----@param sideName string The side that owns the zone
----@param zoneName string The zone name or GUID
+---@param sideName string
+---@param zoneName string
 ---@param zoneType number The zone type (constants.ZONE_TYPES)
 ---@return CMO__Zone|nil
 function ScenEdit_GetZone(sideName, zoneName, zoneType) end
@@ -1079,7 +1079,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---Movement parameters for commanding units to a randomly selected position
 ---@class SBJ__MoveToPositionParams: table
 ---@field unitName string Unit name (for messages)
----@field battery CMO__Unit Unit group
+---@field firingUnit CMO__Unit Unit group
 ---@field positions SBJ__Position[] Position array
 ---@field positionType string Position type (RL/HA/AHA/FP)
 ---@field areaName string Operational area name (for messages)
