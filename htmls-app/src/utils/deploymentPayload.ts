@@ -44,7 +44,7 @@ export function fromOperationalArea(
 
   return {
     unitName,
-    category,
+    missileSystemType: category,
     center: calculateCentroid(operationalArea.uShapeVertices),
     openingAngle: 0,
     ahaCenter: calculateCentroid(ammoArea),
@@ -139,7 +139,7 @@ export function toControlPanelResult({
     missileSystems: Array.from(deployedMissileSystems.entries()).map(([key, deployment]) => ({
       key,
       unitname: deployment.unitName,
-      category: deployment.category,
+      missileSystemType: deployment.missileSystemType,
       center: deployment.center,
       openingAngle: deployment.openingAngle,
       tacticalAreas: deployment.tacticalAreas,

@@ -8,8 +8,8 @@ import { buildMissileGroups } from '@/pages/control-panel/missileGroups';
 const MISSILE_SYSTEMS = {
   ascm: {
     firingUnits: {
-      HF3_01: { name: 'HF3 Battery 1' },
-      HF3_02: { name: 'HF3 Battery 2' },
+      HF3_01: { name: 'HF3 Battery 1', missileSystem: 'HF-3' },
+      HF3_02: { name: 'HF3 Battery 2', missileSystem: 'HF-3' },
     },
   },
   // Categories without firing units are injected for their ammunition data only
@@ -27,11 +27,11 @@ describe('buildMissileGroups', () => {
   it('flattens firing units into unit keys and display names', () => {
     const [group] = buildMissileGroups(MISSILE_SYSTEMS, new Map());
 
-    expect(group.category).toBe('ascm');
-    expect(group.weaponName).toBe('ASCM (Hsiung Feng III/100 NM)');
-    expect(group.systemName).toBe('ASCM');
+    expect(group.missileSystemType).toBe('ascm');
+    expect(group.units.map((unit) => unit.missileSystemType)).toEqual(['ASCM', 'ASCM']);
     expect(group.units.map((unit) => unit.unitKey)).toEqual(['ascm_HF3_01', 'ascm_HF3_02']);
     expect(group.units.map((unit) => unit.name)).toEqual(['HF3 Battery 1', 'HF3 Battery 2']);
+    expect(group.units.map((unit) => unit.missileSystem)).toEqual(['HF-3', 'HF-3']);
   });
 
   it('skips categories that carry no firing units', () => {
@@ -48,7 +48,7 @@ describe('buildMissileGroups', () => {
   });
 
   it('falls back to the uppercased category when the weapon is unnamed', () => {
-    const unknown = { xyz: { firingUnits: {} } } as unknown as MissileSystems;
-    expect(buildMissileGroups(unknown, new Map())[0].weaponName).toBe('XYZ');
+    const unknown = { xyz: { firingUnits: { u: { name: 'U' } } } } as unknown as MissileSystems;
+    expect(buildMissileGroups(unknown, new Map())[0].units[0].missileSystemType).toBe('XYZ');
   });
 });

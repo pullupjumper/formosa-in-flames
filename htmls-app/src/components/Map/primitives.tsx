@@ -248,9 +248,9 @@ interface RangeCircleProps {
 }
 
 const RANGE_STYLE: Record<RangeCircleVariant, Omit<L.PathOptions, 'color' | 'fillColor'>> = {
-  range: { fillOpacity: 0.01, weight: 1.5, opacity: 0.25, dashArray: '5, 10' },
-  relocating: { fillOpacity: 0.01, weight: 1.5, opacity: 0.15, dashArray: DASHED },
-  preview: { fillOpacity: 0.05, weight: 2, dashArray: DASHED },
+  range: { fillOpacity: 0.1, weight: 1.5, opacity: 0.25 },
+  relocating: { fillOpacity: 0.1, weight: 1.5, opacity: 0.15, dashArray: DASHED },
+  preview: { fillOpacity: 0.1, weight: 2, dashArray: DASHED },
 };
 
 export function RangeCircle({ center, radiusNm, color, variant = 'range' }: RangeCircleProps) {

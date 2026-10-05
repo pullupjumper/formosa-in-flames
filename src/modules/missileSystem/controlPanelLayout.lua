@@ -49,7 +49,7 @@ local function buildLayout(entry, areaName)
   end
 
   return {
-    category = entry.category,
+    missileSystemType = entry.missileSystemType,
     unitname = entry.unitname,
     operationalArea = operationalArea
   }
@@ -85,6 +85,22 @@ local function resolveVertices(sideName, area)
   return vertices
 end
 
+---@param weaponDBID number | number[]
+---@return number
+local function getWeaponRange(weaponDBID)
+  local id = weaponDBID
+  local dbid
+  if type(id) == "table" then
+    dbid = id[1]
+  else
+    dbid = id
+  end
+  local weaponInfo = GameApi.ScenEdit_QueryDB("weapon", dbid)
+  local weaponRange = tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges
+    .land.max) or 0
+  return weaponRange
+end
+
 ---Build the control panel's missile system rows, with zone names resolved to vertices
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param sideName string
@@ -98,7 +114,9 @@ function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, sideN
     copy.ammunitions = nil
 
     for _, descriptor in pairs(copy.firingUnits) do
+      ---@cast descriptor SBJ__FiringUnitWithWeaponRangeDescriptor
       local operationalArea = descriptor.operationalArea
+      descriptor.weaponRange = getWeaponRange(descriptor.weaponDBID)
 
       for _, attr in ipairs(SETUP_POSITION_TYPES) do
         local positions = operationalArea[attr]

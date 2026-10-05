@@ -3,9 +3,8 @@ import { CircleMarker, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/controlPanel';
+import type { MissileDeployment, MissileSystems, TacticalAreas } from '@/types/controlPanel';
 import type { AreaType, RelocatingArea } from '@/types/deployment';
-import { CONFIG } from '@/constants/controlPanel';
 import { getAreaColor } from '@/constants/deployment';
 import { canInteractArea, getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
@@ -78,6 +77,8 @@ function toPathPositions(waypoints: Coordinate[] | undefined): LatLngExpression[
 interface MissileSystemMarkerProps {
   unitKey: string;
   data: MissileDeployment;
+  /** Weapon range of this unit's firing unit, in NM */
+  rangeNm: number;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
   /** Only the relocatingArea relevant to THIS unit (or null) */
@@ -90,14 +91,14 @@ interface MissileSystemMarkerProps {
 export const MissileSystemMarker = memo(function MissileSystemMarker({
   unitKey,
   data,
+  rangeNm,
   onAreaClick,
   onRotateClick,
   relocatingArea,
   isAnyRelocating = false,
   isRotating,
 }: MissileSystemMarkerProps) {
-  const { unitName, category, tacticalAreas, paths } = data;
-  const rangeNm = CONFIG.WEAPON_RANGES[category] || 100;
+  const { unitName, missileSystemType: category, tacticalAreas, paths } = data;
 
   const isAreaRelocating = useCallback(
     (type: AreaType, fpIndex?: number) =>
@@ -332,6 +333,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 // ============================================================================
 interface DeployedMissileSystemsProps {
   deployedMissileSystems: Map<string, MissileDeployment>;
+  missileSystems: MissileSystems;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
   relocatingArea?: RelocatingArea | null;
@@ -340,6 +342,7 @@ interface DeployedMissileSystemsProps {
 
 export function DeployedMissileSystems({
   deployedMissileSystems,
+  missileSystems,
   onAreaClick,
   onRotateClick,
   relocatingArea,
@@ -354,6 +357,9 @@ export function DeployedMissileSystems({
           key={unitKey}
           unitKey={unitKey}
           data={data}
+          rangeNm={
+            missileSystems[data.missileSystemType]?.firingUnits[data.unitName]?.weaponRange ?? 0
+          }
           onAreaClick={onAreaClick}
           onRotateClick={onRotateClick}
           relocatingArea={relocatingArea?.unitKey === unitKey ? relocatingArea : null}

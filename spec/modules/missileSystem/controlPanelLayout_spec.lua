@@ -53,7 +53,7 @@ describe("MissileSystem ControlPanelLayout", function()
   local function makeEntry(overrides)
     local entry = {
       unitname = "FU-1",
-      category = "srbm",
+      missileSystemType = "srbm",
       tacticalAreas = {
         uShapeVertices = { "U" },
         shelterPoints = { "S" },
@@ -111,7 +111,7 @@ describe("MissileSystem ControlPanelLayout", function()
 
       assert.are.same({
         {
-          category = "srbm",
+          missileSystemType = "srbm",
           unitname = "FU-1",
           operationalArea = {
             FP = {
@@ -152,7 +152,10 @@ describe("MissileSystem ControlPanelLayout", function()
   -- ============================================================================
 
   describe("buildDeploymentSystems", function()
+    local queryDbStub
+
     before_each(function()
+      queryDbStub = trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 150 } } }))
       trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").invokes(function(selector)
         if selector.area[1] == "rp-1" then
           return { { latitude = "25.5", longitude = "121.5" } }
@@ -171,6 +174,23 @@ describe("MissileSystem ControlPanelLayout", function()
       assert.is_nil(rows.srbm.resupplyUnits)
       assert.is_nil(rows.srbm.ammunitions)
       assert.are.equal(60, rows.srbm.reloadTime)
+    end)
+
+    -- Positive: the map draws the weapon's range circle from this
+    it("should set weaponRange from the weapon database", function()
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+
+      assert.are.equal(150, rows.srbm.firingUnits.fu.weaponRange)
+    end)
+
+    -- Negative: an unknown weapon must not break the panel
+    it("should set weaponRange to 0 when the weapon is not in the database", function()
+      queryDbStub:revert()
+      trackStub(stub(GameApi, "ScenEdit_QueryDB").returns(nil))
+
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+
+      assert.are.equal(0, rows.srbm.firingUnits.fu.weaponRange)
     end)
 
     -- Positive: zone names become numeric vertices the menu can draw
@@ -201,7 +221,8 @@ describe("MissileSystem ControlPanelLayout", function()
 
     -- Boundary: an unresolved mask leaves no U-shape rather than an empty one
     it("should not set U-shape vertices when the mask does not resolve", function()
-      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), "Taiwan")
+      local rows = ControlPanelLayout.buildDeploymentSystems(
+        makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), "Taiwan")
 
       assert.is_nil(rows.srbm.firingUnits.fu.operationalArea.uShapeVertices)
     end)

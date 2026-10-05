@@ -107,7 +107,7 @@ function ChildCard({
     (selectedUnitKey === battery.unitKey || expandedUnitKey === battery.unitKey);
   const details = (
     <>
-      <UnitDetails type={type} unit={unit} />
+      <UnitDetails type={type} unit={unit} battery={battery} />
       {isOpen && batteryStatus && <BatteryStatusDetails status={batteryStatus} />}
     </>
   );
@@ -133,9 +133,22 @@ function ChildCard({
   );
 }
 
-function UnitDetails({ type, unit }: { type: C2Child['type']; unit: C2Child['unit'] }) {
+function UnitDetails({
+  type,
+  unit,
+  battery,
+}: {
+  type: C2Child['type'];
+  unit: C2Child['unit'];
+  battery: C2Child['battery'];
+}) {
   return (
     <>
+      {battery && (
+        <div>
+          {battery.missileSystemType}|{battery.missileSystem}
+        </div>
+      )}
       <div>
         {type.toUpperCase()} | DETECT {unit.OODADetection} | TARGET {unit.OODATargeting}
       </div>

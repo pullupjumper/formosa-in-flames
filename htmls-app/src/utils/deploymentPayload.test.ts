@@ -21,7 +21,7 @@ describe('fromOperationalArea', () => {
 
   it('keeps identity and stored areas verbatim', () => {
     expect(deployment.unitName).toBe(UNIT_NAME);
-    expect(deployment.category).toBe(CATEGORY);
+    expect(deployment.missileSystemType).toBe(CATEGORY);
     expect(deployment.tacticalAreas.uShapeVertices).toBe(AREA.uShapeVertices);
     expect(deployment.tacticalAreas.ammoArea).toBe(AREA.AHA[0].area);
     expect(deployment.tacticalAreas.firePoints).toHaveLength(AREA.FP.length);

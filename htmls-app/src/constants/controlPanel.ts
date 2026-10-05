@@ -4,19 +4,6 @@
 export const CONFIG = {
   LOADOUT_COST: 100,
   INITIAL_SCORE: 1000,
-  // Keyed by the category names in config.{t,c}.ground. Both sides share these
-  // entries, so `sam` and `mrbm` use side-neutral wording.
-  WEAPON_RANGES: {
-    srbm: 162,
-    ascm: 100,
-    mlrs: 20,
-    glcm: 324,
-    // Envelope of the long-range system in each side's mixed SAM group
-    // (TK-3 for Taiwan, SA-20 for China); the co-located PAC-3 / SA-16
-    // launchers reach far less.
-    sam: 108,
-    mrbm: 810,
-  } as Record<string, number>,
   WEAPON_NAMES: {
     srbm: 'SRBM (ATACMS/162 NM)',
     ascm: 'ASCM (Hsiung Feng III/100 NM)',

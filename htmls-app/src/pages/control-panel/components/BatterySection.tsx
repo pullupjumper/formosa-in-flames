@@ -41,7 +41,7 @@ export function BatterySection({
           <DeployableUnitCard
             key={unit.unitKey}
             name={unit.name}
-            icon={<ImageIcon image={getBatteryImage(group.category)} />}
+            icon={<ImageIcon image={getBatteryImage(group.missileSystemType)} />}
             details={
               <BatteryDetails
                 group={group}
@@ -54,7 +54,7 @@ export function BatterySection({
             isDeployed={unit.isDeployed}
             isSelected={selectedUnitKey === unit.unitKey}
             isExpanded={expandedUnitKey === unit.unitKey}
-            onSelect={() => onUnitSelect(unit.unitKey, unit.name, group.category)}
+            onSelect={() => onUnitSelect(unit.unitKey, unit.name, group.missileSystemType)}
             onCancelDeployment={() => onUndeploy(unit.unitKey, unit.name)}
             onCancelSelection={onCancelSelection}
           />
@@ -76,10 +76,12 @@ function BatteryDetails({
   /** Status stays folded until the card is clicked open */
   isOpen: boolean;
 }) {
-  const status = getBatteryStatus(batteryStatusMap, group.category, unit.name);
+  const status = getBatteryStatus(batteryStatusMap, group.missileSystemType, unit.name);
   return (
     <>
-      <div>SYSTEM: {group.systemName}</div>
+      <div>
+        {unit.missileSystemType}|{unit.missileSystem}
+      </div>
       {isOpen && status && <BatteryStatusDetails status={status} />}
     </>
   );

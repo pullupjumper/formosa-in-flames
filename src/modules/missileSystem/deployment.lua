@@ -433,7 +433,7 @@ function Deployment.updateLayouts(missileSystemConfigMap, layouts)
   local operationalAreasToRemove = {}
 
   for _, layout in ipairs(layouts) do
-    local systemConfig = missileSystemConfigMap[layout.category]
+    local systemConfig = missileSystemConfigMap[layout.missileSystemType]
 
     if systemConfig and systemConfig.firingUnits[layout.unitname] then
       local firingUnitDescriptor = Utils.deepCopy(systemConfig.firingUnits[layout.unitname])

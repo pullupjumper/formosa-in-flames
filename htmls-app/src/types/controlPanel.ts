@@ -58,43 +58,15 @@ export interface OperationalArea {
 }
 
 export interface FiringUnit {
-  dbid: number;
-  resupplyUnit: string;
-  guid: string;
-  ammoThreshold: number;
-  weaponDBID: number;
   name: string;
   operationalArea: OperationalArea;
-  state: number;
-  msg: string;
-}
-
-export interface ResupplyUnit {
-  unitCount: number;
-  weaponCountCurrent: number;
-  ammunition: string;
-  weaponCountDefault: number;
-  name: string;
-  state: number;
-  guid: string;
-  operationalArea: OperationalArea;
-}
-
-export interface Ammunition {
-  name: string;
-  weaponCountCurrent: number;
-  guid: string;
-  weaponCountDefault: number;
+  missileSystem: string;
+  /** Weapon range in NM, drives the range circle on the map */
+  weaponRange: number;
 }
 
 export interface MissileSystemCategory {
-  operationalAreas: Record<string, OperationalArea>;
-  reloadTime: number;
-  weaponCountDefault: number;
   firingUnits: Record<string, FiringUnit>;
-  resupplyUnits?: Record<string, ResupplyUnit>;
-  ammoThreshold: number;
-  ammunitions?: Record<string, Ammunition>;
 }
 
 export type MissileSystems = Record<string, MissileSystemCategory>;
@@ -125,7 +97,7 @@ export interface JammerResult {
 export interface MissileSystemResult {
   key: string;
   unitname: string;
-  category: string;
+  missileSystemType: string;
   center: Coordinate;
   openingAngle: number;
   tacticalAreas: TacticalAreas;
@@ -169,7 +141,7 @@ export interface MovementPaths {
 /** One missile unit placed on the map, with everything the export needs. */
 export interface MissileDeployment {
   unitName: string;
-  category: string;
+  missileSystemType: string;
   center: Coordinate;
   openingAngle: number;
   /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */

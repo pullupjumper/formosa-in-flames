@@ -56,18 +56,15 @@ function flattenC2Nodes(data: C2Data): Record<string, C2Node> {
 }
 
 /**
- * Pair every SAM unit with its battery: by GUID first (the C2 payload keys SAM
- * units by game GUID), then by name. A battery backs at most one SAM unit so
- * two cards never drive the same deployment.
+ * Pair every SAM unit with its battery by name. A battery backs at most one SAM
+ * unit so two cards never drive the same deployment.
  */
 export function buildC2NodeViews(c2Data: C2Data, samBatteries: MissileGroupUnit[]): C2NodeView[] {
   const claimed = new Set<string>();
 
-  const findBattery = (guid: string, name: string): MissileGroupUnit | null => {
+  const findBattery = (name: string): MissileGroupUnit | null => {
     const battery =
-      samBatteries.find((unit) => unit.guid === guid && !claimed.has(unit.unitKey)) ??
-      samBatteries.find((unit) => unit.name === name && !claimed.has(unit.unitKey)) ??
-      null;
+      samBatteries.find((unit) => unit.name === name && !claimed.has(unit.unitKey)) ?? null;
     if (battery) claimed.add(battery.unitKey);
     return battery;
   };
@@ -79,7 +76,7 @@ export function buildC2NodeViews(c2Data: C2Data, samBatteries: MissileGroupUnit[
       children.push({ key: guid, type: 'Radar', unit, battery: null });
     }
     for (const [guid, unit] of Object.entries(node.SAM ?? {})) {
-      children.push({ key: guid, type: 'SAM', unit, battery: findBattery(guid, unit.name) });
+      children.push({ key: guid, type: 'SAM', unit, battery: findBattery(unit.name) });
     }
 
     return { key, name: node.name, children };

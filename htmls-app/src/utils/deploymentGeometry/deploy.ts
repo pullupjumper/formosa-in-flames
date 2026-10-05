@@ -72,7 +72,7 @@ export function generateDeploymentData({
 
       return {
         unitName,
-        category,
+        missileSystemType: category,
         center,
         openingAngle: angle,
         ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
@@ -114,7 +114,7 @@ export function rotateDeployment({
   if (!isValidAngle(angle)) return null;
   return generateDeploymentData({
     unitName: deployment.unitName,
-    category: deployment.category,
+    category: deployment.missileSystemType,
     center: deployment.center,
     angle,
     validateTaiwanBoundary,

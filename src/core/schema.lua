@@ -203,7 +203,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field stowTime number Stow time in seconds
 ---@field ammunitions table<string, SBJ__AmmunitionUnitDescriptor> Ammunition units indexed by unit name
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
----@field firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units indexed by unit name
+---@field firingUnits table<string, SBJ__FiringUnitDescriptor|SBJ__FiringUnitWithWeaponRangeDescriptor> Firing units indexed by unit name
 
 ---Per-side ground policy; the only differences between the China and Taiwan event scripts
 ---@class SBJ__GroundPolicyConfig: table
@@ -900,7 +900,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 
 ---Player-chosen operational area for one battery, applied by MissileSystem.redeploy
 ---@class SBJ__MissileSystemLayout: table
----@field category string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field operationalArea SBJ__OperationalArea New operational area for the firing unit and its resupply unit
 
@@ -949,6 +949,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field dbid number The firing unit database ID
 ---@field missileSystem string Missile system designation (e.g. "HF-3")
 ---@field mountDescriptors? {dbid:number, mountCount:integer}[] Mount DBIDs and counts on the firing unit
+
+---@class SBJ__FiringUnitWithWeaponRangeDescriptor: SBJ__FiringUnitDescriptor
+---@field weaponRange number
 
 ---Ammunition context data structure
 ---Tracks ammunition unit status and remaining ammunition counts
@@ -1747,7 +1750,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@class SBJ__MissileSystemResult: table
 ---@field key string Control panel row key
 ---@field unitname string Firing unit name in the side's ground force config
----@field category string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field center CMO__Location Center of the drawn layout
 ---@field openingAngle number U-shape opening angle in degrees
 ---@field tacticalAreas SBJ__TacticalAreas Drawn zones

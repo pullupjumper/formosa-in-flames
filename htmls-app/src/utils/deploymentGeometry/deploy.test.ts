@@ -49,7 +49,7 @@ describe('generateDeploymentData', () => {
 
     expect(data).not.toBeNull();
     expect(data!.unitName).toBe('HF3_01');
-    expect(data!.category).toBe('ascm');
+    expect(data!.missileSystemType).toBe('ascm');
     expect(data!.center).toEqual(INLAND);
     expect(data!.openingAngle).toBe(90);
     expect(data!.ahaRadius).toBe(AREA_CONFIG.ahaPoint.radius);

@@ -302,16 +302,8 @@ export const AIRBASES_DATA: Airbase[] = [
 // ============================================================================
 export const MISSILE_SYSTEMS_DATA: MissileSystems = {
   sam: {
-    operationalAreas: {},
-    reloadTime: 600,
-    weaponCountDefault: 27,
     firingUnits: {
       '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde': {
-        dbid: 2446,
-        resupplyUnit: 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
-        guid: 'IC8B0X-0HN7SOIUF4D47',
-        ammoThreshold: 25,
-        weaponDBID: 1717,
         name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
         operationalArea: {
           RL: [
@@ -398,23 +390,14 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
             { latitude: 23.943869164377904, longitude: 120.53845933003232 },
           ],
         },
-        state: 3,
-        msg: 'Radio source, Bty',
+        missileSystem: 'PAC-3',
+        weaponRange: 65,
       },
     },
-    ammoThreshold: 25,
   },
   srbm: {
-    operationalAreas: {},
-    reloadTime: 600,
-    weaponCountDefault: 27,
     firingUnits: {
       'Rocket Arty Coy, 58th Arty Command': {
-        dbid: 2446,
-        resupplyUnit: 'Ammo Sec, Rocket Arty Coy, 58th Arty Command',
-        guid: 'IC8B0X-0HN7SOIUF4D47',
-        ammoThreshold: 25,
-        weaponDBID: 1717,
         name: 'Rocket Arty Coy, 58th Arty Command',
         operationalArea: {
           RL: [
@@ -501,23 +484,14 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
             { latitude: 23.801672159940395, longitude: 120.41768774016136 },
           ],
         },
-        state: 3,
-        msg: 'Radio source, Bty',
+        missileSystem: 'HIMARS',
+        weaponRange: 150,
       },
     },
-    ammoThreshold: 25,
   },
   ascm: {
-    operationalAreas: {},
-    reloadTime: 2700,
-    weaponCountDefault: 16,
     firingUnits: {
       '1st Hai Feng Shore-based ASM MOB Sqn': {
-        dbid: 3531,
-        resupplyUnit: 'Hai Feng Shore-based ASM SUPP Sqn, Dong',
-        guid: 'X58F5H-0HMVEU1FUVO8I',
-        ammoThreshold: 25,
-        weaponDBID: 1133,
         name: '1st Hai Feng Shore-based ASM MOB Sqn',
         operationalArea: {
           RL: [
@@ -604,8 +578,8 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
             { latitude: 23.685636542906167, longitude: 120.36564943890005 },
           ],
         },
-        state: 3,
-        msg: 'Radio source, Bty',
+        missileSystem: 'HF-3',
+        weaponRange: 100,
       },
       // '2nd Hai Feng Shore-based ASM MOB Sqn': {
       //   dbid: 3531,
@@ -663,7 +637,6 @@ export const MISSILE_SYSTEMS_DATA: MissileSystems = {
       //   msg: 'Radio source, Bty',
       // },
     },
-    ammoThreshold: 25,
   },
 };
 

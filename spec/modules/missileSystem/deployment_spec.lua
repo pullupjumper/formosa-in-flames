@@ -131,7 +131,7 @@ describe("MissileSystem Deployment", function()
       local newArea = { name = "#ABC" }
 
       local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, {
-        { category = "srbm", unitname = "FU-1", operationalArea = newArea }
+        { missileSystemType = "srbm", unitname = "FU-1", operationalArea = newArea }
       })
 
       assert.are.same({ newArea }, operationalAreas)
@@ -149,8 +149,8 @@ describe("MissileSystem Deployment", function()
       local operationalArea2 = { name = "#Y" }
 
       local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, {
-        { category = "glcm", unitname = "FU-1",  operationalArea = operationalArea1 },
-        { category = "srbm", unitname = "Ghost", operationalArea = operationalArea2 }
+        { missileSystemType = "glcm", unitname = "FU-1",  operationalArea = operationalArea1 },
+        { missileSystemType = "srbm", unitname = "Ghost", operationalArea = operationalArea2 }
       })
 
       assert.are.same({}, operationalAreas)

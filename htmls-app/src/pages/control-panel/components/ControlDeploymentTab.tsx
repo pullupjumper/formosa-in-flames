@@ -98,7 +98,7 @@ export function ControlDeploymentTab({
     [missileSystems, deployedMissileSystems]
   );
   const batteryGroups = useMemo(
-    () => missileGroups.filter((group) => group.category !== SAM_CATEGORY),
+    () => missileGroups.filter((group) => group.missileSystemType !== SAM_CATEGORY),
     [missileGroups]
   );
   const deployedBatteries = batteryGroups.reduce((sum, group) => sum + group.deployedCount, 0);
@@ -106,7 +106,9 @@ export function ControlDeploymentTab({
 
   const [batteryStatusMap] = useState(() => buildBatteryStatusMap(payload.batteryStatuses));
   const c2Nodes = useMemo(() => {
-    const samBatteries = missileGroups.find((group) => group.category === SAM_CATEGORY)?.units;
+    const samBatteries = missileGroups.find(
+      (group) => group.missileSystemType === SAM_CATEGORY
+    )?.units;
     return buildC2NodeViews(payload.c2Data, samBatteries ?? []);
   }, [payload.c2Data, missileGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
@@ -210,6 +212,7 @@ export function ControlDeploymentTab({
           airbases={airbases}
           jammers={jammers}
           deployedMissileSystems={deployedMissileSystems}
+          missileSystems={missileSystems}
           deployedJammers={deployedJammers}
           signals={signals}
           isPlacementActive={isPlacementActive}
