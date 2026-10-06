@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { MissileDeployment, MissileSystemTypes } from '@/types/controlPanel';
 import type { BatteryStatus } from '@/types/unitStatus';
-import { buildBatteryGroups } from '@/pages/control-panel/logic/batteryGroups';
+import { buildBatteryGroups, buildWeaponRanges } from '@/pages/control-panel/logic/batteryGroups';
 
 // ============================================================================
 // FIXTURES
@@ -91,6 +91,22 @@ describe('buildBatteryGroups', () => {
     const unknown = { xyz: { firingUnits: { u: { name: 'U' } } } } as unknown as MissileSystemTypes;
     expect(buildBatteryGroups(unknown, new Map(), [])[0].batteries[0].missileSystemType).toBe(
       'xyz'
+    );
+  });
+});
+
+describe('buildWeaponRanges', () => {
+  it('keys each firing unit range by its unit key', () => {
+    const types = {
+      ascm: { firingUnits: { HF3_01: { weaponRange: 150 }, HF3_02: { weaponRange: 120 } } },
+      empty: {},
+    } as unknown as MissileSystemTypes;
+
+    expect(buildWeaponRanges(types)).toEqual(
+      new Map([
+        ['ascm_HF3_01', 150],
+        ['ascm_HF3_02', 120],
+      ])
     );
   });
 });

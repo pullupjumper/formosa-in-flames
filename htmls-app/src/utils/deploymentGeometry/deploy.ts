@@ -15,7 +15,7 @@ import { buildShelterPlan } from './shelter';
 
 export interface GenerateDeploymentParams {
   unitname: string;
-  category: string;
+  missileSystemType: string;
   center: Coordinate;
   angle: number;
   validateTaiwanBoundary: boolean;
@@ -38,7 +38,7 @@ export function isValidAngle(angle: number): boolean {
  */
 export function generateDeploymentData({
   unitname,
-  category,
+  missileSystemType,
   center,
   angle,
   validateTaiwanBoundary,
@@ -72,7 +72,7 @@ export function generateDeploymentData({
 
       return {
         unitname,
-        missileSystemType: category,
+        missileSystemType,
         center,
         openingAngle: angle,
         ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
@@ -114,7 +114,7 @@ export function rotateDeployment({
   if (!isValidAngle(angle)) return null;
   return generateDeploymentData({
     unitname: deployment.unitname,
-    category: deployment.missileSystemType,
+    missileSystemType: deployment.missileSystemType,
     center: deployment.center,
     angle,
     validateTaiwanBoundary,

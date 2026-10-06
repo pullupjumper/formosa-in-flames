@@ -18,7 +18,7 @@ function shifted(base: Coordinate, latitudeDelta: number, longitudeDelta: number
 function deployed() {
   const data = generateDeploymentData({
     unitname: 'HF3 Battery 1',
-    category: 'ascm',
+    missileSystemType: 'ascm',
     center: INLAND,
     angle: 90,
     validateTaiwanBoundary: true,

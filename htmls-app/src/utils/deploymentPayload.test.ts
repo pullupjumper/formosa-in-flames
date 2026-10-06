@@ -74,7 +74,7 @@ describe('toControlPanelResult', () => {
     const rng = createSeededRandom(7);
     const generated = generateDeploymentData({
       unitname: UNIT_NAME,
-      category: CATEGORY,
+      missileSystemType: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
       angle: 90,
       validateTaiwanBoundary: false,
@@ -106,7 +106,7 @@ describe('toControlPanelResult', () => {
     const rng = createSeededRandom(11);
     const generated = generateDeploymentData({
       unitname: UNIT_NAME,
-      category: CATEGORY,
+      missileSystemType: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
       angle: 45,
       validateTaiwanBoundary: false,

@@ -11,7 +11,7 @@ import {
 } from './deploymentMode';
 import type { DeploymentMode } from './deploymentMode';
 
-const UNIT = { key: 'ascm_HF3_01', name: 'HF3_01', category: 'ascm' };
+const UNIT = { key: 'ascm_HF3_01', name: 'HF3_01', missileSystemType: 'ascm' };
 const CENTER = { latitude: 24, longitude: 121 };
 
 const MODES: Record<string, DeploymentMode> = {

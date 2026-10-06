@@ -3,7 +3,7 @@ import { CircleMarker, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, MissileSystemTypes, TacticalAreas } from '@/types/controlPanel';
+import type { MissileDeployment, TacticalAreas } from '@/types/controlPanel';
 import type { AreaType, RelocatingArea } from '@/types/deployment';
 import { getAreaColor } from '@/constants/deployment';
 import { canInteractArea, getWeaponSystemName } from '@/utils/map';
@@ -98,7 +98,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
   isAnyRelocating = false,
   isRotating,
 }: MissileSystemMarkerProps) {
-  const { unitname, missileSystemType: category, tacticalAreas, paths } = data;
+  const { unitname, missileSystemType, tacticalAreas, paths } = data;
 
   const isAreaRelocating = useCallback(
     (type: AreaType, fpIndex?: number) =>
@@ -159,7 +159,10 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [tacticalAreas.reloadArea]
   );
 
-  const icon = useMemo(() => createImageIcon(getBatteryImage(category)), [category]);
+  const icon = useMemo(
+    () => createImageIcon(getBatteryImage(missileSystemType)),
+    [missileSystemType]
+  );
 
   // Fallback if no tactical areas
   if (!tacticalAreas.uShapeVertices || tacticalAreas.uShapeVertices.length === 0) {
@@ -175,7 +178,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
             <div className="text-text-primary">
               <strong>{unitname}</strong>
               <br />
-              <span className="text-text-secondary">{getWeaponSystemName(category)}</span>
+              <span className="text-text-secondary">{getWeaponSystemName(missileSystemType)}</span>
               <br />
               <br />
               Lat: {data.center.latitude.toFixed(6)}°
@@ -333,7 +336,8 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 // ============================================================================
 interface DeployedMissileSystemsProps {
   deployedMissileSystems: Map<string, MissileDeployment>;
-  missileSystems: MissileSystemTypes;
+  /** Weapon range in NM by unit key; units without an entry draw no range circle */
+  weaponRanges: ReadonlyMap<string, number>;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
   relocatingArea?: RelocatingArea | null;
@@ -342,7 +346,7 @@ interface DeployedMissileSystemsProps {
 
 export function DeployedMissileSystems({
   deployedMissileSystems,
-  missileSystems,
+  weaponRanges,
   onAreaClick,
   onRotateClick,
   relocatingArea,
@@ -357,9 +361,7 @@ export function DeployedMissileSystems({
           key={unitKey}
           unitKey={unitKey}
           data={data}
-          rangeNm={
-            missileSystems[data.missileSystemType]?.firingUnits[data.unitname]?.weaponRange ?? 0
-          }
+          rangeNm={weaponRanges.get(unitKey) ?? 0}
           onAreaClick={onAreaClick}
           onRotateClick={onRotateClick}
           relocatingArea={relocatingArea?.unitKey === unitKey ? relocatingArea : null}

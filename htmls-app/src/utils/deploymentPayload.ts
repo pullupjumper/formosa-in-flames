@@ -35,7 +35,7 @@ import { calculateCentroid } from '@/utils/geo';
  * the AHA from `AREA_CONFIG` and move it.
  */
 export function fromOperationalArea(
-  category: string,
+  missileSystemType: string,
   unitname: string,
   operationalArea: OperationalArea
 ): MissileDeployment {
@@ -44,7 +44,7 @@ export function fromOperationalArea(
 
   return {
     unitname,
-    missileSystemType: category,
+    missileSystemType,
     center: calculateCentroid(operationalArea.uShapeVertices),
     openingAngle: 0,
     ahaCenter: calculateCentroid(ammoArea),
@@ -74,11 +74,11 @@ export function buildInjectedDeployments(
 ): Map<string, MissileDeployment> {
   const deployments = new Map<string, MissileDeployment>();
 
-  for (const [category, system] of Object.entries(missileSystems)) {
+  for (const [missileSystemType, system] of Object.entries(missileSystems)) {
     for (const [unitname, unit] of Object.entries(system.firingUnits ?? {})) {
       deployments.set(
-        buildUnitKey(category, unitname),
-        fromOperationalArea(category, unitname, unit.operationalArea)
+        buildUnitKey(missileSystemType, unitname),
+        fromOperationalArea(missileSystemType, unitname, unit.operationalArea)
       );
     }
   }

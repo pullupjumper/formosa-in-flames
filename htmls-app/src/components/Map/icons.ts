@@ -24,9 +24,9 @@ export const AIRBASE_ICON_SIZE = { width: 16, height: 16 };
 export const EW_ICON_URL = 'https://i.meee.com.tw/LO1UNjw.png';
 export const EW_ICON_SIZE = { width: 25, height: 15 };
 
-/** Symbol for a battery's weapon category: SAM gets its own, everything else is SSM */
-export function getBatteryImage(category: string): ForceImage {
-  return category === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.ssm;
+/** Symbol for a battery's missile system type: SAM gets its own, everything else is SSM */
+export function getBatteryImage(missileSystemType: string): ForceImage {
+  return missileSystemType === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.ssm;
 }
 
 /** divIcon showing an image, or a dashed placeholder box of the same size */

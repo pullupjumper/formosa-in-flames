@@ -1,6 +1,7 @@
 import { ImageIcon } from '@/components/ImageIcon';
 import { ICON_IMAGES } from '@/components/Map';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
+import type { Battery } from '../../logic/batteryGroups';
 import type { C2Child, C2NodeView } from '../../logic/c2Nodes';
 import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
 import { BatteryStatusDetails } from '@pages/control-panel/components/sections/BatteryStatusDetails';
@@ -16,8 +17,8 @@ interface C2NodesSectionProps {
   onSamWeaponsFreeChange: (weaponsFree: boolean) => void;
   expandedUnitKey: string | null;
   selectedUnitKey: string | null;
-  onUnitSelect: (unitKey: string, unitname: string, category: string) => void;
-  onUndeploy: (unitKey: string, unitname: string) => void;
+  onUnitSelect: (battery: Battery) => void;
+  onUndeploy: (battery: Battery) => void;
   onCancelSelection: () => void;
 }
 
@@ -115,8 +116,8 @@ function ChildCard({
       isDeployed={battery.deployment !== null}
       isSelected={selectedUnitKey === battery.unitKey}
       isExpanded={expandedUnitKey === battery.unitKey}
-      onSelect={() => onUnitSelect(battery.unitKey, battery.name, battery.missileSystemType)}
-      onCancelDeployment={() => onUndeploy(battery.unitKey, battery.name)}
+      onSelect={() => onUnitSelect(battery)}
+      onCancelDeployment={() => onUndeploy(battery)}
       onCancelSelection={onCancelSelection}
     />
   );

@@ -22,5 +22,5 @@ export interface RelocatingArea {
 export interface SelectedUnit {
   key: string;
   name: string;
-  category: string;
+  missileSystemType: string;
 }

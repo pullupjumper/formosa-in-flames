@@ -16,7 +16,7 @@ const INLAND: Coordinate = { latitude: 23.9, longitude: 120.75 };
 function place(seed: number) {
   const deployment = generateDeploymentData({
     unitname: 'u',
-    category: 'ascm',
+    missileSystemType: 'ascm',
     center: INLAND,
     angle: 90,
     validateTaiwanBoundary: false,

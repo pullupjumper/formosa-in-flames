@@ -63,7 +63,7 @@ function buildUShapeUpdate(
 ): AreaUpdateResult {
   const regenerated = generateDeploymentData({
     unitname: deployment.unitname,
-    category: deployment.missileSystemType,
+    missileSystemType: deployment.missileSystemType,
     center: position,
     angle: deployment.openingAngle,
     validateTaiwanBoundary,

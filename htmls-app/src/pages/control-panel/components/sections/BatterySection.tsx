@@ -12,8 +12,8 @@ interface BatterySectionProps {
   expandedUnitKey: string | null;
   /** Missile unit armed for deployment, null when no deploy mode is live */
   selectedUnitKey: string | null;
-  onUnitSelect: (unitKey: string, unitname: string, category: string) => void;
-  onUndeploy: (unitKey: string, unitname: string) => void;
+  onUnitSelect: (battery: Battery) => void;
+  onUndeploy: (battery: Battery) => void;
   onCancelSelection: () => void;
 }
 
@@ -51,8 +51,8 @@ export function BatterySection({
             isDeployed={battery.deployment !== null}
             isSelected={selectedUnitKey === battery.unitKey}
             isExpanded={expandedUnitKey === battery.unitKey}
-            onSelect={() => onUnitSelect(battery.unitKey, battery.name, battery.missileSystemType)}
-            onCancelDeployment={() => onUndeploy(battery.unitKey, battery.name)}
+            onSelect={() => onUnitSelect(battery)}
+            onCancelDeployment={() => onUndeploy(battery)}
             onCancelSelection={onCancelSelection}
           />
         ))

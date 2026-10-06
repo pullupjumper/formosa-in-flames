@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { Airbase, MissileDeployment, MissileSystemTypes, Jammer } from '@/types/controlPanel';
+import type { Airbase, MissileDeployment, Jammer } from '@/types/controlPanel';
 import type { SignalData } from '@/types/unitStatus';
 import {
   BaseMap,
@@ -22,7 +22,7 @@ interface DeploymentMapProps {
   airbases: Airbase[];
   jammers: Jammer[];
   deployedMissileSystems: Map<string, MissileDeployment>;
-  missileSystems: MissileSystemTypes;
+  weaponRanges: ReadonlyMap<string, number>;
   deployedJammers: Map<number, Coordinate>;
   /** Detected signals shown as suspected C2 markers */
   signals: SignalData[];
@@ -55,7 +55,7 @@ export function DeploymentMap({
   airbases,
   jammers,
   deployedMissileSystems,
-  missileSystems,
+  weaponRanges,
   deployedJammers,
   signals,
   isPlacementActive,
@@ -83,7 +83,7 @@ export function DeploymentMap({
       <AirbaseMarkers airbases={airbases} />
       <DeployedMissileSystems
         deployedMissileSystems={deployedMissileSystems}
-        missileSystems={missileSystems}
+        weaponRanges={weaponRanges}
         onAreaClick={onAreaClick}
         onRotateClick={onRotateClick}
         relocatingArea={relocatingArea}

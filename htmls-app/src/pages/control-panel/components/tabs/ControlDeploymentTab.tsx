@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/map/DeploymentMap';
-import { buildBatteryGroups } from '@pages/control-panel/logic/batteryGroups';
+import { buildBatteryGroups, buildWeaponRanges } from '@pages/control-panel/logic/batteryGroups';
 import { toControlPanelResult } from '@/utils/deploymentPayload';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../../logic/c2Nodes';
 import { submitDeployment, type ControlPanelPayload } from '../../logic/controlPanelPayload';
@@ -18,7 +18,7 @@ import { BatterySection } from '@pages/control-panel/components/sections/Battery
 import { ResizeHandle } from '@pages/control-panel/components/shared/ResizeHandle';
 
 // SAM batteries are deployed from their C2 node card, not the battery list
-const SAM_CATEGORY = 'sam';
+const SAM_TYPE = 'sam';
 
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 900;
@@ -96,17 +96,16 @@ export function ControlDeploymentTab({
     () => buildBatteryGroups(missileSystems, deployedMissileSystems, payload.batteryStatuses),
     [missileSystems, deployedMissileSystems, payload.batteryStatuses]
   );
+  const weaponRanges = useMemo(() => buildWeaponRanges(missileSystems), [missileSystems]);
   const batteryGroups = useMemo(
-    () => allGroups.filter((group) => group.missileSystemType !== SAM_CATEGORY),
+    () => allGroups.filter((group) => group.missileSystemType !== SAM_TYPE),
     [allGroups]
   );
   const deployedBatteries = batteryGroups.reduce((sum, group) => sum + group.deployedCount, 0);
   const totalBatteries = batteryGroups.reduce((sum, group) => sum + group.batteries.length, 0);
 
   const c2Nodes = useMemo(() => {
-    const samBatteries = allGroups.find(
-      (group) => group.missileSystemType === SAM_CATEGORY
-    )?.batteries;
+    const samBatteries = allGroups.find((group) => group.missileSystemType === SAM_TYPE)?.batteries;
     return buildC2NodeViews(payload.c2Data, samBatteries ?? []);
   }, [payload.c2Data, allGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
@@ -207,7 +206,7 @@ export function ControlDeploymentTab({
           airbases={airbases}
           jammers={jammers}
           deployedMissileSystems={deployedMissileSystems}
-          missileSystems={missileSystems}
+          weaponRanges={weaponRanges}
           deployedJammers={deployedJammers}
           signals={signals}
           isPlacementActive={isPlacementActive}

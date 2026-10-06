@@ -34,17 +34,17 @@ describe('resolveOpeningAngle', () => {
 });
 
 describe('getWeaponSystemName', () => {
-  it('maps a known category to its display name', () => {
+  it('maps a known type to its display name', () => {
     expect(getWeaponSystemName('sam')).toBe('SAM (Long-Range Air Defense/108 NM)');
   });
 
-  it('upper-cases an unknown category', () => {
+  it('upper-cases an unknown type', () => {
     expect(getWeaponSystemName('foo')).toBe('FOO');
   });
 });
 
 describe('unit keys', () => {
-  it('joins the category and the unit name', () => {
+  it('joins the type and the unit name', () => {
     expect(buildUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
   });
 });

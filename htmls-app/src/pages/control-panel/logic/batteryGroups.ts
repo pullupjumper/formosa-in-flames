@@ -78,3 +78,16 @@ export function buildBatteryGroups(
 
   return groups;
 }
+
+/** Weapon range in NM per unit key, for the map's range circles. */
+export function buildWeaponRanges(missileSystemTypes: MissileSystemTypes): Map<string, number> {
+  const ranges = new Map<string, number>();
+
+  for (const [missileSystemType, config] of Object.entries(missileSystemTypes)) {
+    for (const [unitname, unit] of Object.entries(config?.firingUnits ?? {})) {
+      ranges.set(buildUnitKey(missileSystemType, unitname), unit.weaponRange);
+    }
+  }
+
+  return ranges;
+}

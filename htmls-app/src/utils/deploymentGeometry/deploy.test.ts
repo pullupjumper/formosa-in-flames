@@ -35,7 +35,7 @@ describe('isValidAngle', () => {
 describe('generateDeploymentData', () => {
   const baseParams = {
     unitname: 'HF3_01',
-    category: 'ascm',
+    missileSystemType: 'ascm',
     angle: 90,
     validateTaiwanBoundary: true,
   };
@@ -141,7 +141,7 @@ describe('rotateDeployment', () => {
     const rng = createSeededRandom(seed);
     const deployment = generateDeploymentData({
       unitname: 'u',
-      category: 'ascm',
+      missileSystemType: 'ascm',
       center: INLAND,
       angle: 90,
       validateTaiwanBoundary: false,

@@ -15,6 +15,7 @@ import {
   isSameArea,
 } from '@/pages/control-panel/logic/deploymentMode';
 import type { DeploymentMode } from '@/pages/control-panel/logic/deploymentMode';
+import type { Battery } from '@/pages/control-panel/logic/batteryGroups';
 import { getAreaLabel } from '@/constants/deployment';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { createSeededRandom } from '@/utils/random';
@@ -31,6 +32,18 @@ const SEED = 42;
 const UNIT_KEY = 'ascm_HF3_01';
 const UNIT_NAME = 'HF3 Battery 1';
 
+function batteryOf(unitKey: string, name: string): Battery {
+  return {
+    unitKey,
+    name,
+    missileSystem: 'HF-3',
+    missileSystemType: 'ascm',
+    deployment: null,
+    status: undefined,
+  };
+}
+const BATTERY = batteryOf(UNIT_KEY, UNIT_NAME);
+
 const JAMMERS = [
   { zoneName: 'Z1', name: 'EW North', randomRadiusNm: 5, radius: 50 },
   { zoneName: 'Z2', name: 'EW South', randomRadiusNm: 5, radius: 50 },
@@ -39,7 +52,7 @@ const JAMMERS = [
 function makeDeployment(): MissileDeployment {
   const data = generateDeploymentData({
     unitname: UNIT_NAME,
-    category: 'ascm',
+    missileSystemType: 'ascm',
     center: INLAND,
     angle: 90,
     validateTaiwanBoundary: true,
@@ -150,7 +163,7 @@ describe('deploymentModeReducer', () => {
   it('drops the previous mode on every transition', () => {
     const deploying = deploymentModeReducer(IDLE_STATE, {
       type: 'selectUnit',
-      unit: { key: UNIT_KEY, name: UNIT_NAME, category: 'ascm' },
+      unit: { key: UNIT_KEY, name: UNIT_NAME, missileSystemType: 'ascm' },
       offsets: {},
     });
     const rotating = deploymentModeReducer(deploying, {
@@ -263,12 +276,12 @@ describe('isLocked', () => {
     });
 
     act(() => {
-      result.current.handleUnitSelect('ascm_other', 'Other', 'ascm');
+      result.current.handleUnitSelect(batteryOf('ascm_other', 'Other'));
       result.current.handleJammerSelect(1);
       result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' });
       result.current.handleRotateClick(UNIT_KEY);
       result.current.handleJammerRelocateClick(0);
-      result.current.handleUndeploy(UNIT_KEY, UNIT_NAME);
+      result.current.handleUndeploy(BATTERY);
       result.current.handleUndeployJammer(0);
       result.current.handleMapClick(INLAND);
     });
@@ -287,12 +300,12 @@ describe('isLocked', () => {
 describe('mode arbitration', () => {
   it('activates deploy mode on unit select', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
 
     expect(expectMode(result.current.mode, 'deploy').unit).toEqual({
       key: UNIT_KEY,
       name: UNIT_NAME,
-      category: 'ascm',
+      missileSystemType: 'ascm',
     });
     expect(result.current.isPlacementActive).toBe(true);
     expect(result.current.status).toContain('selected');
@@ -302,17 +315,17 @@ describe('mode arbitration', () => {
     const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedMissileSystems });
 
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     expectIdle(result.current.mode);
     expect(result.current.expandedUnitKey).toBe(UNIT_KEY);
 
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     expect(result.current.expandedUnitKey).toBeNull();
   });
 
   it('drops a pending unit selection when a jammer is selected', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleJammerSelect(0));
 
     expect(expectMode(result.current.mode, 'placeJammer')).toMatchObject({
@@ -325,7 +338,7 @@ describe('mode arbitration', () => {
   it('drops jammer placement when a unit is selected', () => {
     const { result } = setup();
     act(() => result.current.handleJammerSelect(0));
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
 
     expectMode(result.current.mode, 'deploy');
   });
@@ -333,7 +346,7 @@ describe('mode arbitration', () => {
   it('drops a pending unit selection when an area relocation starts', () => {
     const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleUnitSelect('ascm_OTHER', 'Other', 'ascm'));
+    act(() => result.current.handleUnitSelect(batteryOf('ascm_OTHER', 'Other')));
     act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
 
     expect(expectMode(result.current.mode, 'relocateArea').area).toEqual({
@@ -374,7 +387,7 @@ describe('mode arbitration', () => {
 
   it('ignores a jammer relocate click while a missile mode is live', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleJammerRelocateClick(0));
 
     expectMode(result.current.mode, 'deploy');
@@ -405,7 +418,7 @@ describe('mode arbitration', () => {
 describe('ESC cancellation', () => {
   it('cancels a pending unit selection', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     pressEscape();
 
     expectIdle(result.current.mode);
@@ -447,7 +460,7 @@ describe('ESC cancellation', () => {
     const { result } = setup({ deployedMissileSystems });
     // The listener is keyed on "a mode is live", so this switch does not
     // re-register it — the message still has to follow the current mode.
-    act(() => result.current.handleUnitSelect('ascm_OTHER', 'Other', 'ascm'));
+    act(() => result.current.handleUnitSelect(batteryOf('ascm_OTHER', 'Other')));
     act(() => result.current.handleRotateClick(UNIT_KEY));
     pressEscape();
 
@@ -456,7 +469,7 @@ describe('ESC cancellation', () => {
 
   it('ignores other keys', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     });
@@ -476,7 +489,7 @@ describe('ESC cancellation', () => {
 describe('handleMapClick', () => {
   it('deploys the selected unit on an inland click', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleMapClick(INLAND));
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
@@ -489,7 +502,7 @@ describe('handleMapClick', () => {
 
   it('refuses an offshore click and keeps the unit selected', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleMapClick(OFFSHORE));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
@@ -499,7 +512,7 @@ describe('handleMapClick', () => {
 
   it('allows an offshore click when the boundary rule is off', () => {
     const { result } = setup({ shouldValidateTaiwanBoundary: false });
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleMapClick(OFFSHORE));
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
@@ -608,13 +621,13 @@ describe('handleMapClick', () => {
 describe('preview data', () => {
   it('has no preview until the mouse moves', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     expect(result.current.previewData).toBeNull();
   });
 
   it('translates the precomputed offsets to the cursor', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleMouseMove(INLAND));
 
     const preview = result.current.previewData!;
@@ -628,7 +641,7 @@ describe('preview data', () => {
 
   it('marks an offshore preview invalid without blocking it', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleMouseMove(OFFSHORE));
 
     expect(result.current.previewData!.isValid).toBe(false);
@@ -655,7 +668,7 @@ describe('preview data', () => {
 
   it('drops a stale hover preview when the mode changes', () => {
     const { result } = setup();
-    act(() => result.current.handleUnitSelect(UNIT_KEY, UNIT_NAME, 'ascm'));
+    act(() => result.current.handleUnitSelect(BATTERY));
     act(() => result.current.handleMouseMove(INLAND));
     expect(result.current.previewData).not.toBeNull();
 
@@ -671,7 +684,7 @@ describe('preview data', () => {
 describe('undeploy', () => {
   it('reports the cancelled missile deployment', () => {
     const { result } = setup();
-    act(() => result.current.handleUndeploy(UNIT_KEY, UNIT_NAME));
+    act(() => result.current.handleUndeploy(BATTERY));
 
     expect(handlers.onUndeploySystem).toHaveBeenCalledWith(UNIT_KEY);
     expect(result.current.status).toContain(UNIT_NAME);

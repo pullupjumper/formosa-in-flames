@@ -11,6 +11,7 @@ import {
   rotateDeployment,
 } from '@/utils/deploymentGeometry';
 import type { PreviewOffsets } from '@/utils/deploymentGeometry';
+import type { Battery } from '../logic/batteryGroups';
 import type { RandomSource } from '@/utils/random';
 import {
   DEFAULT_STATUS,
@@ -126,10 +127,10 @@ export function useDeploymentState({
 
   /** Injects the side's boundary rule into the pure generator */
   const createDeployment = useCallback(
-    (unitname: string, category: string, center: Coordinate, angle: number) =>
+    (unitname: string, missileSystemType: string, center: Coordinate, angle: number) =>
       generateDeploymentData({
         unitname,
-        category,
+        missileSystemType,
         center,
         angle,
         validateTaiwanBoundary: shouldValidateTaiwanBoundary,
@@ -241,7 +242,7 @@ export function useDeploymentState({
       // Preview offsets pre-compute a specific HA/RL layout, but we need both
       // FP and SHRL gateways to exist. Delegate to createDeployment which has
       // the outer retry loop that regenerates HA/RL when gateways fail.
-      const deployment = createDeployment(unit.name, unit.category, position, autoAngle);
+      const deployment = createDeployment(unit.name, unit.missileSystemType, position, autoAngle);
       if (!deployment) {
         // The clicked point already passed the boundary check above, so the
         // failure is the surrounding areas spilling out or no gateway fitting.
@@ -310,7 +311,8 @@ export function useDeploymentState({
    * so the click toggles its card open — same split as `handleJammerSelect`.
    */
   const handleUnitSelect = useCallback(
-    (unitKey: string, unitname: string, category: string) => {
+    (battery: Battery) => {
+      const { unitKey } = battery;
       if (deployedMissileSystems.has(unitKey)) {
         setExpandedUnitKey((current) => (current === unitKey ? null : unitKey));
         return;
@@ -322,8 +324,13 @@ export function useDeploymentState({
       if (offsetsAt90) offsets[90] = offsetsAt90;
       if (offsetsAt270) offsets[270] = offsetsAt270;
 
-      dispatch({ type: 'selectUnit', unit: { key: unitKey, name: unitname, category }, offsets });
-      setStatus(`${unitname} selected - Click map to deploy`);
+      const unit: SelectedUnit = {
+        key: unitKey,
+        name: battery.name,
+        missileSystemType: battery.missileSystemType,
+      };
+      dispatch({ type: 'selectUnit', unit, offsets });
+      setStatus(`${battery.name} selected - Click map to deploy`);
     },
     [deployedMissileSystems, rng]
   );
@@ -415,9 +422,9 @@ export function useDeploymentState({
   );
 
   const handleUndeploy = useCallback(
-    (unitKey: string, unitname: string) => {
-      onUndeploySystem(unitKey);
-      setStatus(`${unitname} deployment cancelled`);
+    (battery: Battery) => {
+      onUndeploySystem(battery.unitKey);
+      setStatus(`${battery.name} deployment cancelled`);
     },
     [onUndeploySystem]
   );

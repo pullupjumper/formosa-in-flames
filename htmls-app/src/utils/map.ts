@@ -16,17 +16,17 @@ export function resolveOpeningAngle(point: Coordinate): number {
   return longitude < ridgeLongitude ? 90 : 270;
 }
 
-/** Weapon system display name for a category key. */
-export function getWeaponSystemName(category: string): string {
-  return CONFIG.WEAPON_NAMES[category] || category.toUpperCase();
+/** Weapon system display name for a missile system type key. */
+export function getWeaponSystemName(missileSystemType: string): string {
+  return CONFIG.WEAPON_NAMES[missileSystemType] || missileSystemType.toUpperCase();
 }
 
 /**
- * Build the key identifying a firing unit inside a weapon category.
+ * Build the key identifying a firing unit inside a missile system type.
  * Deployment maps are keyed by this string throughout the control panel.
  */
-export function buildUnitKey(category: string, unitname: string): string {
-  return `${category}_${unitname}`;
+export function buildUnitKey(missileSystemType: string, unitname: string): string {
+  return `${missileSystemType}_${unitname}`;
 }
 
 /**
