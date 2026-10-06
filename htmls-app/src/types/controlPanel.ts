@@ -65,11 +65,11 @@ export interface FiringUnit {
   weaponRange: number;
 }
 
-export interface MissileSystemCategory {
+export interface MissileSystemConfig {
   firingUnits: Record<string, FiringUnit>;
 }
 
-export type MissileSystems = Record<string, MissileSystemCategory>;
+export type MissileSystemTypes = Record<string, MissileSystemConfig>;
 
 export interface AmphibiousLocation {
   name: string;
@@ -140,7 +140,7 @@ export interface MovementPaths {
 
 /** One missile unit placed on the map, with everything the export needs. */
 export interface MissileDeployment {
-  unitName: string;
+  unitname: string;
   missileSystemType: string;
   center: Coordinate;
   openingAngle: number;

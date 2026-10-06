@@ -62,7 +62,7 @@ function buildUShapeUpdate(
   rng: RandomSource
 ): AreaUpdateResult {
   const regenerated = generateDeploymentData({
-    unitName: deployment.unitName,
+    unitname: deployment.unitname,
     category: deployment.missileSystemType,
     center: position,
     angle: deployment.openingAngle,

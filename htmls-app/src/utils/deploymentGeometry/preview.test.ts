@@ -15,7 +15,7 @@ const INLAND: Coordinate = { latitude: 23.9, longitude: 120.75 };
 
 function place(seed: number) {
   const deployment = generateDeploymentData({
-    unitName: 'u',
+    unitname: 'u',
     category: 'ascm',
     center: INLAND,
     angle: 90,

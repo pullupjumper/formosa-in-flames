@@ -14,7 +14,7 @@ import { buildShelterPlan } from './shelter';
  */
 
 export interface GenerateDeploymentParams {
-  unitName: string;
+  unitname: string;
   category: string;
   center: Coordinate;
   angle: number;
@@ -37,7 +37,7 @@ export function isValidAngle(angle: number): boolean {
  * layout with both gateways could be found.
  */
 export function generateDeploymentData({
-  unitName,
+  unitname,
   category,
   center,
   angle,
@@ -71,7 +71,7 @@ export function generateDeploymentData({
       };
 
       return {
-        unitName,
+        unitname,
         missileSystemType: category,
         center,
         openingAngle: angle,
@@ -113,7 +113,7 @@ export function rotateDeployment({
 }: RotateDeploymentParams): MissileDeployment | null {
   if (!isValidAngle(angle)) return null;
   return generateDeploymentData({
-    unitName: deployment.unitName,
+    unitname: deployment.unitname,
     category: deployment.missileSystemType,
     center: deployment.center,
     angle,

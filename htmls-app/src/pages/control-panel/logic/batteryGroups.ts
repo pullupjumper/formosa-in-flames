@@ -1,0 +1,80 @@
+import type { MissileDeployment, MissileSystemTypes } from '@/types/controlPanel';
+import type { BatteryStatus } from '@/types/unitStatus';
+import { buildUnitKey } from '@/utils/map';
+
+/**
+ * Flattens the injected `MissileSystemTypes` payload into the batteries the sidebar
+ * renders, each carrying its deployment and live status. Pure, so grouping,
+ * deployed counters and status pairing can be tested without mounting the map.
+ */
+
+// ============================================================================
+// TYPES
+// ============================================================================
+export interface Battery {
+  /** Key shared by the deployment map and the status lookup: type plus name */
+  unitKey: string;
+  /** Display name from the game database */
+  name: string;
+  /** Missile system designation, e.g. `HF-3` */
+  missileSystem: string;
+  /** Missile system type key the battery is grouped under, e.g. `sam`, `ascm` */
+  missileSystemType: string;
+  /** Placement on the map, null until the battery is deployed */
+  deployment: MissileDeployment | null;
+  /** Live status from the unit status payload, absent when the game has none */
+  status: BatteryStatus | undefined;
+}
+
+export interface BatteryGroup {
+  missileSystemType: string;
+  deployedCount: number;
+  batteries: Battery[];
+}
+
+// ============================================================================
+// BUILDER
+// ============================================================================
+function buildStatusLookup(statuses: BatteryStatus[] | undefined): Map<string, BatteryStatus> {
+  const lookup = new Map<string, BatteryStatus>();
+
+  if (!Array.isArray(statuses)) return lookup;
+  for (const status of statuses) {
+    lookup.set(buildUnitKey(status.missileSystemType, status.name), status);
+  }
+
+  return lookup;
+}
+
+export function buildBatteryGroups(
+  missileSystemTypes: MissileSystemTypes,
+  deployments: Map<string, MissileDeployment>,
+  statuses: BatteryStatus[] | undefined
+): BatteryGroup[] {
+  const statusLookup = buildStatusLookup(statuses);
+  const groups: BatteryGroup[] = [];
+
+  for (const [missileSystemType, config] of Object.entries(missileSystemTypes)) {
+    if (!config?.firingUnits) continue;
+
+    const batteries = Object.entries(config.firingUnits).map(([unitname, unit]): Battery => {
+      const unitKey = buildUnitKey(missileSystemType, unitname);
+      return {
+        unitKey,
+        name: unit.name,
+        missileSystem: unit.missileSystem,
+        missileSystemType,
+        deployment: deployments.get(unitKey) ?? null,
+        status: statusLookup.get(buildUnitKey(missileSystemType, unit.name)),
+      };
+    });
+
+    groups.push({
+      missileSystemType,
+      deployedCount: batteries.filter((battery) => battery.deployment !== null).length,
+      batteries,
+    });
+  }
+
+  return groups;
+}

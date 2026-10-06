@@ -2,13 +2,13 @@ import { useState } from 'react';
 import type { AddUnitsMenuResult } from '@/types/addUnitsMenu';
 import { PageShell, type PageTab } from '@/components/PageShell';
 import { useActionSelection } from '@pages/control-panel/hooks/useActionSelection';
-import { MechanicsTab } from '@pages/control-panel/components/MechanicsTab';
-import { OpordTab } from '@pages/control-panel/components/OpordTab';
+import { MechanicsTab } from '@pages/control-panel/components/tabs/MechanicsTab';
+import { OpordTab } from '@pages/control-panel/components/tabs/OpordTab';
 import { useDeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
-import { AddUnitsTab } from './components/AddUnitsTab';
-import { ControlDeploymentTab } from './components/ControlDeploymentTab';
-import { resolveControlPanelView } from './controlPanelMode';
-import { readControlPanelPayload, submitSelectedActions } from './controlPanelPayload';
+import { AddUnitsTab } from '@pages/control-panel/components/tabs/AddUnitsTab';
+import { ControlDeploymentTab } from '@pages/control-panel/components/tabs/ControlDeploymentTab';
+import { resolveControlPanelView } from './logic/controlPanelMode';
+import { readControlPanelPayload, submitSelectedActions } from './logic/controlPanelPayload';
 
 // ============================================================================
 // TAB CONFIGURATION

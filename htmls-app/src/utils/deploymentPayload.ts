@@ -3,7 +3,7 @@ import type {
   Airbase,
   Jammer,
   MissileDeployment,
-  MissileSystems,
+  MissileSystemTypes,
   MovementPaths,
   OperationalArea,
   ControlPanelResult,
@@ -36,14 +36,14 @@ import { calculateCentroid } from '@/utils/geo';
  */
 export function fromOperationalArea(
   category: string,
-  unitName: string,
+  unitname: string,
   operationalArea: OperationalArea
 ): MissileDeployment {
   const reloadCourse = operationalArea.RL[0].course;
   const ammoArea = operationalArea.AHA[0].area;
 
   return {
-    unitName,
+    unitname,
     missileSystemType: category,
     center: calculateCentroid(operationalArea.uShapeVertices),
     openingAngle: 0,
@@ -70,15 +70,15 @@ export function fromOperationalArea(
 
 /** Every scenario-placed firing unit, keyed the same way as player placements. */
 export function buildInjectedDeployments(
-  missileSystems: MissileSystems
+  missileSystems: MissileSystemTypes
 ): Map<string, MissileDeployment> {
   const deployments = new Map<string, MissileDeployment>();
 
   for (const [category, system] of Object.entries(missileSystems)) {
-    for (const [unitName, unit] of Object.entries(system.firingUnits ?? {})) {
+    for (const [unitname, unit] of Object.entries(system.firingUnits ?? {})) {
       deployments.set(
-        buildUnitKey(category, unitName),
-        fromOperationalArea(category, unitName, unit.operationalArea)
+        buildUnitKey(category, unitname),
+        fromOperationalArea(category, unitname, unit.operationalArea)
       );
     }
   }
@@ -138,7 +138,7 @@ export function toControlPanelResult({
     }),
     missileSystems: Array.from(deployedMissileSystems.entries()).map(([key, deployment]) => ({
       key,
-      unitname: deployment.unitName,
+      unitname: deployment.unitname,
       missileSystemType: deployment.missileSystemType,
       center: deployment.center,
       openingAngle: deployment.openingAngle,

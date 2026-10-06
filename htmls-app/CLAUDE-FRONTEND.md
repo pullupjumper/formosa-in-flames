@@ -15,6 +15,7 @@ React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Use
 - `components/` — shared React components
 - `utils/` — utility functions that make no assumption about a page (e.g., `geo.ts` owns all coordinate helpers). If it would only make sense on one page's screen, it belongs in that page folder
 - `hooks/` (inside a page) — React hooks only (`useX.ts`); pure reducers and selectors go next to them, not inside
+- `logic/` (inside a page) — pure view models, mode reducers, and payload reads for that page, with their tests. No React
 - `constants/` — runtime constants and CONFIG objects
 - `data/` — mock data for development
 - `index.css` — Tailwind @theme custom colors
@@ -92,7 +93,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
 | `get` | O(1) lookup | `getWeaponSystemName` |
 | `calculate` | geometry / numeric work | `calculateCentroid`, `calculateBearing` |
 | `generate` | produce new data, may be random | `generateShelterPoints` |
-| `build` | deterministic assembly | `buildMovementPaths`, `buildMissileGroups` |
+| `build` | deterministic assembly | `buildMovementPaths`, `buildBatteryGroups` |
 | `create` | third-party object factory | `createIcon`, `createSeededRandom` |
 | `resolve` / `select` | pick one of several candidates | `resolveOpeningAngle`, `selectFpGateway` |
 | `parse` / `read` | decode input | `parseInjectedJSON`, `readInjectedString` |

@@ -3,7 +3,7 @@ import { CircleMarker, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, MissileSystems, TacticalAreas } from '@/types/controlPanel';
+import type { MissileDeployment, MissileSystemTypes, TacticalAreas } from '@/types/controlPanel';
 import type { AreaType, RelocatingArea } from '@/types/deployment';
 import { getAreaColor } from '@/constants/deployment';
 import { canInteractArea, getWeaponSystemName } from '@/utils/map';
@@ -98,7 +98,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
   isAnyRelocating = false,
   isRotating,
 }: MissileSystemMarkerProps) {
-  const { unitName, missileSystemType: category, tacticalAreas, paths } = data;
+  const { unitname, missileSystemType: category, tacticalAreas, paths } = data;
 
   const isAreaRelocating = useCallback(
     (type: AreaType, fpIndex?: number) =>
@@ -173,7 +173,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         >
           <Popup>
             <div className="text-text-primary">
-              <strong>{unitName}</strong>
+              <strong>{unitname}</strong>
               <br />
               <span className="text-text-secondary">{getWeaponSystemName(category)}</span>
               <br />
@@ -222,7 +222,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         <>
           <Marker position={toLeafletLatLng(hideCenter)} icon={icon}>
             <Tooltip direction="top">
-              <strong>{unitName}</strong>
+              <strong>{unitname}</strong>
             </Tooltip>
           </Marker>
           <RangeCircle center={hideCenter} radiusNm={rangeNm} color={WEAPON_RANGE_COLOR} />
@@ -333,7 +333,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 // ============================================================================
 interface DeployedMissileSystemsProps {
   deployedMissileSystems: Map<string, MissileDeployment>;
-  missileSystems: MissileSystems;
+  missileSystems: MissileSystemTypes;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (unitKey: string) => void;
   relocatingArea?: RelocatingArea | null;
@@ -358,7 +358,7 @@ export function DeployedMissileSystems({
           unitKey={unitKey}
           data={data}
           rangeNm={
-            missileSystems[data.missileSystemType]?.firingUnits[data.unitName]?.weaponRange ?? 0
+            missileSystems[data.missileSystemType]?.firingUnits[data.unitname]?.weaponRange ?? 0
           }
           onAreaClick={onAreaClick}
           onRotateClick={onRotateClick}

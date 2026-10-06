@@ -1,8 +1,8 @@
 import type { LandingUnitsData } from '@/types/unitStatus';
 import { ImageIcon } from '@/components/ImageIcon';
 import { ICON_IMAGES } from '@/components/Map';
-import { InfoCard } from './InfoCard';
-import { TreeRow } from './TreeRow';
+import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
+import { TreeRow } from '@pages/control-panel/components/shared/TreeRow';
 
 // ============================================================================
 // LandingUnitsSection — landing areas on the left, their unit counts on the right

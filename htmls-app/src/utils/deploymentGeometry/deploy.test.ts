@@ -34,7 +34,7 @@ describe('isValidAngle', () => {
 // ============================================================================
 describe('generateDeploymentData', () => {
   const baseParams = {
-    unitName: 'HF3_01',
+    unitname: 'HF3_01',
     category: 'ascm',
     angle: 90,
     validateTaiwanBoundary: true,
@@ -48,7 +48,7 @@ describe('generateDeploymentData', () => {
     });
 
     expect(data).not.toBeNull();
-    expect(data!.unitName).toBe('HF3_01');
+    expect(data!.unitname).toBe('HF3_01');
     expect(data!.missileSystemType).toBe('ascm');
     expect(data!.center).toEqual(INLAND);
     expect(data!.openingAngle).toBe(90);
@@ -140,7 +140,7 @@ describe('rotateDeployment', () => {
   function place(seed: number) {
     const rng = createSeededRandom(seed);
     const deployment = generateDeploymentData({
-      unitName: 'u',
+      unitname: 'u',
       category: 'ascm',
       center: INLAND,
       angle: 90,

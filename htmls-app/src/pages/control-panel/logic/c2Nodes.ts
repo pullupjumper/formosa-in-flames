@@ -1,5 +1,5 @@
 import type { C2Data, C2Node, C2Unit } from '@/types/unitStatus';
-import type { MissileGroupUnit } from '@pages/control-panel/missileGroups';
+import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 
 /**
  * View model for the C2 Nodes section: each node with its radar and SAM units,
@@ -15,7 +15,7 @@ export interface C2Child {
   type: 'SAM' | 'Radar';
   unit: C2Unit;
   /** Matching missile battery, present only for SAM units that can be deployed */
-  battery: MissileGroupUnit | null;
+  battery: Battery | null;
 }
 
 /** One live SAM unit and its weapons control status, as written to `emconData`. */
@@ -59,10 +59,10 @@ function flattenC2Nodes(data: C2Data): Record<string, C2Node> {
  * Pair every SAM unit with its battery by name. A battery backs at most one SAM
  * unit so two cards never drive the same deployment.
  */
-export function buildC2NodeViews(c2Data: C2Data, samBatteries: MissileGroupUnit[]): C2NodeView[] {
+export function buildC2NodeViews(c2Data: C2Data, samBatteries: Battery[]): C2NodeView[] {
   const claimed = new Set<string>();
 
-  const findBattery = (name: string): MissileGroupUnit | null => {
+  const findBattery = (name: string): Battery | null => {
     const battery =
       samBatteries.find((unit) => unit.name === name && !claimed.has(unit.unitKey)) ?? null;
     if (battery) claimed.add(battery.unitKey);

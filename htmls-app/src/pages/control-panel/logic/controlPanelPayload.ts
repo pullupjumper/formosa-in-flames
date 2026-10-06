@@ -3,7 +3,7 @@ import type {
   Airbase,
   AmphibiousLocation,
   Jammer,
-  MissileSystems,
+  MissileSystemTypes,
   ControlPanelResult,
 } from '@/types/controlPanel';
 import type { BatteryStatus, C2Data, LandingUnitsData, SignalData } from '@/types/unitStatus';
@@ -59,7 +59,7 @@ export interface ControlPanelPayload {
   mode: ControlPanelMode;
   airbases: Airbase[];
   jammers: Jammer[];
-  missileSystems: MissileSystems;
+  missileSystems: MissileSystemTypes;
   amphibiousLocations: AmphibiousLocation[];
   c2Data: C2Data;
   signals: SignalData[];
@@ -78,7 +78,7 @@ export function readControlPanelPayload(): ControlPanelPayload {
     },
     airbases: parseInjectedJSON<Airbase[]>(window.__INJECT_AIRBASES__, AIRBASES_DATA, 'AIRBASES'),
     jammers: parseInjectedJSON<Jammer[]>(window.__INJECT_JAMMERS__, JAMMERS_DATA, 'JAMMERS'),
-    missileSystems: parseInjectedJSON<MissileSystems>(
+    missileSystems: parseInjectedJSON<MissileSystemTypes>(
       window.__INJECT_MISSILE_SYSTEMS__,
       MISSILE_SYSTEMS_DATA,
       'MISSILE_SYSTEMS'

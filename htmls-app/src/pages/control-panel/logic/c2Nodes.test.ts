@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { C2Data, C2Unit } from '@/types/unitStatus';
-import type { MissileGroupUnit } from '@pages/control-panel/missileGroups';
+import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from './c2Nodes';
 
 // ============================================================================
@@ -18,14 +18,14 @@ function c2Unit(name: string): C2Unit {
   };
 }
 
-function battery(unitKey: string, name: string): MissileGroupUnit {
+function battery(unitKey: string, name: string): Battery {
   return {
     unitKey,
     name,
     missileSystem: 'PAC-3',
-    missileSystemType: 'SAM',
-    isDeployed: false,
-    openingAngle: null,
+    missileSystemType: 'sam',
+    deployment: null,
+    status: undefined,
   };
 }
 

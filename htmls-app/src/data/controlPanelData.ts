@@ -1,4 +1,4 @@
-import type { Airbase, Jammer, MissileSystems, AmphibiousLocation } from '@/types/controlPanel';
+import type { Airbase, Jammer, MissileSystemTypes, AmphibiousLocation } from '@/types/controlPanel';
 
 // ============================================================================
 // JAMMERS DATA
@@ -300,7 +300,7 @@ export const AIRBASES_DATA: Airbase[] = [
 // ============================================================================
 // MISSILE SYSTEMS DATA (Simplified - only firingUnits for UI)
 // ============================================================================
-export const MISSILE_SYSTEMS_DATA: MissileSystems = {
+export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
   sam: {
     firingUnits: {
       '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde': {

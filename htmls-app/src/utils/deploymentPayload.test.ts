@@ -20,7 +20,7 @@ describe('fromOperationalArea', () => {
   const deployment = fromOperationalArea(CATEGORY, UNIT_NAME, AREA);
 
   it('keeps identity and stored areas verbatim', () => {
-    expect(deployment.unitName).toBe(UNIT_NAME);
+    expect(deployment.unitname).toBe(UNIT_NAME);
     expect(deployment.missileSystemType).toBe(CATEGORY);
     expect(deployment.tacticalAreas.uShapeVertices).toBe(AREA.uShapeVertices);
     expect(deployment.tacticalAreas.ammoArea).toBe(AREA.AHA[0].area);
@@ -73,7 +73,7 @@ describe('toControlPanelResult', () => {
   it('uses the Lua field names and the trimmed paths', () => {
     const rng = createSeededRandom(7);
     const generated = generateDeploymentData({
-      unitName: UNIT_NAME,
+      unitname: UNIT_NAME,
       category: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
       angle: 90,
@@ -105,7 +105,7 @@ describe('toControlPanelResult', () => {
   it('round-trips a generated deployment through the Lua area shape', () => {
     const rng = createSeededRandom(11);
     const generated = generateDeploymentData({
-      unitName: UNIT_NAME,
+      unitname: UNIT_NAME,
       category: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
       angle: 45,

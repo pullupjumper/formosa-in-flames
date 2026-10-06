@@ -4,7 +4,7 @@ import type { Airbase, MissileDeployment } from '@/types/controlPanel';
 import { CONFIG } from '@/constants/controlPanel';
 import { buildInjectedDeployments } from '@/utils/deploymentPayload';
 import { createBudgetState } from '@/utils/budgetLedger';
-import type { ControlPanelPayload } from '../controlPanelPayload';
+import type { ControlPanelPayload } from '../logic/controlPanelPayload';
 
 /**
  * Deployment state for the Deployment tab: the loadout budget and what the

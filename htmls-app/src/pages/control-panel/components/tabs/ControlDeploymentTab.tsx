@@ -1,22 +1,21 @@
 import { useMemo, useState } from 'react';
-import { DeploymentMap } from '@pages/control-panel/components/DeploymentMap';
-import { buildMissileGroups } from '@pages/control-panel/missileGroups';
+import { DeploymentMap } from '@pages/control-panel/components/map/DeploymentMap';
+import { buildBatteryGroups } from '@pages/control-panel/logic/batteryGroups';
 import { toControlPanelResult } from '@/utils/deploymentPayload';
-import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../c2Nodes';
-import { buildBatteryStatusMap } from '../batteryStatus';
-import { submitDeployment, type ControlPanelPayload } from '../controlPanelPayload';
+import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../../logic/c2Nodes';
+import { submitDeployment, type ControlPanelPayload } from '../../logic/controlPanelPayload';
 import type { DeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
-import { Panel } from './Panel';
-import { JammerSection } from './JammerSection';
-import { LandingUnitsSection } from './LandingUnitsSection';
-import { MapStatusBar } from './MapStatusBar';
-import { SubmitBar } from './SubmitBar';
-import { SignalSection } from './SignalSection';
-import { C2NodesSection } from './C2NodesSection';
-import { AircraftBasesSection } from './AircraftBasesSection';
-import { BatterySection } from './BatterySection';
-import { ResizeHandle } from './ResizeHandle';
+import { Panel } from '@pages/control-panel/components/shared/Panel';
+import { JammerSection } from '@pages/control-panel/components/sections/JammerSection';
+import { LandingUnitsSection } from '@pages/control-panel/components/sections/LandingUnitsSection';
+import { MapStatusBar } from '@pages/control-panel/components/map/MapStatusBar';
+import { SubmitBar } from '@pages/control-panel/components/shared/SubmitBar';
+import { SignalSection } from '@pages/control-panel/components/sections/SignalSection';
+import { C2NodesSection } from '@pages/control-panel/components/sections/C2NodesSection';
+import { AircraftBasesSection } from '@pages/control-panel/components/sections/AircraftBasesSection';
+import { BatterySection } from '@pages/control-panel/components/sections/BatterySection';
+import { ResizeHandle } from '@pages/control-panel/components/shared/ResizeHandle';
 
 // SAM batteries are deployed from their C2 node card, not the battery list
 const SAM_CATEGORY = 'sam';
@@ -93,24 +92,23 @@ export function ControlDeploymentTab({
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
-  const missileGroups = useMemo(
-    () => buildMissileGroups(missileSystems, deployedMissileSystems),
-    [missileSystems, deployedMissileSystems]
+  const allGroups = useMemo(
+    () => buildBatteryGroups(missileSystems, deployedMissileSystems, payload.batteryStatuses),
+    [missileSystems, deployedMissileSystems, payload.batteryStatuses]
   );
   const batteryGroups = useMemo(
-    () => missileGroups.filter((group) => group.missileSystemType !== SAM_CATEGORY),
-    [missileGroups]
+    () => allGroups.filter((group) => group.missileSystemType !== SAM_CATEGORY),
+    [allGroups]
   );
   const deployedBatteries = batteryGroups.reduce((sum, group) => sum + group.deployedCount, 0);
-  const totalBatteries = batteryGroups.reduce((sum, group) => sum + group.units.length, 0);
+  const totalBatteries = batteryGroups.reduce((sum, group) => sum + group.batteries.length, 0);
 
-  const [batteryStatusMap] = useState(() => buildBatteryStatusMap(payload.batteryStatuses));
   const c2Nodes = useMemo(() => {
-    const samBatteries = missileGroups.find(
+    const samBatteries = allGroups.find(
       (group) => group.missileSystemType === SAM_CATEGORY
-    )?.units;
+    )?.batteries;
     return buildC2NodeViews(payload.c2Data, samBatteries ?? []);
-  }, [payload.c2Data, missileGroups]);
+  }, [payload.c2Data, allGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
   const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
   const samUnits = collectSamUnits(shownC2Nodes);
@@ -143,8 +141,6 @@ export function ControlDeploymentTab({
             nodes={shownC2Nodes}
             samWeaponsFree={samUnits.length > 0 && samUnits.every((sam) => sam.weaponFree)}
             onSamWeaponsFreeChange={setSamWeaponsFree}
-            batteryStatusMap={batteryStatusMap}
-            samCategory={SAM_CATEGORY}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}
@@ -169,8 +165,7 @@ export function ControlDeploymentTab({
           badge={`${deployedBatteries}/${totalBatteries}`}
         >
           <BatterySection
-            missileGroups={batteryGroups}
-            batteryStatusMap={batteryStatusMap}
+            batteryGroups={batteryGroups}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}

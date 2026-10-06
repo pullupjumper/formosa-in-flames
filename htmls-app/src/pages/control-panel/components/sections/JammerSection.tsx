@@ -1,7 +1,7 @@
 import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/controlPanel';
 import { EW_ICON_URL, EW_ICON_SIZE } from '@/components/Map';
-import { DeployableUnitCard } from '@pages/control-panel/components/DeployableUnitCard';
+import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 
 // ============================================================================
 // JammerSection — GPS jammer cards for the control panel

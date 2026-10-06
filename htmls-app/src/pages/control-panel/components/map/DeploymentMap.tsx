@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { Airbase, MissileDeployment, MissileSystems, Jammer } from '@/types/controlPanel';
+import type { Airbase, MissileDeployment, MissileSystemTypes, Jammer } from '@/types/controlPanel';
 import type { SignalData } from '@/types/unitStatus';
 import {
   BaseMap,
@@ -12,7 +12,7 @@ import {
   JammerRelocatePreview,
 } from '@/components/Map';
 import type { RelocatingArea } from '@/types/deployment';
-import type { DeploymentPreview } from '../hooks/useDeploymentPreviews';
+import type { DeploymentPreview } from '../../hooks/useDeploymentPreviews';
 
 // ============================================================================
 // DeploymentMap — the map layer stack for the Deployment tab
@@ -22,7 +22,7 @@ interface DeploymentMapProps {
   airbases: Airbase[];
   jammers: Jammer[];
   deployedMissileSystems: Map<string, MissileDeployment>;
-  missileSystems: MissileSystems;
+  missileSystems: MissileSystemTypes;
   deployedJammers: Map<number, Coordinate>;
   /** Detected signals shown as suspected C2 markers */
   signals: SignalData[];

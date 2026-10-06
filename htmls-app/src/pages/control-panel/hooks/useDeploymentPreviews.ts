@@ -5,7 +5,7 @@ import { resolveOpeningAngle } from '@/utils/map';
 import { previewDeployment, previewRelocation, previewRotation } from '@/utils/deploymentGeometry';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 import type { RandomSource } from '@/utils/random';
-import type { DeploymentMode } from '../deploymentMode';
+import type { DeploymentMode } from '../logic/deploymentMode';
 
 export type { DeploymentPreview } from '@/utils/deploymentGeometry';
 

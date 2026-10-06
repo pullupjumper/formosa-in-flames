@@ -25,8 +25,8 @@ export function getWeaponSystemName(category: string): string {
  * Build the key identifying a firing unit inside a weapon category.
  * Deployment maps are keyed by this string throughout the control panel.
  */
-export function buildUnitKey(category: string, unitName: string): string {
-  return `${category}_${unitName}`;
+export function buildUnitKey(category: string, unitname: string): string {
+  return `${category}_${unitname}`;
 }
 
 /**

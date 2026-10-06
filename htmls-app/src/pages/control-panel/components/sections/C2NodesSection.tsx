@@ -1,12 +1,11 @@
 import { ImageIcon } from '@/components/ImageIcon';
 import { ICON_IMAGES } from '@/components/Map';
-import { DeployableUnitCard } from '@pages/control-panel/components/DeployableUnitCard';
-import type { C2Child, C2NodeView } from '../c2Nodes';
-import { getBatteryStatus, type BatteryStatusMap } from '../batteryStatus';
-import { InfoCard } from './InfoCard';
-import { BatteryStatusDetails } from './BatteryStatusDetails';
-import { SamDoctrineToggle } from './SamDoctrineToggle';
-import { TreeRow } from './TreeRow';
+import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
+import type { C2Child, C2NodeView } from '../../logic/c2Nodes';
+import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
+import { BatteryStatusDetails } from '@pages/control-panel/components/sections/BatteryStatusDetails';
+import { SamDoctrineToggle } from '@pages/control-panel/components/sections/SamDoctrineToggle';
+import { TreeRow } from '@pages/control-panel/components/shared/TreeRow';
 
 // ============================================================================
 // C2NodesSection — C2 nodes on the left, their radar and SAM units on the right
@@ -15,13 +14,10 @@ interface C2NodesSectionProps {
   nodes: C2NodeView[];
   samWeaponsFree: boolean;
   onSamWeaponsFreeChange: (weaponsFree: boolean) => void;
-  batteryStatusMap: BatteryStatusMap;
-  /** Weapon category the SAM batteries are deployed under */
-  samCategory: string;
   expandedUnitKey: string | null;
   selectedUnitKey: string | null;
-  onUnitSelect: (unitKey: string, unitName: string, category: string) => void;
-  onUndeploy: (unitKey: string, unitName: string) => void;
+  onUnitSelect: (unitKey: string, unitname: string, category: string) => void;
+  onUndeploy: (unitKey: string, unitname: string) => void;
   onCancelSelection: () => void;
 }
 
@@ -29,8 +25,6 @@ export function C2NodesSection({
   nodes,
   samWeaponsFree,
   onSamWeaponsFreeChange,
-  batteryStatusMap,
-  samCategory,
   expandedUnitKey,
   selectedUnitKey,
   onUnitSelect,
@@ -59,8 +53,6 @@ export function C2NodesSection({
               node: (
                 <ChildCard
                   child={child}
-                  batteryStatusMap={batteryStatusMap}
-                  samCategory={samCategory}
                   expandedUnitKey={expandedUnitKey}
                   selectedUnitKey={selectedUnitKey}
                   onUnitSelect={onUnitSelect}
@@ -89,8 +81,6 @@ interface ChildCardProps extends Omit<
 
 function ChildCard({
   child,
-  batteryStatusMap,
-  samCategory,
   expandedUnitKey,
   selectedUnitKey,
   onUnitSelect,
@@ -98,9 +88,6 @@ function ChildCard({
   onCancelSelection,
 }: ChildCardProps) {
   const { unit, battery, type } = child;
-  const batteryStatus = battery
-    ? getBatteryStatus(batteryStatusMap, samCategory, battery.name)
-    : undefined;
   // Status stays folded until the card is clicked open
   const isOpen =
     battery !== null &&
@@ -108,7 +95,7 @@ function ChildCard({
   const details = (
     <>
       <UnitDetails type={type} unit={unit} battery={battery} />
-      {isOpen && batteryStatus && <BatteryStatusDetails status={batteryStatus} />}
+      {isOpen && battery?.status && <BatteryStatusDetails status={battery.status} />}
     </>
   );
   const icon = type === 'SAM' ? <ImageIcon image={ICON_IMAGES.sam} /> : undefined;
@@ -122,11 +109,13 @@ function ChildCard({
       name={battery.name}
       icon={icon}
       details={details}
-      deployedSummary={`✓ Deployed | Angle: ${battery.openingAngle}°`}
-      isDeployed={battery.isDeployed}
+      deployedSummary={
+        battery.deployment ? `✓ Deployed | Angle: ${battery.deployment.openingAngle}°` : null
+      }
+      isDeployed={battery.deployment !== null}
       isSelected={selectedUnitKey === battery.unitKey}
       isExpanded={expandedUnitKey === battery.unitKey}
-      onSelect={() => onUnitSelect(battery.unitKey, battery.name, samCategory)}
+      onSelect={() => onUnitSelect(battery.unitKey, battery.name, battery.missileSystemType)}
       onCancelDeployment={() => onUndeploy(battery.unitKey, battery.name)}
       onCancelSelection={onCancelSelection}
     />
@@ -146,7 +135,7 @@ function UnitDetails({
     <>
       {battery && (
         <div>
-          {battery.missileSystemType}|{battery.missileSystem}
+          {battery.missileSystemType.toUpperCase()}|{battery.missileSystem}
         </div>
       )}
       <div>

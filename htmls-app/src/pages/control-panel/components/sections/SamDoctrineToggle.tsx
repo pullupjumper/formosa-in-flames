@@ -1,4 +1,4 @@
-import { CheckboxCard } from './CheckboxCard';
+import { CheckboxCard } from '@pages/control-panel/components/shared/CheckboxCard';
 
 // ============================================================================
 // SamDoctrineToggle — one checkbox for every SAM's weapons control status

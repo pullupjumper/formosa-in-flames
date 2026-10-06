@@ -1,7 +1,7 @@
 import type { AddUnitAction } from '@/types/addUnitsMenu';
-import { CheckboxCard } from './CheckboxCard';
-import { Panel } from './Panel';
-import { SubmitBar } from './SubmitBar';
+import { CheckboxCard } from '@pages/control-panel/components/shared/CheckboxCard';
+import { Panel } from '@pages/control-panel/components/shared/Panel';
+import { SubmitBar } from '@pages/control-panel/components/shared/SubmitBar';
 
 // ============================================================================
 // AddUnitsTab — pick the `addXXX` actions to run when the dialog is confirmed

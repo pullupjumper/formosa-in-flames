@@ -1,6 +1,6 @@
 import type { Airbase, BudgetState } from '@/types/controlPanel';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/Map';
-import { BaseEditor } from '@pages/control-panel/components/BaseEditor';
+import { BaseEditor } from '@pages/control-panel/components/sections/BaseEditor';
 
 // ============================================================================
 // AircraftBasesSection — budget plus one loadout card per airbase

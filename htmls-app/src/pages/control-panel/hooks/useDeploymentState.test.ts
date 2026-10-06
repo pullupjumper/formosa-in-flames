@@ -13,8 +13,8 @@ import {
   formatAreaLabel,
   isMissileMode,
   isSameArea,
-} from '@/pages/control-panel/deploymentMode';
-import type { DeploymentMode } from '@/pages/control-panel/deploymentMode';
+} from '@/pages/control-panel/logic/deploymentMode';
+import type { DeploymentMode } from '@/pages/control-panel/logic/deploymentMode';
 import { getAreaLabel } from '@/constants/deployment';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { createSeededRandom } from '@/utils/random';
@@ -38,7 +38,7 @@ const JAMMERS = [
 
 function makeDeployment(): MissileDeployment {
   const data = generateDeploymentData({
-    unitName: UNIT_NAME,
+    unitname: UNIT_NAME,
     category: 'ascm',
     center: INLAND,
     angle: 90,
