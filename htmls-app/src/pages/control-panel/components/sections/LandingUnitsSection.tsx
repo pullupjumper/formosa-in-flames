@@ -1,6 +1,6 @@
 import type { LandingUnitsData } from '@/types/unitStatus';
+import { getLandingUnitImage } from '@/components/map';
 import { ImageIcon } from '@/components/ImageIcon';
-import { ICON_IMAGES } from '@/components/Map';
 import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
 import { TreeRow } from '@pages/control-panel/components/shared/TreeRow';
 
@@ -29,23 +29,20 @@ export function LandingUnitsSection({ landingUnits }: LandingUnitsSectionProps) 
         return (
           <TreeRow
             key={area}
-            root={
-              <InfoCard
-                name={area}
-                icon={<ImageIcon image={ICON_IMAGES.suspectedC2} />}
-                details={<div>LANDED: {total}</div>}
-              />
-            }
-            leaves={unitTypes.map(([unitType, count]) => ({
-              key: unitType,
-              node: (
-                <InfoCard
-                  name={unitType}
-                  icon={<ImageIcon image={ICON_IMAGES.suspectedC2} />}
-                  details={<div>COUNT: {count}</div>}
-                />
-              ),
-            }))}
+            root={<InfoCard name={area} details={<div>LANDED: {total}</div>} />}
+            leaves={unitTypes.map(([unitType, count]) => {
+              const image = getLandingUnitImage(unitType);
+              return {
+                key: unitType,
+                node: (
+                  <InfoCard
+                    name={unitType}
+                    icon={image && <ImageIcon image={image} />}
+                    details={<div>COUNT: {count}</div>}
+                  />
+                ),
+              };
+            })}
             emptyMessage="No unit types"
           />
         );

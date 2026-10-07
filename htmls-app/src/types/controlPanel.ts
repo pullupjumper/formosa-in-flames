@@ -4,6 +4,7 @@
 // `OperationalArea`, ...) are dictated by `unitStatusUI.lua` and must not be
 // renamed here.
 
+import type { ComponentType, SVGProps } from 'react';
 import type { Coordinate, MovementPath } from '@/types/geo';
 
 // ============================================================================
@@ -153,7 +154,7 @@ export interface MissileDeployment {
 }
 
 export interface ForceImage {
-  url: string | null;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
   label: string;
   width: number;
   height: number;

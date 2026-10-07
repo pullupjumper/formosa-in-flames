@@ -1,6 +1,6 @@
 import type { SignalData } from '@/types/unitStatus';
 import { ImageIcon } from '@/components/ImageIcon';
-import { ICON_IMAGES } from '@/components/Map';
+import { ICON_IMAGES } from '@/components/map';
 import { formatTimestamp } from '@/utils/format';
 
 // ============================================================================

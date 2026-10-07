@@ -1,5 +1,5 @@
 import type { Airbase, BudgetState } from '@/types/controlPanel';
-import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/Map';
+import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/map';
 import { BaseEditor } from '@pages/control-panel/components/sections/BaseEditor';
 
 // ============================================================================

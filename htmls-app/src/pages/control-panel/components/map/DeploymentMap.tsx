@@ -10,7 +10,7 @@ import {
   AreaRelocatePreview,
   DeployedJammers,
   JammerRelocatePreview,
-} from '@/components/Map';
+} from '@/components/map';
 import type { RelocatingArea } from '@/types/deployment';
 import type { DeploymentPreview } from '../../hooks/useDeploymentPreviews';
 

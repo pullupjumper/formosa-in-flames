@@ -1,5 +1,5 @@
 import { ImageIcon } from '@/components/ImageIcon';
-import { ICON_IMAGES } from '@/components/Map';
+import { ICON_IMAGES } from '@/components/map';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 import type { Battery } from '../../logic/batteryGroups';
 import type { C2Child, C2NodeView } from '../../logic/c2Nodes';

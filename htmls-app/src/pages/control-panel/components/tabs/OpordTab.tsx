@@ -3,7 +3,7 @@ import { Marker, Polyline, Circle } from 'react-leaflet';
 import type { LatLngTuple, PathOptions } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
 import type { AmphibiousLocation, ForceImage } from '@/types/controlPanel';
-import { MapShell, createImageIcon } from '@/components/Map';
+import { MapShell, createImageIcon, ICON_IMAGES } from '@/components/map';
 import {
   Section,
   Subsection,
@@ -17,24 +17,14 @@ import {
   DocTd,
 } from '@/components/Doc';
 
-// ============================================================================
-// FORCE IMAGERY SLOTS
-// Reserved space for amphibious task force / carrier strike group imagery.
-// Drop a URL (or an injected data URI) in here and the map marker renders it;
-// until then a dashed placeholder box of the same size holds the layout.
-// ============================================================================
-
 interface OpordTabProps {
   amphibiousLocations: AmphibiousLocation[];
 }
 
-const AMPHIBIOUS_IMAGE_URL = 'https://i.meee.com.tw/k9bABdK.png';
-const CARRIER_IMAGE_URL = 'https://i.meee.com.tw/KaFhzmY.png';
-
 const FORCE_IMAGES: Record<'atf1' | 'atf2' | 'csg', ForceImage> = {
-  atf1: { url: AMPHIBIOUS_IMAGE_URL, label: 'ATF-1', width: 48, height: 32 },
-  atf2: { url: AMPHIBIOUS_IMAGE_URL, label: 'ATF-2', width: 48, height: 32 },
-  csg: { url: CARRIER_IMAGE_URL, label: 'CSG', width: 48, height: 32 },
+  atf1: { ...ICON_IMAGES.taskForce, label: 'ATF-1' },
+  atf2: { ...ICON_IMAGES.taskForce, label: 'ATF-2' },
+  csg: { ...ICON_IMAGES.carrier, label: 'CSG' },
 };
 
 /**

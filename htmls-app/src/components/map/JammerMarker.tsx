@@ -1,19 +1,13 @@
 import { memo, useMemo, useCallback } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
-import L from 'leaflet';
 import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { RangeCircle } from './primitives';
-import { EW_ICON_URL, EW_ICON_SIZE } from './icons';
+import { createImageIcon, ICON_IMAGES } from './icons';
 
 // EW unit icon
-const EW_ICON = L.icon({
-  iconUrl: EW_ICON_URL,
-  iconSize: [EW_ICON_SIZE.width, EW_ICON_SIZE.height],
-  iconAnchor: [EW_ICON_SIZE.width / 2, EW_ICON_SIZE.height / 2],
-  popupAnchor: [0, -15],
-});
+const EW_ICON = createImageIcon(ICON_IMAGES.ew);
 
 const JAMMER_RANGE_COLOR = '#ff6b6b';
 

@@ -154,11 +154,6 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [tacticalAreas.ammoArea]
   );
 
-  const reloadCenter = useMemo<Coordinate | null>(
-    () => (tacticalAreas.reloadArea?.length ? calculateCentroid(tacticalAreas.reloadArea) : null),
-    [tacticalAreas.reloadArea]
-  );
-
   const icon = useMemo(
     () => createImageIcon(getBatteryImage(missileSystemType)),
     [missileSystemType]
@@ -235,15 +230,6 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
       {ahaCenter && (
         <>
           <Marker position={toLeafletLatLng(ahaCenter)} icon={createImageIcon(ICON_IMAGES.atp)} />
-        </>
-      )}
-
-      {reloadCenter && (
-        <>
-          <Marker
-            position={toLeafletLatLng(reloadCenter)}
-            icon={createImageIcon(ICON_IMAGES.msl)}
-          />
         </>
       )}
 

@@ -1,5 +1,5 @@
 import { ImageIcon } from '@/components/ImageIcon';
-import { getBatteryImage } from '@/components/Map';
+import { getBatteryImage } from '@/components/map';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 import type { Battery, BatteryGroup } from '@pages/control-panel/logic/batteryGroups';
 import { BatteryStatusDetails } from '@pages/control-panel/components/sections/BatteryStatusDetails';

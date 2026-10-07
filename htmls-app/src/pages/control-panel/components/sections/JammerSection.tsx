@@ -1,6 +1,7 @@
 import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/controlPanel';
-import { EW_ICON_URL, EW_ICON_SIZE } from '@/components/Map';
+import { ICON_IMAGES } from '@/components/map';
+import { ImageIcon } from '@/components/ImageIcon';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 
 // ============================================================================
@@ -36,15 +37,7 @@ export function JammerSection({
         const deployment = deployedJammers.get(index);
         return (
           <DeployableUnitCard
-            icon={
-              <img
-                src={EW_ICON_URL}
-                alt="EW"
-                width={EW_ICON_SIZE.width * 1.4}
-                height={EW_ICON_SIZE.height * 1.4}
-                className="shrink-0 object-contain"
-              />
-            }
+            icon={<ImageIcon image={ICON_IMAGES.ew} />}
             key={index}
             name={jammer.name}
             details={
