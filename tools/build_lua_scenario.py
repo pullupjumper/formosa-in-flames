@@ -555,11 +555,9 @@ def inject_html_templates(content: str, src_dir: str) -> str:
                 # Inject local JS files into HTML before processing
                 html_content = inject_local_js_into_html(html_content, html_dir)
 
-                # Escape % to %% but keep %s as %s
-                # 1. Replace all % with %%
+                # Escape every % for string.format; the real %s placeholders are
+                # added afterwards by replace_html_placeholders
                 html_content = html_content.replace("%", "%%")
-                # 2. Replace %%s back to %s (restore placeholders)
-                html_content = html_content.replace("%%s", "%s")
 
                 html_content = replace_html_placeholders(
                     html_content, spec.placeholders

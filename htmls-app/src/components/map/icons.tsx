@@ -21,18 +21,22 @@ import type { ForceImage } from '@/types/controlPanel';
 // ============================================================================
 // BATTERY ICONS — NATO symbols shared by the map markers and the sidebar cards
 // ============================================================================
+const LANDING_UNIT_ICON_SIZE = { width: 20, height: 20 };
 export const ICON_IMAGES: Record<string, ForceImage> = {
   sam: { Icon: SamIcon, label: 'SAM', width: 25, height: 15 },
   ssm: { Icon: SsmIcon, label: 'SSM', width: 25, height: 15 },
   atp: { Icon: AmmunitionTransferPointIcon, label: 'ATP', width: 25 * 1.5, height: 15 * 1.5 },
   c2: { Icon: CommandAndControlIcon, label: 'C2', width: 25, height: 15 },
-  suspectedC2: { Icon: EnemyCommandAndControlIcon, label: 'Suspected C2', width: 25, height: 15 },
+  suspectedC2: {
+    Icon: EnemyCommandAndControlIcon,
+    label: 'Suspected C2',
+    ...LANDING_UNIT_ICON_SIZE,
+  },
   ew: { Icon: ElectronicWarfareIcon, label: 'EW', width: 25, height: 15 },
   taskForce: { Icon: NavyTaskForceIcon, label: 'Task Force', width: 48, height: 32 },
   carrier: { Icon: CarrierIcon, label: 'Carrier', width: 48, height: 32 },
 };
 
-const LANDING_UNIT_ICON_SIZE = { width: 20, height: 20 };
 const LANDING_UNIT_IMAGES: Record<string, ForceImage> = {
   'ZBD-05': { Icon: ArmoredMechanizedTrackedIcon, label: 'ZBD-05', ...LANDING_UNIT_ICON_SIZE },
   'ZTD-05': { Icon: AmphibiousIcon, label: 'ZTD-05', ...LANDING_UNIT_ICON_SIZE },
