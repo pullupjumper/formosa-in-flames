@@ -2,6 +2,7 @@ import { ImageIcon } from '@/components/ImageIcon';
 import { getBatteryImage } from '@/components/map';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 import type { Battery, BatteryGroup } from '@pages/control-panel/logic/batteryGroups';
+import { DetailsBox } from '@pages/control-panel/components/shared/DetailsBox';
 import { BatteryStatusDetails } from '@pages/control-panel/components/sections/BatteryStatusDetails';
 
 // ============================================================================
@@ -40,10 +41,16 @@ export function BatterySection({
             name={battery.name}
             icon={<ImageIcon image={getBatteryImage(group.missileSystemType)} />}
             details={
-              <BatteryDetails
-                battery={battery}
-                isOpen={selectedUnitKey === battery.unitKey || expandedUnitKey === battery.unitKey}
-              />
+              <div>
+                {battery.missileSystemType.toUpperCase()}|{battery.missileSystem}
+              </div>
+            }
+            foldedDetails={
+              battery.status && (
+                <DetailsBox title="Status">
+                  <BatteryStatusDetails status={battery.status} />
+                </DetailsBox>
+              )
             }
             deployedSummary={
               battery.deployment ? `Deployed | Angle: ${battery.deployment.openingAngle}°` : null
@@ -58,23 +65,5 @@ export function BatterySection({
         ))
       )}
     </div>
-  );
-}
-
-function BatteryDetails({
-  battery,
-  isOpen,
-}: {
-  battery: Battery;
-  /** Status stays folded until the card is clicked open */
-  isOpen: boolean;
-}) {
-  return (
-    <>
-      <div>
-        {battery.missileSystemType.toUpperCase()}|{battery.missileSystem}
-      </div>
-      {isOpen && battery.status && <BatteryStatusDetails status={battery.status} />}
-    </>
   );
 }

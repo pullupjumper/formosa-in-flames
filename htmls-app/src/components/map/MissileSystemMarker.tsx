@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback } from 'react';
-import { CircleMarker, Polyline, Popup, Tooltip, Marker } from 'react-leaflet';
+import { CircleMarker, Polyline, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
@@ -10,6 +10,7 @@ import { canInteractArea, getWeaponSystemName } from '@/utils/map';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
 import { TacticalPolygon, RangeCircle, ZoomGate, DETAIL_MIN_ZOOM } from './primitives';
 import { createImageIcon, ICON_IMAGES, getBatteryImage } from './icons';
+import { MapPopup } from './MapPopup';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 
 // ============================================================================
@@ -169,22 +170,16 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
           radius={8}
           pathOptions={PATH_OPTIONS_FALLBACK_MARKER}
         >
-          <Popup>
-            <div className="text-text-primary">
-              <strong>{unitname}</strong>
-              <br />
-              <span className="text-text-secondary">{getWeaponSystemName(missileSystemType)}</span>
-              <br />
-              <br />
-              Lat: {data.center.latitude.toFixed(6)}°
-              <br />
-              Lng: {data.center.longitude.toFixed(6)}°
-              <br />
-              Angle: {data.openingAngle}°
-              <br />
-              Range: {rangeNm} NM
-            </div>
-          </Popup>
+          <MapPopup
+            name={unitname}
+            subtitle={getWeaponSystemName(missileSystemType)}
+            rows={[
+              { label: 'Latitude', value: `${data.center.latitude.toFixed(6)}°` },
+              { label: 'Longitude', value: `${data.center.longitude.toFixed(6)}°` },
+              { label: 'Angle', value: `${data.openingAngle}°` },
+              { label: 'Range', value: `${rangeNm} NM` },
+            ]}
+          />
         </CircleMarker>
       </>
     );

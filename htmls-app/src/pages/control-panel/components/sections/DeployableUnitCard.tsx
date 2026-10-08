@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 // ============================================================================
 // DeployableUnitCard — shared sidebar card for jammers and missile systems
@@ -8,7 +8,9 @@ interface DeployableUnitCardProps {
   /** Optional symbol shown left of the name and details */
   icon?: ReactNode;
   /** Secondary lines describing the unit (zone, range, weapon system, ...) */
-  details: ReactNode;
+  details?: ReactNode;
+  /** Shown under the body while the card is clicked open (e.g. a DetailsBox) */
+  foldedDetails?: ReactNode;
   /** Line shown inside the green block once the unit is on the map */
   deployedSummary: ReactNode;
   isDeployed: boolean;
@@ -36,6 +38,7 @@ export function DeployableUnitCard({
   name,
   icon,
   details,
+  foldedDetails,
   deployedSummary,
   isDeployed,
   isSelected,
@@ -44,20 +47,31 @@ export function DeployableUnitCard({
   onCancelDeployment,
   onCancelSelection,
 }: DeployableUnitCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div
       className={`cursor-pointer rounded-xs border-2 bg-aip-card text-xs transition-colors ${
         isDeployed ? CARD_TONES.deployed : isSelected ? CARD_TONES.selected : CARD_TONES.idle
       }`}
-      onClick={onSelect}
+      onClick={() => {
+        setIsOpen((previous) => !previous);
+        onSelect();
+      }}
     >
       <div className="flex items-start gap-2.5 p-2.5">
         {icon}
         <div className="min-w-0 flex-1">
           <div className="mb-1 text-[13px] text-text-primary">{name}</div>
-          <div className="text-[11px] leading-snug text-text-secondary">{details}</div>
+          {details && (
+            <div className="text-[11px] leading-snug text-text-secondary [overflow-wrap:anywhere]">
+              {details}
+            </div>
+          )}
         </div>
       </div>
+
+      {isOpen && foldedDetails && <div className="px-2.5 pb-2.5">{foldedDetails}</div>}
 
       {isDeployed && (
         <StatusStrip tone="deployed" label={deployedSummary}>

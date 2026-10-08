@@ -53,8 +53,18 @@ export function List({ children }: ChildrenProps) {
   );
 }
 
-export function Panel({ children }: ChildrenProps) {
-  return <div className="my-2.5 border border-aip-border bg-aip-pane p-3">{children}</div>;
+interface PanelProps extends ChildrenProps {
+  /** Header row above the body, like the deployment sidebar's panels */
+  title?: string;
+}
+
+export function Panel({ title, children }: PanelProps) {
+  return (
+    <section className="my-2.5 border border-aip-border bg-aip-panel">
+      {title && <div className="px-4 py-3 text-[13px] font-bold text-text-primary">{title}</div>}
+      <div className={`p-3${title ? ' border-t border-aip-border' : ''}`}>{children}</div>
+    </section>
+  );
 }
 
 export function Term({ children }: ChildrenProps) {

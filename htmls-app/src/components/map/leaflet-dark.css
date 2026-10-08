@@ -4,38 +4,70 @@
   font-family: inherit;
 }
 
-/* Popup Styles */
+/* Popup: light card, flat corners; MapPopup draws its own header and close button */
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  background: #202b33;
-  color: #e1e8ed;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  border: 1px solid #30404d;
+  background: #f4f6f8;
+  color: #182026;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 2px;
+  padding: 0;
 }
 
 .leaflet-popup-content {
-  margin: 10px;
+  margin: 0;
   font-size: 12px;
   line-height: 1.5;
 }
 
-.leaflet-popup-close-button {
+/* Controls: light square buttons with slate icons, stacked with hairline dividers */
+.leaflet-bar,
+.leaflet-control-layers {
+  border: none !important;
+  border-radius: 2px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) !important;
+}
+
+.leaflet-bar a,
+.leaflet-control-layers {
+  background-color: rgba(240, 242, 244, 0.82) !important;
+  color: #5c7080 !important;
+}
+
+.leaflet-bar a {
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  font-size: 20px;
+  border-bottom: 1px solid #ced4da !important;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-bar a:hover,
+.leaflet-control-layers-toggle:hover {
+  background-color: #d8dde2 !important;
+  color: #394b59 !important;
+}
+
+.leaflet-bar a.leaflet-disabled {
+  background-color: rgba(240, 242, 244, 0.6) !important;
   color: #a7b6c2 !important;
 }
 
-.leaflet-popup-close-button:hover {
-  color: #e1e8ed !important;
+.leaflet-control-layers-expanded {
+  padding: 6px 10px !important;
+  color: #394b59 !important;
+  font-size: 12px;
 }
 
-/* Controls */
-.leaflet-control-zoom a {
-  background-color: #202b33 !important;
-  color: #e1e8ed !important;
-  border-color: #30404d !important;
-}
-
-.leaflet-control-zoom a:hover {
-  background-color: #293742 !important;
+.leaflet-control-layers-separator {
+  border-top-color: #ced4da !important;
 }
 
 .leaflet-control-attribution {

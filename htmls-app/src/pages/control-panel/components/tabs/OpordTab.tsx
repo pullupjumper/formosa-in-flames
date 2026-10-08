@@ -114,7 +114,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
           <div className="text-sm text-text-secondary">09JUN27 0200Z</div>
         </header>
 
-        <main className="border-x border-b border-aip-border bg-aip-panel px-5 py-6">
+        <main className="border-x border-b border-aip-border bg-aip-pane px-5 py-6">
           {/* ---------------------------------------------------------------- */}
           <Section title="(U) 1. SITUATION">
             <Subsection title="1.a. General.">
@@ -210,8 +210,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
               </Paragraph>
             </Subsection>
 
-            <Panel>
-              <SubTitle>1.e. CCIR.</SubTitle>
+            <Panel title="1.e. CCIR.">
               <List>
                 <li>
                   PIR: CSG departure from Bashi Channel; primary and secondary landing wave timing

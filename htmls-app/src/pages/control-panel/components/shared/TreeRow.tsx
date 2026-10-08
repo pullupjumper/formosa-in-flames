@@ -28,7 +28,7 @@ export function TreeRow({ root, leaves, emptyMessage }: TreeRowProps) {
           <div className="self-center text-xs italic text-text-secondary">{emptyMessage}</div>
         ) : (
           leaves.map((leaf, index) => (
-            <div key={leaf.key} className="relative">
+            <div key={leaf.key} className="relative min-w-0">
               <Connector index={index} count={leaves.length} />
               {leaf.node}
             </div>

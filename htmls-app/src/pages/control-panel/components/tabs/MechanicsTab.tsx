@@ -100,7 +100,7 @@ export function MechanicsTab() {
           <div className="text-sm text-text-secondary">MISSILE SYSTEM -- HOW TO PLAY</div>
         </header>
 
-        <main className="border-x border-b border-dark-border bg-dark-panel px-5 py-6">
+        <main className="border-x border-b border-aip-border bg-aip-pane px-5 py-6">
           {/* ---------------------------------------------------------------- */}
           <Section title="1. YOUR LAUNCHERS ARE ON MANUAL CONTROL">
             <Paragraph>
@@ -108,8 +108,7 @@ export function MechanicsTab() {
               your order. Plan for it -- a battery with empty tubes sitting at a firing point stays
               empty until you do something about it.
             </Paragraph>
-            <Panel>
-              <SubTitle>Your job, in one line each</SubTitle>
+            <Panel title="Your job, in one line each">
               <List>
                 <li>Keep launchers at a FP while you want them shooting.</li>
                 <li>
@@ -134,8 +133,7 @@ export function MechanicsTab() {
               />
             </Figure>
             <PositionTable />
-            <Panel>
-              <SubTitle>Reloading only works if you get this right</SubTitle>
+            <Panel title="Reloading only works if you get this right">
               <List>
                 <li>
                   The launcher and the ammo truck must be in the <Term>same</Term> RL. Different RLs
@@ -162,8 +160,7 @@ export function MechanicsTab() {
             <Figure caption="Fig 2. Cargo Operations. Pick the vehicles on the left, load them into the building on the right.">
               <Screenshot src={SCREENSHOT.loadCargo} alt="Cargo Operations dialog" />
             </Figure>
-            <Panel>
-              <SubTitle>Steps</SubTitle>
+            <Panel title="Steps">
               <List>
                 <li>Move the launchers and ammo trucks into the MASK area.</li>
                 <li>

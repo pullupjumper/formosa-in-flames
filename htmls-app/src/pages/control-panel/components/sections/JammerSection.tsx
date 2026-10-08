@@ -2,6 +2,7 @@ import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/controlPanel';
 import { ICON_IMAGES } from '@/components/map';
 import { ImageIcon } from '@/components/ImageIcon';
+import { DetailsBox, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 
 // ============================================================================
@@ -40,11 +41,11 @@ export function JammerSection({
             icon={<ImageIcon image={ICON_IMAGES.ew} />}
             key={index}
             name={jammer.name}
-            details={
-              <>
-                <div>ZONE: {jammer.zoneName}</div>
-                <div>RANGE: {jammer.radius} NM</div>
-              </>
+            foldedDetails={
+              <DetailsBox title="Details">
+                <TextRow label="Zone" value={jammer.zoneName} />
+                <TextRow label="Range" value={`${jammer.radius} NM`} />
+              </DetailsBox>
             }
             deployedSummary={
               deployment

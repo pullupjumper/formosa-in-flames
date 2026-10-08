@@ -163,10 +163,10 @@ function CoordinateSearch() {
               width: 200,
               padding: '4px 8px',
               fontSize: 12,
-              background: '#202b33',
-              border: '1px solid #30404d',
-              borderRadius: 4,
-              color: '#e1e8ed',
+              background: 'rgba(240, 242, 244, 0.82)',
+              border: '1px solid #ced4da',
+              borderRadius: 2,
+              color: '#394b59',
               outline: 'none',
             }}
           />
@@ -175,10 +175,10 @@ function CoordinateSearch() {
             style={{
               padding: '4px 8px',
               fontSize: 12,
-              background: '#137cbd',
-              border: '1px solid #137cbd',
-              borderRadius: 4,
-              color: '#e1e8ed',
+              background: 'rgba(240, 242, 244, 0.82)',
+              border: '1px solid #ced4da',
+              borderRadius: 2,
+              color: '#394b59',
               cursor: 'pointer',
             }}
           >

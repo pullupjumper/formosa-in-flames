@@ -57,6 +57,7 @@ export function MapShell({
       // dashed) the SVG renderer makes zoom/pan visibly stutter in CMO's
       // embedded browser.
       preferCanvas
+      zoomControl={false}
       className={`h-full w-full ${className}`}
       style={{ background: '#10161a' }}
     >

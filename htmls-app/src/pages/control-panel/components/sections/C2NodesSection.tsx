@@ -3,6 +3,7 @@ import { ICON_IMAGES } from '@/components/map';
 import { DeployableUnitCard } from '@pages/control-panel/components/sections/DeployableUnitCard';
 import type { Battery } from '../../logic/batteryGroups';
 import type { C2Child, C2NodeView } from '../../logic/c2Nodes';
+import { DetailsBox, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
 import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
 import { BatteryStatusDetails } from '@pages/control-panel/components/sections/BatteryStatusDetails';
 import { SamDoctrineToggle } from '@pages/control-panel/components/sections/SamDoctrineToggle';
@@ -89,20 +90,24 @@ function ChildCard({
   onCancelSelection,
 }: ChildCardProps) {
   const { unit, battery, type } = child;
-  // Status stays folded until the card is clicked open
-  const isOpen =
-    battery !== null &&
-    (selectedUnitKey === battery.unitKey || expandedUnitKey === battery.unitKey);
-  const details = (
-    <>
-      <UnitDetails type={type} unit={unit} battery={battery} />
-      {isOpen && battery?.status && <BatteryStatusDetails status={battery.status} />}
-    </>
+  const details = battery && (
+    <div>
+      {battery.missileSystemType.toUpperCase()}|{battery.missileSystem}
+    </div>
+  );
+  // Folds open when the card is clicked
+  const foldedDetails = (
+    <DetailsBox title="Details">
+      <UnitDetails type={type} unit={unit} />
+      {battery?.status && <BatteryStatusDetails status={battery.status} />}
+    </DetailsBox>
   );
   const icon = <ImageIcon image={type === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.radar} />;
 
   if (!battery) {
-    return <InfoCard name={unit.name} icon={icon} details={details} />;
+    return (
+      <InfoCard name={unit.name} icon={icon} details={details} foldedDetails={foldedDetails} />
+    );
   }
 
   return (
@@ -110,6 +115,7 @@ function ChildCard({
       name={battery.name}
       icon={icon}
       details={details}
+      foldedDetails={foldedDetails}
       deployedSummary={
         battery.deployment ? `Deployed | Angle: ${battery.deployment.openingAngle}°` : null
       }
@@ -123,32 +129,19 @@ function ChildCard({
   );
 }
 
-function UnitDetails({
-  type,
-  unit,
-  battery,
-}: {
-  type: C2Child['type'];
-  unit: C2Child['unit'];
-  battery: C2Child['battery'];
-}) {
+function UnitDetails({ type, unit }: { type: C2Child['type']; unit: C2Child['unit'] }) {
   return (
     <>
-      {battery && (
-        <div>
-          {battery.missileSystemType.toUpperCase()}|{battery.missileSystem}
-        </div>
-      )}
-      <div>
-        {type.toUpperCase()} | DETECT {unit.OODADetection} | TARGET {unit.OODATargeting}
-      </div>
-      <div>{unit.EMCONSetting}</div>
-      {unit.isOutOfComms && <div className="text-status-danger">OUT OF COMMS</div>}
-      {unit.isDestroyed && <div className="text-status-danger">DESTROYED</div>}
-      {unit.weaponFree == true ? (
-        <div className="text-status-danger">WEAPON FREE</div>
+      <TextRow label="Type" value={type.toUpperCase()} />
+      <TextRow label="Detection" value={unit.OODADetection} />
+      <TextRow label="Targeting" value={unit.OODATargeting} />
+      <TextRow label="EMCON" value={unit.EMCONSetting} />
+      {unit.isOutOfComms && <TextRow label="Comms" value="OUT OF COMMS" tone="danger" />}
+      {unit.isDestroyed && <TextRow label="Condition" value="DESTROYED" tone="danger" />}
+      {unit.weaponFree ? (
+        <TextRow label="Doctrine" value="WEAPON FREE" tone="danger" />
       ) : (
-        <div className="text-status-warning">HOLD FIRE</div>
+        <TextRow label="Doctrine" value="HOLD FIRE" tone="warning" />
       )}
     </>
   );

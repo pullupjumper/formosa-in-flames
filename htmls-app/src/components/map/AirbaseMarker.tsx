@@ -1,9 +1,10 @@
 import { memo, useMemo } from 'react';
-import { Marker, Popup } from 'react-leaflet';
+import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { Airbase } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from './icons';
+import { MapPopup, PopupSection } from './MapPopup';
 
 // Airbase icon
 const AIRBASE_ICON = L.icon({
@@ -31,43 +32,33 @@ export const AirbaseMarker = memo(function AirbaseMarker({
 
   return (
     <Marker position={toLeafletLatLng(airbase)} icon={AIRBASE_ICON} eventHandlers={eventHandlers}>
-      <Popup>
-        <div className="text-text-primary">
-          <strong className="text-status-success">{airbase.name}</strong>
-          <br />
-          <br />
-          <strong>Coordinates:</strong>
-          <br />
-          <span className="text-status-success">Lat: {airbase.latitude.toFixed(6)}°</span>
-          <br />
-          <span className="text-status-success">Lng: {airbase.longitude.toFixed(6)}°</span>
-
-          {airbase.embarkedUnits && airbase.embarkedUnits.length > 0 && (
-            <div className="mt-3">
-              <div className="font-semibold">Deployed Aircraft</div>
-              {airbase.embarkedUnits.map((unit, unitIndex) => {
-                const count = unit.loadouts?.reduce((sum, loadout) => sum + loadout.num, 0) || 0;
-                return (
-                  <div key={unitIndex}>
-                    {unit.platformName} x {count}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {airbase.loadouts && airbase.loadouts.length > 0 && (
-            <div className="mt-3">
-              <div className="font-semibold">Ammunition Storage</div>
-              {airbase.loadouts.map((loadout, loadoutIndex) => (
-                <div key={loadoutIndex}>
-                  {loadout.name} x {loadout.num}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Popup>
+      <MapPopup
+        name={airbase.name}
+        subtitle="Airbase"
+        rows={[
+          { label: 'Latitude', value: `${airbase.latitude.toFixed(6)}°` },
+          { label: 'Longitude', value: `${airbase.longitude.toFixed(6)}°` },
+        ]}
+      >
+        {airbase.embarkedUnits && airbase.embarkedUnits.length > 0 && (
+          <PopupSection
+            title="Deployed Aircraft"
+            rows={airbase.embarkedUnits.map((unit) => ({
+              label: unit.platformName,
+              value: `x ${unit.loadouts?.reduce((sum, loadout) => sum + loadout.num, 0) || 0}`,
+            }))}
+          />
+        )}
+        {airbase.loadouts && airbase.loadouts.length > 0 && (
+          <PopupSection
+            title="Ammunition Storage"
+            rows={airbase.loadouts.map((loadout) => ({
+              label: loadout.name,
+              value: `x ${loadout.num}`,
+            }))}
+          />
+        )}
+      </MapPopup>
     </Marker>
   );
 });
