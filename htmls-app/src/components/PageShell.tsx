@@ -8,7 +8,7 @@ export interface PageTab<TabId extends string> {
 interface PageShellProps<TabId extends string> {
   /** Highlighted part of the top bar, e.g. the side name. */
   title: string;
-  /** Muted text after the title, rendered as `TITLE / SUBTITLE`. */
+  /** Text centred in the green banner above the title, e.g. the panel name. */
   subtitle?: string;
   tabs?: readonly PageTab<TabId>[];
   activeTab?: TabId;
@@ -33,22 +33,22 @@ export function PageShell<TabId extends string>({
 }: PageShellProps<TabId>) {
   return (
     <div className="flex h-screen flex-col">
-      <div className="flex h-12.5 items-center justify-between border-b border-dark-border bg-dark-panel px-5">
-        <div className="text-sm font-medium text-text-secondary">
-          <span className="text-text-primary">{title}</span>
-          {subtitle && ` / ${subtitle}`}
+      <div className="relative z-10 shadow-[0_2px_4px_rgba(0,0,0,0.45)]">
+        <div className="h-4 border-b border-aip-banner-edge bg-aip-banner text-center text-[11px] leading-[15px] font-medium tracking-wide text-white uppercase">
+          {subtitle}
         </div>
-      </div>
 
-      {tabs && tabs.length > 0 && (
-        <div className="flex border-b border-dark-border bg-dark-bg px-5">
-          {tabs.map((tab) => (
+        <div className="flex h-12.5 items-stretch bg-aip-header px-5">
+          <div className="flex items-center pr-8 text-base font-bold text-text-primary">
+            {title}
+          </div>
+          {tabs?.map((tab) => (
             <button
               key={tab.id}
-              className={`border-b-[3px] px-4 py-3 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
+              className={`border-b-2 px-4 text-sm transition-colors ${
                 activeTab === tab.id
-                  ? 'border-accent-blue text-accent-blue'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'border-aip-tab-active text-aip-tab-active'
+                  : 'border-transparent text-text-primary hover:text-aip-tab-active'
               }`}
               onClick={() => onTabChange?.(tab.id)}
             >
@@ -56,7 +56,7 @@ export function PageShell<TabId extends string>({
             </button>
           ))}
         </div>
-      )}
+      </div>
 
       <div className={contentClassName}>{children}</div>
     </div>

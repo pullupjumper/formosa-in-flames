@@ -99,7 +99,7 @@ function ChildCard({
       {isOpen && battery?.status && <BatteryStatusDetails status={battery.status} />}
     </>
   );
-  const icon = type === 'sam' ? <ImageIcon image={ICON_IMAGES.sam} /> : undefined;
+  const icon = <ImageIcon image={type === 'sam' ? ICON_IMAGES.sam : ICON_IMAGES.radar} />;
 
   if (!battery) {
     return <InfoCard name={unit.name} icon={icon} details={details} />;
@@ -111,7 +111,7 @@ function ChildCard({
       icon={icon}
       details={details}
       deployedSummary={
-        battery.deployment ? `✓ Deployed | Angle: ${battery.deployment.openingAngle}°` : null
+        battery.deployment ? `Deployed | Angle: ${battery.deployment.openingAngle}°` : null
       }
       isDeployed={battery.deployment !== null}
       isSelected={selectedUnitKey === battery.unitKey}

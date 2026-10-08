@@ -107,14 +107,14 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
         <Classification />
 
         {/* Header */}
-        <header className="border-x border-dark-border bg-dark-panel px-5 py-5 text-center">
+        <header className="border border-aip-border bg-aip-panel px-5 py-5 text-center">
           <h1 className="mb-2.5 text-2xl font-bold underline">(U) OPERATIONS ORDER 26-001</h1>
           <div className="text-sm text-text-secondary">DEFENSE OF TAIWAN</div>
           <div className="text-sm text-text-secondary">TAIWAN DEFENSE COMMAND</div>
           <div className="text-sm text-text-secondary">09JUN27 0200Z</div>
         </header>
 
-        <main className="border-x border-b border-dark-border bg-dark-panel px-5 py-6">
+        <main className="border-x border-b border-aip-border bg-aip-panel px-5 py-6">
           {/* ---------------------------------------------------------------- */}
           <Section title="(U) 1. SITUATION">
             <Subsection title="1.a. General.">

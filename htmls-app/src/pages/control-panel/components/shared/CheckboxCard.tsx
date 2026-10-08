@@ -13,7 +13,7 @@ interface CheckboxCardProps {
 
 export function CheckboxCard({ label, checked, onChange, trailing }: CheckboxCardProps) {
   return (
-    <label className="flex cursor-pointer items-center justify-between border border-aip-card-border bg-aip-card p-2.5 text-xs transition-colors select-none hover:border-aip-link">
+    <label className="flex cursor-pointer items-center justify-between rounded-xs border-2 border-aip-card-border bg-aip-card p-2.5 text-xs transition-colors select-none hover:border-aip-link">
       <span className="flex items-center gap-2.5">
         <input
           type="checkbox"

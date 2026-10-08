@@ -46,7 +46,7 @@ export function BatterySection({
               />
             }
             deployedSummary={
-              battery.deployment ? `✓ Deployed | Angle: ${battery.deployment.openingAngle}°` : null
+              battery.deployment ? `Deployed | Angle: ${battery.deployment.openingAngle}°` : null
             }
             isDeployed={battery.deployment !== null}
             isSelected={selectedUnitKey === battery.unitKey}

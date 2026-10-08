@@ -11,12 +11,12 @@ interface InfoCardProps {
 
 export function InfoCard({ name, icon, details }: InfoCardProps) {
   return (
-    <div className="border border-aip-card-border bg-aip-card p-2.5 text-xs">
-      <div className="flex items-start gap-2.5">
+    <div className="rounded-xs border-2 border-aip-card-border bg-aip-card text-xs">
+      <div className="flex items-start gap-2.5 p-2.5">
         {icon}
         <div className="min-w-0 flex-1">
-          <div className="mb-1 font-semibold">{name}</div>
-          <div className="text-text-secondary">{details}</div>
+          <div className="mb-1 text-[13px] text-text-primary">{name}</div>
+          <div className="text-[11px] leading-snug text-text-secondary">{details}</div>
         </div>
       </div>
     </div>

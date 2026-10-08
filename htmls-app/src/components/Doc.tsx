@@ -16,7 +16,7 @@ interface TitledProps extends ChildrenProps {
 export function Section({ title, children }: TitledProps) {
   return (
     <section className="mb-6">
-      <div className="mb-2.5 border-b border-dark-border pb-2 text-base font-semibold uppercase tracking-wide text-accent-blue">
+      <div className="mb-2.5 border-b border-aip-border pb-2 text-base font-semibold uppercase tracking-wide text-aip-link">
         {title}
       </div>
       {children}
@@ -54,9 +54,7 @@ export function List({ children }: ChildrenProps) {
 }
 
 export function Panel({ children }: ChildrenProps) {
-  return (
-    <div className="my-2.5 rounded-sm border border-dark-border bg-black/30 p-3">{children}</div>
-  );
+  return <div className="my-2.5 border border-aip-border bg-aip-pane p-3">{children}</div>;
 }
 
 export function Term({ children }: ChildrenProps) {

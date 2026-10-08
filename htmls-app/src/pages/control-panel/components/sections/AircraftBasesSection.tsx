@@ -34,7 +34,7 @@ export function AircraftBasesSection({
           {airbases.map((base, index) => (
             <div
               key={base.baseGUID}
-              className="border border-aip-card-border bg-aip-card p-2.5 text-xs"
+              className="rounded-xs border-2 border-aip-card-border bg-aip-card p-2.5 text-xs"
             >
               <div className="mb-2 flex items-center gap-2.5">
                 <img
@@ -44,7 +44,7 @@ export function AircraftBasesSection({
                   height={AIRBASE_ICON_SIZE.height * 1.4}
                   className="shrink-0 object-contain"
                 />
-                <div className="font-semibold">{base.name}</div>
+                <div className="text-[13px] text-text-primary">{base.name}</div>
               </div>
               <BaseEditor
                 base={base}
@@ -77,7 +77,7 @@ function BudgetMeter({ budget }: { budget: BudgetState }) {
   const percentage = budget.total > 0 ? Math.min(100, (budget.current / budget.total) * 100) : 0;
 
   return (
-    <div className="mb-3 border border-aip-card-border bg-aip-card p-3">
+    <div className="mb-3 rounded-xs border-2 border-aip-card-border bg-aip-card p-3">
       <div className="flex items-baseline justify-between">
         <span className="text-[11px] font-bold uppercase tracking-wide text-text-secondary">
           Loadout Budget

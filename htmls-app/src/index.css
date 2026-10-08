@@ -5,10 +5,10 @@
 
 /* CMO 風格深色主題 */
 @theme {
-  --color-dark-bg: #10161a;
-  --color-dark-panel: #202b33;
+  --color-dark-bg: #1b252e;
+  --color-dark-panel: #2b3b49;
   --color-dark-hover: #293742;
-  --color-dark-border: #30404d;
+  --color-dark-border: #3d5162;
 
   --color-text-primary: #e1e8ed;
   --color-text-secondary: #a7b6c2;
@@ -16,13 +16,18 @@
   --color-accent-blue: #137cbd;
   --color-accent-blue-hover: #2b95d6;
 
-  /* Control panel (AIP-style) surfaces: pane < panel < card */
-  --color-aip-pane: #1e2a36;
-  --color-aip-panel: #263645;
-  --color-aip-card: #2f4152;
-  --color-aip-card-border: #4b6277;
-  --color-aip-border: #394e61;
+  /* Control panel (AIP-style) surfaces, sampled from the reference screenshot */
+  --color-aip-pane: #2f3740;
+  --color-aip-panel: #34424d;
+  --color-aip-card: #293946;
+  --color-aip-card-border: #5a6a77;
+  --color-aip-border: #25313d;
   --color-aip-link: #4c9be8;
+  /* Top bar and tab strip, sampled from the reference screenshot */
+  --color-aip-header: #38404b;
+  --color-aip-tab-active: #6cb3e6;
+  --color-aip-banner: #1c9d58;
+  --color-aip-banner-edge: #198449;
 
   --color-status-success: #0f9960;
   --color-status-danger: #db3737;

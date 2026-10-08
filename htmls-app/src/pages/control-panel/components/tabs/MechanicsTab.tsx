@@ -95,7 +95,7 @@ export function MechanicsTab() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-260 p-8">
-        <header className="border border-dark-border bg-dark-panel px-5 py-5 text-center">
+        <header className="border border-aip-border bg-aip-panel px-5 py-5 text-center">
           <h1 className="mb-2.5 text-2xl font-bold underline">GAME MECHANICS</h1>
           <div className="text-sm text-text-secondary">MISSILE SYSTEM -- HOW TO PLAY</div>
         </header>

@@ -48,7 +48,7 @@ export function JammerSection({
             }
             deployedSummary={
               deployment
-                ? `✓ Deployed at ${deployment.latitude.toFixed(4)}°, ${deployment.longitude.toFixed(4)}°`
+                ? `Deployed at ${deployment.latitude.toFixed(4)}°, ${deployment.longitude.toFixed(4)}°`
                 : null
             }
             isDeployed={deployment !== undefined}
