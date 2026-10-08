@@ -4,6 +4,7 @@ import {
   LayersControl,
   MapContainer,
   Polygon,
+  Polyline,
   TileLayer,
   Tooltip,
   useMap,
@@ -266,4 +267,44 @@ export function RangeCircle({ center, radiusNm, color, variant = 'range' }: Rang
       pathOptions={pathOptions}
     />
   );
+}
+
+// ============================================================================
+// ZonePolygon — operating zone outline, never interactive
+// ============================================================================
+const ZONE_STYLE: L.PathOptions = {
+  color: '#f59e0b',
+  fillColor: '#f59e0b',
+  fillOpacity: 0.06,
+  weight: 1.5,
+  dashArray: '2, 6',
+};
+
+interface ZonePolygonProps {
+  vertices: Coordinate[];
+  tooltip?: ReactNode;
+}
+
+export function ZonePolygon({ vertices, tooltip }: ZonePolygonProps) {
+  const positions = useMemo(() => toLeafletPositions(vertices), [vertices]);
+  return (
+    <Polygon positions={positions} interactive={Boolean(tooltip)} pathOptions={ZONE_STYLE}>
+      {tooltip && <Tooltip sticky>{tooltip}</Tooltip>}
+    </Polygon>
+  );
+}
+
+// ============================================================================
+// LinkLine — solid white line from a C2 node to a unit under it
+// ============================================================================
+const LINK_STYLE: L.PathOptions = { color: '#ffffff', weight: 1.5, opacity: 0.9 };
+
+interface LinkLineProps {
+  from: Coordinate;
+  to: Coordinate;
+}
+
+export function LinkLine({ from, to }: LinkLineProps) {
+  const positions = useMemo(() => toLeafletPositions([from, to]), [from, to]);
+  return <Polyline positions={positions} interactive={false} pathOptions={LINK_STYLE} />;
 }

@@ -6,6 +6,7 @@ export {
   MissileSystemPreview,
   AreaRelocatePreview,
 } from './MissileSystemMarker';
+export { C2Layers } from './C2Marker';
 export { SignalMarkers } from './SignalMarker';
 export { MapShell } from './primitives';
 export {

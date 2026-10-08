@@ -1,3 +1,4 @@
+import type { Coordinate } from './geo';
 // Unit Status Dashboard Types
 
 export interface SignalData {
@@ -26,6 +27,8 @@ export interface BatteryStatus {
 }
 
 export interface C2Unit {
+  /** Type of the C2 node the unit reports to: 'c2', 'rocc' or 'taaoc' */
+  type: string;
   name: string;
   OODADetection: string;
   OODATargeting: string;
@@ -33,11 +36,16 @@ export interface C2Unit {
   EMCONSetting: string;
   isDestroyed: boolean;
   weaponFree: boolean;
+  pos: Coordinate;
 }
 
 export interface C2Node {
+  /** IADS group the node belongs to: 'c2', 'rocc' or 'taaoc' */
+  type: string;
   name: string;
-  SAM?: Record<string, C2Unit>;
+  pos: Coordinate;
+  areas: Coordinate[][];
+  sam?: Record<string, C2Unit>;
   radar?: Record<string, C2Unit>;
 }
 

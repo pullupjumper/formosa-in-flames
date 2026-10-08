@@ -99,7 +99,7 @@ function ChildCard({
       {isOpen && battery?.status && <BatteryStatusDetails status={battery.status} />}
     </>
   );
-  const icon = type === 'SAM' ? <ImageIcon image={ICON_IMAGES.sam} /> : undefined;
+  const icon = type === 'sam' ? <ImageIcon image={ICON_IMAGES.sam} /> : undefined;
 
   if (!battery) {
     return <InfoCard name={unit.name} icon={icon} details={details} />;

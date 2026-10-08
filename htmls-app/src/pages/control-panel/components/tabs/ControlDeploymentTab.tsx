@@ -2,7 +2,12 @@ import { useMemo, useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/map/DeploymentMap';
 import { buildBatteryGroups, buildWeaponRanges } from '@pages/control-panel/logic/batteryGroups';
 import { toControlPanelResult } from '@/utils/deploymentPayload';
-import { applySamWeaponsFree, buildC2NodeViews, collectSamUnits } from '../../logic/c2Nodes';
+import {
+  applySamWeaponsFree,
+  buildC2MapLayers,
+  buildC2NodeViews,
+  collectSamUnits,
+} from '../../logic/c2Nodes';
 import { submitDeployment, type ControlPanelPayload } from '../../logic/controlPanelPayload';
 import type { DeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
@@ -111,6 +116,7 @@ export function ControlDeploymentTab({
   // Cards, checkbox and submitted result all read the nodes with the choice applied
   const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
   const samUnits = collectSamUnits(shownC2Nodes);
+  const c2Layers = useMemo(() => buildC2MapLayers(c2Nodes), [c2Nodes]);
 
   return (
     <div className="flex h-full">
@@ -209,6 +215,7 @@ export function ControlDeploymentTab({
           weaponRanges={weaponRanges}
           deployedJammers={deployedJammers}
           signals={signals}
+          c2Layers={c2Layers}
           isPlacementActive={isPlacementActive}
           mousePosition={deployment.mousePosition}
           relocatingArea={deployment.relocatingArea}

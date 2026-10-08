@@ -5,6 +5,7 @@ import {
   BaseMap,
   AirbaseMarkers,
   SignalMarkers,
+  C2Layers,
   DeployedMissileSystems,
   MissileSystemPreview,
   AreaRelocatePreview,
@@ -12,6 +13,7 @@ import {
   JammerRelocatePreview,
 } from '@/components/map';
 import type { RelocatingArea } from '@/types/deployment';
+import type { C2MapLayers } from '../../logic/c2Nodes';
 import type { DeploymentPreview } from '../../hooks/useDeploymentPreviews';
 
 // ============================================================================
@@ -26,6 +28,8 @@ interface DeploymentMapProps {
   deployedJammers: Map<number, Coordinate>;
   /** Detected signals shown as suspected C2 markers */
   signals: SignalData[];
+  /** C2 operating zones and C2 / SAM / radar markers */
+  c2Layers: C2MapLayers;
 
   /** True while some mode owns the next map click; drives cursor and hover */
   isPlacementActive: boolean;
@@ -58,6 +62,7 @@ export function DeploymentMap({
   weaponRanges,
   deployedJammers,
   signals,
+  c2Layers,
   isPlacementActive,
   mousePosition,
   relocatingArea,
@@ -80,6 +85,7 @@ export function DeploymentMap({
       cursorStyle={isPlacementActive ? 'crosshair' : undefined}
       sideName={sideName}
     >
+      <C2Layers layers={c2Layers} />
       <AirbaseMarkers airbases={airbases} />
       <DeployedMissileSystems
         deployedMissileSystems={deployedMissileSystems}

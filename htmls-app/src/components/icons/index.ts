@@ -9,6 +9,7 @@ export { EnemySamIcon } from './EnemySamIcon';
 export { FieldArtilleryIcon } from './FieldArtilleryIcon';
 export { MainGunSystemIcon } from './MainGunSystemIcon';
 export { NavyTaskForceIcon } from './NavyTaskForceIcon';
+export { RadarIcon } from './RadarIcon';
 export { SamIcon } from './SamIcon';
 export { SelfPropelledIcon } from './SelfPropelledIcon';
 export { SsmIcon } from './SsmIcon';

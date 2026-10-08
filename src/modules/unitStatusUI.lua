@@ -17,30 +17,51 @@ local UnitStatusUI = {}
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 ---@param types SBJ__C2TypeKey[]
----@return string # JSON formatted C2 status data
+---@return string # JSON formatted C2 status data, flat `guid -> node` with each node's `type`
 local function createC2NodeDataString(saveData, sideName, types)
   local iads = PersistentState.iads(saveData, sideName)
   local rows = {}
 
   for _, type in pairs(types) do
-    local C2Ctxs = iads[type]
+    local c2Ctxs = iads[type]
 
-    if C2Ctxs then
-      for _, C2Ctx in pairs(C2Ctxs) do
-        if rows[type] == nil then
-          rows[type] = {}
+    if c2Ctxs then
+      for _, c2Ctx in pairs(c2Ctxs) do
+        rows[c2Ctx.guid] = { type = type, name = c2Ctx.name, areas = {} }
+        local c2 = GameApi.ScenEdit_GetUnit(c2Ctx.guid, sideName)
+
+        if c2 then
+          rows[c2Ctx.guid].pos = { latitude = c2.latitude, longitude = c2.longitude }
         end
 
-        rows[type][C2Ctx.guid] = { name = C2Ctx.name }
+        for _, rps in ipairs(c2Ctx.areas or {}) do
+          local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = rps })
 
-        if C2Ctx.sam then
-          rows[type][C2Ctx.guid]["SAM"] = {}
+          if points then
+            local area = {}
 
-          for _, SAMCtx in pairs(C2Ctx.sam) do
+            for _, point in ipairs(points) do
+              table.insert(area, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
+            end
+
+            table.insert(rows[c2Ctx.guid].areas, area)
+          end
+        end
+
+        if c2Ctx.sam then
+          rows[c2Ctx.guid].sam = {}
+
+          for _, SAMCtx in pairs(c2Ctx.sam) do
             local unit = GameApi.ScenEdit_GetUnit(SAMCtx.guid)
+
+            if not unit then
+              goto continue
+            end
+
             local isDestroyed = unit == nil
             local doctrine = GameApi.ScenEdit_GetDoctrine(SAMCtx.guid)
-            rows[type][C2Ctx.guid]["SAM"][SAMCtx.guid] = {
+            rows[c2Ctx.guid].sam[SAMCtx.guid] = {
+              type = type,
               name = SAMCtx.name,
               OODADetection = tostring(SAMCtx.currOODA.detection) .. "/" .. tostring(SAMCtx.OODA.detection),
               OODATargeting = tostring(SAMCtx.currOODA.targeting) .. "/" .. tostring(SAMCtx.OODA.targeting),
@@ -48,24 +69,36 @@ local function createC2NodeDataString(saveData, sideName, types)
               EMCONSetting = SAMCtx.EMCONSetting,
               isDestroyed = isDestroyed,
               weaponFree = doctrine.weapon_control_status_air == constants.WCS.HOLD and false or true,
+              pos = { latitude = unit.latitude, longitude = unit.longitude }
             }
+
+            ::continue::
           end
         end
 
-        if C2Ctx.radar then
-          rows[type][C2Ctx.guid]["radar"] = {}
+        if c2Ctx.radar then
+          rows[c2Ctx.guid].radar = {}
 
-          for _, radarCtx in pairs(C2Ctx.radar) do
+          for _, radarCtx in pairs(c2Ctx.radar) do
             local unit = GameApi.ScenEdit_GetUnit(radarCtx.guid)
+
+            if not unit then
+              goto continue
+            end
+
             local isDestroyed = unit == nil
-            rows[type][C2Ctx.guid]["radar"][radarCtx.guid] = {
+            rows[c2Ctx.guid].radar[radarCtx.guid] = {
+              type = type,
               name = radarCtx.name,
               OODADetection = tostring(radarCtx.currOODA.detection) .. "/" .. tostring(radarCtx.OODA.detection),
               OODATargeting = tostring(radarCtx.currOODA.targeting) .. "/" .. tostring(radarCtx.OODA.targeting),
               isOutOfComms = radarCtx.isOutOfComms,
               EMCONSetting = radarCtx.EMCONSetting,
-              isDestroyed = isDestroyed
+              isDestroyed = isDestroyed,
+              pos = { latitude = unit.latitude, longitude = unit.longitude }
             }
+
+            ::continue::
           end
         end
       end
