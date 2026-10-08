@@ -51,7 +51,9 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
     defaultReloadTime: 10,
     resupplyUnitReloadTime: 4,
     missilesInAmmoVehicles: 12,
+    missilesInTransloaderDefault: 20,
     missilesInAHA: 40,
+    missilesInAHADefault: 49,
   },
   {
     name: 'Rocket Arty Coy, 58th Arty Command',
@@ -62,7 +64,9 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
     defaultReloadTime: 10,
     resupplyUnitReloadTime: 0,
     missilesInAmmoVehicles: 6,
-    missilesInAHA: 18,
+    missilesInTransloaderDefault: 20,
+    missilesInAHA: 40,
+    missilesInAHADefault: 49,
   },
   {
     name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
@@ -73,7 +77,9 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
     defaultReloadTime: 100,
     resupplyUnitReloadTime: 20,
     missilesInAmmoVehicles: 5,
-    missilesInAHA: 10,
+    missilesInTransloaderDefault: 20,
+    missilesInAHA: 40,
+    missilesInAHADefault: 49,
   },
   {
     name: 'Rocket Arty Coy, 58th Arty Command',
@@ -84,7 +90,9 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
     defaultReloadTime: 100,
     resupplyUnitReloadTime: 20,
     missilesInAmmoVehicles: 5,
-    missilesInAHA: 10,
+    missilesInTransloaderDefault: 20,
+    missilesInAHA: 40,
+    missilesInAHADefault: 49,
   },
   {
     name: '1st Hai Feng Shore-based ASM MOB Sqn',
@@ -95,7 +103,9 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
     defaultReloadTime: 100,
     resupplyUnitReloadTime: 20,
     missilesInAmmoVehicles: 5,
-    missilesInAHA: 10,
+    missilesInTransloaderDefault: 20,
+    missilesInAHA: 40,
+    missilesInAHADefault: 49,
   },
 ];
 

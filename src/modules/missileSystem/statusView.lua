@@ -55,7 +55,9 @@ function StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, curr
           firingUnitState = formatState(firingUnitCtx.state),
           resupplyUnitState = formatState(resupplyUnitCtx.state),
           missilesInAmmoVehicles = resupplyUnitCtx.weaponCountCurrent,
+          missilesInTransloaderDefault = resupplyUnitCtx.weaponCountDefault,
           missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].weaponCountCurrent,
+          missilesInAHADefault = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].weaponCountDefault,
           firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, currentTime),
           resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, currentTime),
           defaultReloadTime = missileSystemConfigMap[missileSystemType].reloadTime / 60

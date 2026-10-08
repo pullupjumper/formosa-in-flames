@@ -911,7 +911,9 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field firingUnitState string Firing unit state label
 ---@field resupplyUnitState string Paired resupply unit state label
 ---@field missilesInAmmoVehicles number Missiles carried by the resupply unit
+---@field missilesInTransloaderDefault number
 ---@field missilesInAHA number Missiles left in the paired ammo holding area
+---@field missilesInAHADefault number
 ---@field firingUnitReloadTime number Minutes elapsed in the firing unit's reload, 0 when not reloading
 ---@field resupplyUnitReloadTime number Minutes elapsed in the resupply unit's reload, 0 when not reloading
 ---@field defaultReloadTime number Configured reload time in minutes
