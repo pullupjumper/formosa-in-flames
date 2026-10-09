@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import type { Coordinate } from '@/types/geo';
 import { DeploymentMap } from '@pages/control-panel/components/map/DeploymentMap';
 import { buildBatteryGroups, buildWeaponRanges } from '@pages/control-panel/logic/batteryGroups';
 import { toControlPanelResult } from '@/utils/deploymentPayload';
@@ -6,6 +7,9 @@ import {
   applySamWeaponsFree,
   buildC2MapLayers,
   buildC2NodeViews,
+  checkSamDeployment,
+  collectC2ContextUpdates,
+  collectDeployedPlacements,
   collectSamUnits,
 } from '../../logic/c2Nodes';
 import { submitDeployment, type ControlPanelPayload } from '../../logic/controlPanelPayload';
@@ -24,6 +28,7 @@ import { ResizeHandle } from '@pages/control-panel/components/shared/ResizeHandl
 
 // SAM batteries are deployed from their C2 node card, not the battery list
 const SAM_TYPE = 'sam';
+const NO_PINNED_NODES: ReadonlyMap<string, string> = new Map();
 
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 900;
@@ -59,12 +64,43 @@ export function ControlDeploymentTab({
     updateAirbase: onUpdateAirbase,
   } = session;
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
+  const allGroups = useMemo(
+    () => buildBatteryGroups(missileSystems, deployedMissileSystems, payload.batteryStatuses),
+    [missileSystems, deployedMissileSystems, payload.batteryStatuses]
+  );
+
+  // Where each SAM was last deployed, so cancelling keeps its card under that node;
+  // a fresh payload is the game's word and clears it
+  const [pinned, setPinned] = useState({
+    data: payload.c2Data,
+    nodes: new Map<string, string>(),
+  });
+  const pinnedNodes = pinned.data === payload.c2Data ? pinned.nodes : NO_PINNED_NODES;
+  const samBatteries = useMemo(
+    () => allGroups.find((group) => group.missileSystemType === SAM_TYPE)?.batteries ?? [],
+    [allGroups]
+  );
+  const c2Nodes = useMemo(
+    () => buildC2NodeViews(payload.c2Data, samBatteries, pinnedNodes),
+    [payload.c2Data, samBatteries, pinnedNodes]
+  );
+  const newPlacements = [...collectDeployedPlacements(c2Nodes)].filter(
+    ([unit, node]) => pinnedNodes.get(unit) !== node
+  );
+  if (newPlacements.length > 0) {
+    setPinned({ data: payload.c2Data, nodes: new Map([...pinnedNodes, ...newPlacements]) });
+  }
+  const validateMissilePosition = useCallback(
+    (unitKey: string, position: Coordinate) => checkSamDeployment(c2Nodes, unitKey, position),
+    [c2Nodes]
+  );
   const deployment = useDeploymentState({
     jammers,
     deployedMissileSystems,
     deployedJammers,
     shouldValidateTaiwanBoundary,
     isLocked: isDeploymentLocked,
+    validateMissilePosition,
     onDeploySystem: session.deployMissileSystem,
     onUndeploySystem: session.undeployMissileSystem,
     onDeployJammer: session.deployJammer,
@@ -90,17 +126,20 @@ export function ControlDeploymentTab({
       deployedJammers,
       deployedMissileSystems,
     });
-    const doctrine = { sams: samUnits };
+    const doctrine = {
+      sams: samUnits,
+      c2Nodes: collectC2ContextUpdates(
+        payload.c2Data,
+        // Only SAMs that are really deployed move; a pinned card is just a display hold
+        buildC2NodeViews(payload.c2Data, samBatteries)
+      ),
+    };
     console.log('Export data:', result, doctrine);
     if (submitDeployment(result, doctrine)) setSubmittedInputs(resultInputs);
   };
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
-  const allGroups = useMemo(
-    () => buildBatteryGroups(missileSystems, deployedMissileSystems, payload.batteryStatuses),
-    [missileSystems, deployedMissileSystems, payload.batteryStatuses]
-  );
   const weaponRanges = useMemo(() => buildWeaponRanges(missileSystems), [missileSystems]);
   const batteryGroups = useMemo(
     () => allGroups.filter((group) => group.missileSystemType !== SAM_TYPE),
@@ -109,14 +148,10 @@ export function ControlDeploymentTab({
   const deployedBatteries = batteryGroups.reduce((sum, group) => sum + group.deployedCount, 0);
   const totalBatteries = batteryGroups.reduce((sum, group) => sum + group.batteries.length, 0);
 
-  const c2Nodes = useMemo(() => {
-    const samBatteries = allGroups.find((group) => group.missileSystemType === SAM_TYPE)?.batteries;
-    return buildC2NodeViews(payload.c2Data, samBatteries ?? []);
-  }, [payload.c2Data, allGroups]);
   // Cards, checkbox and submitted result all read the nodes with the choice applied
   const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
   const samUnits = collectSamUnits(shownC2Nodes);
-  const c2Layers = useMemo(() => buildC2MapLayers(c2Nodes), [c2Nodes]);
+  const c2Layers = useMemo(() => buildC2MapLayers(c2Nodes, pinnedNodes), [c2Nodes, pinnedNodes]);
 
   return (
     <div className="flex h-full">

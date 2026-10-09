@@ -23,7 +23,7 @@ export function TreeRow({ root, leaves, emptyMessage }: TreeRowProps) {
         )}
       </div>
 
-      <div className="ml-6 flex min-w-0 flex-1 flex-col gap-2">
+      <div className="ml-6 flex min-w-0 flex-1 flex-col justify-center gap-2">
         {leaves.length === 0 ? (
           <div className="self-center text-xs italic text-text-secondary">{emptyMessage}</div>
         ) : (

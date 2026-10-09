@@ -601,6 +601,34 @@ describe('handleMapClick', () => {
     }
   });
 
+  it('rejects a rotation that the position check refuses', () => {
+    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const validateMissilePosition = vi.fn(() => 'Warning: outside zone');
+    const { result } = setup({ deployedMissileSystems, validateMissilePosition });
+    const target = { ...INLAND, longitude: INLAND.longitude - 0.2 };
+    act(() => result.current.handleRotateClick(UNIT_KEY));
+    act(() => result.current.handleMouseMove(target));
+    act(() => result.current.handleMapClick(target));
+
+    expect(validateMissilePosition).toHaveBeenCalledWith(UNIT_KEY, expect.anything());
+    expect(handlers.onDeploySystem).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('Warning: outside zone');
+    expectMode(result.current.mode, 'rotate');
+  });
+
+  it('rejects a hide-area relocation that the position check refuses', () => {
+    const deployment = makeDeployment();
+    const deployedMissileSystems = new Map([[UNIT_KEY, deployment]]);
+    const validateMissilePosition = vi.fn(() => 'Warning: outside zone');
+    const { result } = setup({ deployedMissileSystems, validateMissilePosition });
+
+    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    act(() => result.current.handleMapClick(deployment.tacticalAreas.hideArea![0]));
+
+    expect(handlers.onDeploySystem).not.toHaveBeenCalled();
+    expectMode(result.current.mode, 'relocateArea');
+  });
+
   it('leaves relocation mode when the unit disappeared underneath it', () => {
     const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
     const { result, rerender } = setup({ deployedMissileSystems });

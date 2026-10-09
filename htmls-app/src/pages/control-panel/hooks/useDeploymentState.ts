@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment, Jammer } from '@/types/controlPanel';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
-import { calculateBearing, isPointInTaiwan } from '@/utils/geo';
+import { calculateBearing, calculateCentroid, isPointInTaiwan } from '@/utils/geo';
 import { resolveOpeningAngle } from '@/utils/map';
 import {
   generateDeploymentData,
@@ -68,6 +68,12 @@ export interface UseDeploymentStateParams {
    * moves or removes a unit is inert. Cancel and the status line still work.
    */
   isLocked?: boolean;
+  /**
+   * Extra check on where a missile unit ends up (deploy click, or the centre of
+   * its hide area after a relocation or rotation), run after the boundary check.
+   * Returns a warning to show instead of applying the change, or null to allow it.
+   */
+  validateMissilePosition?: (unitKey: string, position: Coordinate) => string | null;
   onDeploySystem: (key: string, data: MissileDeployment) => void;
   onUndeploySystem: (key: string) => void;
   onDeployJammer: (index: number, position: Coordinate) => void;
@@ -88,6 +94,7 @@ export function useDeploymentState({
   deployedJammers,
   shouldValidateTaiwanBoundary,
   isLocked = false,
+  validateMissilePosition,
   onDeploySystem,
   onUndeploySystem,
   onDeployJammer,
@@ -139,15 +146,27 @@ export function useDeploymentState({
     [shouldValidateTaiwanBoundary, rng]
   );
 
+  /** Warning when the hide area of `deployment` sits where `unitKey` may not go */
+  const rejectHideAreaPosition = useCallback(
+    (unitKey: string, deployment: MissileDeployment): string | null => {
+      const hideArea = deployment.tacticalAreas.hideArea;
+      if (!validateMissilePosition || !hideArea?.length) return null;
+      return validateMissilePosition(unitKey, calculateCentroid(hideArea));
+    },
+    [validateMissilePosition]
+  );
+
   /**
    * Re-generate the deployment at a new opening angle. Returns false when the
    * angle is unusable — the rotated U-shape left the boundary, or no valid
-   * gateway was found — so the caller can keep the user in rotation mode.
+   * gateway was found — so the caller can keep the user in rotation mode. The
+   * failure carries the warning to show.
    */
   const applyAngleChange = useCallback(
-    (unitKey: string, newAngle: number): boolean => {
+    (unitKey: string, newAngle: number): string | null => {
+      const label = deployedMissileSystems.get(unitKey)?.unitname ?? unitKey;
       const deployment = deployedMissileSystems.get(unitKey);
-      if (!deployment) return false;
+      if (!deployment) return `Warning: ${label} is not deployed`;
 
       const rotated = rotateDeployment({
         deployment,
@@ -155,12 +174,20 @@ export function useDeploymentState({
         validateTaiwanBoundary: shouldValidateTaiwanBoundary,
         rng,
       });
-      if (!rotated) return false;
+      if (!rotated) return `Warning: ${newAngle}° leaves no valid layout for ${label}`;
+      const rejection = rejectHideAreaPosition(unitKey, rotated);
+      if (rejection) return rejection;
 
       onDeploySystem(unitKey, rotated);
-      return true;
+      return null;
     },
-    [deployedMissileSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
+    [
+      deployedMissileSystems,
+      shouldValidateTaiwanBoundary,
+      rng,
+      onDeploySystem,
+      rejectHideAreaPosition,
+    ]
   );
 
   // ============================================================================
@@ -191,10 +218,11 @@ export function useDeploymentState({
   const commitRotation = useCallback(
     (unitKey: string, angle: number) => {
       const label = deployedMissileSystems.get(unitKey)?.unitname ?? unitKey;
-      if (!applyAngleChange(unitKey, angle)) {
+      const failure = applyAngleChange(unitKey, angle);
+      if (failure) {
         // Stay in rotation mode: the unit keeps its old angle and the user can
         // sweep to another one without restarting.
-        setStatus(`Warning: ${angle}° leaves no valid layout for ${label}`);
+        setStatus(failure);
         return;
       }
       setStatus(`Angle set to ${angle}° for ${label}`);
@@ -223,17 +251,34 @@ export function useDeploymentState({
         return;
       }
 
+      const rejection = rejectHideAreaPosition(area.unitKey, result.data);
+      if (rejection) {
+        setStatus(rejection);
+        return;
+      }
+
       onDeploySystem(area.unitKey, result.data);
       setStatus(`${formatAreaLabel(area)} relocated for ${deployment.unitname}`);
       dispatch({ type: 'reset' });
     },
-    [deployedMissileSystems, shouldValidateTaiwanBoundary, rng, onDeploySystem]
+    [
+      deployedMissileSystems,
+      shouldValidateTaiwanBoundary,
+      rng,
+      onDeploySystem,
+      rejectHideAreaPosition,
+    ]
   );
 
   const commitDeployment = useCallback(
     (unit: SelectedUnit, position: Coordinate) => {
       if (shouldValidateTaiwanBoundary && !isPointInTaiwan(position)) {
         setStatus(OUT_OF_BOUNDS_MISSILE);
+        return;
+      }
+      const rejection = validateMissilePosition?.(unit.key, position);
+      if (rejection) {
+        setStatus(rejection);
         return;
       }
 
@@ -258,7 +303,7 @@ export function useDeploymentState({
       setStatus(`Done: ${unit.name} deployed at ${formatPosition(position)}, Angle: ${autoAngle}`);
       dispatch({ type: 'reset' });
     },
-    [shouldValidateTaiwanBoundary, createDeployment, onDeploySystem]
+    [shouldValidateTaiwanBoundary, validateMissilePosition, createDeployment, onDeploySystem]
   );
 
   const handleMapClick = useCallback(

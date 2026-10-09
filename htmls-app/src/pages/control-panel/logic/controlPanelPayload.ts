@@ -15,7 +15,7 @@ import {
   AMPHIBIOUS_LOCATION_DATA,
 } from '@/data/controlPanelData';
 import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
-import type { SamDoctrineEntry } from './c2Nodes';
+import type { C2ContextEntry, SamDoctrineEntry } from './c2Nodes';
 import {
   parseInjectedJSON,
   readInjectedBoolean,
@@ -122,6 +122,8 @@ export function readControlPanelPayload(): ControlPanelPayload {
  */
 export interface EmconResult {
   sams: SamDoctrineEntry[];
+  /** C2 nodes whose SAM units changed after the player's redeployment */
+  c2Nodes: C2ContextEntry[];
 }
 
 /** Deployment and SAM doctrine are one submission: both inputs or neither counts. */

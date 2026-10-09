@@ -72,9 +72,9 @@ describe('host writes', () => {
     addInput('summaryData');
     const result = { budget: {}, airbases: [], jammers: [], missileSystems: [] };
 
-    expect(submitDeployment(result as never, { sams: [] } as never)).toBe(false);
+    expect(submitDeployment(result as never, { sams: [], c2Nodes: [] } as never)).toBe(false);
 
     addInput('emconData');
-    expect(submitDeployment(result as never, { sams: [] } as never)).toBe(true);
+    expect(submitDeployment(result as never, { sams: [], c2Nodes: [] } as never)).toBe(true);
   });
 });
