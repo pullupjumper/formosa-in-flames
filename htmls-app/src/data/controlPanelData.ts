@@ -1,4 +1,10 @@
-import type { Airbase, Jammer, MissileSystemTypes, AmphibiousLocation } from '@/types/controlPanel';
+import type {
+  AddUnitAction,
+  Airbase,
+  Jammer,
+  MissileSystemTypes,
+  AmphibiousLocation,
+} from '@/types/controlPanel';
 
 // ============================================================================
 // JAMMERS DATA
@@ -687,4 +693,13 @@ export const AMPHIBIOUS_LOCATION_DATA: AmphibiousLocation[] = [
       },
     ],
   },
+];
+
+// ============================================================================
+// ADD UNITS MENU DATA
+// ============================================================================
+export const MOCK_ADD_UNIT_ACTIONS: AddUnitAction[] = [
+  { id: 'addACs', label: 'Add aircraft' },
+  { id: 'addSAGs', label: 'Add SAGs' },
+  { id: 'addMissileSystems', label: 'Add missile systems' },
 ];

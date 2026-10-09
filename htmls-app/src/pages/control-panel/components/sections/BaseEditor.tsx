@@ -1,6 +1,7 @@
-import type { Airbase, BudgetState } from '@/types/controlPanel';
+import type { Airbase } from '@/types/controlPanel';
+import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { CONFIG } from '@/constants/controlPanel';
-import { settleQuantityChange } from '@/utils/budgetLedger';
+import { settleQuantityChange } from '@/pages/control-panel/logic/budgetLedger';
 
 // ============================================================================
 // BaseEditor

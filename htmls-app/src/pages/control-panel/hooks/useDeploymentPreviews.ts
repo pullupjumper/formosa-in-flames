@@ -1,8 +1,12 @@
 import { useMemo } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/controlPanel';
-import { resolveOpeningAngle } from '@/utils/map';
-import { previewDeployment, previewRelocation, previewRotation } from '@/utils/deploymentGeometry';
+import type { MissileDeployment } from '@/types/deployment';
+import {
+  previewDeployment,
+  previewRelocation,
+  previewRotation,
+  resolveOpeningAngle,
+} from '@/utils/deploymentGeometry';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';
 import type { RandomSource } from '@/utils/random';
 import type { DeploymentMode } from '../logic/deploymentMode';

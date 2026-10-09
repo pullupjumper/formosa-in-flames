@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { C2Data, C2Unit } from '@/types/unitStatus';
+import type { C2Nodes, C2Unit } from '@/types/controlPanel';
 import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 import {
   applySamWeaponsFree,
   buildC2MapLayers,
   buildC2NodeViews,
-  checkSamDeployment,
+  getSamDeploymentWarning,
   collectC2ContextUpdates,
   collectSamUnits,
   OUTSIDE_OPERATING_ZONE,
@@ -46,7 +46,7 @@ function battery(unitKey: string, name: string): Battery {
 // ============================================================================
 describe('buildC2NodeViews', () => {
   it('lists radar before SAM units under each node', () => {
-    const nodes: C2Data = {
+    const nodes: C2Nodes = {
       n1: {
         type: 'c2',
         name: 'C2 One',
@@ -67,7 +67,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('pairs a SAM unit with its battery by name', () => {
-    const nodes: C2Data = {
+    const nodes: C2Nodes = {
       n1: { name: 'C2', type: 'c2', pos: ORIGIN, areas: [], sam: { g1: c2Unit('Same Name') } },
     };
     const batteries = [battery('sam_a', 'Same Name')];
@@ -76,7 +76,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('leaves SAM units without a battery as plain cards', () => {
-    const nodes: C2Data = {
+    const nodes: C2Nodes = {
       n1: { name: 'C2', type: 'c2', pos: ORIGIN, areas: [], sam: { g1: c2Unit('Unknown') } },
     };
 
@@ -84,7 +84,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('never gives one battery to two SAM units', () => {
-    const nodes: C2Data = {
+    const nodes: C2Nodes = {
       n1: {
         type: 'c2',
         name: 'C2',
@@ -112,7 +112,7 @@ describe('buildC2NodeViews', () => {
         tacticalAreas: { hideArea: zone(latitude, longitude).map((p) => ({ ...p })) },
       } as Battery['deployment'],
     });
-    const twoNodes = (): C2Data => ({
+    const twoNodes = (): C2Nodes => ({
       a: {
         type: 'c2',
         name: 'A',
@@ -160,7 +160,7 @@ describe('buildC2NodeViews', () => {
 describe('collectSamUnits', () => {
   it('lists live SAM units with their GUID, name and weapons status', () => {
     const destroyed = { ...c2Unit('Dead SAM'), isDestroyed: true };
-    const nodes: C2Data = {
+    const nodes: C2Nodes = {
       n1: {
         type: 'c2',
         name: 'C2',
@@ -178,7 +178,7 @@ describe('collectSamUnits', () => {
 });
 
 describe('applySamWeaponsFree', () => {
-  const nodes: C2Data = {
+  const nodes: C2Nodes = {
     n1: {
       type: 'c2',
       name: 'C2',
@@ -213,7 +213,7 @@ describe('buildC2MapLayers', () => {
   ];
 
   it('draws a zone shared by two nodes once and marks every unit', () => {
-    const nodes: C2Data = {
+    const nodes: C2Nodes = {
       n1: {
         type: 'c2',
         name: 'A',
@@ -252,7 +252,7 @@ describe('buildC2MapLayers', () => {
     ];
 
     function layersFor(hideCenter: { latitude: number; longitude: number }, zone = bigZone) {
-      const nodes: C2Data = {
+      const nodes: C2Nodes = {
         far: {
           type: 'c2',
           name: 'Far',
@@ -279,7 +279,7 @@ describe('buildC2MapLayers', () => {
     });
 
     it('ignores nearer C2 nodes of another type', () => {
-      const nodes: C2Data = {
+      const nodes: C2Nodes = {
         rocc: {
           type: 'rocc',
           name: 'ROCC',
@@ -307,7 +307,7 @@ describe('buildC2MapLayers', () => {
     });
 
     it('draws neither marker nor line for a cancelled deployment', () => {
-      const nodes: C2Data = {
+      const nodes: C2Nodes = {
         n1: { type: 'c2', name: 'N', pos: ORIGIN, areas: [], sam: { s1: c2Unit('SAM') } },
       };
       const views = buildC2NodeViews(nodes, [battery('b1', 'SAM')]);
@@ -326,7 +326,7 @@ describe('buildC2MapLayers', () => {
   });
 });
 
-describe('checkSamDeployment', () => {
+describe('getSamDeploymentWarning', () => {
   const zone = [
     { latitude: 22, longitude: 119 },
     { latitude: 22, longitude: 121 },
@@ -342,17 +342,17 @@ describe('checkSamDeployment', () => {
     );
 
   it('lets a SAM deploy inside the zone of a node of its type', () => {
-    expect(checkSamDeployment(views(), 'b1', { latitude: 23, longitude: 120 })).toBeNull();
+    expect(getSamDeploymentWarning(views(), 'b1', { latitude: 23, longitude: 120 })).toBeNull();
   });
 
   it('warns when the position is outside every zone', () => {
-    expect(checkSamDeployment(views(), 'b1', { latitude: 30, longitude: 130 })).toBe(
+    expect(getSamDeploymentWarning(views(), 'b1', { latitude: 30, longitude: 130 })).toBe(
       OUTSIDE_OPERATING_ZONE
     );
   });
 
   it('ignores batteries that are no SAM unit of any node', () => {
-    expect(checkSamDeployment(views(), 'other', { latitude: 30, longitude: 130 })).toBeNull();
+    expect(getSamDeploymentWarning(views(), 'other', { latitude: 30, longitude: 130 })).toBeNull();
   });
 });
 
@@ -363,7 +363,7 @@ describe('collectC2ContextUpdates', () => {
     { latitude: latitude + 1, longitude: longitude + 1 },
     { latitude: latitude + 1, longitude: longitude - 1 },
   ];
-  const nodes = (): C2Data => ({
+  const nodes = (): C2Nodes => ({
     a: {
       type: 'rocc',
       name: 'A',

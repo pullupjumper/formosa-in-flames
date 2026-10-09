@@ -3,15 +3,44 @@ import { CircleMarker, Polyline, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/controlPanel';
-import type { AreaType, RelocatingArea } from '@/types/deployment';
+import type {
+  AreaType,
+  MissileDeployment,
+  RelocatingArea,
+  TacticalAreas,
+} from '@/types/deployment';
 import { getAreaColor } from '@/constants/deployment';
-import { canInteractArea, getWeaponSystemName } from '@/utils/map';
+import { CONFIG } from '@/constants/controlPanel';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
 import { TacticalPolygon, RangeCircle, ZoomGate, DETAIL_MIN_ZOOM } from './primitives';
 import { createImageIcon, ICON_IMAGES, getBatteryImage } from './icons';
 import { MapPopup } from './MapPopup';
 import type { DeploymentPreview } from '@/utils/deploymentGeometry';
+
+/** Weapon system display name for a missile system type key. */
+function getWeaponSystemName(missileSystemType: string): string {
+  return CONFIG.WEAPON_NAMES[missileSystemType] || missileSystemType.toUpperCase();
+}
+
+/**
+ * Whether a click on a tactical area should do anything: nothing while another
+ * area is armed for relocation, everything when idle.
+ */
+interface CanInteractAreaParams {
+  hasHandler: boolean;
+  isAnyRelocating: boolean;
+  isThisRelocating: boolean;
+}
+
+function canInteractArea({
+  hasHandler,
+  isAnyRelocating,
+  isThisRelocating,
+}: CanInteractAreaParams): boolean {
+  if (!hasHandler) return false;
+  if (!isAnyRelocating) return true;
+  return isThisRelocating;
+}
 
 // ============================================================================
 // COLORS

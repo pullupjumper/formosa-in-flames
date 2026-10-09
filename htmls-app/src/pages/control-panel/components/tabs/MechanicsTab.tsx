@@ -3,7 +3,7 @@ import {
   SubTitle,
   Paragraph,
   List,
-  Panel,
+  Callout,
   Term,
   Screenshot,
   Figure,
@@ -108,7 +108,7 @@ export function MechanicsTab() {
               your order. Plan for it -- a battery with empty tubes sitting at a firing point stays
               empty until you do something about it.
             </Paragraph>
-            <Panel title="Your job, in one line each">
+            <Callout title="Your job, in one line each">
               <List>
                 <li>Keep launchers at a FP while you want them shooting.</li>
                 <li>
@@ -117,7 +117,7 @@ export function MechanicsTab() {
                 <li>When a truck runs empty, send it to the AHA to take on more missiles.</li>
                 <li>Hide idle vehicles in MASK buildings so they survive.</li>
               </List>
-            </Panel>
+            </Callout>
           </Section>
 
           {/* ---------------------------------------------------------------- */}
@@ -133,7 +133,7 @@ export function MechanicsTab() {
               />
             </Figure>
             <PositionTable />
-            <Panel title="Reloading only works if you get this right">
+            <Callout title="Reloading only works if you get this right">
               <List>
                 <li>
                   The launcher and the ammo truck must be in the <Term>same</Term> RL. Different RLs
@@ -148,7 +148,7 @@ export function MechanicsTab() {
                   Reloading takes time. Pull a battery out before it is completely dry, not after.
                 </li>
               </List>
-            </Panel>
+            </Callout>
           </Section>
 
           {/* ---------------------------------------------------------------- */}
@@ -160,7 +160,7 @@ export function MechanicsTab() {
             <Figure caption="Fig 2. Cargo Operations. Pick the vehicles on the left, load them into the building on the right.">
               <Screenshot src={SCREENSHOT.loadCargo} alt="Cargo Operations dialog" />
             </Figure>
-            <Panel title="Steps">
+            <Callout title="Steps">
               <List>
                 <li>Move the launchers and ammo trucks into the MASK area.</li>
                 <li>
@@ -180,7 +180,7 @@ export function MechanicsTab() {
                 <li>A hidden vehicle cannot fire or move until you unload it.</li>
                 <li>If the building is destroyed, so is what is inside.</li>
               </List>
-            </Panel>
+            </Callout>
           </Section>
 
           {/* ---------------------------------------------------------------- */}
@@ -190,7 +190,7 @@ export function MechanicsTab() {
               <Term>Missile Batteries</Term> panel to see what it is doing instead of clicking
               through units one by one.
             </Paragraph>
-            <Panel>
+            <Callout>
               <List>
                 <li>
                   <Term>FIRING</Term> -- whether the battery is hiding, in position, or reloading,
@@ -206,7 +206,7 @@ export function MechanicsTab() {
                   <Term>MISSILES (AHA)</Term> -- remaining stock at the depot.
                 </li>
               </List>
-            </Panel>
+            </Callout>
             <Paragraph>
               Depot feeds truck, truck feeds launcher. A zero anywhere in that chain means a battery
               goes quiet soon -- this panel is where you spot it early.

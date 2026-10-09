@@ -1,11 +1,11 @@
 // Control Panel Types
 //
 // Field names on the injected payload types (`Airbase`, `Jammer`,
-// `OperationalArea`, ...) are dictated by `unitStatusUI.lua` and must not be
-// renamed here.
+// `OperationalArea`, `C2Node`, ...) are dictated by `unitStatusUI.lua` and must
+// not be renamed here.
 
-import type { ComponentType, SVGProps } from 'react';
-import type { Coordinate, MovementPath } from '@/types/geo';
+import type { Coordinate } from '@/types/geo';
+import type { MovementPaths, TacticalAreas } from '@/types/deployment';
 
 // ============================================================================
 // INJECTED PAYLOAD
@@ -77,6 +77,77 @@ export interface AmphibiousLocation {
   waypoints: Coordinate[];
 }
 
+/** One `addXXX` option the side can run. */
+export interface AddUnitAction {
+  id: string;
+  label: string;
+}
+
+// ============================================================================
+// INJECTED PAYLOAD (live status: signals, batteries, C2, landing units)
+// ============================================================================
+export interface Signal {
+  name: string;
+  type: string;
+  autodetectable: boolean;
+  latitude?: number;
+  longitude?: number;
+  firstDetected: number | string;
+  lastDetected: number | string;
+  detectionCount: number;
+  confidence: number;
+  currentDetectionLevel?: number;
+}
+
+export interface BatteryStatus {
+  name: string;
+  missileSystemType: string;
+  firingUnitState: string;
+  resupplyUnitState: string;
+  firingUnitReloadTime: number;
+  defaultReloadTime: number;
+  resupplyUnitReloadTime: number;
+  missilesInAmmoVehicles: number;
+  missilesInTransloaderDefault: number;
+  missilesInAHA: number;
+  missilesInAHADefault: number;
+}
+
+export interface C2Unit {
+  /** Type of the C2 node the unit reports to: 'c2', 'rocc' or 'taaoc' */
+  type: string;
+  name: string;
+  OODADetection: string;
+  OODATargeting: string;
+  isOutOfComms: boolean;
+  EMCONSetting: string;
+  isDestroyed: boolean;
+  weaponFree: boolean;
+  pos: Coordinate;
+}
+
+export interface C2Node {
+  /** IADS group the node belongs to: 'c2', 'rocc' or 'taaoc' */
+  type: string;
+  name: string;
+  pos: Coordinate;
+  areas: Coordinate[][];
+  sam?: Record<string, C2Unit>;
+  radar?: Record<string, C2Unit>;
+}
+
+// C2 data: direct mapping of node keys to C2Node
+export type C2Nodes = Record<string, C2Node>;
+
+export type LandingUnits = Record<string, Record<string, number>>;
+
+export interface LiveStatusData {
+  signals: Signal[];
+  batteryStatuses: BatteryStatus[];
+  c2: C2Nodes;
+  landingUnits: LandingUnits;
+}
+
 // ============================================================================
 // HOST RESULT (what `summaryData` sends back to unitStatusUI.lua)
 // Field names mirror `SBJ__ControlPanelResult` in schema.lua and must not change.
@@ -112,50 +183,7 @@ export interface ControlPanelResult {
   missileSystems: MissileSystemResult[];
 }
 
-// ============================================================================
-// UI STATE
-// ============================================================================
-export interface BudgetState {
-  current: number;
-  used: number;
-  total: number;
-}
-
-export interface TacticalAreas {
-  uShapeVertices: Coordinate[];
-  ammoArea?: Coordinate[];
-  hideArea?: Coordinate[];
-  reloadArea?: Coordinate[];
-  firePoints?: Coordinate[][];
-  shelterPoints?: Coordinate[];
-}
-
-/** Keys mirror the Lua `SBJ__MovementPaths` shape and are exported verbatim. */
-export interface MovementPaths {
-  FP: MovementPath[];
-  HA: MovementPath;
-  RL: MovementPath[];
-  AHA: MovementPath;
-  SHRL: MovementPath;
-}
-
-/** One missile unit placed on the map, with everything the export needs. */
-export interface MissileDeployment {
-  unitname: string;
-  missileSystemType: string;
-  center: Coordinate;
-  openingAngle: number;
-  /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
-  ahaRadius?: number;
-  /** Where the AHA square sits; set by hand-relocation or scenario placement. */
-  ahaCenter?: Coordinate;
-  tacticalAreas: TacticalAreas;
-  paths: MovementPaths;
-}
-
-export interface ForceImage {
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
-  label: string;
-  width: number;
-  height: number;
+/** What `selectedActions` sends back to `addUnitsMenu.lua`. */
+export interface AddUnitsMenuResult {
+  actionIds: string[];
 }

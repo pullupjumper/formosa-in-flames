@@ -1,6 +1,7 @@
 import type { Coordinate } from '@/types/geo';
-import type { Airbase, MissileDeployment, Jammer } from '@/types/controlPanel';
-import type { SignalData } from '@/types/unitStatus';
+import type { Airbase, Jammer } from '@/types/controlPanel';
+import type { MissileDeployment } from '@/types/deployment';
+import type { Signal } from '@/types/controlPanel';
 import {
   BaseMap,
   AirbaseMarkers,
@@ -27,7 +28,7 @@ interface DeploymentMapProps {
   weaponRanges: ReadonlyMap<string, number>;
   deployedJammers: Map<number, Coordinate>;
   /** Detected signals shown as suspected C2 markers */
-  signals: SignalData[];
+  signals: Signal[];
   /** C2 operating zones and C2 / SAM / radar markers */
   c2Layers: C2MapLayers;
 

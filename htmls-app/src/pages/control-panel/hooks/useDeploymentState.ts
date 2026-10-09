@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, Jammer } from '@/types/controlPanel';
+import type { Jammer } from '@/types/controlPanel';
+import type { MissileDeployment } from '@/types/deployment';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { calculateBearing, calculateCentroid, isPointInTaiwan } from '@/utils/geo';
-import { resolveOpeningAngle } from '@/utils/map';
 import {
   generateDeploymentData,
   generateOffsetsForAngle,
   relocateArea,
+  resolveOpeningAngle,
   rotateDeployment,
 } from '@/utils/deploymentGeometry';
 import type { PreviewOffsets } from '@/utils/deploymentGeometry';

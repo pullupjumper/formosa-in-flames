@@ -2,12 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import type { Coordinate } from '@/types/geo';
 import { DeploymentMap } from '@pages/control-panel/components/map/DeploymentMap';
 import { buildBatteryGroups, buildWeaponRanges } from '@pages/control-panel/logic/batteryGroups';
-import { toControlPanelResult } from '@/utils/deploymentPayload';
+import { toControlPanelResult } from '@/pages/control-panel/logic/deploymentPayload';
 import {
   applySamWeaponsFree,
   buildC2MapLayers,
   buildC2NodeViews,
-  checkSamDeployment,
+  getSamDeploymentWarning,
   collectC2ContextUpdates,
   collectDeployedPlacements,
   collectSamUnits,
@@ -91,7 +91,7 @@ export function ControlDeploymentTab({
     setPinned({ data: payload.c2Data, nodes: new Map([...pinnedNodes, ...newPlacements]) });
   }
   const validateMissilePosition = useCallback(
-    (unitKey: string, position: Coordinate) => checkSamDeployment(c2Nodes, unitKey, position),
+    (unitKey: string, position: Coordinate) => getSamDeploymentWarning(c2Nodes, unitKey, position),
     [c2Nodes]
   );
   const deployment = useDeploymentState({

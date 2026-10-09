@@ -23,7 +23,7 @@ export interface Layout {
   firePoints: Coordinate[][];
 }
 
-export interface LayoutOptions {
+export interface LayoutParams {
   /** Scenario-placed units may sit at a non-default AHA distance */
   ahaRadius?: number;
   /** A hand-placed AHA stays where the user put it */
@@ -112,7 +112,7 @@ function generateInternalSquares(
 function generateAhaArea(
   center: Coordinate,
   openingAngle: number,
-  { ahaRadius, ahaCenter }: LayoutOptions
+  { ahaRadius, ahaCenter }: LayoutParams
 ): Coordinate[] {
   const { squareSize, radius } = AREA_CONFIG.ahaPoint;
   if (ahaCenter) {
@@ -184,7 +184,7 @@ function generateFirePoints(
 export function generateLayout(
   center: Coordinate,
   openingAngle: number,
-  options: LayoutOptions = {},
+  options: LayoutParams = {},
   rng: RandomSource = Math.random
 ): Layout {
   if (!Number.isFinite(center?.latitude) || !Number.isFinite(center?.longitude)) {

@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Marker, Polyline, Circle } from 'react-leaflet';
 import type { LatLngTuple, PathOptions } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { AmphibiousLocation, ForceImage } from '@/types/controlPanel';
+import type { AmphibiousLocation } from '@/types/controlPanel';
+import type { ForceImage } from '@/components/map/icons';
 import { MapShell, createImageIcon, ICON_IMAGES } from '@/components/map';
 import {
   Section,
@@ -11,7 +12,7 @@ import {
   Paragraph,
   Indent,
   List,
-  Panel,
+  Callout,
   Caption,
   DocTable,
   DocTd,
@@ -210,7 +211,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
               </Paragraph>
             </Subsection>
 
-            <Panel title="1.e. CCIR.">
+            <Callout title="1.e. CCIR.">
               <List>
                 <li>
                   PIR: CSG departure from Bashi Channel; primary and secondary landing wave timing
@@ -223,7 +224,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
                   reload capacity.
                 </li>
               </List>
-            </Panel>
+            </Callout>
           </Section>
 
           {/* ---------------------------------------------------------------- */}
@@ -307,7 +308,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
             </Subsection>
 
             <Subsection title="3.d. Coordinating Instructions.">
-              <Panel>
+              <Callout>
                 <Paragraph>
                   a. Airspace: Combat air patrol zones deconflicted from missile and air defense
                   engagement zones.
@@ -326,7 +327,7 @@ export function OpordTab({ amphibiousLocations }: OpordTabProps) {
                   d. Runway Repair: Damaged airfield runways automatically regenerate at ~3% per
                   hour, so continuous operations are sustainable.
                 </Paragraph>
-              </Panel>
+              </Callout>
             </Subsection>
           </Section>
 

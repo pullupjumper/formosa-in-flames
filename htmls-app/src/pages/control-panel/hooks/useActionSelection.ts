@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { AddUnitAction } from '@/types/addUnitsMenu';
+import type { AddUnitAction } from '@/types/controlPanel';
 
 export interface UseActionSelectionParams {
   actions: AddUnitAction[];

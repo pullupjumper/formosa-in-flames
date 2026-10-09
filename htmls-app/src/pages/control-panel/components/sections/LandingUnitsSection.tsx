@@ -1,4 +1,4 @@
-import type { LandingUnitsData } from '@/types/unitStatus';
+import type { LandingUnits } from '@/types/controlPanel';
 import { getLandingUnitImage } from '@/components/map';
 import { ImageIcon } from '@/components/ImageIcon';
 import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
@@ -8,7 +8,7 @@ import { TreeRow } from '@pages/control-panel/components/shared/TreeRow';
 // LandingUnitsSection — landing areas on the left, their unit counts on the right
 // ============================================================================
 interface LandingUnitsSectionProps {
-  landingUnits: LandingUnitsData;
+  landingUnits: LandingUnits;
 }
 
 export function LandingUnitsSection({ landingUnits }: LandingUnitsSectionProps) {

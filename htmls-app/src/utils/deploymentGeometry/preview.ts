@@ -1,5 +1,5 @@
 import type { Coordinate, CoordinateOffset } from '@/types/geo';
-import type { MissileDeployment } from '@/types/controlPanel';
+import type { MissileDeployment } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInTaiwan, translateCoordinate } from '@/utils/geo';
 import { AREA_SQUARE_SIZE, REF_CENTER } from './config';

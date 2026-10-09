@@ -1,4 +1,4 @@
-import type { ForceImage } from '@/types/controlPanel';
+import type { ForceImage } from '@/components/map/icons';
 
 interface ImageIconProps {
   image: ForceImage;

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
-import type { SignalData } from '@/types/unitStatus';
+import type { Signal } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { createImageIcon, ICON_IMAGES } from './icons';
 
@@ -10,7 +10,7 @@ import { createImageIcon, ICON_IMAGES } from './icons';
 const SUSPECTED_C2_ICON = createImageIcon(ICON_IMAGES.suspectedC2);
 
 interface SignalMarkersProps {
-  signals: SignalData[];
+  signals: Signal[];
 }
 
 /** One marker per signal that carries a position; the rest only appear in the sidebar. */

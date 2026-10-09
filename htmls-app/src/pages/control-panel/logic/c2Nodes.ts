@@ -1,6 +1,6 @@
 import type { Coordinate } from '@/types/geo';
 import { calculateCentroid, calculateDistance, isPointInPolygon } from '@/utils/geo';
-import type { C2Data, C2Node, C2Unit } from '@/types/unitStatus';
+import type { C2Nodes, C2Node, C2Unit } from '@/types/controlPanel';
 import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 
 /**
@@ -45,7 +45,7 @@ export interface C2NodeView {
   key: string;
   type: string;
   name: string;
-  pos: Coordinate;
+  position: Coordinate;
   /** Operating zones of the node, one polygon each */
   areas: Coordinate[][];
   children: C2Child[];
@@ -60,7 +60,7 @@ export interface C2MarkerLayer {
   key: string;
   kind: 'c2' | 'sam' | 'radar';
   name: string;
-  pos: Coordinate;
+  position: Coordinate;
   isDestroyed: boolean;
 }
 
@@ -84,7 +84,7 @@ export interface C2MapLayers {
  * `{ ROCC: {...}, TAAOC: {...} }` and the Lua payload's wrapped groups
  * `{ rocc: { guid1: {...}, guid2: {...} } }`.
  */
-function flattenC2Nodes(data: C2Data): Record<string, C2Node> {
+function flattenC2Nodes(data: C2Nodes): Record<string, C2Node> {
   const flatNodes: Record<string, C2Node> = {};
 
   for (const [key, value] of Object.entries(data)) {
@@ -105,7 +105,7 @@ function flattenC2Nodes(data: C2Data): Record<string, C2Node> {
  * unit so two cards never drive the same deployment.
  */
 export function buildC2NodeViews(
-  c2Data: C2Data,
+  c2Data: C2Nodes,
   samBatteries: Battery[],
   pinned: ReadonlyMap<string, string> = new Map()
 ): C2NodeView[] {
@@ -132,7 +132,7 @@ export function buildC2NodeViews(
       key,
       type: node.type,
       name: node.name,
-      pos: node.pos,
+      position: node.pos,
       areas: node.areas ?? [],
       children,
     };
@@ -197,7 +197,7 @@ export function collectSamUnits(views: C2NodeView[]): SamDoctrineEntry[] {
  * they now command. Unchanged nodes are left out so the host only rewrites
  * what moved.
  */
-export function collectC2ContextUpdates(c2Data: C2Data, views: C2NodeView[]): C2ContextEntry[] {
+export function collectC2ContextUpdates(c2Data: C2Nodes, views: C2NodeView[]): C2ContextEntry[] {
   const original = flattenC2Nodes(c2Data);
 
   return views
@@ -254,8 +254,8 @@ function findCommandingNode(
   let nearestDistance = Infinity;
 
   for (const view of views) {
-    if (!view.pos || view.type !== c2Type) continue;
-    const distance = calculateDistance(view.pos, position);
+    if (!view.position || view.type !== c2Type) continue;
+    const distance = calculateDistance(view.position, position);
     if (distance < nearestDistance) {
       nearest = view;
       nearestDistance = distance;
@@ -272,7 +272,7 @@ export const OUTSIDE_OPERATING_ZONE =
  * Why a SAM battery cannot be deployed at `position`, or null when it can (or
  * when the battery is no SAM unit of any node, so no zone applies to it).
  */
-export function checkSamDeployment(
+export function getSamDeploymentWarning(
   views: C2NodeView[],
   unitKey: string,
   position: Coordinate
@@ -305,12 +305,12 @@ export function buildC2MapLayers(
       if (vertices.length >= 3 && !zones.has(key)) zones.set(key, { key, vertices });
     }
 
-    if (view.pos) {
+    if (view.position) {
       markers.push({
         key: view.key,
         kind: 'c2',
         name: view.name,
-        pos: view.pos,
+        position: view.position,
         isDestroyed: false,
       });
     }
@@ -323,7 +323,11 @@ export function buildC2MapLayers(
         const position = hideArea?.length ? calculateCentroid(hideArea) : null;
         const commander = position ? findCommandingNode(position, child.unit.type, views) : null;
         if (position && commander) {
-          links.push({ key: `${commander.key}-${child.key}`, from: commander.pos, to: position });
+          links.push({
+            key: `${commander.key}-${child.key}`,
+            from: commander.position,
+            to: position,
+          });
         }
         continue;
       }
@@ -332,11 +336,11 @@ export function buildC2MapLayers(
         key: child.key,
         kind: child.type,
         name: child.unit.name,
-        pos: child.unit.pos,
+        position: child.unit.pos,
         isDestroyed: child.unit.isDestroyed,
       });
-      if (view.pos) {
-        links.push({ key: `${view.key}-${child.key}`, from: view.pos, to: child.unit.pos });
+      if (view.position) {
+        links.push({ key: `${view.key}-${child.key}`, from: view.position, to: child.unit.pos });
       }
     }
   }

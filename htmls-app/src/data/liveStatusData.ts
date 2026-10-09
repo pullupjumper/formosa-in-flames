@@ -1,16 +1,15 @@
 import type {
-  SignalData,
+  Signal,
   BatteryStatus,
-  C2Data,
-  Base,
-  LandingUnitsData,
-  UnitStatusData,
-} from '@/types/unitStatus';
+  C2Nodes,
+  LandingUnits,
+  LiveStatusData,
+} from '@/types/controlPanel';
 
 // ===========================================================================
 // SIGNAL DATA
 // ===========================================================================
-export const SIGNALS_DATA: SignalData[] = [
+export const SIGNALS_DATA: Signal[] = [
   {
     name: 'Signal 1',
     type: 'Type A',
@@ -112,7 +111,7 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
 // ===========================================================================
 // C2 NODES DATA
 // ===========================================================================
-export const C2_DATA: C2Data = {
+export const C2_DATA: C2Nodes = {
   'IC8B0X-0HNE084PJAHI0': {
     type: 'c2',
     pos: { latitude: 24.2847165330236, longitude: 120.73412101965434 },
@@ -218,29 +217,9 @@ export const C2_DATA: C2Data = {
 };
 
 // ===========================================================================
-// BASE WEAPONS DATA
-// ===========================================================================
-export const BASE_WEAPONS_DATA: Base[] = [
-  {
-    name: 'Base1',
-    wpns: [
-      { name: 'wpn1', currWpn: 6 },
-      { name: 'wpn2', currWpn: 6 },
-    ],
-  },
-  {
-    name: 'Base2',
-    wpns: [
-      { name: 'wpn1', currWpn: 6 },
-      { name: 'wpn2', currWpn: 6 },
-    ],
-  },
-];
-
-// ===========================================================================
 // LANDING UNITS DATA
 // ===========================================================================
-export const LANDING_UNITS_DATA: LandingUnitsData = {
+export const LANDING_UNITS_DATA: LandingUnits = {
   'Area A': {
     'ZBD-05': 0,
     'ZTD-05': 0,
@@ -268,12 +247,11 @@ export const LANDING_UNITS_DATA: LandingUnitsData = {
 };
 
 // ===========================================================================
-// COMBINED UNIT STATUS DATA
+// COMBINED LIVE STATUS DATA
 // ===========================================================================
-export const UNIT_STATUS_DATA: UnitStatusData = {
+export const LIVE_STATUS_DATA: LiveStatusData = {
   signals: SIGNALS_DATA,
   batteryStatuses: BATTERY_STATUSES_DATA,
   c2: C2_DATA,
-  baseWeapons: BASE_WEAPONS_DATA,
   landingUnits: LANDING_UNITS_DATA,
 };

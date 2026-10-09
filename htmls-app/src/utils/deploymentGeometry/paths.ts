@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { MovementPaths, TacticalAreas } from '@/types/controlPanel';
+import type { MovementPaths, TacticalAreas } from '@/types/deployment';
 import { calculateBearing, calculateDistance, getPointFromBearing } from '@/utils/geo';
 import { MOVEMENT_PATH_AVOIDANCE_MARGIN } from './config';
 import { calculateSquareCenter, doesSegmentCrossSquare } from './squares';

@@ -1,4 +1,4 @@
-import type { BatteryStatus } from '@/types/unitStatus';
+import type { BatteryStatus } from '@/types/controlPanel';
 import { BarRow, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
 
 // ============================================================================

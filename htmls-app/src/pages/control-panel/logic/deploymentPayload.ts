@@ -1,15 +1,14 @@
+import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import type { Coordinate } from '@/types/geo';
 import type {
   Airbase,
   Jammer,
-  MissileDeployment,
   MissileSystemTypes,
-  MovementPaths,
   OperationalArea,
   ControlPanelResult,
-  BudgetState,
 } from '@/types/controlPanel';
-import { buildUnitKey } from '@/utils/map';
+import type { MissileDeployment, MovementPaths } from '@/types/deployment';
+import { buildUnitKey } from './batteryGroups';
 import { calculateCentroid } from '@/utils/geo';
 
 /**

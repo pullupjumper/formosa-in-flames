@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { MOCK_ADD_UNIT_ACTIONS } from '@/data/addUnitsMenuData';
-import { AIRBASES_DATA } from '@/data/controlPanelData';
-import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
+import { AIRBASES_DATA, MOCK_ADD_UNIT_ACTIONS } from '@/data/controlPanelData';
+import { LIVE_STATUS_DATA } from '@/data/liveStatusData';
 import {
   readControlPanelPayload,
   submitDeployment,
@@ -35,7 +34,7 @@ describe('readControlPanelPayload', () => {
     expect(payload.sideName).toBe('Taiwan');
     expect(payload.mode).toEqual({ isEditMode: true, isDeployLocked: false });
     expect(payload.airbases).toBe(AIRBASES_DATA);
-    expect(payload.c2Data).toBe(UNIT_STATUS_DATA.c2);
+    expect(payload.c2Data).toBe(LIVE_STATUS_DATA.c2);
     expect(payload.addUnitActions).toBe(MOCK_ADD_UNIT_ACTIONS);
   });
 

@@ -21,7 +21,7 @@ interface C2LayersProps {
 function C2UnitMarker({ marker }: { marker: C2MarkerLayer }) {
   return (
     <Marker
-      position={toLeafletLatLng(marker.pos)}
+      position={toLeafletLatLng(marker.position)}
       icon={KIND_ICONS[marker.kind]}
       opacity={marker.isDestroyed ? 0.4 : 1}
     >

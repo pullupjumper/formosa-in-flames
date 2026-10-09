@@ -1,12 +1,20 @@
-import type { MissileDeployment, MissileSystemTypes } from '@/types/controlPanel';
-import type { BatteryStatus } from '@/types/unitStatus';
-import { buildUnitKey } from '@/utils/map';
+import type { MissileSystemTypes } from '@/types/controlPanel';
+import type { MissileDeployment } from '@/types/deployment';
+import type { BatteryStatus } from '@/types/controlPanel';
 
 /**
  * Flattens the injected `MissileSystemTypes` payload into the batteries the sidebar
  * renders, each carrying its deployment and live status. Pure, so grouping,
  * deployed counters and status pairing can be tested without mounting the map.
  */
+
+/**
+ * Build the key identifying a firing unit inside a missile system type.
+ * Deployment maps are keyed by this string throughout the control panel.
+ */
+export function buildUnitKey(missileSystemType: string, unitname: string): string {
+  return `${missileSystemType}_${unitname}`;
+}
 
 // ============================================================================
 // TYPES
@@ -22,7 +30,7 @@ export interface Battery {
   missileSystemType: string;
   /** Placement on the map, null until the battery is deployed */
   deployment: MissileDeployment | null;
-  /** Live status from the unit status payload, absent when the game has none */
+  /** Live status from the live status payload, absent when the game has none */
   status: BatteryStatus | undefined;
 }
 

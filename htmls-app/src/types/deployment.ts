@@ -4,6 +4,8 @@
  * `constants/deployment.ts`.
  */
 
+import type { Coordinate, MovementPath } from '@/types/geo';
+
 /** Every tactical area a deployed unit can relocate by clicking it */
 export type AreaType = 'ushape' | 'aha' | 'hide' | 'reload' | 'fp';
 
@@ -23,4 +25,36 @@ export interface SelectedUnit {
   key: string;
   name: string;
   missileSystemType: string;
+}
+
+export interface TacticalAreas {
+  uShapeVertices: Coordinate[];
+  ammoArea?: Coordinate[];
+  hideArea?: Coordinate[];
+  reloadArea?: Coordinate[];
+  firePoints?: Coordinate[][];
+  shelterPoints?: Coordinate[];
+}
+
+/** Keys mirror the Lua `SBJ__MovementPaths` shape and are exported verbatim. */
+export interface MovementPaths {
+  FP: MovementPath[];
+  HA: MovementPath;
+  RL: MovementPath[];
+  AHA: MovementPath;
+  SHRL: MovementPath;
+}
+
+/** One missile unit placed on the map, with everything the export needs. */
+export interface MissileDeployment {
+  unitname: string;
+  missileSystemType: string;
+  center: Coordinate;
+  openingAngle: number;
+  /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
+  ahaRadius?: number;
+  /** Where the AHA square sits; set by hand-relocation or scenario placement. */
+  ahaCenter?: Coordinate;
+  tacticalAreas: TacticalAreas;
+  paths: MovementPaths;
 }

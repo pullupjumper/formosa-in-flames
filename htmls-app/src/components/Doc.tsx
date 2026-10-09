@@ -53,12 +53,12 @@ export function List({ children }: ChildrenProps) {
   );
 }
 
-interface PanelProps extends ChildrenProps {
+interface CalloutProps extends ChildrenProps {
   /** Header row above the body, like the deployment sidebar's panels */
   title?: string;
 }
 
-export function Panel({ title, children }: PanelProps) {
+export function Callout({ title, children }: CalloutProps) {
   return (
     <section className="my-2.5 border border-aip-border bg-aip-panel">
       {title && <div className="px-4 py-3 text-[13px] font-bold text-text-primary">{title}</div>}

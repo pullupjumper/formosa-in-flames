@@ -1,4 +1,4 @@
-import type { AddUnitAction } from '@/types/addUnitsMenu';
+import type { AddUnitAction } from '@/types/controlPanel';
 import { CheckboxCard } from '@pages/control-panel/components/shared/CheckboxCard';
 import { Panel } from '@pages/control-panel/components/shared/Panel';
 import { SubmitBar } from '@pages/control-panel/components/shared/SubmitBar';

@@ -1,20 +1,21 @@
-import type { AddUnitAction, AddUnitsMenuResult } from '@/types/addUnitsMenu';
 import type {
+  AddUnitAction,
+  AddUnitsMenuResult,
   Airbase,
   AmphibiousLocation,
   Jammer,
   MissileSystemTypes,
   ControlPanelResult,
 } from '@/types/controlPanel';
-import type { BatteryStatus, C2Data, LandingUnitsData, SignalData } from '@/types/unitStatus';
-import { MOCK_ADD_UNIT_ACTIONS } from '@/data/addUnitsMenuData';
+import type { BatteryStatus, C2Nodes, LandingUnits, Signal } from '@/types/controlPanel';
 import {
   AIRBASES_DATA,
   JAMMERS_DATA,
   MISSILE_SYSTEMS_DATA,
   AMPHIBIOUS_LOCATION_DATA,
+  MOCK_ADD_UNIT_ACTIONS,
 } from '@/data/controlPanelData';
-import { UNIT_STATUS_DATA } from '@/data/unitStatusData';
+import { LIVE_STATUS_DATA } from '@/data/liveStatusData';
 import type { C2ContextEntry, SamDoctrineEntry } from './c2Nodes';
 import {
   parseInjectedJSON,
@@ -61,10 +62,10 @@ export interface ControlPanelPayload {
   jammers: Jammer[];
   missileSystems: MissileSystemTypes;
   amphibiousLocations: AmphibiousLocation[];
-  c2Data: C2Data;
-  signals: SignalData[];
+  c2Data: C2Nodes;
+  signals: Signal[];
   batteryStatuses: BatteryStatus[];
-  landingUnits: LandingUnitsData;
+  landingUnits: LandingUnits;
   addUnitActions: AddUnitAction[];
 }
 
@@ -88,20 +89,20 @@ export function readControlPanelPayload(): ControlPanelPayload {
       AMPHIBIOUS_LOCATION_DATA,
       'AMPHIBIOUS_LOCATIONS'
     ),
-    c2Data: parseInjectedJSON<C2Data>(window.__INJECT_C2__, UNIT_STATUS_DATA.c2, 'C2'),
-    signals: parseInjectedJSON<SignalData[]>(
+    c2Data: parseInjectedJSON<C2Nodes>(window.__INJECT_C2__, LIVE_STATUS_DATA.c2, 'C2'),
+    signals: parseInjectedJSON<Signal[]>(
       window.__INJECT_SIGNALS__,
-      UNIT_STATUS_DATA.signals,
+      LIVE_STATUS_DATA.signals,
       'SIGNALS'
     ),
     batteryStatuses: parseInjectedJSON<BatteryStatus[]>(
       window.__INJECT_BATTERY_STATUSES__,
-      UNIT_STATUS_DATA.batteryStatuses,
+      LIVE_STATUS_DATA.batteryStatuses,
       'BATTERY_STATUSES'
     ),
-    landingUnits: parseInjectedJSON<LandingUnitsData>(
+    landingUnits: parseInjectedJSON<LandingUnits>(
       window.__INJECT_LANDING_UNITS__,
-      UNIT_STATUS_DATA.landingUnits,
+      LIVE_STATUS_DATA.landingUnits,
       'LANDING_UNITS'
     ),
     addUnitActions: parseInjectedJSON<AddUnitAction[]>(

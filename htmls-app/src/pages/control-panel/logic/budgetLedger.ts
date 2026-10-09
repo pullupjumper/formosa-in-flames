@@ -1,9 +1,14 @@
-import type { BudgetState } from '@/types/controlPanel';
-
 /**
  * Pure loadout-budget rules. The page owns one `BudgetState`; every change goes
  * through here and returns the next state instead of mutating anything.
  */
+
+/** Loadout points: `current` is what is left, `used` what was spent, `total` the start. */
+export interface BudgetState {
+  current: number;
+  used: number;
+  total: number;
+}
 
 export function createBudgetState(initial: number): BudgetState {
   return { current: initial, used: 0, total: initial };

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { calculateProgress } from '@/utils/format';
+import { calculateProgress } from '@/pages/control-panel/logic/format';
 
 // ============================================================================
 // DetailsBox — titled box inside a card; rows line up as label | value | bar

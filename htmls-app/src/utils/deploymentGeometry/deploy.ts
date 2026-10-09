@@ -1,5 +1,5 @@
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/controlPanel';
+import type { MissileDeployment, TacticalAreas } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInTaiwan } from '@/utils/geo';
 import { AREA_CONFIG, DEPLOYMENT_MAX_ATTEMPTS } from './config';
@@ -25,6 +25,21 @@ export interface GenerateDeploymentParams {
   firePointsOverride?: Coordinate[][];
   /** Defaults to `Math.random`; pass a seeded source for reproducible output. */
   rng?: RandomSource;
+}
+
+/**
+ * Suggest which way a U-shape should open at a position: toward the coast the
+ * unit is closest to, using a rough north-south ridge line as the divider.
+ */
+export function resolveOpeningAngle(point: Coordinate): number {
+  const { latitude, longitude } = point;
+  let ridgeLongitude: number;
+  if (latitude >= 25) ridgeLongitude = 121.5;
+  else if (latitude >= 24) ridgeLongitude = 121.0 + (latitude - 24) * 0.5;
+  else if (latitude >= 23) ridgeLongitude = 120.8 + (latitude - 23) * 0.2;
+  else ridgeLongitude = 120.8;
+
+  return longitude < ridgeLongitude ? 90 : 270;
 }
 
 export function isValidAngle(angle: number): boolean {

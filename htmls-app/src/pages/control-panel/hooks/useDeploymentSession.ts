@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { Airbase, MissileDeployment } from '@/types/controlPanel';
+import type { Airbase } from '@/types/controlPanel';
+import type { MissileDeployment } from '@/types/deployment';
 import { CONFIG } from '@/constants/controlPanel';
-import { buildInjectedDeployments } from '@/utils/deploymentPayload';
-import { createBudgetState } from '@/utils/budgetLedger';
+import { buildInjectedDeployments } from '@/pages/control-panel/logic/deploymentPayload';
+import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import type { ControlPanelPayload } from '../logic/controlPanelPayload';
 
 /**

@@ -4,8 +4,8 @@ import {
   fromOperationalArea,
   toExportPaths,
   toControlPanelResult,
-} from '@/utils/deploymentPayload';
-import { createBudgetState } from '@/utils/budgetLedger';
+} from '@/pages/control-panel/logic/deploymentPayload';
+import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';

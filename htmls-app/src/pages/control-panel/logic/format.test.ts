@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTimestamp, calculateProgress } from '@/utils/format';
+import { formatTimestamp, calculateProgress } from '@/pages/control-panel/logic/format';
 
 describe('formatTimestamp', () => {
   it('formats a Unix timestamp in UTC', () => {

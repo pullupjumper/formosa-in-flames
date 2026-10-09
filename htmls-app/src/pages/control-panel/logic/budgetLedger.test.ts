@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createBudgetState, spend, refund, settleQuantityChange } from '@/utils/budgetLedger';
+import {
+  createBudgetState,
+  spend,
+  refund,
+  settleQuantityChange,
+} from '@/pages/control-panel/logic/budgetLedger';
 
 describe('budgetLedger', () => {
   const start = createBudgetState(1000);

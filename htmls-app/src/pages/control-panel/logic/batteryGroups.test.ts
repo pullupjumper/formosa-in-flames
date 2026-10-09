@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import type { MissileDeployment, MissileSystemTypes } from '@/types/controlPanel';
-import type { BatteryStatus } from '@/types/unitStatus';
-import { buildBatteryGroups, buildWeaponRanges } from '@/pages/control-panel/logic/batteryGroups';
+import type { MissileSystemTypes } from '@/types/controlPanel';
+import type { MissileDeployment } from '@/types/deployment';
+import type { BatteryStatus } from '@/types/controlPanel';
+import {
+  buildBatteryGroups,
+  buildUnitKey,
+  buildWeaponRanges,
+} from '@/pages/control-panel/logic/batteryGroups';
 
 // ============================================================================
 // FIXTURES
@@ -110,5 +115,11 @@ describe('buildWeaponRanges', () => {
         ['ascm_HF3_02', 120],
       ])
     );
+  });
+});
+
+describe('unit keys', () => {
+  it('joins the type and the unit name', () => {
+    expect(buildUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
   });
 });

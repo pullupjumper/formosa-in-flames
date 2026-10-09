@@ -17,7 +17,14 @@ import {
   MainGunSystemIcon,
   NavyTaskForceIcon,
 } from '@/components/icons';
-import type { ForceImage } from '@/types/controlPanel';
+import type { ComponentType, SVGProps } from 'react';
+
+export interface ForceImage {
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  label: string;
+  width: number;
+  height: number;
+}
 
 // ============================================================================
 // BATTERY ICONS — NATO symbols shared by the map markers and the sidebar cards

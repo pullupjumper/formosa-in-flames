@@ -1,15 +1,15 @@
-import type { SignalData } from '@/types/unitStatus';
+import type { Signal } from '@/types/controlPanel';
 import { DetailsBox, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
 import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
 import { ImageIcon } from '@/components/ImageIcon';
 import { ICON_IMAGES } from '@/components/map';
-import { formatTimestamp } from '@/utils/format';
+import { formatTimestamp } from '@/pages/control-panel/logic/format';
 
 // ============================================================================
 // SignalSection — one suspected C2 card per detected signal
 // ============================================================================
 interface SignalSectionProps {
-  signals: SignalData[];
+  signals: Signal[];
 }
 
 export function SignalSection({ signals }: SignalSectionProps) {
