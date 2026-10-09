@@ -1,19 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-import type { Coordinate } from '@/types/geo';
+import { useState } from 'react';
 import { DeploymentMap } from '@pages/control-panel/components/map/DeploymentMap';
-import { buildBatteryGroups, buildWeaponRanges } from '@pages/control-panel/logic/batteryGroups';
 import { toControlPanelResult } from '@/pages/control-panel/logic/deploymentPayload';
-import {
-  applySamWeaponsFree,
-  buildC2MapLayers,
-  buildC2NodeViews,
-  getSamDeploymentWarning,
-  collectC2ContextUpdates,
-  collectDeployedPlacements,
-  collectSamUnits,
-} from '../../logic/c2Nodes';
 import { submitDeployment, type ControlPanelPayload } from '../../logic/controlPanelPayload';
 import type { DeploymentSession } from '@pages/control-panel/hooks/useDeploymentSession';
+import { useBatteryGroups } from '@pages/control-panel/hooks/useBatteryGroups';
+import { useC2Nodes } from '@pages/control-panel/hooks/useC2Nodes';
 import { useDeploymentState } from '@pages/control-panel/hooks/useDeploymentState';
 import { Panel } from '@pages/control-panel/components/shared/Panel';
 import { JammerSection } from '@pages/control-panel/components/sections/JammerSection';
@@ -25,10 +16,6 @@ import { C2NodesSection } from '@pages/control-panel/components/sections/C2Nodes
 import { AircraftBasesSection } from '@pages/control-panel/components/sections/AircraftBasesSection';
 import { BatterySection } from '@pages/control-panel/components/sections/BatterySection';
 import { ResizeHandle } from '@pages/control-panel/components/shared/ResizeHandle';
-
-// SAM batteries are deployed from their C2 node card, not the battery list
-const SAM_TYPE = 'sam';
-const NO_PINNED_NODES: ReadonlyMap<string, string> = new Map();
 
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 900;
@@ -54,7 +41,7 @@ export function ControlDeploymentTab({
   showLandingUnits,
   isDeploymentLocked,
 }: ControlDeploymentTabProps) {
-  const { missileSystems, jammers, sideName, signals, landingUnits } = payload;
+  const { jammers, sideName, signals, landingUnits } = payload;
   const {
     airbases,
     budget,
@@ -64,43 +51,15 @@ export function ControlDeploymentTab({
     updateAirbase: onUpdateAirbase,
   } = session;
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
-  const allGroups = useMemo(
-    () => buildBatteryGroups(missileSystems, deployedMissileSystems, payload.batteryStatuses),
-    [missileSystems, deployedMissileSystems, payload.batteryStatuses]
-  );
-
-  // Where each SAM was last deployed, so cancelling keeps its card under that node;
-  // a fresh payload is the game's word and clears it
-  const [pinned, setPinned] = useState({
-    data: payload.c2Data,
-    nodes: new Map<string, string>(),
-  });
-  const pinnedNodes = pinned.data === payload.c2Data ? pinned.nodes : NO_PINNED_NODES;
-  const samBatteries = useMemo(
-    () => allGroups.find((group) => group.missileSystemType === SAM_TYPE)?.batteries ?? [],
-    [allGroups]
-  );
-  const c2Nodes = useMemo(
-    () => buildC2NodeViews(payload.c2Data, samBatteries, pinnedNodes),
-    [payload.c2Data, samBatteries, pinnedNodes]
-  );
-  const newPlacements = [...collectDeployedPlacements(c2Nodes)].filter(
-    ([unit, node]) => pinnedNodes.get(unit) !== node
-  );
-  if (newPlacements.length > 0) {
-    setPinned({ data: payload.c2Data, nodes: new Map([...pinnedNodes, ...newPlacements]) });
-  }
-  const validateMissilePosition = useCallback(
-    (unitKey: string, position: Coordinate) => getSamDeploymentWarning(c2Nodes, unitKey, position),
-    [c2Nodes]
-  );
+  const batteries = useBatteryGroups(payload, deployedMissileSystems);
+  const c2 = useC2Nodes(payload, batteries.samBatteries);
   const deployment = useDeploymentState({
     jammers,
     deployedMissileSystems,
     deployedJammers,
     shouldValidateTaiwanBoundary,
     isLocked: isDeploymentLocked,
-    validateMissilePosition,
+    validateMissilePosition: c2.validateMissilePosition,
     onDeploySystem: session.deployMissileSystem,
     onUndeploySystem: session.undeployMissileSystem,
     onDeployJammer: session.deployJammer,
@@ -108,12 +67,15 @@ export function ControlDeploymentTab({
   });
   const { isPlacementActive, coordinates, status } = deployment;
 
-  // null until the player touches the checkbox; until then the SAMs keep their own status
-  const [samWeaponsFree, setSamWeaponsFree] = useState<boolean | null>(null);
-
   // The host input holds the last submitted result; it goes stale as soon as any
   // input of that result changes, so remember which inputs it was built from
-  const resultInputs = [budget, airbases, deployedJammers, deployedMissileSystems, samWeaponsFree];
+  const resultInputs = [
+    budget,
+    airbases,
+    deployedJammers,
+    deployedMissileSystems,
+    c2.samWeaponsFreeChoice,
+  ];
   const [submittedInputs, setSubmittedInputs] = useState<unknown[] | null>(null);
   const isSubmitted =
     submittedInputs !== null && submittedInputs.every((input, i) => input === resultInputs[i]);
@@ -126,32 +88,12 @@ export function ControlDeploymentTab({
       deployedJammers,
       deployedMissileSystems,
     });
-    const doctrine = {
-      sams: samUnits,
-      c2Nodes: collectC2ContextUpdates(
-        payload.c2Data,
-        // Only SAMs that are really deployed move; a pinned card is just a display hold
-        buildC2NodeViews(payload.c2Data, samBatteries)
-      ),
-    };
+    const doctrine = c2.buildEmconResult();
     console.log('Export data:', result, doctrine);
     if (submitDeployment(result, doctrine)) setSubmittedInputs(resultInputs);
   };
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
-
-  const weaponRanges = useMemo(() => buildWeaponRanges(missileSystems), [missileSystems]);
-  const batteryGroups = useMemo(
-    () => allGroups.filter((group) => group.missileSystemType !== SAM_TYPE),
-    [allGroups]
-  );
-  const deployedBatteries = batteryGroups.reduce((sum, group) => sum + group.deployedCount, 0);
-  const totalBatteries = batteryGroups.reduce((sum, group) => sum + group.batteries.length, 0);
-
-  // Cards, checkbox and submitted result all read the nodes with the choice applied
-  const shownC2Nodes = applySamWeaponsFree(c2Nodes, samWeaponsFree);
-  const samUnits = collectSamUnits(shownC2Nodes);
-  const c2Layers = useMemo(() => buildC2MapLayers(c2Nodes, pinnedNodes), [c2Nodes, pinnedNodes]);
 
   return (
     <div className="flex h-full">
@@ -176,11 +118,11 @@ export function ControlDeploymentTab({
           />
         </Panel>
 
-        <Panel title="C2 Nodes" badge={`${c2Nodes.length}`}>
+        <Panel title="C2 Nodes" badge={`${c2.nodes.length}`}>
           <C2NodesSection
-            nodes={shownC2Nodes}
-            samWeaponsFree={samUnits.length > 0 && samUnits.every((sam) => sam.weaponFree)}
-            onSamWeaponsFreeChange={setSamWeaponsFree}
+            nodes={c2.nodes}
+            samWeaponsFree={c2.isAllSamWeaponsFree}
+            onSamWeaponsFreeChange={c2.setSamWeaponsFreeChoice}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}
@@ -202,10 +144,10 @@ export function ControlDeploymentTab({
         <Panel
           title="Missile Batteries"
           locked={isDeploymentLocked}
-          badge={`${deployedBatteries}/${totalBatteries}`}
+          badge={`${batteries.deployedCount}/${batteries.totalCount}`}
         >
           <BatterySection
-            batteryGroups={batteryGroups}
+            batteryGroups={batteries.batteryGroups}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}
@@ -247,10 +189,10 @@ export function ControlDeploymentTab({
           airbases={airbases}
           jammers={jammers}
           deployedMissileSystems={deployedMissileSystems}
-          weaponRanges={weaponRanges}
+          weaponRanges={batteries.weaponRanges}
           deployedJammers={deployedJammers}
           signals={signals}
-          c2Layers={c2Layers}
+          c2Layers={c2.layers}
           isPlacementActive={isPlacementActive}
           mousePosition={deployment.mousePosition}
           relocatingArea={deployment.relocatingArea}
