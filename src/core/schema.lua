@@ -1787,9 +1787,17 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field name string SAM unit name
 ---@field weaponFree boolean True for weapons free, false for hold fire
 
+---A C2 node whose SAM units changed, shaped like SBJ__C2Context
+---@class SBJ__C2ContextEntry: table
+---@field guid string GUID of the C2 node
+---@field type SBJ__C2TypeKey IADS group the node lives in ('c2', 'rocc' or 'taaoc')
+---@field name string C2 node name
+---@field sam table<string, {guid: string, name: string}> SAM units now under the node, indexed by GUID
+
 ---EMCON configuration result containing user selections
 ---@class SBJ__EmconResult: table
 ---@field sams SBJ__SamDoctrineEntry[] SAM units with the weapons control status the player chose
+---@field c2Nodes SBJ__C2ContextEntry[]|nil C2 nodes whose SAM units changed after redeployment
 
 -- ============================================================================
 -- Ground Operations (Fire Support) - FSEM Builder

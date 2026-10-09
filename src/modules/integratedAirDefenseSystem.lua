@@ -120,6 +120,35 @@ function IntegratedAirDefenseSystem.setSamDoctrine(entries)
   end
 end
 
+---Move SAM units between C2 nodes to match the submitted control panel result.
+---Each entry lists the SAM units a node now commands; their existing contexts
+---(OODA, comms status) move with them. Unknown nodes and unknown units are skipped.
+---@param iadsCtx SBJ__IADSContext
+---@param entries SBJ__C2ContextEntry[]
+function IntegratedAirDefenseSystem.reassignSamUnits(iadsCtx, entries)
+  -- Gather before moving anything: a unit leaves one node as it joins another
+  local samCtxByGuid = {}
+  for _, entry in ipairs(entries) do
+    for _, c2Ctx in pairs(iadsCtx[entry.type] or {}) do
+      for guid, samCtx in pairs(c2Ctx.sam or {}) do
+        samCtxByGuid[guid] = samCtx
+      end
+    end
+  end
+
+  for _, entry in ipairs(entries) do
+    local c2Ctx = (iadsCtx[entry.type] or {})[entry.guid]
+
+    if c2Ctx then
+      local sam = {}
+      for guid in pairs(entry.sam or {}) do
+        sam[guid] = samCtxByGuid[guid]
+      end
+      c2Ctx.sam = sam
+    end
+  end
+end
+
 ---Process command and control disruption when C2 node is destroyed
 ---@param saveData SBJ__SaveData
 ---@param c2 CMO__Unit

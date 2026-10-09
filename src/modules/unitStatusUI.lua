@@ -403,10 +403,20 @@ local function parseFormJson(raw)
 end
 
 ---Apply the SAM doctrine the control panel submitted to the Taiwan facilities
----@param doctrine SBJ__EmconResult|nil
-local function applySamDoctrine(doctrine)
-  if doctrine and doctrine.sams and #doctrine.sams > 0 then
-    IntegratedAirDefenseSystem.setSamDoctrine(doctrine.sams)
+---@param emconResult SBJ__EmconResult|nil
+local function applySamDoctrine(emconResult)
+  if emconResult and emconResult.sams and #emconResult.sams > 0 then
+    IntegratedAirDefenseSystem.setSamDoctrine(emconResult.sams)
+  end
+end
+
+---Apply the SAM-to-C2 assignments the control panel submitted to the side's IADS
+---@param saveData SBJ__SaveData
+---@param sideName string
+---@param emconResult SBJ__EmconResult|nil
+local function applyC2Assignments(saveData, sideName, emconResult)
+  if emconResult and emconResult.c2Nodes and #emconResult.c2Nodes > 0 then
+    IntegratedAirDefenseSystem.reassignSamUnits(PersistentState.iads(saveData, sideName), emconResult.c2Nodes)
   end
 end
 
@@ -452,6 +462,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
   end
 
   local controlPanelResult = parseFormJson(form["summaryData"])
+  local emconResult = parseFormJson(form["emconData"])
   if controlPanelResult then
     ---@cast controlPanelResult SBJ__ControlPanelResult
     PersistentState.update(function(saveData)
@@ -459,13 +470,14 @@ function UnitStatusUI.createControlPanel(config, sideName)
         return
       end
       updateFromControlPanelResult(config, saveData, sideName, controlPanelResult)
+      applyC2Assignments(saveData, sideName, emconResult)
       if not isEditMode then
         PersistentState.lockDeployment(saveData, sideName)
       end
     end)
   end
 
-  applySamDoctrine(parseFormJson(form["emconData"]))
+  applySamDoctrine(emconResult)
 
   local addUnits = isEditMode and parseFormJson(form["selectedActions"])
   if addUnits and addUnits.actionIds then

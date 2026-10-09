@@ -123,6 +123,47 @@ describe("IntegratedAirDefenseSystem", function()
   end)
 
   -- ============================================================================
+  -- reassignSamUnits
+  -- ============================================================================
+
+  describe("reassignSamUnits", function()
+    local function makeIads()
+      return {
+        rocc = {
+          A = { guid = "A", name = "A", sam = { S1 = { guid = "S1", name = "SAM", isOutOfComms = true } }, radar = {} },
+          B = { guid = "B", name = "B", sam = {}, radar = {} },
+        },
+      }
+    end
+
+    -- Positive: the unit moves with its existing context
+    it("should move a SAM context to the node that now commands it", function()
+      local iads = makeIads()
+      local samCtx = iads.rocc.A.sam.S1
+
+      IntegratedAirDefenseSystem.reassignSamUnits(iads, {
+        { guid = "A", type = "rocc", name = "A", sam = {} },
+        { guid = "B", type = "rocc", name = "B", sam = { S1 = { guid = "S1", name = "SAM" } } },
+      })
+
+      assert.is_nil(iads.rocc.A.sam.S1)
+      assert.are.equal(samCtx, iads.rocc.B.sam.S1)
+    end)
+
+    -- Negative: unknown nodes are skipped and nothing else changes
+    it("should skip entries for nodes that no longer exist", function()
+      local iads = makeIads()
+
+      IntegratedAirDefenseSystem.reassignSamUnits(iads, {
+        { guid = "GONE", type = "rocc", name = "Gone", sam = { S1 = { guid = "S1", name = "SAM" } } },
+        { guid = "A", type = "nope", name = "A", sam = {} },
+      })
+
+      assert.is_not_nil(iads.rocc.A.sam.S1)
+    end)
+  end)
+
+  -- ============================================================================
   -- processC2Disruption
   -- ============================================================================
 
