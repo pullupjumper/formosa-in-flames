@@ -176,7 +176,7 @@ export const C2_DATA: C2Data = {
         { longitude: 120.769435403132, latitude: 22.2984708560583 },
       ],
     ],
-    name: 'Suspected C2 Facility#HJ/Shanwei',
+    name: 'Suspected C2 Facility#HJ/Sha',
     radar: {
       'X58F5H-0HMT5': {
         type: 'c2',
@@ -249,6 +249,9 @@ export const LANDING_UNITS_DATA: LandingUnitsData = {
     'PGZ-09': 0,
     'PGZ-95': 0,
     'SA-15': 0,
+    AirborneCorps: 0,
+    HMMWV: 0,
+    'ZBD-03': 0,
   },
   'Area B': {
     'ZBD-05': 0,
@@ -258,6 +261,9 @@ export const LANDING_UNITS_DATA: LandingUnitsData = {
     'PGZ-09': 0,
     'PGZ-95': 0,
     'SA-15': 0,
+    AirborneCorps: 0,
+    HMMWV: 0,
+    'ZBD-03': 0,
   },
 };
 

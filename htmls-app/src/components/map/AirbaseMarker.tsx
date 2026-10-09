@@ -35,10 +35,10 @@ export const AirbaseMarker = memo(function AirbaseMarker({
       <MapPopup
         name={airbase.name}
         subtitle="Airbase"
-        rows={[
-          { label: 'Latitude', value: `${airbase.latitude.toFixed(6)}°` },
-          { label: 'Longitude', value: `${airbase.longitude.toFixed(6)}°` },
-        ]}
+        // rows={[
+        //   { label: 'Latitude', value: `${airbase.latitude.toFixed(6)}°` },
+        //   { label: 'Longitude', value: `${airbase.longitude.toFixed(6)}°` },
+        // ]}
       >
         {airbase.embarkedUnits && airbase.embarkedUnits.length > 0 && (
           <PopupSection
