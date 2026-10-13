@@ -1565,6 +1565,14 @@ config.red.air.deployedACs = {
 -- Amphibious Operations (China)
 -- ============================================================================
 
+-- ZBD-05 * 28 * 4
+-- ZTD-05 * 28 * 4
+-- PLL-05 * 24
+-- PGZ-09 * 6
+-- PGZ-95 * 4
+-- PLZ-96 * 27
+-- SA-15 * 2
+
 config.red.amphibOps = {}
 config.red.amphibOps.isTesting = true
 config.red.amphibOps.periodSec = 5 * 60
@@ -1573,18 +1581,18 @@ config.red.amphibOps.cargo = {
   type075 = {
     { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
-    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 3
-    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 1
+    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 3 (2x 35mm/90 PGZ-09 SPAAG)
+    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 1 (2x 25mm Quad PGZ04A PGZ95 Type 95 SPAAG/SAM)
     { type = 3, num = 30, dbid = constants.PLATFORMS.HMMWV }, -- HMMWV 30
-    { type = 3, num = 76, dbid = constants.PLATFORMS.MC },    -- MC 76
+    { type = 3, num = 76, dbid = constants.PLATFORMS.MC },    -- MC 76 (4x Infantry Section [7.62mm MG/Unguided Infantry Anti Tank Weapon])
   },
   type071 = {
     { type = 2, num = 5,  dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
     { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
-    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 3
-    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 1
-    { type = 3, num = 2,  dbid = constants.PLATFORMS.SA15 },  -- SA-15 2
-    { type = 3, num = 22, dbid = constants.PLATFORMS.MC }     -- MC
+    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 3 (2x 35mm/90 PGZ-09 SPAAG)
+    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 1 (2x 25mm Quad PGZ04A PGZ95 Type 95 SPAAG/SAM)
+    { type = 3, num = 2,  dbid = constants.PLATFORMS.SA15 },  -- SA-15 2 (2x SA-15e Gauntlet [9A331] TELAR)
+    { type = 3, num = 22, dbid = constants.PLATFORMS.MC }     -- MC (4x Infantry Section [7.62mm MG/Unguided Infantry Anti Tank Weapon])
   },
   type072iii = {
     { type = 2, num = 5, dbid = constants.PLATFORMS.ZBD05 }, -- ZBD-05
@@ -1724,6 +1732,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
+          type529 = 4
         }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_D,
@@ -1746,6 +1755,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
+          type529 = 4
         }
       }, }
     },
@@ -1771,6 +1781,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
+          type529 = 4
         }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_F,
@@ -1793,6 +1804,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
+          type529 = 4
         }
       }, }
     },
@@ -1818,6 +1830,7 @@ config.red.amphibOps.operations = {
           ferry = 0,
           roro = 0,
           barge = 0,
+          type529 = 1
         }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_E,
@@ -1840,6 +1853,7 @@ config.red.amphibOps.operations = {
           ferry = 0,
           roro = 0,
           barge = 0,
+          type529 = 1
         }
       }, }
     },

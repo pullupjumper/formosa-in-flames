@@ -175,6 +175,13 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
     distance = verticalDistance
   })
 
+  positions.type529 = GameApi.World_GetPointFromBearing({
+    latitude = positions.type073a.latitude,
+    longitude = positions.type073a.longitude,
+    bearing = verticalHeading,
+    distance = verticalDistance
+  })
+
   return positions
 end
 
@@ -218,10 +225,42 @@ local function createShipsByType(position, shipType, formationCtx)
     },
     barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge", cargo = nil, embarkedUnits = nil },
     roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargo = cargoMap.barge, embarkedUnits = nil },
-    type072a = { dbid = constants.PLATFORMS.TYPE_072A, name = "Type 072A", cargo = cargoMap.type072a, embarkedUnits = nil },
-    type072iii = { dbid = constants.PLATFORMS.TYPE_072III, name = "Type 072III", cargo = cargoMap.type072iii, embarkedUnits = nil },
+    type072a = {
+      dbid = constants.PLATFORMS.TYPE_072A,
+      name = "Type 072A",
+      cargo = cargoMap.type072a,
+      embarkedUnits = {
+        {
+          side = constants.SIDES.RED,
+          type = constants.UNIT_TYPES.SHIP,
+          name = "Assault Boat",
+          dbid = constants.PLATFORMS.ASSAULT_BOAT,
+          loadouts = { { loadoutId = 0, num = 2 } }
+        }
+      }
+    },
+    type072iii = {
+      dbid = constants.PLATFORMS.TYPE_072III,
+      name = "Type 072III",
+      cargo = cargoMap.type072iii,
+      embarkedUnits = {
+        {
+          side = constants.SIDES.RED,
+          type = constants.UNIT_TYPES.SHIP,
+          name = "Assault Boat",
+          dbid = constants.PLATFORMS.ASSAULT_BOAT,
+          loadouts = { { loadoutId = 0, num = 2 } }
+        }
+      }
+    },
     ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargo = cargoMap.ferry, embarkedUnits = nil },
-    type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = cargoMap.type073a, embarkedUnits = nil }
+    type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = cargoMap.type073a, embarkedUnits = nil },
+    type529 = {
+      dbid = constants.PLATFORMS.TYPE_529,
+      name = "Type 529",
+      cargo = nil,
+      embarkedUnits = nil
+    },
   }
 
   local shipConfig = shipConfigs[shipType]
@@ -690,6 +729,7 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
       createShipsByType(positions.type072iii, "type072iii", formationCtx)
       createShipsByType(positions.ferry, "ferry", formationCtx)
       createShipsByType(positions.type073a, "type073a", formationCtx)
+      createShipsByType(positions.type529, "type529", formationCtx)
     end
   end
 

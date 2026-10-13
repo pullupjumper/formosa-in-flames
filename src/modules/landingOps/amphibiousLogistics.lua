@@ -29,6 +29,7 @@ local AMPHIBIOUS_SHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_076]    = true,
   [constants.PLATFORMS.FERRY]       = true,
   [constants.PLATFORMS.BARGE]       = true,
+  [constants.PLATFORMS.TYPE_529]    = true
 }
 
 ---@type {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[], assignments: {platform: string, configKey: string}[]}[]

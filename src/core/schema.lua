@@ -480,6 +480,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---| '"ferry"'
 ---| '"barge"'
 ---| '"roro"'
+---| '"type529"'
 
 -- ============================================================================
 -- Cargo & Logistics
@@ -766,6 +767,7 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@field ferry integer Number of ferries
 ---@field roro integer Number of roll-on/roll-off ships
 ---@field barge integer Number of barges
+---@field type529 integer
 
 ---Operation area descriptor for amphibious operation origin or destination
 ---@class SBJ__OperationAreaDescriptor: table

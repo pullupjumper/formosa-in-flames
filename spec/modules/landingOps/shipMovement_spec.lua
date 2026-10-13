@@ -99,6 +99,7 @@ describe("ShipMovement", function()
       ferry = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       roro = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       barge = makeShipCalcResult({ dbid = constants.PLATFORMS.BARGE }),
+      type529 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_529 }),
     }
     if overrides then
       for k, v in pairs(overrides) do result[k] = v end
@@ -170,6 +171,7 @@ describe("ShipMovement", function()
               ferry = 1,
               roro = 1,
               barge = 1,
+              type529 = 1,
             },
           },
         },
@@ -839,7 +841,7 @@ describe("ShipMovement", function()
     end)
 
     -- Positive: calls buildLocations for each ship type
-    it("should call buildLocations for all 10 ship types per area", function()
+    it("should call buildLocations for all 11 ship types per area", function()
       local rp = makeLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
@@ -850,7 +852,7 @@ describe("ShipMovement", function()
       local config = makeAmphibOpsConfig()
       ShipMovement.calculateDestination(config, calculationResult)
 
-      assert.stub(stubGenerateLocations).was.called(10)
+      assert.stub(stubGenerateLocations).was.called(11)
     end)
 
     -- Positive: derives ship positions from reference points using vertical distance

@@ -17,6 +17,7 @@ local FERRY_OR_LST_DBIDS = {
   [constants.PLATFORMS.TYPE_072III] = true,
   [constants.PLATFORMS.TYPE_072A]   = true,
   [constants.PLATFORMS.TYPE_073A]   = true,
+  [constants.PLATFORMS.TYPE_529]    = true
 }
 local FERRY_NAME = "Ferry"
 

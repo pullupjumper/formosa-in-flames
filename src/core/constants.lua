@@ -522,6 +522,8 @@ constants.PLATFORMS = {
   BUILDING = 448,
   CUSTOMED_SSM = 3727,
   CUSTOMED_SAM = 2988,
+  ASSAULT_BOAT = 3948,
+  TYPE_529 = 4620
 }
 
 constants.SENSORS = {
