@@ -679,9 +679,22 @@ end
 ---Unload cargo from a unit
 ---@param fromUnit CMO__UnitSelector|string
 ---@param cargos string[]|number[][]
----@return boolean #True if Successful or false if not
+---@return boolean # True if Successful or false if not
 function realApi.ScenEdit_UnloadCargo(fromUnit, cargos)
   return ScenEdit_UnloadCargo(fromUnit, cargos)
+end
+
+---@param params CMO__MinefieldDescriptor
+---@return number # Number of mines actually laid
+function realApi.ScenEdit_AddMinefield(params)
+  return ScenEdit_AddMinefield(params)
+end
+
+---@param sideName string
+---@param guid string
+---@return boolean # True if successful
+function realApi.ScenEdit_DeleteMine(sideName, guid)
+  return ScenEdit_DeleteMine(sideName, guid)
 end
 
 setmetatable(GameApi, {

@@ -635,6 +635,7 @@ constants.WEAPONS = {
   MIM104F_PAC3 = 1150, -- MIM-104F PAC-3 Air Defense Missile
   MIM104F_PAC2 = 642,  -- MIM-104F PAC-2 Air Defense Missile
   TK3 = 888,           -- TK-3 Air-to-Surface Missile
+  SEA_MINE = 634
 }
 
 constants.UNIT_TYPES = {

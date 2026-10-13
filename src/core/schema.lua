@@ -3,6 +3,8 @@
 -- ============================================================================
 -- CMO native API type definitions provided by the game engine
 
+---@meta
+
 ---Display weapon allocation from attacker to target
 ---Supply attacker GUID and contact GUID to see salvos between units
 ---@param attackerGUID string
@@ -24,6 +26,17 @@ function ScenEdit_CreateMissionFlightPlan(sideName, missionName, opts) end
 ---@param zoneType number The zone type (constants.ZONE_TYPES)
 ---@return CMO__Zone|nil
 function ScenEdit_GetZone(sideName, zoneName, zoneType) end
+
+---@param params CMO__MinefieldDescriptor
+---@return number
+function ScenEdit_AddMinefield(params) end
+
+---@class CMO__MinefieldDescriptor: table
+---@field side string
+---@field dbid number
+---@field number number
+---@field delay number
+---@field area string[]
 
 ---Unit OODA (Observe, Orient, Decide, Act) loop characteristics
 ---@class CMO__OODA: table
