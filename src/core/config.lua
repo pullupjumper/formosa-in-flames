@@ -1668,52 +1668,12 @@ config.red.amphibOps.formationSettings = {
   verticalDistance = 0.4,
   transitDistance = 13,
   shipSpeed = 14,
-  heading = {
-    north = {
-      horizontal  = 220 - 90,
-      vertical    = 220,
-      destination = {
-        { latitude = "N 25.04.44", longitude = "E 121.13.54", },
-      }
-    },
-    west = {
-      horizontal = 150 - 90,
-      vertical = 150,
-      destination = {
-        { latitude = "N 25.04.52", longitude = "E 121.10.05", },
-        { latitude = "N 25.04.44", longitude = "E 121.13.54", },
-      }
-    },
-    south = {
-      horizontal = 45 - 90,
-      vertical = 45,
-      destination = {
-        { latitude = "N 25.04.44", longitude = "E 121.13.54", },
-      }
-    },
-    penghu = {
-      horizontal = 82 - 90,
-      vertical = 82,
-      destination = {
-        { latitude = "N 23.31.00", longitude = "E 119.33.54", },
-        { latitude = "N 23.31.35", longitude = "E 119.35.36", },
-        { latitude = "N 23.34.09", longitude = "E 119.37.41", },
-      }
-    },
-    sishu = {
-      horizontal = 73 - 90,
-      vertical = 73,
-      destination = {
-        { latitude = "N 22.56.39", longitude = "E 120.10.37", },
-        { latitude = "N 22.57.14", longitude = "E 120.12.09", },
-      }
-    },
-  },
   acvSpeed = 8,
   acvTransitDistance = 5,
   acvHorizontalDistance = 0.05,
   hovercraftSpeed = 40,
-  sweeperSpeed = 25
+  sweeperSpeed = 25,
+  rowBearingOffset = 90 -- ship rows run this many degrees off the zone heading
 }
 config.red.amphibOps.minefields = {
   -- delay: CMO arming delay; area: BLUE-side reference points
@@ -1753,37 +1713,27 @@ config.red.amphibOps.tuning = {
     holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
   },
 }
+-- Approach bearing (degrees) of each landing zone; zone.heading and the lane, LST, ACV and SAG bearings all derive from it
+local zoneHeading = { taoyuan = 150, sishu = 73, penghu = 82 }
 config.red.amphibOps.zones = {
   {
     name = "Taoyuan",
+    heading = zoneHeading.taoyuan,
+    stagingArea = constants.AREAS.AREA_OF_OPS_D,
     fleet = {
       names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
-      from = {
-        areas = { {
-          startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_TAOYUAN },
-          heading = config.red.amphibOps.formationSettings.heading.north,
-          shipCounts = {
-            type075 = 2,
-            type071 = 4,
-            type076 = 1,
-            type072iii = 7,
-            type072a = 8,
-            type073a = 7,
-            ferry = 4,
-            roro = 2,
-            barge = 1,
-            type082 = 4
-          }
-        } },
-        stagingArea = constants.AREAS.AREA_OF_OPS_D,
-      },
-      to = {
-        areas = { {
-          startingPoints = {
-            type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
-            type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
+      groups = {
+        {
+          from = {
+            heading = 220, -- departs from the north
+            startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_TAOYUAN },
           },
-          heading = config.red.amphibOps.formationSettings.heading.west,
+          to = {
+            startingPoints = {
+              type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
+              type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
+              },
+          },
           shipCounts = {
             type075 = 2,
             type071 = 4,
@@ -1796,8 +1746,8 @@ config.red.amphibOps.zones = {
             roro = 2,
             barge = 1,
             type082 = 4
-          }
-        }, }
+          },
+        },
       },
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -1821,7 +1771,6 @@ config.red.amphibOps.zones = {
           amphibiousVehicleStagingArea = {
             { latitude = "N 25.06.19", longitude = "E 121.04.15", desiredSpeed = 14, },
           },
-          heading = config.red.amphibOps.formationSettings.heading.west.vertical,
         },
         area = constants.AREAS.AIRLANDING_TAOYUAN
       },
@@ -1843,7 +1792,6 @@ config.red.amphibOps.zones = {
           amphibiousVehicleStagingArea = {
             { latitude = "N 25.08.29", longitude = "E 121.10.20", desiredSpeed = 14, },
           },
-          heading = config.red.amphibOps.formationSettings.heading.west.vertical,
         },
         area = constants.AREAS.AIRLANDING_TAOYUAN
       },
@@ -1971,20 +1919,18 @@ config.red.amphibOps.zones = {
     },
     lstSettings = {
       speed = config.red.amphibOps.formationSettings.shipSpeed,
-      course = {
-        bearing = config.red.amphibOps.formationSettings.heading.west.vertical,
-        distance = config.red.amphibOps.formationSettings.transitDistance
-      }
+      distance = config.red.amphibOps.formationSettings.transitDistance
     },
     acv = {
-      bearing = config.red.amphibOps.formationSettings.heading.west.horizontal,
       distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
       speed = config.red.amphibOps.formationSettings.acvSpeed,
-      destination = config.red.amphibOps.formationSettings.heading.west.destination,
+      destination = {
+          { latitude = "N 25.04.52", longitude = "E 121.10.05", },
+          { latitude = "N 25.04.44", longitude = "E 121.13.54", },
+      },
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
     },
     laneCenter = constants.AREAS.LANE_CENTER_TAOYUAN,
-    laneBearing = config.red.amphibOps.formationSettings.heading.west.vertical,
     obstacleArea = constants.AREAS.OBSTACLE_TAOYUAN,
     sweeper = {
       missionName = "MINECLEARING/TOA/1/1",
@@ -1994,35 +1940,22 @@ config.red.amphibOps.zones = {
   },
   {
     name = "Sishu",
+    heading = zoneHeading.sishu,
+    stagingArea = constants.AREAS.AREA_OF_OPS_F,
     fleet = {
       names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
-      from = {
-        areas = { {
-          startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
-          heading = config.red.amphibOps.formationSettings.heading.sishu,
-          shipCounts = {
-            type075 = 1,
-            type071 = 3,
-            type076 = 0,
-            type072iii = 2,
-            type072a = 4,
-            type073a = 2,
-            type071InLSTArea = 0,
-            ferry = 4,
-            roro = 2,
-            barge = 1,
-            type082 = 4
-          }
-        } },
-        stagingArea = constants.AREAS.AREA_OF_OPS_F,
-      },
-      to = {
-        areas = { {
-          startingPoints = {
-            type075 = constants.AREAS.DESTINATION_075_SISHU,
-            type071 = constants.AREAS.DESTINATION_071_SISHU,
+      groups = {
+        {
+          from = {
+            heading = zoneHeading.sishu,
+            startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
           },
-          heading = config.red.amphibOps.formationSettings.heading.sishu,
+          to = {
+            startingPoints = {
+              type075 = constants.AREAS.DESTINATION_075_SISHU,
+              type071 = constants.AREAS.DESTINATION_071_SISHU,
+              },
+          },
           shipCounts = {
             type075 = 1,
             type071 = 3,
@@ -2035,8 +1968,8 @@ config.red.amphibOps.zones = {
             roro = 2,
             barge = 1,
             type082 = 4
-          }
-        }, }
+          },
+        },
       },
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -2050,7 +1983,7 @@ config.red.amphibOps.zones = {
         },
         from = {
           pos = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
-          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+          heading = zoneHeading.sishu,
         },
         to = {
           anchorageArea = {
@@ -2059,7 +1992,6 @@ config.red.amphibOps.zones = {
           amphibiousVehicleStagingArea = {
             { latitude = "N 22.53.16", longitude = "E 120.07.39", desiredSpeed = 14, },
           },
-          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
         },
         area = constants.AREAS.AIRLANDING_CHANGLONG,
       },
@@ -2071,7 +2003,7 @@ config.red.amphibOps.zones = {
         },
         from = {
           pos = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
-          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+          heading = zoneHeading.sishu,
         },
         to = {
           anchorageArea = {
@@ -2080,7 +2012,6 @@ config.red.amphibOps.zones = {
           amphibiousVehicleStagingArea = {
             { latitude = "N 22.58.52", longitude = "E 120.05.48", desiredSpeed = 14, },
           },
-          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
         },
         area = constants.AREAS.AIRLANDING_CHANGLONG,
       },
@@ -2208,20 +2139,18 @@ config.red.amphibOps.zones = {
     },
     lstSettings = {
       speed = config.red.amphibOps.formationSettings.shipSpeed,
-      course = {
-        bearing = config.red.amphibOps.formationSettings.heading.sishu.vertical,
-        distance = config.red.amphibOps.formationSettings.transitDistance
-      }
+      distance = config.red.amphibOps.formationSettings.transitDistance
     },
     acv = {
-      bearing = config.red.amphibOps.formationSettings.heading.sishu.horizontal,
       distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
       speed = config.red.amphibOps.formationSettings.acvSpeed,
-      destination = config.red.amphibOps.formationSettings.heading.sishu.destination,
+      destination = {
+          { latitude = "N 22.56.39", longitude = "E 120.10.37", },
+          { latitude = "N 22.57.14", longitude = "E 120.12.09", },
+      },
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
     },
     laneCenter = constants.AREAS.LANE_CENTER_SISHU,
-    laneBearing = config.red.amphibOps.formationSettings.heading.sishu.vertical,
     obstacleArea = constants.AREAS.OBSTACLE_SISHU,
     sweeper = {
       missionName = "MINECLEARING/SISHU/1/1",
@@ -2231,35 +2160,22 @@ config.red.amphibOps.zones = {
   },
   {
     name = "Penghu",
+    heading = zoneHeading.penghu,
+    stagingArea = constants.AREAS.AREA_OF_OPS_E,
     fleet = {
       names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
-      from = {
-        areas = { {
-          startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
-          heading = config.red.amphibOps.formationSettings.heading.penghu,
-          shipCounts = {
-            type075 = 1,
-            type071 = 1,
-            type076 = 0,
-            type072iii = 2,
-            type072a = 3,
-            type073a = 1,
-            type071InLSTArea = 0,
-            ferry = 0,
-            roro = 0,
-            barge = 0,
-            type082 = 1
-          }
-        } },
-        stagingArea = constants.AREAS.AREA_OF_OPS_E,
-      },
-      to = {
-        areas = { {
-          startingPoints = {
-            type075 = constants.AREAS.DESTINATION_075_PENGHU,
-            type071 = constants.AREAS.DESTINATION_071_PENGHU,
+      groups = {
+        {
+          from = {
+            heading = zoneHeading.penghu,
+            startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
           },
-          heading = config.red.amphibOps.formationSettings.heading.penghu,
+          to = {
+            startingPoints = {
+              type075 = constants.AREAS.DESTINATION_075_PENGHU,
+              type071 = constants.AREAS.DESTINATION_071_PENGHU,
+              },
+          },
           shipCounts = {
             type075 = 1,
             type071 = 1,
@@ -2272,8 +2188,8 @@ config.red.amphibOps.zones = {
             roro = 0,
             barge = 0,
             type082 = 1
-          }
-        }, }
+          },
+        },
       },
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -2287,7 +2203,7 @@ config.red.amphibOps.zones = {
         },
         from = {
           pos = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
-          heading = config.red.amphibOps.formationSettings.heading.penghu.vertical,
+          heading = zoneHeading.penghu,
         },
         to = {
           anchorageArea = {
@@ -2296,7 +2212,6 @@ config.red.amphibOps.zones = {
           amphibiousVehicleStagingArea = {
             { latitude = "N 23.32.34", longitude = "E 119.29.14", desiredSpeed = 14, },
           },
-          heading = config.red.amphibOps.formationSettings.heading.penghu.vertical,
         },
         area = constants.AREAS.AIRLANDING_PENGHU,
       },
@@ -2424,20 +2339,19 @@ config.red.amphibOps.zones = {
     },
     lstSettings = {
       speed = config.red.amphibOps.formationSettings.shipSpeed,
-      course = {
-        bearing = config.red.amphibOps.formationSettings.heading.penghu.vertical,
-        distance = config.red.amphibOps.formationSettings.transitDistance
-      }
+      distance = config.red.amphibOps.formationSettings.transitDistance
     },
     acv = {
-      bearing = config.red.amphibOps.formationSettings.heading.penghu.horizontal,
       distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
       speed = config.red.amphibOps.formationSettings.acvSpeed,
-      destination = config.red.amphibOps.formationSettings.heading.penghu.destination,
+      destination = {
+          { latitude = "N 23.31.00", longitude = "E 119.33.54", },
+          { latitude = "N 23.31.35", longitude = "E 119.35.36", },
+          { latitude = "N 23.34.09", longitude = "E 119.37.41", },
+      },
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
     },
     laneCenter = constants.AREAS.LANE_CENTER_PENGHU,
-    laneBearing = config.red.amphibOps.formationSettings.heading.penghu.vertical,
     obstacleArea = constants.AREAS.OBSTACLE_PENGHU,
     sweeper = {
       missionName = "MINECLEARING/PENGHU/1/1",

@@ -65,13 +65,13 @@ describe("AmphibiousAssault", function()
       transportHelicopter = { missions = { makeMission({ name = "HeloMission1" }) } },
       boat = { missions = { makeMission({ name = "BoatMission1" }) } },
       attackHelicopter = { missions = { makeMission({ name = "AtkHeloMission1" }) } },
+      heading = 270,
       lstSettings = {
         speed = 10,
-        course = { bearing = 270, distance = 5 },
+        distance = 5,
       },
       acv = {
         area = { "RP-ACV-1", "RP-ACV-2" },
-        bearing = 90,
         distance = 0.5,
         speed = 20,
         destination = { { latitude = 25.0, longitude = 121.0 } },

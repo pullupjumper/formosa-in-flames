@@ -118,6 +118,7 @@ describe("ShipMovement", function()
       verticalDistance = 1.0,
       distanceBetweenLSTAndLPDArea = 2.0,
       transitDistance = 5.0,
+      rowBearingOffset = 90,
     }
     if overrides then
       for k, v in pairs(overrides) do settings[k] = v end
@@ -136,7 +137,6 @@ describe("ShipMovement", function()
           { latitude = 24.0, longitude = 120.0 },
           { latitude = 24.1, longitude = 120.1 },
         },
-        heading = 180,
       },
     }
     if overrides then
@@ -151,30 +151,31 @@ describe("ShipMovement", function()
   local function makeZone(overrides)
     local zone = {
       name = "Taoyuan",
+      heading = 180,
+      stagingArea = { "RP-STAGING-1", "RP-STAGING-2" },
       sags = {},
       fleet = {
-        from = { stagingArea = { "RP-STAGING-1", "RP-STAGING-2" } },
-        to = {
-          areas = {
-            {
+        groups = {
+          {
+            from = { heading = 220, startingPoints = { type075 = { "RP-FROM-075" } } },
+            to = {
               startingPoints = {
                 type075 = { "RP-075-1" },
                 type071 = { "RP-071-1" },
               },
-              heading = { horizontal = 90, vertical = 0 },
-              shipCounts = {
-                type075 = 2,
-                type071 = 2,
-                type076 = 1,
-                type072iii = 2,
-                type072a = 2,
-                type073a = 1,
-                type071InLSTArea = 1,
-                ferry = 1,
-                roro = 1,
-                barge = 1,
-                type082 = 1,
-              },
+            },
+            shipCounts = {
+              type075 = 2,
+              type071 = 2,
+              type076 = 1,
+              type072iii = 2,
+              type072a = 2,
+              type073a = 1,
+              type071InLSTArea = 1,
+              ferry = 1,
+              roro = 1,
+              barge = 1,
+              type082 = 1,
             },
           },
         },
@@ -650,7 +651,7 @@ describe("ShipMovement", function()
 
     -- Negative: SAG anchorage area is required
     it("should fail and log when SAG anchorage area is missing", function()
-      local sagDesc = makeSAGDescriptor({ to = { heading = 180 } })
+      local sagDesc = makeSAGDescriptor({ to = {} })
       local filteredUnits = {}
       local calculationResult = makeCalculationResult()
 
@@ -1029,7 +1030,7 @@ describe("ShipMovement", function()
       stubInsertList.invokes(function(list) return list end)
 
       local config = makeAmphibOpsConfig()
-      config.zones[1].fleet.to.areas[1].shipCounts.type075 = 0
+      config.zones[1].fleet.groups[1].shipCounts.type075 = 0
       local calculationResult = {}
 
       ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)

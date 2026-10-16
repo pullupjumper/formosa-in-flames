@@ -47,13 +47,13 @@ describe("SecondWaveUnloading", function()
       name = "ZoneAlpha",
       lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
       offloadArea = { "RP-OFF-1", "RP-OFF-2", "RP-OFF-3", "RP-OFF-4" },
+      heading = 270,
       lstSettings = {
         speed = 10,
-        course = { bearing = 270, distance = 5 },
+        distance = 5,
       },
       acv = {
         area = { "RP-ACV-1", "RP-ACV-2" },
-        bearing = 90,
         distance = 0.5,
         speed = 20,
         destination = { { latitude = 25.0, longitude = 121.0 } },

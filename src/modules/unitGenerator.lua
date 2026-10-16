@@ -190,7 +190,7 @@ end
 ---@param shipType SBJ__AmphibiousShipType
 ---@param formationCtx SBJ__ShipFormationContext
 local function createShipsByType(position, shipType, formationCtx)
-  local areaDescriptor, fleet = formationCtx.areaDescriptor, formationCtx.fleet
+  local group, fleet = formationCtx.group, formationCtx.fleet
   local shipSettings, cargoMap = formationCtx.shipSettings, formationCtx.cargoMap
   local shipConfigs = {
     type075 = {
@@ -269,9 +269,9 @@ local function createShipsByType(position, shipType, formationCtx)
   ---@type SBJ__LinearPlacementParams
   local params = {
     initialLocation = position,
-    bearing = areaDescriptor.heading.horizontal,
+    bearing = group.from.heading - shipSettings.rowBearingOffset,
     distance = shipSettings.horizontalDistance,
-    num = areaDescriptor.shipCounts[shipType]
+    num = group.shipCounts[shipType]
   }
 
   local unitDescriptor = {
@@ -280,7 +280,7 @@ local function createShipsByType(position, shipType, formationCtx)
     name = shipConfig.name,
     dbid = shipConfig.dbid,
     cargo = shipConfig.cargo,
-    heading = areaDescriptor.heading.vertical,
+    heading = group.from.heading,
     manualSpeed = shipSettings.shipSpeed,
   }
 
@@ -704,17 +704,16 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
   local cargoMap = amphibOpsConfig.cargo
 
   for _, zone in ipairs(amphibOpsConfig.zones) do
-    for _, areaDescriptor in ipairs(zone.fleet.from.areas) do
+    for _, group in ipairs(zone.fleet.groups) do
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints({
-        side = constants.SIDES.RED, area = areaDescriptor.startingPoints.type075
+        side = constants.SIDES.RED, area = group.from.startingPoints.type075
       })[1]
 
-      local positions = calculateShipPositions(firstRp075, areaDescriptor.heading.vertical, layoutConfig
-        .verticalDistance)
+      local positions = calculateShipPositions(firstRp075, group.from.heading, layoutConfig.verticalDistance)
 
       ---@type SBJ__ShipFormationContext
       local formationCtx = {
-        areaDescriptor = areaDescriptor,
+        group = group,
         fleet = zone.fleet,
         shipSettings = layoutConfig,
         cargoMap = cargoMap

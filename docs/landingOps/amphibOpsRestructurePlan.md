@@ -98,3 +98,12 @@ config.red.amphibOps
 - 未改名 `formationSettings` → `formation`，`from.stagingArea` 未搬出 `from`。
 - `airLandingZone` 與 SAG 的 `area` **不是重複**：Sishu / Penghu 的 SAG `area` 分別是 `AIRLANDING_CHANGLONG` / `AIRLANDING_PENGHU`，但 zone 的 `airLandingZone` 三區都是 `AIRLANDING_TAOYUAN`。為保持行為不變，兩者都保留。Sishu / Penghu 的 `airLandingZone` 疑似複製貼上未改，待確認。
 - 未做 `SBJ__Placement` / `SBJ__Composition` / `SBJ__Anchorage` 型別對齊。
+
+## 第二階段：ShipGroup 對齊
+
+- `fleet.from.areas[]` + `fleet.to.areas[]` 合併為 `zone.fleet.groups[]`；每組自帶 `from`（`heading` + `startingPoints`）、`to`（`startingPoints`）與 `shipCounts`（原本 from / to 各寫一份，內容相同）。
+- SAG 與 fleet group 共用 `SBJ__ShipGroup`（`from: SBJ__Placement`），`from.heading` 都是數字。
+- `formationSettings.heading` 表刪除：`horizontal` 永遠是 `vertical - 90`（改為 `formationSettings.rowBearingOffset`），`destination` 移到各 zone 的 `acv.destination`。
+- 各區接近方向只寫一次：`zone.heading`。`laneBearing`、`lstSettings.course.bearing`、`acv.bearing`、SAG `to.heading` 都由它取代；`lstSettings.course.distance` 改為 `lstSettings.distance`。
+- `from.stagingArea` 搬到 `zone.stagingArea`。
+- 驗證：重構前後的 config 逐欄比對（heading、座標、艦數、SAG 路線等）零差異。

@@ -67,7 +67,7 @@ describe("MineClearing", function()
     return {
       name = "Taoyuan",
       laneCenter = { "RP-CENTER" },
-      laneBearing = BEARING,
+      heading = BEARING,
       obstacleArea = { "RP-O1", "RP-O2", "RP-O3" },
       lstAnchorageArea = { "RP-LST" },
       anchorageArea = { "RP-ANC" },

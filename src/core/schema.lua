@@ -607,13 +607,22 @@ function ScenEdit_DeleteMinefield(params) end
 ---@class SBJ__DestinationStagingArea: SBJ__DestinationArea
 ---@field anchorageArea CMO__Waypoint[] Anchorage area waypoints
 ---@field amphibiousVehicleStagingArea CMO__Waypoint[] Amphibious vehicle staging area waypoints
----@field heading number Formation heading angle
 
----Formation heading configuration
----@class SBJ__FormationHeading: table
----@field horizontal number Horizontal spacing angle
----@field vertical number Vertical spacing angle
----@field destination CMO__Waypoint[] Destination waypoints
+---Where a ship group spawns: heading plus a literal position or reference point names per ship type
+---@class SBJ__Placement: table
+---@field heading number Heading at spawn (degrees)
+---@field pos? CMO__Location Literal coordinate (SAG, CSG, submarines)
+---@field startingPoints? SBJ__StartingPoints Reference points per ship type (amphibious fleet)
+
+---Reference point names of the first ship of each row (type071 used at destination only)
+---@class SBJ__StartingPoints: table
+---@field type075 string[]
+---@field type071? string[]
+
+---Ship group that spawns at `from` and sails to `to`; shared by fleet groups and SAGs
+---@class SBJ__ShipGroup: table
+---@field from SBJ__Placement Spawn placement
+---@field to? table Destination, shape depends on the group kind
 
 ---Submarine descriptor for SLCM operations
 ---@class SBJ__SubmarineDescriptor: table
@@ -623,10 +632,10 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field weaponDBID number Weapon database ID for SLCM
 
 ---Surface Action Group descriptor
----@class SBJ__SAGDescriptor: table
+---@class SBJ__SAGDescriptor: SBJ__ShipGroup
 ---@field groupName string Group name
 ---@field from SBJ__DeparturePoint Starting location
----@field to? SBJ__DestinationStagingArea Destination staging area
+---@field to? SBJ__DestinationStagingArea Destination staging area; arrival heading is the zone heading
 ---@field unitMap table<string, SBJ__AirbaseDeploymentDescriptor> Unit list indexed by unit name
 ---@field area? string[] Operational area reference points
 ---@field missionName? string Mission name
@@ -803,7 +812,6 @@ function ScenEdit_DeleteMinefield(params) end
 
 ---Air Cushion Vehicle deployment configuration
 ---@class SBJ__ACVDescriptor: table
----@field bearing number Deployment direction (degrees)
 ---@field distance number Horizontal spacing between ACVs (nautical miles)
 ---@field speed number ACV transit speed (knots)
 ---@field destination CMO__Waypoint[] Destination waypoints
@@ -844,7 +852,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---Defines LST approach to beach
 ---@class SBJ__LSTMovementDescriptor: table
 ---@field speed number LST transit speed (knots)
----@field course {bearing:number, distance:number} Approach course (bearing in degrees, distance in nautical miles)
+---@field distance number Approach distance along the zone heading (nautical miles)
 
 ---@class SBJ__SweeperDescriptor: table
 ---@field missionName string
@@ -855,7 +863,9 @@ function ScenEdit_DeleteMinefield(params) end
 ---Defines complete landing zone configuration including air and surface assets
 ---@class SBJ__OperationalZoneDescriptor: table
 ---@field name string Operational zone name (e.g., "Taoyuan", "Sishu", "Penghu")
----@field fleet SBJ__FleetDescriptor Ship formations leaving for and anchoring in this zone
+---@field heading number Approach bearing toward the shore (degrees); lane, LST, ACV and SAG bearings derive from it
+---@field stagingArea string[] Staging area reference points; ships inside belong to this zone
+---@field fleet SBJ__FleetDescriptor Ship groups leaving for and anchoring in this zone
 ---@field sags SBJ__SAGDescriptor[] Surface Action Groups assigned to this zone
 ---@field airLandingZone string[] Air landing zone reference area
 ---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
@@ -871,7 +881,6 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
 ---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
 ---@field laneCenter string[] Reference point name of the lane center on the shore (one point)
----@field laneBearing number Bearing toward the shore (degrees)
 ---@field obstacleArea string[] Beach obstacle polygon reference point names (BLUE side)
 ---@field sweeper SBJ__SweeperDescriptor
 
@@ -884,12 +893,12 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field verticalDistance number Vertical spacing between ships in formation
 ---@field transitDistance number Distance for transit phase
 ---@field shipSpeed number Ship movement speed
----@field heading table<string, SBJ__FormationHeading> Formation heading configuration
 ---@field acvSpeed number Amphibious combat vehicle speed
 ---@field acvTransitDistance number Amphibious combat vehicle transit distance
 ---@field acvHorizontalDistance number Amphibious combat vehicle horizontal spacing
 ---@field hovercraftSpeed number
 ---@field sweeperSpeed number
+---@field rowBearingOffset number Degrees between the zone heading and the direction ships of one type line up along
 
 ---Fleet composition configuration for amphibious operations
 ---Defines the number of ships by type for amphibious assault fleets
@@ -906,28 +915,23 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field barge integer Number of barges
 ---@field type082 integer
 
----Operation area descriptor for amphibious operation origin or destination
----@class SBJ__OperationAreaDescriptor: table
----@field startingPoints { type075: string[], type071?: string[] } Starting point reference points (type071 used at destination only)
----@field heading SBJ__FormationHeading Formation heading angle
+---Fleet group destination: reference points where each ship row anchors
+---@class SBJ__FleetDestination: table
+---@field startingPoints SBJ__StartingPoints Anchorage reference points
+
+---One fleet group: ships spawn at `from`, sail to `to`, composition in `shipCounts`
+---Several groups may land in the same zone
+---@class SBJ__FleetGroup: SBJ__ShipGroup
+---@field from SBJ__Placement Spawn placement
+---@field to SBJ__FleetDestination Anchorage placement
 ---@field shipCounts SBJ__FleetCompositionConfig Ship quantity configuration
 
----Departure descriptor for amphibious operation origin
----@class SBJ__DepartureDescriptor: table
----@field areas SBJ__OperationAreaDescriptor[] Array of departure area descriptors
----@field stagingArea string[] Staging area reference points
-
----Destination descriptor for amphibious operation target
----@class SBJ__DestinationDescriptor: table
----@field areas SBJ__OperationAreaDescriptor[] Array of destination area descriptors
-
 ---Amphibious fleet descriptor
----Departure, destination and unit naming for the ships of one zone
+---Unit naming and ship groups of one zone
 ---Used for scenario initialization and deployment planning
 ---@class SBJ__FleetDescriptor: table
 ---@field names string[] Unit name array
----@field from SBJ__DepartureDescriptor Departure configuration
----@field to SBJ__DestinationDescriptor Destination configuration
+---@field groups SBJ__FleetGroup[] Ship groups
 
 ---Amphibious Operations system configuration
 ---Comprehensive configuration for amphibious assault operations including
@@ -2044,9 +2048,9 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field weaponDBIDSet table<number, boolean> Set of weapon DBIDs to track
 ---@field sideName string Side name
 
----Area, operation, layout and cargo shared by every ship type created for one operation area
+---Group, fleet, layout and cargo shared by every ship type created for one fleet group
 ---@class SBJ__ShipFormationContext: table
----@field areaDescriptor SBJ__OperationAreaDescriptor Area configuration
+---@field group SBJ__FleetGroup Group configuration
 ---@field fleet SBJ__FleetDescriptor Fleet configuration of the zone
 ---@field shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
 ---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list

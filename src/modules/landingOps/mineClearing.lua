@@ -88,7 +88,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
     return false
   end
 
-  local frame = { origin = center, bearing = zone.laneBearing }
+  local frame = { origin = center, bearing = zone.heading }
   local sweepers = findSweepers(zone, frame, ships)
   if #sweepers == 0 then
     report.add("FAIL", { reason = "no_type082_in_zone" })
@@ -98,7 +98,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
 
   local lanes = LaneGeometry.buildLanes({
     origin = center,
-    bearing = zone.laneBearing,
+    bearing = zone.heading,
     count = #sweepers,
     inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.tuning.route.inlandMarginM,
     areaMarginM = amphibOps.tuning.mineClearing.areaMarginM,

@@ -61,7 +61,7 @@ SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、�
 flowchart TD
     START["calculateDestination()"]
     ITER_OP["遍歷 operations"]
-    ITER_AREA["遍歷 operation.to.areas"]
+    ITER_AREA["遍歷 zone.fleet.groups"]
     INIT["initOperationResult<br>初始化結果結構"]
     CALC_SP["calculateStartingPoints<br>取得兩基準參考點<br>依 SHIP_ROW_LAYOUT 推算各列起始點"]
     GEN_LOC["buildAllShipLocations<br>對每列依水平間距生成 N 個位置"]

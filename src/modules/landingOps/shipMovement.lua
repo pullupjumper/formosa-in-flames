@@ -248,9 +248,10 @@ end
 ---Handle Surface Action Group (SAG) movement to anchorage area
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
 ---@param descriptor SBJ__SAGDescriptor
+---@param heading number Zone heading the SAG faces at anchorage
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function processSAG(descriptor, isTesting)
+local function processSAG(descriptor, heading, isTesting)
   local anchorageArea = descriptor.to and descriptor.to.anchorageArea
   if not anchorageArea or #anchorageArea == 0 then
     return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "anchorage_area_missing" } }
@@ -291,18 +292,18 @@ local function processSAG(descriptor, isTesting)
           ship,
           anchoragePoint.latitude,
           anchoragePoint.longitude,
-          descriptor.to.heading
+          heading
         )
         positioned = positioned + 1
       else
         local point = getNextPosition(
           anchoragePoint.latitude,
           anchoragePoint.longitude,
-          descriptor.to.heading - 180,
+          heading - 180,
           SAG_FORMATION.TRAIL_DISTANCE
         )
         if point then
-          setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
+          setShipPosition(ship, point.latitude, point.longitude, heading)
           positioned = positioned + 1
         else
           skipped = skipped + 1
@@ -315,11 +316,11 @@ local function processSAG(descriptor, isTesting)
       local point = getNextPosition(
         anchoragePoint.latitude,
         anchoragePoint.longitude,
-        descriptor.to.heading - angle,
+        heading - angle,
         SAG_FORMATION.FLANK_DISTANCE
       )
       if point then
-        setShipPosition(ship, point.latitude, point.longitude, descriptor.to.heading)
+        setShipPosition(ship, point.latitude, point.longitude, heading)
         positioned = positioned + 1
       else
         skipped = skipped + 1
@@ -358,12 +359,12 @@ local function initOperationResult(operationName, calculationResult)
 end
 
 ---Get a required reference point for a ship row
----@param area SBJ__OperationAreaDescriptor
+---@param startingPoints SBJ__StartingPoints
 ---@param key string
 ---@return CMO__Location|nil point Reference point
 ---@return table<string, any>|nil errorFields Log fields describing the failure
-local function getStartingReferencePoint(area, key)
-  local startingPointArea = area.startingPoints and area.startingPoints[key]
+local function getStartingReferencePoint(startingPoints, key)
+  local startingPointArea = startingPoints and startingPoints[key]
   if not startingPointArea then
     return nil, { point = key, reason = "starting_point_area_missing" }
   end
@@ -380,18 +381,19 @@ local function getStartingReferencePoint(area, key)
 end
 
 ---Calculate starting points for all ship types from two reference points
----@param area SBJ__OperationAreaDescriptor
+---@param startingPoints SBJ__StartingPoints
+---@param heading number Bearing the ship rows are stacked along
 ---@param formationSettings SBJ__AmphibiousFormationConfig
 ---@return table<string, CMO__Location>|nil startingPointMap Mapping of key to starting location
 ---@return table<string, any>|nil errorFields Log fields describing the failure
-local function calculateStartingPoints(area, formationSettings)
+local function calculateStartingPoints(startingPoints, heading, formationSettings)
   local startingPointMap = {}
   local errorFields
 
-  startingPointMap.type075, errorFields = getStartingReferencePoint(area, "type075")
+  startingPointMap.type075, errorFields = getStartingReferencePoint(startingPoints, "type075")
   if not startingPointMap.type075 then return nil, errorFields end
 
-  startingPointMap.type071, errorFields = getStartingReferencePoint(area, "type071")
+  startingPointMap.type071, errorFields = getStartingReferencePoint(startingPoints, "type071")
   if not startingPointMap.type071 then return nil, errorFields end
 
   for _, row in ipairs(SHIP_ROW_LAYOUT) do
@@ -403,7 +405,7 @@ local function calculateStartingPoints(area, formationSettings)
     startingPointMap[row.key] = GameApi.World_GetPointFromBearing({
       latitude = fromPoint.latitude,
       longitude = fromPoint.longitude,
-      bearing = area.heading.vertical,
+      bearing = heading,
       distance = formationSettings[row.distanceKey],
     })
 
@@ -418,17 +420,18 @@ end
 ---Generate and append locations for all ship types in an area
 ---@param opResult table<string, SBJ__ShipCalculationState>
 ---@param startingPointMap table<string, CMO__Location>
----@param area SBJ__OperationAreaDescriptor
----@param horizontalDistance number
-local function buildAllShipLocations(opResult, startingPointMap, area, horizontalDistance)
+---@param shipCounts SBJ__FleetCompositionConfig
+---@param heading number Zone heading; ships of one type line up perpendicular to it
+---@param formationSettings SBJ__AmphibiousFormationConfig
+local function buildAllShipLocations(opResult, startingPointMap, shipCounts, heading, formationSettings)
   for _, entry in ipairs(ALL_RESULT_KEYS) do
     Utils.addAll(
       opResult[entry.key].locations,
       GameUtils.buildLocations({
         initialLocation = startingPointMap[entry.key],
-        num = area.shipCounts[entry.key],
-        bearing = area.heading.horizontal,
-        distance = horizontalDistance,
+        num = shipCounts[entry.key],
+        bearing = heading - formationSettings.rowBearingOffset,
+        distance = formationSettings.horizontalDistance,
       })
     )
   end
@@ -442,20 +445,20 @@ end
 ---@return boolean # True if all destination positions were calculated
 function ShipMovement.calculateDestination(zones, formationSettings, calculationResult)
   for _, zone in ipairs(zones) do
-    for areaIndex, area in ipairs(zone.fleet.to.areas) do
+    for groupIndex, group in ipairs(zone.fleet.groups) do
       initOperationResult(zone.name, calculationResult)
-      local startingPointMap, errorFields = calculateStartingPoints(area, formationSettings)
+      local startingPointMap, errorFields =
+          calculateStartingPoints(group.to.startingPoints, zone.heading, formationSettings)
       if not startingPointMap then
         Logger.error(LogFormat.line("ERROR", LogFormat.merge(
-          { operation = zone.name, areaIndex = areaIndex },
+          { operation = zone.name, areaIndex = groupIndex },
           errorFields or { reason = "starting_point_calculation_failed" })))
         return false
       end
 
       buildAllShipLocations(
         calculationResult[zone.name].result,
-        startingPointMap, area,
-        formationSettings.horizontalDistance
+        startingPointMap, group.shipCounts, zone.heading, formationSettings
       )
     end
   end
@@ -489,13 +492,13 @@ function ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, 
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
-    if unit and unit:inArea(zone.fleet.from.stagingArea) then
+    if unit and unit:inArea(zone.stagingArea) then
       table.insert(results, moveMatchingShip(unit, result, formationSettings.shipSpeed, isTesting))
     end
   end
 
   for _, descriptor in ipairs(zone.sags) do
-    table.insert(results, processSAG(descriptor, isTesting))
+    table.insert(results, processSAG(descriptor, zone.heading, isTesting))
   end
 
   local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. zone.name, "Move to staging area")

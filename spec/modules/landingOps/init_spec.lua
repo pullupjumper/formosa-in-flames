@@ -75,8 +75,8 @@ describe("LandingOps", function()
   local function makeZone(overrides)
     local zone = {
       baseGUID = "BASE-001",
+      heading = 180,
       acv = {
-        bearing = 90,
         distance = 0.5,
         speed = 20,
         destination = { { latitude = 25.0, longitude = 121.0 } },
@@ -371,7 +371,7 @@ describe("LandingOps", function()
       assert.stub(stubOffload).was.called_with({
         ship = roro,
         num = 20,
-        bearing = zone.acv.bearing + 90,
+        bearing = zone.heading,
         distance = zone.acv.distance,
         firstDistance = 1
       })

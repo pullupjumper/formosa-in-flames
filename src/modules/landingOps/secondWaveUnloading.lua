@@ -57,13 +57,13 @@ local function createCourseForBarge(zone, unit)
     return nil
   end
 
-  local b2 = math.abs(zone.lstSettings.course.bearing - b1)
+  local b2 = math.abs(zone.heading - b1)
   local d2 = d1 * math.cos(b2 * 2 * math.pi / 360)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
     distance = d2,
-    bearing = zone.lstSettings.course.bearing
+    bearing = zone.heading
   })
 
   if not destination then
@@ -83,8 +83,8 @@ local function createCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
-    distance = zone.lstSettings.course.distance,
-    bearing = zone.lstSettings.course.bearing
+    distance = zone.lstSettings.distance,
+    bearing = zone.heading
   })
 
   if not destination then

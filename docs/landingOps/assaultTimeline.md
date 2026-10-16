@@ -204,7 +204,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 | 觸發 | 事件腳本 `launchACV.lua`，每 5 分鐘對區內每艘船各觸發一次 |
 | 可釋放的船 | 071、072III、072A、073A、529、渡輪（`isFerryOrLST`；現已拿掉 529） |
 | 每次數量 | 每艘船 5 輛（寫死 `num = 5`），先 ZBD-05，用完才 ZTD-05 |
-| 排列與航行 | 沿 `zone.acv.bearing + 90` 排開，間距 0.05 浬；油門 Full，航線 `zone.acv.destination` |
+| 排列與航行 | 沿 `zone.heading` 排開，間距 0.05 浬；油門 Full，航線 `zone.acv.destination` |
 | 結束 | 艙內沒有 ZBD/ZTD（`count == 0`）就掛回基地並 RTB |
 | 上限 | 無，有貨就一直放 |
 
@@ -286,7 +286,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 | `OBSTACLE_*` | 岸上障礙範圍（多邊形，至少 3 點） | 藍方 |
 | `MINEFIELD_*` | 近海雷區（多邊形） | 藍方 |
 
-朝岸方向 `laneBearing` 用各區 LST 航向（`formationSettings.heading.*.vertical`）。
+朝岸方向用 `zone.heading`（各區 LST 航向）。
 
 ---
 

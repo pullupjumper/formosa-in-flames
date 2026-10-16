@@ -218,8 +218,8 @@ local function setCourseForLST(unit, zone)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
-    bearing = zone.lstSettings.course.bearing,
-    distance = zone.lstSettings.course.distance
+    bearing = zone.heading,
+    distance = zone.lstSettings.distance
   })
 
   if not destination then
@@ -234,7 +234,7 @@ local function setCourseForLST(unit, zone)
   unit.manualSpeed = zone.lstSettings.speed
   return {
     tag = "OK",
-    fields = { ship = unit.name, bearing = zone.lstSettings.course.bearing, speed = zone.lstSettings.speed }
+    fields = { ship = unit.name, bearing = zone.heading, speed = zone.lstSettings.speed }
   }
 end
 

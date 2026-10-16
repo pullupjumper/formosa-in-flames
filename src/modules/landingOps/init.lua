@@ -121,7 +121,7 @@ function LandingOps.launchACV(config, saveData, ship)
   local result = AmphibiousAssault.launchACV({
     ship = ship,
     num = 5,
-    bearing = zone.acv.bearing + 90,
+    bearing = zone.heading,
     distance = zone.acv.distance,
     quota = AcvWave.getQuota(zoneState, amphibOps.tuning.acvWave, GameApi.ScenEdit_CurrentTime()),
     routeACV = buildACVRouter(amphibOps.tuning.route, zone, zoneState),
@@ -183,7 +183,7 @@ function LandingOps.offloadVehicles(config, saveData, ship)
           SecondWaveUnloading.offloadVehicles({
             ship = roro,
             num = 20,
-            bearing = zone.acv.bearing + 90,
+            bearing = zone.heading,
             distance = zone.acv.distance,
             firstDistance = 1
           })
