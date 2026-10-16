@@ -2,6 +2,7 @@
 
 # 預設變數（預設都會執行）
 RUN_TEST=false
+RUN_LINT=false
 SKIP_NPM=false
 SKIP_LUAMIN=false
 SKIP_INJECT=false
@@ -11,9 +12,10 @@ EXCLUDE_PATTERNS=()
 SCEN_PATH="/mnt/c/Program Files (x86)/Steam/steamapps/common/Command - Modern Operations/Scenarios/Formosa in Flames, 2027 (v0.32) (db v516).scen"
 
 # 1. 處理參數
-while getopts "nlhtipvx:s:" opt; do
+while getopts "nlhtcipvx:s:" opt; do
   case $opt in
     t) RUN_TEST=true ;;
+    c) RUN_LINT=true ;;
     n) SKIP_NPM=true ;;
     l) SKIP_LUAMIN=true ;;
     i) SKIP_INJECT=true ;;
@@ -22,8 +24,9 @@ while getopts "nlhtipvx:s:" opt; do
     x) EXCLUDE_PATTERNS+=("$OPTARG") ;;
     s) SCEN_PATH="$OPTARG" ;;
     h)
-      echo "Usage: ./build.sh [-t] [-n] [-l] [-i] [-p] [-v] [-x pattern] [-s scen_path] [-h]"
+      echo "Usage: ./build.sh [-t] [-c] [-n] [-l] [-i] [-p] [-v] [-x pattern] [-s scen_path] [-h]"
       echo "  -t  run tests (Lua busted + frontend vitest)"
+      echo "  -c  run LuaLS check (warnings are shown, build is not blocked)"
       echo "  -n  skip npm run build (do not rebuild frontend)"
       echo "  -l  skip luamin (do not minify Lua)"
       echo "  -i  skip injecting into the scen file"
@@ -60,14 +63,32 @@ warn()  { echo "  ${C_YELLOW}⚠ $1${C_RESET}"; }
 # 4. 執行流程
 START=$(date +%s)
 
-# 階段 1: 測試
-stage 1 "Tests"
+# 階段 1: 測試 / Lint
+stage 1 "Tests / Lint"
 if [ "$RUN_TEST" = true ]; then
     busted --lua=luajit spec || fail "Lua tests failed"
     ok "Lua (busted)"
     (cd htmls-app && npm test --silent) || fail "Frontend tests failed"
     ok "Frontend (vitest)"
-else
+fi
+if [ "$RUN_LINT" = true ]; then
+    # 版本號會變，挑 Zed 下載的最新一份
+    LS_BIN=$(ls -d "$HOME"/.local/share/zed/remote_extensions/work/lua/lua-language-server-*/bin/lua-language-server 2>/dev/null | sort -V | tail -n 1)
+    if [ -z "$LS_BIN" ]; then
+        warn "lua-language-server not found (open a Lua project in Zed once to download it)"
+    else
+        # 進度條用 \r 重繪，轉成換行後濾掉
+        LINT_LOG=$("$LS_BIN" --check . --checklevel=Warning --logpath=/tmp/luals-log --metapath=/tmp/luals-meta 2>&1 \
+            | tr '\r' '\n' | grep -vE '^ *[>=]+ +[0-9]+/[0-9]+')
+        if echo "$LINT_LOG" | grep -q "no problems found"; then
+            ok "Lua (LuaLS) no problems"
+        else
+            [ "$VERBOSE" = true ] && echo "$LINT_LOG"
+            warn "$(echo "$LINT_LOG" | grep 'Diagnosis complete') (use -v for details)"
+        fi
+    fi
+fi
+if [ "$RUN_TEST" = false ] && [ "$RUN_LINT" = false ]; then
     skip
 fi
 

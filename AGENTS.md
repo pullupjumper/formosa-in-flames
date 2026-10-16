@@ -14,6 +14,13 @@ This is a **Command: Modern Operations (CMO)** military simulation scenario writ
 busted --lua=luajit spec
 ```
 
+### Linting
+```bash
+# LuaLS check (warn only, never blocks the build); add -v for details
+bash bin/build.sh -c -n -l -i
+```
+Run after editing Lua; do not add new warnings.
+
 ### Build and Deployment
 ```bash
 # Full deployment build: UI build -> Lua flatten/inject -> minify -> inject into .scen (in place, keeps .bak)
