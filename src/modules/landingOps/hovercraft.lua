@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
+local AcvWave = require("src.modules.landingOps.acvWave")
 local constants = require("src.core.constants")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 
@@ -42,7 +43,7 @@ end
 ---@param hovercraftMap table<string, SBJ__HovercraftState>
 ---@return string
 local function findMissionName(zone, hovercraftMap)
-  local missions = zone.landing.boat.missions
+  local missions = zone.landing.hovercraft.missions
   local counts = {}
   for _, entry in pairs(hovercraftMap) do
     counts[entry.missionName] = (counts[entry.missionName] or 0) + 1
@@ -89,6 +90,10 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   if not zoneState.lanes then
     return
   end
+  -- Hovercraft unload slowly, so they sail only after the first ACV wave is out (or the wait times out)
+  if not AcvWave.isFirstWaveFull(zoneState, amphibOps.tuning.acvWave, GameApi.ScenEdit_CurrentTime()) then
+    return
+  end
 
   zoneState.hovercraft = zoneState.hovercraft or {}
   zoneState.queueCounters = zoneState.queueCounters or {}
@@ -114,7 +119,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
 
         if plan then
           craft.course = plan.course
-          craft.manualSpeed = zone.landing.boat.speed
+          craft.manualSpeed = zone.landing.hovercraft.speed
           craft:Launch(true)
           zoneState.hovercraft[craft.guid] = {
             missionName = findMissionName(zone, zoneState.hovercraft),

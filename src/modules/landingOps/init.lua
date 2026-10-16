@@ -6,7 +6,7 @@ local AcvWave = require("src.modules.landingOps.acvWave")
 local MineClearing = require("src.modules.landingOps.mineClearing")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local LogFormat = require("src.utils.logFormat")
-local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local AdminUnloading = require("src.modules.landingOps.adminUnloading")
 local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
@@ -155,7 +155,7 @@ end
 function LandingOps.offloadVehicles(config, saveData, ship)
   local barges = PersistentState.landingOps(saveData).amphibOps.barges
 
-  if ship.name == "Barge" and not SecondWaveUnloading.hasExtendedBridge(barges, ship) then
+  if ship.name == "Barge" and not AdminUnloading.hasExtendedBridge(barges, ship) then
     ship.course = nil
     ship.manualSpeed = 0
     ship.holdposition = true
@@ -176,15 +176,15 @@ function LandingOps.offloadVehicles(config, saveData, ship)
     barges[ship.guid].bridgeGUID = bridge.guid
   end
 
-  if ship.name == "Barge" and not SecondWaveUnloading.isBridgeDestroyed(barges, ship) then
+  if ship.name == "Barge" and not AdminUnloading.isBridgeDestroyed(barges, ship) then
     for _, guid in ipairs(barges[ship.guid].roros) do
       local roro = GameApi.ScenEdit_GetUnit(guid)
 
       if roro then
-        local zone = SecondWaveUnloading.getBargeROROZone(config.red.amphibOps.zones, ship, roro)
+        local zone = AdminUnloading.getBargeROROZone(config.red.amphibOps.zones, ship, roro)
 
         if zone then
-          SecondWaveUnloading.offloadVehicles({
+          AdminUnloading.offloadVehicles({
             ship = roro,
             num = 20,
             bearing = zone.heading,

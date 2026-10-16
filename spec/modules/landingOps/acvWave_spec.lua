@@ -23,7 +23,7 @@ describe("AcvWave", function()
     end
   end)
 
-  local CONFIG = { capacity = { zbd05 = 4, ztd05 = 4 }, lossRatio = 0.5, holdSec = 600 }
+  local CONFIG = { capacity = { zbd05 = 4, ztd05 = 4 }, lossRatio = 0.5, holdSec = 600, hovercraftWaitSec = 1000 }
 
   ---@param zoneState table
   ---@param key string
@@ -97,5 +97,33 @@ describe("AcvWave", function()
     aliveSet[zoneState.acvGuids.zbd05[1]] = nil
 
     assert.are.equal(1, AcvWave.getQuota(zoneState, CONFIG, 700).zbd05)
+  end)
+  describe("isFirstWaveFull", function()
+    it("should be false until every type reaches capacity", function()
+      local zoneState = {}
+      launch(zoneState, "zbd05", 4)
+      launch(zoneState, "ztd05", 3)
+
+      assert.is_false(AcvWave.isFirstWaveFull(zoneState, CONFIG, 0))
+    end)
+
+    it("should release after the wait times out", function()
+      local zoneState = {}
+      launch(zoneState, "zbd05", 1)
+
+      assert.is_false(AcvWave.isFirstWaveFull(zoneState, CONFIG, 0))
+      assert.is_false(AcvWave.isFirstWaveFull(zoneState, CONFIG, 999))
+      assert.is_true(AcvWave.isFirstWaveFull(zoneState, CONFIG, 1000))
+    end)
+
+    it("should latch true even after losses", function()
+      local zoneState = {}
+      launch(zoneState, "zbd05", 4)
+      launch(zoneState, "ztd05", 4)
+      assert.is_true(AcvWave.isFirstWaveFull(zoneState, CONFIG, 0))
+
+      aliveSet[zoneState.acvGuids.zbd05[1]] = nil
+      assert.is_true(AcvWave.isFirstWaveFull(zoneState, CONFIG, 0))
+    end)
   end)
 end)

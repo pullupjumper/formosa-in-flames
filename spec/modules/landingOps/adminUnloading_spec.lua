@@ -1,12 +1,12 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
--- SecondWaveUnloading Unit Tests
-local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+-- AdminUnloading Unit Tests
+local AdminUnloading = require("src.modules.landingOps.adminUnloading")
 local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 
-describe("SecondWaveUnloading", function()
+describe("AdminUnloading", function()
   ---@type luassert.spy[]
   local activeStubs
   ---@type luassert.spy
@@ -174,10 +174,10 @@ describe("SecondWaveUnloading", function()
   end
 
   -- ============================================================================
-  -- startSecondWaveUnloading
+  -- startAdminUnloading
   -- ============================================================================
 
-  describe("startSecondWaveUnloading", function()
+  describe("startAdminUnloading", function()
     local stubGetUnit, stubGetRefPoints, stubCalcCenter, stubToolRange, stubToolBearing
     local stubGetPointFromBearing
 
@@ -223,7 +223,7 @@ describe("SecondWaveUnloading", function()
       stubGetPointFromBearing.returns(destination)
 
       local filteredUnits = { makeSideUnit({ guid = "BARGE-001" }) }
-      local result = SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnits)
+      local result = AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
 
       assert.is_true(result)
       assert.are.same({ destination }, bargeUnit.course)
@@ -257,7 +257,7 @@ describe("SecondWaveUnloading", function()
       stubToolBearing.returns(300)
       stubGetPointFromBearing.returns({ latitude = 24.8, longitude = 120.8 })
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -325,7 +325,7 @@ describe("SecondWaveUnloading", function()
         makeSideUnit({ guid = "RORO-001" }),
       }
 
-      SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnits)
+      AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
 
       -- RORO should be registered under the barge's roros list
       assert.are.same({ "RORO-001" }, barges["BARGE-001"].roros)
@@ -343,7 +343,7 @@ describe("SecondWaveUnloading", function()
       stubGetUnit.returns(nil)
 
       local filteredUnits = { makeSideUnit({ guid = "MISSING-001" }) }
-      local result = SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnits)
+      local result = AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
 
       assert.is_true(result)
       assert.are.same({}, barges)
@@ -365,7 +365,7 @@ describe("SecondWaveUnloading", function()
       stubGetUnit.returns(bargeUnit)
       stubGetRefPoints.returns(nil)
 
-      local result = SecondWaveUnloading.startSecondWaveUnloading(
+      local result = AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -395,7 +395,7 @@ describe("SecondWaveUnloading", function()
       })
       stubCalcCenter.returns(nil)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -425,7 +425,7 @@ describe("SecondWaveUnloading", function()
       stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(nil)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -456,7 +456,7 @@ describe("SecondWaveUnloading", function()
       stubToolRange.returns(5.0)
       stubToolBearing.returns(nil)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -488,7 +488,7 @@ describe("SecondWaveUnloading", function()
       stubToolBearing.returns(300)
       stubGetPointFromBearing.returns(nil)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -544,7 +544,7 @@ describe("SecondWaveUnloading", function()
         return nil
       end)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges,
         { makeSideUnit({ guid = "BARGE-001" }), makeSideUnit({ guid = "RORO-001" }) }
       )
@@ -570,7 +570,7 @@ describe("SecondWaveUnloading", function()
 
       stubGetUnit.returns(otherUnit)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "LST-001" }) }
       )
 
@@ -592,7 +592,7 @@ describe("SecondWaveUnloading", function()
 
       stubGetUnit.returns(bargeUnit)
 
-      SecondWaveUnloading.startSecondWaveUnloading(
+      AdminUnloading.startAdminUnloading(
         zone, barges, { makeSideUnit({ guid = "BARGE-001" }) }
       )
 
@@ -605,7 +605,7 @@ describe("SecondWaveUnloading", function()
       local zone = makeZone()
       local barges = {}
 
-      local result = SecondWaveUnloading.startSecondWaveUnloading(zone, barges, {})
+      local result = AdminUnloading.startAdminUnloading(zone, barges, {})
 
       assert.is_true(result)
       assert.are.same({}, barges)
@@ -658,8 +658,8 @@ describe("SecondWaveUnloading", function()
         makeSideUnit({ guid = "BARGE-Z2" }),
       }
 
-      SecondWaveUnloading.startSecondWaveUnloading(zone1, barges, allUnits)
-      SecondWaveUnloading.startSecondWaveUnloading(zone2, barges, allUnits)
+      AdminUnloading.startAdminUnloading(zone1, barges, allUnits)
+      AdminUnloading.startAdminUnloading(zone2, barges, allUnits)
 
       assert.is_not_nil(barges["BARGE-Z1"])
       assert.is_not_nil(barges["BARGE-Z2"])
@@ -690,7 +690,7 @@ describe("SecondWaveUnloading", function()
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
 
-      local result = SecondWaveUnloading.offloadVehicles(params)
+      local result = AdminUnloading.offloadVehicles(params)
 
       assert.are.equal(2, result)
       assert.stub(deleteStub).was.called(2)
@@ -719,7 +719,7 @@ describe("SecondWaveUnloading", function()
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
 
-      SecondWaveUnloading.offloadVehicles(params)
+      AdminUnloading.offloadVehicles(params)
 
       assert.stub(stubAddUnit).was.called_with({
         side = "China",
@@ -753,7 +753,7 @@ describe("SecondWaveUnloading", function()
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
 
-      SecondWaveUnloading.offloadVehicles(params)
+      AdminUnloading.offloadVehicles(params)
 
       assert.stub(stubAddUnit).was.called_with({
         side = "China",
@@ -777,7 +777,7 @@ describe("SecondWaveUnloading", function()
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
 
-      SecondWaveUnloading.offloadVehicles(params)
+      AdminUnloading.offloadVehicles(params)
 
       assert.stub(stubGenerateLocations).was.called_with({
         initialLocation = { latitude = params.ship.latitude, longitude = params.ship.longitude },
@@ -794,7 +794,7 @@ describe("SecondWaveUnloading", function()
       local params = makeOffloadParams()
       params.ship = nil
 
-      local result = SecondWaveUnloading.offloadVehicles(params)
+      local result = AdminUnloading.offloadVehicles(params)
 
       assert.is_nil(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -806,7 +806,7 @@ describe("SecondWaveUnloading", function()
       local params = makeOffloadParams()
       params.ship.IsDestroyed = true
 
-      local result = SecondWaveUnloading.offloadVehicles(params)
+      local result = AdminUnloading.offloadVehicles(params)
 
       assert.is_nil(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -829,7 +829,7 @@ describe("SecondWaveUnloading", function()
         return nil
       end)
 
-      local result = SecondWaveUnloading.offloadVehicles(params)
+      local result = AdminUnloading.offloadVehicles(params)
 
       assert.is_nil(result)
       assert.stub(logStub).was.called(1)
@@ -847,7 +847,7 @@ describe("SecondWaveUnloading", function()
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
 
-      local result = SecondWaveUnloading.offloadVehicles(params)
+      local result = AdminUnloading.offloadVehicles(params)
 
       assert.are.equal(1, result)
       assert.stub(stubAddUnit).was.called(1)
@@ -879,7 +879,7 @@ describe("SecondWaveUnloading", function()
 
       stubGetUnit.returns(nil)
 
-      local result = SecondWaveUnloading.isBridgeDestroyed(barges, ship)
+      local result = AdminUnloading.isBridgeDestroyed(barges, ship)
 
       assert.is_true(result)
       assert.stub(logStub).was_not.called()
@@ -898,7 +898,7 @@ describe("SecondWaveUnloading", function()
 
       stubGetUnit.returns({ guid = "BRIDGE-001" })
 
-      local result = SecondWaveUnloading.isBridgeDestroyed(barges, ship)
+      local result = AdminUnloading.isBridgeDestroyed(barges, ship)
 
       assert.is_false(result)
     end)
@@ -908,7 +908,7 @@ describe("SecondWaveUnloading", function()
       local barges = {}
       local ship = makeUnit({ guid = "UNKNOWN-001" })
 
-      local result = SecondWaveUnloading.isBridgeDestroyed(barges, ship)
+      local result = AdminUnloading.isBridgeDestroyed(barges, ship)
 
       assert.is_true(result)
     end)
@@ -923,7 +923,7 @@ describe("SecondWaveUnloading", function()
       }
       local ship = makeUnit({ guid = "BARGE-001" })
 
-      local result = SecondWaveUnloading.isBridgeDestroyed(barges, ship)
+      local result = AdminUnloading.isBridgeDestroyed(barges, ship)
 
       assert.is_true(result)
     end)
@@ -945,7 +945,7 @@ describe("SecondWaveUnloading", function()
       }
       local ship = makeUnit({ guid = "BARGE-001" })
 
-      local result = SecondWaveUnloading.hasExtendedBridge(barges, ship)
+      local result = AdminUnloading.hasExtendedBridge(barges, ship)
 
       assert.is_true(result)
     end)
@@ -960,7 +960,7 @@ describe("SecondWaveUnloading", function()
       }
       local ship = makeUnit({ guid = "BARGE-001" })
 
-      local result = SecondWaveUnloading.hasExtendedBridge(barges, ship)
+      local result = AdminUnloading.hasExtendedBridge(barges, ship)
 
       assert.is_false(result)
     end)
@@ -993,7 +993,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.5)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
       assert.is_not_nil(result)
       assert.are.equal("ZoneAlpha", result.name)
     end)
@@ -1014,7 +1014,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(1.0)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1035,7 +1035,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(nil)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1056,7 +1056,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.5)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1077,7 +1077,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.5)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1099,7 +1099,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.3)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_not_nil(result)
       assert.are.equal("Zone2", result.name)
@@ -1111,7 +1111,7 @@ describe("SecondWaveUnloading", function()
       local barge = makeUnit({ guid = "BARGE-001" })
       local roro = makeUnit({ guid = "RORO-001" })
 
-      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
+      local result = AdminUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)

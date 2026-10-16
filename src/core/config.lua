@@ -12,7 +12,7 @@ config.logging = {
   modules = {
     [constants.TAGS.GROUND] = { verbose = true },
     [constants.TAGS.AIR] = { verbose = true },
-    [constants.TAGS.SECOND_WAVE_UNLOADING] = { verbose = true },
+    [constants.TAGS.ADMIN_UNLOADING] = { verbose = true },
     [constants.TAGS.RECON] = { verbose = true },
     [constants.TAGS.DYNAMIC_OPERATIONS] = { verbose = true },
     [constants.TAGS.TARGETING_PROCESS] = { verbose = true },
@@ -1716,6 +1716,7 @@ config.red.amphibOps.tuning = {
     capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
     lossRatio = 0.3,                         -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
     holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
+    hovercraftWaitSec = 60 * 60,             -- 氣墊船等第一波車波放滿的上限秒數，逾時直接放行
   },
 }
 config.red.amphibOps.zones = {
@@ -1878,7 +1879,7 @@ config.red.amphibOps.zones = {
       },
     },
     landing = {
-      boat = {
+      hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
         missions = {
           {
@@ -2106,7 +2107,7 @@ config.red.amphibOps.zones = {
       },
     },
     landing = {
-      boat = {
+      hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
         missions = {
           {
@@ -2314,7 +2315,7 @@ config.red.amphibOps.zones = {
       },
     },
     landing = {
-      boat = {
+      hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
         missions = {
           {

@@ -25,7 +25,7 @@ local PLATFORM_GROUPS = { boat = "landing", transportHelicopter = "air", attackH
 ---Look up a mission platform descriptor of a zone by its config key
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param platformKey string Platform config key (e.g., "boat", "transportHelicopter")
----@return SBJ__BoatMissionDescriptor|SBJ__TransportHelicopterDescriptor|SBJ__AttackHelicopterDescriptor
+---@return SBJ__HovercraftMissionDescriptor|SBJ__TransportHelicopterDescriptor|SBJ__AttackHelicopterDescriptor
 local function getPlatformDescriptor(zone, platformKey)
   return zone[PLATFORM_GROUPS[platformKey]][platformKey]
 end
@@ -383,7 +383,7 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
   return true
 end
 
----Re-transfer cargo to embarked units for second wave operations
+---Re-transfer cargo to embarked units for admin unloading operations
 ---Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]

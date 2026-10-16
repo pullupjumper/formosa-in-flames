@@ -68,6 +68,35 @@ function AcvWave.getQuota(zoneState, config, currentTime)
   return quota
 end
 
+---Whether hovercraft may go: the first ACV wave filled every type to capacity, or the wait timed out
+---The wait starts at the first call. Latched once true.
+---@param zoneState SBJ__ZoneState
+---@param config SBJ__AcvWaveConfig
+---@param currentTime number
+---@return boolean
+function AcvWave.isFirstWaveFull(zoneState, config, currentTime)
+  if zoneState.acvFirstWaveFull then
+    return true
+  end
+
+  zoneState.acvWaitStartedAt = zoneState.acvWaitStartedAt or currentTime
+  if currentTime - zoneState.acvWaitStartedAt >= config.hovercraftWaitSec then
+    zoneState.acvFirstWaveFull = true
+    return true
+  end
+
+  zoneState.acvGuids = zoneState.acvGuids or {}
+  for key, capacity in pairs(config.capacity) do
+    local guids = zoneState.acvGuids[key] or {}
+    if pruneDestroyed(guids) < capacity then
+      return false
+    end
+  end
+
+  zoneState.acvFirstWaveFull = true
+  return true
+end
+
 ---Record a launched ACV so it counts against the quota
 ---@param zoneState SBJ__ZoneState
 ---@param key string ACV type key

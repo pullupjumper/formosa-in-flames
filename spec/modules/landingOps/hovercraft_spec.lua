@@ -21,6 +21,7 @@ describe("Hovercraft", function()
     activeStubs = {}
     trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "error"))
+    trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(0))
   end)
 
   after_each(function()
@@ -52,12 +53,12 @@ describe("Hovercraft", function()
     }
   end
 
-  local CONFIG = { tuning = { route = makeRouteConfig() }, formationSettings = { hovercraftSpeed = 40 } }
+  local CONFIG = { tuning = { route = makeRouteConfig(), acvWave = { capacity = { zbd05 = 1 }, hovercraftWaitSec = 3600 } }, formationSettings = { hovercraftSpeed = 40 } }
   local zone = {
     name = "Taoyuan",
     movement = { holdingAreas = { mothership = { "RP-ANC" } } },
     landing = {
-      boat = { missions = { { name = "LANDING/TAO/1/1", unitCount = 1 }, { name = "LANDING/TAO/1/2", unitCount = 3 } } },
+      hovercraft = { speed = 40, missions = { { name = "LANDING/TAO/1/1", unitCount = 1 }, { name = "LANDING/TAO/1/2", unitCount = 3 } } },
     },
   }
 
@@ -75,7 +76,7 @@ describe("Hovercraft", function()
     for _, beachLane in ipairs(lanes.waterLanes[1].beachLanes) do
       beachLane.isCleared = isCleared
     end
-    return { lanes = lanes, obstacle = { cells = {} } }
+    return { lanes = lanes, obstacle = { cells = {} }, acvFirstWaveFull = true }
   end
 
   ---@param calls string[]
@@ -140,6 +141,19 @@ describe("Hovercraft", function()
       assert.are.equal("LANDING/TAO/1/1", entry.missionName)
       assert.are.same(craft.course[#craft.course], entry.finalPoint)
       assert.is_false(entry.arrived)
+    end)
+
+    -- Negative: hovercraft wait until the first ACV wave is full
+    it("should not launch before the first ACV wave is full", function()
+      local calls = {}
+      stubFleet(makeCraft(calls))
+      local zoneState = makeZoneState(true)
+      zoneState.acvFirstWaveFull = nil
+
+      Hovercraft.launchHovercraft(CONFIG, zone, zoneState, { { guid = "LHD-1", name = "LHD-1" } })
+
+      assert.are.same({}, calls)
+      assert.is_nil(zoneState.hovercraft)
     end)
 
     -- Negative: no cleared lane means the craft stays aboard

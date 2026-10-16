@@ -8,7 +8,7 @@ local Logger = require("src.utils.logger")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local AdminUnloading = require("src.modules.landingOps.adminUnloading")
 local MineClearing = require("src.modules.landingOps.mineClearing")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
@@ -211,7 +211,6 @@ describe("LandingOps Coordinator", function()
     local stubMoveToStagingArea
     local stubIsAfterStartTime
     local stubGetUnitsInHoldingAreas
-    local stubGetCount
     local stubCreateCargoMissions
     local stubTransferAndAssign
     local stubTransferTransportAircraft
@@ -220,7 +219,7 @@ describe("LandingOps Coordinator", function()
     local stubSetLandingMissionStartTime
     local stubSetCoursesForLSTs
     local stubCountUnitsInEachArea
-    local stubStartSecondWaveUnloading
+    local stubStartAdminUnloading
     local stubRetransferCargos
     local stubAddReconEntry
     local stubStartMineClearing
@@ -246,8 +245,7 @@ describe("LandingOps Coordinator", function()
       stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToHoldingAreas").returns(false))
       stubIsAfterStartTime = trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
       stubGetUnitsInHoldingAreas = trackStub(stub(AmphibiousLogistics, "getUnitsInHoldingAreas")
-        .returns(makeHoldingResult()))
-      stubGetCount = trackStub(stub(Utils, "getCount").returns(0))
+        .returns(makeHoldingResult({ units = {} })))
       stubCreateCargoMissions = trackStub(stub(AmphibiousLogistics, "createCargoMissions").returns(true))
       stubTransferAndAssign = trackStub(stub(AmphibiousLogistics, "transferAndAssign").returns(true))
       stubTransferTransportAircraft = trackStub(stub(AmphibiousLogistics, "transferAndAssignTransportAircraft"))
@@ -256,7 +254,7 @@ describe("LandingOps Coordinator", function()
       stubSetLandingMissionStartTime = trackStub(stub(AmphibiousAssault, "setLandingMissionStartTime").returns(true))
       stubSetCoursesForLSTs = trackStub(stub(AmphibiousAssault, "setCoursesForLSTs").returns(true))
       stubCountUnitsInEachArea = trackStub(stub(AmphibiousAssault, "countUnitsInEachArea").returns({}))
-      stubStartSecondWaveUnloading = trackStub(stub(SecondWaveUnloading, "startSecondWaveUnloading").returns(true))
+      stubStartAdminUnloading = trackStub(stub(AdminUnloading, "startAdminUnloading").returns(true))
       stubRetransferCargos = trackStub(stub(AmphibiousLogistics, "retransferCargos").returns(true))
       stubAddReconEntry = trackStub(stub(StrikePlanner, "addReconEntry"))
     end)
@@ -284,7 +282,7 @@ describe("LandingOps Coordinator", function()
       local landingState = makeLandingState()
 
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
-      stubGetCount.returns(2)
+      stubGetUnitsInHoldingAreas.returns(makeHoldingResult())
 
       Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
 
@@ -304,7 +302,7 @@ describe("LandingOps Coordinator", function()
       landingState.amphibOps.zoneStates = {
         Tainan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
       }
-      stubGetCount.returns(2)
+      stubGetUnitsInHoldingAreas.returns(makeHoldingResult())
 
       Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
 
@@ -411,8 +409,8 @@ describe("LandingOps Coordinator", function()
       Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.COMPLETED, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubStartSecondWaveUnloading).was.called(1)
-      assert.are.same(landingState.amphibOps.barges, stubStartSecondWaveUnloading.calls[1].vals[2])
+      assert.stub(stubStartAdminUnloading).was.called(1)
+      assert.are.same(landingState.amphibOps.barges, stubStartAdminUnloading.calls[1].vals[2])
       assert.stub(stubUpdateHovercraft).was.called(1)
     end)
 
@@ -426,7 +424,7 @@ describe("LandingOps Coordinator", function()
       Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubStartSecondWaveUnloading).was_not.called()
+      assert.stub(stubStartAdminUnloading).was_not.called()
     end)
 
     -- Boundary: triggers cargo retransfer exactly at the two-hour threshold

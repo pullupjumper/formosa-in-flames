@@ -5,7 +5,7 @@ local LogFormat = require("src.utils.logFormat")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local AdminUnloading = require("src.modules.landingOps.adminUnloading")
 local MineClearing = require("src.modules.landingOps.mineClearing")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
@@ -67,7 +67,7 @@ local function processZone(tickCtx, zone)
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL then
     local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredShips)
-    local hasArrived = Utils.getCount(result.units) > zone.movement.arrivalThreshold and not result.isUnitMoving
+    local hasArrived = #result.units > zone.movement.arrivalThreshold and not result.isUnitMoving
 
     if hasArrived then
       local ok = AmphibiousLogistics.createCargoMissions(zone)
@@ -135,7 +135,7 @@ local function processZone(tickCtx, zone)
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING then
     -- TODO: 行政下卸的「絕對安全」條件；目前直接放行
-    local ok = SecondWaveUnloading.startSecondWaveUnloading(zone, landingState.amphibOps.barges, filteredShips)
+    local ok = AdminUnloading.startAdminUnloading(zone, landingState.amphibOps.barges, filteredShips)
     if ok then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
     end

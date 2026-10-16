@@ -4,7 +4,7 @@ local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 
-local SecondWaveUnloading = {}
+local AdminUnloading = {}
 
 -- ============================================================================
 -- Enumerations and Constants
@@ -98,7 +98,7 @@ end
 -- Unit Classification and Processing
 -- ============================================================================
 
----Process a barge unit for second wave unloading
+---Process a barge unit for admin unloading
 ---Creates course, sets speed, and registers barge in the barge registry
 ---@param unit CMO__Unit
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -245,7 +245,7 @@ end
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if bridge was created but is now destroyed
-function SecondWaveUnloading.isBridgeDestroyed(barges, ship)
+function AdminUnloading.isBridgeDestroyed(barges, ship)
   if barges[ship.guid] and barges[ship.guid].bridgeGUID then
     local bridge = GameApi.ScenEdit_GetUnit(barges[ship.guid].bridgeGUID)
 
@@ -264,7 +264,7 @@ end
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if barge has an active bridge GUID
-function SecondWaveUnloading.hasExtendedBridge(barges, ship)
+function AdminUnloading.hasExtendedBridge(barges, ship)
   return barges[ship.guid].bridgeGUID ~= nil
 end
 
@@ -274,7 +274,7 @@ end
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
-function SecondWaveUnloading.getBargeROROZone(zones, barge, roro)
+function AdminUnloading.getBargeROROZone(zones, barge, roro)
   for _, zone in ipairs(zones) do
     local distance = GameApi.Tool_Range(roro.guid, barge.guid)
 
@@ -290,19 +290,19 @@ end
 -- Public API: Operations
 -- ============================================================================
 
----Initiate second wave unloading operations for a single zone
+---Initiate admin unloading operations for a single zone
 ---Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param filteredUnits CMO__SideUnit[]
----@return boolean # True if second wave unloading successfully started
-function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnits)
+---@return boolean # True if admin unloading successfully started
+function AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
   local roros = {}
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
   local bargeEntries = {}
   local report = LogFormat.report(
-    constants.TAGS.SECOND_WAVE_UNLOADING, "zone=" .. zone.name, "Second wave unloading")
+    constants.TAGS.ADMIN_UNLOADING, "zone=" .. zone.name, "Admin unloading")
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
@@ -340,7 +340,7 @@ end
 ---Deletes cargo from ship and spawns facility units in line formation at calculated positions
 ---@param params SBJ__VehicleOffloadParams
 ---@return integer|nil # Number of vehicles successfully offloaded, or nil on error
-function SecondWaveUnloading.offloadVehicles(params)
+function AdminUnloading.offloadVehicles(params)
   local ship = params.ship
   if ship == nil or ship.IsDestroyed then return end
 
@@ -356,11 +356,11 @@ function SecondWaveUnloading.offloadVehicles(params)
   local count, results = createOffloadedVehicles(ship, cargoItems, acvLocations)
 
   local report = LogFormat.report(
-    constants.TAGS.SECOND_WAVE_UNLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")
+    constants.TAGS.ADMIN_UNLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")
   report.addAll(results)
   report.emit()
 
   return count
 end
 
-return SecondWaveUnloading
+return AdminUnloading

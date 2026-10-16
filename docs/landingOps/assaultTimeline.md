@@ -102,7 +102,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到 S_lane 或被摧毀 | `assaultBoat.lua` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` | `obstacleClearing.lua` |
 | `ASSAULT_LANDING` | 衝擊上陸：兩棲車分波、氣墊船走通道 | 灘頭堡建立（暫用 `air.casArea` 內 ZBD-05 ≥ 1，TODO） | `acvWave.lua`、`hovercraft.lua` |
-| `WAITING_ADMIN_UNLOADING` | 等絕對安全（TODO，目前直接放行） | `startSecondWaveUnloading` 成功 | `secondWaveUnloading.lua` |
+| `WAITING_ADMIN_UNLOADING` | 等絕對安全（TODO，目前直接放行） | `startAdminUnloading` 成功 | `adminUnloading.lua` |
 
 兩棲車、氣墊船從 `ASSAULT_LANDING` 開始，之後的 phase（含 `COMPLETED`）也繼續跑。
 

@@ -7,7 +7,7 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local MineClearing = require("src.modules.landingOps.mineClearing")
-local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local AdminUnloading = require("src.modules.landingOps.adminUnloading")
 local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
@@ -331,8 +331,8 @@ describe("LandingOps", function()
         },
       })
       local cfg = {}
-      local stubHasBridge = trackStub(stub(SecondWaveUnloading, "hasExtendedBridge").returns(false))
-      local stubIsBridgeDestroyed = trackStub(stub(SecondWaveUnloading, "isBridgeDestroyed").returns(true))
+      local stubHasBridge = trackStub(stub(AdminUnloading, "hasExtendedBridge").returns(false))
+      local stubIsBridgeDestroyed = trackStub(stub(AdminUnloading, "isBridgeDestroyed").returns(true))
       local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
 
       local result = LandingOps.offloadVehicles(makeConfig(cfg), saveData, ship)
@@ -361,11 +361,11 @@ describe("LandingOps", function()
         },
       })
       local cfg = { zones = { zone } }
-      local stubHasBridge = trackStub(stub(SecondWaveUnloading, "hasExtendedBridge").returns(true))
-      local stubIsBridgeDestroyed = trackStub(stub(SecondWaveUnloading, "isBridgeDestroyed").returns(false))
+      local stubHasBridge = trackStub(stub(AdminUnloading, "hasExtendedBridge").returns(true))
+      local stubIsBridgeDestroyed = trackStub(stub(AdminUnloading, "isBridgeDestroyed").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(roro))
-      local stubGetZone = trackStub(stub(SecondWaveUnloading, "getBargeROROZone").returns(zone))
-      local stubOffload = trackStub(stub(SecondWaveUnloading, "offloadVehicles").returns(20))
+      local stubGetZone = trackStub(stub(AdminUnloading, "getBargeROROZone").returns(zone))
+      local stubOffload = trackStub(stub(AdminUnloading, "offloadVehicles").returns(20))
 
       local result = LandingOps.offloadVehicles(makeConfig(cfg), saveData, ship)
 

@@ -11,7 +11,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 - **艦隊移動**：登陸艦從集結區移動至等待區，依艦型分層佈置陣形
 - **後勤裝載**：貨物轉移至登陸載具（直升機、氣墊船），建立運輸任務
 - **兩棲突擊**：LST 航至泛水編波區、ACV 兩棲步兵戰鬥車釋放、直升機空中突擊
-- **第二波卸載**：駁船與 RORO 船組成後勤橋樑，卸載重型裝備
+- **行政下卸**：駁船與 RORO 船組成後勤橋樑，卸載重型裝備
 
 ### 登陸作戰階段對應
 
@@ -20,7 +20,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | **集結** | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向等待區 |
 | **裝載** | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、運輸任務建立、單位指派 |
 | **突擊** | [amphibiousAssault](amphibiousAssault.md) | ACV 釋放、LST 航至泛水編波區、任務時序設定 |
-| **卸載** | [secondWaveUnloading](secondWaveUnloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
+| **卸載** | [adminUnloading](adminUnloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
 
 ---
 
@@ -32,7 +32,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至等待區與 SAG 護航編隊佈陣 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物操作、平台裝載與任務指派 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
-| [secondWaveUnloading](secondWaveUnloading.md) | `secondWaveUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載（行政下卸） |
+| [adminUnloading](adminUnloading.md) | `adminUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載（行政下卸） |
 | [assaultTimeline](assaultTimeline.md) | `laneGeometry.lua` | 通道幾何（純函式）：水際／灘際通道、弓字型、障礙方塊、相交判斷 |
 | [assaultTimeline](assaultTimeline.md) | `routePlanner.lua` | 走通道的航線：選通道、排隊入口點、停車位 |
 | [assaultTimeline](assaultTimeline.md) | `mineClearing.lua` | 開場佈雷、Type 529 掃雷 |
@@ -88,9 +88,9 @@ flowchart TB
         AA_ACV["amphibiousAssault<br>.launchACV()"]
     end
 
-    subgraph 階段四["第二波卸載"]
-        SW_START["secondWaveUnloading<br>.startSecondWaveUnloading()"]
-        SW_OFFLOAD["secondWaveUnloading<br>.offloadVehicles()"]
+    subgraph 階段四["行政下卸"]
+        SW_START["adminUnloading<br>.startAdminUnloading()"]
+        SW_OFFLOAD["adminUnloading<br>.offloadVehicles()"]
     end
 
     TRIGGER --> COORD
@@ -191,7 +191,7 @@ flowchart BT
         SM["shipMovement"]
         AL["amphibiousLogistics"]
         AA["amphibiousAssault"]
-        SW["secondWaveUnloading"]
+        SW["adminUnloading"]
     end
 
     UI --> INIT

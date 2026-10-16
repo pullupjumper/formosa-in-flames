@@ -192,7 +192,7 @@ local function createAmphibiousTaskForceLocationDataString(config)
 
     local destination = GameApi.ScenEdit_GetReferencePoint({
       side = constants.SIDES.RED,
-      name = zone.landing.boat.zone[1],
+      name = zone.landing.hovercraft.zone[1],
     })
 
     if destination then

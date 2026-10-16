@@ -1,6 +1,6 @@
-# secondWaveUnloading — 第二波卸載作業
+# adminUnloading — 行政下卸作業
 
-> 原始碼：`src/modules/landingOps/secondWaveUnloading.lua`
+> 原始碼：`src/modules/landingOps/adminUnloading.lua`
 
 **職責**：管理駁船-RORO 後勤鏈建立、重型車輛卸載與灘頭浮橋架設
 
@@ -8,14 +8,14 @@
 
 ## 概述
 
-secondWaveUnloading 負責登陸作戰的第四階段——第二波重裝備卸載。當灘頭由第一波 ACV 建立後，系統啟動駁船（Barge）與 RORO 船的後勤鏈：
+adminUnloading 負責登陸作戰的第四階段——行政下卸（重裝備卸載）。當灘頭由第一波 ACV 建立後，系統啟動駁船（Barge）與 RORO 船的後勤鏈：
 
 1. **駁船搶灘**：計算駁船從等待區到卸載區的航向，投影至 LST 搶灘航線
 2. **RORO 跟隨**：RORO 船與同區域駁船配對，跟隨駁船前進
 3. **浮橋架設**：駁船到達灘頭後停止並架設後勤浮橋（Bridge Facility）
 4. **車輛卸載**：透過後勤鏈（RORO → 駁船 → 灘頭）下卸重型裝備
 
-本模組由兩個事件腳本驅動：`landingCheck.lua`（啟動第二波）和 `offloadVehicles.lua`（執行卸載）。
+本模組由兩個事件腳本驅動：`landingCheck.lua`（啟動行政下卸）和 `offloadVehicles.lua`（執行卸載）。
 
 ---
 
@@ -66,11 +66,11 @@ flowchart TD
 
 ---
 
-## 第二波啟動流程
+## 行政下卸啟動流程
 
 ```mermaid
 flowchart TD
-    START["startSecondWaveUnloading()"]
+    START["startAdminUnloading()"]
     ITER_UNIT["遍歷 filteredUnits"]
     IS_BARGE{是 Barge<br>在 holdingAreas.deployLine?}
     IS_RORO{是 RORO<br>在 holdingAreas.deployLine?}
@@ -172,7 +172,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `startSecondWaveUnloading(zone, saveData, filteredUnits)` | 啟動第二波卸載：駁船搶灘、RORO 配對（單一作戰區） |
+| `startAdminUnloading(zone, saveData, filteredUnits)` | 啟動行政下卸：駁船搶灘、RORO 配對（單一作戰區） |
 | `offloadVehicles(params)` | 從船艦下卸車輛至灘頭 |
 
 ---
@@ -182,12 +182,12 @@ flowchart TD
 兩個作業 API 各自建立一份 `LogFormat.report`。`offloadVehicles` 原本在失敗與成功兩條路徑各 emit 一次相同的 summary，現在收斂成單一 emit。
 
 ```
-[secondWaveUnloading] zone=Taoyuan: Second wave unloading | total=2 ok=2
+[adminUnloading] zone=Taoyuan: Admin unloading | total=2 ok=2
   [OK]   ship=Barge action=course_set guid=B-001
   [OK]   ship=RORO action=paired guid=R-014 barge=B-001
 ```
 ```
-[secondWaveUnloading] ship=Barge: Offload vehicles | total=1 ok=1
+[adminUnloading] ship=Barge: Offload vehicles | total=1 ok=1
   [OK]   unit=ZBD-04A type="Ground unit" dbid=3211 index=1
 ```
 

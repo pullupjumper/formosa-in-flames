@@ -695,6 +695,8 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field obstacleStartedAt? number Time all boats finished and obstacle clearing began
 ---@field acvGuids? table<string, string[]> Launched ACV GUIDs per type key (zbd05, ztd05)
 ---@field acvPausedAt? table<string, number> Pause start per ACV type key; nil while releasing
+---@field acvFirstWaveFull? boolean Latched once the first ACV wave is full or the wait timed out; hovercraft wait for it
+---@field acvWaitStartedAt? number Time hovercraft first started waiting for the first ACV wave
 ---@field queueCounters? table<string, integer> Units routed per water lane id
 ---@field laneSlots? SBJ__LaneSlotsState Parking slot holders per beach lane
 ---@field hovercraft? table<string, SBJ__HovercraftState> Routed hovercraft indexed by GUID
@@ -807,7 +809,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field isPaused boolean Cargo remains but the wave quota allows none of it
 
 ---Vehicle offload parameters for unloading vehicles from landing ships
----Input table for SecondWaveUnloading.offloadVehicles
+---Input table for AdminUnloading.offloadVehicles
 ---@class SBJ__VehicleOffloadParams: table
 ---@field ship CMO__Unit Landing ship to offload from
 ---@field num integer Number of vehicles to offload
@@ -839,7 +841,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field transferManifest SBJ__ShipTypeCargoManifest Cargo transfer manifest by ship type
 
 ---Landing craft mission configuration for boat-based amphibious landings
----@class SBJ__BoatMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
+---@class SBJ__HovercraftMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
 ---@field speed number
 
 ---Transport helicopter mission configuration for air assault operations
@@ -903,7 +905,7 @@ function ScenEdit_DeleteMinefield(params) end
 
 ---Landing craft, vehicles and beach setup of a zone
 ---@class SBJ__ZoneLanding: table
----@field boat SBJ__BoatMissionDescriptor Landing craft configuration
+---@field hovercraft SBJ__HovercraftMissionDescriptor Landing craft configuration
 ---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
 ---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
 ---@field laneCenter string[] Reference point name of the lane center on the shore (one point)
@@ -1026,6 +1028,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
 ---@field lossRatio number Resume when alive drops below capacity * (1 - lossRatio)
 ---@field holdSec number Resume when paused longer than this
+---@field hovercraftWaitSec number Hovercraft stop waiting for the first ACV wave after this many seconds
 
 ---Land-Attack Cruise Missile context managing LACM operations state
 ---@class SBJ__LACMContext: table
