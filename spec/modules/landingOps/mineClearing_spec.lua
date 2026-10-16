@@ -67,7 +67,7 @@ describe("MineClearing", function()
     return {
       name = "Taoyuan",
       heading = BEARING,
-      anchorage = { lstArea = { "RP-LST" }, area = { "RP-ANC" } },
+      movement = { holdingAreas = { deployLine = { "RP-LST" }, mothership = { "RP-ANC" } } },
       landing = {
         laneCenter = { "RP-CENTER" },
         obstacleArea = { "RP-O1", "RP-O2", "RP-O3" },

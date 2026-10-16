@@ -54,10 +54,12 @@ describe("LandingOps Coordinator", function()
   local function makeZone(overrides)
     local zone = {
       name = "Taoyuan",
-      anchorage = {
+      movement = {
         arrivalThreshold = 1,
-        lstArea = { "RP-LST-1", "RP-LST-2" },
-        area = { "RP-ANC-1", "RP-ANC-2" },
+        holdingAreas = {
+          deployLine = { "RP-LST-1", "RP-LST-2" },
+          mothership = { "RP-ANC-1", "RP-ANC-2" },
+        },
       },
       air = {
         landingZone = { "RP-AIR-1", "RP-AIR-2" },
@@ -67,7 +69,7 @@ describe("LandingOps Coordinator", function()
     }
     if overrides then
       for k, v in pairs(overrides) do
-        if type(zone[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+        if type(zone[k]) == "table" and (k == "movement" or k == "air" or k == "landing" or k == "fleet") then
           for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
         else
           zone[k] = v
@@ -154,10 +156,10 @@ describe("LandingOps Coordinator", function()
     return landingState
   end
 
-  ---Create an anchorage query result
+  ---Create a holding-areas query result
   ---@param overrides? table
   ---@return table
-  local function makeAnchorageResult(overrides)
+  local function makeHoldingResult(overrides)
     local result = {
       units = { { guid = "SHIP-001" }, { guid = "SHIP-002" } },
       isUnitMoving = false,
@@ -208,7 +210,7 @@ describe("LandingOps Coordinator", function()
   describe("process", function()
     local stubMoveToStagingArea
     local stubIsAfterStartTime
-    local stubGetUnitsInAnchorageArea
+    local stubGetUnitsInHoldingAreas
     local stubGetCount
     local stubCreateCargoMissions
     local stubTransferAndAssign
@@ -241,10 +243,10 @@ describe("LandingOps Coordinator", function()
       stubUpdateObstacleClearing = trackStub(stub(ObstacleClearing, "updateObstacleClearing").returns(false))
       stubLaunchHovercraft = trackStub(stub(Hovercraft, "launchHovercraft"))
       stubUpdateHovercraft = trackStub(stub(Hovercraft, "updateHovercraft"))
-      stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToStagingArea").returns(false))
+      stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToHoldingAreas").returns(false))
       stubIsAfterStartTime = trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
-      stubGetUnitsInAnchorageArea = trackStub(stub(AmphibiousLogistics, "getUnitsInAnchorageArea")
-        .returns(makeAnchorageResult()))
+      stubGetUnitsInHoldingAreas = trackStub(stub(AmphibiousLogistics, "getUnitsInHoldingAreas")
+        .returns(makeHoldingResult()))
       stubGetCount = trackStub(stub(Utils, "getCount").returns(0))
       stubCreateCargoMissions = trackStub(stub(AmphibiousLogistics, "createCargoMissions").returns(true))
       stubTransferAndAssign = trackStub(stub(AmphibiousLogistics, "transferAndAssign").returns(true))
@@ -347,7 +349,7 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubSetLandingMissionStartTime).was_not.called()
     end)
 
-    -- Negative: sweepers still working keep LSTs in the anchorage
+    -- Negative: sweepers still working keep LSTs on the deploy line
     it("should keep MINE_CLEARING and LSTs anchored while sweepers are working", function()
       local config = makeConfig()
       local landingState = makeLandingState()

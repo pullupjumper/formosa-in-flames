@@ -51,7 +51,7 @@ local function findSweepers(zone, frame, ships)
   for _, u in ipairs(ships) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit and unit.dbid == constants.PLATFORMS.TYPE_082
-        and (unit:inArea(zone.anchorage.lstArea) or unit:inArea(zone.anchorage.area)) then
+        and (unit:inArea(zone.movement.holdingAreas.deployLine) or unit:inArea(zone.movement.holdingAreas.mothership)) then
       local _, lateral = LaneGeometry.projectPoint(frame, unit)
       table.insert(entries, { unit = unit, lateral = lateral })
     end

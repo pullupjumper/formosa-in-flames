@@ -75,7 +75,7 @@ describe("LandingOps", function()
   local function makeZone(overrides)
     local zone = {
       heading = 180,
-      anchorage = { baseGUID = "BASE-001" },
+      movement = { baseGUID = "BASE-001" },
       landing = {
         acv = {
           distance = 0.5,
@@ -86,7 +86,7 @@ describe("LandingOps", function()
     }
     if overrides then
       for k, v in pairs(overrides) do
-        if type(zone[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+        if type(zone[k]) == "table" and (k == "movement" or k == "air" or k == "landing" or k == "fleet") then
           for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
         else
           zone[k] = v
@@ -136,7 +136,7 @@ describe("LandingOps", function()
     it("should initialize landing operations by calculating destinations", function()
       local saveData = makeSaveData({ calculationResult = {} })
       local cfg = { zones = {}, formationSettings = {} }
-      local stubCalc = trackStub(stub(ShipMovement, "calculateDestination"))
+      local stubCalc = trackStub(stub(ShipMovement, "planHoldingPositions"))
       local stubLay = trackStub(stub(MineClearing, "layMinefields"))
 
       LandingOps.init(makeConfig(cfg), saveData)
@@ -292,7 +292,7 @@ describe("LandingOps", function()
       assert.is_true(wasRTB)
       assert.stub(stubHost).was.called_with({
         HostedUnitNameOrID = ship.guid,
-        SelectedBaseNameOrID = zone.anchorage.baseGUID
+        SelectedBaseNameOrID = zone.movement.baseGUID
       })
     end)
 

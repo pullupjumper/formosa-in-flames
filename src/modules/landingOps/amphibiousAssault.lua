@@ -263,7 +263,7 @@ local function setZoneLSTCourses(zone, units)
   for _, u in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if unit and unit.type == "Ship" and unit:inArea(zone.anchorage.lstArea) then
+    if unit and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) then
       local result = setCourseForLST(unit, zone)
       table.insert(results, result)
 
@@ -318,7 +318,7 @@ function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, categorie
 end
 
 ---Set course for LSTs to approach beach and move SAGs to staging areas
----LSTs in anchorage are directed to landing zones; RORO ships and barges remain in anchorage
+---LSTs on the deploy line are directed to landing zones; RORO ships and barges stay put
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]
 ---@return boolean # True if all LST courses were successfully set

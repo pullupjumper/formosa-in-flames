@@ -37,7 +37,7 @@ local function findCarriers(zone, frame, ships)
 
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
-    if ship and BOAT_CARRIER_DBIDS[ship.dbid] and ship:inArea(zone.anchorage.lstArea) then
+    if ship and BOAT_CARRIER_DBIDS[ship.dbid] and ship:inArea(zone.movement.holdingAreas.deployLine) then
       local boats = {}
       local embarked = ship.embarkedUnits and ship.embarkedUnits[constants.PLATFORM_TYPES.BOATS] or {}
       for _, guid in ipairs(embarked) do

@@ -602,10 +602,10 @@ function ScenEdit_DeleteMinefield(params) end
 ---@class SBJ__DestinationArea: table
 ---@field area? CMO__Location[] Destination area waypoints
 
----Destination staging area with anchorage and vehicle staging zones
----Extends destination area with additional staging and anchorage areas
+---Destination staging area with holding and vehicle staging zones
+---Extends destination area with additional staging and holding areas
 ---@class SBJ__DestinationStagingArea: SBJ__DestinationArea
----@field anchorageArea CMO__Waypoint[] Anchorage area waypoints
+---@field holdingArea CMO__Waypoint[] Holding area waypoints
 ---@field amphibiousVehicleStagingArea CMO__Waypoint[] Amphibious vehicle staging area waypoints
 
 ---Where a ship group spawns: heading plus a literal position or reference point names per ship type
@@ -669,7 +669,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---Stores calculated ship formation positions for each ship type in the operation zone
 ---@class SBJ__OperationZoneCalculationState: table
 ---@field name string Operation zone name (e.g., "Taoyuan", "Penghu", "Sishu")
----@field result table<string, SBJ__ShipCalculationState> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071InLSTArea, ferry, roro, barge)
+---@field result table<string, SBJ__ShipCalculationState> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071OnDeployLine, ferry, roro, barge)
 
 ---Per-zone state for amphibious operation phase tracking
 ---@class SBJ__ZoneState: table
@@ -860,22 +860,26 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field speed number
 
 ---Operational zone descriptor for amphibious operations
----Defines one landing zone: its fleet and SAGs, plus anchorage, air and landing setup
+---Defines one landing zone: its fleet and SAGs, plus holding areas, air and landing setup
 ---@class SBJ__OperationalZoneDescriptor: table
 ---@field name string Operational zone name (e.g., "Taoyuan", "Sishu", "Penghu")
 ---@field heading number Approach bearing toward the shore (degrees); lane, LST, ACV and SAG bearings derive from it
----@field fleet SBJ__FleetDescriptor Ship groups leaving for and anchoring in this zone
+---@field fleet SBJ__FleetDescriptor Ship groups leaving for and holding in this zone
 ---@field sags SBJ__SAGDescriptor[] Surface Action Groups assigned to this zone
----@field anchorage SBJ__ZoneAnchorage Home base and anchorage waters
+---@field movement SBJ__ZoneMovement Home base, holding areas and arrival check
 ---@field air SBJ__ZoneAir Air landing and air support
 ---@field landing SBJ__ZoneLanding Landing craft, vehicles and beach setup
 
----Home base and anchorage waters of a zone
----@class SBJ__ZoneAnchorage: table
+---Fleet movement setup of a zone: home base, where the fleet waits, when it counts as arrived
+---@class SBJ__ZoneMovement: table
 ---@field baseGUID string Home base GUID for embarked units
----@field area string[] LHD/LPD anchorage area reference points
----@field lstArea string[] LST anchorage area reference points
 ---@field arrivalThreshold integer Minimum unit count to consider fleet arrived
+---@field holdingAreas SBJ__ZoneHoldingAreas Where the fleet waits before the assault
+
+---Waiting areas of a zone's fleet (docs/landingOps/assaultTimeline.md)
+---@class SBJ__ZoneHoldingAreas: table
+---@field mothership string[] Mothership area (登陸母艦乘載區): Type 075/076/071 reference points
+---@field deployLine string[] Deploy line (登陸艦艇展開線): other landing ships' reference points
 
 ---Air landing and air support of a zone
 ---@class SBJ__ZoneAir: table
@@ -899,7 +903,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---Defines spacing and movement parameters for amphibious assault ship formations
 ---Used internally for calculating ship positions during landing operations
 ---@class SBJ__AmphibiousFormationConfig: table
----@field distanceBetweenLSTAndLPDArea number Distance between LST and LPD staging areas
+---@field deployLineSetback number Distance from the mothership area to the deploy line
 ---@field horizontalDistance number Horizontal spacing between ships in formation
 ---@field verticalDistance number Vertical spacing between ships in formation
 ---@field transitDistance number Distance for transit phase
@@ -920,21 +924,21 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field type072iii integer Number of Type 072III landing ships
 ---@field type072a integer Number of Type 072A landing ships
 ---@field type073a integer Number of Type 073A landing craft
----@field type071InLSTArea? integer Number of Type 071 ships in LST area
+---@field type071OnDeployLine? integer Number of Type 071 ships on the deploy line
 ---@field ferry integer Number of ferries
 ---@field roro integer Number of roll-on/roll-off ships
 ---@field barge integer Number of barges
 ---@field type082 integer
 
----Fleet group destination: reference points where each ship row anchors
+---Fleet group destination: reference points where each ship row holds
 ---@class SBJ__FleetDestination: table
----@field startingPoints SBJ__StartingPoints Anchorage reference points
+---@field startingPoints SBJ__StartingPoints Holding area reference points
 
 ---One fleet group: ships spawn at `from`, sail to `to`, composition in `shipCounts`
 ---Several groups may land in the same zone
 ---@class SBJ__FleetGroup: SBJ__ShipGroup
 ---@field from SBJ__Placement Spawn placement
----@field to SBJ__FleetDestination Anchorage placement
+---@field to SBJ__FleetDestination Holding placement
 ---@field shipCounts SBJ__FleetCompositionConfig Ship quantity configuration
 
 ---Amphibious fleet descriptor

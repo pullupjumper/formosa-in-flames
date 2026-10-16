@@ -115,7 +115,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 登陸母艦乘載區（距岸 20–30 浬） | Type 075、076、071 |
 | 登陸艦艇展開線（距岸 11–16 浬） | 其他登陸艦艇（072III、072A、073A、渡輪、駁船等） |
 
-其他艦艇再往前到泛水出發線（距岸 2–4 浬），釋放衝鋒舟與兩棲車。`formationSettings.distanceBetweenLSTAndLPDArea = 13`（浬）是 LST 區與 LPD 區的距離。
+其他艦艇再往前到泛水出發線（距岸 2–4 浬），釋放衝鋒舟與兩棲車。`formationSettings.deployLineSetback = 13`（浬）是登陸艦艇展開線與登陸母艦乘載區的距離。
 
 | 單位 | 速度 | 來源 |
 |---|---|---|
@@ -270,9 +270,9 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 ## 10. 氣墊船（Type 726A）
 
-- 母艦：075、076、071（在 `zone.anchorage.area` 內）。
+- 母艦：075、076、071（在 `zone.movement.holdingAreas.mothership` 內）。
 - `ASSAULT_LANDING` 起每 tick：`embarkedUnits[BOATS]` 裡 726A、已裝貨、`readytime_v == 0`、還沒走過通道的 → 算航線 → `course` → `Launch(true)` → 記 `zoneState.hovercraft[guid] = { missionName, finalPoint, arrived }`。
-- 在錨地**不** assign 任務（`amphibiousLogistics` 只裝貨）。`boat` 任務的開始時間也不再由 `setLandingMissionStartTime` 設。
+- 在等待區**不** assign 任務（`amphibiousLogistics` 只裝貨）。`boat` 任務的開始時間也不再由 `setLandingMissionStartTime` 設。
 - 到停車位 → `arrived = true` → `-- TODO: assign cargo 任務`（使用者自己寫，任務名在 `missionName`，依 `unitCount` 依序分配）。
 - 每艘只走一次通道，之後交給 cargo 任務。
 

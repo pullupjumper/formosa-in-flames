@@ -78,13 +78,13 @@ end
 ---Point a fraction of the way from a to b
 ---@param a CMO__Location
 ---@param b CMO__Location
----@param t number 0 = a, 1 = b
+---@param fraction number 0 = a, 1 = b
 ---@return CMO__Location
-function LaneGeometry.interpolate(a, b, t)
+function LaneGeometry.interpolate(a, b, fraction)
   local aLat, aLon = Utils.toNumber(a.latitude), Utils.toNumber(a.longitude)
   return {
-    latitude = aLat + (Utils.toNumber(b.latitude) - aLat) * t,
-    longitude = aLon + (Utils.toNumber(b.longitude) - aLon) * t,
+    latitude = aLat + (Utils.toNumber(b.latitude) - aLat) * fraction,
+    longitude = aLon + (Utils.toNumber(b.longitude) - aLon) * fraction,
   }
 end
 

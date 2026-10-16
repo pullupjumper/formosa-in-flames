@@ -308,7 +308,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnit
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
-      if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.anchorage.lstArea) then
+      if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) then
         local dest, result = processBarge(unit, zone, barges)
         report.add(result.tag, result.fields)
         if dest then
@@ -316,7 +316,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnit
         end
       end
 
-      if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.anchorage.lstArea) then
+      if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) then
         table.insert(roros, { unit = unit, zone = zone })
       end
     end
@@ -324,7 +324,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnit
 
   for _, roro in ipairs(roros) do
     for _, barge in ipairs(bargeEntries) do
-      if barge.unit:inArea(roro.zone.anchorage.lstArea) then
+      if barge.unit:inArea(roro.zone.movement.holdingAreas.deployLine) then
         local result = pairROROWithBarge(roro, barge, barges)
         report.add(result.tag, result.fields)
       end

@@ -9,7 +9,7 @@
 - 水雷：開場 script 用 `ScenEdit_AddMinefield` 在近海佈（藍方、範圍用參考點、數量放 config）。灘岸雷區以後再做。
 - 掃雷：CMO 內建掃雷任務。**先設 `course`，再 assign 任務**。
 - 衝鋒舟、氣墊船：照 `strikePlanner/recon.lua:56` 用 `unit:Launch(true)`，但**先設 `course` 再 Launch**。
-- 氣墊船：**不在錨地 assign 任務**。Launch 前先給航線，航線走完才 assign cargo 任務。
+- 氣墊船：**不在等待區 assign 任務**。Launch 前先給航線，航線走完才 assign cargo 任務。
 - **所有 assign 任務的地方（529 掃雷任務、氣墊船 cargo 任務）只留 `-- TODO:` 註解，使用者自己寫。** course、Launch、狀態記錄照做。
 - 兩棲車分波：照文件「7. 兩棲車泛水與分波」做。
 - 障礙範圍、通道中心：用 `.scen` 參考點，放 `constants.AREAS`。水雷用 `constants.WEAPONS.SEA_MINE`。

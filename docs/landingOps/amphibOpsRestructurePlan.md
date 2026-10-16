@@ -27,7 +27,7 @@ config.red.amphibOps
       ├─ fleet     stagingFilter, from.areas[], to.areas[]
       │            area = { startingPoints, headingKey, shipCounts }
       ├─ sags[]    { groupName, from = Placement, to = Anchorage, unitMap, ... }
-      ├─ anchorage baseGUID, anchorageArea, lstAnchorageArea, arrivalThreshold
+      ├─ anchorage baseGUID, holdingArea, lstAnchorageArea, arrivalThreshold
       ├─ air       airLandingZone（唯一一份）, contactThreshold, casArea,
       │            transportHelicopter, attackHelicopter
       └─ landing   boat, lst, acv, laneCenter, laneBearing, obstacleArea,
@@ -112,7 +112,7 @@ config.red.amphibOps
 
 Zone 既有欄位依用途分成三組（原先維持平的）：
 
-- `anchorage`：`baseGUID`、`area`（原 `anchorageArea`）、`lstArea`（原 `lstAnchorageArea`）、`arrivalThreshold`
+- `anchorage`：`baseGUID`、`area`（原 `holdingArea`）、`lstArea`（原 `lstAnchorageArea`）、`arrivalThreshold`
 - `air`：`landingZone`（原 `airLandingZone`）、`contactThreshold`、`casArea`、`transportHelicopter`、`attackHelicopter`
 - `landing`：`boat`、`lstSettings`、`acv`、`laneCenter`、`obstacleArea`、`offloadArea`、`sweeper`
 

@@ -104,9 +104,11 @@ describe("AmphibiousLogistics", function()
   local function makeOperationalZone(overrides)
     local zone = {
       name = "ZoneAlpha",
-      anchorage = {
-        area = { "RP-ANC-1", "RP-ANC-2" },
-        lstArea = { "RP-LST-1", "RP-LST-2" },
+      movement = {
+        holdingAreas = {
+          mothership = { "RP-ANC-1", "RP-ANC-2" },
+          deployLine = { "RP-LST-1", "RP-LST-2" },
+        },
       },
       landing = {
         boat = {
@@ -154,7 +156,7 @@ describe("AmphibiousLogistics", function()
     }
     if overrides then
       for k, v in pairs(overrides) do
-        if type(zone[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing") then
+        if type(zone[k]) == "table" and (k == "movement" or k == "air" or k == "landing") then
           for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
         else
           zone[k] = v
@@ -337,14 +339,14 @@ describe("AmphibiousLogistics", function()
   end)
 
   -- ============================================================================
-  -- getUnitsInAnchorageArea
+  -- getUnitsInHoldingAreas
   -- ============================================================================
 
-  describe("getUnitsInAnchorageArea", function()
+  describe("getUnitsInHoldingAreas", function()
     local stubGetUnit
 
-    -- Positive: should collect amphibious ships in anchorage area
-    it("should collect amphibious ships that are in anchorage area", function()
+    -- Positive: should collect amphibious ships in holding area
+    it("should collect amphibious ships that are in holding area", function()
       local unit = makeUnit({
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_075,
@@ -359,30 +361,30 @@ describe("AmphibiousLogistics", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(1, #result.units)
       assert.are.equal(unit, result.units[1])
     end)
 
-    -- Positive: should collect ships in LST anchorage area
-    it("should collect ships that are in LST anchorage area", function()
+    -- Positive: should collect ships in LST holding area
+    it("should collect ships that are in LST holding area", function()
       local zone = makeOperationalZone()
-      local lstArea = zone.anchorage.lstArea
+      local deployLine = zone.movement.holdingAreas.deployLine
       local unit = makeUnit({
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_072III,
         unitstate = "Unassigned",
         inArea = function(_, area)
-          return area == lstArea
+          return area == deployLine
         end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
 
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(1, #result.units)
@@ -420,7 +422,7 @@ describe("AmphibiousLogistics", function()
       end))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(#shipDBIDs, #result.units)
@@ -438,7 +440,7 @@ describe("AmphibiousLogistics", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_true(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -466,7 +468,7 @@ describe("AmphibiousLogistics", function()
       end))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_true(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -485,7 +487,7 @@ describe("AmphibiousLogistics", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -498,7 +500,7 @@ describe("AmphibiousLogistics", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -517,7 +519,7 @@ describe("AmphibiousLogistics", function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local zone = makeOperationalZone()
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -527,7 +529,7 @@ describe("AmphibiousLogistics", function()
     it("should return empty results for empty filtered units list", function()
       local zone = makeOperationalZone()
       local filteredUnits = {}
-      local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
@@ -716,7 +718,7 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubAssignMission).was.called(1)
     end)
 
-    -- Positive: should handle mixed fleet in anchorage
+    -- Positive: should handle mixed fleet in holding areas
     it("should process both Type 075 and Type 071 ships in same zone", function()
       local ship075, creates075 = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       local ship071, creates071 = makeFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
@@ -730,8 +732,8 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubAssignMission).was.called(3)
     end)
 
-    -- Negative: should skip units not in anchorage area
-    it("should skip ships not in anchorage area", function()
+    -- Negative: should skip units not in holding area
+    it("should skip ships not in holding area", function()
       local ship, creates = makeFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       ship.inArea = function() return false end
       local zone = makeOperationalZone()

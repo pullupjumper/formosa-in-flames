@@ -8,7 +8,7 @@
 
 Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦隊集結到灘頭建立的完整登陸流程。系統分為四個核心階段：
 
-- **艦隊移動**：登陸艦從集結區移動至錨泊區，依艦型分層佈置陣形
+- **艦隊移動**：登陸艦從集結區移動至等待區，依艦型分層佈置陣形
 - **後勤裝載**：貨物轉移至登陸載具（直升機、氣墊船），建立運輸任務
 - **兩棲突擊**：LST 航至泛水編波區、ACV 兩棲步兵戰鬥車釋放、直升機空中突擊
 - **第二波卸載**：駁船與 RORO 船組成後勤橋樑，卸載重型裝備
@@ -17,7 +17,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 
 | 作戰階段 | 對應模組 | 說明 |
 |:-:|---|---|
-| **集結** | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向錨泊區 |
+| **集結** | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向等待區 |
 | **裝載** | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、運輸任務建立、單位指派 |
 | **突擊** | [amphibiousAssault](amphibiousAssault.md) | ACV 釋放、LST 航至泛水編波區、任務時序設定 |
 | **卸載** | [secondWaveUnloading](secondWaveUnloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
@@ -29,7 +29,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | 模組 | 原始碼 | 職責 |
 |---|---|---|
 | [coordinator](coordinator.md) | `coordinator.lua` | 主流程編排、各 zone 階段推進、火力支援暫停閘門 |
-| [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至錨泊區與 SAG 護航編隊佈陣 |
+| [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至等待區與 SAG 護航編隊佈陣 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物操作、平台裝載與任務指派 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
 | [secondWaveUnloading](secondWaveUnloading.md) | `secondWaveUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載（行政下卸） |
@@ -72,12 +72,12 @@ flowchart TB
     end
 
     subgraph 階段一["艦隊移動"]
-        SM["shipMovement<br>.moveToStagingArea()"]
-        CALC["shipMovement<br>.calculateDestination()"]
+        SM["shipMovement<br>.moveToHoldingAreas()"]
+        CALC["shipMovement<br>.planHoldingPositions()"]
     end
 
     subgraph 階段二["後勤裝載"]
-        AL_GET["amphibiousLogistics<br>.getUnitsInAnchorageArea()"]
+        AL_GET["amphibiousLogistics<br>.getUnitsInHoldingAreas()"]
         AL_CREATE["amphibiousLogistics<br>.createCargoMissions()"]
         AL_TRANSFER["amphibiousLogistics<br>.transferAndAssign()"]
     end
@@ -120,7 +120,7 @@ flowchart TB
 stateDiagram-v2
     [*] --> MOVING: 想定載入
     MOVING --> WAITING_ARRIVAL: 艦隊發出移動命令
-    WAITING_ARRIVAL --> WAITING_ASSAULT: 艦隊到達錨泊區<br>完成裝載與任務建立
+    WAITING_ARRIVAL --> WAITING_ASSAULT: 艦隊到達等待區<br>完成裝載與任務建立
     WAITING_ASSAULT --> MINE_CLEARING: 空/機降區威脅清除或超時<br>算通道、派 529、直升機任務開始
     MINE_CLEARING --> BOAT_ASSAULT: 529 全部走完（RTB）<br>配對衝鋒舟、LST 前進
     BOAT_ASSAULT --> OBSTACLE_CLEARING: 衝鋒舟全部到 S_lane 或被摧毀<br>切障礙方塊、開始計時
@@ -217,7 +217,7 @@ flowchart BT
 | `config.red.amphibOps.transferCargo` | 轉移用貨物清單（依作戰群組索引） |
 | `config.red.amphibOps.missionStartTime` | 各載具類型任務延遲時間 |
 | `config.red.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
-| `config.red.amphibOps.zones` | 作戰區設定：`fleet`（集結區→錨泊區）、`sags`（SAG 護航編隊）、`anchorage`（基地、錨泊區）、`air`（空降區、直升機任務）、`landing`（登陸艇、LST、ACV、灘頭） |
+| `config.red.amphibOps.zones` | 作戰區設定：`fleet`（集結區→等待區）、`sags`（SAG 護航編隊）、`movement`（基地、母艦乘載區、展開線、抵達門檻）、`air`（空降區、直升機任務）、`landing`（登陸艇、LST、ACV、灘頭） |
 | `config.red.amphibOps.tuning` | 共用參數：`route`、`mineClearing`、`assaultBoat`、`obstacle`、`acvWave` |
 | `config.red.amphibOps.transportAircraft` | 運輸機配置（空降部隊） |
 | `config.red.triggers.amphibiousOps.startTime` | 兩棲作戰觸發開始時間 |

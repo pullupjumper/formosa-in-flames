@@ -38,30 +38,30 @@ local SAG_FORMATION = {
 
 ---@type {key: string, dbid: number}[]
 local ALL_RESULT_KEYS = {
-  { key = "type075",          dbid = constants.PLATFORMS.TYPE_075 },
-  { key = "type071",          dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "type076",          dbid = constants.PLATFORMS.TYPE_076 },
-  { key = "type072iii",       dbid = constants.PLATFORMS.TYPE_072III },
-  { key = "type072a",         dbid = constants.PLATFORMS.TYPE_072A },
-  { key = "type073a",         dbid = constants.PLATFORMS.TYPE_073A },
-  { key = "type071InLSTArea", dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "ferry",            dbid = constants.PLATFORMS.FERRY },
-  { key = "roro",             dbid = constants.PLATFORMS.FERRY },
-  { key = "barge",            dbid = constants.PLATFORMS.BARGE },
-  { key = "type082",          dbid = constants.PLATFORMS.TYPE_082 }
+  { key = "type075",             dbid = constants.PLATFORMS.TYPE_075 },
+  { key = "type071",             dbid = constants.PLATFORMS.TYPE_071 },
+  { key = "type076",             dbid = constants.PLATFORMS.TYPE_076 },
+  { key = "type072iii",          dbid = constants.PLATFORMS.TYPE_072III },
+  { key = "type072a",            dbid = constants.PLATFORMS.TYPE_072A },
+  { key = "type073a",            dbid = constants.PLATFORMS.TYPE_073A },
+  { key = "type071OnDeployLine", dbid = constants.PLATFORMS.TYPE_071 },
+  { key = "ferry",               dbid = constants.PLATFORMS.FERRY },
+  { key = "roro",                dbid = constants.PLATFORMS.FERRY },
+  { key = "barge",               dbid = constants.PLATFORMS.BARGE },
+  { key = "type082",             dbid = constants.PLATFORMS.TYPE_082 }
 }
 
 ---@type {key: string, from: string, distanceKey: string}[]
 local SHIP_ROW_LAYOUT = {
-  { key = "type076",          from = "type071",          distanceKey = "verticalDistance" },
-  { key = "barge",            from = "type075",          distanceKey = "distanceBetweenLSTAndLPDArea" },
-  { key = "roro",             from = "barge",            distanceKey = "verticalDistance" },
-  { key = "type072a",         from = "roro",             distanceKey = "verticalDistance" },
-  { key = "type072iii",       from = "type072a",         distanceKey = "verticalDistance" },
-  { key = "ferry",            from = "type072iii",       distanceKey = "verticalDistance" },
-  { key = "type071InLSTArea", from = "ferry",            distanceKey = "verticalDistance" },
-  { key = "type073a",         from = "type071InLSTArea", distanceKey = "verticalDistance" },
-  { key = "type082",          from = "type073a",         distanceKey = "verticalDistance" }
+  { key = "type076",             from = "type071",             distanceKey = "verticalDistance" },
+  { key = "barge",               from = "type075",             distanceKey = "deployLineSetback" },
+  { key = "roro",                from = "barge",               distanceKey = "verticalDistance" },
+  { key = "type072a",            from = "roro",                distanceKey = "verticalDistance" },
+  { key = "type072iii",          from = "type072a",            distanceKey = "verticalDistance" },
+  { key = "ferry",               from = "type072iii",          distanceKey = "verticalDistance" },
+  { key = "type071OnDeployLine", from = "ferry",               distanceKey = "verticalDistance" },
+  { key = "type073a",            from = "type071OnDeployLine", distanceKey = "verticalDistance" },
+  { key = "type082",             from = "type073a",            distanceKey = "verticalDistance" }
 }
 
 
@@ -171,7 +171,7 @@ local function moveShipToNextLocation(unit, resultEntry, resultKey, params)
   }
 end
 
----Handle Type 071 movement with overflow to LST area
+---Handle Type 071 movement with overflow to the deploy line
 ---@param unit CMO__Unit
 ---@param result table<string, SBJ__ShipCalculationState>
 ---@param speed number
@@ -179,8 +179,8 @@ end
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function moveType071(unit, result, speed, isTesting)
   local entry = result.type071
-  local lstEntry = result.type071InLSTArea
-  if not entry or not entry.locations or not entry.locationIndex or not lstEntry or not lstEntry.locations then
+  local deployLineEntry = result.type071OnDeployLine
+  if not entry or not entry.locations or not entry.locationIndex or not deployLineEntry or not deployLineEntry.locations then
     return {
       tag = "FAIL",
       fields = { ship = unit.name, dbid = unit.dbid, dest = "type071", reason = "calculation_entry_missing" }
@@ -191,7 +191,7 @@ local function moveType071(unit, result, speed, isTesting)
   local len = #entry.locations
   local location
   if index > len then
-    location = lstEntry.locations[index - len]
+    location = deployLineEntry.locations[index - len]
   else
     location = entry.locations[index]
   end
@@ -210,7 +210,7 @@ local function moveType071(unit, result, speed, isTesting)
       ship = unit.name,
       dbid = unit.dbid,
       dest = "type071",
-      area = index > len and "LST" or "LPD",
+      area = index > len and "deployLine" or "mothership",
       index = index
     }
   }
@@ -245,21 +245,21 @@ end
 -- SAG Formation Positioning
 -- ============================================================================
 
----Handle Surface Action Group (SAG) movement to anchorage area
+---Handle Surface Action Group (SAG) movement to its holding area
 ---Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
 ---@param descriptor SBJ__SAGDescriptor
----@param heading number Zone heading the SAG faces at anchorage
+---@param heading number Zone heading the SAG faces at its holding area
 ---@param isTesting boolean If true, enables testing mode with instant teleportation
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function processSAG(descriptor, heading, isTesting)
-  local anchorageArea = descriptor.to and descriptor.to.anchorageArea
-  if not anchorageArea or #anchorageArea == 0 then
-    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "anchorage_area_missing" } }
+  local holdingArea = descriptor.to and descriptor.to.holdingArea
+  if not holdingArea or #holdingArea == 0 then
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "holding_area_missing" } }
   end
 
-  local anchoragePoint = anchorageArea[#anchorageArea]
-  if not anchoragePoint or not anchoragePoint.latitude or not anchoragePoint.longitude then
-    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "anchorage_point_missing" } }
+  local holdingPoint = holdingArea[#holdingArea]
+  if not holdingPoint or not holdingPoint.latitude or not holdingPoint.longitude then
+    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "holding_point_missing" } }
   end
 
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
@@ -267,7 +267,7 @@ local function processSAG(descriptor, heading, isTesting)
     return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_group_not_found" } }
   end
 
-  unit.course = anchorageArea
+  unit.course = holdingArea
 
   if not isTesting then
     return { tag = "OK", fields = { sag = descriptor.groupName, action = "course_set" } }
@@ -290,15 +290,15 @@ local function processSAG(descriptor, heading, isTesting)
       if type052d == 0 then
         setShipPosition(
           ship,
-          anchoragePoint.latitude,
-          anchoragePoint.longitude,
+          holdingPoint.latitude,
+          holdingPoint.longitude,
           heading
         )
         positioned = positioned + 1
       else
         local point = getNextPosition(
-          anchoragePoint.latitude,
-          anchoragePoint.longitude,
+          holdingPoint.latitude,
+          holdingPoint.longitude,
           heading - 180,
           SAG_FORMATION.TRAIL_DISTANCE
         )
@@ -314,8 +314,8 @@ local function processSAG(descriptor, heading, isTesting)
     elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
       local angle = (type054a == 0) and SAG_FORMATION.PORT_ANGLE or SAG_FORMATION.STARBOARD_ANGLE
       local point = getNextPosition(
-        anchoragePoint.latitude,
-        anchoragePoint.longitude,
+        holdingPoint.latitude,
+        holdingPoint.longitude,
         heading - angle,
         SAG_FORMATION.FLANK_DISTANCE
       )
@@ -417,20 +417,24 @@ local function calculateStartingPoints(startingPoints, heading, formationSetting
   return startingPointMap
 end
 
+---@class SBJ__BuildAllShipLocationsParams
+---@field startingPointMap table<string, CMO__Location>
+---@field shipCounts SBJ__FleetCompositionConfig
+---@field heading number Zone heading; ships of one type line up perpendicular to it
+---@field formationSettings SBJ__AmphibiousFormationConfig
+
 ---Generate and append locations for all ship types in an area
 ---@param opResult table<string, SBJ__ShipCalculationState>
----@param startingPointMap table<string, CMO__Location>
----@param shipCounts SBJ__FleetCompositionConfig
----@param heading number Zone heading; ships of one type line up perpendicular to it
----@param formationSettings SBJ__AmphibiousFormationConfig
-local function buildAllShipLocations(opResult, startingPointMap, shipCounts, heading, formationSettings)
+---@param params SBJ__BuildAllShipLocationsParams
+local function buildAllShipLocations(opResult, params)
+  local formationSettings = params.formationSettings
   for _, entry in ipairs(ALL_RESULT_KEYS) do
     Utils.addAll(
       opResult[entry.key].locations,
       GameUtils.buildLocations({
-        initialLocation = startingPointMap[entry.key],
-        num = shipCounts[entry.key],
-        bearing = heading - formationSettings.rowBearingOffset,
+        initialLocation = params.startingPointMap[entry.key],
+        num = params.shipCounts[entry.key],
+        bearing = params.heading - formationSettings.rowBearingOffset,
         distance = formationSettings.horizontalDistance,
       })
     )
@@ -438,12 +442,12 @@ local function buildAllShipLocations(opResult, startingPointMap, shipCounts, hea
 end
 
 ---Pre-calculate all destination positions for amphibious assault ships
----Generates grid of anchorage positions for each ship type with layered arrangement and spacing
+---Generates grid of holding positions for each ship type with layered arrangement and spacing
 ---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param formationSettings SBJ__AmphibiousFormationConfig
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
 ---@return boolean # True if all destination positions were calculated
-function ShipMovement.calculateDestination(zones, formationSettings, calculationResult)
+function ShipMovement.planHoldingPositions(zones, formationSettings, calculationResult)
   for _, zone in ipairs(zones) do
     for groupIndex, group in ipairs(zone.fleet.groups) do
       initOperationResult(zone.name, calculationResult)
@@ -456,10 +460,12 @@ function ShipMovement.calculateDestination(zones, formationSettings, calculation
         return false
       end
 
-      buildAllShipLocations(
-        calculationResult[zone.name].result,
-        startingPointMap, group.shipCounts, zone.heading, formationSettings
-      )
+      buildAllShipLocations(calculationResult[zone.name].result, {
+        startingPointMap = startingPointMap,
+        shipCounts = group.shipCounts,
+        heading = zone.heading,
+        formationSettings = formationSettings,
+      })
     end
   end
 
@@ -470,15 +476,15 @@ end
 -- Public API
 -- ============================================================================
 
----Move amphibious assault ships from staging area to designated anchorage positions for a single zone
+---Move amphibious assault ships from staging area to designated holding positions for a single zone
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Pre-calculated destination positions indexed by zone name
 ---@param filteredUnits CMO__SideUnit[]
----@param formationSettings SBJ__AmphibiousFormationConfig
----@param isTesting boolean If true, enables testing mode with instant teleportation
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@return boolean # True when all movement orders have been issued
-function ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, formationSettings, isTesting)
+function ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, amphibOps)
+  local isTesting = amphibOps.isTesting
   local result, errorFields = getOperationResult(calculationResult, zone.name)
 
   if not result then
@@ -493,7 +499,7 @@ function ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit and unit:inArea(zone.fleet.stagingArea) then
-      table.insert(results, moveMatchingShip(unit, result, formationSettings.shipSpeed, isTesting))
+      table.insert(results, moveMatchingShip(unit, result, amphibOps.formationSettings.shipSpeed, isTesting))
     end
   end
 

@@ -57,16 +57,16 @@ local function processZone(tickCtx, zone)
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
       and GameUtils.isAfterStartTime(config.red.triggers.amphibiousOps.startTime) then
-    local done = ShipMovement.moveToStagingArea(zone, landingState.amphibOps.calculationResult,
-      filteredShips, amphibOps.formationSettings, amphibOps.isTesting)
+    local done = ShipMovement.moveToHoldingAreas(zone, landingState.amphibOps.calculationResult,
+      filteredShips, amphibOps)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
     end
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL then
-    local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredShips)
-    local hasArrived = Utils.getCount(result.units) > zone.anchorage.arrivalThreshold and not result.isUnitMoving
+    local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredShips)
+    local hasArrived = Utils.getCount(result.units) > zone.movement.arrivalThreshold and not result.isUnitMoving
 
     if hasArrived then
       local ok = AmphibiousLogistics.createCargoMissions(zone)

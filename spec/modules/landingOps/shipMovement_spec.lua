@@ -96,7 +96,7 @@ describe("ShipMovement", function()
       type072a = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_072A }),
       type073a = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_073A }),
       type071 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_071 }),
-      type071InLSTArea = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_071 }),
+      type071OnDeployLine = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_071 }),
       ferry = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       roro = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       barge = makeShipCalcResult({ dbid = constants.PLATFORMS.BARGE }),
@@ -116,7 +116,7 @@ describe("ShipMovement", function()
       shipSpeed = 12,
       horizontalDistance = 0.5,
       verticalDistance = 1.0,
-      distanceBetweenLSTAndLPDArea = 2.0,
+      deployLineSetback = 2.0,
       transitDistance = 5.0,
       rowBearingOffset = 90,
     }
@@ -133,7 +133,7 @@ describe("ShipMovement", function()
     local desc = {
       groupName = "SAG Alpha",
       to = {
-        anchorageArea = {
+        holdingArea = {
           { latitude = 24.0, longitude = 120.0 },
           { latitude = 24.1, longitude = 120.1 },
         },
@@ -171,7 +171,7 @@ describe("ShipMovement", function()
               type072iii = 2,
               type072a = 2,
               type073a = 1,
-              type071InLSTArea = 1,
+              type071OnDeployLine = 1,
               ferry = 1,
               roro = 1,
               barge = 1,
@@ -216,10 +216,10 @@ describe("ShipMovement", function()
   end
 
   -- ============================================================================
-  -- moveToStagingArea
+  -- moveToHoldingAreas
   -- ============================================================================
 
-  describe("moveToStagingArea", function()
+  describe("moveToHoldingAreas", function()
     -- Positive: standard ship type movement
     it("should move a Type 075 ship to the first calculated location", function()
       local resultTable = makeResultTable()
@@ -235,7 +235,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_true(result)
       assert.are.equal(targetLocation, unit.course[1])
@@ -258,7 +258,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -272,7 +272,7 @@ describe("ShipMovement", function()
           locations = { makeLocation() },
           locationIndex = 2,
         }),
-        type071InLSTArea = makeShipCalcResult({
+        type071OnDeployLine = makeShipCalcResult({
           dbid = constants.PLATFORMS.TYPE_071,
           locations = { lstLocation },
         }),
@@ -288,7 +288,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(lstLocation, unit.course[1])
     end)
@@ -309,7 +309,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -330,7 +330,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -351,7 +351,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -370,7 +370,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(3, resultTable.type075.locationIndex)
     end)
@@ -391,7 +391,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ isTesting = true })
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.stub(stubSetUnit).was.called_with({
@@ -416,13 +416,13 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
-      assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
+      assert.are.same(sagDesc.to.holdingArea, sagUnit.course)
     end)
 
     -- Positive: SAG testing mode positions Type 052D ships in formation
-    it("should position Type 052D destroyer at anchorage in testing mode", function()
+    it("should position Type 052D destroyer at holding point in testing mode", function()
       local sagDesc = makeSAGDescriptor()
       local destroyer = makeUnit({
         guid = "DDG-001",
@@ -443,13 +443,13 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.stub(stubSetUnit).was.called(1)
       local callArgs = stubSetUnit.calls[1].vals[1]
       assert.are.equal("DDG-001", callArgs.guid)
-      assert.are.equal(sagDesc.to.anchorageArea[2].latitude, callArgs.latitude)
-      assert.are.equal(sagDesc.to.anchorageArea[2].longitude, callArgs.longitude)
+      assert.are.equal(sagDesc.to.holdingArea[2].latitude, callArgs.latitude)
+      assert.are.equal(sagDesc.to.holdingArea[2].longitude, callArgs.longitude)
       assert.are.equal(180, callArgs.heading)
     end)
 
@@ -476,7 +476,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.stub(stubSetUnit).was.called(2)
       local secondCall = stubSetUnit.calls[2].vals[1]
@@ -508,7 +508,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.stub(stubGetPoint).was.called(2)
@@ -528,7 +528,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_true(result)
     end)
@@ -547,7 +547,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(1, resultTable.type075.locationIndex)
     end)
@@ -562,7 +562,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -582,7 +582,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_false(result)
       assert.stub(stubGetUnit).was_not.called()
@@ -598,7 +598,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, nil, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, nil, filteredUnits, config)
 
       assert.is_false(result)
       assert.stub(stubGetUnit).was_not.called()
@@ -621,7 +621,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -642,15 +642,15 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=sag_unitlist_missing"))
     end)
 
-    -- Negative: SAG anchorage area is required
-    it("should fail and log when SAG anchorage area is missing", function()
+    -- Negative: SAG holding area is required
+    it("should fail and log when SAG holding area is missing", function()
       local sagDesc = makeSAGDescriptor({ to = {} })
       local filteredUnits = {}
       local calculationResult = makeCalculationResult()
@@ -659,11 +659,11 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=anchorage_area_missing"))
+      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=holding_area_missing"))
     end)
 
     -- Negative: SAG individual ship not found in testing mode
@@ -684,7 +684,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
@@ -712,7 +712,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
       local zone = config.zones[1]
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
@@ -734,7 +734,7 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig()
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -746,7 +746,7 @@ describe("ShipMovement", function()
       local zone = config.zones[1]
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local result = ShipMovement.moveToStagingArea(zone, calculationResult, {}, config.formationSettings, config.isTesting)
+      local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, {}, config)
 
       assert.is_true(result)
     end)
@@ -766,18 +766,18 @@ describe("ShipMovement", function()
 
       local config = makeAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
-      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
+      ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
-      assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
+      assert.are.same(sagDesc.to.holdingArea, sagUnit.course)
       assert.stub(stubSetUnit).was_not.called()
     end)
   end)
 
   -- ============================================================================
-  -- calculateDestination
+  -- planHoldingPositions
   -- ============================================================================
 
-  describe("calculateDestination", function()
+  describe("planHoldingPositions", function()
     local stubGetRPs, stubGetPoint, stubInsertList, stubGenerateLocations
 
     before_each(function()
@@ -804,7 +804,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.are.equal("Taoyuan", calculationResult.Taoyuan.name)
@@ -814,7 +814,7 @@ describe("ShipMovement", function()
       assert.is_not_nil(calculationResult.Taoyuan.result.type072iii)
       assert.is_not_nil(calculationResult.Taoyuan.result.type072a)
       assert.is_not_nil(calculationResult.Taoyuan.result.type073a)
-      assert.is_not_nil(calculationResult.Taoyuan.result.type071InLSTArea)
+      assert.is_not_nil(calculationResult.Taoyuan.result.type071OnDeployLine)
       assert.is_not_nil(calculationResult.Taoyuan.result.ferry)
       assert.is_not_nil(calculationResult.Taoyuan.result.roro)
       assert.is_not_nil(calculationResult.Taoyuan.result.barge)
@@ -830,7 +830,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       local result = calculationResult.Taoyuan.result
       assert.are.equal(constants.PLATFORMS.TYPE_075, result.type075.dbid)
@@ -839,7 +839,7 @@ describe("ShipMovement", function()
       assert.are.equal(constants.PLATFORMS.TYPE_072III, result.type072iii.dbid)
       assert.are.equal(constants.PLATFORMS.TYPE_072A, result.type072a.dbid)
       assert.are.equal(constants.PLATFORMS.TYPE_073A, result.type073a.dbid)
-      assert.are.equal(constants.PLATFORMS.TYPE_071, result.type071InLSTArea.dbid)
+      assert.are.equal(constants.PLATFORMS.TYPE_071, result.type071OnDeployLine.dbid)
       assert.are.equal(constants.PLATFORMS.FERRY, result.ferry.dbid)
       assert.are.equal(constants.PLATFORMS.FERRY, result.roro.dbid)
       assert.are.equal(constants.PLATFORMS.BARGE, result.barge.dbid)
@@ -855,7 +855,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       assert.stub(stubGenerateLocations).was.called(11)
     end)
@@ -882,7 +882,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       -- Verify that World_GetPointFromBearing was called with rp071 coords and verticalDistance
       local found = false
@@ -898,8 +898,8 @@ describe("ShipMovement", function()
       assert.is_true(found)
     end)
 
-    -- Positive: derives barge position from Type 075 using distanceBetweenLSTAndLPDArea
-    it("should derive barge position from Type 075 using distanceBetweenLSTAndLPDArea", function()
+    -- Positive: derives barge position from Type 075 using deployLineSetback
+    it("should derive barge position from Type 075 using deployLineSetback", function()
       local rp075 = makeLocation({ latitude = 25.0 })
       local rp071 = makeLocation({ latitude = 25.5 })
 
@@ -914,7 +914,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
@@ -942,7 +942,7 @@ describe("ShipMovement", function()
         Taoyuan = { name = "Taoyuan", result = existingResult },
       }
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       assert.are.equal(existingResult, calculationResult.Taoyuan.result)
     end)
@@ -959,7 +959,7 @@ describe("ShipMovement", function()
       config.zones = { makeZone(), makeZone({ name = "Penghu" }) }
       local calculationResult = {}
 
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.is_not_nil(calculationResult.Penghu)
@@ -975,7 +975,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       for _, call in ipairs(stubGenerateLocations.calls) do
         local params = call.vals[1]
@@ -996,7 +996,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      local result = ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -1013,7 +1013,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      local result = ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -1033,7 +1033,7 @@ describe("ShipMovement", function()
       config.zones[1].fleet.groups[1].shipCounts.type075 = 0
       local calculationResult = {}
 
-      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGenerateLocations.calls) do

@@ -1663,7 +1663,7 @@ config.red.amphibOps.missionStartTime = {
   reconUAV = { 0 }
 }
 config.red.amphibOps.formationSettings = {
-  distanceBetweenLSTAndLPDArea = 13,
+  deployLineSetback = 13,
   horizontalDistance = 0.4,
   verticalDistance = 0.4,
   transitDistance = 13,
@@ -1739,7 +1739,7 @@ config.red.amphibOps.zones = {
             type072iii = 7,
             type072a = 8,
             type073a = 7,
-            type071InLSTArea = 0,
+            type071OnDeployLine = 0,
             ferry = 4,
             roro = 2,
             barge = 1,
@@ -1760,7 +1760,7 @@ config.red.amphibOps.zones = {
           heading = 225
         },
         to = {
-          anchorageArea = {
+          holdingArea = {
             { latitude = "N 25.17.39", longitude = "E 120.56.04", desiredSpeed = 14, },
             { latitude = "N 25.17.32", longitude = "E 120.56.07", desiredSpeed = 14, },
           },
@@ -1781,7 +1781,7 @@ config.red.amphibOps.zones = {
           heading = 225
         },
         to = {
-          anchorageArea = {
+          holdingArea = {
             { latitude = "N 25.33.23", longitude = "E 120.54.45", desiredSpeed = 14, },
             { latitude = "N 25.21.00", longitude = "E 121.04.12", desiredSpeed = 14, },
           },
@@ -1792,11 +1792,13 @@ config.red.amphibOps.zones = {
         area = constants.AREAS.AIRLANDING_TAOYUAN
       },
     },
-    anchorage = {
+    movement = {
       baseGUID = constants.BASES.PINGTAN_PORT,
-      area = constants.AREAS.ANCH_AREA_TAOYUAN,
-      lstArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
       arrivalThreshold = 15,
+      holdingAreas = {
+        mothership = constants.AREAS.MOTHERSHIP_AREA_TAOYUAN,
+        deployLine = constants.AREAS.DEPLOY_LINE_AREA_TAOYUAN,
+      },
     },
     air = {
       landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -1967,7 +1969,7 @@ config.red.amphibOps.zones = {
             type072iii = 2,
             type072a = 4,
             type073a = 2,
-            type071InLSTArea = 0,
+            type071OnDeployLine = 0,
             ferry = 4,
             roro = 2,
             barge = 1,
@@ -1988,7 +1990,7 @@ config.red.amphibOps.zones = {
           heading = 73,
         },
         to = {
-          anchorageArea = {
+          holdingArea = {
             { latitude = "N 22.49.20", longitude = "E 119.55.57", desiredSpeed = 14, },
           },
           amphibiousVehicleStagingArea = {
@@ -2008,7 +2010,7 @@ config.red.amphibOps.zones = {
           heading = 73,
         },
         to = {
-          anchorageArea = {
+          holdingArea = {
             { latitude = "N 22.55.20", longitude = "E 119.52.25", desiredSpeed = 14, },
           },
           amphibiousVehicleStagingArea = {
@@ -2018,11 +2020,13 @@ config.red.amphibOps.zones = {
         area = constants.AREAS.AIRLANDING_CHANGLONG,
       },
     },
-    anchorage = {
+    movement = {
       baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
-      area = constants.AREAS.ANCH_AREA_SISHU,
-      lstArea = constants.AREAS.LST_ANCH_AREA_SISHU,
       arrivalThreshold = 10,
+      holdingAreas = {
+        mothership = constants.AREAS.MOTHERSHIP_AREA_SISHU,
+        deployLine = constants.AREAS.DEPLOY_LINE_AREA_SISHU,
+      },
     },
     air = {
       landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -2193,7 +2197,7 @@ config.red.amphibOps.zones = {
             type072iii = 2,
             type072a = 3,
             type073a = 1,
-            type071InLSTArea = 0,
+            type071OnDeployLine = 0,
             ferry = 0,
             roro = 0,
             barge = 0,
@@ -2214,7 +2218,7 @@ config.red.amphibOps.zones = {
           heading = 82,
         },
         to = {
-          anchorageArea = {
+          holdingArea = {
             { latitude = "N 23.32.46", longitude = "E 119.16.11", desiredSpeed = 14, },
           },
           amphibiousVehicleStagingArea = {
@@ -2224,11 +2228,13 @@ config.red.amphibOps.zones = {
         area = constants.AREAS.AIRLANDING_PENGHU,
       },
     },
-    anchorage = {
+    movement = {
       baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
-      area = constants.AREAS.ANCH_AREA_PENGHU,
-      lstArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
       arrivalThreshold = 5,
+      holdingAreas = {
+        mothership = constants.AREAS.MOTHERSHIP_AREA_PENGHU,
+        deployLine = constants.AREAS.DEPLOY_LINE_AREA_PENGHU,
+      },
     },
     air = {
       landingZone = constants.AREAS.AIRLANDING_TAOYUAN,

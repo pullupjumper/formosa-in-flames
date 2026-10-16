@@ -20,7 +20,7 @@ local LandingOps = {}
 ---@param saveData SBJ__SaveData
 function LandingOps.init(config, saveData)
   local amphibOps = config.red.amphibOps
-  ShipMovement.calculateDestination(
+  ShipMovement.planHoldingPositions(
     amphibOps.zones, amphibOps.formationSettings, PersistentState.landingOps(saveData).amphibOps.calculationResult)
   MineClearing.layMinefields(amphibOps)
 end
@@ -130,7 +130,7 @@ function LandingOps.launchACV(config, saveData, ship)
   if result and result.isEmpty then
     local hosted = GameApi.ScenEdit_HostUnitToParent({
       HostedUnitNameOrID = ship.guid,
-      SelectedBaseNameOrID = zone.anchorage.baseGUID
+      SelectedBaseNameOrID = zone.movement.baseGUID
     })
 
     if not hosted then

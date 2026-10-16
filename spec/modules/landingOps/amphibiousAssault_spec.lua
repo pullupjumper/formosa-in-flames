@@ -61,9 +61,11 @@ describe("AmphibiousAssault", function()
       name = "ZoneAlpha",
       sags = {},
       heading = 270,
-      anchorage = {
-        lstArea = { "RP-LST-1", "RP-LST-2" },
-        area = { "RP-ANC-1", "RP-ANC-2" },
+      movement = {
+        holdingAreas = {
+          deployLine = { "RP-LST-1", "RP-LST-2" },
+          mothership = { "RP-ANC-1", "RP-ANC-2" },
+        },
       },
       air = {
         transportHelicopter = { missions = { makeMission({ name = "HeloMission1" }) } },
@@ -85,7 +87,7 @@ describe("AmphibiousAssault", function()
     }
     if overrides then
       for k, v in pairs(overrides) do
-        if type(z[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+        if type(z[k]) == "table" and (k == "movement" or k == "air" or k == "landing" or k == "fleet") then
           for groupKey, groupValue in pairs(v) do z[k][groupKey] = groupValue end
         else
           z[k] = v
@@ -301,8 +303,8 @@ describe("AmphibiousAssault", function()
       stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
     end)
 
-    -- Positive: sets course and speed for LST units in anchorage area
-    it("should set course and speed for LST ships in anchorage area", function()
+    -- Positive: sets course and speed for LST units in holding area
+    it("should set course and speed for LST ships in holding area", function()
       local destination = { latitude = 24.5, longitude = 120.5 }
       stubGetPoint.returns(destination)
 
@@ -310,7 +312,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         name = "LST-001",
         inArea = function(_, area)
-          return area == zone.anchorage.lstArea
+          return area == zone.movement.holdingAreas.deployLine
         end,
       })
 
@@ -330,7 +332,7 @@ describe("AmphibiousAssault", function()
     end)
 
     -- Positive: does not set course for RORO ships
-    it("should not set course for RORO ships even when in anchorage area", function()
+    it("should not set course for RORO ships even when in holding area", function()
       local destination = { latitude = 24.5, longitude = 120.5 }
       stubGetPoint.returns(destination)
 
@@ -338,7 +340,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         name = "RORO",
         inArea = function(_, area)
-          return area == zone.anchorage.lstArea
+          return area == zone.movement.holdingAreas.deployLine
         end,
       })
 
@@ -356,7 +358,7 @@ describe("AmphibiousAssault", function()
     end)
 
     -- Positive: does not set course for Barge ships
-    it("should not set course for Barge ships even when in anchorage area", function()
+    it("should not set course for Barge ships even when in holding area", function()
       local destination = { latitude = 24.5, longitude = 120.5 }
       stubGetPoint.returns(destination)
 
@@ -364,7 +366,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         name = "Barge",
         inArea = function(_, area)
-          return area == zone.anchorage.lstArea
+          return area == zone.movement.holdingAreas.deployLine
         end,
       })
 
@@ -381,7 +383,7 @@ describe("AmphibiousAssault", function()
     end)
 
     -- Negative: Type 529 sweepers keep their sweep course
-    it("should not set course for Type 529 sweepers in the anchorage area", function()
+    it("should not set course for Type 529 sweepers in the holding area", function()
       stubGetPoint.returns({ latitude = 24.5, longitude = 120.5 })
 
       local zone = makeZone()
@@ -391,7 +393,7 @@ describe("AmphibiousAssault", function()
         dbid = constants.PLATFORMS.TYPE_082,
         course = sweepCourse,
         inArea = function(_, area)
-          return area == zone.anchorage.lstArea
+          return area == zone.movement.holdingAreas.deployLine
         end,
       })
       stubGetUnit.returns(unit)
@@ -435,7 +437,7 @@ describe("AmphibiousAssault", function()
       local zone = makeZone()
       local unit = makeUnit({
         inArea = function(_, area)
-          return area == zone.anchorage.lstArea
+          return area == zone.movement.holdingAreas.deployLine
         end,
       })
 
@@ -489,7 +491,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         type = "Aircraft",
         inArea = function(_, area)
-          return area == zone.anchorage.lstArea
+          return area == zone.movement.holdingAreas.deployLine
         end,
       })
 
@@ -505,8 +507,8 @@ describe("AmphibiousAssault", function()
       assert.are.same({}, unit.course)
     end)
 
-    -- Boundary: ship not in any anchorage area
-    it("should not set course for ships not in any anchorage area", function()
+    -- Boundary: ship not in any holding area
+    it("should not set course for ships not in any holding area", function()
       local destination = { latitude = 24.5, longitude = 120.5 }
       stubGetPoint.returns(destination)
 

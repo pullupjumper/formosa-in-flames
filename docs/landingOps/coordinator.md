@@ -42,7 +42,7 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> MOVING: saveData 初始化
-    MOVING --> WAITING_ARRIVAL: ShipMovement.moveToStagingArea() done
+    MOVING --> WAITING_ARRIVAL: ShipMovement.moveToHoldingAreas() done
     WAITING_ARRIVAL --> WAITING_ASSAULT: 艦數 > arrivalThreshold<br>且裝載與任務建立成功
     WAITING_ASSAULT --> MINE_CLEARING: 接觸數 < contactThreshold<br>或等待逾時 (periodSec)
     MINE_CLEARING --> BOAT_ASSAULT: updateMineClearing() 全部完成
@@ -56,8 +56,8 @@ stateDiagram-v2
 
 | 起始 phase | 觸發條件 | 對應動作 |
 |---|---|---|
-| `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToStagingArea` |
-| `WAITING_ARRIVAL` | `units > zone.anchorage.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
+| `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToHoldingAreas` |
+| `WAITING_ARRIVAL` | `units > zone.movement.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
 | `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `MineClearing.startMineClearing` + `setLandingMissionStartTime`（只有直升機） |
 | `MINE_CLEARING` | 529 全部走完或被摧毀 | `AssaultBoat.pairBoats` + `setCoursesForLSTs`（排除 529） |
 | `BOAT_ASSAULT` | 衝鋒舟全部到 S_lane 或被摧毀（每 tick 先 `launchBoats`） | `ObstacleClearing.startObstacleClearing` |
@@ -92,7 +92,7 @@ stateDiagram-v2
 
 ## 火力支援暫停閘門
 
-私有函式 `evaluateFireSupportGate`（在 `Coordinator.process` 末尾呼叫）防止 SRBM 在艦隊抵達錨泊區之前耗盡彈藥。閘門狀態存於 `saveData.red.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRA/*` 映射。
+私有函式 `evaluateFireSupportGate`（在 `Coordinator.process` 末尾呼叫）防止 SRBM 在艦隊抵達等待區之前耗盡彈藥。閘門狀態存於 `saveData.red.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRA/*` 映射。
 
 ### 狀態轉移
 
@@ -171,7 +171,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 |---|---|
 | `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
 | `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
-| `config.red.amphibOps.zones[].anchorage.arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
+| `config.red.amphibOps.zones[].movement.arrivalThreshold` | 認定艦隊抵達等待區的最低艦數 |
 | `config.red.amphibOps.zones[].air.contactThreshold` | 空/機降區可接受的最大接觸數 |
 
 ---

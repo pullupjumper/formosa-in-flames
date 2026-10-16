@@ -11,7 +11,7 @@
 amphibiousAssault 負責登陸作戰的第三階段——兩棲突擊。系統協調三項核心作業：
 
 1. **任務時序設定**：計算各登陸任務（直升機、氣墊船、攻擊直升機）的開始時間，確保各波次按既定間隔投入
-2. **LST 航向設定**：驅動在錨泊區的 LST 向泛水編波區前進，同時引導 SAG 至兩棲載具集結區
+2. **LST 航向設定**：驅動在等待區的 LST 向泛水編波區前進，同時引導 SAG 至兩棲載具集結區
 3. **ACV 釋放**：從登陸艦刪除貨物並生成兩棲戰車單位，以編隊形式向灘頭推進
 
 系統透過 `landingCheck.lua` 的狀態機驅動，在空/機降區威脅清除（敵方地面接觸目標數低於門檻）或等待超時後自動發起突擊。
@@ -90,7 +90,7 @@ flowchart TD
 
 | 步驟 | 說明 |
 |---|---|
-| 過濾 | 在 `anchorage.lstArea` 內的 Ship 類型單元 |
+| 過濾 | 在 `holdingAreas.deployLine` 內的 Ship 類型單元 |
 | 排除 | RORO 和 Barge（`isLST` 檢查，排除 `NON_LST_NAMES`） |
 | 計算目的地 | 從當前位置依 `bearing` 和 `distance` 投影 |
 | 設定速度 | `zone.landing.lstSettings.speed` |

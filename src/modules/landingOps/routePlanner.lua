@@ -139,15 +139,14 @@ end
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param beachLane SBJ__BeachLaneEntry
 ---@param entryPoint CMO__Location
----@param slotPoint CMO__Location
----@param slotBackoffM number
+---@param slot {point: CMO__Location, backoffM: number}
 ---@return CMO__Location[]
-local function buildSlotCourse(waterLane, beachLane, entryPoint, slotPoint, slotBackoffM)
+local function buildSlotCourse(waterLane, beachLane, entryPoint, slot)
   local course = { entryPoint, waterLane.launchPoint, waterLane.assaultPoint, beachLane.assaultPoint }
-  if slotBackoffM < LaneGeometry.calculateDistanceM(beachLane.endPoint, beachLane.shorePoint) then
+  if slot.backoffM < LaneGeometry.calculateDistanceM(beachLane.endPoint, beachLane.shorePoint) then
     table.insert(course, beachLane.shorePoint)
   end
-  table.insert(course, slotPoint)
+  table.insert(course, slot.point)
   return course
 end
 
@@ -196,7 +195,7 @@ local function planInWaterLane(waterLane, params, opts)
 
     if slot then
       local slotPoint, backoffM = buildSlotPoint(beachLane, slot, params.routeConfig)
-      local course = buildSlotCourse(waterLane, beachLane, entryPoint, slotPoint, backoffM)
+      local course = buildSlotCourse(waterLane, beachLane, entryPoint, { point = slotPoint, backoffM = backoffM })
       if opts and opts.isFromDeployLine then
         table.insert(course, 1, waterLane.deployPoint)
       end

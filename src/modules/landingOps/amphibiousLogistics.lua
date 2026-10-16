@@ -288,13 +288,13 @@ end
 -- Public API
 -- ============================================================================
 
----Get units in anchorage area and check their movement status
+---Get units in the holding areas and check their movement status
 ---Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param filteredUnits CMO__SideUnit
----@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in anchorage and movement status
-function AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
-  local unitsInAnchorageArea = {}
+---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in holding areas and movement status
+function AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
+  local unitsInHoldingAreas = {}
   local isUnitMoving = false
 
   for _, u in ipairs(filteredUnits) do
@@ -306,13 +306,13 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
         break
       end
 
-      if unit:inArea(zone.anchorage.area) or unit:inArea(zone.anchorage.lstArea) then
-        table.insert(unitsInAnchorageArea, unit)
+      if unit:inArea(zone.movement.holdingAreas.mothership) or unit:inArea(zone.movement.holdingAreas.deployLine) then
+        table.insert(unitsInHoldingAreas, unit)
       end
     end
   end
 
-  return { units = unitsInAnchorageArea, isUnitMoving = isUnitMoving }
+  return { units = unitsInHoldingAreas, isUnitMoving = isUnitMoving }
 end
 
 ---Create cargo transport missions for an operational zone
@@ -333,14 +333,14 @@ end
 ---Transfer cargo to embarked units and assign them to missions
 ---Handles Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases
 ---@param zone SBJ__OperationalZoneDescriptor
----@param unitsInAnchorageArea CMO__Unit[]
+---@param unitsInHoldingAreas CMO__Unit[]
 ---@return boolean # True if all transfers and assignments completed successfully
-function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
+function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer and assign")
 
-  for _, u in ipairs(unitsInAnchorageArea) do
-    if u:inArea(zone.anchorage.area) then
+  for _, u in ipairs(unitsInHoldingAreas) do
+    if u:inArea(zone.movement.holdingAreas.mothership) then
       processShipTransfers(u.guid, u.dbid, zone)
       processShipAssignments(u.guid, u.dbid, zone)
       report.add("OK", { ship = u.name or u.guid, dbid = u.dbid })

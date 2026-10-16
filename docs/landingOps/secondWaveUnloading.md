@@ -10,7 +10,7 @@
 
 secondWaveUnloading 負責登陸作戰的第四階段——第二波重裝備卸載。當灘頭由第一波 ACV 建立後，系統啟動駁船（Barge）與 RORO 船的後勤鏈：
 
-1. **駁船搶灘**：計算駁船從錨泊區到卸載區的航向，投影至 LST 搶灘航線
+1. **駁船搶灘**：計算駁船從等待區到卸載區的航向，投影至 LST 搶灘航線
 2. **RORO 跟隨**：RORO 船與同區域駁船配對，跟隨駁船前進
 3. **浮橋架設**：駁船到達灘頭後停止並架設後勤浮橋（Bridge Facility）
 4. **車輛卸載**：透過後勤鏈（RORO → 駁船 → 灘頭）下卸重型裝備
@@ -72,8 +72,8 @@ flowchart TD
 flowchart TD
     START["startSecondWaveUnloading()"]
     ITER_UNIT["遍歷 filteredUnits"]
-    IS_BARGE{是 Barge<br>在 anchorage.lstArea?}
-    IS_RORO{是 RORO<br>在 anchorage.lstArea?}
+    IS_BARGE{是 Barge<br>在 holdingAreas.deployLine?}
+    IS_RORO{是 RORO<br>在 holdingAreas.deployLine?}
     PROC_BARGE["processBarge<br>計算航向、記錄至 saveData"]
     COLLECT_RORO["收集 RORO<br>至暫存清單"]
     PAIR["pairROROWithBarge<br>配對同區域駁船"]
@@ -92,7 +92,7 @@ flowchart TD
 
 ### 配對規則
 
-RORO 與 Barge 的配對依據「同區域」原則：`barge:inArea(roro.zone.anchorage.lstArea)` 為 true 時配對。一個駁船可配對多個 RORO 船。
+RORO 與 Barge 的配對依據「同區域」原則：`barge:inArea(roro.zone.movement.holdingAreas.deployLine)` 為 true 時配對。一個駁船可配對多個 RORO 船。
 
 ---
 

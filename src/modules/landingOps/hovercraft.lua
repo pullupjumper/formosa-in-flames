@@ -98,7 +98,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.anchorage.area) then
+    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) then
       for _, craft in ipairs(findReadyHovercraft(ship, zoneState.hovercraft)) do
         local plan = RoutePlanner.buildRoute({
           lanes = zoneState.lanes,

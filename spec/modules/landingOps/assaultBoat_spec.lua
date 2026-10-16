@@ -69,7 +69,7 @@ describe("AssaultBoat", function()
     })
   end
 
-  local zone = { name = "Sishu", anchorage = { lstArea = { "RP-LST" } }, landing = { acv = { area = { "RP-ACV" } } } }
+  local zone = { name = "Sishu", movement = { holdingAreas = { deployLine = { "RP-LST" } } }, landing = { acv = { area = { "RP-ACV" } } } }
 
   ---Build carriers spread left to right, each with boatsPer assault boats
   ---@param carrierCount integer

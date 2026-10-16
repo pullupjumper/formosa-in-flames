@@ -8,7 +8,7 @@
 
 ## 概述
 
-amphibiousLogistics 負責登陸作戰的第二階段——後勤裝載。當登陸艦隊到達錨泊區後，系統依艦型將貨物（車輛、步兵、裝備）從母艦轉移至搭載的直升機與登陸艇，同時建立貨物運輸任務（Cargo Mission）並指派登陸載具執行。
+amphibiousLogistics 負責登陸作戰的第二階段——後勤裝載。當登陸艦隊到達等待區後，系統依艦型將貨物（車輛、步兵、裝備）從母艦轉移至搭載的直升機與登陸艇，同時建立貨物運輸任務（Cargo Mission）並指派登陸載具執行。
 
 系統採用**資料驅動分派**（Data-Driven Dispatch）架構，透過 `SHIP_TRANSFER_SPECS` 描述符表定義各艦型的貨物轉移規格與任務指派規則，避免針對每型艦船寫硬編碼邏輯。
 
@@ -48,8 +48,8 @@ SHIP_TRANSFER_SPECS[]
 ```mermaid
 flowchart TD
     START["transferAndAssign()"]
-    ITER_UNIT["遍歷錨泊區單位"]
-    IN_AREA{單位在<br>anchorage.area?}
+    ITER_UNIT["遍歷等待區單位"]
+    IN_AREA{單位在<br>holdingAreas.mothership?}
     FIND_SPEC["findTransferSpec<br>匹配艦型"]
     TRANSFER["processShipTransfers<br>依 spec.transfers 轉移貨物"]
     ASSIGN["processShipAssignments<br>依 spec.assignments 指派任務"]
@@ -75,15 +75,15 @@ flowchart TD
 
 ---
 
-## 錨泊區監控
+## 等待區監控
 
-`getUnitsInAnchorageArea` 監控艦隊到達狀態：
+`getUnitsInHoldingAreas` 監控艦隊到達狀態：
 
 | 檢查項目 | 說明 |
 |---|---|
 | 艦型過濾 | 僅計算 `AMPHIBIOUS_SHIP_DBIDS` 中的兩棲艦船 |
 | 移動狀態 | 若有艦船 `unitstate != "Unassigned"` 則判定仍在移動 |
-| 區域判定 | 艦船須在 `anchorage.area` 或 `anchorage.lstArea` 內 |
+| 區域判定 | 艦船須在 `holdingAreas.mothership` 或 `holdingAreas.deployLine` 內 |
 
 ### 兩棲艦船 DBID 對照
 
@@ -105,9 +105,9 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `getUnitsInAnchorageArea(zone, filteredUnits)` | 取得錨泊區內艦船清單及移動狀態 |
+| `getUnitsInHoldingAreas(zone, filteredUnits)` | 取得等待區內艦船清單及移動狀態 |
 | `createCargoMissions(zone)` | 為作戰區建立貨物運輸任務 |
-| `transferAndAssign(zone, unitsInAnchorageArea)` | 執行貨物轉移並指派登陸載具至任務 |
+| `transferAndAssign(zone, unitsInHoldingAreas)` | 執行貨物轉移並指派登陸載具至任務 |
 | `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
 | `retransferCargos(zone, units)` | 第二波作戰的貨物重新裝載 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
@@ -141,7 +141,7 @@ flowchart TD
 
 ## 相關模組
 
-- [shipMovement](shipMovement.md) — 前置階段：艦隊移動至錨泊區
+- [shipMovement](shipMovement.md) — 前置階段：艦隊移動至等待區
 - [amphibiousAssault](amphibiousAssault.md) — 後續階段：ACV 釋放時呼叫 `removeCargo`
 - `assignMission` — `transferAndAssign` 呼叫 `AssignMission.assignEmbarkedUnitsToMissions`
 - [系統架構](README.md)
