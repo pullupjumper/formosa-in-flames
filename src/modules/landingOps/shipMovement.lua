@@ -436,24 +436,24 @@ end
 
 ---Pre-calculate all destination positions for amphibious assault ships
 ---Generates grid of anchorage positions for each ship type with layered arrangement and spacing
----@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param zones SBJ__OperationalZoneDescriptor[]
+---@param formationSettings SBJ__AmphibiousFormationConfig
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
 ---@return boolean # True if all destination positions were calculated
-function ShipMovement.calculateDestination(amphibOpsConfig, calculationResult)
-  local formationSettings = amphibOpsConfig.formationSettings
-  for _, operation in ipairs(amphibOpsConfig.operations) do
-    for areaIndex, area in ipairs(operation.to.areas) do
-      initOperationResult(operation.name, calculationResult)
+function ShipMovement.calculateDestination(zones, formationSettings, calculationResult)
+  for _, zone in ipairs(zones) do
+    for areaIndex, area in ipairs(zone.fleet.to.areas) do
+      initOperationResult(zone.name, calculationResult)
       local startingPointMap, errorFields = calculateStartingPoints(area, formationSettings)
       if not startingPointMap then
         Logger.error(LogFormat.line("ERROR", LogFormat.merge(
-          { operation = operation.name, areaIndex = areaIndex },
+          { operation = zone.name, areaIndex = areaIndex },
           errorFields or { reason = "starting_point_calculation_failed" })))
         return false
       end
 
       buildAllShipLocations(
-        calculationResult[operation.name].result,
+        calculationResult[zone.name].result,
         startingPointMap, area,
         formationSettings.horizontalDistance
       )
@@ -467,21 +467,20 @@ end
 -- Public API
 -- ============================================================================
 
----Move amphibious assault ships from staging area to designated anchorage positions for a single operation
+---Move amphibious assault ships from staging area to designated anchorage positions for a single zone
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
----@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param zone SBJ__OperationalZoneDescriptor
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Pre-calculated destination positions indexed by zone name
 ---@param filteredUnits CMO__SideUnit[]
----@param operation SBJ__AmphibiousOperationDescriptor
+---@param formationSettings SBJ__AmphibiousFormationConfig
+---@param isTesting boolean If true, enables testing mode with instant teleportation
 ---@return boolean # True when all movement orders have been issued
-function ShipMovement.moveToStagingArea(amphibOpsConfig, calculationResult, filteredUnits, operation)
-  local formationSettings = amphibOpsConfig.formationSettings
-  local isTesting = amphibOpsConfig.isTesting
-  local result, errorFields = getOperationResult(calculationResult, operation.name)
+function ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, formationSettings, isTesting)
+  local result, errorFields = getOperationResult(calculationResult, zone.name)
 
   if not result then
     Logger.error(LogFormat.line("ERROR", LogFormat.merge(
-      { operation = operation.name },
+      { operation = zone.name },
       errorFields or { reason = "calculation_result_missing" })))
     return false
   end
@@ -490,21 +489,16 @@ function ShipMovement.moveToStagingArea(amphibOpsConfig, calculationResult, filt
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
-    if unit and unit:inArea(operation.from.stagingArea) then
+    if unit and unit:inArea(zone.fleet.from.stagingArea) then
       table.insert(results, moveMatchingShip(unit, result, formationSettings.shipSpeed, isTesting))
     end
   end
 
-  for _, sagName in ipairs(operation.sagNames) do
-    local descriptor = amphibOpsConfig.sags[sagName]
-    if descriptor then
-      table.insert(results, processSAG(descriptor, isTesting))
-    else
-      table.insert(results, { tag = "SKIP", fields = { sag = sagName, reason = "sag_descriptor_not_found" } })
-    end
+  for _, descriptor in ipairs(zone.sags) do
+    table.insert(results, processSAG(descriptor, isTesting))
   end
 
-  local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. operation.name, "Move to staging area")
+  local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. zone.name, "Move to staging area")
   report.addAll(results)
   report.emit()
 

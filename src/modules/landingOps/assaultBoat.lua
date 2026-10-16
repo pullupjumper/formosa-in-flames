@@ -179,11 +179,10 @@ function AssaultBoat.pairBoats(zone, zoneState, ships)
 end
 
 ---Launch paired boats whose carrier has entered the ACV staging area: course first, then Launch
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
-function AssaultBoat.launchBoats(config, zone, zoneState)
-  local amphibOps = config.red.amphibOps
+function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
   zoneState.queueCounters = zoneState.queueCounters or {}
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Launch assault boats")
 
@@ -194,11 +193,11 @@ function AssaultBoat.launchBoats(config, zone, zoneState)
 
       if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.acv.area) then
         local course = RoutePlanner.buildBoatRoute(
-          zoneState.lanes, entry.beachLaneId, zoneState.queueCounters, amphibOps.route)
+          zoneState.lanes, entry.beachLaneId, zoneState.queueCounters, amphibOps.tuning.route)
 
         if course then
           boat.course = course
-          boat.manualSpeed = amphibOps.assaultBoat.speed
+          boat.manualSpeed = amphibOps.tuning.assaultBoat.speed
           boat:Launch(true)
           entry.status = STATUS.LAUNCHED
           entry.finalPoint = course[#course]
@@ -212,11 +211,11 @@ function AssaultBoat.launchBoats(config, zone, zoneState)
 end
 
 ---Track boats until each reaches S_lane or is lost
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when no boat is still pending or under way
-function AssaultBoat.updateBoats(config, zoneState)
-  local arrivalNm = config.red.amphibOps.route.arrivalNm
+function AssaultBoat.updateBoats(amphibOps, zoneState)
+  local arrivalNm = amphibOps.tuning.route.arrivalNm
   local isAllDone = true
 
   for boatGuid, entry in pairs(zoneState.boats or {}) do

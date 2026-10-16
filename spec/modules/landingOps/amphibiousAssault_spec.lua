@@ -59,6 +59,7 @@ describe("AmphibiousAssault", function()
   local function makeZone(overrides)
     local z = {
       name = "ZoneAlpha",
+      sags = {},
       lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
       anchorageArea = { "RP-ANC-1", "RP-ANC-2" },
       transportHelicopter = { missions = { makeMission({ name = "HeloMission1" }) } },
@@ -87,8 +88,7 @@ describe("AmphibiousAssault", function()
   ---@return table
   local function makeAmphibOpsConfig(overrides)
     local cfg = {
-      operationalZones = { makeZone() },
-      sags = {},
+      zones = { makeZone() },
     }
     if overrides then
       for k, v in pairs(overrides) do cfg[k] = v end
@@ -311,10 +311,8 @@ describe("AmphibiousAssault", function()
       end)
 
       local units = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.is_true(result)
       assert.are.same({ destination }, unit.course)
@@ -341,10 +339,8 @@ describe("AmphibiousAssault", function()
       end)
 
       local units = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.are.same({}, unit.course)
       assert.are.equal(0, unit.manualSpeed)
@@ -369,10 +365,8 @@ describe("AmphibiousAssault", function()
       end)
 
       local units = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.are.same({}, unit.course)
     end)
@@ -394,10 +388,8 @@ describe("AmphibiousAssault", function()
       stubGetUnit.returns(unit)
 
       local ships = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, ships, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, ships)
 
       assert.is_true(result)
       assert.are.same(sweepCourse, unit.course)
@@ -413,15 +405,14 @@ describe("AmphibiousAssault", function()
       end)
 
       local zone = makeZone()
-      local operation = { sagNames = { "alpha" } }
-      local sagLookup = {
-        alpha = {
+      zone.sags = {
+        {
           groupName = "SAG Alpha",
           to = { amphibiousVehicleStagingArea = sagCourse },
         },
       }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, {}, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, {})
 
       assert.is_true(result)
       assert.are.same(sagCourse, sagUnit.course)
@@ -445,10 +436,8 @@ describe("AmphibiousAssault", function()
       end)
 
       local units = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.is_false(result)
     end)
@@ -458,15 +447,14 @@ describe("AmphibiousAssault", function()
       stubGetUnit.returns(nil)
 
       local zone = makeZone()
-      local operation = { sagNames = { "alpha" } }
-      local sagLookup = {
-        alpha = {
+      zone.sags = {
+        {
           groupName = "SAG Alpha",
           to = { amphibiousVehicleStagingArea = {} },
         },
       }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, {}, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, {})
 
       assert.is_false(result)
     end)
@@ -477,10 +465,8 @@ describe("AmphibiousAssault", function()
 
       local zone = makeZone()
       local units = { { guid = "MISSING-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.is_true(result)
     end)
@@ -504,10 +490,8 @@ describe("AmphibiousAssault", function()
       end)
 
       local units = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.are.same({}, unit.course)
     end)
@@ -528,10 +512,8 @@ describe("AmphibiousAssault", function()
 
       local zone = makeZone()
       local units = { { guid = "SHIP-001" } }
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
+      AmphibiousAssault.setCoursesForLSTs(zone, units)
 
       assert.are.same({}, unit.course)
     end)
@@ -539,10 +521,8 @@ describe("AmphibiousAssault", function()
     -- Boundary: empty units list
     it("should return true when units list is empty and no SAG", function()
       local zone = makeZone()
-      local operation = { sagNames = {} }
-      local sagLookup = {}
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, {}, operation, sagLookup)
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, {})
 
       assert.is_true(result)
     end)
@@ -554,7 +534,7 @@ describe("AmphibiousAssault", function()
 
   describe("countUnitsInEachArea", function()
     local config = {
-      red = { amphibOps = { operationalZones = { makeZone({ name = "A", casArea = "CAS-A" }), makeZone({ name = "B", casArea = "CAS-B" }) } } }
+      red = { amphibOps = { zones = { makeZone({ name = "A", casArea = "CAS-A" }), makeZone({ name = "B", casArea = "CAS-B" }) } } }
     }
 
     ---Stub China's units; each unit is a makeUnit override table
@@ -583,7 +563,7 @@ describe("AmphibiousAssault", function()
         { guid = "U-3", dbid = constants.PLATFORMS.MC,    inArea = inCasArea("CAS-B") },
       })
 
-      local result = AmphibiousAssault.countUnitsInEachArea(config)
+      local result = AmphibiousAssault.countUnitsInEachArea(config.red.amphibOps.zones)
 
       assert.are.equal(2, result.A["ZBD-05"])
       assert.are.equal(0, result.A["AirborneCorps"])
@@ -595,7 +575,7 @@ describe("AmphibiousAssault", function()
     it("should ignore platforms that are not landed unit types", function()
       stubRedUnits({ { guid = "U-1", dbid = constants.PLATFORMS.TYPE_071, inArea = inCasArea("CAS-A") } })
 
-      local result = AmphibiousAssault.countUnitsInEachArea(config)
+      local result = AmphibiousAssault.countUnitsInEachArea(config.red.amphibOps.zones)
 
       for _, count in pairs(result.A) do
         assert.are.equal(0, count)
@@ -607,7 +587,7 @@ describe("AmphibiousAssault", function()
       trackStub(stub(GameApi, "VP_GetSide").returns({ units = { { guid = "GONE" } } }))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local result = AmphibiousAssault.countUnitsInEachArea(config)
+      local result = AmphibiousAssault.countUnitsInEachArea(config.red.amphibOps.zones)
 
       assert.are.equal(0, result.A["ZBD-05"])
     end)
@@ -1147,9 +1127,9 @@ describe("AmphibiousAssault", function()
         end,
       })
 
-      local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
+      local config = makeAmphibOpsConfig({ zones = { zone1, zone2 } })
 
-      local result = AmphibiousAssault.getShipZone(config, ship)
+      local result = AmphibiousAssault.getShipZone(config.zones, ship)
       assert.is_not_nil(result)
       assert.are.equal("ZoneBravo", result.name)
     end)
@@ -1163,9 +1143,9 @@ describe("AmphibiousAssault", function()
         inArea = function() return true end,
       })
 
-      local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
+      local config = makeAmphibOpsConfig({ zones = { zone1, zone2 } })
 
-      local result = AmphibiousAssault.getShipZone(config, ship)
+      local result = AmphibiousAssault.getShipZone(config.zones, ship)
       assert.are.equal("ZoneAlpha", result.name)
     end)
 
@@ -1177,7 +1157,7 @@ describe("AmphibiousAssault", function()
 
       local config = makeAmphibOpsConfig()
 
-      local result = AmphibiousAssault.getShipZone(config, ship)
+      local result = AmphibiousAssault.getShipZone(config.zones, ship)
 
       assert.is_nil(result)
     end)
@@ -1185,9 +1165,9 @@ describe("AmphibiousAssault", function()
     -- Boundary: empty operational zones
     it("should return nil when there are no operational zones", function()
       local ship = makeUnit()
-      local config = makeAmphibOpsConfig({ operationalZones = {} })
+      local config = makeAmphibOpsConfig({ zones = {} })
 
-      local result = AmphibiousAssault.getShipZone(config, ship)
+      local result = AmphibiousAssault.getShipZone(config.zones, ship)
 
       assert.is_nil(result)
     end)

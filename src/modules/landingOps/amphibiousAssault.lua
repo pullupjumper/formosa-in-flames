@@ -276,24 +276,19 @@ local function setZoneLSTCourses(zone, units)
   return true, results
 end
 
----Set courses for every SAG in an operation, stopping at the first failure
----@param operation SBJ__AmphibiousOperationDescriptor
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor>
+---Set courses for every SAG in a zone, stopping at the first failure
+---@param sags SBJ__SAGDescriptor[]
 ---@return boolean success True when no SAG failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function setOperationSAGCourses(operation, sagDescriptorMap)
+local function setZoneSAGCourses(sags)
   local results = {}
 
-  for _, sagName in ipairs(operation.sagNames) do
-    local descriptor = sagDescriptorMap[sagName]
+  for _, descriptor in ipairs(sags) do
+    local result = setCourseForSAG(descriptor)
+    table.insert(results, result)
 
-    if descriptor then
-      local result = setCourseForSAG(descriptor)
-      table.insert(results, result)
-
-      if result.tag == "FAIL" then
-        return false, results
-      end
+    if result.tag == "FAIL" then
+      return false, results
     end
   end
 
@@ -326,10 +321,8 @@ end
 ---LSTs in anchorage are directed to landing zones; RORO ships and barges remain in anchorage
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]
----@param operation SBJ__AmphibiousOperationDescriptor
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor>
 ---@return boolean # True if all LST courses were successfully set
-function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagDescriptorMap)
+function AmphibiousAssault.setCoursesForLSTs(zone, units)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set courses for LSTs")
 
   local success, results = setZoneLSTCourses(zone, units)
@@ -337,7 +330,7 @@ function AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagDescript
 
   if success then
     local sagResults
-    success, sagResults = setOperationSAGCourses(operation, sagDescriptorMap)
+    success, sagResults = setZoneSAGCourses(zone.sags)
     report.addAll(sagResults)
   end
 
@@ -362,13 +355,13 @@ function AmphibiousAssault.countContactsInArea(contacts, area)
 end
 
 ---Count landed China units by type in each operational zone's CAS area
----@param config SBJ__Config
+---@param zones SBJ__OperationalZoneDescriptor[]
 ---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
-function AmphibiousAssault.countUnitsInEachArea(config)
+function AmphibiousAssault.countUnitsInEachArea(zones)
   local unitsFromRed = GameApi.VP_GetSide({ side = constants.SIDES.RED }).units
   local result = {}
 
-  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
+  for _, zone in ipairs(zones) do
     local item = {}
     for _, unitType in ipairs(LANDED_UNIT_TYPES) do
       item[unitType.name] = 0
@@ -443,11 +436,11 @@ end
 
 ---Get the operational zone for a ship based on its location
 ---Matches ship position against ACV deployment areas to retrieve zone-specific configuration
----@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param ship CMO__Unit
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
-function AmphibiousAssault.getShipZone(amphibOpsConfig, ship)
-  for _, zone in ipairs(amphibOpsConfig.operationalZones) do
+function AmphibiousAssault.getShipZone(zones, ship)
+  for _, zone in ipairs(zones) do
     if ship:inArea(zone.acv.area) then
       return zone
     end

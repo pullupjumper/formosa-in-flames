@@ -53,7 +53,7 @@ describe("AssaultBoat", function()
 
   ---@return table
   local function makeConfig()
-    return { red = { amphibOps = { route = makeRouteConfig(), assaultBoat = { speed = 30 } } } }
+    return { tuning = { route = makeRouteConfig(), assaultBoat = { speed = 30 } } }
   end
 
   ---@param count integer

@@ -190,7 +190,7 @@ end
 ---@param shipType SBJ__AmphibiousShipType
 ---@param formationCtx SBJ__ShipFormationContext
 local function createShipsByType(position, shipType, formationCtx)
-  local areaDescriptor, descriptor = formationCtx.areaDescriptor, formationCtx.descriptor
+  local areaDescriptor, fleet = formationCtx.areaDescriptor, formationCtx.fleet
   local shipSettings, cargoMap = formationCtx.shipSettings, formationCtx.cargoMap
   local shipConfigs = {
     type075 = {
@@ -198,8 +198,8 @@ local function createShipsByType(position, shipType, formationCtx)
       name = "Type 075",
       cargo = cargoMap.type075,
       embarkedUnits = {
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
         { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
@@ -208,7 +208,7 @@ local function createShipsByType(position, shipType, formationCtx)
       name = "Type 071",
       cargo = cargoMap.type071,
       embarkedUnits = {
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
         { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
       }
     },
@@ -217,9 +217,9 @@ local function createShipsByType(position, shipType, formationCtx)
       name = "Type 076",
       cargo = cargoMap.type075,
       embarkedUnits = {
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = descriptor.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
+        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
         { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
       }
     },
@@ -476,10 +476,10 @@ end
 
 ---Create SAG formations
 ---@param sideName string
----@param sagDescriptorMap table<string, SBJ__SAGDescriptor>
+---@param sagDescriptors SBJ__SAGDescriptor[]|table<string, SBJ__SAGDescriptor>
 ---@return boolean # Whether successful
-function UnitGenerator.createSAGs(sideName, sagDescriptorMap)
-  for _, sagDescriptor in pairs(sagDescriptorMap) do
+function UnitGenerator.createSAGs(sideName, sagDescriptors)
+  for _, sagDescriptor in pairs(sagDescriptors) do
     local formationConfig = {
       centerPoint = sagDescriptor.from.pos,
       heading = sagDescriptor.from.heading,
@@ -700,12 +700,11 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig
 ---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(amphibOpsConfig)
-  local descriptors = amphibOpsConfig.operations
   local layoutConfig = amphibOpsConfig.formationSettings
   local cargoMap = amphibOpsConfig.cargo
 
-  for _, descriptor in ipairs(descriptors) do
-    for _, areaDescriptor in ipairs(descriptor.from.areas) do
+  for _, zone in ipairs(amphibOpsConfig.zones) do
+    for _, areaDescriptor in ipairs(zone.fleet.from.areas) do
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints({
         side = constants.SIDES.RED, area = areaDescriptor.startingPoints.type075
       })[1]
@@ -716,7 +715,7 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
       ---@type SBJ__ShipFormationContext
       local formationCtx = {
         areaDescriptor = areaDescriptor,
-        descriptor = descriptor,
+        fleet = zone.fleet,
         shipSettings = layoutConfig,
         cargoMap = cargoMap
       }

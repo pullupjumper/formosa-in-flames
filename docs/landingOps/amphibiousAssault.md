@@ -119,12 +119,12 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `setLandingMissionStartTime(zone, zoneState)` | 設定單一作戰區的登陸任務開始時間 |
-| `setCoursesForLSTs(zone, units, operation, sagLookup)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
+| `setCoursesForLSTs(zone, units)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
 | `countContactsInArea(contacts, area)` | 計算區域內目標數量 |
-| `countUnitsInEachArea(config)` | 依 zone 的 `casArea` 統計已登陸的中國單位數（依單位類型）；coordinator 用來判定灘頭建立，`unitStatusUI` 經門面 `LandingOps.countUnitsInEachArea` 呼叫 |
+| `countUnitsInEachArea(zones)` | 依 zone 的 `casArea` 統計已登陸的中國單位數（依單位類型）；coordinator 用來判定灘頭建立，`unitStatusUI` 經門面 `LandingOps.countUnitsInEachArea` 呼叫 |
 | `launchACV(params)` | 從登陸艦釋放兩棲步兵戰鬥車 |
 | `isFerryOrLST(ship)` | 判斷艦船是否為渡輪或 LST |
-| `getShipZone(amphibOpsConfig, ship)` | 取得艦船所在的作戰區 |
+| `getShipZone(zones, ship)` | 取得艦船所在的作戰區 |
 
 ---
 

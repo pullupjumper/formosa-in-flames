@@ -166,7 +166,7 @@ flowchart TD
 |---|---|
 | `isBridgeDestroyed(saveData, ship)` | 檢查駁船浮橋是否被摧毀 |
 | `hasExtendedBridge(saveData, ship)` | 檢查駁船是否已架設浮橋 |
-| `getBargeROROZone(amphibOpsConfig, barge, roro)` | 取得 Barge-RORO 配對的作戰區（需同區域且距離 < 1nm） |
+| `getBargeROROZone(zones, barge, roro)` | 取得 Barge-RORO 配對的作戰區（需同區域且距離 < 1nm） |
 
 ## 作業 API
 

@@ -70,7 +70,7 @@ describe("SecondWaveUnloading", function()
   ---@return table
   local function makeAmphibOpsConfig(overrides)
     local cfg = {
-      operationalZones = { makeZone() },
+      zones = { makeZone() },
     }
     if overrides then
       for k, v in pairs(overrides) do cfg[k] = v end
@@ -968,7 +968,7 @@ describe("SecondWaveUnloading", function()
     -- Positive: returns zone when both units are in same ACV area and within 1nm
     it("should return zone when barge and RORO are in same ACV area within 1nm", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
+      local config = makeAmphibOpsConfig({ zones = { zone } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
@@ -981,7 +981,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.5)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
       assert.is_not_nil(result)
       assert.are.equal("ZoneAlpha", result.name)
     end)
@@ -989,7 +989,7 @@ describe("SecondWaveUnloading", function()
     -- Negative: returns nil when distance is 1nm or greater
     it("should return nil when units are 1nm or more apart", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
+      local config = makeAmphibOpsConfig({ zones = { zone } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
@@ -1002,7 +1002,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(1.0)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1010,7 +1010,7 @@ describe("SecondWaveUnloading", function()
     -- Negative: returns nil when Tool_Range returns nil
     it("should return nil when Tool_Range returns nil", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
+      local config = makeAmphibOpsConfig({ zones = { zone } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
@@ -1023,7 +1023,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(nil)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1031,7 +1031,7 @@ describe("SecondWaveUnloading", function()
     -- Negative: returns nil when RORO is not in ACV area
     it("should return nil when RORO is not in the ACV area", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
+      local config = makeAmphibOpsConfig({ zones = { zone } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
@@ -1044,7 +1044,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.5)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1052,7 +1052,7 @@ describe("SecondWaveUnloading", function()
     -- Negative: returns nil when barge is not in ACV area
     it("should return nil when barge is not in the ACV area", function()
       local zone = makeZone()
-      local config = makeAmphibOpsConfig({ operationalZones = { zone } })
+      local config = makeAmphibOpsConfig({ zones = { zone } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
@@ -1065,7 +1065,7 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.5)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)
@@ -1074,7 +1074,7 @@ describe("SecondWaveUnloading", function()
     it("should return first matching zone from multiple operational zones", function()
       local zone1 = makeZone({ name = "Zone1", acv = { area = { "AREA-1" } } })
       local zone2 = makeZone({ name = "Zone2", acv = { area = { "AREA-2" } } })
-      local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
+      local config = makeAmphibOpsConfig({ zones = { zone1, zone2 } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
@@ -1087,19 +1087,19 @@ describe("SecondWaveUnloading", function()
 
       stubToolRange.returns(0.3)
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_not_nil(result)
       assert.are.equal("Zone2", result.name)
     end)
 
     -- Boundary: returns nil when no operational zones exist
-    it("should return nil when operationalZones is empty", function()
-      local config = makeAmphibOpsConfig({ operationalZones = {} })
+    it("should return nil when zones is empty", function()
+      local config = makeAmphibOpsConfig({ zones = {} })
       local barge = makeUnit({ guid = "BARGE-001" })
       local roro = makeUnit({ guid = "RORO-001" })
 
-      local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
+      local result = SecondWaveUnloading.getBargeROROZone(config.zones, barge, roro)
 
       assert.is_nil(result)
     end)

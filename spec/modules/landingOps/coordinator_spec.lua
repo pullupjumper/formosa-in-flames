@@ -57,6 +57,9 @@ describe("LandingOps Coordinator", function()
       arrivalThreshold = 1,
       lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
       anchorageArea = { "RP-ANC-1", "RP-ANC-2" },
+      airLandingZone = { "RP-AIR-1", "RP-AIR-2" },
+      contactThreshold = 2,
+      sags = { { groupName = "SAG Alpha" } },
     }
     if overrides then
       for k, v in pairs(overrides) do
@@ -64,24 +67,6 @@ describe("LandingOps Coordinator", function()
       end
     end
     return zone
-  end
-
-  ---Create an operation descriptor
-  ---@param overrides? table
-  ---@return table
-  local function makeOperation(overrides)
-    local operation = {
-      name = "Taoyuan",
-      airLandingZone = { "RP-AIR-1", "RP-AIR-2" },
-      contactThreshold = 2,
-      sagNames = { "SAG Alpha" },
-    }
-    if overrides then
-      for k, v in pairs(overrides) do
-        operation[k] = v
-      end
-    end
-    return operation
   end
 
   ---Create a zone state entry
@@ -108,10 +93,8 @@ describe("LandingOps Coordinator", function()
     local config = {
       red = {
         amphibOps = {
-          operationalZones = { makeZone() },
-          operations = { makeOperation() },
+          zones = { makeZone() },
           periodSec = 3600,
-          sags = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
           transportAircraft = { { guid = "TA-001", name = "Transport 1" } },
         },
         triggers = {
@@ -306,8 +289,7 @@ describe("LandingOps Coordinator", function()
     -- Negative: non-Taoyuan zones skip transport-aircraft transfer and recon insertion
     it("should not run Taoyuan temporary setup for a non-Taoyuan zone", function()
       local config = makeConfig()
-      config.red.amphibOps.operationalZones = { makeZone({ name = "Tainan" }) }
-      config.red.amphibOps.operations = { makeOperation({ name = "Tainan" }) }
+      config.red.amphibOps.zones = { makeZone({ name = "Tainan" }) }
       local landingState = makeLandingState()
       landingState.amphibOps.zoneStates = {
         Tainan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
@@ -437,44 +419,6 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubStartSecondWaveUnloading).was_not.called()
     end)
 
-    -- Negative: logs an error when zone operation mapping is missing
-    it("should log an error when no matching operation exists for a zone", function()
-      local config = makeConfig({
-        red = {
-          amphibOps = {
-            operationalZones = { makeZone({ name = "Kaohsiung" }) },
-            operations = { makeOperation({ name = "Taoyuan" }) },
-            periodSec = 3600,
-            sags = { ["SAG Alpha"] = { groupName = "SAG Alpha" } },
-            transportAircraft = {},
-          },
-          recon = {
-            templates = {
-              GJ11_RECON = {
-                course = { { latitude = 25.0, longitude = 121.0 } },
-                speed = 400,
-              },
-            },
-          },
-        },
-      })
-      local landingState = makeLandingState({
-        amphibOps = {
-          zoneStates = {
-            Kaohsiung = makeZoneState(),
-          },
-        },
-        recon = {
-          queue = {},
-        },
-      })
-
-      Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
-
-      assert.stub(errorStub).was.called(1)
-      assert.stub(stubMoveToStagingArea).was_not.called()
-    end)
-
     -- Boundary: triggers cargo retransfer exactly at the two-hour threshold
     it("should retransfer cargos when airlanding mission has reached the two-hour threshold", function()
       local config = makeConfig()
@@ -556,8 +500,7 @@ describe("LandingOps Coordinator", function()
       -- Positive: RESUME releases hold once all zones reach WAITING_ASSAULT or later
       it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
         local cfg = makeGateConfig()
-        cfg.red.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-        cfg.red.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
+        cfg.red.amphibOps.zones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
         local landingState = makeGateLandingState()
         landingState.amphibOps.fireSupportOnHold = true
         landingState.amphibOps.zoneStates = {
@@ -573,8 +516,7 @@ describe("LandingOps Coordinator", function()
       -- Negative: RESUME requires ALL zones; one straggler keeps hold engaged
       it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
         local cfg = makeGateConfig()
-        cfg.red.amphibOps.operationalZones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
-        cfg.red.amphibOps.operations = { makeOperation({ name = "Taoyuan" }), makeOperation({ name = "Tainan" }) }
+        cfg.red.amphibOps.zones = { makeZone({ name = "Taoyuan" }), makeZone({ name = "Tainan" }) }
         local landingState = makeGateLandingState()
         landingState.amphibOps.fireSupportOnHold = true
         landingState.amphibOps.zoneStates = {

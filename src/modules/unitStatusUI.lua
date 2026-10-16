@@ -178,29 +178,25 @@ end
 local function createAmphibiousTaskForceLocationDataString(config)
   local data = {}
 
-  for _, op in ipairs(config.red.amphibOps.operations) do
-    local item = { name = op.name, waypoints = {} }
+  for _, zone in ipairs(config.red.amphibOps.zones) do
+    local item = { name = zone.name, waypoints = {} }
 
     local point = GameApi.ScenEdit_GetReferencePoint({
       side = constants.SIDES.RED,
-      name = op.from.areas[1].startingPoints.type075[1],
+      name = zone.fleet.from.areas[1].startingPoints.type075[1],
     })
 
     if point then
       table.insert(item.waypoints, { latitude = point.latitude, longitude = point.longitude })
     end
 
-    for _, opZone in ipairs(config.red.amphibOps.operationalZones) do
-      if op.name == opZone.name then
-        local destination = GameApi.ScenEdit_GetReferencePoint({
-          side = constants.SIDES.RED,
-          name = opZone.boat.zone[1],
-        })
+    local destination = GameApi.ScenEdit_GetReferencePoint({
+      side = constants.SIDES.RED,
+      name = zone.boat.zone[1],
+    })
 
-        if destination then
-          table.insert(item.waypoints, { latitude = destination.latitude, longitude = destination.longitude })
-        end
-      end
+    if destination then
+      table.insert(item.waypoints, { latitude = destination.latitude, longitude = destination.longitude })
     end
 
     table.insert(data, item)
@@ -301,7 +297,13 @@ local ADD_UNIT_ACTIONS = {
       id = "addSAGs",
       label = "Add SAGs",
       run = function(config)
-        UnitGenerator.createSAGs(constants.SIDES.RED, config.red.amphibOps.sags)
+        local sags = {}
+        for _, zone in ipairs(config.red.amphibOps.zones) do
+          for _, sag in ipairs(zone.sags) do
+            table.insert(sags, sag)
+          end
+        end
+        UnitGenerator.createSAGs(constants.SIDES.RED, sags)
       end
     },
     {

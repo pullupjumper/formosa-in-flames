@@ -48,7 +48,7 @@ describe("UnitStatusUI", function()
       return { gnssJamming = { jammers = {} }, air = { deployedACs = {} }, ground = { missileSystemTypes = {} } }
     end
     local config = { red = makeSideConfig(), blue = makeSideConfig() }
-    config.red.amphibOps = { operations = {}, operationalZones = {} }
+    config.red.amphibOps = { zones = {} }
     if overrides then
       for k, v in pairs(overrides) do config[k] = v end
     end

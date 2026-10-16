@@ -19,8 +19,10 @@ local LandingOps = {}
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 function LandingOps.init(config, saveData)
-  ShipMovement.calculateDestination(config.red.amphibOps, PersistentState.landingOps(saveData).amphibOps.calculationResult)
-  MineClearing.layMinefields(config.red.amphibOps)
+  local amphibOps = config.red.amphibOps
+  ShipMovement.calculateDestination(
+    amphibOps.zones, amphibOps.formationSettings, PersistentState.landingOps(saveData).amphibOps.calculationResult)
+  MineClearing.layMinefields(amphibOps)
 end
 
 ---Process all landing operation phases for the current event tick
@@ -62,11 +64,11 @@ end
 
 ---Build the per-ACV course callback: plan through cleared lanes to a parking slot and count the
 ---ACV against the wave quota; falls back to the zone destination when no lane has room
----@param config SBJ__Config
+---@param routeConfig SBJ__RouteConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
-local function buildACVRouter(config, zone, zoneState)
+local function buildACVRouter(routeConfig, zone, zoneState)
   zoneState.queueCounters = zoneState.queueCounters or {}
   zoneState.laneSlots = zoneState.laneSlots or {}
   zoneState.laneSlots.acv = zoneState.laneSlots.acv or {}
@@ -78,7 +80,7 @@ local function buildACVRouter(config, zone, zoneState)
       lanes = zoneState.lanes,
       launchPos = { latitude = unit.latitude, longitude = unit.longitude },
       guid = unit.guid,
-      routeConfig = config.red.amphibOps.route,
+      routeConfig = routeConfig,
       queueCounters = zoneState.queueCounters,
       laneSlots = zoneState.laneSlots.acv,
       cells = zoneState.obstacle and zoneState.obstacle.cells,
@@ -104,7 +106,9 @@ function LandingOps.launchACV(config, saveData, ship)
     return false
   end
 
-  local zone = AmphibiousAssault.getShipZone(config.red.amphibOps, ship)
+  local amphibOps = config.red.amphibOps
+
+  local zone = AmphibiousAssault.getShipZone(amphibOps.zones, ship)
   if not zone then
     return false
   end
@@ -119,8 +123,8 @@ function LandingOps.launchACV(config, saveData, ship)
     num = 5,
     bearing = zone.acv.bearing + 90,
     distance = zone.acv.distance,
-    quota = AcvWave.getQuota(zoneState, config.red.amphibOps.acvWave, GameApi.ScenEdit_CurrentTime()),
-    routeACV = buildACVRouter(config, zone, zoneState),
+    quota = AcvWave.getQuota(zoneState, amphibOps.tuning.acvWave, GameApi.ScenEdit_CurrentTime()),
+    routeACV = buildACVRouter(amphibOps.tuning.route, zone, zoneState),
   })
 
   if result and result.isEmpty then
@@ -173,7 +177,7 @@ function LandingOps.offloadVehicles(config, saveData, ship)
       local roro = GameApi.ScenEdit_GetUnit(guid)
 
       if roro then
-        local zone = SecondWaveUnloading.getBargeROROZone(config.red.amphibOps, ship, roro)
+        local zone = SecondWaveUnloading.getBargeROROZone(config.red.amphibOps.zones, ship, roro)
 
         if zone then
           SecondWaveUnloading.offloadVehicles({
@@ -197,6 +201,22 @@ function LandingOps.offloadVehicles(config, saveData, ship)
   return true
 end
 
+---Find a SAG descriptor by group name across all zones
+---@param zones SBJ__OperationalZoneDescriptor[]
+---@param groupName string
+---@return SBJ__SAGDescriptor|nil
+local function findSAG(zones, groupName)
+  for _, zone in ipairs(zones) do
+    for _, sag in ipairs(zone.sags) do
+      if sag.groupName == groupName then
+        return sag
+      end
+    end
+  end
+
+  return nil
+end
+
 ---Neutralize airlanding zone contacts with SAG surface fire support
 ---@param config SBJ__Config
 ---@param ship CMO__Unit
@@ -206,7 +226,7 @@ function LandingOps.neutralizeAirlandingZone(config, ship)
     return false
   end
 
-  local sagConfig = config.red.amphibOps.sags[ship.group.name]
+  local sagConfig = findSAG(config.red.amphibOps.zones, ship.group.name)
   if not sagConfig then
     return false
   end
@@ -247,7 +267,7 @@ end
 ---@param config SBJ__Config
 ---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
 function LandingOps.countUnitsInEachArea(config)
-  return AmphibiousAssault.countUnitsInEachArea(config)
+  return AmphibiousAssault.countUnitsInEachArea(config.red.amphibOps.zones)
 end
 
 return LandingOps

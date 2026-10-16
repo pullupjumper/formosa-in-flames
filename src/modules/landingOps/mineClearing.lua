@@ -72,13 +72,12 @@ end
 
 ---Build the zone's lanes and send each Type 529 down its water lane and serpentine
 ---Fails (logged, nothing changed) when the lane center or obstacle area reference points are missing.
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param ships CMO__SideUnit[]
 ---@return boolean # True when lanes were built and every sweeper got its course
-function MineClearing.startMineClearing(config, zone, zoneState, ships)
-  local amphibOps = config.red.amphibOps
+function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Start mine clearing")
 
   local center = GameUtils.findAreaLocations(constants.SIDES.RED, zone.laneCenter)[1]
@@ -101,9 +100,9 @@ function MineClearing.startMineClearing(config, zone, zoneState, ships)
     origin = center,
     bearing = zone.laneBearing,
     count = #sweepers,
-    inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.route.inlandMarginM,
-    areaMarginM = amphibOps.mineClearing.areaMarginM,
-    routeConfig = amphibOps.route,
+    inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.tuning.route.inlandMarginM,
+    areaMarginM = amphibOps.tuning.mineClearing.areaMarginM,
+    routeConfig = amphibOps.tuning.route,
   })
 
   zoneState.lanes = lanes
@@ -155,11 +154,11 @@ function MineClearing.startMineClearing(config, zone, zoneState, ships)
 end
 
 ---Send sweepers that reached the end of their serpentine home; destroyed sweepers count as done
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when every sweeper is done
-function MineClearing.updateMineClearing(config, zoneState)
-  local arrivalNm = config.red.amphibOps.route.arrivalNm
+function MineClearing.updateMineClearing(amphibOps, zoneState)
+  local arrivalNm = amphibOps.tuning.route.arrivalNm
   local isAllDone = true
 
   for guid, sweeper in pairs(zoneState.minesweepers or {}) do

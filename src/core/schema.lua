@@ -854,7 +854,11 @@ function ScenEdit_DeleteMinefield(params) end
 ---Operational zone descriptor for amphibious operations
 ---Defines complete landing zone configuration including air and surface assets
 ---@class SBJ__OperationalZoneDescriptor: table
----@field name string Operational zone name
+---@field name string Operational zone name (e.g., "Taoyuan", "Sishu", "Penghu")
+---@field fleet SBJ__FleetDescriptor Ship formations leaving for and anchoring in this zone
+---@field sags SBJ__SAGDescriptor[] Surface Action Groups assigned to this zone
+---@field airLandingZone string[] Air landing zone reference area
+---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
 ---@field baseGUID string Home base GUID for embarked units
 ---@field anchorageArea string[] LHD/LPD anchorage area reference points
 ---@field lstAnchorageArea string[] LST anchorage area reference points
@@ -917,18 +921,13 @@ function ScenEdit_DeleteMinefield(params) end
 ---@class SBJ__DestinationDescriptor: table
 ---@field areas SBJ__OperationAreaDescriptor[] Array of destination area descriptors
 
----Amphibious operation descriptor
----Comprehensive configuration for one complete amphibious landing operation
----Includes departure, destination, air landing zones, and participating forces
+---Amphibious fleet descriptor
+---Departure, destination and unit naming for the ships of one zone
 ---Used for scenario initialization and deployment planning
----@class SBJ__AmphibiousOperationDescriptor: table
----@field name string Operation name (e.g., "Taoyuan", "Sishu", "Penghu")
+---@class SBJ__FleetDescriptor: table
 ---@field names string[] Unit name array
----@field sagNames string[] Surface Action Group names assigned to this operation
 ---@field from SBJ__DepartureDescriptor Departure configuration
 ---@field to SBJ__DestinationDescriptor Destination configuration
----@field airLandingZone string[] Air landing zone reference area
----@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
 
 ---Amphibious Operations system configuration
 ---Comprehensive configuration for amphibious assault operations including
@@ -940,14 +939,16 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field transferCargo table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartTime table<string, number[]> Mission start times by type (seconds)
 ---@field formationSettings SBJ__AmphibiousFormationConfig Ship formation layout configuration
----@field operations SBJ__AmphibiousOperationDescriptor[] Amphibious operation descriptors
----@field operationalZones SBJ__OperationalZoneDescriptor[] Operation zone descriptors
+---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
----@field sags table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
 ---@field isTesting boolean Whether the system is in testing mode
+---@field tuning SBJ__AmphibTuningConfig Shared lane, boat, obstacle and ACV wave parameters
+---@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start
+
+---Shared parameters used by every zone of the amphibious operations
+---@class SBJ__AmphibTuningConfig: table
 ---@field route SBJ__RouteConfig Lane layout and routing through swept lanes
 ---@field mineClearing SBJ__MineClearingConfig Type 529 mine clearing settings
----@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start
 ---@field assaultBoat SBJ__AssaultBoatConfig Assault boat settings
 ---@field obstacle SBJ__ObstacleConfig Beach obstacle settings
 ---@field acvWave SBJ__AcvWaveConfig ACV wave limits
@@ -2046,7 +2047,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---Area, operation, layout and cargo shared by every ship type created for one operation area
 ---@class SBJ__ShipFormationContext: table
 ---@field areaDescriptor SBJ__OperationAreaDescriptor Area configuration
----@field descriptor SBJ__AmphibiousOperationDescriptor Operation configuration
+---@field fleet SBJ__FleetDescriptor Fleet configuration of the zone
 ---@field shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
 ---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
 

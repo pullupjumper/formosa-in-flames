@@ -52,7 +52,7 @@ describe("Hovercraft", function()
     }
   end
 
-  local CONFIG = { red = { amphibOps = { route = makeRouteConfig(), formationSettings = { hovercraftSpeed = 40 } } } }
+  local CONFIG = { tuning = { route = makeRouteConfig() }, formationSettings = { hovercraftSpeed = 40 } }
   local zone = {
     name = "Taoyuan",
     anchorageArea = { "RP-ANC" },

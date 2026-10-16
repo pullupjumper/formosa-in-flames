@@ -47,12 +47,12 @@ end
 
 ---Tile the zone's obstacle area into cells, mark cells in front of landed boats as clearing,
 ---and start the clearing timer
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param currentTime number
 ---@return boolean # Always true; a missing obstacle area just yields no cells
-function ObstacleClearing.startObstacleClearing(config, zone, zoneState, currentTime)
+function ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, currentTime)
   local lanes = zoneState.lanes
 
   if not lanes then
@@ -61,7 +61,7 @@ function ObstacleClearing.startObstacleClearing(config, zone, zoneState, current
 
   local frame = { origin = lanes.origin, bearing = lanes.bearing }
   local polygon = GameUtils.findAreaLocations(constants.SIDES.BLUE, zone.obstacleArea)
-  local cells = LaneGeometry.buildObstacleCells(frame, polygon, config.red.amphibOps.obstacle.cellSizeM)
+  local cells = LaneGeometry.buildObstacleCells(frame, polygon, amphibOps.tuning.obstacle.cellSizeM)
 
   zoneState.obstacle = { cells = cells }
   zoneState.obstacleStartedAt = currentTime
@@ -80,13 +80,13 @@ function ObstacleClearing.startObstacleClearing(config, zone, zoneState, current
 end
 
 ---After clearSec, clear the cells of every lane whose boat is still alive and open those lanes
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@param currentTime number
 ---@return boolean # True once clearing has finished
-function ObstacleClearing.updateObstacleClearing(config, zoneState, currentTime)
+function ObstacleClearing.updateObstacleClearing(amphibOps, zoneState, currentTime)
   local elapsed = currentTime - (zoneState.obstacleStartedAt or currentTime)
-  if elapsed < config.red.amphibOps.obstacle.clearSec then
+  if elapsed < amphibOps.tuning.obstacle.clearSec then
     return false
   end
 

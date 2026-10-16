@@ -123,7 +123,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 兩棲車 | 8 kt（約 14.8 km/h） | `formationSettings.acvSpeed`，油門 Full |
 | 氣墊船（Type 726A） | 約 40 kt | CMO 實測；config 只設油門 Full |
 | 運輸直升機（Z-18） | 約 130 kt | CMO 實測；config 設轉場 Military、到站 Afterburner，高度 304 |
-| 衝鋒舟 | 30 kt | `config.red.amphibOps.assaultBoat.speed`（`manualSpeed`） |
+| 衝鋒舟 | 30 kt | `config.red.amphibOps.tuning.assaultBoat.speed`（`manualSpeed`） |
 
 兩棲車與 LST 都比原文快（原文泛水編波約 7 km/h，過渡航態 14.4 km/h）。
 
@@ -137,7 +137,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 3 個營 | 3 | 12 |
 | 1 個營 | 1 | 4 |
 
-`config.red.amphibOps.operations` 的 `type082` 數量需等於營數（目前 4 個作戰為 4 艘，2 個作戰為 1 艘）。
+`config.red.amphibOps.zones[].fleet` 的 `type082` 數量需等於營數（目前 4 個作戰為 4 艘，2 個作戰為 1 艘）。
 
 ## 4. 反水雷（獵雷艦 Type 529，DBID 4620）
 
@@ -188,7 +188,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 **流程**
 1. 所有衝鋒舟都走完航線、停在登陸區後，開始計時。
-2. 超過 `config.red.amphibOps.obstacle.clearSec`（預設值隨意給）後，衝鋒舟前方的方塊設為 `cleared`。
+2. 超過 `config.red.amphibOps.tuning.obstacle.clearSec`（預設值隨意給）後，衝鋒舟前方的方塊設為 `cleared`。
 3. 一條灘際通道的方塊全部 `cleared`，該通道算完成。
 
 **放行**：所有「有衝鋒舟破障的」灘際通道都完成，兩棲車才開始泛水，航線才能通過。沒有衝鋒舟的通道不計入，也不能走。第二組實際只能用 12 條。
@@ -240,7 +240,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 預計波次：桃園 3 波（224 / 224 / 192），喜樹 3 波（224 / 224 / 72），澎湖 1 波（56）。
 
-**config**（`config.red.amphibOps.acvWave`，預設值隨意給）：`capacity.zbd05`、`capacity.ztd05`（112 / 112）、`lossRatio`（0.3）、`holdSec`（30 × 60）。
+**config**（`config.red.amphibOps.tuning.acvWave`，預設值隨意給）：`capacity.zbd05`、`capacity.ztd05`（112 / 112）、`lossRatio`（0.3）、`holdSec`（30 × 60）。
 
 **state**（`SBJ__ZoneState` 新增）：`acvGuids`、`acvPausedAt`。
 
@@ -259,7 +259,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 ## 9. 航線規則（`routePlanner.lua`）
 
-衝鋒舟、兩棲車、氣墊船共用。距離參數在 `config.red.amphibOps.route`。
+衝鋒舟、兩棲車、氣墊船共用。距離參數在 `config.red.amphibOps.tuning.route`。
 
 1. **選水際通道**：離艦位置到各 `L_i` 最近的；距離差在 `laneTieNm` 內選負載少的（負載 = 已送進該通道的單位數）。兩棲車、氣墊船只考慮至少有一條 `cleared` 灘際通道的水際通道。
 2. **排隊入口點**：每條水際通道一個計數器 `k`（`zoneState.queueCounters`）。入口 = `L_i` 往外海退 `(k mod queueDepth) × columnSpacingM`。

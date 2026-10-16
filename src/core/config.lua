@@ -1715,193 +1715,139 @@ config.red.amphibOps.formationSettings = {
   hovercraftSpeed = 40,
   sweeperSpeed = 25
 }
--- Lane layout and routing shared by Type 529, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
-config.red.amphibOps.route = {
-  deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
-  launchLineNm = 3,                           -- 泛水出發線，距岸
-  assaultLineNm = 2,                          -- 衝擊發起線，距岸
-  waterLaneSpacingM = 750,                    -- 相鄰水際通道間距
-  beachLaneOffsetsM = { -180, -60, 60, 180 }, -- 灘際通道相對水際通道的橫向偏移
-  shoreStandoffM = 100,                       -- S_lane 離岸距離
-  inlandMarginM = 100,                        -- E_lane 超出障礙範圍的距離
-  columnSpacingM = 100,                       -- 排隊入口點間距（往外海退）
-  queueDepth = 5,                             -- 排隊入口點數量
-  queueSpacingM = 50,                         -- 通道內停車位間距
-  laneTieNm = 0.5,                            -- 距離差在此內視為平手，改選負載少的通道
-  arrivalNm = 0.1,                            -- 離最後航點多近算到達
-}
-config.red.amphibOps.mineClearing = {
-  areaMarginM = 60, -- 掃雷任務區域比最外側灘際通道再寬多少
-}
 config.red.amphibOps.minefields = {
   -- delay: CMO arming delay; area: BLUE-side reference points
   { area = constants.AREAS.MINEFIELD_TAOYUAN, number = 500, delay = 0 },
   { area = constants.AREAS.MINEFIELD_SISHU,   number = 500, delay = 0 },
   { area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
 }
-config.red.amphibOps.assaultBoat = {
-  speed = 30,
+-- Lane layout and routing shared by Type 529, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
+config.red.amphibOps.tuning = {
+  route = {
+    deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
+    launchLineNm = 3,                           -- 泛水出發線，距岸
+    assaultLineNm = 2,                          -- 衝擊發起線，距岸
+    waterLaneSpacingM = 750,                    -- 相鄰水際通道間距
+    beachLaneOffsetsM = { -180, -60, 60, 180 }, -- 灘際通道相對水際通道的橫向偏移
+    shoreStandoffM = 100,                       -- S_lane 離岸距離
+    inlandMarginM = 100,                        -- E_lane 超出障礙範圍的距離
+    columnSpacingM = 100,                       -- 排隊入口點間距（往外海退）
+    queueDepth = 5,                             -- 排隊入口點數量
+    queueSpacingM = 50,                         -- 通道內停車位間距
+    laneTieNm = 0.5,                            -- 距離差在此內視為平手，改選負載少的通道
+    arrivalNm = 0.1,                            -- 離最後航點多近算到達
+  },
+  mineClearing = {
+    areaMarginM = 60, -- 掃雷任務區域比最外側灘際通道再寬多少
+  },
+  assaultBoat = {
+    speed = 30,
+  },
+  obstacle = {
+    cellSizeM = 50,
+    clearSec = 20 * 60,
+  },
+  acvWave = {
+    capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
+    lossRatio = 0.3,                         -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
+    holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
+  },
 }
-config.red.amphibOps.obstacle = {
-  cellSizeM = 50,
-  clearSec = 20 * 60,
-}
-config.red.amphibOps.acvWave = {
-  capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
-  lossRatio = 0.3,                         -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
-  holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
-}
-config.red.amphibOps.operations = {
+config.red.amphibOps.zones = {
   {
     name = "Taoyuan",
-    sagNames = { "SAG 173", "SAG 155" },
-    names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
-    from = {
-      areas = { {
-        startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_TAOYUAN },
-        heading = config.red.amphibOps.formationSettings.heading.north,
-        shipCounts = {
-          type075 = 2,
-          type071 = 4,
-          type076 = 1,
-          type072iii = 7,
-          type072a = 8,
-          type073a = 7,
-          ferry = 4,
-          roro = 2,
-          barge = 1,
-          type082 = 4
-        }
-      } },
-      stagingArea = constants.AREAS.AREA_OF_OPS_D,
-    },
-    to = {
-      areas = { {
-        startingPoints = {
-          type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
-          type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
-        },
-        heading = config.red.amphibOps.formationSettings.heading.west,
-        shipCounts = {
-          type075 = 2,
-          type071 = 4,
-          type076 = 1,
-          type072iii = 7,
-          type072a = 8,
-          type073a = 7,
-          type071InLSTArea = 0,
-          ferry = 4,
-          roro = 2,
-          barge = 1,
-          type082 = 4
-        }
-      }, }
-    },
-    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    contactThreshold = 3
-  },
-  {
-    name = "Sishu",
-    sagNames = { "SAG 154", "SAG 175" },
-    names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
-    from = {
-      areas = { {
-        startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
-        heading = config.red.amphibOps.formationSettings.heading.sishu,
-        shipCounts = {
-          type075 = 1,
-          type071 = 3,
-          type076 = 0,
-          type072iii = 2,
-          type072a = 4,
-          type073a = 2,
-          type071InLSTArea = 0,
-          ferry = 4,
-          roro = 2,
-          barge = 1,
-          type082 = 4
-        }
-      } },
-      stagingArea = constants.AREAS.AREA_OF_OPS_F,
-    },
-    to = {
-      areas = { {
-        startingPoints = {
-          type075 = constants.AREAS.DESTINATION_075_SISHU,
-          type071 = constants.AREAS.DESTINATION_071_SISHU,
-        },
-        heading = config.red.amphibOps.formationSettings.heading.sishu,
-        shipCounts = {
-          type075 = 1,
-          type071 = 3,
-          type076 = 0,
-          type072iii = 2,
-          type072a = 4,
-          type073a = 2,
-          type071InLSTArea = 0,
-          ferry = 4,
-          roro = 2,
-          barge = 1,
-          type082 = 4
-        }
-      }, }
+    fleet = {
+      names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
+      from = {
+        areas = { {
+          startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_TAOYUAN },
+          heading = config.red.amphibOps.formationSettings.heading.north,
+          shipCounts = {
+            type075 = 2,
+            type071 = 4,
+            type076 = 1,
+            type072iii = 7,
+            type072a = 8,
+            type073a = 7,
+            ferry = 4,
+            roro = 2,
+            barge = 1,
+            type082 = 4
+          }
+        } },
+        stagingArea = constants.AREAS.AREA_OF_OPS_D,
+      },
+      to = {
+        areas = { {
+          startingPoints = {
+            type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
+            type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
+          },
+          heading = config.red.amphibOps.formationSettings.heading.west,
+          shipCounts = {
+            type075 = 2,
+            type071 = 4,
+            type076 = 1,
+            type072iii = 7,
+            type072a = 8,
+            type073a = 7,
+            type071InLSTArea = 0,
+            ferry = 4,
+            roro = 2,
+            barge = 1,
+            type082 = 4
+          }
+        }, }
+      },
     },
     airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    contactThreshold = 3
-  },
-  {
-    name = "Penghu",
-    sagNames = { "SAG 167" },
-    names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
-    from = {
-      areas = { {
-        startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
-        heading = config.red.amphibOps.formationSettings.heading.penghu,
-        shipCounts = {
-          type075 = 1,
-          type071 = 1,
-          type076 = 0,
-          type072iii = 2,
-          type072a = 3,
-          type073a = 1,
-          type071InLSTArea = 0,
-          ferry = 0,
-          roro = 0,
-          barge = 0,
-          type082 = 1
-        }
-      } },
-      stagingArea = constants.AREAS.AREA_OF_OPS_E,
-    },
-    to = {
-      areas = { {
-        startingPoints = {
-          type075 = constants.AREAS.DESTINATION_075_PENGHU,
-          type071 = constants.AREAS.DESTINATION_071_PENGHU,
+    contactThreshold = 3,
+    sags = {
+      {
+        groupName = "SAG 173",
+        unitMap = {
+          type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
+          type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
         },
-        heading = config.red.amphibOps.formationSettings.heading.penghu,
-        shipCounts = {
-          type075 = 1,
-          type071 = 1,
-          type076 = 0,
-          type072iii = 2,
-          type072a = 3,
-          type073a = 1,
-          type071InLSTArea = 0,
-          ferry = 0,
-          roro = 0,
-          barge = 0,
-          type082 = 1
-        }
-      }, }
+        from = {
+          pos = { latitude = "N 26.54.18", longitude = "E 121.31.38", },
+          heading = 225
+        },
+        to = {
+          anchorageArea = {
+            { latitude = "N 25.17.39", longitude = "E 120.56.04", desiredSpeed = 14, },
+            { latitude = "N 25.17.32", longitude = "E 120.56.07", desiredSpeed = 14, },
+          },
+          amphibiousVehicleStagingArea = {
+            { latitude = "N 25.06.19", longitude = "E 121.04.15", desiredSpeed = 14, },
+          },
+          heading = config.red.amphibOps.formationSettings.heading.west.vertical,
+        },
+        area = constants.AREAS.AIRLANDING_TAOYUAN
+      },
+      {
+        groupName = "SAG 155",
+        unitMap = {
+          type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
+          type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
+        },
+        from = {
+          pos = { latitude = "N 26.13.13", longitude = "E 120.59.55", },
+          heading = 225
+        },
+        to = {
+          anchorageArea = {
+            { latitude = "N 25.33.23", longitude = "E 120.54.45", desiredSpeed = 14, },
+            { latitude = "N 25.21.00", longitude = "E 121.04.12", desiredSpeed = 14, },
+          },
+          amphibiousVehicleStagingArea = {
+            { latitude = "N 25.08.29", longitude = "E 121.10.20", desiredSpeed = 14, },
+          },
+          heading = config.red.amphibOps.formationSettings.heading.west.vertical,
+        },
+        area = constants.AREAS.AIRLANDING_TAOYUAN
+      },
     },
-    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    contactThreshold = 3
-  },
-}
-config.red.amphibOps.operationalZones = {
-  {
-    name = "Taoyuan",
     arrivalThreshold = 15,
     baseGUID = constants.BASES.PINGTAN_PORT,
     anchorageArea = constants.AREAS.ANCH_AREA_TAOYUAN,
@@ -2048,6 +1994,97 @@ config.red.amphibOps.operationalZones = {
   },
   {
     name = "Sishu",
+    fleet = {
+      names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
+      from = {
+        areas = { {
+          startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
+          heading = config.red.amphibOps.formationSettings.heading.sishu,
+          shipCounts = {
+            type075 = 1,
+            type071 = 3,
+            type076 = 0,
+            type072iii = 2,
+            type072a = 4,
+            type073a = 2,
+            type071InLSTArea = 0,
+            ferry = 4,
+            roro = 2,
+            barge = 1,
+            type082 = 4
+          }
+        } },
+        stagingArea = constants.AREAS.AREA_OF_OPS_F,
+      },
+      to = {
+        areas = { {
+          startingPoints = {
+            type075 = constants.AREAS.DESTINATION_075_SISHU,
+            type071 = constants.AREAS.DESTINATION_071_SISHU,
+          },
+          heading = config.red.amphibOps.formationSettings.heading.sishu,
+          shipCounts = {
+            type075 = 1,
+            type071 = 3,
+            type076 = 0,
+            type072iii = 2,
+            type072a = 4,
+            type073a = 2,
+            type071InLSTArea = 0,
+            ferry = 4,
+            roro = 2,
+            barge = 1,
+            type082 = 4
+          }
+        }, }
+      },
+    },
+    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
+    contactThreshold = 3,
+    sags = {
+      {
+        groupName = "SAG 154",
+        unitMap = {
+          type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
+          type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
+        },
+        from = {
+          pos = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
+          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+        },
+        to = {
+          anchorageArea = {
+            { latitude = "N 22.49.20", longitude = "E 119.55.57", desiredSpeed = 14, },
+          },
+          amphibiousVehicleStagingArea = {
+            { latitude = "N 22.53.16", longitude = "E 120.07.39", desiredSpeed = 14, },
+          },
+          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+        },
+        area = constants.AREAS.AIRLANDING_CHANGLONG,
+      },
+      {
+        groupName = "SAG 175",
+        unitMap = {
+          type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
+          type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
+        },
+        from = {
+          pos = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
+          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+        },
+        to = {
+          anchorageArea = {
+            { latitude = "N 22.55.20", longitude = "E 119.52.25", desiredSpeed = 14, },
+          },
+          amphibiousVehicleStagingArea = {
+            { latitude = "N 22.58.52", longitude = "E 120.05.48", desiredSpeed = 14, },
+          },
+          heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+        },
+        area = constants.AREAS.AIRLANDING_CHANGLONG,
+      },
+    },
     arrivalThreshold = 10,
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_SISHU,
@@ -2194,6 +2231,76 @@ config.red.amphibOps.operationalZones = {
   },
   {
     name = "Penghu",
+    fleet = {
+      names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
+      from = {
+        areas = { {
+          startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
+          heading = config.red.amphibOps.formationSettings.heading.penghu,
+          shipCounts = {
+            type075 = 1,
+            type071 = 1,
+            type076 = 0,
+            type072iii = 2,
+            type072a = 3,
+            type073a = 1,
+            type071InLSTArea = 0,
+            ferry = 0,
+            roro = 0,
+            barge = 0,
+            type082 = 1
+          }
+        } },
+        stagingArea = constants.AREAS.AREA_OF_OPS_E,
+      },
+      to = {
+        areas = { {
+          startingPoints = {
+            type075 = constants.AREAS.DESTINATION_075_PENGHU,
+            type071 = constants.AREAS.DESTINATION_071_PENGHU,
+          },
+          heading = config.red.amphibOps.formationSettings.heading.penghu,
+          shipCounts = {
+            type075 = 1,
+            type071 = 1,
+            type076 = 0,
+            type072iii = 2,
+            type072a = 3,
+            type073a = 1,
+            type071InLSTArea = 0,
+            ferry = 0,
+            roro = 0,
+            barge = 0,
+            type082 = 1
+          }
+        }, }
+      },
+    },
+    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
+    contactThreshold = 3,
+    sags = {
+      {
+        groupName = "SAG 167",
+        unitMap = {
+          type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
+          type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
+        },
+        from = {
+          pos = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
+          heading = config.red.amphibOps.formationSettings.heading.penghu.vertical,
+        },
+        to = {
+          anchorageArea = {
+            { latitude = "N 23.32.46", longitude = "E 119.16.11", desiredSpeed = 14, },
+          },
+          amphibiousVehicleStagingArea = {
+            { latitude = "N 23.32.34", longitude = "E 119.29.14", desiredSpeed = 14, },
+          },
+          heading = config.red.amphibOps.formationSettings.heading.penghu.vertical,
+        },
+        area = constants.AREAS.AIRLANDING_PENGHU,
+      },
+    },
     arrivalThreshold = 5,
     baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
     anchorageArea = constants.AREAS.ANCH_AREA_PENGHU,
@@ -2358,115 +2465,6 @@ config.red.amphibOps.transportAircraft = {
         cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup3 }
       },
     }
-  },
-}
-config.red.amphibOps.sags = {
-  ["SAG 173"] = {
-    groupName = "SAG 173",
-    unitMap = {
-      type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
-      type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
-    },
-    from = {
-      pos = { latitude = "N 26.54.18", longitude = "E 121.31.38", },
-      heading = 225
-    },
-    to = {
-      anchorageArea = {
-        { latitude = "N 25.17.39", longitude = "E 120.56.04", desiredSpeed = 14, },
-        { latitude = "N 25.17.32", longitude = "E 120.56.07", desiredSpeed = 14, },
-      },
-      amphibiousVehicleStagingArea = {
-        { latitude = "N 25.06.19", longitude = "E 121.04.15", desiredSpeed = 14, },
-      },
-      heading = config.red.amphibOps.formationSettings.heading.west.vertical,
-    },
-    area = constants.AREAS.AIRLANDING_TAOYUAN
-  },
-  ["SAG 155"] = {
-    groupName = "SAG 155",
-    unitMap = {
-      type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
-      type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
-    },
-    from = {
-      pos = { latitude = "N 26.13.13", longitude = "E 120.59.55", },
-      heading = 225
-    },
-    to = {
-      anchorageArea = {
-        { latitude = "N 25.33.23", longitude = "E 120.54.45", desiredSpeed = 14, },
-        { latitude = "N 25.21.00", longitude = "E 121.04.12", desiredSpeed = 14, },
-      },
-      amphibiousVehicleStagingArea = {
-        { latitude = "N 25.08.29", longitude = "E 121.10.20", desiredSpeed = 14, },
-      },
-      heading = config.red.amphibOps.formationSettings.heading.west.vertical,
-    },
-    area = constants.AREAS.AIRLANDING_TAOYUAN
-  },
-  ["SAG 167"] = {
-    groupName = "SAG 167",
-    unitMap = {
-      type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
-      type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
-    },
-    from = {
-      pos = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
-      heading = config.red.amphibOps.formationSettings.heading.penghu.vertical,
-    },
-    to = {
-      anchorageArea = {
-        { latitude = "N 23.32.46", longitude = "E 119.16.11", desiredSpeed = 14, },
-      },
-      amphibiousVehicleStagingArea = {
-        { latitude = "N 23.32.34", longitude = "E 119.29.14", desiredSpeed = 14, },
-      },
-      heading = config.red.amphibOps.formationSettings.heading.penghu.vertical,
-    },
-    area = constants.AREAS.AIRLANDING_PENGHU,
-  },
-  ["SAG 154"] = {
-    groupName = "SAG 154",
-    unitMap = {
-      type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
-      type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
-    },
-    from = {
-      pos = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
-      heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
-    },
-    to = {
-      anchorageArea = {
-        { latitude = "N 22.49.20", longitude = "E 119.55.57", desiredSpeed = 14, },
-      },
-      amphibiousVehicleStagingArea = {
-        { latitude = "N 22.53.16", longitude = "E 120.07.39", desiredSpeed = 14, },
-      },
-      heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
-    },
-    area = constants.AREAS.AIRLANDING_CHANGLONG,
-  },
-  ["SAG 175"] = {
-    groupName = "SAG 175",
-    unitMap = {
-      type054a = { dbid = constants.PLATFORMS.TYPE_054A, },
-      type052d = { dbid = constants.PLATFORMS.TYPE_052D, }
-    },
-    from = {
-      pos = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
-      heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
-    },
-    to = {
-      anchorageArea = {
-        { latitude = "N 22.55.20", longitude = "E 119.52.25", desiredSpeed = 14, },
-      },
-      amphibiousVehicleStagingArea = {
-        { latitude = "N 22.58.52", longitude = "E 120.05.48", desiredSpeed = 14, },
-      },
-      heading = config.red.amphibOps.formationSettings.heading.sishu.vertical,
-    },
-    area = constants.AREAS.AIRLANDING_CHANGLONG,
   },
 }
 

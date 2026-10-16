@@ -32,17 +32,6 @@ local ARRIVED_PHASES = {
 ---@type string[]
 local HELICOPTER_MISSION_CATEGORIES = { "transportHelicopter", "attackHelicopter" }
 
----Find an operation descriptor by zone name
----@param operations SBJ__AmphibiousOperationDescriptor[]
----@param name string
----@return SBJ__AmphibiousOperationDescriptor|nil # Matched descriptor, or nil if not found
-local function findOperationByName(operations, name)
-  for _, op in ipairs(operations) do
-    if op.name == name then return op end
-  end
-  return nil
-end
-
 ---Handle temporary Taoyuan-only loading and reconnaissance setup
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
@@ -60,16 +49,16 @@ end
 ---Process a single operational zone through all amphibious phases
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
----@param operation SBJ__AmphibiousOperationDescriptor
-local function processZone(tickCtx, zone, operation)
+local function processZone(tickCtx, zone)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local contacts, currentTime, filteredShips = tickCtx.contacts, tickCtx.currentTime, tickCtx.filteredShips
+  local amphibOps = config.red.amphibOps
   local zoneState = landingState.amphibOps.zoneStates[zone.name]
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MOVING
       and GameUtils.isAfterStartTime(config.red.triggers.amphibiousOps.startTime) then
-    local done = ShipMovement.moveToStagingArea(config.red.amphibOps, landingState.amphibOps.calculationResult,
-      filteredShips, operation)
+    local done = ShipMovement.moveToStagingArea(zone, landingState.amphibOps.calculationResult,
+      filteredShips, amphibOps.formationSettings, amphibOps.isTesting)
     if done then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
     end
@@ -92,12 +81,12 @@ local function processZone(tickCtx, zone, operation)
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT then
-    local contactCount = AmphibiousAssault.countContactsInArea(contacts, operation.airLandingZone)
+    local contactCount = AmphibiousAssault.countContactsInArea(contacts, zone.airLandingZone)
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
-    local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.red.amphibOps.periodSec
+    local shouldLaunch = contactCount < zone.contactThreshold or elapsed >= amphibOps.periodSec
 
     if shouldLaunch then
-      local ok = MineClearing.startMineClearing(config, zone, zoneState, filteredShips)
+      local ok = MineClearing.startMineClearing(amphibOps, zone, zoneState, filteredShips)
           and AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_MISSION_CATEGORIES)
 
       if ok then
@@ -107,9 +96,9 @@ local function processZone(tickCtx, zone, operation)
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MINE_CLEARING then
-    if MineClearing.updateMineClearing(config, zoneState) then
+    if MineClearing.updateMineClearing(amphibOps, zoneState) then
       local ok = AssaultBoat.pairBoats(zone, zoneState, filteredShips)
-          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.red.amphibOps.sags)
+          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips)
 
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT
@@ -118,23 +107,23 @@ local function processZone(tickCtx, zone, operation)
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT then
-    AssaultBoat.launchBoats(config, zone, zoneState)
+    AssaultBoat.launchBoats(amphibOps, zone, zoneState)
 
-    if AssaultBoat.updateBoats(config, zoneState)
-        and ObstacleClearing.startObstacleClearing(config, zone, zoneState, currentTime) then
+    if AssaultBoat.updateBoats(amphibOps, zoneState)
+        and ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, currentTime) then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING
     end
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING then
-    if ObstacleClearing.updateObstacleClearing(config, zoneState, currentTime) then
+    if ObstacleClearing.updateObstacleClearing(amphibOps, zoneState, currentTime) then
       zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
     end
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING then
     -- TODO: 換成更嚴格的灘頭堡條件
-    local result = AmphibiousAssault.countUnitsInEachArea(config)
+    local result = AmphibiousAssault.countUnitsInEachArea(amphibOps.zones)
     local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
 
     if hasBeachhead then
@@ -151,8 +140,8 @@ local function processZone(tickCtx, zone, operation)
   end
 
   if constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
-    Hovercraft.launchHovercraft(config, zone, zoneState, filteredShips)
-    Hovercraft.updateHovercraft(config, zoneState)
+    Hovercraft.launchHovercraft(amphibOps, zone, zoneState, filteredShips)
+    Hovercraft.updateHovercraft(amphibOps, zoneState)
   end
 end
 
@@ -161,7 +150,7 @@ end
 local function processCargoRetransfer(tickCtx)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local currentTime, filteredShips = tickCtx.currentTime, tickCtx.filteredShips
-  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
+  for _, zone in ipairs(config.red.amphibOps.zones) do
     local zoneState = landingState.amphibOps.zoneStates[zone.name]
     if zoneState.airlandingMissionStartTime ~= nil then
       local elapsed = currentTime - zoneState.airlandingMissionStartTime
@@ -180,7 +169,7 @@ end
 ---@param amphibOps SBJ__AmphibOpsContext
 ---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
 local function hasAllZonesArrived(config, amphibOps)
-  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
+  for _, zone in ipairs(config.red.amphibOps.zones) do
     local zoneState = amphibOps.zoneStates[zone.name]
     if not zoneState or not ARRIVED_PHASES[zoneState.phase] then
       return false
@@ -241,14 +230,8 @@ function Coordinator.process(config, landingState, params)
     currentTime = params.currentTime,
     filteredShips = params.filteredShips
   }
-  for _, zone in ipairs(config.red.amphibOps.operationalZones) do
-    local operation = findOperationByName(config.red.amphibOps.operations, zone.name)
-
-    if operation then
-      processZone(tickCtx, zone, operation)
-    else
-      Logger.error(LogFormat.line("ERROR", { zone = zone.name, reason = "operation_not_found" }))
-    end
+  for _, zone in ipairs(config.red.amphibOps.zones) do
+    processZone(tickCtx, zone)
   end
 
   processCargoRetransfer(tickCtx)

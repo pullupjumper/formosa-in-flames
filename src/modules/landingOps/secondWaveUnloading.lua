@@ -270,12 +270,12 @@ end
 
 ---Get the operational zone for a barge-RORO pair
 ---Checks if both units are in same ACV area and within 1nm of each other
----@param amphibOpsConfig SBJ__AmphibOpsConfig
+---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
-function SecondWaveUnloading.getBargeROROZone(amphibOpsConfig, barge, roro)
-  for _, zone in ipairs(amphibOpsConfig.operationalZones) do
+function SecondWaveUnloading.getBargeROROZone(zones, barge, roro)
+  for _, zone in ipairs(zones) do
     local distance = GameApi.Tool_Range(roro.guid, barge.guid)
 
     if distance and roro:inArea(zone.acv.area) and barge:inArea(zone.acv.area) and distance < 1 then

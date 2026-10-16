@@ -40,27 +40,25 @@ describe("MineClearing", function()
   ---@return table
   local function makeConfig()
     return {
-      red = {
-        amphibOps = {
-          route = {
-            deployLineNm = 12,
-            launchLineNm = 3,
-            assaultLineNm = 2,
-            waterLaneSpacingM = 750,
-            beachLaneOffsetsM = { -180, -60, 60, 180 },
-            shoreStandoffM = 100,
-            inlandMarginM = 100,
-            columnSpacingM = 100,
-            queueDepth = 5,
-            queueSpacingM = 50,
-            laneTieNm = 0.5,
-            arrivalNm = 0.1,
-          },
-          mineClearing = { areaMarginM = 60 },
-          minefields = {},
-          formationSettings = { shipSpeed = 17 }
+      tuning = {
+        route = {
+          deployLineNm = 12,
+          launchLineNm = 3,
+          assaultLineNm = 2,
+          waterLaneSpacingM = 750,
+          beachLaneOffsetsM = { -180, -60, 60, 180 },
+          shoreStandoffM = 100,
+          inlandMarginM = 100,
+          columnSpacingM = 100,
+          queueDepth = 5,
+          queueSpacingM = 50,
+          laneTieNm = 0.5,
+          arrivalNm = 0.1,
         },
+        mineClearing = { areaMarginM = 60 },
       },
+      minefields = {},
+      formationSettings = { shipSpeed = 17 }
     }
   end
 

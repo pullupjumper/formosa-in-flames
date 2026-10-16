@@ -80,11 +80,11 @@ end
 -- ============================================================================
 
 ---Route and launch ready hovercraft from motherships anchored in the zone: course first, then Launch
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param ships CMO__SideUnit[]
-function Hovercraft.launchHovercraft(config, zone, zoneState, ships)
+function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   if not zoneState.lanes then
     return
   end
@@ -104,7 +104,7 @@ function Hovercraft.launchHovercraft(config, zone, zoneState, ships)
           lanes = zoneState.lanes,
           launchPos = { latitude = ship.latitude, longitude = ship.longitude },
           guid = craft.guid,
-          routeConfig = config.red.amphibOps.route,
+          routeConfig = amphibOps.tuning.route,
           queueCounters = zoneState.queueCounters,
           laneSlots = zoneState.laneSlots.hovercraft,
           cells = zoneState.obstacle and zoneState.obstacle.cells,
@@ -132,10 +132,10 @@ function Hovercraft.launchHovercraft(config, zone, zoneState, ships)
 end
 
 ---Mark hovercraft that reached their parking slot
----@param config SBJ__Config
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
-function Hovercraft.updateHovercraft(config, zoneState)
-  local arrivalNm = config.red.amphibOps.route.arrivalNm
+function Hovercraft.updateHovercraft(amphibOps, zoneState)
+  local arrivalNm = amphibOps.tuning.route.arrivalNm
 
   for guid, entry in pairs(zoneState.hovercraft or {}) do
     local unit = GameApi.ScenEdit_GetUnit(guid)

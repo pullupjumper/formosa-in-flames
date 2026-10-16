@@ -129,13 +129,13 @@ describe("LandingOps", function()
     -- Positive: delegates destination pre-calculation to ShipMovement
     it("should initialize landing operations by calculating destinations", function()
       local saveData = makeSaveData({ calculationResult = {} })
-      local cfg = { operations = {} }
+      local cfg = { zones = {}, formationSettings = {} }
       local stubCalc = trackStub(stub(ShipMovement, "calculateDestination"))
       local stubLay = trackStub(stub(MineClearing, "layMinefields"))
 
       LandingOps.init(makeConfig(cfg), saveData)
 
-      assert.stub(stubCalc).was.called_with(cfg, saveData.red.amphibOps.calculationResult)
+      assert.stub(stubCalc).was.called_with(cfg.zones, cfg.formationSettings, saveData.red.amphibOps.calculationResult)
       assert.stub(stubLay).was.called_with(cfg)
     end)
   end)
@@ -207,7 +207,7 @@ describe("LandingOps", function()
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV")
         .returns({ count = 2, isEmpty = false, isPaused = false }))
 
-      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, ship)
+      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       local params = stubLaunch.calls[1].vals[1]
@@ -232,7 +232,7 @@ describe("LandingOps", function()
       end))
       trackStub(stub(Logger, "warn"))
 
-      LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, makeShip())
+      LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, makeShip())
 
       assert.are.same(zone.acv.destination, course)
       assert.are.same({ "ACV-1" }, zoneState.acvGuids.zbd05)
@@ -246,7 +246,7 @@ describe("LandingOps", function()
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV"))
 
-      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, makeShip())
+      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, makeShip())
 
       assert.is_false(result)
       assert.stub(stubLaunch).was_not.called()
@@ -280,7 +280,7 @@ describe("LandingOps", function()
       trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = true, isPaused = false }))
       local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent").returns(true))
 
-      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, ship)
+      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       assert.is_true(wasRTB)
@@ -301,7 +301,7 @@ describe("LandingOps", function()
       trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = false, isPaused = true }))
       local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent"))
 
-      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, ship)
+      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       assert.is_false(wasRTB)
@@ -354,7 +354,7 @@ describe("LandingOps", function()
           },
         },
       })
-      local cfg = { operationalZones = { zone } }
+      local cfg = { zones = { zone } }
       local stubHasBridge = trackStub(stub(SecondWaveUnloading, "hasExtendedBridge").returns(true))
       local stubIsBridgeDestroyed = trackStub(stub(SecondWaveUnloading, "isBridgeDestroyed").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(roro))
@@ -367,7 +367,7 @@ describe("LandingOps", function()
       assert.stub(stubHasBridge).was.called_with(saveData.red.amphibOps.barges, ship)
       assert.stub(stubIsBridgeDestroyed).was.called_with(saveData.red.amphibOps.barges, ship)
       assert.stub(stubGetUnit).was.called_with(roro.guid)
-      assert.stub(stubGetZone).was.called_with({ operationalZones = { zone } }, ship, roro)
+      assert.stub(stubGetZone).was.called_with({ zone }, ship, roro)
       assert.stub(stubOffload).was.called_with({
         ship = roro,
         num = 20,
@@ -408,9 +408,11 @@ describe("LandingOps", function()
         }),
       }
       local cfg = {
-        sags = {
-          ["SAG Alpha"] = {
-            area = { "RP-SAG-1", "RP-SAG-2" },
+        zones = {
+          {
+            sags = {
+              { groupName = "SAG Alpha", area = { "RP-SAG-1", "RP-SAG-2" } },
+            },
           },
         },
       }
@@ -440,7 +442,7 @@ describe("LandingOps", function()
     -- Negative: returns false when the ship is not a valid Type 052D SAG unit
     it("should return false for ships outside the supported SAG destroyer context", function()
       local ship = makeShip({ dbid = constants.PLATFORMS.TYPE_054A })
-      local cfg = { sags = {} }
+      local cfg = { zones = {} }
 
       local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
 
@@ -460,9 +462,11 @@ describe("LandingOps", function()
         }),
       }
       local cfg = {
-        sags = {
-          ["SAG Alpha"] = {
-            area = { "RP-SAG-1", "RP-SAG-2" },
+        zones = {
+          {
+            sags = {
+              { groupName = "SAG Alpha", area = { "RP-SAG-1", "RP-SAG-2" } },
+            },
           },
         },
       }

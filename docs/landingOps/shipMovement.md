@@ -120,8 +120,8 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `calculateDestination(amphibOpsConfig, calculationResult)` | 計算所有作戰區域的艦船錨泊位置 |
-| `moveToStagingArea(amphibOpsConfig, saveData, filteredUnits, operation)` | 驅動艦隊從集結區移動至錨泊位置（單一作戰區） |
+| `calculateDestination(zones, formationSettings, calculationResult)` | 計算所有作戰區域的艦船錨泊位置 |
+| `moveToStagingArea(zone, calculationResult, filteredUnits, formationSettings, isTesting)` | 驅動艦隊從集結區移動至錨泊位置（單一作戰區） |
 
 ---
 

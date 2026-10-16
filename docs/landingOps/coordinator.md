@@ -23,7 +23,7 @@ coordinator 是 Landing Operations 的主流程引擎，由 `landingCheck.lua` �
 ```mermaid
 flowchart TD
     PROC["Coordinator.process()"]
-    LOOP["遍歷 operationalZones"]
+    LOOP["遍歷 zones"]
     FIND["findOperationByName<br>取得 operation 描述符"]
     ZONE["processZone<br>單一 zone 階段推進"]
     RETRANS["processCargoRetransfer<br>每 2 小時重轉運"]
@@ -171,8 +171,8 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 |---|---|
 | `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
 | `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
-| `config.red.amphibOps.operationalZones[].arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
-| `config.red.amphibOps.operations[].contactThreshold` | 空/機降區可接受的最大接觸數 |
+| `config.red.amphibOps.zones[].arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
+| `config.red.amphibOps.zones[].contactThreshold` | 空/機降區可接受的最大接觸數 |
 
 ---
 

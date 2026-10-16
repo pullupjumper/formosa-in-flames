@@ -145,56 +145,59 @@ describe("ShipMovement", function()
     return desc
   end
 
-  ---Create an amphibious operation descriptor
+  ---Create an operational zone descriptor
   ---@param overrides? table
   ---@return table
-  local function makeOperation(overrides)
-    local op = {
+  local function makeZone(overrides)
+    local zone = {
       name = "Taoyuan",
-      from = { stagingArea = { "RP-STAGING-1", "RP-STAGING-2" } },
-      sagNames = { "SAG Alpha" },
-      to = {
-        areas = {
-          {
-            startingPoints = {
-              type075 = { "RP-075-1" },
-              type071 = { "RP-071-1" },
-            },
-            heading = { horizontal = 90, vertical = 0 },
-            shipCounts = {
-              type075 = 2,
-              type071 = 2,
-              type076 = 1,
-              type072iii = 2,
-              type072a = 2,
-              type073a = 1,
-              type071InLSTArea = 1,
-              ferry = 1,
-              roro = 1,
-              barge = 1,
-              type082 = 1,
+      sags = {},
+      fleet = {
+        from = { stagingArea = { "RP-STAGING-1", "RP-STAGING-2" } },
+        to = {
+          areas = {
+            {
+              startingPoints = {
+                type075 = { "RP-075-1" },
+                type071 = { "RP-071-1" },
+              },
+              heading = { horizontal = 90, vertical = 0 },
+              shipCounts = {
+                type075 = 2,
+                type071 = 2,
+                type076 = 1,
+                type072iii = 2,
+                type072a = 2,
+                type073a = 1,
+                type071InLSTArea = 1,
+                ferry = 1,
+                roro = 1,
+                barge = 1,
+                type082 = 1,
+              },
             },
           },
         },
       },
     }
     if overrides then
-      for k, v in pairs(overrides) do op[k] = v end
+      for k, v in pairs(overrides) do zone[k] = v end
     end
-    return op
+    return zone
   end
 
-  ---Create an amphibOpsConfig
+  ---Create an amphibOpsConfig; `sags` overrides land in the zone
   ---@param overrides? table
   ---@return table
   local function makeAmphibOpsConfig(overrides)
     local cfg = {
       formationSettings = makeFormationSettings(),
-      operations = { makeOperation() },
-      sags = {},
+      zones = { makeZone() },
     }
     if overrides then
-      for k, v in pairs(overrides) do cfg[k] = v end
+      for k, v in pairs(overrides) do
+        if k == "sags" then cfg.zones[1].sags = v else cfg[k] = v end
+      end
     end
     return cfg
   end
@@ -230,8 +233,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_true(result)
       assert.are.equal(targetLocation, unit.course[1])
@@ -253,8 +256,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -283,8 +286,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(lstLocation, unit.course[1])
     end)
@@ -304,8 +307,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -325,8 +328,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -346,8 +349,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
@@ -365,8 +368,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(3, resultTable.type075.locationIndex)
     end)
@@ -386,8 +389,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig({ isTesting = true })
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.stub(stubSetUnit).was.called_with({
@@ -410,9 +413,9 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
     end)
@@ -437,9 +440,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.stub(stubSetUnit).was.called(1)
       local callArgs = stubSetUnit.calls[1].vals[1]
@@ -470,9 +473,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.stub(stubSetUnit).was.called(2)
       local secondCall = stubSetUnit.calls[2].vals[1]
@@ -502,9 +505,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.stub(stubGetPoint).was.called(2)
@@ -523,8 +526,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_true(result)
     end)
@@ -542,8 +545,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.equal(1, resultTable.type075.locationIndex)
     end)
@@ -556,9 +559,9 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -577,8 +580,8 @@ describe("ShipMovement", function()
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_false(result)
       assert.stub(stubGetUnit).was_not.called()
@@ -593,8 +596,8 @@ describe("ShipMovement", function()
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, nil, filteredUnits, operation)
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, nil, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_false(result)
       assert.stub(stubGetUnit).was_not.called()
@@ -616,8 +619,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -636,9 +639,9 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -653,9 +656,9 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -678,9 +681,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
@@ -706,9 +709,9 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc }, isTesting = true })
-      local operation = config.operations[1]
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local zone = config.zones[1]
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.is_true(result)
       assert.stub(stubSetUnit).was_not.called()
@@ -729,8 +732,8 @@ describe("ShipMovement", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -739,10 +742,10 @@ describe("ShipMovement", function()
     it("should return true when filteredUnits is empty", function()
       local calculationResult = makeCalculationResult()
       local config = makeAmphibOpsConfig()
-      local operation = config.operations[1]
+      local zone = config.zones[1]
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local result = ShipMovement.moveToStagingArea(config, calculationResult, {}, operation)
+      local result = ShipMovement.moveToStagingArea(zone, calculationResult, {}, config.formationSettings, config.isTesting)
 
       assert.is_true(result)
     end)
@@ -760,9 +763,9 @@ describe("ShipMovement", function()
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { ["SAG Alpha"] = sagDesc } })
-      local operation = config.operations[1]
-      ShipMovement.moveToStagingArea(config, calculationResult, filteredUnits, operation)
+      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local zone = config.zones[1]
+      ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, config.formationSettings, config.isTesting)
 
       assert.are.same(sagDesc.to.anchorageArea, sagUnit.course)
       assert.stub(stubSetUnit).was_not.called()
@@ -800,7 +803,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.are.equal("Taoyuan", calculationResult.Taoyuan.name)
@@ -826,7 +829,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       local result = calculationResult.Taoyuan.result
       assert.are.equal(constants.PLATFORMS.TYPE_075, result.type075.dbid)
@@ -851,7 +854,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       assert.stub(stubGenerateLocations).was.called(11)
     end)
@@ -878,7 +881,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       -- Verify that World_GetPointFromBearing was called with rp071 coords and verticalDistance
       local found = false
@@ -910,7 +913,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
@@ -938,7 +941,7 @@ describe("ShipMovement", function()
         Taoyuan = { name = "Taoyuan", result = existingResult },
       }
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       assert.are.equal(existingResult, calculationResult.Taoyuan.result)
     end)
@@ -951,12 +954,11 @@ describe("ShipMovement", function()
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
-      local op1 = makeOperation()
-      local op2 = makeOperation({ name = "Penghu" })
-      local config = makeAmphibOpsConfig({ operations = { op1, op2 } })
+      local config = makeAmphibOpsConfig({})
+      config.zones = { makeZone(), makeZone({ name = "Penghu" }) }
       local calculationResult = {}
 
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.is_not_nil(calculationResult.Penghu)
@@ -972,7 +974,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       for _, call in ipairs(stubGenerateLocations.calls) do
         local params = call.vals[1]
@@ -993,7 +995,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.calculateDestination(config, calculationResult)
+      local result = ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -1010,7 +1012,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.calculateDestination(config, calculationResult)
+      local result = ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -1026,12 +1028,11 @@ describe("ShipMovement", function()
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
-      local op = makeOperation()
-      op.to.areas[1].shipCounts.type075 = 0
-      local config = makeAmphibOpsConfig({ operations = { op } })
+      local config = makeAmphibOpsConfig()
+      config.zones[1].fleet.to.areas[1].shipCounts.type075 = 0
       local calculationResult = {}
 
-      ShipMovement.calculateDestination(config, calculationResult)
+      ShipMovement.calculateDestination(config.zones, config.formationSettings, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGenerateLocations.calls) do
