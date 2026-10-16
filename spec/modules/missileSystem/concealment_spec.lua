@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem Concealment Unit Tests
 local stub = require("luassert.stub")
 local Concealment = require("src.modules.missileSystem.concealment")
@@ -76,7 +77,6 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
       local success, errorFields = Concealment.hideUnit(unitCtx, unit)
-      assert(errorFields ~= nil)
       assert.is_false(success)
       assert.are.equal("no_available_building", errorFields.reason)
     end)
@@ -94,7 +94,6 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
 
       local success, errorFields = Concealment.hideUnit(unitCtx, unit)
-      assert(errorFields ~= nil)
       assert.is_false(success)
       assert.are.equal("no_available_building", errorFields.reason)
     end)

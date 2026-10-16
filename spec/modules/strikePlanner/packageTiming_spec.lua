@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- PackageTiming Unit Tests
 local PackageTiming = require("src.modules.strikePlanner.packageTiming")
 local Utils = require("src.utils.utils")

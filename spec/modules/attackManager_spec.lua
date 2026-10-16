@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 local AttackManager = require("src.modules.attackManager")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")

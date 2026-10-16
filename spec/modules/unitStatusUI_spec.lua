@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- UnitStatusUI Unit Tests
 local UnitStatusUI = require("src.modules.unitStatusUI")
 local GameApi = require("src.utils.gameApi")

@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 local TankerMission = require("src.modules.strikePlanner.tankerMission")
 
 describe("TankerMission", function()

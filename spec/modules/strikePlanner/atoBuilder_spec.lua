@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- AtoBuilder Unit Tests
 local AtoBuilder = require("src.modules.strikePlanner.atoBuilder")
 local Utils = require("src.utils.utils")

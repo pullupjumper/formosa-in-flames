@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- PersistentState Unit Tests
 local PersistentState = require("src.core.persistentState")
 local gKH = require("src.core.gKH_State_Standalone")

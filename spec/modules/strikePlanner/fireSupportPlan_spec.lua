@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- FireSupportPlan Unit Tests
 local FireSupportPlan = require("src.modules.strikePlanner.fireSupportPlan")
 local GameApi = require("src.utils.gameApi")

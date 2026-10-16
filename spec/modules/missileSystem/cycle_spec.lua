@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem Cycle Unit Tests
 local stub = require("luassert.stub")
 local Cycle = require("src.modules.missileSystem.cycle")

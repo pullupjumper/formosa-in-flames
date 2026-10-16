@@ -460,11 +460,10 @@ function UnitStatusUI.createControlPanel(config, sideName)
   if form["pressed"] ~= "Done" then
     return
   end
-
+  ---@type SBJ__ControlPanelResult|nil
   local controlPanelResult = parseFormJson(form["summaryData"])
   local emconResult = parseFormJson(form["emconData"])
   if controlPanelResult then
-    ---@cast controlPanelResult SBJ__ControlPanelResult
     PersistentState.update(function(saveData)
       if not isEditMode and PersistentState.deploymentLocked(saveData, sideName) then
         return
@@ -479,9 +478,9 @@ function UnitStatusUI.createControlPanel(config, sideName)
 
   applySamDoctrine(emconResult)
 
-  local addUnits = isEditMode and parseFormJson(form["selectedActions"])
+  ---@type SBJ__AddUnitsMenuResult|nil
+  local addUnits = isEditMode and parseFormJson(form["selectedActions"]) or nil
   if addUnits and addUnits.actionIds then
-    ---@cast addUnits SBJ__AddUnitsMenuResult
     runAddUnitActions(config, sideName, addUnits.actionIds)
   end
 end

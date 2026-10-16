@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem Context Unit Tests
 local stub = require("luassert.stub")
 local Context = require("src.modules.missileSystem.context")
@@ -111,7 +112,6 @@ describe("MissileSystem Context", function()
 
       local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
-      assert(detail ~= nil)
       assert.is_true(result)
       assert.are.equal(0, mockSystemCtx.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
       assert.are.equal("ammo_depot", detail.role)
@@ -129,7 +129,6 @@ describe("MissileSystem Context", function()
 
       local result, detail = Context.processSupplyAssetDestruction(unit, mockSystemCtx)
 
-      assert(detail ~= nil)
       assert.is_true(result)
       assert.are.equal(15, mockSystemCtx.resupplyUnits["Resupply Group Alpha"].weaponCountCurrent)
       assert.are.equal("resupply_unit", detail.role)

@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- FrontlineRedirect Unit Tests
 local FrontlineRedirect = require("src.modules.strikePlanner.frontlineRedirect")
 local AirbaseAttrition = require("src.modules.strikePlanner.airbaseAttrition")

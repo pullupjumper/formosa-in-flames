@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem StatusView Unit Tests
 local StatusView = require("src.modules.missileSystem.statusView")
 local constants = require("src.core.constants")

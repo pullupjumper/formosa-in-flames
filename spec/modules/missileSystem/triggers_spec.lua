@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem Triggers Unit Tests
 local stub = require("luassert.stub")
 local Triggers = require("src.modules.missileSystem.triggers")

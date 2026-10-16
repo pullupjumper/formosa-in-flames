@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- ConfigCodeGenerator Unit Tests
 local ConfigCodeGenerator = require("src.utils.configCodeGenerator")
 local constants = require("src.core.constants")

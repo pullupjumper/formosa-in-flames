@@ -1,5 +1,6 @@
 -- OperationType Unit Tests
 local OperationType = require("src.modules.strikePlanner.operationType")
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 
 describe("OperationType", function()
   ---Create the minimal plannerState shape both plan tables live in
@@ -17,7 +18,6 @@ describe("OperationType", function()
     local plannerState = makePlannerState()
     local config = { red = { air = { strikeInterval = 900 } } }
 
-    assert(descriptor ~= nil)
     assert.is_table(descriptor)
     assert.are.equal("packageTemplates", descriptor.templateSource)
     assert.are.equal("packages", descriptor.templateField)
@@ -32,7 +32,6 @@ describe("OperationType", function()
     local plannerState = makePlannerState()
     local config = { red = { air = { strikeInterval = 900 } } }
 
-    assert(descriptor ~= nil)
     assert.is_table(descriptor)
     assert.are.equal("fireSupportTaskTemplates", descriptor.templateSource)
     assert.are.equal("fireSupportTasks", descriptor.templateField)

@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem CargoProxy Unit Tests
 local stub = require("luassert.stub")
 local CargoProxy = require("src.modules.missileSystem.cargoProxy")

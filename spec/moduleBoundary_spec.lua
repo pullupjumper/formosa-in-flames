@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- Module Boundary Tests
 -- A module folder with an init.lua is a package: code outside the folder must go through
 -- its init.lua facade instead of requiring the package's internal files.

@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem Ammo And Meeting Unit Tests
 local stub = require("luassert.stub")
 local Ammo = require("src.modules.missileSystem.ammo")
@@ -381,7 +382,6 @@ describe("MissileSystem Ammo And Meeting", function()
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
       local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
-      assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
@@ -410,7 +410,6 @@ describe("MissileSystem Ammo And Meeting", function()
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
       local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
-      assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
@@ -566,7 +565,6 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
 
       local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
-      assert(ctx ~= nil)
       assert.is_true(hasMet)
       assert.are.equal("Ammo Sec, Alpha", ctx.name)
     end)

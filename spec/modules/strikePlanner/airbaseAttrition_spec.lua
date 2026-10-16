@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- AirbaseAttrition Unit Tests
 local AirbaseAttrition = require("src.modules.strikePlanner.airbaseAttrition")
 local GameApi = require("src.utils.gameApi")

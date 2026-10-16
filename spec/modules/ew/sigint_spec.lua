@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- Sigint Unit Tests
 local Sigint = require("src.modules.ew.sigint")
 local GameApi = require("src.utils.gameApi")

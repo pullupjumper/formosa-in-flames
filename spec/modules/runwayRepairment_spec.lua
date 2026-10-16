@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- RunwayRepairment Unit Tests
 local RunwayRepairment = require("src.modules.runwayRepairment")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")

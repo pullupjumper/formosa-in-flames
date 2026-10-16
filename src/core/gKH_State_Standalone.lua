@@ -1,3 +1,4 @@
+---@diagnostic disable: cast-local-type, return-type-mismatch, need-check-nil
 --[[
   gKH State library functions
   Filename: gKHApi\State.lua | gKH_State_Standalone.lua

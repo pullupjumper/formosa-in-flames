@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- OperationScheduler Unit Tests
 local OperationScheduler = require("src.modules.strikePlanner.operationScheduler")
 local OperationBatch = require("src.modules.strikePlanner.operationBatch")
@@ -888,7 +889,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "AIR/STRIKE/AB/W/1", type = "air" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal("AIR/STRIKE/AB/W/2", nextOperation.template.name)
         assert.are.equal("air", nextOperation.type)
         assert.is_false(nextOperation.executed)
@@ -912,7 +912,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "GND/STRIKE/C2/N/1", type = "ground" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal("GND/STRIKE/C2/N/2", nextOperation.template.name)
         assert.are.equal("ground", nextOperation.type)
         assert.is_false(nextOperation.executed)
@@ -932,7 +931,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "AIR/STRIKE/AB/W/99", type = "air" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal("AIR/STRIKE/AB/W/100", nextOperation.template.name)
       end)
 
@@ -950,7 +948,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "AIR/STRIKE/AB/W/5", type = "air" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal("AIR/STRIKE/AB/W/5", nextOperation.template.name)
         assert.are.equal(originalPackages, nextOperation.template.packages)
         assert.is_true(hasLogCall(constants.TAGS.DYNAMIC_OPERATIONS, "status=reused_current"))
@@ -969,7 +966,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "GND/STRIKE/ANTISHIP/3", type = "ground" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal("GND/STRIKE/ANTISHIP/3", nextOperation.template.name)
         assert.are.equal(originalTasks, nextOperation.template.fireSupportTasks)
       end)
@@ -983,7 +979,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "GND/STRIKE/C2/N/1", type = "ground" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal("GND/STRIKE/C2/N/2", nextOperation.template.name)
         assert.are.equal(0, nextOperation.template.strikeInterval)
       end)
@@ -1000,7 +995,6 @@ describe("OperationScheduler", function()
         local nextOperation = scheduleNextWave(config, operationBatches,
           { name = "AIR/STRIKE/AB/W/1", type = "air" })
 
-        assert(nextOperation ~= nil)
         assert.are.equal(45, nextOperation.template.strikeInterval)
       end)
     end)

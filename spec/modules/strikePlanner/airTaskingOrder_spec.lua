@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- AirTaskingOrder Unit Tests
 local AirTaskingOrder = require("src.modules.strikePlanner.airTaskingOrder")
 local Utils = require("src.utils.utils")

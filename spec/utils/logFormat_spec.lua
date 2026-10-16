@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LogFormat Unit Tests
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")

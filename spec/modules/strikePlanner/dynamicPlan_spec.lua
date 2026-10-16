@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- DynamicPlan Unit Tests
 local DynamicPlan = require("src.modules.strikePlanner.dynamicPlan")
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")

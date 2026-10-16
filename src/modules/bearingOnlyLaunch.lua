@@ -24,8 +24,8 @@ local function rad2deg(radians) return radians * 180 / math.pi end
 ---@return CMO__Location # Destination point
 local function calculateDestinationPoint(pos, bearingDeg, distanceNm)
   local bearing = deg2rad(bearingDeg)
-  local lat1 = deg2rad(pos.latitude)
-  local lon1 = deg2rad(pos.longitude)
+  local lat1 = deg2rad(Utils.toNumber(pos.latitude))
+  local lon1 = deg2rad(Utils.toNumber(pos.longitude))
   local dDivR = distanceNm / EARTH_RADIUS_NM
 
   local lat2 = math.asin(math.sin(lat1) * math.cos(dDivR) +
@@ -98,12 +98,12 @@ function BearingOnlyLaunch.buildMissilePaths(params)
 
       local crossesRadar = isIntersectingRadarCircle(
         { latitude = launcherLat, longitude = launcherLon },
-        { latitude = wpLat, longitude = wpLon },
+        { latitude = Utils.toNumber(wpLat), longitude = Utils.toNumber(wpLon) },
         { latitude = targetLat, longitude = targetLon },
         radarRange
       )
-      local totalDistance = calculateHaversineNM(launcherLat, launcherLon, wpLat, wpLon) +
-          calculateHaversineNM(wpLat, wpLon, targetLat, targetLon)
+      local totalDistance = calculateHaversineNM(launcherLat, launcherLon, Utils.toNumber(wpLat), Utils.toNumber(wpLon)) +
+          calculateHaversineNM(Utils.toNumber(wpLat), Utils.toNumber(wpLon), targetLat, targetLon)
 
       if not crossesRadar and totalDistance <= maxRange then
         valid = true
@@ -114,8 +114,8 @@ function BearingOnlyLaunch.buildMissilePaths(params)
     end
 
     if valid then
-      local totalDistance = calculateHaversineNM(launcherLat, launcherLon, wpLat, wpLon) +
-          calculateHaversineNM(wpLat, wpLon, targetLat, targetLon)
+      local totalDistance = calculateHaversineNM(launcherLat, launcherLon, Utils.toNumber(wpLat), Utils.toNumber(wpLon)) +
+          calculateHaversineNM(Utils.toNumber(wpLat), Utils.toNumber(wpLon), targetLat, targetLon)
       local flightTime = totalDistance / speed * 3600 -- seconds
       table.insert(result, {
         waypoints = {

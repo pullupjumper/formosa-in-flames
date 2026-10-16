@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- OperationBatch Unit Tests
 local OperationBatch = require("src.modules.strikePlanner.operationBatch")
 local GameApi = require("src.utils.gameApi")

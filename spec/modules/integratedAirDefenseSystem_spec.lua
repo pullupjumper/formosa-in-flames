@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")

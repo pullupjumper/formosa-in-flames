@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem Init Unit Tests
 local stub = require("luassert.stub")
 local match = require("luassert.match")
@@ -702,7 +703,6 @@ describe("MissileSystem", function()
 
       local report = MissileSystem.getAmmoInventory(groundCtx, "srbm", "China")
 
-      assert(report ~= nil)
       assert.are.equal(80, report.total.percentage)
       assert.stub(inventoryStub).was.called_with(srbmCtx, "China")
     end)

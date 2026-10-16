@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- CommsJamming Unit Tests
 local CommsJamming = require("src.modules.ew.commsJamming")
 local GameApi = require("src.utils.gameApi")

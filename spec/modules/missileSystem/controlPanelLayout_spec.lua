@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- MissileSystem ControlPanelLayout Unit Tests
 local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
 local GameApi = require("src.utils.gameApi")

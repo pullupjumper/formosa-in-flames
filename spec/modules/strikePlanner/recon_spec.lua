@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- Recon Unit Tests
 local Recon = require("src.modules.strikePlanner.recon")
 local GameApi = require("src.utils.gameApi")
@@ -244,7 +245,6 @@ describe("Recon", function()
       local result = Recon.launchWZ8(reconCtx, h6n)
 
       assert.is_not_nil(result)
-      assert(result ~= nil)
       assert.are.equal("WZ8-001", result.guid)
       assert.are.same(wz8Course, result.course)
       assert.spy(rtbSpy).was.called_with(h6n, true)

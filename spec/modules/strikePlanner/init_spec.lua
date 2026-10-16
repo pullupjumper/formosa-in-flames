@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- StrikePlanner Init Unit Tests
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local GameApi = require("src.utils.gameApi")

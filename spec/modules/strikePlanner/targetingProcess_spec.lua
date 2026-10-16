@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- TargetingProcess Unit Tests
 local TargetingProcess = require("src.modules.strikePlanner.targetingProcess")
 local GameApi = require("src.utils.gameApi")

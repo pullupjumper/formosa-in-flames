@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- GnssJamming Unit Tests
 local GnssJamming = require("src.modules.ew.gnssJamming")
 local Utils = require("src.utils.utils")
@@ -504,7 +505,6 @@ describe("GnssJamming", function()
 
       local success, unit = GnssJamming.addGnssJammer("China", descriptor)
 
-      assert(unit ~= nil)
       assert.is_true(success)
       assert.are.equal("NEW-JAMMER", unit.guid)
       assert.stub(addUnitStub).was.called(1)
@@ -557,7 +557,6 @@ describe("GnssJamming", function()
 
       local success, unit = GnssJamming.addGnssJammer("China", makeDescriptor())
 
-      assert(unit ~= nil)
       assert.is_false(success)
       assert.are.equal("NEW-JAMMER", unit.guid)
     end)
