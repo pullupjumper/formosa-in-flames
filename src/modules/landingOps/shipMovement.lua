@@ -19,7 +19,7 @@ local SHIP_TYPE_DBIDS = {
   { key = "type072a",   dbid = constants.PLATFORMS.TYPE_072A },
   { key = "type073a",   dbid = constants.PLATFORMS.TYPE_073A },
   { key = "type071",    dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "type529",    dbid = constants.PLATFORMS.TYPE_529 }
+  { key = "type082",    dbid = constants.PLATFORMS.TYPE_082 }
 }
 
 ---@type table<string, string>
@@ -48,7 +48,7 @@ local ALL_RESULT_KEYS = {
   { key = "ferry",            dbid = constants.PLATFORMS.FERRY },
   { key = "roro",             dbid = constants.PLATFORMS.FERRY },
   { key = "barge",            dbid = constants.PLATFORMS.BARGE },
-  { key = "type529",          dbid = constants.PLATFORMS.TYPE_529 }
+  { key = "type082",          dbid = constants.PLATFORMS.TYPE_082 }
 }
 
 ---@type {key: string, from: string, distanceKey: string}[]
@@ -61,7 +61,7 @@ local SHIP_ROW_LAYOUT = {
   { key = "ferry",            from = "type072iii",       distanceKey = "verticalDistance" },
   { key = "type071InLSTArea", from = "ferry",            distanceKey = "verticalDistance" },
   { key = "type073a",         from = "type071InLSTArea", distanceKey = "verticalDistance" },
-  { key = "type529",          from = "type073a",         distanceKey = "verticalDistance" }
+  { key = "type082",          from = "type073a",         distanceKey = "verticalDistance" }
 }
 
 
@@ -276,6 +276,7 @@ local function processSAG(descriptor, isTesting)
     return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unitlist_missing" } }
   end
 
+  unit.course = nil
   local type052d, type054a = 0, 0
   local positioned, skipped = 0, 0
 

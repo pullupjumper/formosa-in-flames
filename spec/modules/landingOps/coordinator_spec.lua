@@ -1,5 +1,6 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps Coordinator Unit Tests
----@diagnostic disable: undefined-field
+---@diagnostic disable: undefined-field, inject-field
 local Coordinator = require("src.modules.landingOps.coordinator")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
@@ -8,6 +9,10 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local MineClearing = require("src.modules.landingOps.mineClearing")
+local AssaultBoat = require("src.modules.landingOps.assaultBoat")
+local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
+local Hovercraft = require("src.modules.landingOps.hovercraft")
 local MissileSystem = require("src.modules.missileSystem.init")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
@@ -225,8 +230,26 @@ describe("LandingOps Coordinator", function()
     local stubStartSecondWaveUnloading
     local stubRetransferCargos
     local stubAddReconEntry
+    local stubStartMineClearing
+    local stubUpdateMineClearing
+    local stubPairBoats
+    local stubLaunchBoats
+    local stubUpdateBoats
+    local stubStartObstacleClearing
+    local stubUpdateObstacleClearing
+    local stubLaunchHovercraft
+    local stubUpdateHovercraft
 
     before_each(function()
+      stubStartMineClearing = trackStub(stub(MineClearing, "startMineClearing").returns(true))
+      stubUpdateMineClearing = trackStub(stub(MineClearing, "updateMineClearing").returns(false))
+      stubPairBoats = trackStub(stub(AssaultBoat, "pairBoats").returns(true))
+      stubLaunchBoats = trackStub(stub(AssaultBoat, "launchBoats"))
+      stubUpdateBoats = trackStub(stub(AssaultBoat, "updateBoats").returns(false))
+      stubStartObstacleClearing = trackStub(stub(ObstacleClearing, "startObstacleClearing").returns(true))
+      stubUpdateObstacleClearing = trackStub(stub(ObstacleClearing, "updateObstacleClearing").returns(false))
+      stubLaunchHovercraft = trackStub(stub(Hovercraft, "launchHovercraft"))
+      stubUpdateHovercraft = trackStub(stub(Hovercraft, "updateHovercraft"))
       stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToStagingArea").returns(false))
       stubIsAfterStartTime = trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
       stubGetUnitsInAnchorageArea = trackStub(stub(AmphibiousLogistics, "getUnitsInAnchorageArea")
@@ -298,8 +321,8 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubAddReconEntry).was_not.called()
     end)
 
-    -- Positive: advances assault phase when launch conditions are met
-    it("should move a zone from WAITING_ASSAULT to WAITING_SECOND_WAVE when assault launches", function()
+    -- Positive: assault launch starts mine clearing and helicopter missions only
+    it("should move a zone from WAITING_ASSAULT to MINE_CLEARING when assault launches", function()
       local config = makeConfig()
       local landingState = makeLandingState()
 
@@ -311,18 +334,82 @@ describe("LandingOps Coordinator", function()
 
       Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubSetLandingMissionStartTime).was.called(1)
-      assert.stub(stubSetCoursesForLSTs).was.called(1)
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
+      assert.stub(stubStartMineClearing).was.called(1)
+      assert.are.same({ "transportHelicopter", "attackHelicopter" }, stubSetLandingMissionStartTime.calls[1].vals[3])
+      assert.stub(stubSetCoursesForLSTs).was_not.called()
     end)
 
-    -- Positive: completes second wave when beachhead exists
-    it("should move a zone from WAITING_SECOND_WAVE to COMPLETED when beachhead exists", function()
+    -- Negative: missing lane reference points keep the zone waiting
+    it("should stay in WAITING_ASSAULT when mine clearing cannot start", function()
+      local config = makeConfig()
+      local landingState = makeLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan = makeZoneState({
+        phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT,
+        amphibiousAssaultStartTime = 900,
+      })
+      stubCountContactsInArea.returns(1)
+      stubStartMineClearing.returns(false)
+
+      Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
+      assert.stub(stubSetLandingMissionStartTime).was_not.called()
+    end)
+
+    -- Negative: sweepers still working keep LSTs in the anchorage
+    it("should keep MINE_CLEARING and LSTs anchored while sweepers are working", function()
+      local config = makeConfig()
+      local landingState = makeLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
+
+      Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
+      assert.stub(stubSetCoursesForLSTs).was_not.called()
+    end)
+
+    -- Positive: the full assault chain advances one phase per completed step
+    it("should advance MINE_CLEARING through ASSAULT_LANDING as each step completes", function()
+      local config = makeConfig()
+      local landingState = makeLandingState()
+      local zoneState = landingState.amphibOps.zoneStates.Taoyuan
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
+      stubUpdateMineClearing.returns(true)
+      stubUpdateBoats.returns(true)
+      stubUpdateObstacleClearing.returns(true)
+
+      Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, zoneState.phase)
+      assert.stub(stubPairBoats).was.called(1)
+      assert.stub(stubSetCoursesForLSTs).was.called(1)
+      assert.stub(stubLaunchBoats).was.called(1)
+      assert.stub(stubStartObstacleClearing).was.called(1)
+      assert.stub(stubLaunchHovercraft).was.called(1)
+    end)
+
+    -- Negative: boats still under way hold the zone in BOAT_ASSAULT
+    it("should keep BOAT_ASSAULT while boats are under way", function()
+      local config = makeConfig()
+      local landingState = makeLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT
+
+      Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
+      assert.stub(stubLaunchBoats).was.called(1)
+      assert.stub(stubStartObstacleClearing).was_not.called()
+      assert.stub(stubLaunchHovercraft).was_not.called()
+    end)
+
+    -- Positive: beachhead moves assault landing on to admin unloading and then completion
+    it("should move ASSAULT_LANDING to COMPLETED via WAITING_ADMIN_UNLOADING when beachhead exists", function()
       local config = makeConfig()
       local landingState = makeLandingState()
       landingState.amphibOps.barges = { ["BARGE-001"] = { guid = "BARGE-001", roros = {} } }
 
-      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
       stubCountUnitsInEachArea.returns({
         Taoyuan = {
           ["ZBD-05"] = 1,
@@ -334,6 +421,20 @@ describe("LandingOps Coordinator", function()
       assert.are.equal(constants.AMPHIBIOUS_PHASES.COMPLETED, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartSecondWaveUnloading).was.called(1)
       assert.are.same(landingState.amphibOps.barges, stubStartSecondWaveUnloading.calls[1].vals[2])
+      assert.stub(stubUpdateHovercraft).was.called(1)
+    end)
+
+    -- Negative: no beachhead keeps the assault landing going
+    it("should stay in ASSAULT_LANDING without a beachhead", function()
+      local config = makeConfig()
+      local landingState = makeLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      stubCountUnitsInEachArea.returns({ Taoyuan = { ["ZBD-05"] = 0 } })
+
+      Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, landingState.amphibOps.zoneStates.Taoyuan.phase)
+      assert.stub(stubStartSecondWaveUnloading).was_not.called()
     end)
 
     -- Negative: logs an error when zone operation mapping is missing
@@ -461,7 +562,7 @@ describe("LandingOps Coordinator", function()
         landingState.amphibOps.fireSupportOnHold = true
         landingState.amphibOps.zoneStates = {
           Taoyuan = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
-          Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE }),
+          Tainan  = makeZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING }),
         }
 
         Coordinator.process(cfg, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })

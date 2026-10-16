@@ -1,3 +1,4 @@
+local PersistentState = require("src.core.persistentState")
 local LandingOps = require("src.modules.landingOps.init")
 local GameApi = require("src.utils.gameApi")
 local config = require("src.core.config")
@@ -7,4 +8,6 @@ if not ship then
   return
 end
 
-LandingOps.launchACV(config, ship)
+PersistentState.update(function(saveData)
+  LandingOps.launchACV(config, saveData, ship)
+end)

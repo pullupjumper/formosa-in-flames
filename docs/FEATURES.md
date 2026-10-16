@@ -74,7 +74,8 @@
 
 ## 三、landingOps — 兩棲登陸
 
-- ✅ 五階段狀態機 — MOVING → WAITING_ARRIVAL → WAITING_ASSAULT → WAITING_SECOND_WAVE → COMPLETED，各作戰區各自推進
+- ✅ 狀態機 — MOVING → WAITING_ARRIVAL → WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASSAULT_LANDING → WAITING_ADMIN_UNLOADING → COMPLETED，各作戰區各自推進
+- ✅ 反水雷（Type 529 走水際通道 + 弓字型）、衝鋒舟上岸、岸上破障、兩棲車分波、氣墊船走通道（掃雷任務、氣墊船 cargo 任務待補）
 - ✅ 兩棲作戰編隊初始化以及計算座標起始位置、航線
 - ✅ 兩棲作戰編隊海上航渡至指定區域，LPD、LHA乘載區(距岸20-30浬)，LST展開線(距岸11-16浬)
 - ✅ LPD、LHA於乘載區展開直升機、氣墊登陸艇換乘作業

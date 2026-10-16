@@ -5,7 +5,7 @@ local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local constants = require("src.core.constants")
-
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 describe("AmphibiousAssault", function()
   ---@type luassert.spy[]
   local activeStubs
@@ -166,6 +166,7 @@ describe("AmphibiousAssault", function()
   -- ============================================================================
 
   describe("setLandingMissionStartTime", function()
+    local HELICOPTER_CATEGORIES = { "transportHelicopter", "attackHelicopter" }
     local stubCurrentTime, stubGetMission
 
     before_each(function()
@@ -180,15 +181,15 @@ describe("AmphibiousAssault", function()
       stubGetMission.returns(missionObj)
 
       local zone = makeZone()
-      local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
 
       assert.is_true(result)
       assert.are.equal(1000, zoneState.airlandingMissionStartTime)
-      -- 3 missions (helo + boat + atkHelo), each calls GetMission once
-      assert.stub(stubGetMission).was.called(3)
+      -- 2 missions (helo + atkHelo), each calls GetMission once
+      assert.stub(stubGetMission).was.called(2)
+      assert.stub(stubGetMission).was_not.called_with(constants.SIDES.RED, "BoatMission1")
       assert.stub(logStub).was.called()
     end)
 
@@ -198,10 +199,9 @@ describe("AmphibiousAssault", function()
       stubGetMission.returns({ starttime = nil })
 
       local zone = makeZone()
-      local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
 
       assert.are.equal(5000, zoneState.airlandingMissionStartTime)
     end)
@@ -219,14 +219,14 @@ describe("AmphibiousAssault", function()
       })
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
 
       local expectedTime = "1970-01-01 00:26:40" .. constants.TIME_FORMATS
       assert.are.equal(expectedTime, missionObj.starttime)
     end)
 
-    -- Positive: processes missions in a zone with specific categories
-    it("should process missions in specified categories of a single zone", function()
+    -- Positive: only the requested categories are started
+    it("should only process missions in the requested categories", function()
       stubCurrentTime.returns(2000)
       stubGetMission.returns({ starttime = nil })
 
@@ -238,10 +238,11 @@ describe("AmphibiousAssault", function()
       local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, { "boat" })
 
       assert.is_true(result)
-      assert.stub(stubGetMission).was.called(2)
+      assert.stub(stubGetMission).was.called(1)
+      assert.stub(stubGetMission).was.called_with(constants.SIDES.RED, "Z1Boat")
     end)
 
     -- Negative: returns false when GetMission returns nil for a mission
@@ -253,7 +254,7 @@ describe("AmphibiousAssault", function()
       local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
 
       assert.is_false(result)
       assert.stub(errorStub).was.called(1)
@@ -272,7 +273,7 @@ describe("AmphibiousAssault", function()
       local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
 
       assert.is_true(result)
       assert.stub(stubGetMission).was_not.called()
@@ -374,6 +375,32 @@ describe("AmphibiousAssault", function()
       AmphibiousAssault.setCoursesForLSTs(zone, units, operation, sagLookup)
 
       assert.are.same({}, unit.course)
+    end)
+
+    -- Negative: Type 529 sweepers keep their sweep course
+    it("should not set course for Type 529 sweepers in the anchorage area", function()
+      stubGetPoint.returns({ latitude = 24.5, longitude = 120.5 })
+
+      local zone = makeZone()
+      local sweepCourse = { { latitude = 24.0, longitude = 120.0 } }
+      local unit = makeUnit({
+        name = "Type 529",
+        dbid = constants.PLATFORMS.TYPE_082,
+        course = sweepCourse,
+        inArea = function(_, area)
+          return area == zone.lstAnchorageArea
+        end,
+      })
+      stubGetUnit.returns(unit)
+
+      local ships = { { guid = "SHIP-001" } }
+      local operation = { sagNames = {} }
+      local sagLookup = {}
+
+      local result = AmphibiousAssault.setCoursesForLSTs(zone, ships, operation, sagLookup)
+
+      assert.is_true(result)
+      assert.are.same(sweepCourse, unit.course)
     end)
 
     -- Positive: sets course for SAG groups
@@ -553,7 +580,7 @@ describe("AmphibiousAssault", function()
       stubRedUnits({
         { guid = "U-1", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
         { guid = "U-2", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
-        { guid = "U-3", dbid = constants.PLATFORMS.MC, inArea = inCasArea("CAS-B") },
+        { guid = "U-3", dbid = constants.PLATFORMS.MC,    inArea = inCasArea("CAS-B") },
       })
 
       local result = AmphibiousAssault.countUnitsInEachArea(config)
@@ -686,13 +713,14 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 4,
         bearing = 90,
         distance = 0.5,
       }
 
-      local count = AmphibiousAssault.launchACV(params)
+      local count = AmphibiousAssault.launchACV(params).count
 
       assert.are.equal(4, count)
       assert.stub(stubAddUnit).was.called(4)
@@ -718,13 +746,14 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 2,
         bearing = 90,
         distance = 0.5,
       }
 
-      local count = AmphibiousAssault.launchACV(params)
+      local count = AmphibiousAssault.launchACV(params).count
 
       assert.are.equal(2, count)
     end)
@@ -748,13 +777,14 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 2,
         bearing = 90,
         distance = 0.5,
       }
 
-      local count = AmphibiousAssault.launchACV(params)
+      local count = AmphibiousAssault.launchACV(params).count
 
       assert.are.equal(2, count)
     end)
@@ -776,7 +806,8 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = destination,
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return destination end,
         num = 1,
         bearing = 90,
         distance = 0.5,
@@ -792,7 +823,7 @@ describe("AmphibiousAssault", function()
     it("should return nil when ship is nil", function()
       local params = {
         ship = nil,
-        destination = {},
+        quota = { zbd05 = 99, ztd05 = 99 },
         num = 2,
         bearing = 90,
         distance = 0.5,
@@ -808,7 +839,7 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit({ IsDestroyed = true })
       local params = {
         ship = ship,
-        destination = {},
+        quota = { zbd05 = 99, ztd05 = 99 },
         num = 2,
         bearing = 90,
         distance = 0.5,
@@ -833,7 +864,8 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 1,
         bearing = 90,
         distance = 0.5,
@@ -841,7 +873,7 @@ describe("AmphibiousAssault", function()
 
       local result = AmphibiousAssault.launchACV(params)
 
-      assert.is_nil(result)
+      assert.is_nil(result.count)
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=add_unit_failed"))
     end)
@@ -861,7 +893,8 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 1,
         bearing = 90,
         distance = 0.5,
@@ -869,7 +902,7 @@ describe("AmphibiousAssault", function()
 
       local result = AmphibiousAssault.launchACV(params)
 
-      assert.is_nil(result)
+      assert.is_nil(result.count)
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=set_doctrine_failed"))
     end)
@@ -892,7 +925,8 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 1,
         bearing = 90,
         distance = 0.5,
@@ -900,7 +934,7 @@ describe("AmphibiousAssault", function()
 
       local result = AmphibiousAssault.launchACV(params)
 
-      assert.is_nil(result)
+      assert.is_nil(result.count)
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=add_unit_failed"))
     end)
@@ -923,7 +957,8 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 1,
         bearing = 90,
         distance = 0.5,
@@ -931,7 +966,7 @@ describe("AmphibiousAssault", function()
 
       local result = AmphibiousAssault.launchACV(params)
 
-      assert.is_nil(result)
+      assert.is_nil(result.count)
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=set_doctrine_failed"))
     end)
@@ -945,16 +980,100 @@ describe("AmphibiousAssault", function()
       local ship = makeUnit()
       local params = {
         ship = ship,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
         num = 2,
         bearing = 90,
         distance = 0.5,
       }
 
-      local count = AmphibiousAssault.launchACV(params)
+      local count = AmphibiousAssault.launchACV(params).count
 
       assert.are.equal(0, count)
       assert.stub(stubAddUnit).was_not.called()
+    end)
+
+    -- Positive: an empty ship reports isEmpty so the caller can send it home
+    it("should report isEmpty when the ship carries no ZBD or ZTD", function()
+      local ship = makeUnit({ cargo = { [1] = { cargo = { { guid = "MC-1", dbid = constants.PLATFORMS.MC } } } } })
+
+      local result = AmphibiousAssault.launchACV({
+        ship = ship,
+        num = 5,
+        bearing = 90,
+        distance = 0.5,
+        quota = { zbd05 = 99, ztd05 = 99 },
+        routeACV = function() return {} end
+      })
+
+      assert.are.same({ count = 0, isEmpty = true, isPaused = false }, result)
+      assert.stub(stubDeleteCargo).was_not.called()
+    end)
+
+    -- Negative: zero quota pauses without touching cargo
+    it("should report isPaused and keep cargo when the quota allows none of it", function()
+      local ship = makeUnit()
+
+      local result = AmphibiousAssault.launchACV({
+        ship = ship,
+        num = 5,
+        bearing = 90,
+        distance = 0.5,
+        quota = { zbd05 = 0, ztd05 = 0 },
+        routeACV = function() return {} end
+      })
+
+      assert.are.same({ count = 0, isEmpty = false, isPaused = true }, result)
+      assert.stub(stubDeleteCargo).was_not.called()
+    end)
+
+    -- Boundary: each type takes at most its own quota
+    it("should request at most each type's quota from cargo", function()
+      stubGenerateLocations.returns({ { latitude = 25.1, longitude = 121.1 }, { latitude = 25.2, longitude = 121.2 } })
+      stubDeleteCargo.invokes(function(_, cargoItem) return cargoItem.num end)
+      stubAddUnit.returns({ guid = "NEW-UNIT" })
+      stubSetDoctrine.returns(true)
+
+      local result = AmphibiousAssault.launchACV({
+        ship = makeUnit(),
+        num = 5,
+        bearing = 90,
+        distance = 0.5,
+        quota = { zbd05 = 1, ztd05 = 1 },
+        routeACV = function() return {} end
+      })
+
+      assert.are.equal(2, result.count)
+      assert.are.equal(1, stubDeleteCargo.calls[1].vals[2].num)
+      assert.are.equal(1, stubDeleteCargo.calls[2].vals[2].num)
+    end)
+
+    -- Positive: each spawned ACV gets its course from routeACV with its type key
+    it("should ask routeACV for each spawned ACV's course with its type key", function()
+      stubGenerateLocations.returns({ { latitude = 25.1, longitude = 121.1 } })
+      stubDeleteCargo.invokes(function(_, cargoItem) return cargoItem.dbid == 241 and 1 or 0 end)
+      local addedUnit = { guid = "NEW-UNIT" }
+      stubAddUnit.returns(addedUnit)
+      stubSetDoctrine.returns(true)
+      local route = { { latitude = 25.5, longitude = 121.5 } }
+      local routedUnit, routedKey
+      local function routeACV(unit, acvKey)
+        routedUnit, routedKey = unit, acvKey
+        return route
+      end
+
+      AmphibiousAssault.launchACV({
+        ship = makeUnit(),
+        num = 1,
+        bearing = 90,
+        distance = 0.5,
+        quota = { zbd05 = 5, ztd05 = 5 },
+        routeACV = routeACV
+      })
+
+      assert.are.equal(addedUnit, routedUnit)
+      assert.are.equal("zbd05", routedKey)
+      assert.are.same(route, addedUnit.course)
     end)
   end)
 
@@ -999,6 +1118,12 @@ describe("AmphibiousAssault", function()
       assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
+    -- Negative: Type 529 sweepers no longer launch ACVs
+    it("should return false for Type 529 minesweeper", function()
+      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_082, name = "Type 529" })
+      assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
+    end)
+
     -- Negative: returns false for Type 075 (LHD, not LST)
     it("should return false for Type 075 LHD", function()
       local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_075, name = "Type075" })
@@ -1025,7 +1150,6 @@ describe("AmphibiousAssault", function()
       local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
 
       local result = AmphibiousAssault.getShipZone(config, ship)
-      assert(result ~= nil)
       assert.is_not_nil(result)
       assert.are.equal("ZoneBravo", result.name)
     end)
@@ -1042,7 +1166,6 @@ describe("AmphibiousAssault", function()
       local config = makeAmphibOpsConfig({ operationalZones = { zone1, zone2 } })
 
       local result = AmphibiousAssault.getShipZone(config, ship)
-      assert(result ~= nil)
       assert.are.equal("ZoneAlpha", result.name)
     end)
 

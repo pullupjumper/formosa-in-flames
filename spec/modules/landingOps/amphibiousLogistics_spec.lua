@@ -5,7 +5,7 @@ local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local AssignMission = require("src.modules.assignMission")
 local constants = require("src.core.constants")
-
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 describe("AmphibiousLogistics", function()
   ---@type luassert.spy[]
   local activeStubs
@@ -664,10 +664,12 @@ describe("AmphibiousLogistics", function()
       assert.stub(creates.boat).was.called()
       assert.stub(creates.helo).was.called()
       assert.stub(creates.heloAlt).was.called()
-      -- boats + transport helo + attack helo
-      assert.stub(stubAssignMission).was.called(3)
+      -- transport helo + attack helo; hovercraft are assigned after routing, not here
+      assert.stub(stubAssignMission).was.called(2)
       assert.stub(stubAssignMission).was.called_with(
         "SHIP-075", "Aircraft", zone.attackHelicopter.dbid, zone.attackHelicopter.missions)
+      assert.stub(stubAssignMission).was_not.called_with(
+        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.boat.dbid, zone.boat.missions)
     end)
 
     -- Positive: should treat Type 076 ships like Type 075
@@ -679,7 +681,7 @@ describe("AmphibiousLogistics", function()
 
       assert.is_true(result)
       assert.stub(creates.heloAlt).was.called()
-      assert.stub(stubAssignMission).was.called(3)
+      assert.stub(stubAssignMission).was.called(2)
     end)
 
     -- Positive: should load boats and one helicopter loadout on Type 071 ships
@@ -694,8 +696,8 @@ describe("AmphibiousLogistics", function()
       assert.stub(creates.helo).was.called()
       -- Type 071 manifest has no second helicopter loadout
       assert.stub(creates.heloAlt).was_not.called()
-      -- boats + transport helo, no attack helo
-      assert.stub(stubAssignMission).was.called(2)
+      -- transport helo only; no attack helo, hovercraft assigned later
+      assert.stub(stubAssignMission).was.called(1)
     end)
 
     -- Positive: should handle mixed fleet in anchorage
@@ -709,7 +711,7 @@ describe("AmphibiousLogistics", function()
       assert.is_true(result)
       assert.stub(creates075.heloAlt).was.called()
       assert.stub(creates071.boat).was.called()
-      assert.stub(stubAssignMission).was.called(5)
+      assert.stub(stubAssignMission).was.called(3)
     end)
 
     -- Negative: should skip units not in anchorage area

@@ -29,7 +29,7 @@ local AMPHIBIOUS_SHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_076]    = true,
   [constants.PLATFORMS.FERRY]       = true,
   [constants.PLATFORMS.BARGE]       = true,
-  [constants.PLATFORMS.TYPE_529]    = true
+  [constants.PLATFORMS.TYPE_082]    = true
 }
 
 ---@type {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[], assignments: {platform: string, configKey: string}[]}[]
@@ -42,8 +42,8 @@ local SHIP_TRANSFER_SPECS = {
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 2 },
     },
+    -- Hovercraft (BOATS) are loaded here but assigned only after routing through the lanes (hovercraft.lua)
     assignments = {
-      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "boat" },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter" },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "attackHelicopter" },
     },
@@ -56,7 +56,6 @@ local SHIP_TRANSFER_SPECS = {
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
     },
     assignments = {
-      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "boat" },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter" },
     },
   },

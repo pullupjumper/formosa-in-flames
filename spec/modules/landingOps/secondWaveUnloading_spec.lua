@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- SecondWaveUnloading Unit Tests
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local Utils = require("src.utils.utils")
@@ -981,7 +982,6 @@ describe("SecondWaveUnloading", function()
       stubToolRange.returns(0.5)
 
       local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
-      assert(result ~= nil)
       assert.is_not_nil(result)
       assert.are.equal("ZoneAlpha", result.name)
     end)
@@ -1089,7 +1089,6 @@ describe("SecondWaveUnloading", function()
 
       local result = SecondWaveUnloading.getBargeROROZone(config, barge, roro)
 
-      assert(result ~= nil)
       assert.is_not_nil(result)
       assert.are.equal("Zone2", result.name)
     end)

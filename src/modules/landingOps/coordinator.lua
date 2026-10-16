@@ -6,6 +6,10 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
+local MineClearing = require("src.modules.landingOps.mineClearing")
+local AssaultBoat = require("src.modules.landingOps.assaultBoat")
+local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
+local Hovercraft = require("src.modules.landingOps.hovercraft")
 local MissileSystem = require("src.modules.missileSystem.init")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
@@ -15,10 +19,18 @@ local Coordinator = {}
 ---Phases considered "fleet has arrived at staging waters" for fire support gate
 ---@type table<string, true>
 local ARRIVED_PHASES = {
-  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]     = true,
-  [constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE] = true,
-  [constants.AMPHIBIOUS_PHASES.COMPLETED]           = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]         = true,
+  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]           = true,
+  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]            = true,
+  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]       = true,
+  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING] = true,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]               = true,
 }
+
+---Zone missions started when the assault launches; boat (hovercraft) missions wait for the lanes
+---@type string[]
+local HELICOPTER_MISSION_CATEGORIES = { "transportHelicopter", "attackHelicopter" }
 
 ---Find an operation descriptor by zone name
 ---@param operations SBJ__AmphibiousOperationDescriptor[]
@@ -85,25 +97,62 @@ local function processZone(tickCtx, zone, operation)
     local shouldLaunch = contactCount < operation.contactThreshold or elapsed >= config.red.amphibOps.periodSec
 
     if shouldLaunch then
-      local ok = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState)
-          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.red.amphibOps.sags)
+      local ok = MineClearing.startMineClearing(config, zone, zoneState, filteredShips)
+          and AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_MISSION_CATEGORIES)
 
       if ok then
-        zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE
+        zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
       end
     end
   end
 
-  if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_SECOND_WAVE then
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.MINE_CLEARING then
+    if MineClearing.updateMineClearing(config, zoneState) then
+      local ok = AssaultBoat.pairBoats(zone, zoneState, filteredShips)
+          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips, operation, config.red.amphibOps.sags)
+
+      if ok then
+        zoneState.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT
+      end
+    end
+  end
+
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT then
+    AssaultBoat.launchBoats(config, zone, zoneState)
+
+    if AssaultBoat.updateBoats(config, zoneState)
+        and ObstacleClearing.startObstacleClearing(config, zone, zoneState, currentTime) then
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING
+    end
+  end
+
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING then
+    if ObstacleClearing.updateObstacleClearing(config, zoneState, currentTime) then
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+    end
+  end
+
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING then
+    -- TODO: 換成更嚴格的灘頭堡條件
     local result = AmphibiousAssault.countUnitsInEachArea(config)
     local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
 
     if hasBeachhead then
-      local ok = SecondWaveUnloading.startSecondWaveUnloading(zone, landingState.amphibOps.barges, filteredShips)
-      if ok then
-        zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
-      end
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING
     end
+  end
+
+  if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING then
+    -- TODO: 行政下卸的「絕對安全」條件；目前直接放行
+    local ok = SecondWaveUnloading.startSecondWaveUnloading(zone, landingState.amphibOps.barges, filteredShips)
+    if ok then
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
+    end
+  end
+
+  if constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
+    Hovercraft.launchHovercraft(config, zone, zoneState, filteredShips)
+    Hovercraft.updateHovercraft(config, zoneState)
   end
 end
 

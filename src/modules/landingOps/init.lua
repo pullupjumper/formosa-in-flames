@@ -2,6 +2,9 @@ local GameApi = require("src.utils.gameApi")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local AcvWave = require("src.modules.landingOps.acvWave")
+local MineClearing = require("src.modules.landingOps.mineClearing")
+local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local LogFormat = require("src.utils.logFormat")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local AttackManager = require("src.modules.attackManager")
@@ -17,6 +20,7 @@ local LandingOps = {}
 ---@param saveData SBJ__SaveData
 function LandingOps.init(config, saveData)
   ShipMovement.calculateDestination(config.red.amphibOps, PersistentState.landingOps(saveData).amphibOps.calculationResult)
+  MineClearing.layMinefields(config.red.amphibOps)
 end
 
 ---Process all landing operation phases for the current event tick
@@ -49,11 +53,53 @@ function LandingOps.process(config, saveData)
   }))
 end
 
----Launch amphibious combat vehicles for a ship when it is in a valid zone
+---Whether a unit GUID still resolves
+---@param guid string
+---@return boolean
+local function isAlive(guid)
+  return GameApi.ScenEdit_GetUnit(guid) ~= nil
+end
+
+---Build the per-ACV course callback: plan through cleared lanes to a parking slot and count the
+---ACV against the wave quota; falls back to the zone destination when no lane has room
 ---@param config SBJ__Config
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
+local function buildACVRouter(config, zone, zoneState)
+  zoneState.queueCounters = zoneState.queueCounters or {}
+  zoneState.laneSlots = zoneState.laneSlots or {}
+  zoneState.laneSlots.acv = zoneState.laneSlots.acv or {}
+
+  return function(unit, acvKey)
+    AcvWave.addACV(zoneState, acvKey, unit.guid)
+
+    local plan = zoneState.lanes and RoutePlanner.buildRoute({
+      lanes = zoneState.lanes,
+      launchPos = { latitude = unit.latitude, longitude = unit.longitude },
+      guid = unit.guid,
+      routeConfig = config.red.amphibOps.route,
+      queueCounters = zoneState.queueCounters,
+      laneSlots = zoneState.laneSlots.acv,
+      cells = zoneState.obstacle and zoneState.obstacle.cells,
+      isAlive = isAlive,
+    })
+
+    if not plan then
+      Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
+      return zone.acv.destination
+    end
+    return plan.course
+  end
+end
+
+---Launch amphibious combat vehicles for a ship once its zone has reached the assault landing
+---A paused wave leaves the ship waiting at the launch line; an empty ship returns to base.
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
 ---@return boolean # Whether the launch workflow was handled successfully
-function LandingOps.launchACV(config, ship)
+function LandingOps.launchACV(config, saveData, ship)
   if not AmphibiousAssault.isFerryOrLST(ship) then
     return false
   end
@@ -63,22 +109,27 @@ function LandingOps.launchACV(config, ship)
     return false
   end
 
-  local count = AmphibiousAssault.launchACV({
+  local zoneState = PersistentState.landingOps(saveData).amphibOps.zoneStates[zone.name]
+  if not zoneState or not constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
+    return false
+  end
+
+  local result = AmphibiousAssault.launchACV({
     ship = ship,
     num = 5,
     bearing = zone.acv.bearing + 90,
     distance = zone.acv.distance,
-    speed = zone.acv.speed,
-    destination = zone.acv.destination
+    quota = AcvWave.getQuota(zoneState, config.red.amphibOps.acvWave, GameApi.ScenEdit_CurrentTime()),
+    routeACV = buildACVRouter(config, zone, zoneState),
   })
 
-  if count == 0 then
-    local result = GameApi.ScenEdit_HostUnitToParent({
+  if result and result.isEmpty then
+    local hosted = GameApi.ScenEdit_HostUnitToParent({
       HostedUnitNameOrID = ship.guid,
       SelectedBaseNameOrID = zone.baseGUID
     })
 
-    if not result then
+    if not hosted then
       return false
     end
 

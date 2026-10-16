@@ -552,6 +552,27 @@ function GameUtils.removeRPs(sideName, zone)
 end
 
 ---Check if point is within defined area using reference points
+---Resolve reference point names to numeric locations, in the order CMO returns them
+---@param sideName string
+---@param area string[]|nil
+---@return CMO__Location[] # Empty when the area is unset or cannot be resolved
+function GameUtils.findAreaLocations(sideName, area)
+  if not area or #area == 0 then
+    return {}
+  end
+
+  local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = area })
+  if not points then
+    return {}
+  end
+
+  local locations = {}
+  for _, p in ipairs(points) do
+    table.insert(locations, { latitude = tonumber(p.latitude), longitude = tonumber(p.longitude) })
+  end
+  return locations
+end
+
 ---Converts reference point names to polygon coordinates and performs point-in-polygon test
 ---@param sideName string
 ---@param point CMO__Location|nil

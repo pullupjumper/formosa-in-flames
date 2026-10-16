@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- ShipMovement Unit Tests
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local GameApi = require("src.utils.gameApi")
@@ -99,7 +100,7 @@ describe("ShipMovement", function()
       ferry = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       roro = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       barge = makeShipCalcResult({ dbid = constants.PLATFORMS.BARGE }),
-      type529 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_529 }),
+      type082 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_082 }),
     }
     if overrides then
       for k, v in pairs(overrides) do result[k] = v end
@@ -171,7 +172,7 @@ describe("ShipMovement", function()
               ferry = 1,
               roro = 1,
               barge = 1,
-              type529 = 1,
+              type082 = 1,
             },
           },
         },

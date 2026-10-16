@@ -175,7 +175,7 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
     distance = verticalDistance
   })
 
-  positions.type529 = GameApi.World_GetPointFromBearing({
+  positions.type082 = GameApi.World_GetPointFromBearing({
     latitude = positions.type073a.latitude,
     longitude = positions.type073a.longitude,
     bearing = verticalHeading,
@@ -255,9 +255,9 @@ local function createShipsByType(position, shipType, formationCtx)
     },
     ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargo = cargoMap.ferry, embarkedUnits = nil },
     type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = cargoMap.type073a, embarkedUnits = nil },
-    type529 = {
-      dbid = constants.PLATFORMS.TYPE_529,
-      name = "Type 529",
+    type082 = {
+      dbid = constants.PLATFORMS.TYPE_082,
+      name = "Type 082",
       cargo = nil,
       embarkedUnits = nil
     },
@@ -729,7 +729,7 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
       createShipsByType(positions.type072iii, "type072iii", formationCtx)
       createShipsByType(positions.ferry, "ferry", formationCtx)
       createShipsByType(positions.type073a, "type073a", formationCtx)
-      createShipsByType(positions.type529, "type529", formationCtx)
+      createShipsByType(positions.type082, "type082", formationCtx)
     end
   end
 
@@ -757,7 +757,8 @@ function UnitGenerator.removeLandingShips()
     constants.PLATFORMS.TYPE_072A_2,
     constants.PLATFORMS.TYPE_076,
     constants.PLATFORMS.FERRY,
-    constants.PLATFORMS.BARGE
+    constants.PLATFORMS.BARGE,
+    constants.PLATFORMS.TYPE_082
   }
 
   for _, u in ipairs(filteredUnits) do

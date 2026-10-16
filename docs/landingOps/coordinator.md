@@ -44,8 +44,12 @@ stateDiagram-v2
     [*] --> MOVING: saveData 初始化
     MOVING --> WAITING_ARRIVAL: ShipMovement.moveToStagingArea() done
     WAITING_ARRIVAL --> WAITING_ASSAULT: 艦數 > arrivalThreshold<br>且裝載與任務建立成功
-    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 接觸數 < contactThreshold<br>或等待逾時 (periodSec)
-    WAITING_SECOND_WAVE --> COMPLETED: 灘頭建立 (ZBD-05 ≥ 1)
+    WAITING_ASSAULT --> MINE_CLEARING: 接觸數 < contactThreshold<br>或等待逾時 (periodSec)
+    MINE_CLEARING --> BOAT_ASSAULT: updateMineClearing() 全部完成
+    BOAT_ASSAULT --> OBSTACLE_CLEARING: updateBoats() 全部完成
+    OBSTACLE_CLEARING --> ASSAULT_LANDING: updateObstacleClearing() 超過 clearSec
+    ASSAULT_LANDING --> WAITING_ADMIN_UNLOADING: 灘頭建立 (ZBD-05 ≥ 1，TODO 更嚴格)
+    WAITING_ADMIN_UNLOADING --> COMPLETED: startSecondWaveUnloading 成功
 ```
 
 各 phase 轉換條件：
@@ -54,8 +58,14 @@ stateDiagram-v2
 |---|---|---|
 | `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToStagingArea` |
 | `WAITING_ARRIVAL` | `units > zone.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
-| `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `setLandingMissionStartTime` + `setCoursesForLSTs` |
-| `WAITING_SECOND_WAVE` | 灘頭建立（ZBD-05 ≥ 1） | `startSecondWaveUnloading` |
+| `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `MineClearing.startMineClearing` + `setLandingMissionStartTime`（只有直升機） |
+| `MINE_CLEARING` | 529 全部走完或被摧毀 | `AssaultBoat.pairBoats` + `setCoursesForLSTs`（排除 529） |
+| `BOAT_ASSAULT` | 衝鋒舟全部到 S_lane 或被摧毀（每 tick 先 `launchBoats`） | `ObstacleClearing.startObstacleClearing` |
+| `OBSTACLE_CLEARING` | 超過 `obstacle.clearSec` | 有活衝鋒舟的灘際通道標 cleared |
+| `ASSAULT_LANDING` | 灘頭建立（ZBD-05 ≥ 1，TODO） | — |
+| `WAITING_ADMIN_UNLOADING` | 絕對安全（TODO，目前直接放行） | `startSecondWaveUnloading` |
+
+`ASSAULT_LANDING`、`WAITING_ADMIN_UNLOADING`、`COMPLETED`（`constants.AMPHIBIOUS_LANDING_PHASES`）每 tick 另跑 `Hovercraft.launchHovercraft` + `updateHovercraft`。
 
 ---
 
@@ -129,7 +139,8 @@ flowchart TD
 local 常數 `ARRIVED_PHASES` 涵蓋：
 
 - `WAITING_ASSAULT`
-- `WAITING_SECOND_WAVE`
+- `MINE_CLEARING`、`BOAT_ASSAULT`、`OBSTACLE_CLEARING`、`ASSAULT_LANDING`
+- `WAITING_ADMIN_UNLOADING`
 - `COMPLETED`
 
 ---

@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps Init Unit Tests
 local LandingOps = require("src.modules.landingOps.init")
 local GameApi = require("src.utils.gameApi")
@@ -5,6 +6,7 @@ local Logger = require("src.utils.logger")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local MineClearing = require("src.modules.landingOps.mineClearing")
 local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading")
 local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
@@ -129,10 +131,12 @@ describe("LandingOps", function()
       local saveData = makeSaveData({ calculationResult = {} })
       local cfg = { operations = {} }
       local stubCalc = trackStub(stub(ShipMovement, "calculateDestination"))
+      local stubLay = trackStub(stub(MineClearing, "layMinefields"))
 
       LandingOps.init(makeConfig(cfg), saveData)
 
       assert.stub(stubCalc).was.called_with(cfg, saveData.red.amphibOps.calculationResult)
+      assert.stub(stubLay).was.called_with(cfg)
     end)
   end)
 
@@ -178,70 +182,130 @@ describe("LandingOps", function()
   -- ============================================================================
 
   describe("launchACV", function()
-    -- Positive: launches ACV using derived zone settings
-    it("should launch ACV when ship is a valid ferry or LST in a valid zone", function()
-      local ship = makeShip()
-      local zone = makeZone()
-      local cfg = { operationalZones = { zone } }
-      local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV").returns(2))
+    local ACV_WAVE = { capacity = { zbd05 = 112, ztd05 = 112 }, lossRatio = 0.3, holdSec = 1800 }
 
-      local result = LandingOps.launchACV(makeConfig(cfg), ship)
+    ---@param phase string
+    ---@return table saveData
+    ---@return table zoneState
+    local function makeZoneSaveData(phase)
+      local zoneState = { phase = phase }
+      return makeSaveData({ zoneStates = { ZoneAlpha = zoneState } }), zoneState
+    end
+
+    before_each(function()
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+    end)
+
+    -- Positive: launches ACVs with the wave quota once assault landing has started
+    it("should launch ACVs with quota and a router when the zone is in ASSAULT_LANDING", function()
+      local ship = makeShip()
+      local zone = makeZone({ name = "ZoneAlpha" })
+      local saveData, zoneState = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
+      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
+      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV")
+        .returns({ count = 2, isEmpty = false, isPaused = false }))
+
+      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, ship)
 
       assert.is_true(result)
-      assert.stub(stubIsFerry).was.called_with(ship)
-      assert.stub(stubGetZone).was.called_with({ operationalZones = { zone } }, ship)
-      assert.stub(stubLaunch).was.called_with({
-        ship = ship,
-        num = 5,
-        bearing = 180,
-        distance = 0.5,
-        speed = 20,
-        destination = zone.acv.destination
-      })
+      local params = stubLaunch.calls[1].vals[1]
+      assert.are.same(ship, params.ship)
+      assert.are.equal(5, params.num)
+      assert.are.equal(180, params.bearing)
+      assert.are.same({ zbd05 = 112, ztd05 = 112 }, params.quota)
+      assert.are.equal("function", type(params.routeACV))
+      assert.is_not_nil(zoneState.acvGuids)
+    end)
+
+    -- Positive: without lanes the router counts the ACV and falls back to the zone destination
+    it("should record the ACV and fall back to the zone destination when no lane is available", function()
+      local zone = makeZone({ name = "ZoneAlpha" })
+      local saveData, zoneState = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
+      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
+      local course
+      trackStub(stub(AmphibiousAssault, "launchACV").invokes(function(params)
+        course = params.routeACV({ guid = "ACV-1", latitude = 25.0, longitude = 121.0 }, "zbd05")
+        return { count = 1, isEmpty = false, isPaused = false }
+      end))
+      trackStub(stub(Logger, "warn"))
+
+      LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, makeShip())
+
+      assert.are.same(zone.acv.destination, course)
+      assert.are.same({ "ACV-1" }, zoneState.acvGuids.zbd05)
+    end)
+
+    -- Negative: nothing happens before assault landing
+    it("should not launch before the zone reaches ASSAULT_LANDING", function()
+      local zone = makeZone({ name = "ZoneAlpha" })
+      local saveData = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
+      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
+      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
+      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV"))
+
+      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, makeShip())
+
+      assert.is_false(result)
+      assert.stub(stubLaunch).was_not.called()
     end)
 
     -- Negative: exits when ship type is not eligible
     it("should return false when ship is not a ferry or LST", function()
       local ship = makeShip()
-      local cfg = {}
       local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(false))
       local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone"))
 
-      local result = LandingOps.launchACV(makeConfig(cfg), ship)
+      local result = LandingOps.launchACV(makeConfig({}), makeSaveData({}), ship)
 
       assert.is_false(result)
       assert.stub(stubIsFerry).was.called_with(ship)
       assert.stub(stubGetZone).was_not.called()
     end)
 
-    -- Boundary: hosts and RTBs when no ACV can be launched
-    it("should host the ship back to base and RTB when launch count is zero", function()
+    -- Boundary: hosts and RTBs when the ship is empty
+    it("should host the ship back to base and RTB when the ship is empty", function()
       local wasRTB = false
       local ship = makeShip({
         RTB = function(_, force)
           wasRTB = force
         end,
       })
-      local zone = makeZone()
-      local cfg = {}
-      local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV").returns(0))
+      local zone = makeZone({ name = "ZoneAlpha" })
+      local saveData = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.COMPLETED)
+      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
+      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
+      trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = true, isPaused = false }))
       local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent").returns(true))
 
-      local result = LandingOps.launchACV(makeConfig(cfg), ship)
+      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, ship)
 
       assert.is_true(result)
       assert.is_true(wasRTB)
-      assert.stub(stubIsFerry).was.called_with(ship)
-      assert.stub(stubGetZone).was.called_with({}, ship)
-      assert.stub(stubLaunch).was.called(1)
       assert.stub(stubHost).was.called_with({
         HostedUnitNameOrID = ship.guid,
         SelectedBaseNameOrID = zone.baseGUID
       })
+    end)
+
+    -- Negative: a paused wave keeps the ship on station
+    it("should not RTB the ship when the wave is paused", function()
+      local wasRTB = false
+      local ship = makeShip({ RTB = function() wasRTB = true end })
+      local zone = makeZone({ name = "ZoneAlpha" })
+      local saveData = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
+      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
+      trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = false, isPaused = true }))
+      local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent"))
+
+      local result = LandingOps.launchACV(makeConfig({ acvWave = ACV_WAVE }), saveData, ship)
+
+      assert.is_true(result)
+      assert.is_false(wasRTB)
+      assert.stub(stubHost).was_not.called()
     end)
   end)
 

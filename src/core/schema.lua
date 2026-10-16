@@ -31,11 +31,19 @@ function ScenEdit_GetZone(sideName, zoneName, zoneType) end
 ---@return number
 function ScenEdit_AddMinefield(params) end
 
+---@param params CMO__DeleteMinefieldDescriptor
+---@return number
+function ScenEdit_DeleteMinefield(params) end
+
 ---@class CMO__MinefieldDescriptor: table
 ---@field side string
 ---@field dbid number
 ---@field number number
 ---@field delay number
+---@field area string[]
+
+---@class CMO__DeleteMinefieldDescriptor: table
+---@field side string
 ---@field area string[]
 
 ---Unit OODA (Observe, Orient, Decide, Act) loop characteristics
@@ -260,7 +268,7 @@ function ScenEdit_AddMinefield(params) end
 ---@class SBJ__AirTimingConfig: table
 ---@field assignmentSafetyMargin number Seconds reserved between assignment completion and planned takeoff
 ---@field flightTimeSafetyMargin number Extra seconds added to estimated transit time
----@field supportLeadTime table<SBJ__RoleKey, number> Support-role arrival lead time before striker TOT
+---@field supportLeadTime table<string, number> Support-role arrival lead time before striker TOT
 ---@field tankerSetupTime number Seconds tanker should be on station before the earliest receiver arrives
 ---@field tankerUnresolvedArrivalLeadTime number Tanker lead time before striker TOT when receiver arrival cannot be resolved
 ---@field unresolvedFlightTime { striker: number, support: number } Fallback flight times when route data cannot be resolved
@@ -493,7 +501,7 @@ function ScenEdit_AddMinefield(params) end
 ---| '"ferry"'
 ---| '"barge"'
 ---| '"roro"'
----| '"type529"'
+---| '"type082"'
 
 -- ============================================================================
 -- Cargo & Logistics
@@ -659,6 +667,101 @@ function ScenEdit_AddMinefield(params) end
 ---@field phase string Current phase (constants.AMPHIBIOUS_PHASES value)
 ---@field amphibiousAssaultStartTime? number Amphibious assault start timestamp
 ---@field airlandingMissionStartTime? number Air landing mission start timestamp
+---@field lanes? SBJ__LanePlanState Water and beach lanes, built when mine clearing starts
+---@field minesweepers? table<string, SBJ__MinesweeperState> Type 529 progress indexed by GUID
+---@field boats? table<string, SBJ__AssaultBoatState> Assault boat pairing and progress indexed by boat GUID
+---@field obstacle? SBJ__ObstacleState Beach obstacle cells
+---@field obstacleStartedAt? number Time all boats finished and obstacle clearing began
+---@field acvGuids? table<string, string[]> Launched ACV GUIDs per type key (zbd05, ztd05)
+---@field acvPausedAt? table<string, number> Pause start per ACV type key; nil while releasing
+---@field queueCounters? table<string, integer> Units routed per water lane id
+---@field laneSlots? SBJ__LaneSlotsState Parking slot holders per beach lane
+---@field hovercraft? table<string, SBJ__HovercraftState> Routed hovercraft indexed by GUID
+
+---Local flat frame for lane geometry
+---@class SBJ__LaneFrame: table
+---@field origin CMO__Location Lane center on the shore
+---@field bearing number Bearing toward the shore (degrees)
+
+---All lanes of a zone
+---@class SBJ__LanePlanState: SBJ__LaneFrame
+---@field waterLanes SBJ__WaterLaneEntry[] Water lanes ordered left to right (facing the shore)
+
+---One water lane (one Type 529 / one battalion)
+---@class SBJ__WaterLaneEntry: table
+---@field id string Water lane id ("W1")
+---@field deployPoint CMO__Location Point on the deployment line
+---@field launchPoint CMO__Location L_i, point on the launch line
+---@field assaultPoint CMO__Location A_i, point on the assault line
+---@field beachLanes SBJ__BeachLaneEntry[] Beach lanes ordered left to right
+---@field sweepCourse CMO__Waypoint[] Type 082 course: water lane then serpentine over beach lanes
+---@field missionArea CMO__Location[] Sweep mission rectangle (4 corners)
+
+---One beach lane
+---@class SBJ__BeachLaneEntry: table
+---@field id string Beach lane id ("W1-B2")
+---@field waterLaneId string Parent water lane id
+---@field assaultPoint CMO__Location A_lane, start on the assault line
+---@field shorePoint CMO__Location S_lane, just off the shore
+---@field endPoint CMO__Location E_lane, inland past the obstacle area
+---@field isCleared boolean Whether obstacles on this lane are cleared
+
+---@class SBJ__BuildLanesParams: table
+---@field origin CMO__Location Lane center on the shore
+---@field bearing number Bearing toward the shore (degrees)
+---@field count integer Number of water lanes (Type 529 count)
+---@field inlandDepthM number E_lane distance inland
+---@field areaMarginM number Sweep mission area margin
+---@field routeConfig SBJ__RouteConfig
+
+---One obstacle cell
+---@class SBJ__ObstacleCellEntry: table
+---@field corners CMO__Location[] 4 corners
+---@field state string constants.OBSTACLE_CELL_STATES value
+---@field beachLaneId? string Beach lane that cleared this cell
+
+---@class SBJ__ObstacleState: table
+---@field cells SBJ__ObstacleCellEntry[]
+
+---@class SBJ__LaneSlotsState: table
+---@field acv table<string, table<integer, string>> ACV slot holders per beach lane id
+---@field hovercraft table<string, table<integer, string>> Hovercraft slot holders per beach lane id
+
+---@class SBJ__BuildRouteParams: table
+---@field lanes SBJ__LanePlanState
+---@field launchPos CMO__Location Where the unit starts
+---@field guid string Unit taking the slot
+---@field routeConfig SBJ__RouteConfig
+---@field queueCounters table<string, integer> Also used as water lane load
+---@field laneSlots table<string, table<integer, string>> Slot holders for this unit kind
+---@field cells SBJ__ObstacleCellEntry[]|nil
+---@field isAlive fun(guid: string): boolean
+
+---@class SBJ__BuildRouteOpts: table
+---@field isFromDeployLine? boolean Prepend the water lane's deployment line point (units launched far offshore)
+
+---@class SBJ__RoutePlanResult: table
+---@field course CMO__Location[]
+---@field waterLaneId string
+---@field beachLaneId string
+---@field slot integer
+
+---@class SBJ__MinesweeperState: table
+---@field waterLaneId string
+---@field missionArea CMO__Location[] Sweep mission rectangle (4 corners), for the mine clearing mission
+---@field finalPoint CMO__Location Last waypoint of the sweep course
+---@field isDone boolean Reached the final point (and sent RTB) or was destroyed
+
+---@class SBJ__AssaultBoatState: table
+---@field shipGuid string Carrying LST
+---@field beachLaneId string Paired beach lane
+---@field status string "pending" | "launched" | "arrived" | "lost"
+---@field finalPoint? CMO__Location S_lane, set at launch
+
+---@class SBJ__HovercraftState: table
+---@field missionName string Cargo mission to assign after arrival
+---@field finalPoint CMO__Location Parking slot
+---@field arrived boolean
 
 ---Amphibious operations context managing all amphibious operation state
 ---@class SBJ__AmphibOpsContext: table
@@ -667,15 +770,20 @@ function ScenEdit_AddMinefield(params) end
 ---@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
 ---@field fireSupportOnHold? boolean Whether SRBM fire-support strikes are on hold for ammo conservation; set true when ammo low and not all zones arrived, cleared once all zones reach staging
 
----ACV deployment parameters for launching air cushion vehicles
+---ACV deployment parameters for launching amphibious combat vehicles
 ---Input table for AmphibiousAssault.launchACV
 ---@class SBJ__ACVDeploymentParams: table
 ---@field bearing number Deployment direction (degrees)
 ---@field distance number Deployment distance (nautical miles)
 ---@field ship CMO__Unit Parent landing ship
----@field speed number ACV movement speed (knots)
----@field destination CMO__Waypoint[] ACV destination waypoints
----@field num integer Number of ACVs to deploy
+---@field num integer Maximum number of ACVs to deploy
+---@field quota table<string, integer> Remaining quota per ACV type key (zbd05, ztd05)
+---@field routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Waypoint[] Course for a freshly spawned ACV
+
+---@class SBJ__LaunchACVResult: table
+---@field count integer|nil ACVs launched, nil when a spawn failed
+---@field isEmpty boolean Ship carries no ZBD/ZTD cargo
+---@field isPaused boolean Cargo remains but the wave quota allows none of it
 
 ---Vehicle offload parameters for unloading vehicles from landing ships
 ---Input table for SecondWaveUnloading.offloadVehicles
@@ -712,6 +820,7 @@ function ScenEdit_AddMinefield(params) end
 
 ---Landing craft mission configuration for boat-based amphibious landings
 ---@class SBJ__BoatMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
+---@field speed number
 
 ---Transport helicopter mission configuration for air assault operations
 ---@class SBJ__TransportHelicopterDescriptor: SBJ__CargoLandingPlatformDescriptor
@@ -737,6 +846,11 @@ function ScenEdit_AddMinefield(params) end
 ---@field speed number LST transit speed (knots)
 ---@field course {bearing:number, distance:number} Approach course (bearing in degrees, distance in nautical miles)
 
+---@class SBJ__SweeperDescriptor: table
+---@field missionName string
+---@field settings CMO__Mission
+---@field speed number
+
 ---Operational zone descriptor for amphibious operations
 ---Defines complete landing zone configuration including air and surface assets
 ---@class SBJ__OperationalZoneDescriptor: table
@@ -752,6 +866,10 @@ function ScenEdit_AddMinefield(params) end
 ---@field attackHelicopter SBJ__AttackHelicopterDescriptor Attack helicopter configuration
 ---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
 ---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
+---@field laneCenter string[] Reference point name of the lane center on the shore (one point)
+---@field laneBearing number Bearing toward the shore (degrees)
+---@field obstacleArea string[] Beach obstacle polygon reference point names (BLUE side)
+---@field sweeper SBJ__SweeperDescriptor
 
 ---Formation settings for amphibious operation layouts
 ---Defines spacing and movement parameters for amphibious assault ship formations
@@ -766,6 +884,8 @@ function ScenEdit_AddMinefield(params) end
 ---@field acvSpeed number Amphibious combat vehicle speed
 ---@field acvTransitDistance number Amphibious combat vehicle transit distance
 ---@field acvHorizontalDistance number Amphibious combat vehicle horizontal spacing
+---@field hovercraftSpeed number
+---@field sweeperSpeed number
 
 ---Fleet composition configuration for amphibious operations
 ---Defines the number of ships by type for amphibious assault fleets
@@ -780,7 +900,7 @@ function ScenEdit_AddMinefield(params) end
 ---@field ferry integer Number of ferries
 ---@field roro integer Number of roll-on/roll-off ships
 ---@field barge integer Number of barges
----@field type529 integer
+---@field type082 integer
 
 ---Operation area descriptor for amphibious operation origin or destination
 ---@class SBJ__OperationAreaDescriptor: table
@@ -825,6 +945,48 @@ function ScenEdit_AddMinefield(params) end
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
 ---@field sags table<string, SBJ__SAGDescriptor> Surface Action Group descriptors
 ---@field isTesting boolean Whether the system is in testing mode
+---@field route SBJ__RouteConfig Lane layout and routing through swept lanes
+---@field mineClearing SBJ__MineClearingConfig Type 529 mine clearing settings
+---@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start
+---@field assaultBoat SBJ__AssaultBoatConfig Assault boat settings
+---@field obstacle SBJ__ObstacleConfig Beach obstacle settings
+---@field acvWave SBJ__AcvWaveConfig ACV wave limits
+
+---Lane layout and routing settings (distances measured from the lane center on the shore)
+---@class SBJ__RouteConfig: table
+---@field deployLineNm number Deployment line distance offshore (water lane start)
+---@field launchLineNm number Launch line distance offshore (L_i)
+---@field assaultLineNm number Assault line distance offshore (A_i, A_lane)
+---@field waterLaneSpacingM number Spacing between adjacent water lanes
+---@field beachLaneOffsetsM number[] Beach lane lateral offsets from their water lane, ascending
+---@field shoreStandoffM number S_lane distance offshore
+---@field inlandMarginM number How far E_lane extends past the obstacle area
+---@field columnSpacingM number Spacing between queue entry points along the water lane
+---@field queueDepth integer Number of queue entry points per water lane
+---@field queueSpacingM number Spacing between parking slots inside a beach lane
+---@field laneTieNm number Distance difference treated as a tie when choosing a water lane
+---@field arrivalNm number Distance to the final waypoint that counts as arrived
+
+---@class SBJ__MineClearingConfig: table
+---@field areaMarginM number Extra width of the sweep mission area beyond the outermost beach lane
+
+---Offshore minefield laid for BLUE at scenario start
+---@class SBJ__MinefieldDescriptor: table
+---@field area string[] BLUE-side reference point names; empty skips this minefield
+---@field number integer Number of mines
+---@field delay number CMO arming delay
+
+---@class SBJ__AssaultBoatConfig: table
+---@field speed number Manual speed (knots)
+
+---@class SBJ__ObstacleConfig: table
+---@field cellSizeM number Obstacle cell edge length
+---@field clearSec number Seconds after all boats land before obstacles are cleared
+
+---@class SBJ__AcvWaveConfig: table
+---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
+---@field lossRatio number Resume when alive drops below capacity * (1 - lossRatio)
+---@field holdSec number Resume when paused longer than this
 
 ---Land-Attack Cruise Missile context managing LACM operations state
 ---@class SBJ__LACMContext: table

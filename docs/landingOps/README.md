@@ -32,7 +32,14 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至錨泊區與 SAG 護航編隊佈陣 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物操作、平台裝載與任務指派 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
-| [secondWaveUnloading](secondWaveUnloading.md) | `secondWaveUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載 |
+| [secondWaveUnloading](secondWaveUnloading.md) | `secondWaveUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載（行政下卸） |
+| [assaultTimeline](assaultTimeline.md) | `laneGeometry.lua` | 通道幾何（純函式）：水際／灘際通道、弓字型、障礙方塊、相交判斷 |
+| [assaultTimeline](assaultTimeline.md) | `routePlanner.lua` | 走通道的航線：選通道、排隊入口點、停車位 |
+| [assaultTimeline](assaultTimeline.md) | `mineClearing.lua` | 開場佈雷、Type 529 掃雷 |
+| [assaultTimeline](assaultTimeline.md) | `assaultBoat.lua` | 衝鋒舟配對、放出、到達追蹤 |
+| [assaultTimeline](assaultTimeline.md) | `obstacleClearing.lua` | 岸上障礙方塊與破障計時 |
+| [assaultTimeline](assaultTimeline.md) | `acvWave.lua` | 兩棲車存活上限與分波 |
+| [assaultTimeline](assaultTimeline.md) | `hovercraft.lua` | 氣墊船走通道、到點標記 |
 
 ### 門面 API（`init.lua`）
 
@@ -42,7 +49,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 |---|---|---|
 | `init(amphibOpsConfig, landingState)` | 開局初始化兩棲作戰狀態 | `src/core/init.lua` |
 | `process(config, landingState, params)`（`params`：`contacts`、`currentTime`、`filteredShips`） | 轉交 [`Coordinator.process`](coordinator.md) | `landingCheck.lua` |
-| `launchACV(amphibOpsConfig, ship)` | ACV 釋放 | `launchACV.lua` |
+| `launchACV(config, saveData, ship)` | ACV 釋放（`ASSAULT_LANDING` 起；額度 0 暫停、艙內空 RTB） | `launchACV.lua` |
 | `offloadVehicles(amphibOpsConfig, landingState, ship)` | 重裝備下卸 | `offloadVehicles.lua` |
 | `neutralizeAirlandingZone(amphibOpsConfig, ship, contacts)` | SAG 壓制空/機降區 | `neutralizeAirlandingZone.lua` |
 | `countUnitsInEachArea(config)` | 純轉發 [`AmphibiousAssault.countUnitsInEachArea`](amphibiousAssault.md) | `src/modules/unitStatusUI.lua` |
@@ -114,9 +121,15 @@ stateDiagram-v2
     [*] --> MOVING: 想定載入
     MOVING --> WAITING_ARRIVAL: 艦隊發出移動命令
     WAITING_ARRIVAL --> WAITING_ASSAULT: 艦隊到達錨泊區<br>完成裝載與任務建立
-    WAITING_ASSAULT --> WAITING_SECOND_WAVE: 空/機降區威脅清除或超時<br>發起兩棲突擊
-    WAITING_SECOND_WAVE --> COMPLETED: 灘頭陣地建立<br>啟動第二波卸載
+    WAITING_ASSAULT --> MINE_CLEARING: 空/機降區威脅清除或超時<br>算通道、派 529、直升機任務開始
+    MINE_CLEARING --> BOAT_ASSAULT: 529 全部走完（RTB）<br>配對衝鋒舟、LST 前進
+    BOAT_ASSAULT --> OBSTACLE_CLEARING: 衝鋒舟全部到 S_lane 或被摧毀<br>切障礙方塊、開始計時
+    OBSTACLE_CLEARING --> ASSAULT_LANDING: 超過 obstacle.clearSec<br>有衝鋒舟的灘際通道標 cleared
+    ASSAULT_LANDING --> WAITING_ADMIN_UNLOADING: 灘頭陣地建立（暫用 ZBD-05 ≥ 1）
+    WAITING_ADMIN_UNLOADING --> COMPLETED: 絕對安全（TODO，目前直接放行）<br>啟動行政下卸
 ```
+
+`ASSAULT_LANDING` 起（含之後的 phase），兩棲車分波泛水、氣墊船走通道。流程細節見 [assaultTimeline](assaultTimeline.md)。
 
 每個作戰區（Taoyuan、Sishu、Penghu）各自維護獨立的 `zoneState.phase`，透過 `constants.AMPHIBIOUS_PHASES` 列舉值推進。
 
@@ -228,7 +241,7 @@ flowchart BT
 | `constants.PLATFORMS.TYPE_054A` | 054A 型護衛艦 DBID |
 | `constants.PLATFORMS.BRIDGE` | 後勤浮橋設施 DBID |
 | `constants.PLATFORMS.HPJ_38` | H/PJ-38 130mm 艦砲武器 ID |
-| `constants.AMPHIBIOUS_PHASES.*` | 作戰階段列舉（MOVING / WAITING_ARRIVAL / WAITING_ASSAULT / WAITING_SECOND_WAVE / COMPLETED） |
+| `constants.AMPHIBIOUS_PHASES.*` | 作戰階段列舉（MOVING / WAITING_ARRIVAL / WAITING_ASSAULT / MINE_CLEARING / BOAT_ASSAULT / OBSTACLE_CLEARING / ASSAULT_LANDING / WAITING_ADMIN_UNLOADING / COMPLETED） |
 | `constants.SIDES.RED` | 中國陣營名稱 |
 | `constants.CONTACT_TYPES.FACILITY_MOBILE` | 可移動設施接觸類型 |
 | `constants.PLATFORM_TYPES.AIRCRAFT` | 航空器平台類型 |

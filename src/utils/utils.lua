@@ -11,6 +11,13 @@ function Utils.buildRandomText(numLetters)
   return totTxt
 end
 
+---Coerce a value (e.g. a CMO coordinate) to a number
+---@param value number|string|nil
+---@return number # The parsed number, or 0 when it cannot be parsed
+function Utils.toNumber(value)
+  return tonumber(value) or 0
+end
+
 ---Get the count of items in a list
 ---@param list table
 ---@return number # The number of items in the list

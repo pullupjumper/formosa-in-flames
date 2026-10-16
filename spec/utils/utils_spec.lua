@@ -1,8 +1,35 @@
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- Utils Unit Tests
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 describe("Utils", function()
+  -- ============================================================================
+  -- toNumber
+  -- ============================================================================
+
+  describe("toNumber", function()
+    -- Positive: a number passes through unchanged
+    it("should return a number as is", function()
+      assert.are.equal(23.5, Utils.toNumber(23.5))
+    end)
+
+    -- Positive: a numeric string is parsed
+    it("should parse a numeric string", function()
+      assert.are.equal(121.25, Utils.toNumber("121.25"))
+    end)
+
+    -- Negative: an unparsable string falls back to 0
+    it("should return 0 for a non-numeric string", function()
+      assert.are.equal(0, Utils.toNumber("abc"))
+    end)
+
+    -- Negative: nil falls back to 0
+    it("should return 0 for nil", function()
+      assert.are.equal(0, Utils.toNumber(nil))
+    end)
+  end)
+
   -- ============================================================================
   -- parseDatetimeToTimestamp
   -- ============================================================================

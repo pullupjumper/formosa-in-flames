@@ -79,14 +79,34 @@
 ## 1. 整體流程
 
 ```
+開場：藍方近海佈雷（ScenEdit_AddMinefield）
 航渡：母艦到乘載區，其他登陸艦艇到展開線
-  → 獵雷艦（Type 529）反水雷，開水際通道與灘際通道
+  → 獵雷艦（Type 529）反水雷，開水際通道與灘際通道（CMO 內建掃雷任務）
   → LST 到泛水出發線，釋放衝鋒舟
   → 衝鋒舟走水際通道，衝擊發起線轉橫隊，走灘際通道上岸
   → 衝鋒舟在岸上破障（障礙區方塊）
-  → 灘際通道破障都完成，兩棲車泛水、分波登陸
-  → 氣墊船從母艦運送重裝備
+  → 灘際通道破障都完成，衝擊上陸：兩棲車泛水、分波登陸；氣墊船從母艦運送重裝備
+  → 灘頭堡建立、絕對安全後，行政下卸（駁船搭橋、RORO 下卸大量戰甲車）
 ```
+
+### Phase 對照（`constants.AMPHIBIOUS_PHASES`）
+
+```
+WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASSAULT_LANDING → WAITING_ADMIN_UNLOADING → COMPLETED
+```
+
+| Phase | 做什麼 | 換下一階段 | Code |
+|---|---|---|---|
+| `WAITING_ASSAULT` | 條件成立 → 算通道、派 529、直升機任務開始（不含氣墊船） | 派完 | `mineClearing.startMineClearing` |
+| `MINE_CLEARING` | 529 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → 配對衝鋒舟、LST 前進（排除 529） | `mineClearing.updateMineClearing` |
+| `BOAT_ASSAULT` | 072A/072III 進 `zone.acv.area` 就放衝鋒舟 | 衝鋒舟全部到 S_lane 或被摧毀 | `assaultBoat.lua` |
+| `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` | `obstacleClearing.lua` |
+| `ASSAULT_LANDING` | 衝擊上陸：兩棲車分波、氣墊船走通道 | 灘頭堡建立（暫用 `casArea` 內 ZBD-05 ≥ 1，TODO） | `acvWave.lua`、`hovercraft.lua` |
+| `WAITING_ADMIN_UNLOADING` | 等絕對安全（TODO，目前直接放行） | `startSecondWaveUnloading` 成功 | `secondWaveUnloading.lua` |
+
+兩棲車、氣墊船從 `ASSAULT_LANDING` 開始，之後的 phase（含 `COMPLETED`）也繼續跑。
+
+`.scen` 參考點缺（`LANE_CENTER_*` 或 `OBSTACLE_*` 是空的）時，該區記 log、停在 `WAITING_ASSAULT`，不會 crash。
 
 ## 2. 艦艇位置與速度
 
@@ -103,7 +123,7 @@
 | 兩棲車 | 8 kt（約 14.8 km/h） | `formationSettings.acvSpeed`，油門 Full |
 | 氣墊船（Type 726A） | 約 40 kt | CMO 實測；config 只設油門 Full |
 | 運輸直升機（Z-18） | 約 130 kt | CMO 實測；config 設轉場 Military、到站 Afterburner，高度 304 |
-| 衝鋒舟 | 30 kt | 設計值；code 尚未設定 |
+| 衝鋒舟 | 30 kt | `config.red.amphibOps.assaultBoat.speed`（`manualSpeed`） |
 
 兩棲車與 LST 都比原文快（原文泛水編波約 7 km/h，過渡航態 14.4 km/h）。
 
@@ -117,7 +137,7 @@
 | 3 個營 | 3 | 12 |
 | 1 個營 | 1 | 4 |
 
-`config.red.amphibOps.operations` 的 `type529` 數量需等於營數（目前 4 個作戰為 4 艘，2 個作戰為 1 艘）。
+`config.red.amphibOps.operations` 的 `type082` 數量需等於營數（目前 4 個作戰為 4 艘，2 個作戰為 1 艘）。
 
 ## 4. 反水雷（獵雷艦 Type 529，DBID 4620）
 
@@ -129,7 +149,9 @@
 | 灘際通道 | 到衝擊發起線後走弓字型，掃出 4 條，長度為衝擊發起線到岸（2–6 km） |
 | 位置 | 水際通道延伸線在 4 條灘際通道正中間；偏移 -180、-60、+60、+180 m |
 | 間距 | 灘際通道中心線相距 120 m（取圖 37 下限），弓字型轉折間距同為 120 m；相鄰獵雷艦水際通道相距 750 m（500 + 250） |
-| 完成 | 走完事先規劃的弓字型航線，行進中同時掃雷；儲存航線作為通道標示 |
+| 掃雷 | CMO 內建掃雷任務。**先設 `course`，再 assign 任務**。任務區域 4 角存在 `zoneState.minesweepers[guid].missionArea`；建任務、assign 是 `-- TODO`（使用者自己寫） |
+| 配對 | 529 依橫向位置排序，一艘配一條水際通道（左到右） |
+| 完成 | 走到最後航點（距離 < `route.arrivalNm`）或被摧毀；通道存在 `zoneState.lanes` |
 | 結束 | 呼叫 `unit:RTB()` |
 
 與原文差異：灘際通道原由破障階段處理，改由獵雷艦開，因為衝鋒舟不能反水雷。
@@ -143,14 +165,16 @@
 | 路線 | 縱隊走水際通道，衝擊發起線轉橫隊，走灘際通道上岸 |
 | 配對 | 1 條灘際通道 1 艘衝鋒舟，依橫向位置排序一對一 |
 | 不足時 | 每艘 072A、072III 再釋放第二艘補 |
+| 放出 | `boat.course = 航線` → `boat.manualSpeed = 30` → `boat:Launch(true)`（先 course 再 Launch） |
+| 配對時機 | 掃雷結束那一 tick 算一次，存 `zoneState.boats` |
 
 對應原文圖 37 第一波（先遣突擊群）。泛水出發線到灘頭約 4–9 分鐘，遠快於兩棲車。[推論]
 
 | 作戰 | 072III / 072A | 衝鋒舟 | 灘際通道需求 |
 |---|---|---|---|
-| type529 = 4（第一組） | 7 / 8 | 30 | 16，足夠 |
-| type529 = 4（第二組） | 2 / 4 | 12 | 16，**缺 4 艘** |
-| type529 = 1 | 2 / 3 | 10 | 4，足夠 |
+| type082 = 4（第一組） | 7 / 8 | 30 | 16，足夠 |
+| type082 = 4（第二組） | 2 / 4 | 12 | 16，**缺 4 艘** |
+| type082 = 1 | 2 / 3 | 10 | 4，足夠 |
 
 第二組獵雷艦仍開滿 16 條，不派衝鋒舟的 4 條取橫向排序後同一側最外側，其餘 12 條連續一對一配對，航線最短。
 
@@ -173,12 +197,12 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 ## 7. 兩棲車泛水與分波
 
-### 現況
+### 改版前（參考）
 
-| 項目 | 現況 |
+| 項目 | 改版前 |
 |---|---|
 | 觸發 | 事件腳本 `launchACV.lua`，每 5 分鐘對區內每艘船各觸發一次 |
-| 可釋放的船 | 071、072III、072A、073A、529、渡輪（`isFerryOrLST`） |
+| 可釋放的船 | 071、072III、072A、073A、529、渡輪（`isFerryOrLST`；現已拿掉 529） |
 | 每次數量 | 每艘船 5 輛（寫死 `num = 5`），先 ZBD-05，用完才 ZTD-05 |
 | 排列與航行 | 沿 `zone.acv.bearing + 90` 排開，間距 0.05 浬；油門 Full，航線 `zone.acv.destination` |
 | 結束 | 艙內沒有 ZBD/ZTD（`count == 0`）就掛回基地並 RTB |
@@ -220,11 +244,49 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 **state**（`SBJ__ZoneState` 新增）：`acvGuids`、`acvPausedAt`。
 
-### 實作注意
+### 實作
 
-- 暫停時 `AmphibiousAssault.launchACV` 不能回傳 0，否則船會被當成艙內空了而 RTB。要分開「暫停」和「艙內空了」。
-- 071、529 本來就沒有 ZBD/ZTD，第一次觸發就 RTB，是現有行為，不用改。
-- `num` 取 `min(5, 剩餘額度, 該車種剩餘額度)`；`removeCargoByPriority` 要改成依各車種額度分配。
+- `ASSAULT_LANDING` 之前，`LandingOps.launchACV` 不動作。
+- `AmphibiousAssault.launchACV` 回傳 `{ count, isEmpty, isPaused }`：額度 0 → `isPaused`，船不 RTB；艙內沒 ZBD/ZTD → `isEmpty`，照舊掛回基地 RTB。
+- 071 沒有 ZBD/ZTD，第一次觸發就 RTB（529 已不算 `isFerryOrLST`）。
+- `removeCargoByPriority` 依各車種額度分配（`min(5, 該車種額度)`）。
+- 每輛車放出後立刻記 GUID，同 tick 後面的船自然拿到較少額度。
+- 每輛車用 `routePlanner` 算自己的航線（走 `cleared` 灘際通道，停在自己的停車位）。沒有可用通道時退回 `zone.acv.destination` 並記 WARN。
+
+## 8. 佈雷
+
+開場（`LandingOps.init`）依 `config.red.amphibOps.minefields` 每筆呼叫一次 `ScenEdit_AddMinefield({ side = BLUE, dbid = constants.WEAPONS.SEA_MINE, number, delay, area })`。`area` 是空的就跳過。灘岸雷區以後再做。
+
+## 9. 航線規則（`routePlanner.lua`）
+
+衝鋒舟、兩棲車、氣墊船共用。距離參數在 `config.red.amphibOps.route`。
+
+1. **選水際通道**：離艦位置到各 `L_i` 最近的；距離差在 `laneTieNm` 內選負載少的（負載 = 已送進該通道的單位數）。兩棲車、氣墊船只考慮至少有一條 `cleared` 灘際通道的水際通道。
+2. **排隊入口點**：每條水際通道一個計數器 `k`（`zoneState.queueCounters`）。入口 = `L_i` 往外海退 `(k mod queueDepth) × columnSpacingM`。
+3. **選灘際通道**：只選 `cleared` 的，從 `k mod 數量` 開始輪流；衝鋒舟例外（直接用配對的那條）。
+4. **停車位**：灘際通道從 `E_lane` 往 `A_lane` 每 `queueSpacingM` 一格。拿第一個空格（沒人、自己、或佔位的單位已被摧毀）。格子滿換下一條灘際通道，再滿換下一條水際通道。兩棲車、氣墊船各一套（`zoneState.laneSlots.acv` / `.hovercraft`）。
+5. **航線**：`[入口點, L_i, A_i, A_lane, (S_lane), 停車位]`；停車位在 `S_lane` 外海側時不經過 `S_lane`。氣墊船從母艦出發，前面多加展開線點。
+6. **安全檢查**：航線碰到任何非 `cleared` 的方塊就換下一條。
+
+## 10. 氣墊船（Type 726A）
+
+- 母艦：075、076、071（在 `zone.anchorageArea` 內）。
+- `ASSAULT_LANDING` 起每 tick：`embarkedUnits[BOATS]` 裡 726A、已裝貨、`readytime_v == 0`、還沒走過通道的 → 算航線 → `course` → `Launch(true)` → 記 `zoneState.hovercraft[guid] = { missionName, finalPoint, arrived }`。
+- 在錨地**不** assign 任務（`amphibiousLogistics` 只裝貨）。`boat` 任務的開始時間也不再由 `setLandingMissionStartTime` 設。
+- 到停車位 → `arrived = true` → `-- TODO: assign cargo 任務`（使用者自己寫，任務名在 `missionName`，依 `unitCount` 依序分配）。
+- 每艘只走一次通道，之後交給 cargo 任務。
+
+## 11. `.scen` 參考點清單
+
+`constants.AREAS` 每區（Taoyuan、Sishu、Penghu）要填：
+
+| 欄位 | 內容 | 陣營 |
+|---|---|---|
+| `LANE_CENTER_*` | 通道中心點（岸邊 1 點） | 紅方 |
+| `OBSTACLE_*` | 岸上障礙範圍（多邊形，至少 3 點） | 藍方 |
+| `MINEFIELD_*` | 近海雷區（多邊形） | 藍方 |
+
+朝岸方向 `laneBearing` 用各區 LST 航向（`formationSettings.heading.*.vertical`）。
 
 ---
 
@@ -312,8 +374,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 - control panel 畫障礙範圍的資料格式，以及怎麼存進 save data
 - 氣墊船卸載、回艦、重新裝載所需時間（目前未計）
 - 抵達泛水出發線的實際時刻
-- `type529` 數量是否都等於各作戰營數（尚未逐一核對）
-- 衝鋒舟 30 kt 尚未在 code 中設定
+- `type082` 數量是否都等於各作戰營數（尚未逐一核對）
 
 **原文**
 - T 的定義：未明講，推論為第一波抵達坐灘線。

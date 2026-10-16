@@ -697,6 +697,12 @@ function realApi.ScenEdit_DeleteMine(sideName, guid)
   return ScenEdit_DeleteMine(sideName, guid)
 end
 
+---@param params CMO__DeleteMinefieldDescriptor
+---@return number # Number of mines actually deleted
+function realApi.ScenEdit_DeleteMinefield(params)
+  return ScenEdit_DeleteMinefield(params)
+end
+
 setmetatable(GameApi, {
   __index = function(t, key)
     local targetFunc = realApi[key]

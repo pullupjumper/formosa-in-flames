@@ -331,6 +331,19 @@ constants.AREAS = {
   LANDING_PENGHU = { "RP-46296", "RP-46297", "RP-46298", "RP-46299" },
   AIRLANDING_PENGHU = { "RP-59968", "RP-59969", "RP-59970", "RP-59971" },
   AMPH_VEH_STAGING_AREA_PENGHU = { "RP-46329", "RP-46330", "RP-46331", "RP-46332" },
+  -- TODO: 填 .scen 參考點名稱（通道中心：岸邊 1 點）
+  LANE_CENTER_TAOYUAN = { "RP-211569" },
+  LANE_CENTER_SISHU = { "RP-211568" },
+  LANE_CENTER_PENGHU = { "RP-211567" },
+  -- TODO: 填 .scen 參考點名稱（岸上障礙範圍，多邊形）
+  OBSTACLE_TAOYUAN = { "RP-211555", "RP-211556", "RP-211557", "RP-211558" },
+  OBSTACLE_SISHU = { "RP-211559", "RP-211560", "RP-211561", "RP-211562" },
+  OBSTACLE_PENGHU = { "RP-211563", "RP-211564", "RP-211565", "RP-211566" },
+  -- TODO: 填 .scen 參考點名稱（近海雷區，多邊形）
+  MINEFIELD_TAOYUAN = { "RP-211570", "RP-211571", "RP-211572", "RP-211573" },
+  MINEFIELD_SISHU = { "RP-211574", "RP-211575", "RP-211576", "RP-211577" },
+  MINEFIELD_PENGHU = { "RP-211578", "RP-211579", "RP-211580", "RP-211581" },
+
   AREA_OF_OPS_NORTH = { "RP-8012", "RP-8013", "RP-8014", "RP-8015" },
   AREA_OF_OPS_CENTER = {
     "RP-156966", "RP-156967", "RP-156968",
@@ -361,6 +374,7 @@ constants.AREAS = {
   AAR_PATROL_4 = { "RP-208445", "RP-208446", },
   AAR_PATROL_5 = { "RP-208447", "RP-208448", },
 }
+
 
 constants.BASES = {
   -- China Bases (PLAAF / PLAN)
@@ -523,7 +537,8 @@ constants.PLATFORMS = {
   CUSTOMED_SSM = 3727,
   CUSTOMED_SAM = 2988,
   ASSAULT_BOAT = 3948,
-  TYPE_529 = 4620
+  -- TYPE_082 = 4682
+  TYPE_082 = 2647
 }
 
 constants.SENSORS = {
@@ -3066,11 +3081,30 @@ constants.SIDES = {
 }
 
 constants.AMPHIBIOUS_PHASES = {
-  MOVING              = "MOVING",
-  WAITING_ARRIVAL     = "WAITING_ARRIVAL",
-  WAITING_ASSAULT     = "WAITING_ASSAULT",
-  WAITING_SECOND_WAVE = "WAITING_SECOND_WAVE",
-  COMPLETED           = "COMPLETED",
+  MOVING                  = "MOVING",
+  WAITING_ARRIVAL         = "WAITING_ARRIVAL",
+  WAITING_ASSAULT         = "WAITING_ASSAULT",
+  MINE_CLEARING           = "MINE_CLEARING",
+  BOAT_ASSAULT            = "BOAT_ASSAULT",
+  OBSTACLE_CLEARING       = "OBSTACLE_CLEARING",
+  ASSAULT_LANDING         = "ASSAULT_LANDING",
+  WAITING_ADMIN_UNLOADING = "WAITING_ADMIN_UNLOADING",
+  COMPLETED               = "COMPLETED",
+}
+
+---Phases in which ACVs and hovercraft may land (assault landing has started)
+---@type table<string, true>
+constants.AMPHIBIOUS_LANDING_PHASES = {
+  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING] = true,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]               = true,
+}
+
+---Obstacle cell states on the beach (cells exist only in saveData, not on the CMO map)
+constants.OBSTACLE_CELL_STATES = {
+  INTACT   = "intact",
+  CLEARING = "clearing",
+  CLEARED  = "cleared",
 }
 
 constants.MISSILE_SYSTEM_TYPES = {

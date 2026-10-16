@@ -1712,6 +1712,44 @@ config.red.amphibOps.formationSettings = {
   acvSpeed = 8,
   acvTransitDistance = 5,
   acvHorizontalDistance = 0.05,
+  hovercraftSpeed = 40,
+  sweeperSpeed = 25
+}
+-- Lane layout and routing shared by Type 529, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
+config.red.amphibOps.route = {
+  deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
+  launchLineNm = 3,                           -- 泛水出發線，距岸
+  assaultLineNm = 2,                          -- 衝擊發起線，距岸
+  waterLaneSpacingM = 750,                    -- 相鄰水際通道間距
+  beachLaneOffsetsM = { -180, -60, 60, 180 }, -- 灘際通道相對水際通道的橫向偏移
+  shoreStandoffM = 100,                       -- S_lane 離岸距離
+  inlandMarginM = 100,                        -- E_lane 超出障礙範圍的距離
+  columnSpacingM = 100,                       -- 排隊入口點間距（往外海退）
+  queueDepth = 5,                             -- 排隊入口點數量
+  queueSpacingM = 50,                         -- 通道內停車位間距
+  laneTieNm = 0.5,                            -- 距離差在此內視為平手，改選負載少的通道
+  arrivalNm = 0.1,                            -- 離最後航點多近算到達
+}
+config.red.amphibOps.mineClearing = {
+  areaMarginM = 60, -- 掃雷任務區域比最外側灘際通道再寬多少
+}
+config.red.amphibOps.minefields = {
+  -- delay: CMO arming delay; area: BLUE-side reference points
+  { area = constants.AREAS.MINEFIELD_TAOYUAN, number = 500, delay = 0 },
+  { area = constants.AREAS.MINEFIELD_SISHU,   number = 500, delay = 0 },
+  { area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
+}
+config.red.amphibOps.assaultBoat = {
+  speed = 30,
+}
+config.red.amphibOps.obstacle = {
+  cellSizeM = 50,
+  clearSec = 20 * 60,
+}
+config.red.amphibOps.acvWave = {
+  capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
+  lossRatio = 0.3,                         -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
+  holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
 }
 config.red.amphibOps.operations = {
   {
@@ -1732,7 +1770,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
-          type529 = 4
+          type082 = 4
         }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_D,
@@ -1755,7 +1793,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
-          type529 = 4
+          type082 = 4
         }
       }, }
     },
@@ -1781,7 +1819,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
-          type529 = 4
+          type082 = 4
         }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_F,
@@ -1804,7 +1842,7 @@ config.red.amphibOps.operations = {
           ferry = 4,
           roro = 2,
           barge = 1,
-          type529 = 4
+          type082 = 4
         }
       }, }
     },
@@ -1830,7 +1868,7 @@ config.red.amphibOps.operations = {
           ferry = 0,
           roro = 0,
           barge = 0,
-          type529 = 1
+          type082 = 1
         }
       } },
       stagingArea = constants.AREAS.AREA_OF_OPS_E,
@@ -1853,7 +1891,7 @@ config.red.amphibOps.operations = {
           ferry = 0,
           roro = 0,
           barge = 0,
-          type529 = 1
+          type082 = 1
         }
       }, }
     },
@@ -1879,12 +1917,12 @@ config.red.amphibOps.operationalZones = {
           unitCount = 1,
           startTime = config.red.amphibOps.missionStartTime.boat[1],
         },
-        {
-          name = "LANDING/TAO/1/2",
-          loadoutId = 0,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.boat[2],
-        },
+        -- {
+        --   name = "LANDING/TAO/1/2",
+        --   loadoutId = 0,
+        --   unitCount = 3,
+        --   startTime = config.red.amphibOps.missionStartTime.boat[2],
+        -- },
       },
       zone = constants.AREAS.LANDING_TAOYUAN,
       settings = {
@@ -1916,6 +1954,7 @@ config.red.amphibOps.operationalZones = {
           },
         }
       },
+      speed = config.red.amphibOps.formationSettings.hovercraftSpeed
     },
     transportHelicopter = {
       dbid = constants.PLATFORMS.Z18,
@@ -1998,6 +2037,14 @@ config.red.amphibOps.operationalZones = {
       destination = config.red.amphibOps.formationSettings.heading.west.destination,
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
     },
+    laneCenter = constants.AREAS.LANE_CENTER_TAOYUAN,
+    laneBearing = config.red.amphibOps.formationSettings.heading.west.vertical,
+    obstacleArea = constants.AREAS.OBSTACLE_TAOYUAN,
+    sweeper = {
+      missionName = "MINECLEARING/TOA/1/1",
+      settings = {},
+      speed = config.red.amphibOps.formationSettings.sweeperSpeed
+    }
   },
   {
     name = "Sishu",
@@ -2016,12 +2063,12 @@ config.red.amphibOps.operationalZones = {
           unitCount = 1,
           startTime = config.red.amphibOps.missionStartTime.boat[1],
         },
-        {
-          name = "LANDING/SISHU/1/2",
-          loadoutId = 0,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.boat[2],
-        },
+        -- {
+        --   name = "LANDING/SISHU/1/2",
+        --   loadoutId = 0,
+        --   unitCount = 3,
+        --   startTime = config.red.amphibOps.missionStartTime.boat[2],
+        -- },
       },
       zone = constants.AREAS.LANDING_SISHU,
       settings = {
@@ -2053,6 +2100,7 @@ config.red.amphibOps.operationalZones = {
           },
         }
       },
+      speed = config.red.amphibOps.formationSettings.hovercraftSpeed
     },
     transportHelicopter = {
       dbid = constants.PLATFORMS.Z18,
@@ -2134,6 +2182,14 @@ config.red.amphibOps.operationalZones = {
       speed = config.red.amphibOps.formationSettings.acvSpeed,
       destination = config.red.amphibOps.formationSettings.heading.sishu.destination,
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
+    },
+    laneCenter = constants.AREAS.LANE_CENTER_SISHU,
+    laneBearing = config.red.amphibOps.formationSettings.heading.sishu.vertical,
+    obstacleArea = constants.AREAS.OBSTACLE_SISHU,
+    sweeper = {
+      missionName = "MINECLEARING/SISHU/1/1",
+      settings = {},
+      speed = config.red.amphibOps.formationSettings.sweeperSpeed
     }
   },
   {
@@ -2153,12 +2209,12 @@ config.red.amphibOps.operationalZones = {
           unitCount = 1,
           startTime = config.red.amphibOps.missionStartTime.boat[1],
         },
-        {
-          name = "LANDING/PENGHU/1/2",
-          loadoutId = 0,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.boat[2],
-        },
+        -- {
+        --   name = "LANDING/PENGHU/1/2",
+        --   loadoutId = 0,
+        --   unitCount = 3,
+        --   startTime = config.red.amphibOps.missionStartTime.boat[2],
+        -- },
       },
       zone = constants.AREAS.LANDING_PENGHU,
       settings = {
@@ -2190,6 +2246,7 @@ config.red.amphibOps.operationalZones = {
           },
         }
       },
+      speed = config.red.amphibOps.formationSettings.hovercraftSpeed
     },
     transportHelicopter = {
       dbid = constants.PLATFORMS.Z18,
@@ -2271,6 +2328,14 @@ config.red.amphibOps.operationalZones = {
       speed = config.red.amphibOps.formationSettings.acvSpeed,
       destination = config.red.amphibOps.formationSettings.heading.penghu.destination,
       area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
+    },
+    laneCenter = constants.AREAS.LANE_CENTER_PENGHU,
+    laneBearing = config.red.amphibOps.formationSettings.heading.penghu.vertical,
+    obstacleArea = constants.AREAS.OBSTACLE_PENGHU,
+    sweeper = {
+      missionName = "MINECLEARING/PENGHU/1/1",
+      settings = {},
+      speed = config.red.amphibOps.formationSettings.sweeperSpeed
     }
   },
 }
