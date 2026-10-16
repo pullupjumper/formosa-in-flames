@@ -11,33 +11,10 @@ local ShipMovement = {}
 -- Enumerations and Constants
 -- ============================================================================
 
----@type {key: string, dbid: number}[]
-local SHIP_TYPE_DBIDS = {
-  { key = "type075",    dbid = constants.PLATFORMS.TYPE_075 },
-  { key = "type076",    dbid = constants.PLATFORMS.TYPE_076 },
-  { key = "type072iii", dbid = constants.PLATFORMS.TYPE_072III },
-  { key = "type072a",   dbid = constants.PLATFORMS.TYPE_072A },
-  { key = "type073a",   dbid = constants.PLATFORMS.TYPE_073A },
-  { key = "type071",    dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "type082",    dbid = constants.PLATFORMS.TYPE_082 }
-}
-
----@type table<string, string>
-local NAME_TO_KEY = {
-  Ferry = "ferry",
-  RORO  = "roro",
-  Barge = "barge",
-}
-
-local SAG_FORMATION = {
-  FLANK_DISTANCE  = 1.5,
-  TRAIL_DISTANCE  = 1.5,
-  PORT_ANGLE      = -45,
-  STARBOARD_ANGLE = 45,
-}
-
----@type {key: string, dbid: number}[]
-local ALL_RESULT_KEYS = {
+---One row of the fleet layout. A row is matched to a unit by `name` when it has one, otherwise by `dbid`.
+---Order matters: `type071` must come before `type071OnDeployLine` (same dbid) so the first match wins.
+---@type {key: string, dbid: number, name?: string}[]
+local SHIP_ROWS = {
   { key = "type075",             dbid = constants.PLATFORMS.TYPE_075 },
   { key = "type071",             dbid = constants.PLATFORMS.TYPE_071 },
   { key = "type076",             dbid = constants.PLATFORMS.TYPE_076 },
@@ -45,10 +22,17 @@ local ALL_RESULT_KEYS = {
   { key = "type072a",            dbid = constants.PLATFORMS.TYPE_072A },
   { key = "type073a",            dbid = constants.PLATFORMS.TYPE_073A },
   { key = "type071OnDeployLine", dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "ferry",               dbid = constants.PLATFORMS.FERRY },
-  { key = "roro",                dbid = constants.PLATFORMS.FERRY },
-  { key = "barge",               dbid = constants.PLATFORMS.BARGE },
+  { key = "ferry",               dbid = constants.PLATFORMS.FERRY,      name = "Ferry" },
+  { key = "roro",                dbid = constants.PLATFORMS.FERRY,      name = "RORO" },
+  { key = "barge",               dbid = constants.PLATFORMS.BARGE,      name = "Barge" },
   { key = "type082",             dbid = constants.PLATFORMS.TYPE_082 }
+}
+
+local SAG_FORMATION = {
+  FLANK_DISTANCE  = 1.5,
+  TRAIL_DISTANCE  = 1.5,
+  PORT_ANGLE      = -45,
+  STARBOARD_ANGLE = 45,
 }
 
 ---@type {key: string, from: string, distanceKey: string}[]
@@ -64,22 +48,19 @@ local SHIP_ROW_LAYOUT = {
   { key = "type082",             from = "type073a",            distanceKey = "verticalDistance" }
 }
 
-
 -- ============================================================================
--- Ship Position Utilities
+-- Ship Movement
 -- ============================================================================
 
----Move a ship to a target location with specified speed
----In testing mode, teleports the ship directly to the destination
+---Move a ship to a target location; in testing mode it teleports there instead of sailing
 ---@param unit CMO__Unit
 ---@param location CMO__Location
----@param speed number Ship movement speed in knots
----@param isTesting boolean If true, teleports ship instantly for testing
-local function moveShip(unit, location, speed, isTesting)
+---@param moveCtx SBJ__ShipMoveContext
+local function moveShip(unit, location, moveCtx)
   unit.course = { location }
-  unit.manualSpeed = speed
+  unit.manualSpeed = moveCtx.speed
 
-  if isTesting then
+  if moveCtx.isTesting then
     GameApi.ScenEdit_SetUnit({
       guid = unit.guid,
       latitude = location.latitude,
@@ -89,111 +70,90 @@ local function moveShip(unit, location, speed, isTesting)
   end
 end
 
----Set ship position and heading instantly (used in testing mode)
----@param ship CMO__Unit
----@param latitude number|string
----@param longitude number|string
----@param bearing number Ship heading in degrees
-local function setShipPosition(ship, latitude, longitude, bearing)
-  GameApi.ScenEdit_SetUnit({
-    guid = ship.guid,
-    latitude = latitude,
-    longitude = longitude,
-    heading = bearing,
-  })
-end
-
----Calculate a new position from a starting point given bearing and distance
----@param latitude number|string
----@param longitude number|string
----@param bearing number Direction in degrees (0-360)
----@param distance number Distance in nautical miles
----@return CMO__Location # New position coordinates
-local function getNextPosition(latitude, longitude, bearing, distance)
-  return GameApi.World_GetPointFromBearing({
-    latitude = latitude,
-    longitude = longitude,
-    bearing = bearing,
-    distance = distance,
-  })
-end
-
--- ============================================================================
--- Ship Type Movement
--- ============================================================================
-
----Get pre-calculated movement result for an operation
+---Get the pre-calculated ship rows of a zone
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState>|nil
----@param operationName string
----@return table<string, SBJ__ShipCalculationState>|nil result Operation movement result
+---@param zoneName string
+---@return table<string, SBJ__ShipCalculationState>|nil shipRowMap Ship rows by row key
 ---@return table<string, any>|nil errorFields Log fields describing the failure
-local function getOperationResult(calculationResult, operationName)
-  if not calculationResult then
+local function getShipRowMap(calculationResult, zoneName)
+  local zoneResult = calculationResult and calculationResult[zoneName]
+  if not zoneResult or not zoneResult.result then
     return nil, { reason = "calculation_result_missing" }
   end
 
-  local operationResult = calculationResult[operationName]
-  if not operationResult or not operationResult.result then
-    return nil, { reason = "calculation_result_missing" }
-  end
-
-  return operationResult.result
+  return zoneResult.result
 end
 
----Move ship to next pre-calculated location and increment index
+---Find which ship row a unit belongs to: by DBID first, then by name for ferries, RORO and barges
 ---@param unit CMO__Unit
----@param resultEntry SBJ__ShipCalculationState|nil
----@param resultKey string
----@param params {speed: number, isTesting: boolean} Ship speed in knots and testing mode flag
+---@return string|nil rowKey
+local function findShipRowKey(unit)
+  for _, shipRow in ipairs(SHIP_ROWS) do
+    if not shipRow.name and unit.dbid == shipRow.dbid then
+      return shipRow.key
+    end
+  end
+
+  for _, shipRow in ipairs(SHIP_ROWS) do
+    if shipRow.name == unit.name then
+      return shipRow.key
+    end
+  end
+end
+
+---Move ship to next pre-calculated location of its row and increment index
+---@param unit CMO__Unit
+---@param row SBJ__ShipCalculationState|nil
+---@param rowKey string
+---@param moveCtx SBJ__ShipMoveContext
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveShipToNextLocation(unit, resultEntry, resultKey, params)
-  if not resultEntry or not resultEntry.locations or not resultEntry.locationIndex then
+local function moveToNextLocation(unit, row, rowKey, moveCtx)
+  if not row or not row.locations or not row.locationIndex then
     return {
       tag = "FAIL",
-      fields = { ship = unit.name, dbid = unit.dbid, dest = resultKey, reason = "calculation_entry_missing" }
+      fields = { ship = unit.name, dbid = unit.dbid, dest = rowKey, reason = "calculation_entry_missing" }
     }
   end
 
-  local index = resultEntry.locationIndex
-  local location = resultEntry.locations[index]
+  local index = row.locationIndex
+  local location = row.locations[index]
   if not location then
     return {
       tag = "SKIP",
-      fields = { ship = unit.name, dbid = unit.dbid, dest = resultKey, index = index, reason = "no_location" }
+      fields = { ship = unit.name, dbid = unit.dbid, dest = rowKey, index = index, reason = "no_location" }
     }
   end
 
-  moveShip(unit, location, params.speed, params.isTesting)
-  resultEntry.locationIndex = index + 1
+  moveShip(unit, location, moveCtx)
+  row.locationIndex = index + 1
   return {
     tag = "OK",
-    fields = { ship = unit.name, dbid = unit.dbid, dest = resultKey, index = index }
+    fields = { ship = unit.name, dbid = unit.dbid, dest = rowKey, index = index }
   }
 end
 
 ---Handle Type 071 movement with overflow to the deploy line
 ---@param unit CMO__Unit
----@param result table<string, SBJ__ShipCalculationState>
----@param speed number
----@param isTesting boolean
+---@param shipRowMap table<string, SBJ__ShipCalculationState>
+---@param moveCtx SBJ__ShipMoveContext
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveType071(unit, result, speed, isTesting)
-  local entry = result.type071
-  local deployLineEntry = result.type071OnDeployLine
-  if not entry or not entry.locations or not entry.locationIndex or not deployLineEntry or not deployLineEntry.locations then
+local function moveType071(unit, shipRowMap, moveCtx)
+  local row = shipRowMap.type071
+  local deployLineRow = shipRowMap.type071OnDeployLine
+  if not row or not row.locations or not row.locationIndex or not deployLineRow or not deployLineRow.locations then
     return {
       tag = "FAIL",
       fields = { ship = unit.name, dbid = unit.dbid, dest = "type071", reason = "calculation_entry_missing" }
     }
   end
 
-  local index = entry.locationIndex
-  local len = #entry.locations
+  local index = row.locationIndex
+  local len = #row.locations
   local location
   if index > len then
-    location = deployLineEntry.locations[index - len]
+    location = deployLineRow.locations[index - len]
   else
-    location = entry.locations[index]
+    location = row.locations[index]
   end
   if not location then
     return {
@@ -202,8 +162,8 @@ local function moveType071(unit, result, speed, isTesting)
     }
   end
 
-  moveShip(unit, location, speed, isTesting)
-  entry.locationIndex = index + 1
+  moveShip(unit, location, moveCtx)
+  row.locationIndex = index + 1
   return {
     tag = "OK",
     fields = {
@@ -218,127 +178,116 @@ end
 
 ---Match ship by DBID or name and move to next location
 ---@param unit CMO__Unit
----@param result table<string, SBJ__ShipCalculationState>
----@param speed number
----@param isTesting boolean
+---@param shipRowMap table<string, SBJ__ShipCalculationState>
+---@param moveCtx SBJ__ShipMoveContext
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveMatchingShip(unit, result, speed, isTesting)
-  local params = { speed = speed, isTesting = isTesting }
-  for _, entry in ipairs(SHIP_TYPE_DBIDS) do
-    if unit.dbid == entry.dbid then
-      if entry.key == "type071" then
-        return moveType071(unit, result, speed, isTesting)
-      end
-      return moveShipToNextLocation(unit, result[entry.key], entry.key, params)
-    end
+local function moveMatchingShip(unit, shipRowMap, moveCtx)
+  local rowKey = findShipRowKey(unit)
+  if not rowKey then
+    return { tag = "SKIP", fields = { ship = unit.name, dbid = unit.dbid, reason = "unmatched" } }
   end
 
-  local nameKey = NAME_TO_KEY[unit.name]
-  if nameKey then
-    return moveShipToNextLocation(unit, result[nameKey], nameKey, params)
+  if rowKey == "type071" then
+    return moveType071(unit, shipRowMap, moveCtx)
   end
-
-  return { tag = "SKIP", fields = { ship = unit.name, dbid = unit.dbid, reason = "unmatched" } }
+  return moveToNextLocation(unit, shipRowMap[rowKey], rowKey, moveCtx)
 end
 
 -- ============================================================================
--- SAG Formation Positioning
+-- SAG Movement
 -- ============================================================================
 
----Handle Surface Action Group (SAG) movement to its holding area
----Positions SAG ships in formation: Type 052D destroyers center, Type 054A frigates at flanks
----@param descriptor SBJ__SAGDescriptor
----@param heading number Zone heading the SAG faces at its holding area
----@param isTesting boolean If true, enables testing mode with instant teleportation
----@return SBJ__LogResult # Deferred log result describing the outcome
-local function processSAG(descriptor, heading, isTesting)
-  local holdingArea = descriptor.to and descriptor.to.holdingArea
-  if not holdingArea or #holdingArea == 0 then
-    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "holding_area_missing" } }
-  end
-
-  local holdingPoint = holdingArea[#holdingArea]
-  if not holdingPoint or not holdingPoint.latitude or not holdingPoint.longitude then
-    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "holding_point_missing" } }
-  end
-
-  local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
-  if not unit then
-    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_group_not_found" } }
-  end
-
-  unit.course = holdingArea
-
-  if not isTesting then
-    return { tag = "OK", fields = { sag = descriptor.groupName, action = "course_set" } }
-  end
-
-  if not unit.group or not unit.group.unitlist then
-    return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unitlist_missing" } }
-  end
-
-  unit.course = nil
+---Teleport SAG ships into formation around the holding point (testing mode)
+---Type 052D destroyers take the center (extra ones trail behind), Type 054A frigates take the flanks
+---@param sagUnit CMO__Unit SAG group whose `group.unitlist` is set
+---@param holdingPoint CMO__Location
+---@param heading number Zone heading the SAG faces
+---@return integer positioned
+---@return integer skipped
+local function placeSagInFormation(sagUnit, holdingPoint, heading)
   local type052d, type054a = 0, 0
   local positioned, skipped = 0, 0
 
-  for _, guid in ipairs(unit.group.unitlist) do
+  for _, guid in ipairs(sagUnit.group.unitlist) do
     local ship = GameApi.ScenEdit_GetUnit(guid)
+    local point, offsetBearing, offsetDistance
 
-    if not ship then
-      skipped = skipped + 1
-    elseif ship.dbid == constants.PLATFORMS.TYPE_052D then
+    if ship and ship.dbid == constants.PLATFORMS.TYPE_052D then
       if type052d == 0 then
-        setShipPosition(
-          ship,
-          holdingPoint.latitude,
-          holdingPoint.longitude,
-          heading
-        )
-        positioned = positioned + 1
+        point = holdingPoint
       else
-        local point = getNextPosition(
-          holdingPoint.latitude,
-          holdingPoint.longitude,
-          heading - 180,
-          SAG_FORMATION.TRAIL_DISTANCE
-        )
-        if point then
-          setShipPosition(ship, point.latitude, point.longitude, heading)
-          positioned = positioned + 1
-        else
-          skipped = skipped + 1
-        end
+        offsetBearing, offsetDistance = heading - 180, SAG_FORMATION.TRAIL_DISTANCE
       end
-
       type052d = type052d + 1
-    elseif ship.dbid == constants.PLATFORMS.TYPE_054A then
+    elseif ship and ship.dbid == constants.PLATFORMS.TYPE_054A then
       local angle = (type054a == 0) and SAG_FORMATION.PORT_ANGLE or SAG_FORMATION.STARBOARD_ANGLE
-      local point = getNextPosition(
-        holdingPoint.latitude,
-        holdingPoint.longitude,
-        heading - angle,
-        SAG_FORMATION.FLANK_DISTANCE
-      )
-      if point then
-        setShipPosition(ship, point.latitude, point.longitude, heading)
-        positioned = positioned + 1
-      else
-        skipped = skipped + 1
-      end
+      offsetBearing, offsetDistance = heading - angle, SAG_FORMATION.FLANK_DISTANCE
       type054a = type054a + 1
+    end
+
+    if offsetBearing then
+      point = GameApi.World_GetPointFromBearing({
+        latitude = holdingPoint.latitude,
+        longitude = holdingPoint.longitude,
+        bearing = offsetBearing,
+        distance = offsetDistance,
+      })
+    end
+
+    if ship and point then
+      GameApi.ScenEdit_SetUnit({
+        guid = ship.guid,
+        latitude = point.latitude,
+        longitude = point.longitude,
+        heading = heading,
+      })
+      positioned = positioned + 1
     else
       skipped = skipped + 1
     end
   end
 
+  return positioned, skipped
+end
+
+---Send a Surface Action Group (SAG) to its holding area
+---In testing mode the SAG ships are also teleported into formation
+---@param sag SBJ__SAGDescriptor
+---@param heading number Zone heading the SAG faces at its holding area
+---@param moveCtx SBJ__ShipMoveContext
+---@return SBJ__LogResult # Deferred log result describing the outcome
+local function moveSag(sag, heading, moveCtx)
+  local holdingArea = sag.to and sag.to.holdingArea
+  if not holdingArea or #holdingArea == 0 then
+    return { tag = "FAIL", fields = { sag = sag.groupName, reason = "holding_area_missing" } }
+  end
+
+  local holdingPoint = holdingArea[#holdingArea]
+  if not holdingPoint or not holdingPoint.latitude or not holdingPoint.longitude then
+    return { tag = "FAIL", fields = { sag = sag.groupName, reason = "holding_point_missing" } }
+  end
+
+  local sagUnit = GameApi.ScenEdit_GetUnit(sag.groupName)
+  if not sagUnit then
+    return { tag = "FAIL", fields = { sag = sag.groupName, reason = "sag_group_not_found" } }
+  end
+
+  sagUnit.course = holdingArea
+
+  if not moveCtx.isTesting then
+    return { tag = "OK", fields = { sag = sag.groupName, action = "course_set" } }
+  end
+
+  if not sagUnit.group or not sagUnit.group.unitlist then
+    return { tag = "FAIL", fields = { sag = sag.groupName, reason = "sag_unitlist_missing" } }
+  end
+
+  sagUnit.course = nil
+  local positioned, skipped = placeSagInFormation(sagUnit, holdingPoint, heading)
+
   return {
     tag = "OK",
-    fields = {
-      sag = descriptor.groupName,
-      action = "course_set",
-      positioned = positioned,
-      skipped = skipped
-    }
+    fields = { sag = sag.groupName, action = "course_set", positioned = positioned, skipped = skipped }
   }
 end
 
@@ -346,16 +295,16 @@ end
 -- Destination Calculation
 -- ============================================================================
 
----Initialize calculation result structure for an operation
----@param operationName string
+---Initialize the calculation result of a zone with an empty row per ship type
+---@param zoneName string
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
-local function initOperationResult(operationName, calculationResult)
-  if calculationResult[operationName] then return end
-  local result = {}
-  for _, entry in ipairs(ALL_RESULT_KEYS) do
-    result[entry.key] = { locations = {}, locationIndex = 1, dbid = entry.dbid }
+local function initShipRowMap(zoneName, calculationResult)
+  if calculationResult[zoneName] then return end
+  local shipRowMap = {}
+  for _, shipRow in ipairs(SHIP_ROWS) do
+    shipRowMap[shipRow.key] = { locations = {}, locationIndex = 1, dbid = shipRow.dbid }
   end
-  calculationResult[operationName] = { name = operationName, result = result }
+  calculationResult[zoneName] = { name = zoneName, result = shipRowMap }
 end
 
 ---Get a required reference point for a ship row
@@ -417,29 +366,27 @@ local function calculateStartingPoints(startingPoints, heading, formationSetting
   return startingPointMap
 end
 
----@class SBJ__BuildAllShipLocationsParams
----@field startingPointMap table<string, CMO__Location>
----@field shipCounts SBJ__FleetCompositionConfig
----@field heading number Zone heading; ships of one type line up perpendicular to it
----@field formationSettings SBJ__AmphibiousFormationConfig
-
 ---Generate and append locations for all ship types in an area
----@param opResult table<string, SBJ__ShipCalculationState>
+---@param shipRowMap table<string, SBJ__ShipCalculationState>
 ---@param params SBJ__BuildAllShipLocationsParams
-local function buildAllShipLocations(opResult, params)
+local function buildAllShipLocations(shipRowMap, params)
   local formationSettings = params.formationSettings
-  for _, entry in ipairs(ALL_RESULT_KEYS) do
+  for _, shipRow in ipairs(SHIP_ROWS) do
     Utils.addAll(
-      opResult[entry.key].locations,
+      shipRowMap[shipRow.key].locations,
       GameUtils.buildLocations({
-        initialLocation = params.startingPointMap[entry.key],
-        num = params.shipCounts[entry.key],
+        initialLocation = params.startingPointMap[shipRow.key],
+        num = params.shipCounts[shipRow.key],
         bearing = params.heading - formationSettings.rowBearingOffset,
         distance = formationSettings.horizontalDistance,
       })
     )
   end
 end
+
+-- ============================================================================
+-- Public API
+-- ============================================================================
 
 ---Pre-calculate all destination positions for amphibious assault ships
 ---Generates grid of holding positions for each ship type with layered arrangement and spacing
@@ -450,9 +397,12 @@ end
 function ShipMovement.planHoldingPositions(zones, formationSettings, calculationResult)
   for _, zone in ipairs(zones) do
     for groupIndex, group in ipairs(zone.fleet.groups) do
-      initOperationResult(zone.name, calculationResult)
-      local startingPointMap, errorFields =
-          calculateStartingPoints(group.to.startingPoints, zone.heading, formationSettings)
+      initShipRowMap(zone.name, calculationResult)
+      local startingPointMap, errorFields = calculateStartingPoints(
+        group.to.startingPoints,
+        zone.heading,
+        formationSettings
+      )
       if not startingPointMap then
         Logger.error(LogFormat.line("ERROR", LogFormat.merge(
           { operation = zone.name, areaIndex = groupIndex },
@@ -472,10 +422,6 @@ function ShipMovement.planHoldingPositions(zones, formationSettings, calculation
   return true
 end
 
--- ============================================================================
--- Public API
--- ============================================================================
-
 ---Move amphibious assault ships from staging area to designated holding positions for a single zone
 ---Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -484,30 +430,31 @@ end
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@return boolean # True when all movement orders have been issued
 function ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, amphibOps)
-  local isTesting = amphibOps.isTesting
-  local result, errorFields = getOperationResult(calculationResult, zone.name)
+  local shipRowMap, errorFields = getShipRowMap(calculationResult, zone.name)
 
-  if not result then
+  if not shipRowMap then
     Logger.error(LogFormat.line("ERROR", LogFormat.merge(
       { operation = zone.name },
       errorFields or { reason = "calculation_result_missing" })))
     return false
   end
 
+  ---@type SBJ__ShipMoveContext
+  local moveCtx = { speed = amphibOps.formationSettings.shipSpeed, isTesting = amphibOps.isTesting }
   local results = {}
 
-  for _, u in ipairs(filteredUnits) do
-    local unit = GameApi.ScenEdit_GetUnit(u.guid)
+  for _, sideUnit in ipairs(filteredUnits) do
+    local unit = GameApi.ScenEdit_GetUnit(sideUnit.guid)
     if unit and unit:inArea(zone.fleet.stagingArea) then
-      table.insert(results, moveMatchingShip(unit, result, amphibOps.formationSettings.shipSpeed, isTesting))
+      table.insert(results, moveMatchingShip(unit, shipRowMap, moveCtx))
     end
   end
 
-  for _, descriptor in ipairs(zone.sags) do
-    table.insert(results, processSAG(descriptor, zone.heading, isTesting))
+  for _, sag in ipairs(zone.sags) do
+    table.insert(results, moveSag(sag, zone.heading, moveCtx))
   end
 
-  local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. zone.name, "Move to staging area")
+  local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. zone.name, "Move to holding areas")
   report.addAll(results)
   report.emit()
 

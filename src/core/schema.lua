@@ -671,6 +671,18 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field name string Operation zone name (e.g., "Taoyuan", "Penghu", "Sishu")
 ---@field result table<string, SBJ__ShipCalculationState> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071OnDeployLine, ferry, roro, barge)
 
+---Per-run movement settings shared by every ship of one zone
+---@class SBJ__ShipMoveContext
+---@field speed number Ship speed in knots
+---@field isTesting boolean If true, ships teleport instead of sailing
+
+---Inputs for laying out every ship row of one fleet group
+---@class SBJ__BuildAllShipLocationsParams
+---@field startingPointMap table<string, CMO__Location>
+---@field shipCounts SBJ__FleetCompositionConfig
+---@field heading number Zone heading; ships of one type line up perpendicular to it
+---@field formationSettings SBJ__AmphibiousFormationConfig
+
 ---Per-zone state for amphibious operation phase tracking
 ---@class SBJ__ZoneState: table
 ---@field phase string Current phase (constants.AMPHIBIOUS_PHASES value)

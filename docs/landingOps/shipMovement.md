@@ -62,7 +62,7 @@ flowchart TD
     START["planHoldingPositions()"]
     ITER_OP["遍歷 operations"]
     ITER_AREA["遍歷 zone.fleet.groups"]
-    INIT["initOperationResult<br>初始化結果結構"]
+    INIT["initShipRowMap<br>初始化結果結構"]
     CALC_SP["calculateStartingPoints<br>取得兩基準參考點<br>依 SHIP_ROW_LAYOUT 推算各列起始點"]
     GEN_LOC["buildAllShipLocations<br>對每列依水平間距生成 N 個位置"]
     STORE["儲存至 calculationResult"]
@@ -77,8 +77,8 @@ flowchart TD
 
 `moveToHoldingAreas` 透過 `moveMatchingShip` 進行艦型匹配：
 
-1. **DBID 匹配**：依 `SHIP_TYPE_DBIDS` 表比對艦船 DBID
-2. **名稱匹配**：若 DBID 未命中，依 `NAME_TO_KEY` 表比對艦名（Ferry/RORO/Barge）
+1. **DBID 匹配**：依 `SHIP_ROWS` 表（沒有 `name` 的列）比對艦船 DBID
+2. **名稱匹配**：若 DBID 未命中，依 `SHIP_ROWS` 表（有 `name` 的列）比對艦名（Ferry/RORO/Barge）
 3. **Type 071 特殊處理**：當乘載區位置用盡時，溢出至展開線的 `type071OnDeployLine`
 
 ```mermaid
@@ -88,8 +88,8 @@ flowchart TD
     IS_071{是 Type 071?}
     NAME_CHECK{名稱匹配?}
     MOVE_071["moveType071<br>（含溢出邏輯）"]
-    MOVE_NORMAL["moveShipToNextLocation"]
-    MOVE_NAME["moveShipToNextLocation<br>（依名稱 key）"]
+    MOVE_NORMAL["moveToNextLocation"]
+    MOVE_NAME["moveToNextLocation<br>（依名稱 key）"]
     SKIP["SKIP: 未匹配"]
 
     UNIT --> DBID_CHECK
@@ -105,7 +105,7 @@ flowchart TD
 
 ## SAG 護航編隊
 
-`processSAG` 將 SAG 編隊移動至等待區，測試模式下以精確陣位佈置：
+`moveSag` 將 SAG 編隊移動至等待區，測試模式下以精確陣位佈置：
 
 | 艦型 | 位置 | 說明 |
 |---|---|---|
