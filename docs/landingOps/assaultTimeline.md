@@ -99,9 +99,9 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 |---|---|---|---|
 | `WAITING_ASSAULT` | 條件成立 → 算通道、派 529、直升機任務開始（不含氣墊船） | 派完 | `mineClearing.startMineClearing` |
 | `MINE_CLEARING` | 529 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → 配對衝鋒舟、LST 前進（排除 529） | `mineClearing.updateMineClearing` |
-| `BOAT_ASSAULT` | 072A/072III 進 `zone.acv.area` 就放衝鋒舟 | 衝鋒舟全部到 S_lane 或被摧毀 | `assaultBoat.lua` |
+| `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到 S_lane 或被摧毀 | `assaultBoat.lua` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` | `obstacleClearing.lua` |
-| `ASSAULT_LANDING` | 衝擊上陸：兩棲車分波、氣墊船走通道 | 灘頭堡建立（暫用 `casArea` 內 ZBD-05 ≥ 1，TODO） | `acvWave.lua`、`hovercraft.lua` |
+| `ASSAULT_LANDING` | 衝擊上陸：兩棲車分波、氣墊船走通道 | 灘頭堡建立（暫用 `air.casArea` 內 ZBD-05 ≥ 1，TODO） | `acvWave.lua`、`hovercraft.lua` |
 | `WAITING_ADMIN_UNLOADING` | 等絕對安全（TODO，目前直接放行） | `startSecondWaveUnloading` 成功 | `secondWaveUnloading.lua` |
 
 兩棲車、氣墊船從 `ASSAULT_LANDING` 開始，之後的 phase（含 `COMPLETED`）也繼續跑。
@@ -204,7 +204,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 | 觸發 | 事件腳本 `launchACV.lua`，每 5 分鐘對區內每艘船各觸發一次 |
 | 可釋放的船 | 071、072III、072A、073A、529、渡輪（`isFerryOrLST`；現已拿掉 529） |
 | 每次數量 | 每艘船 5 輛（寫死 `num = 5`），先 ZBD-05，用完才 ZTD-05 |
-| 排列與航行 | 沿 `zone.heading` 排開，間距 0.05 浬；油門 Full，航線 `zone.acv.destination` |
+| 排列與航行 | 沿 `zone.heading` 排開，間距 0.05 浬；油門 Full，航線 `zone.landing.acv.destination` |
 | 結束 | 艙內沒有 ZBD/ZTD（`count == 0`）就掛回基地並 RTB |
 | 上限 | 無，有貨就一直放 |
 
@@ -251,7 +251,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 - 071 沒有 ZBD/ZTD，第一次觸發就 RTB（529 已不算 `isFerryOrLST`）。
 - `removeCargoByPriority` 依各車種額度分配（`min(5, 該車種額度)`）。
 - 每輛車放出後立刻記 GUID，同 tick 後面的船自然拿到較少額度。
-- 每輛車用 `routePlanner` 算自己的航線（走 `cleared` 灘際通道，停在自己的停車位）。沒有可用通道時退回 `zone.acv.destination` 並記 WARN。
+- 每輛車用 `routePlanner` 算自己的航線（走 `cleared` 灘際通道，停在自己的停車位）。沒有可用通道時退回 `zone.landing.acv.destination` 並記 WARN。
 
 ## 8. 佈雷
 
@@ -270,7 +270,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 ## 10. 氣墊船（Type 726A）
 
-- 母艦：075、076、071（在 `zone.anchorageArea` 內）。
+- 母艦：075、076、071（在 `zone.anchorage.area` 內）。
 - `ASSAULT_LANDING` 起每 tick：`embarkedUnits[BOATS]` 裡 726A、已裝貨、`readytime_v == 0`、還沒走過通道的 → 算航線 → `course` → `Launch(true)` → 記 `zoneState.hovercraft[guid] = { missionName, finalPoint, arrived }`。
 - 在錨地**不** assign 任務（`amphibiousLogistics` 只裝貨）。`boat` 任務的開始時間也不再由 `setLandingMissionStartTime` 設。
 - 到停車位 → `arrived = true` → `-- TODO: assign cargo 任務`（使用者自己寫，任務名在 `missionName`，依 `unitCount` 依序分配）。

@@ -51,7 +51,7 @@ local function findSweepers(zone, frame, ships)
   for _, u in ipairs(ships) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
     if unit and unit.dbid == constants.PLATFORMS.TYPE_082
-        and (unit:inArea(zone.lstAnchorageArea) or unit:inArea(zone.anchorageArea)) then
+        and (unit:inArea(zone.anchorage.lstArea) or unit:inArea(zone.anchorage.area)) then
       local _, lateral = LaneGeometry.projectPoint(frame, unit)
       table.insert(entries, { unit = unit, lateral = lateral })
     end
@@ -80,8 +80,8 @@ end
 function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Start mine clearing")
 
-  local center = GameUtils.findAreaLocations(constants.SIDES.RED, zone.laneCenter)[1]
-  local obstacle = GameUtils.findAreaLocations(constants.SIDES.BLUE, zone.obstacleArea)
+  local center = GameUtils.findAreaLocations(constants.SIDES.RED, zone.landing.laneCenter)[1]
+  local obstacle = GameUtils.findAreaLocations(constants.SIDES.BLUE, zone.landing.obstacleArea)
   if not center or #obstacle < 3 then
     report.add("FAIL", { reason = "lane_reference_points_not_set" })
     report.emit()
@@ -108,14 +108,14 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
   zoneState.lanes = lanes
   zoneState.minesweepers = {}
 
-  local mission = GameApi.ScenEdit_GetMission(constants.SIDES.RED, zone.sweeper.missionName)
+  local mission = GameApi.ScenEdit_GetMission(constants.SIDES.RED, zone.landing.sweeper.missionName)
 
   if not mission then
     GameApi.ScenEdit_AddMission(
       constants.SIDES.RED,
-      zone.sweeper.missionName,
+      zone.landing.sweeper.missionName,
       "Mineclearing",
-      { zone = zone.acv.area }
+      { zone = zone.landing.acv.area }
     )
   end
 
@@ -142,8 +142,8 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
       isDone = false,
     }
     -- TODO: 建掃雷任務並 assign（使用者自己寫）。區域 4 角在 zoneState.minesweepers[guid].missionArea。
-    sweeper.mission = zone.sweeper.missionName
-    sweeper.manualSpeed = zone.sweeper.speed
+    sweeper.mission = zone.landing.sweeper.missionName
+    sweeper.manualSpeed = zone.landing.sweeper.speed
     sweeper.obeyEMCON = false
     GameApi.ScenEdit_SetEMCON("Unit", sweeper.guid, "Sonar=Active")
     report.add("OK", { ship = sweeper.name or sweeper.guid, waterLane = waterLane.id })

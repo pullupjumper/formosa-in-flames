@@ -217,7 +217,7 @@ flowchart BT
 | `config.red.amphibOps.transferCargo` | 轉移用貨物清單（依作戰群組索引） |
 | `config.red.amphibOps.missionStartTime` | 各載具類型任務延遲時間 |
 | `config.red.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
-| `config.red.amphibOps.zones` | 作戰區設定：`fleet`（集結區→錨泊區）、`sags`（SAG 護航編隊）、錨泊區、泛水編波區、任務 |
+| `config.red.amphibOps.zones` | 作戰區設定：`fleet`（集結區→錨泊區）、`sags`（SAG 護航編隊）、`anchorage`（基地、錨泊區）、`air`（空降區、直升機任務）、`landing`（登陸艇、LST、ACV、灘頭） |
 | `config.red.amphibOps.tuning` | 共用參數：`route`、`mineClearing`、`assaultBoat`、`obstacle`、`acvWave` |
 | `config.red.amphibOps.transportAircraft` | 運輸機配置（空降部隊） |
 | `config.red.triggers.amphibiousOps.startTime` | 兩棲作戰觸發開始時間 |

@@ -49,7 +49,7 @@ SHIP_TRANSFER_SPECS[]
 flowchart TD
     START["transferAndAssign()"]
     ITER_UNIT["遍歷錨泊區單位"]
-    IN_AREA{單位在<br>anchorageArea?}
+    IN_AREA{單位在<br>anchorage.area?}
     FIND_SPEC["findTransferSpec<br>匹配艦型"]
     TRANSFER["processShipTransfers<br>依 spec.transfers 轉移貨物"]
     ASSIGN["processShipAssignments<br>依 spec.assignments 指派任務"]
@@ -83,7 +83,7 @@ flowchart TD
 |---|---|
 | 艦型過濾 | 僅計算 `AMPHIBIOUS_SHIP_DBIDS` 中的兩棲艦船 |
 | 移動狀態 | 若有艦船 `unitstate != "Unassigned"` 則判定仍在移動 |
-| 區域判定 | 艦船須在 `anchorageArea` 或 `lstAnchorageArea` 內 |
+| 區域判定 | 艦船須在 `anchorage.area` 或 `anchorage.lstArea` 內 |
 
 ### 兩棲艦船 DBID 對照
 

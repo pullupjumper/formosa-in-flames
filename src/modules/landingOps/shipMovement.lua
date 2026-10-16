@@ -492,7 +492,7 @@ function ShipMovement.moveToStagingArea(zone, calculationResult, filteredUnits, 
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
-    if unit and unit:inArea(zone.stagingArea) then
+    if unit and unit:inArea(zone.fleet.stagingArea) then
       table.insert(results, moveMatchingShip(unit, result, formationSettings.shipSpeed, isTesting))
     end
   end

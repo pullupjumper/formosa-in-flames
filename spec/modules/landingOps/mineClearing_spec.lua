@@ -66,13 +66,14 @@ describe("MineClearing", function()
   local function makeZone()
     return {
       name = "Taoyuan",
-      laneCenter = { "RP-CENTER" },
       heading = BEARING,
-      obstacleArea = { "RP-O1", "RP-O2", "RP-O3" },
-      lstAnchorageArea = { "RP-LST" },
-      anchorageArea = { "RP-ANC" },
-      sweeper = { missionName = "", settings = {} },
-      acv = { area = { "RP-10", "RP-11" } }
+      anchorage = { lstArea = { "RP-LST" }, area = { "RP-ANC" } },
+      landing = {
+        laneCenter = { "RP-CENTER" },
+        obstacleArea = { "RP-O1", "RP-O2", "RP-O3" },
+        sweeper = { missionName = "", settings = {} },
+        acv = { area = { "RP-10", "RP-11" } },
+      },
     }
   end
 

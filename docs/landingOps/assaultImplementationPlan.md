@@ -27,7 +27,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 |---|---|---|
 | `WAITING_ASSAULT`（改） | 原條件成立 → 直升機任務開始時間（只 `transportHelicopter`、`attackHelicopter`）、算通道、派 529 | 派完 |
 | `MINE_CLEARING` | 529 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → LST 前進（`setCoursesForLSTs`，排除 529） |
-| `BOAT_ASSAULT` | 072A/072III 進 `zone.acv.area` 就放衝鋒舟 | 衝鋒舟全部到終點或被摧毀 → 記 `obstacleStartedAt` |
+| `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到終點或被摧毀 → 記 `obstacleStartedAt` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` |
 | `ASSAULT_LANDING`（新） | 衝擊上陸：兩棲車分波放行、氣墊船走通道 | 灘頭堡建立（先沿用現有 `hasBeachhead`：`casArea` 內 ZBD-05 ≥ 1，加 `-- TODO:` 之後換成更嚴格的條件） |
 | `WAITING_ADMIN_UNLOADING`（改名） | 等絕對安全 → `SecondWaveUnloading.startSecondWaveUnloading` | 啟動成功 → `COMPLETED` |
@@ -72,7 +72,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 - `updateMineClearing(zoneState)`：到最後航點（`Tool_Range` < `arrivalNm`）或摧毀 → `RTB()`；回傳是否全部完成。
 
 ### `assaultBoat.lua`
-- `launchBoats(...)`：已進 `zone.acv.area` 的 072A/072III，從 `embarkedUnits[constants.PLATFORM_TYPES.BOATS]` 拿 `ASSAULT_BOAT`、`readytime_v == 0` 的艇。
+- `launchBoats(...)`：已進 `zone.landing.acv.area` 的 072A/072III，從 `embarkedUnits[constants.PLATFORM_TYPES.BOATS]` 拿 `ASSAULT_BOAT`、`readytime_v == 0` 的艇。
   - 配對只算一次（存 `zoneState.boats`）：每艘 LST 先出 1 艘，不夠再出第 2 艘；艇不夠時，同一側最外側的通道丟掉（Sishu 12 艇配 16 條）。
   - 航線用 `routePlanner`（灘際通道一對一，不看 `cleared`）。
   - `boat.course = route` → `boat.manualSpeed = 30` → `boat:Launch(true)`。

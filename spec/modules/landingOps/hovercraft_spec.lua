@@ -55,8 +55,10 @@ describe("Hovercraft", function()
   local CONFIG = { tuning = { route = makeRouteConfig() }, formationSettings = { hovercraftSpeed = 40 } }
   local zone = {
     name = "Taoyuan",
-    anchorageArea = { "RP-ANC" },
-    boat = { missions = { { name = "LANDING/TAO/1/1", unitCount = 1 }, { name = "LANDING/TAO/1/2", unitCount = 3 } } },
+    anchorage = { area = { "RP-ANC" } },
+    landing = {
+      boat = { missions = { { name = "LANDING/TAO/1/1", unitCount = 1 }, { name = "LANDING/TAO/1/2", unitCount = 3 } } },
+    },
   }
 
   ---@param isCleared boolean

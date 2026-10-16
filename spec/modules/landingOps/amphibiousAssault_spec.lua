@@ -60,25 +60,37 @@ describe("AmphibiousAssault", function()
     local z = {
       name = "ZoneAlpha",
       sags = {},
-      lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
-      anchorageArea = { "RP-ANC-1", "RP-ANC-2" },
-      transportHelicopter = { missions = { makeMission({ name = "HeloMission1" }) } },
-      boat = { missions = { makeMission({ name = "BoatMission1" }) } },
-      attackHelicopter = { missions = { makeMission({ name = "AtkHeloMission1" }) } },
       heading = 270,
-      lstSettings = {
-        speed = 10,
-        distance = 5,
+      anchorage = {
+        lstArea = { "RP-LST-1", "RP-LST-2" },
+        area = { "RP-ANC-1", "RP-ANC-2" },
       },
-      acv = {
-        area = { "RP-ACV-1", "RP-ACV-2" },
-        distance = 0.5,
-        speed = 20,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+      air = {
+        transportHelicopter = { missions = { makeMission({ name = "HeloMission1" }) } },
+        attackHelicopter = { missions = { makeMission({ name = "AtkHeloMission1" }) } },
+      },
+      landing = {
+        boat = { missions = { makeMission({ name = "BoatMission1" }) } },
+        lstSettings = {
+          speed = 10,
+          distance = 5,
+        },
+        acv = {
+          area = { "RP-ACV-1", "RP-ACV-2" },
+          distance = 0.5,
+          speed = 20,
+          destination = { { latitude = 25.0, longitude = 121.0 } },
+        },
       },
     }
     if overrides then
-      for k, v in pairs(overrides) do z[k] = v end
+      for k, v in pairs(overrides) do
+        if type(z[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+          for groupKey, groupValue in pairs(v) do z[k][groupKey] = groupValue end
+        else
+          z[k] = v
+        end
+      end
     end
     return z
   end
@@ -213,9 +225,8 @@ describe("AmphibiousAssault", function()
       stubGetMission.returns(missionObj)
 
       local zone = makeZone({
-        transportHelicopter = { missions = { makeMission({ name = "Helo1", startTime = 600 }) } },
-        boat = { missions = {} },
-        attackHelicopter = { missions = {} },
+        air = { transportHelicopter = { missions = { makeMission({ name = "Helo1", startTime = 600 }) } }, attackHelicopter = { missions = {} } },
+        landing = { boat = { missions = {} } },
       })
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
@@ -231,18 +242,17 @@ describe("AmphibiousAssault", function()
       stubGetMission.returns({ starttime = nil })
 
       local zone = makeZone({
-        transportHelicopter = { missions = { makeMission({ name = "Z1Helo" }) } },
-        boat = { missions = { makeMission({ name = "Z1Boat" }) } },
-        attackHelicopter = { missions = {} },
+        air = { transportHelicopter = { missions = { makeMission({ name = "Z1Helo" }) } }, attackHelicopter = { missions = {} } },
+        landing = { boat = { missions = { makeMission({ name = "Z1Boat" }) } } },
       })
       local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, { "boat" })
+      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, { "transportHelicopter" })
 
       assert.is_true(result)
       assert.stub(stubGetMission).was.called(1)
-      assert.stub(stubGetMission).was.called_with(constants.SIDES.RED, "Z1Boat")
+      assert.stub(stubGetMission).was.called_with(constants.SIDES.RED, "Z1Helo")
     end)
 
     -- Negative: returns false when GetMission returns nil for a mission
@@ -266,9 +276,8 @@ describe("AmphibiousAssault", function()
       stubCurrentTime.returns(1000)
 
       local zone = makeZone({
-        transportHelicopter = { missions = {} },
-        boat = { missions = {} },
-        attackHelicopter = { missions = {} },
+        air = { transportHelicopter = { missions = {} }, attackHelicopter = { missions = {} } },
+        landing = { boat = { missions = {} } },
       })
       local saveData = makeSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
@@ -301,7 +310,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         name = "LST-001",
         inArea = function(_, area)
-          return area == zone.lstAnchorageArea
+          return area == zone.anchorage.lstArea
         end,
       })
 
@@ -316,7 +325,7 @@ describe("AmphibiousAssault", function()
 
       assert.is_true(result)
       assert.are.same({ destination }, unit.course)
-      assert.are.equal(zone.lstSettings.speed, unit.manualSpeed)
+      assert.are.equal(zone.landing.lstSettings.speed, unit.manualSpeed)
       assert.stub(logStub).was.called()
     end)
 
@@ -329,7 +338,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         name = "RORO",
         inArea = function(_, area)
-          return area == zone.lstAnchorageArea
+          return area == zone.anchorage.lstArea
         end,
       })
 
@@ -355,7 +364,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         name = "Barge",
         inArea = function(_, area)
-          return area == zone.lstAnchorageArea
+          return area == zone.anchorage.lstArea
         end,
       })
 
@@ -382,7 +391,7 @@ describe("AmphibiousAssault", function()
         dbid = constants.PLATFORMS.TYPE_082,
         course = sweepCourse,
         inArea = function(_, area)
-          return area == zone.lstAnchorageArea
+          return area == zone.anchorage.lstArea
         end,
       })
       stubGetUnit.returns(unit)
@@ -426,7 +435,7 @@ describe("AmphibiousAssault", function()
       local zone = makeZone()
       local unit = makeUnit({
         inArea = function(_, area)
-          return area == zone.lstAnchorageArea
+          return area == zone.anchorage.lstArea
         end,
       })
 
@@ -480,7 +489,7 @@ describe("AmphibiousAssault", function()
       local unit = makeUnit({
         type = "Aircraft",
         inArea = function(_, area)
-          return area == zone.lstAnchorageArea
+          return area == zone.anchorage.lstArea
         end,
       })
 
@@ -534,7 +543,7 @@ describe("AmphibiousAssault", function()
 
   describe("countUnitsInEachArea", function()
     local config = {
-      red = { amphibOps = { zones = { makeZone({ name = "A", casArea = "CAS-A" }), makeZone({ name = "B", casArea = "CAS-B" }) } } }
+      red = { amphibOps = { zones = { makeZone({ name = "A", air = { casArea = "CAS-A" } }), makeZone({ name = "B", air = { casArea = "CAS-B" } }) } } }
     }
 
     ---Stub China's units; each unit is a makeUnit override table
@@ -1123,7 +1132,7 @@ describe("AmphibiousAssault", function()
 
       local ship = makeUnit({
         inArea = function(_, area)
-          return area == zone2.acv.area
+          return area == zone2.landing.acv.area
         end,
       })
 

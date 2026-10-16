@@ -104,50 +104,62 @@ describe("AmphibiousLogistics", function()
   local function makeOperationalZone(overrides)
     local zone = {
       name = "ZoneAlpha",
-      anchorageArea = { "RP-ANC-1", "RP-ANC-2" },
-      lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
-      boat = {
-        dbid = 3001,
-        zone = { "RP-BOAT-1" },
-        settings = { throttle = "Full" },
-        missions = {
-          { name = "BoatMission-1", loadoutId = 10, unitCount = 2, startTime = 0 },
-        },
-        transferManifest = {
-          type075 = {
-            [1] = { loadoutId = 10, cargoItems = { [1] = { makeCargoItem() } } },
+      anchorage = {
+        area = { "RP-ANC-1", "RP-ANC-2" },
+        lstArea = { "RP-LST-1", "RP-LST-2" },
+      },
+      landing = {
+        boat = {
+          dbid = 3001,
+          zone = { "RP-BOAT-1" },
+          settings = { throttle = "Full" },
+          missions = {
+            { name = "BoatMission-1", loadoutId = 10, unitCount = 2, startTime = 0 },
           },
-          type071 = {
-            [1] = { loadoutId = 10, cargoItems = { [1] = { makeCargoItem() } } },
+          transferManifest = {
+            type075 = {
+              [1] = { loadoutId = 10, cargoItems = { [1] = { makeCargoItem() } } },
+            },
+            type071 = {
+              [1] = { loadoutId = 10, cargoItems = { [1] = { makeCargoItem() } } },
+            },
           },
         },
       },
-      transportHelicopter = {
-        dbid = 4001,
-        zone = { "RP-HELO-1" },
-        settings = { throttle = "Full" },
-        missions = {
-          { name = "HeloMission-1", loadoutId = 20, unitCount = 2, startTime = 0 },
-        },
-        transferManifest = {
-          type075 = {
-            [1] = { loadoutId = 20, cargoItems = { [1] = { makeCargoItem() } } },
-            [2] = { loadoutId = 21, cargoItems = { [1] = { makeCargoItem({ dbid = 2002 }) } } },
+      air = {
+        transportHelicopter = {
+          dbid = 4001,
+          zone = { "RP-HELO-1" },
+          settings = { throttle = "Full" },
+          missions = {
+            { name = "HeloMission-1", loadoutId = 20, unitCount = 2, startTime = 0 },
           },
-          type071 = {
-            [1] = { loadoutId = 20, cargoItems = { [1] = { makeCargoItem() } } },
+          transferManifest = {
+            type075 = {
+              [1] = { loadoutId = 20, cargoItems = { [1] = { makeCargoItem() } } },
+              [2] = { loadoutId = 21, cargoItems = { [1] = { makeCargoItem({ dbid = 2002 }) } } },
+            },
+            type071 = {
+              [1] = { loadoutId = 20, cargoItems = { [1] = { makeCargoItem() } } },
+            },
           },
         },
-      },
-      attackHelicopter = {
-        dbid = 5001,
-        missions = {
-          { name = "AttackHeloMission-1", loadoutId = 30, unitCount = 1, startTime = 0 },
+        attackHelicopter = {
+          dbid = 5001,
+          missions = {
+            { name = "AttackHeloMission-1", loadoutId = 30, unitCount = 1, startTime = 0 },
+          },
         },
       },
     }
     if overrides then
-      for k, v in pairs(overrides) do zone[k] = v end
+      for k, v in pairs(overrides) do
+        if type(zone[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing") then
+          for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
+        else
+          zone[k] = v
+        end
+      end
     end
     return zone
   end
@@ -357,7 +369,7 @@ describe("AmphibiousLogistics", function()
     -- Positive: should collect ships in LST anchorage area
     it("should collect ships that are in LST anchorage area", function()
       local zone = makeOperationalZone()
-      local lstArea = zone.lstAnchorageArea
+      local lstArea = zone.anchorage.lstArea
       local unit = makeUnit({
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_072III,
@@ -554,11 +566,11 @@ describe("AmphibiousLogistics", function()
 
       assert.stub(stubAddMission).was.called_with(
         "China", "BoatMission-1", "Cargo",
-        { zone = zone.boat.zone }
+        { zone = zone.landing.boat.zone }
       )
       assert.stub(stubAddMission).was.called_with(
         "China", "HeloMission-1", "Cargo",
-        { zone = zone.transportHelicopter.zone }
+        { zone = zone.air.transportHelicopter.zone }
       )
     end)
 
@@ -576,24 +588,28 @@ describe("AmphibiousLogistics", function()
     -- Positive: should handle zone with multiple missions per platform type
     it("should create missions for all missions in a zone", function()
       local zone = makeOperationalZone({
-        boat = {
-          dbid = 3001,
-          zone = { "RP-BOAT-1" },
-          settings = { throttle = "Full" },
-          missions = {
-            { name = "BoatMission-1A", loadoutId = 10, unitCount = 1, startTime = 0 },
-            { name = "BoatMission-1B", loadoutId = 11, unitCount = 1, startTime = 0 },
+        landing = {
+          boat = {
+            dbid = 3001,
+            zone = { "RP-BOAT-1" },
+            settings = { throttle = "Full" },
+            missions = {
+              { name = "BoatMission-1A", loadoutId = 10, unitCount = 1, startTime = 0 },
+              { name = "BoatMission-1B", loadoutId = 11, unitCount = 1, startTime = 0 },
+            },
+            transferManifest = { type075 = {}, type071 = {} },
           },
-          transferManifest = { type075 = {}, type071 = {} },
         },
-        transportHelicopter = {
-          dbid = 4001,
-          zone = { "RP-HELO-1" },
-          settings = { throttle = "Full" },
-          missions = {
-            { name = "HeloMission-1", loadoutId = 20, unitCount = 1, startTime = 0 },
+        air = {
+          transportHelicopter = {
+            dbid = 4001,
+            zone = { "RP-HELO-1" },
+            settings = { throttle = "Full" },
+            missions = {
+              { name = "HeloMission-1", loadoutId = 20, unitCount = 1, startTime = 0 },
+            },
+            transferManifest = { type075 = {}, type071 = {} },
           },
-          transferManifest = { type075 = {}, type071 = {} },
         },
       })
 
@@ -667,9 +683,9 @@ describe("AmphibiousLogistics", function()
       -- transport helo + attack helo; hovercraft are assigned after routing, not here
       assert.stub(stubAssignMission).was.called(2)
       assert.stub(stubAssignMission).was.called_with(
-        "SHIP-075", "Aircraft", zone.attackHelicopter.dbid, zone.attackHelicopter.missions)
+        "SHIP-075", "Aircraft", zone.air.attackHelicopter.dbid, zone.air.attackHelicopter.missions)
       assert.stub(stubAssignMission).was_not.called_with(
-        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.boat.dbid, zone.boat.missions)
+        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.landing.boat.dbid, zone.landing.boat.missions)
     end)
 
     -- Positive: should treat Type 076 ships like Type 075

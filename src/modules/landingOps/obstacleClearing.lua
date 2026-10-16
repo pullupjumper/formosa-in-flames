@@ -60,7 +60,7 @@ function ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, curr
   end
 
   local frame = { origin = lanes.origin, bearing = lanes.bearing }
-  local polygon = GameUtils.findAreaLocations(constants.SIDES.BLUE, zone.obstacleArea)
+  local polygon = GameUtils.findAreaLocations(constants.SIDES.BLUE, zone.landing.obstacleArea)
   local cells = LaneGeometry.buildObstacleCells(frame, polygon, amphibOps.tuning.obstacle.cellSizeM)
 
   zoneState.obstacle = { cells = cells }

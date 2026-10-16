@@ -90,10 +90,10 @@ flowchart TD
 
 | 步驟 | 說明 |
 |---|---|
-| 過濾 | 在 `lstAnchorageArea` 內的 Ship 類型單元 |
+| 過濾 | 在 `anchorage.lstArea` 內的 Ship 類型單元 |
 | 排除 | RORO 和 Barge（`isLST` 檢查，排除 `NON_LST_NAMES`） |
 | 計算目的地 | 從當前位置依 `bearing` 和 `distance` 投影 |
-| 設定速度 | `zone.lstSettings.speed` |
+| 設定速度 | `zone.landing.lstSettings.speed` |
 
 ### SAG 移動
 
@@ -110,7 +110,7 @@ flowchart TD
 
 - 篩選條件：`contact.typed == FACILITY_MOBILE`（地面可移動設施）
 - 結果用於 `landingCheck.lua` 判斷是否可發起突擊
-- 當接觸數 < `operation.contactThreshold` 或等待超時，觸發突擊
+- 當接觸數 < `zone.air.contactThreshold` 或等待超時，觸發突擊
 
 ---
 
@@ -121,7 +121,7 @@ flowchart TD
 | `setLandingMissionStartTime(zone, zoneState)` | 設定單一作戰區的登陸任務開始時間 |
 | `setCoursesForLSTs(zone, units)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
 | `countContactsInArea(contacts, area)` | 計算區域內目標數量 |
-| `countUnitsInEachArea(zones)` | 依 zone 的 `casArea` 統計已登陸的中國單位數（依單位類型）；coordinator 用來判定灘頭建立，`unitStatusUI` 經門面 `LandingOps.countUnitsInEachArea` 呼叫 |
+| `countUnitsInEachArea(zones)` | 依 zone 的 `air.casArea` 統計已登陸的中國單位數（依單位類型）；coordinator 用來判定灘頭建立，`unitStatusUI` 經門面 `LandingOps.countUnitsInEachArea` 呼叫 |
 | `launchACV(params)` | 從登陸艦釋放兩棲步兵戰鬥車 |
 | `isFerryOrLST(ship)` | 判斷艦船是否為渡輪或 LST |
 | `getShipZone(zones, ship)` | 取得艦船所在的作戰區 |

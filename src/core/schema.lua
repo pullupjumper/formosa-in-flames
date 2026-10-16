@@ -860,28 +860,39 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field speed number
 
 ---Operational zone descriptor for amphibious operations
----Defines complete landing zone configuration including air and surface assets
+---Defines one landing zone: its fleet and SAGs, plus anchorage, air and landing setup
 ---@class SBJ__OperationalZoneDescriptor: table
 ---@field name string Operational zone name (e.g., "Taoyuan", "Sishu", "Penghu")
 ---@field heading number Approach bearing toward the shore (degrees); lane, LST, ACV and SAG bearings derive from it
----@field stagingArea string[] Staging area reference points; ships inside belong to this zone
 ---@field fleet SBJ__FleetDescriptor Ship groups leaving for and anchoring in this zone
 ---@field sags SBJ__SAGDescriptor[] Surface Action Groups assigned to this zone
----@field airLandingZone string[] Air landing zone reference area
----@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
+---@field anchorage SBJ__ZoneAnchorage Home base and anchorage waters
+---@field air SBJ__ZoneAir Air landing and air support
+---@field landing SBJ__ZoneLanding Landing craft, vehicles and beach setup
+
+---Home base and anchorage waters of a zone
+---@class SBJ__ZoneAnchorage: table
 ---@field baseGUID string Home base GUID for embarked units
----@field anchorageArea string[] LHD/LPD anchorage area reference points
----@field lstAnchorageArea string[] LST anchorage area reference points
+---@field area string[] LHD/LPD anchorage area reference points
+---@field lstArea string[] LST anchorage area reference points
 ---@field arrivalThreshold integer Minimum unit count to consider fleet arrived
+
+---Air landing and air support of a zone
+---@class SBJ__ZoneAir: table
+---@field landingZone string[] Air landing zone reference area
+---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
 ---@field casArea string[] CAS area reference points
----@field offloadArea string[] Vehicle offload area reference points
----@field boat SBJ__BoatMissionDescriptor Landing craft configuration
 ---@field transportHelicopter SBJ__TransportHelicopterDescriptor Transport helicopter configuration
 ---@field attackHelicopter SBJ__AttackHelicopterDescriptor Attack helicopter configuration
+
+---Landing craft, vehicles and beach setup of a zone
+---@class SBJ__ZoneLanding: table
+---@field boat SBJ__BoatMissionDescriptor Landing craft configuration
 ---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
 ---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
 ---@field laneCenter string[] Reference point name of the lane center on the shore (one point)
 ---@field obstacleArea string[] Beach obstacle polygon reference point names (BLUE side)
+---@field offloadArea string[] Vehicle offload area reference points
 ---@field sweeper SBJ__SweeperDescriptor
 
 ---Formation settings for amphibious operation layouts
@@ -931,6 +942,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---Used for scenario initialization and deployment planning
 ---@class SBJ__FleetDescriptor: table
 ---@field names string[] Unit name array
+---@field stagingArea string[] Staging area reference points; ships inside belong to this zone
 ---@field groups SBJ__FleetGroup[] Ship groups
 
 ---Amphibious Operations system configuration

@@ -107,3 +107,17 @@ config.red.amphibOps
 - 各區接近方向只寫一次：`zone.heading`。`laneBearing`、`lstSettings.course.bearing`、`acv.bearing`、SAG `to.heading` 都由它取代；`lstSettings.course.distance` 改為 `lstSettings.distance`。
 - `from.stagingArea` 搬到 `zone.stagingArea`。
 - 驗證：重構前後的 config 逐欄比對（heading、座標、艦數、SAG 路線等）零差異。
+
+## 第三階段：Zone 欄位分層
+
+Zone 既有欄位依用途分成三組（原先維持平的）：
+
+- `anchorage`：`baseGUID`、`area`（原 `anchorageArea`）、`lstArea`（原 `lstAnchorageArea`）、`arrivalThreshold`
+- `air`：`landingZone`（原 `airLandingZone`）、`contactThreshold`、`casArea`、`transportHelicopter`、`attackHelicopter`
+- `landing`：`boat`、`lstSettings`、`acv`、`laneCenter`、`obstacleArea`、`offloadArea`、`sweeper`
+
+另有 `stagingArea` 併入 `fleet`（`zone.fleet.stagingArea`）。`zone` 本身只剩 `name`、`heading`、`fleet`、`sags` 與三個群組。
+
+- `AmphibiousLogistics` 以 `zone[configKey]` 動態取任務平台，改為 `getPlatformDescriptor(zone, key)`（`boat` → `landing`，兩種直升機 → `air`）。
+- `setLandingMissionStartTime` 的 `categories` 現在是 `zone.air` 的鍵（直升機）；原本可傳 `"boat"` 的用法已移除，目前也沒有呼叫端這樣用。
+- 驗證：與重構前的 config 逐欄比對零差異。

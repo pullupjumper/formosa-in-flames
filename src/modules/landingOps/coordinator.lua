@@ -66,7 +66,7 @@ local function processZone(tickCtx, zone)
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL then
     local result = AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredShips)
-    local hasArrived = Utils.getCount(result.units) > zone.arrivalThreshold and not result.isUnitMoving
+    local hasArrived = Utils.getCount(result.units) > zone.anchorage.arrivalThreshold and not result.isUnitMoving
 
     if hasArrived then
       local ok = AmphibiousLogistics.createCargoMissions(zone)
@@ -81,9 +81,9 @@ local function processZone(tickCtx, zone)
   end
 
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT then
-    local contactCount = AmphibiousAssault.countContactsInArea(contacts, zone.airLandingZone)
+    local contactCount = AmphibiousAssault.countContactsInArea(contacts, zone.air.landingZone)
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
-    local shouldLaunch = contactCount < zone.contactThreshold or elapsed >= amphibOps.periodSec
+    local shouldLaunch = contactCount < zone.air.contactThreshold or elapsed >= amphibOps.periodSec
 
     if shouldLaunch then
       local ok = MineClearing.startMineClearing(amphibOps, zone, zoneState, filteredShips)

@@ -37,7 +37,7 @@ local function findCarriers(zone, frame, ships)
 
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
-    if ship and BOAT_CARRIER_DBIDS[ship.dbid] and ship:inArea(zone.lstAnchorageArea) then
+    if ship and BOAT_CARRIER_DBIDS[ship.dbid] and ship:inArea(zone.anchorage.lstArea) then
       local boats = {}
       local embarked = ship.embarkedUnits and ship.embarkedUnits[constants.PLATFORM_TYPES.BOATS] or {}
       for _, guid in ipairs(embarked) do
@@ -191,7 +191,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
       local ship = GameApi.ScenEdit_GetUnit(entry.shipGuid)
       local boat = GameApi.ScenEdit_GetUnit(boatGuid)
 
-      if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.acv.area) then
+      if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.landing.acv.area) then
         local course = RoutePlanner.buildBoatRoute(
           zoneState.lanes, entry.beachLaneId, zoneState.queueCounters, amphibOps.tuning.route)
 

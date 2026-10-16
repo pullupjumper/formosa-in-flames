@@ -54,16 +54,24 @@ describe("LandingOps Coordinator", function()
   local function makeZone(overrides)
     local zone = {
       name = "Taoyuan",
-      arrivalThreshold = 1,
-      lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
-      anchorageArea = { "RP-ANC-1", "RP-ANC-2" },
-      airLandingZone = { "RP-AIR-1", "RP-AIR-2" },
-      contactThreshold = 2,
+      anchorage = {
+        arrivalThreshold = 1,
+        lstArea = { "RP-LST-1", "RP-LST-2" },
+        area = { "RP-ANC-1", "RP-ANC-2" },
+      },
+      air = {
+        landingZone = { "RP-AIR-1", "RP-AIR-2" },
+        contactThreshold = 2,
+      },
       sags = { { groupName = "SAG Alpha" } },
     }
     if overrides then
       for k, v in pairs(overrides) do
-        zone[k] = v
+        if type(zone[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+          for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
+        else
+          zone[k] = v
+        end
       end
     end
     return zone

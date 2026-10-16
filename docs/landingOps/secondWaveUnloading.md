@@ -35,7 +35,7 @@ flowchart LR
 
 `createCourseForBarge` 使用球面幾何投影計算航向：
 
-1. 取得卸載區（`offloadArea`）的參考點
+1. 取得卸載區（`landing.offloadArea`）的參考點
 2. 計算參考點的球面中心點（`calculateSphericalCenter`）
 3. 計算駁船至中心點的距離（d1）與方位角（b1）
 4. 利用 LST 搶灘方位角計算投影距離：`d2 = d1 × cos(b2)`
@@ -44,7 +44,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     START["createCourseForBarge()"]
-    RP["取得 offloadArea 參考點"]
+    RP["取得 landing.offloadArea 參考點"]
     CENTER["計算球面中心點"]
     D1["計算距離 d1"]
     B1["計算方位角 b1"]
@@ -72,8 +72,8 @@ flowchart TD
 flowchart TD
     START["startSecondWaveUnloading()"]
     ITER_UNIT["遍歷 filteredUnits"]
-    IS_BARGE{是 Barge<br>在 lstAnchorageArea?}
-    IS_RORO{是 RORO<br>在 lstAnchorageArea?}
+    IS_BARGE{是 Barge<br>在 anchorage.lstArea?}
+    IS_RORO{是 RORO<br>在 anchorage.lstArea?}
     PROC_BARGE["processBarge<br>計算航向、記錄至 saveData"]
     COLLECT_RORO["收集 RORO<br>至暫存清單"]
     PAIR["pairROROWithBarge<br>配對同區域駁船"]
@@ -92,7 +92,7 @@ flowchart TD
 
 ### 配對規則
 
-RORO 與 Barge 的配對依據「同區域」原則：`barge:inArea(roro.zone.lstAnchorageArea)` 為 true 時配對。一個駁船可配對多個 RORO 船。
+RORO 與 Barge 的配對依據「同區域」原則：`barge:inArea(roro.zone.anchorage.lstArea)` 為 true 時配對。一個駁船可配對多個 RORO 船。
 
 ---
 

@@ -41,7 +41,7 @@ end
 ---@param hovercraftMap table<string, SBJ__HovercraftState>
 ---@return string
 local function findMissionName(zone, hovercraftMap)
-  local missions = zone.boat.missions
+  local missions = zone.landing.boat.missions
   local counts = {}
   for _, entry in pairs(hovercraftMap) do
     counts[entry.missionName] = (counts[entry.missionName] or 0) + 1
@@ -98,7 +98,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.anchorageArea) then
+    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.anchorage.area) then
       for _, craft in ipairs(findReadyHovercraft(ship, zoneState.hovercraft)) do
         local plan = RoutePlanner.buildRoute({
           lanes = zoneState.lanes,
@@ -113,7 +113,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
 
         if plan then
           craft.course = plan.course
-          craft.manualSpeed = zone.boat.speed
+          craft.manualSpeed = zone.landing.boat.speed
           craft:Launch(true)
           zoneState.hovercraft[craft.guid] = {
             missionName = findMissionName(zone, zoneState.hovercraft),

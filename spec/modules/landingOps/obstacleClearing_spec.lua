@@ -35,7 +35,7 @@ describe("ObstacleClearing", function()
   local BEARING = 150
   local frame = { origin = CENTER, bearing = BEARING }
   local CONFIG = { tuning = { obstacle = { cellSizeM = 50, clearSec = 600 } } }
-  local zone = { name = "Penghu", obstacleArea = { "RP-O1", "RP-O2", "RP-O3", "RP-O4" } }
+  local zone = { name = "Penghu", landing = { obstacleArea = { "RP-O1", "RP-O2", "RP-O3", "RP-O4" } } }
 
   ---@return SBJ__ZoneState
   local function makeZoneState()

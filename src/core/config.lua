@@ -1713,15 +1713,13 @@ config.red.amphibOps.tuning = {
     holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
   },
 }
--- Approach bearing (degrees) of each landing zone; zone.heading and the lane, LST, ACV and SAG bearings all derive from it
-local zoneHeading = { taoyuan = 150, sishu = 73, penghu = 82 }
 config.red.amphibOps.zones = {
   {
     name = "Taoyuan",
-    heading = zoneHeading.taoyuan,
-    stagingArea = constants.AREAS.AREA_OF_OPS_D,
+    heading = 150, -- approach bearing toward the shore; lane, LST, ACV and SAG bearings derive from it
     fleet = {
       names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
+      stagingArea = constants.AREAS.AREA_OF_OPS_D,
       groups = {
         {
           from = {
@@ -1732,7 +1730,7 @@ config.red.amphibOps.zones = {
             startingPoints = {
               type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
               type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
-              },
+            },
           },
           shipCounts = {
             type075 = 2,
@@ -1750,8 +1748,6 @@ config.red.amphibOps.zones = {
         },
       },
     },
-    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    contactThreshold = 3,
     sags = {
       {
         groupName = "SAG 173",
@@ -1796,165 +1792,173 @@ config.red.amphibOps.zones = {
         area = constants.AREAS.AIRLANDING_TAOYUAN
       },
     },
-    arrivalThreshold = 15,
-    baseGUID = constants.BASES.PINGTAN_PORT,
-    anchorageArea = constants.AREAS.ANCH_AREA_TAOYUAN,
-    lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
-    casArea = constants.AREAS.CAS_E,
-    offloadArea = constants.AREAS.OFFLOAD_AREA_TAOYUAN,
-    boat = {
-      dbid = constants.PLATFORMS.TYPE_726A,
-      missions = {
-        {
-          name = "LANDING/TAO/1/1",
-          loadoutId = 0,
-          unitCount = 1,
-          startTime = config.red.amphibOps.missionStartTime.boat[1],
-        },
-        -- {
-        --   name = "LANDING/TAO/1/2",
-        --   loadoutId = 0,
-        --   unitCount = 3,
-        --   startTime = config.red.amphibOps.missionStartTime.boat[2],
-        -- },
-      },
-      zone = constants.AREAS.LANDING_TAOYUAN,
-      settings = {
-        Subtype = "delivery",
-        TransitThrottleShip = "Full",
-        StationThrottleShip = "Full",
-        isactive = false
-      },
-      transferManifest = {
-        type075 = {
-          {
-            loadoutId = 0,
-            cargoItems = {
-              config.red.amphibOps.transferCargo.assaultLandingGroup,
-              config.red.amphibOps.transferCargo.deepAssaultGroup1,
-              config.red.amphibOps.transferCargo.deepAssaultGroup2,
-            }
-          },
-        },
-        type071 = {
-          {
-            loadoutId = 0,
-            cargoItems = {
-              config.red.amphibOps.transferCargo.assaultLandingGroup,
-              config.red.amphibOps.transferCargo.deepAssaultGroup1,
-              config.red.amphibOps.transferCargo.deepAssaultGroup2,
-              config.red.amphibOps.transferCargo.deepAssaultGroup3,
-            }
-          },
-        }
-      },
-      speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+    anchorage = {
+      baseGUID = constants.BASES.PINGTAN_PORT,
+      area = constants.AREAS.ANCH_AREA_TAOYUAN,
+      lstArea = constants.AREAS.LST_ANCH_AREA_TAOYUAN,
+      arrivalThreshold = 15,
     },
-    transportHelicopter = {
-      dbid = constants.PLATFORMS.Z18,
-      missions = {
-        {
-          name = "AIRLANDING/TAO/1/1",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
-        },
-        {
-          name = "AIRLANDING/TAO/1/2",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
-        },
-        {
-          name = "AIRLANDING/TAO/2/1",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
-        },
-        {
-          name = "AIRLANDING/TAO/2/2",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
-        },
-      },
-      zone = constants.AREAS.AIRLANDING_TAOYUAN,
-      settings = {
-        Subtype = "delivery",
-        TransitThrottleAircraft = "Military",
-        TransitAltitudeAircraft = 304,
-        StationThrottleAircraft = "Afterburner",
-        StationAltitudeAircraft = 304,
-        isactive = false
-      },
-      transferManifest = {
-        type075 = {
+    air = {
+      landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
+      contactThreshold = 3,
+      casArea = constants.AREAS.CAS_E,
+      transportHelicopter = {
+        dbid = constants.PLATFORMS.Z18,
+        missions = {
           {
+            name = "AIRLANDING/TAO/1/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
           },
           {
+            name = "AIRLANDING/TAO/1/2",
+            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
+          },
+          {
+            name = "AIRLANDING/TAO/2/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup2 }
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
+          },
+          {
+            name = "AIRLANDING/TAO/2/2",
+            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
           },
         },
-        type071 = {
+        zone = constants.AREAS.AIRLANDING_TAOYUAN,
+        settings = {
+          Subtype = "delivery",
+          TransitThrottleAircraft = "Military",
+          TransitAltitudeAircraft = 304,
+          StationThrottleAircraft = "Afterburner",
+          StationAltitudeAircraft = 304,
+          isactive = false
+        },
+        transferManifest = {
+          type075 = {
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            },
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup2 }
+            },
+          },
+          type071 = {
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            },
+          }
+        },
+      },
+      attackHelicopter = {
+        dbid = constants.PLATFORMS.Z10,
+        missions = {
           {
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            name = "CAS/E",
+            loadoutId = constants.LOADOUTS.Z10_ATTACK,
+            unitCount = 13,
+            startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
           },
         }
       },
     },
-    attackHelicopter = {
-      dbid = constants.PLATFORMS.Z10,
-      missions = {
-        {
-          name = "CAS/E",
-          loadoutId = constants.LOADOUTS.Z10_ATTACK,
-          unitCount = 13,
-          startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
+    landing = {
+      boat = {
+        dbid = constants.PLATFORMS.TYPE_726A,
+        missions = {
+          {
+            name = "LANDING/TAO/1/1",
+            loadoutId = 0,
+            unitCount = 1,
+            startTime = config.red.amphibOps.missionStartTime.boat[1],
+          },
+          -- {
+          --   name = "LANDING/TAO/1/2",
+          --   loadoutId = 0,
+          --   unitCount = 3,
+          --   startTime = config.red.amphibOps.missionStartTime.boat[2],
+          -- },
         },
-      }
-    },
-    lstSettings = {
-      speed = config.red.amphibOps.formationSettings.shipSpeed,
-      distance = config.red.amphibOps.formationSettings.transitDistance
-    },
-    acv = {
-      distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
-      speed = config.red.amphibOps.formationSettings.acvSpeed,
-      destination = {
+        zone = constants.AREAS.LANDING_TAOYUAN,
+        settings = {
+          Subtype = "delivery",
+          TransitThrottleShip = "Full",
+          StationThrottleShip = "Full",
+          isactive = false
+        },
+        transferManifest = {
+          type075 = {
+            {
+              loadoutId = 0,
+              cargoItems = {
+                config.red.amphibOps.transferCargo.assaultLandingGroup,
+                config.red.amphibOps.transferCargo.deepAssaultGroup1,
+                config.red.amphibOps.transferCargo.deepAssaultGroup2,
+              }
+            },
+          },
+          type071 = {
+            {
+              loadoutId = 0,
+              cargoItems = {
+                config.red.amphibOps.transferCargo.assaultLandingGroup,
+                config.red.amphibOps.transferCargo.deepAssaultGroup1,
+                config.red.amphibOps.transferCargo.deepAssaultGroup2,
+                config.red.amphibOps.transferCargo.deepAssaultGroup3,
+              }
+            },
+          }
+        },
+        speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+      },
+      lstSettings = {
+        speed = config.red.amphibOps.formationSettings.shipSpeed,
+        distance = config.red.amphibOps.formationSettings.transitDistance
+      },
+      acv = {
+        distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
+        speed = config.red.amphibOps.formationSettings.acvSpeed,
+        destination = {
           { latitude = "N 25.04.52", longitude = "E 121.10.05", },
           { latitude = "N 25.04.44", longitude = "E 121.13.54", },
+        },
+        area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
       },
-      area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
+      laneCenter = constants.AREAS.LANE_CENTER_TAOYUAN,
+      obstacleArea = constants.AREAS.OBSTACLE_TAOYUAN,
+      offloadArea = constants.AREAS.OFFLOAD_AREA_TAOYUAN,
+      sweeper = {
+        missionName = "MINECLEARING/TOA/1/1",
+        settings = {},
+        speed = config.red.amphibOps.formationSettings.sweeperSpeed
+      },
     },
-    laneCenter = constants.AREAS.LANE_CENTER_TAOYUAN,
-    obstacleArea = constants.AREAS.OBSTACLE_TAOYUAN,
-    sweeper = {
-      missionName = "MINECLEARING/TOA/1/1",
-      settings = {},
-      speed = config.red.amphibOps.formationSettings.sweeperSpeed
-    }
   },
   {
     name = "Sishu",
-    heading = zoneHeading.sishu,
-    stagingArea = constants.AREAS.AREA_OF_OPS_F,
+    heading = 73, -- approach bearing toward the shore; lane, LST, ACV and SAG bearings derive from it
     fleet = {
       names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
+      stagingArea = constants.AREAS.AREA_OF_OPS_F,
       groups = {
         {
           from = {
-            heading = zoneHeading.sishu,
+            heading = 73,
             startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
           },
           to = {
             startingPoints = {
               type075 = constants.AREAS.DESTINATION_075_SISHU,
               type071 = constants.AREAS.DESTINATION_071_SISHU,
-              },
+            },
           },
           shipCounts = {
             type075 = 1,
@@ -1972,8 +1976,6 @@ config.red.amphibOps.zones = {
         },
       },
     },
-    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    contactThreshold = 3,
     sags = {
       {
         groupName = "SAG 154",
@@ -1983,7 +1985,7 @@ config.red.amphibOps.zones = {
         },
         from = {
           pos = { latitude = "N 22.32.59", longitude = "E 118.04.52", },
-          heading = zoneHeading.sishu,
+          heading = 73,
         },
         to = {
           anchorageArea = {
@@ -2003,7 +2005,7 @@ config.red.amphibOps.zones = {
         },
         from = {
           pos = { latitude = "N 22.44.28", longitude = "E 118.01.16", },
-          heading = zoneHeading.sishu,
+          heading = 73,
         },
         to = {
           anchorageArea = {
@@ -2016,165 +2018,173 @@ config.red.amphibOps.zones = {
         area = constants.AREAS.AIRLANDING_CHANGLONG,
       },
     },
-    arrivalThreshold = 10,
-    baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
-    anchorageArea = constants.AREAS.ANCH_AREA_SISHU,
-    lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_SISHU,
-    casArea = constants.AREAS.CAS_S,
-    offloadArea = constants.AREAS.OFFLOAD_AREA_SISHU,
-    boat = {
-      dbid = constants.PLATFORMS.TYPE_726A,
-      missions = {
-        {
-          name = "LANDING/SISHU/1/1",
-          loadoutId = 0,
-          unitCount = 1,
-          startTime = config.red.amphibOps.missionStartTime.boat[1],
-        },
-        -- {
-        --   name = "LANDING/SISHU/1/2",
-        --   loadoutId = 0,
-        --   unitCount = 3,
-        --   startTime = config.red.amphibOps.missionStartTime.boat[2],
-        -- },
-      },
-      zone = constants.AREAS.LANDING_SISHU,
-      settings = {
-        Subtype = "delivery",
-        TransitThrottleShip = "Full",
-        StationThrottleShip = "Full",
-        isactive = false
-      },
-      transferManifest = {
-        type075 = {
-          {
-            loadoutId = 0,
-            cargoItems = {
-              config.red.amphibOps.transferCargo.assaultLandingGroup,
-              config.red.amphibOps.transferCargo.deepAssaultGroup1,
-              config.red.amphibOps.transferCargo.deepAssaultGroup2,
-            }
-          },
-        },
-        type071 = {
-          {
-            loadoutId = 0,
-            cargoItems = {
-              config.red.amphibOps.transferCargo.assaultLandingGroup,
-              config.red.amphibOps.transferCargo.deepAssaultGroup1,
-              config.red.amphibOps.transferCargo.deepAssaultGroup2,
-              config.red.amphibOps.transferCargo.deepAssaultGroup3
-            }
-          },
-        }
-      },
-      speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+    anchorage = {
+      baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
+      area = constants.AREAS.ANCH_AREA_SISHU,
+      lstArea = constants.AREAS.LST_ANCH_AREA_SISHU,
+      arrivalThreshold = 10,
     },
-    transportHelicopter = {
-      dbid = constants.PLATFORMS.Z18,
-      missions = {
-        {
-          name = "AIRLANDING/CHANGLONG/1/1",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
-        },
-        {
-          name = "AIRLANDING/CHANGLONG/1/2",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
-        },
-        {
-          name = "AIRLANDING/CHANGLONG/2/1",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
-        },
-        {
-          name = "AIRLANDING/CHANGLONG/2/2",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
-        },
-      },
-      zone = constants.AREAS.AIRLANDING_CHANGLONG,
-      settings = {
-        Subtype = "delivery",
-        TransitThrottleAircraft = "Military",
-        TransitAltitudeAircraft = 304,
-        StationThrottleAircraft = "Afterburner",
-        StationAltitudeAircraft = 304,
-        isactive = false
-      },
-      transferManifest = {
-        type075 = {
+    air = {
+      landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
+      contactThreshold = 3,
+      casArea = constants.AREAS.CAS_S,
+      transportHelicopter = {
+        dbid = constants.PLATFORMS.Z18,
+        missions = {
           {
+            name = "AIRLANDING/CHANGLONG/1/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
           },
           {
+            name = "AIRLANDING/CHANGLONG/1/2",
+            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
+          },
+          {
+            name = "AIRLANDING/CHANGLONG/2/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup2 }
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
+          },
+          {
+            name = "AIRLANDING/CHANGLONG/2/2",
+            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
           },
         },
-        type071 = {
+        zone = constants.AREAS.AIRLANDING_CHANGLONG,
+        settings = {
+          Subtype = "delivery",
+          TransitThrottleAircraft = "Military",
+          TransitAltitudeAircraft = 304,
+          StationThrottleAircraft = "Afterburner",
+          StationAltitudeAircraft = 304,
+          isactive = false
+        },
+        transferManifest = {
+          type075 = {
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            },
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup2 }
+            },
+          },
+          type071 = {
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            },
+          }
+        },
+      },
+      attackHelicopter = {
+        dbid = constants.PLATFORMS.Z10,
+        missions = {
           {
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            name = "CAS/S",
+            loadoutId = constants.LOADOUTS.Z10_ATTACK,
+            unitCount = 13,
+            startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
           },
         }
       },
     },
-    attackHelicopter = {
-      dbid = constants.PLATFORMS.Z10,
-      missions = {
-        {
-          name = "CAS/S",
-          loadoutId = constants.LOADOUTS.Z10_ATTACK,
-          unitCount = 13,
-          startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
+    landing = {
+      boat = {
+        dbid = constants.PLATFORMS.TYPE_726A,
+        missions = {
+          {
+            name = "LANDING/SISHU/1/1",
+            loadoutId = 0,
+            unitCount = 1,
+            startTime = config.red.amphibOps.missionStartTime.boat[1],
+          },
+          -- {
+          --   name = "LANDING/SISHU/1/2",
+          --   loadoutId = 0,
+          --   unitCount = 3,
+          --   startTime = config.red.amphibOps.missionStartTime.boat[2],
+          -- },
         },
-      }
-    },
-    lstSettings = {
-      speed = config.red.amphibOps.formationSettings.shipSpeed,
-      distance = config.red.amphibOps.formationSettings.transitDistance
-    },
-    acv = {
-      distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
-      speed = config.red.amphibOps.formationSettings.acvSpeed,
-      destination = {
+        zone = constants.AREAS.LANDING_SISHU,
+        settings = {
+          Subtype = "delivery",
+          TransitThrottleShip = "Full",
+          StationThrottleShip = "Full",
+          isactive = false
+        },
+        transferManifest = {
+          type075 = {
+            {
+              loadoutId = 0,
+              cargoItems = {
+                config.red.amphibOps.transferCargo.assaultLandingGroup,
+                config.red.amphibOps.transferCargo.deepAssaultGroup1,
+                config.red.amphibOps.transferCargo.deepAssaultGroup2,
+              }
+            },
+          },
+          type071 = {
+            {
+              loadoutId = 0,
+              cargoItems = {
+                config.red.amphibOps.transferCargo.assaultLandingGroup,
+                config.red.amphibOps.transferCargo.deepAssaultGroup1,
+                config.red.amphibOps.transferCargo.deepAssaultGroup2,
+                config.red.amphibOps.transferCargo.deepAssaultGroup3
+              }
+            },
+          }
+        },
+        speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+      },
+      lstSettings = {
+        speed = config.red.amphibOps.formationSettings.shipSpeed,
+        distance = config.red.amphibOps.formationSettings.transitDistance
+      },
+      acv = {
+        distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
+        speed = config.red.amphibOps.formationSettings.acvSpeed,
+        destination = {
           { latitude = "N 22.56.39", longitude = "E 120.10.37", },
           { latitude = "N 22.57.14", longitude = "E 120.12.09", },
+        },
+        area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
       },
-      area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
+      laneCenter = constants.AREAS.LANE_CENTER_SISHU,
+      obstacleArea = constants.AREAS.OBSTACLE_SISHU,
+      offloadArea = constants.AREAS.OFFLOAD_AREA_SISHU,
+      sweeper = {
+        missionName = "MINECLEARING/SISHU/1/1",
+        settings = {},
+        speed = config.red.amphibOps.formationSettings.sweeperSpeed
+      },
     },
-    laneCenter = constants.AREAS.LANE_CENTER_SISHU,
-    obstacleArea = constants.AREAS.OBSTACLE_SISHU,
-    sweeper = {
-      missionName = "MINECLEARING/SISHU/1/1",
-      settings = {},
-      speed = config.red.amphibOps.formationSettings.sweeperSpeed
-    }
   },
   {
     name = "Penghu",
-    heading = zoneHeading.penghu,
-    stagingArea = constants.AREAS.AREA_OF_OPS_E,
+    heading = 82, -- approach bearing toward the shore; lane, LST, ACV and SAG bearings derive from it
     fleet = {
       names = { "Air Assault Bn", "Combined Arms Bn", "5th Landing Ship Div" },
+      stagingArea = constants.AREAS.AREA_OF_OPS_E,
       groups = {
         {
           from = {
-            heading = zoneHeading.penghu,
+            heading = 82,
             startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
           },
           to = {
             startingPoints = {
               type075 = constants.AREAS.DESTINATION_075_PENGHU,
               type071 = constants.AREAS.DESTINATION_071_PENGHU,
-              },
+            },
           },
           shipCounts = {
             type075 = 1,
@@ -2192,8 +2202,6 @@ config.red.amphibOps.zones = {
         },
       },
     },
-    airLandingZone = constants.AREAS.AIRLANDING_TAOYUAN,
-    contactThreshold = 3,
     sags = {
       {
         groupName = "SAG 167",
@@ -2203,7 +2211,7 @@ config.red.amphibOps.zones = {
         },
         from = {
           pos = { latitude = "N 23.29.19", longitude = "E 118.04.37", },
-          heading = zoneHeading.penghu,
+          heading = 82,
         },
         to = {
           anchorageArea = {
@@ -2216,148 +2224,156 @@ config.red.amphibOps.zones = {
         area = constants.AREAS.AIRLANDING_PENGHU,
       },
     },
-    arrivalThreshold = 5,
-    baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
-    anchorageArea = constants.AREAS.ANCH_AREA_PENGHU,
-    lstAnchorageArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
-    casArea = constants.AREAS.CAS_PENGHU,
-    offloadArea = constants.AREAS.OFFLOAD_AREA_PENGHU,
-    boat = {
-      dbid = constants.PLATFORMS.TYPE_726A,
-      missions = {
-        {
-          name = "LANDING/PENGHU/1/1",
-          loadoutId = 0,
-          unitCount = 1,
-          startTime = config.red.amphibOps.missionStartTime.boat[1],
-        },
-        -- {
-        --   name = "LANDING/PENGHU/1/2",
-        --   loadoutId = 0,
-        --   unitCount = 3,
-        --   startTime = config.red.amphibOps.missionStartTime.boat[2],
-        -- },
-      },
-      zone = constants.AREAS.LANDING_PENGHU,
-      settings = {
-        Subtype = "delivery",
-        TransitThrottleShip = "Full",
-        StationThrottleShip = "Full",
-        isactive = false
-      },
-      transferManifest = {
-        type075 = {
-          {
-            loadoutId = 0,
-            cargoItems = {
-              config.red.amphibOps.transferCargo.assaultLandingGroup,
-              config.red.amphibOps.transferCargo.deepAssaultGroup1,
-              config.red.amphibOps.transferCargo.deepAssaultGroup2,
-            }
-          },
-        },
-        type071 = {
-          {
-            loadoutId = 0,
-            cargoItems = {
-              config.red.amphibOps.transferCargo.assaultLandingGroup,
-              config.red.amphibOps.transferCargo.deepAssaultGroup1,
-              config.red.amphibOps.transferCargo.deepAssaultGroup2,
-              config.red.amphibOps.transferCargo.deepAssaultGroup3
-            }
-          },
-        }
-      },
-      speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+    anchorage = {
+      baseGUID = constants.BASES.KWANG_CHOW_WAN_NB,
+      area = constants.AREAS.ANCH_AREA_PENGHU,
+      lstArea = constants.AREAS.LST_ANCH_AREA_PENGHU,
+      arrivalThreshold = 5,
     },
-    transportHelicopter = {
-      dbid = constants.PLATFORMS.Z18,
-      missions = {
-        {
-          name = "AIRLANDING/PENGHU/1/1",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
-        },
-        {
-          name = "AIRLANDING/PENGHU/1/2",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
-        },
-        {
-          name = "AIRLANDING/PENGHU/2/1",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
-        },
-        {
-          name = "AIRLANDING/PENGHU/2/2",
-          loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-          unitCount = 3,
-          startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
-        },
-      },
-      zone = constants.AREAS.AIRLANDING_PENGHU,
-      settings = {
-        Subtype = "delivery",
-        TransitThrottleAircraft = "Military",
-        TransitAltitudeAircraft = 304,
-        StationThrottleAircraft = "Afterburner",
-        StationAltitudeAircraft = 304,
-        isactive = false
-      },
-      transferManifest = {
-        type075 = {
+    air = {
+      landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
+      contactThreshold = 3,
+      casArea = constants.AREAS.CAS_PENGHU,
+      transportHelicopter = {
+        dbid = constants.PLATFORMS.Z18,
+        missions = {
           {
+            name = "AIRLANDING/PENGHU/1/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
           },
           {
+            name = "AIRLANDING/PENGHU/1/2",
+            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
+          },
+          {
+            name = "AIRLANDING/PENGHU/2/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup2 }
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
+          },
+          {
+            name = "AIRLANDING/PENGHU/2/2",
+            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
+            unitCount = 3,
+            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
           },
         },
-        type071 = {
+        zone = constants.AREAS.AIRLANDING_PENGHU,
+        settings = {
+          Subtype = "delivery",
+          TransitThrottleAircraft = "Military",
+          TransitAltitudeAircraft = 304,
+          StationThrottleAircraft = "Afterburner",
+          StationAltitudeAircraft = 304,
+          isactive = false
+        },
+        transferManifest = {
+          type075 = {
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            },
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup2 }
+            },
+          },
+          type071 = {
+            {
+              loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
+              cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            },
+          }
+        },
+      },
+      attackHelicopter = {
+        dbid = constants.PLATFORMS.Z10,
+        missions = {
           {
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            cargoItems = { config.red.amphibOps.transferCargo.airAssaultGroup1 }
+            name = "CAS/PENGHU",
+            loadoutId = constants.LOADOUTS.Z10_ATTACK,
+            unitCount = 13,
+            startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
           },
         }
       },
     },
-    attackHelicopter = {
-      dbid = constants.PLATFORMS.Z10,
-      missions = {
-        {
-          name = "CAS/PENGHU",
-          loadoutId = constants.LOADOUTS.Z10_ATTACK,
-          unitCount = 13,
-          startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
+    landing = {
+      boat = {
+        dbid = constants.PLATFORMS.TYPE_726A,
+        missions = {
+          {
+            name = "LANDING/PENGHU/1/1",
+            loadoutId = 0,
+            unitCount = 1,
+            startTime = config.red.amphibOps.missionStartTime.boat[1],
+          },
+          -- {
+          --   name = "LANDING/PENGHU/1/2",
+          --   loadoutId = 0,
+          --   unitCount = 3,
+          --   startTime = config.red.amphibOps.missionStartTime.boat[2],
+          -- },
         },
-      }
-    },
-    lstSettings = {
-      speed = config.red.amphibOps.formationSettings.shipSpeed,
-      distance = config.red.amphibOps.formationSettings.transitDistance
-    },
-    acv = {
-      distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
-      speed = config.red.amphibOps.formationSettings.acvSpeed,
-      destination = {
+        zone = constants.AREAS.LANDING_PENGHU,
+        settings = {
+          Subtype = "delivery",
+          TransitThrottleShip = "Full",
+          StationThrottleShip = "Full",
+          isactive = false
+        },
+        transferManifest = {
+          type075 = {
+            {
+              loadoutId = 0,
+              cargoItems = {
+                config.red.amphibOps.transferCargo.assaultLandingGroup,
+                config.red.amphibOps.transferCargo.deepAssaultGroup1,
+                config.red.amphibOps.transferCargo.deepAssaultGroup2,
+              }
+            },
+          },
+          type071 = {
+            {
+              loadoutId = 0,
+              cargoItems = {
+                config.red.amphibOps.transferCargo.assaultLandingGroup,
+                config.red.amphibOps.transferCargo.deepAssaultGroup1,
+                config.red.amphibOps.transferCargo.deepAssaultGroup2,
+                config.red.amphibOps.transferCargo.deepAssaultGroup3
+              }
+            },
+          }
+        },
+        speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+      },
+      lstSettings = {
+        speed = config.red.amphibOps.formationSettings.shipSpeed,
+        distance = config.red.amphibOps.formationSettings.transitDistance
+      },
+      acv = {
+        distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
+        speed = config.red.amphibOps.formationSettings.acvSpeed,
+        destination = {
           { latitude = "N 23.31.00", longitude = "E 119.33.54", },
           { latitude = "N 23.31.35", longitude = "E 119.35.36", },
           { latitude = "N 23.34.09", longitude = "E 119.37.41", },
+        },
+        area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
       },
-      area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
+      laneCenter = constants.AREAS.LANE_CENTER_PENGHU,
+      obstacleArea = constants.AREAS.OBSTACLE_PENGHU,
+      offloadArea = constants.AREAS.OFFLOAD_AREA_PENGHU,
+      sweeper = {
+        missionName = "MINECLEARING/PENGHU/1/1",
+        settings = {},
+        speed = config.red.amphibOps.formationSettings.sweeperSpeed
+      },
     },
-    laneCenter = constants.AREAS.LANE_CENTER_PENGHU,
-    obstacleArea = constants.AREAS.OBSTACLE_PENGHU,
-    sweeper = {
-      missionName = "MINECLEARING/PENGHU/1/1",
-      settings = {},
-      speed = config.red.amphibOps.formationSettings.sweeperSpeed
-    }
   },
 }
 config.red.amphibOps.transportAircraft = {

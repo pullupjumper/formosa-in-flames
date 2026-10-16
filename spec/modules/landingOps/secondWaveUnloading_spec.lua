@@ -45,22 +45,32 @@ describe("SecondWaveUnloading", function()
   local function makeZone(overrides)
     local z = {
       name = "ZoneAlpha",
-      lstAnchorageArea = { "RP-LST-1", "RP-LST-2" },
-      offloadArea = { "RP-OFF-1", "RP-OFF-2", "RP-OFF-3", "RP-OFF-4" },
       heading = 270,
-      lstSettings = {
-        speed = 10,
-        distance = 5,
+      anchorage = {
+        lstArea = { "RP-LST-1", "RP-LST-2" },
       },
-      acv = {
-        area = { "RP-ACV-1", "RP-ACV-2" },
-        distance = 0.5,
-        speed = 20,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+      landing = {
+        offloadArea = { "RP-OFF-1", "RP-OFF-2", "RP-OFF-3", "RP-OFF-4" },
+        lstSettings = {
+          speed = 10,
+          distance = 5,
+        },
+        acv = {
+          area = { "RP-ACV-1", "RP-ACV-2" },
+          distance = 0.5,
+          speed = 20,
+          destination = { { latitude = 25.0, longitude = 121.0 } },
+        },
       },
     }
     if overrides then
-      for k, v in pairs(overrides) do z[k] = v end
+      for k, v in pairs(overrides) do
+        if type(z[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+          for groupKey, groupValue in pairs(v) do z[k][groupKey] = groupValue end
+        else
+          z[k] = v
+        end
+      end
     end
     return z
   end
@@ -189,7 +199,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.5,
         longitude = 120.5,
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.invokes(function(guid)
@@ -215,7 +225,7 @@ describe("SecondWaveUnloading", function()
 
       assert.is_true(result)
       assert.are.same({ destination }, bargeUnit.course)
-      assert.are.equal(zone.lstSettings.speed, bargeUnit.manualSpeed)
+      assert.are.equal(zone.landing.lstSettings.speed, bargeUnit.manualSpeed)
       assert.stub(logStub).was.called(1)
     end)
 
@@ -230,7 +240,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.5,
         longitude = 120.5,
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(bargeUnit)
@@ -266,7 +276,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.5,
         longitude = 120.5,
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       local roroUnit = makeUnit({
@@ -275,7 +285,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.6,
         longitude = 120.6,
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.invokes(function(guid)
@@ -319,7 +329,7 @@ describe("SecondWaveUnloading", function()
       assert.are.same({ "RORO-001" }, barges["BARGE-001"].roros)
       -- RORO course: first waypoint is approach, second is barge destination
       assert.are.same({ roroDest, bargeDest }, roroUnit.course)
-      assert.are.equal(zone.lstSettings.speed, roroUnit.manualSpeed)
+      assert.are.equal(zone.landing.lstSettings.speed, roroUnit.manualSpeed)
       assert.stub(logStub).was.called(1)
     end)
 
@@ -347,7 +357,7 @@ describe("SecondWaveUnloading", function()
         guid = "BARGE-001",
         name = "Barge",
         type = "Ship",
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(bargeUnit)
@@ -371,7 +381,7 @@ describe("SecondWaveUnloading", function()
         guid = "BARGE-001",
         name = "Barge",
         type = "Ship",
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(bargeUnit)
@@ -400,7 +410,7 @@ describe("SecondWaveUnloading", function()
         guid = "BARGE-001",
         name = "Barge",
         type = "Ship",
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(bargeUnit)
@@ -430,7 +440,7 @@ describe("SecondWaveUnloading", function()
         guid = "BARGE-001",
         name = "Barge",
         type = "Ship",
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(bargeUnit)
@@ -461,7 +471,7 @@ describe("SecondWaveUnloading", function()
         guid = "BARGE-001",
         name = "Barge",
         type = "Ship",
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(bargeUnit)
@@ -495,7 +505,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.5,
         longitude = 120.5,
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       local roroUnit = makeUnit({
@@ -504,7 +514,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.6,
         longitude = 120.6,
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.invokes(function(guid)
@@ -553,7 +563,7 @@ describe("SecondWaveUnloading", function()
         guid = "LST-001",
         name = "LST",
         type = "Ship",
-        inArea = function(_, area) return area == zone.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone.anchorage.lstArea end,
       })
 
       stubGetUnit.returns(otherUnit)
@@ -602,8 +612,8 @@ describe("SecondWaveUnloading", function()
 
     -- Boundary: caller invokes once per zone; each call processes its own barges
     it("should process barges for each zone when called separately per zone", function()
-      local zone1 = makeZone({ name = "Zone1", lstAnchorageArea = { "AREA-Z1" } })
-      local zone2 = makeZone({ name = "Zone2", lstAnchorageArea = { "AREA-Z2" } })
+      local zone1 = makeZone({ name = "Zone1", anchorage = { lstArea = { "AREA-Z1" } } })
+      local zone2 = makeZone({ name = "Zone2", anchorage = { lstArea = { "AREA-Z2" } } })
       local barges = {}
 
       local barge1 = makeUnit({
@@ -612,7 +622,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 24.5,
         longitude = 120.5,
-        inArea = function(_, area) return area == zone1.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone1.anchorage.lstArea end,
       })
 
       local barge2 = makeUnit({
@@ -621,7 +631,7 @@ describe("SecondWaveUnloading", function()
         type = "Ship",
         latitude = 23.5,
         longitude = 119.5,
-        inArea = function(_, area) return area == zone2.lstAnchorageArea end,
+        inArea = function(_, area) return area == zone2.anchorage.lstArea end,
       })
 
       stubGetUnit.invokes(function(guid)
@@ -972,11 +982,11 @@ describe("SecondWaveUnloading", function()
 
       local barge = makeUnit({
         guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
       local roro = makeUnit({
         guid = "RORO-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
 
       stubToolRange.returns(0.5)
@@ -993,11 +1003,11 @@ describe("SecondWaveUnloading", function()
 
       local barge = makeUnit({
         guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
       local roro = makeUnit({
         guid = "RORO-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
 
       stubToolRange.returns(1.0)
@@ -1014,11 +1024,11 @@ describe("SecondWaveUnloading", function()
 
       local barge = makeUnit({
         guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
       local roro = makeUnit({
         guid = "RORO-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
 
       stubToolRange.returns(nil)
@@ -1035,7 +1045,7 @@ describe("SecondWaveUnloading", function()
 
       local barge = makeUnit({
         guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
       local roro = makeUnit({
         guid = "RORO-001",
@@ -1060,7 +1070,7 @@ describe("SecondWaveUnloading", function()
       })
       local roro = makeUnit({
         guid = "RORO-001",
-        inArea = function(_, area) return area == zone.acv.area end,
+        inArea = function(_, area) return area == zone.landing.acv.area end,
       })
 
       stubToolRange.returns(0.5)
@@ -1072,17 +1082,17 @@ describe("SecondWaveUnloading", function()
 
     -- Boundary: returns first matching zone when multiple zones exist
     it("should return first matching zone from multiple operational zones", function()
-      local zone1 = makeZone({ name = "Zone1", acv = { area = { "AREA-1" } } })
-      local zone2 = makeZone({ name = "Zone2", acv = { area = { "AREA-2" } } })
+      local zone1 = makeZone({ name = "Zone1", landing = { acv = { area = { "AREA-1" } } } })
+      local zone2 = makeZone({ name = "Zone2", landing = { acv = { area = { "AREA-2" } } } })
       local config = makeAmphibOpsConfig({ zones = { zone1, zone2 } })
 
       local barge = makeUnit({
         guid = "BARGE-001",
-        inArea = function(_, area) return area == zone2.acv.area end,
+        inArea = function(_, area) return area == zone2.landing.acv.area end,
       })
       local roro = makeUnit({
         guid = "RORO-001",
-        inArea = function(_, area) return area == zone2.acv.area end,
+        inArea = function(_, area) return area == zone2.landing.acv.area end,
       })
 
       stubToolRange.returns(0.3)

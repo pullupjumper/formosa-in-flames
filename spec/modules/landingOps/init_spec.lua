@@ -74,17 +74,23 @@ describe("LandingOps", function()
   ---@return table
   local function makeZone(overrides)
     local zone = {
-      baseGUID = "BASE-001",
       heading = 180,
-      acv = {
-        distance = 0.5,
-        speed = 20,
-        destination = { { latitude = 25.0, longitude = 121.0 } },
+      anchorage = { baseGUID = "BASE-001" },
+      landing = {
+        acv = {
+          distance = 0.5,
+          speed = 20,
+          destination = { { latitude = 25.0, longitude = 121.0 } },
+        },
       },
     }
     if overrides then
       for k, v in pairs(overrides) do
-        zone[k] = v
+        if type(zone[k]) == "table" and (k == "anchorage" or k == "air" or k == "landing" or k == "fleet") then
+          for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
+        else
+          zone[k] = v
+        end
       end
     end
     return zone
@@ -234,7 +240,7 @@ describe("LandingOps", function()
 
       LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, makeShip())
 
-      assert.are.same(zone.acv.destination, course)
+      assert.are.same(zone.landing.acv.destination, course)
       assert.are.same({ "ACV-1" }, zoneState.acvGuids.zbd05)
     end)
 
@@ -286,7 +292,7 @@ describe("LandingOps", function()
       assert.is_true(wasRTB)
       assert.stub(stubHost).was.called_with({
         HostedUnitNameOrID = ship.guid,
-        SelectedBaseNameOrID = zone.baseGUID
+        SelectedBaseNameOrID = zone.anchorage.baseGUID
       })
     end)
 
@@ -372,7 +378,7 @@ describe("LandingOps", function()
         ship = roro,
         num = 20,
         bearing = zone.heading,
-        distance = zone.acv.distance,
+        distance = zone.landing.acv.distance,
         firstDistance = 1
       })
     end)

@@ -33,7 +33,7 @@ local DEFAULT_CARGO_TYPE = "Facility"
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
 local function createCourseForBarge(zone, unit)
-  local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.RED, area = zone.offloadArea })
+  local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.RED, area = zone.landing.offloadArea })
 
   if not points then
     return nil
@@ -83,7 +83,7 @@ local function createCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
-    distance = zone.lstSettings.distance,
+    distance = zone.landing.lstSettings.distance,
     bearing = zone.heading
   })
 
@@ -116,7 +116,7 @@ local function processBarge(unit, zone, barges)
   end
 
   unit.course = { destination }
-  unit.manualSpeed = zone.lstSettings.speed
+  unit.manualSpeed = zone.landing.lstSettings.speed
   barges[unit.guid] = { guid = unit.guid, roros = {} }
   return destination, {
     tag = "OK",
@@ -147,7 +147,7 @@ local function pairROROWithBarge(roroEntry, bargeEntry, barges)
   end
 
   roroEntry.unit.course = course
-  roroEntry.unit.manualSpeed = roroEntry.zone.lstSettings.speed
+  roroEntry.unit.manualSpeed = roroEntry.zone.landing.lstSettings.speed
   return {
     tag = "OK",
     fields = {
@@ -278,7 +278,7 @@ function SecondWaveUnloading.getBargeROROZone(zones, barge, roro)
   for _, zone in ipairs(zones) do
     local distance = GameApi.Tool_Range(roro.guid, barge.guid)
 
-    if distance and roro:inArea(zone.acv.area) and barge:inArea(zone.acv.area) and distance < 1 then
+    if distance and roro:inArea(zone.landing.acv.area) and barge:inArea(zone.landing.acv.area) and distance < 1 then
       return zone
     end
   end
@@ -308,7 +308,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnit
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit then
-      if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+      if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.anchorage.lstArea) then
         local dest, result = processBarge(unit, zone, barges)
         report.add(result.tag, result.fields)
         if dest then
@@ -316,7 +316,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnit
         end
       end
 
-      if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+      if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.anchorage.lstArea) then
         table.insert(roros, { unit = unit, zone = zone })
       end
     end
@@ -324,7 +324,7 @@ function SecondWaveUnloading.startSecondWaveUnloading(zone, barges, filteredUnit
 
   for _, roro in ipairs(roros) do
     for _, barge in ipairs(bargeEntries) do
-      if barge.unit:inArea(roro.zone.lstAnchorageArea) then
+      if barge.unit:inArea(roro.zone.anchorage.lstArea) then
         local result = pairROROWithBarge(roro, barge, barges)
         report.add(result.tag, result.fields)
       end

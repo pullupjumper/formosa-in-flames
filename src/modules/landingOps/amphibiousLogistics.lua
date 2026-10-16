@@ -18,6 +18,18 @@ local MISSION_TYPE = {
 ---@type string[]
 local CARGO_MISSION_PLATFORMS = { "boat", "transportHelicopter" }
 
+---Zone group holding each mission platform descriptor
+---@type table<string, "landing"|"air">
+local PLATFORM_GROUPS = { boat = "landing", transportHelicopter = "air", attackHelicopter = "air" }
+
+---Look up a mission platform descriptor of a zone by its config key
+---@param zone SBJ__OperationalZoneDescriptor
+---@param platformKey string Platform config key (e.g., "boat", "transportHelicopter")
+---@return SBJ__BoatMissionDescriptor|SBJ__TransportHelicopterDescriptor|SBJ__AttackHelicopterDescriptor
+local function getPlatformDescriptor(zone, platformKey)
+  return zone[PLATFORM_GROUPS[platformKey]][platformKey]
+end
+
 ---@type table<number, boolean>
 local AMPHIBIOUS_SHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_075]    = true,
@@ -196,7 +208,7 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
   if not spec then return end
 
   for _, transfer in ipairs(spec.transfers) do
-    local cfg = zone[transfer.configKey]
+    local cfg = getPlatformDescriptor(zone, transfer.configKey)
     local manifest = cfg.transferManifest[spec.manifestKey][transfer.loadoutIdx]
     transferCargo(
       shipGuid,
@@ -215,7 +227,7 @@ local function processShipAssignments(shipGuid, shipDbid, zone)
   if not spec then return end
 
   for _, assignment in ipairs(spec.assignments) do
-    local cfg = zone[assignment.configKey]
+    local cfg = getPlatformDescriptor(zone, assignment.configKey)
     AssignMission.assignEmbarkedUnitsToMissions(shipGuid, assignment.platform, cfg.dbid, cfg.missions)
   end
 end
@@ -231,7 +243,7 @@ end
 ---@return boolean success True if mission was successfully created and configured
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function createSingleCargoMission(platformType, zone, missionName)
-  local descriptor = zone[platformType]
+  local descriptor = getPlatformDescriptor(zone, platformType)
   local reason
 
   if not GameApi.ScenEdit_AddMission(
@@ -259,7 +271,7 @@ local function createZoneCargoMissions(zone)
   local results = {}
 
   for _, platformType in ipairs(CARGO_MISSION_PLATFORMS) do
-    for _, mission in ipairs(zone[platformType].missions) do
+    for _, mission in ipairs(getPlatformDescriptor(zone, platformType).missions) do
       local created, result = createSingleCargoMission(platformType, zone, mission.name)
       table.insert(results, result)
 
@@ -294,7 +306,7 @@ function AmphibiousLogistics.getUnitsInAnchorageArea(zone, filteredUnits)
         break
       end
 
-      if unit:inArea(zone.anchorageArea) or unit:inArea(zone.lstAnchorageArea) then
+      if unit:inArea(zone.anchorage.area) or unit:inArea(zone.anchorage.lstArea) then
         table.insert(unitsInAnchorageArea, unit)
       end
     end
@@ -328,7 +340,7 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInAnchorageArea)
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer and assign")
 
   for _, u in ipairs(unitsInAnchorageArea) do
-    if u:inArea(zone.anchorageArea) then
+    if u:inArea(zone.anchorage.area) then
       processShipTransfers(u.guid, u.dbid, zone)
       processShipAssignments(u.guid, u.dbid, zone)
       report.add("OK", { ship = u.name or u.guid, dbid = u.dbid })

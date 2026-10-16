@@ -152,9 +152,9 @@ describe("ShipMovement", function()
     local zone = {
       name = "Taoyuan",
       heading = 180,
-      stagingArea = { "RP-STAGING-1", "RP-STAGING-2" },
       sags = {},
       fleet = {
+        stagingArea = { "RP-STAGING-1", "RP-STAGING-2" },
         groups = {
           {
             from = { heading = 220, startingPoints = { type075 = { "RP-FROM-075" } } },

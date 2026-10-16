@@ -82,14 +82,14 @@ end
 ---Set start times for the missions of the given categories in a single zone
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param currentTime number
----@param categories string[] Zone mission keys (e.g. "transportHelicopter", "attackHelicopter")
+---@param categories string[] Keys of `zone.air` holding missions (e.g. "transportHelicopter", "attackHelicopter")
 ---@return boolean success True if all missions were set
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function setZoneMissionStartTimes(zone, currentTime, categories)
   local results = {}
 
   for _, category in ipairs(categories) do
-    for _, mission in ipairs(zone[category].missions) do
+    for _, mission in ipairs(zone.air[category].missions) do
       local result = setMissionStartTime(mission, currentTime)
       table.insert(results, result)
 
@@ -219,7 +219,7 @@ local function setCourseForLST(unit, zone)
     latitude = unit.latitude,
     longitude = unit.longitude,
     bearing = zone.heading,
-    distance = zone.lstSettings.distance
+    distance = zone.landing.lstSettings.distance
   })
 
   if not destination then
@@ -231,10 +231,10 @@ local function setCourseForLST(unit, zone)
   end
 
   unit.course = { destination }
-  unit.manualSpeed = zone.lstSettings.speed
+  unit.manualSpeed = zone.landing.lstSettings.speed
   return {
     tag = "OK",
-    fields = { ship = unit.name, bearing = zone.heading, speed = zone.lstSettings.speed }
+    fields = { ship = unit.name, bearing = zone.heading, speed = zone.landing.lstSettings.speed }
   }
 end
 
@@ -263,7 +263,7 @@ local function setZoneLSTCourses(zone, units)
   for _, u in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if unit and unit.type == "Ship" and unit:inArea(zone.lstAnchorageArea) then
+    if unit and unit.type == "Ship" and unit:inArea(zone.anchorage.lstArea) then
       local result = setCourseForLST(unit, zone)
       table.insert(results, result)
 
@@ -302,7 +302,7 @@ end
 ---Set start times for amphibious assault missions in a single operational zone and record the start timestamp
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
----@param categories string[] Zone mission keys to start (e.g. "transportHelicopter", "attackHelicopter")
+---@param categories string[] Keys of `zone.air` holding missions to start (e.g. "transportHelicopter", "attackHelicopter")
 ---@return boolean # True if all mission start times were successfully set
 function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, categories)
   local currentTime = GameApi.ScenEdit_CurrentTime()
@@ -370,7 +370,7 @@ function AmphibiousAssault.countUnitsInEachArea(zones)
     for _, u in ipairs(unitsFromRed) do
       local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-      if unit and unit:inArea(zone.casArea) then
+      if unit and unit:inArea(zone.air.casArea) then
         for _, unitType in ipairs(LANDED_UNIT_TYPES) do
           if unit.dbid == unitType.dbid then
             item[unitType.name] = item[unitType.name] + 1
@@ -441,7 +441,7 @@ end
 ---@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
 function AmphibiousAssault.getShipZone(zones, ship)
   for _, zone in ipairs(zones) do
-    if ship:inArea(zone.acv.area) then
+    if ship:inArea(zone.landing.acv.area) then
       return zone
     end
   end

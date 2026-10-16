@@ -89,7 +89,7 @@ local function buildACVRouter(routeConfig, zone, zoneState)
 
     if not plan then
       Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
-      return zone.acv.destination
+      return zone.landing.acv.destination
     end
     return plan.course
   end
@@ -122,7 +122,7 @@ function LandingOps.launchACV(config, saveData, ship)
     ship = ship,
     num = 5,
     bearing = zone.heading,
-    distance = zone.acv.distance,
+    distance = zone.landing.acv.distance,
     quota = AcvWave.getQuota(zoneState, amphibOps.tuning.acvWave, GameApi.ScenEdit_CurrentTime()),
     routeACV = buildACVRouter(amphibOps.tuning.route, zone, zoneState),
   })
@@ -130,7 +130,7 @@ function LandingOps.launchACV(config, saveData, ship)
   if result and result.isEmpty then
     local hosted = GameApi.ScenEdit_HostUnitToParent({
       HostedUnitNameOrID = ship.guid,
-      SelectedBaseNameOrID = zone.baseGUID
+      SelectedBaseNameOrID = zone.anchorage.baseGUID
     })
 
     if not hosted then
@@ -184,7 +184,7 @@ function LandingOps.offloadVehicles(config, saveData, ship)
             ship = roro,
             num = 20,
             bearing = zone.heading,
-            distance = zone.acv.distance,
+            distance = zone.landing.acv.distance,
             firstDistance = 1
           })
         end

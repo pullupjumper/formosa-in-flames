@@ -57,7 +57,7 @@ stateDiagram-v2
 | 起始 phase | 觸發條件 | 對應動作 |
 |---|---|---|
 | `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToStagingArea` |
-| `WAITING_ARRIVAL` | `units > zone.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
+| `WAITING_ARRIVAL` | `units > zone.anchorage.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
 | `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `MineClearing.startMineClearing` + `setLandingMissionStartTime`（只有直升機） |
 | `MINE_CLEARING` | 529 全部走完或被摧毀 | `AssaultBoat.pairBoats` + `setCoursesForLSTs`（排除 529） |
 | `BOAT_ASSAULT` | 衝鋒舟全部到 S_lane 或被摧毀（每 tick 先 `launchBoats`） | `ObstacleClearing.startObstacleClearing` |
@@ -171,8 +171,8 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 |---|---|
 | `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
 | `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
-| `config.red.amphibOps.zones[].arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
-| `config.red.amphibOps.zones[].contactThreshold` | 空/機降區可接受的最大接觸數 |
+| `config.red.amphibOps.zones[].anchorage.arrivalThreshold` | 認定艦隊抵達錨泊區的最低艦數 |
+| `config.red.amphibOps.zones[].air.contactThreshold` | 空/機降區可接受的最大接觸數 |
 
 ---
 
