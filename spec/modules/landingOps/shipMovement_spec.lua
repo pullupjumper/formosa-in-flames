@@ -376,7 +376,7 @@ describe("ShipMovement", function()
     end)
 
     -- Positive: testing mode teleports ship via ScenEdit_SetUnit
-    it("should teleport ship via SetUnit when isTesting is true", function()
+    it("should teleport ship via SetUnit when debug is enabled", function()
       local resultTable = makeResultTable()
       local targetLocation = resultTable.type075.locations[1]
       local unit = makeUnit({
@@ -389,7 +389,7 @@ describe("ShipMovement", function()
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig({ isTesting = true })
+      local config = makeAmphibOpsConfig({ debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -441,7 +441,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -474,7 +474,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -506,7 +506,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -640,7 +640,7 @@ describe("ShipMovement", function()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -682,7 +682,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -710,7 +710,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, isTesting = true })
+      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -719,8 +719,8 @@ describe("ShipMovement", function()
       assert.truthy(string.find(logStub.calls[1].vals[2], "skipped=1"))
     end)
 
-    -- Boundary: isTesting false should not call ScenEdit_SetUnit for normal ships
-    it("should not teleport ship when isTesting is false", function()
+    -- Boundary: debug disabled should not call ScenEdit_SetUnit for normal ships
+    it("should not teleport ship when debug is disabled", function()
       local resultTable = makeResultTable()
       local unit = makeUnit({
         dbid = constants.PLATFORMS.TYPE_075,

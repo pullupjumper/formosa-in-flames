@@ -3,6 +3,7 @@ local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 local Logger = require("src.utils.logger")
 
 local ShipMovement = {}
@@ -440,7 +441,10 @@ function ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits,
   end
 
   ---@type SBJ__ShipMoveContext
-  local moveCtx = { speed = amphibOps.formationSettings.shipSpeed, isTesting = amphibOps.isTesting }
+  local moveCtx = {
+    speed = amphibOps.formationSettings.shipSpeed,
+    isTesting = DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MOVING)
+  }
   local results = {}
 
   for _, sideUnit in ipairs(filteredUnits) do

@@ -13,6 +13,7 @@ local Hovercraft = require("src.modules.landingOps.hovercraft")
 local MissileSystem = require("src.modules.missileSystem.init")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 local Coordinator = {}
 
@@ -84,6 +85,7 @@ local function processZone(tickCtx, zone)
     local contactCount = AmphibiousAssault.countContactsInArea(contacts, zone.air.landingZone)
     local elapsed = currentTime - (zoneState.amphibiousAssaultStartTime or currentTime)
     local shouldLaunch = contactCount < zone.air.contactThreshold or elapsed >= amphibOps.periodSec
+        or DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT)
 
     if shouldLaunch then
       local ok = MineClearing.startMineClearing(amphibOps, zone, zoneState, filteredShips)

@@ -3,6 +3,7 @@ local LogFormat = require("src.utils.logFormat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local constants = require("src.core.constants")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 local AssaultBoat = {}
 
@@ -201,6 +202,9 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
           boat:Launch(true)
           entry.status = STATUS.LAUNCHED
           entry.finalPoint = course[#course]
+          if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT) then
+            DebugFlow.teleport(boatGuid, entry.finalPoint)
+          end
           report.add("OK", { boat = boatGuid, beachLane = entry.beachLaneId })
         end
       end

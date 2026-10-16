@@ -961,6 +961,12 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field stagingArea string[] Staging area reference points; ships inside belong to this zone
 ---@field groups SBJ__FleetGroup[] Ship groups
 
+---Live-test shortcuts for the amphibious flow
+---@class SBJ__AmphibDebugConfig: table
+---@field enabled boolean Master switch; false disables every shortcut
+---@field startStage? string Phase to start testing at (constants.AMPHIBIOUS_PHASES); earlier phases are fast-forwarded. nil fast-forwards all phases
+---@field teleportLanding boolean Hovercraft and ACVs teleport to their parking slot instead of sailing
+
 ---Amphibious Operations system configuration
 ---Comprehensive configuration for amphibious assault operations including
 ---cargo manifests, ship layouts, operational zones, and mission timing
@@ -973,7 +979,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field formationSettings SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
----@field isTesting boolean Whether the system is in testing mode
+---@field debug SBJ__AmphibDebugConfig Live-test shortcuts
 ---@field tuning SBJ__AmphibTuningConfig Shared lane, boat, obstacle and ACV wave parameters
 ---@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start
 

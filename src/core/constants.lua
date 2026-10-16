@@ -3092,6 +3092,20 @@ constants.AMPHIBIOUS_PHASES = {
   COMPLETED               = "COMPLETED",
 }
 
+---Position of each phase in the flow, for "before/after" comparisons
+---@type table<string, integer>
+constants.AMPHIBIOUS_PHASE_ORDER = {
+  [constants.AMPHIBIOUS_PHASES.MOVING]                  = 1,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL]         = 2,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]         = 3,
+  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]           = 4,
+  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]            = 5,
+  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]       = 6,
+  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = 7,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING] = 8,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]               = 9,
+}
+
 ---Phases in which ACVs and hovercraft may land (assault landing has started)
 ---@type table<string, true>
 constants.AMPHIBIOUS_LANDING_PHASES = {

@@ -3,6 +3,7 @@ local LogFormat = require("src.utils.logFormat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local constants = require("src.core.constants")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 local ObstacleClearing = {}
 
@@ -86,7 +87,8 @@ end
 ---@return boolean # True once clearing has finished
 function ObstacleClearing.updateObstacleClearing(amphibOps, zoneState, currentTime)
   local elapsed = currentTime - (zoneState.obstacleStartedAt or currentTime)
-  if elapsed < amphibOps.tuning.obstacle.clearSec then
+  local isFastForward = DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
+  if not isFastForward and elapsed < amphibOps.tuning.obstacle.clearSec then
     return false
   end
 

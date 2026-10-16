@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 local constants = require("src.core.constants")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
@@ -124,13 +125,15 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
     waterLane.sweepCourse[2].desiredSpeed = 5
     sweeper.course = waterLane.sweepCourse
 
-    if amphibOps.isTesting then
+    if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
       local copy = Utils.deepCopy(waterLane.sweepCourse)
       table.remove(copy, 1)
       GameApi.ScenEdit_SetUnit({
         guid = sweeper.guid,
-        latitude = copy[1].latitude,
-        longitude = copy[1].longitude,
+        -- latitude = copy[1].latitude,
+        -- longitude = copy[1].longitude,
+        latitude = copy[#copy].latitude,
+        longitude = copy[#copy].longitude,
         course = copy
       })
     end

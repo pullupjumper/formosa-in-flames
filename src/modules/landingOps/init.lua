@@ -10,6 +10,7 @@ local SecondWaveUnloading = require("src.modules.landingOps.secondWaveUnloading"
 local AttackManager = require("src.modules.attackManager")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 local Logger = require("src.utils.logger")
 local PersistentState = require("src.core.persistentState")
 
@@ -64,11 +65,11 @@ end
 
 ---Build the per-ACV course callback: plan through cleared lanes to a parking slot and count the
 ---ACV against the wave quota; falls back to the zone destination when no lane has room
----@param routeConfig SBJ__RouteConfig
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
-local function buildACVRouter(routeConfig, zone, zoneState)
+local function buildACVRouter(amphibOps, zone, zoneState)
   zoneState.queueCounters = zoneState.queueCounters or {}
   zoneState.laneSlots = zoneState.laneSlots or {}
   zoneState.laneSlots.acv = zoneState.laneSlots.acv or {}
@@ -80,7 +81,7 @@ local function buildACVRouter(routeConfig, zone, zoneState)
       lanes = zoneState.lanes,
       launchPos = { latitude = unit.latitude, longitude = unit.longitude },
       guid = unit.guid,
-      routeConfig = routeConfig,
+      routeConfig = amphibOps.tuning.route,
       queueCounters = zoneState.queueCounters,
       laneSlots = zoneState.laneSlots.acv,
       cells = zoneState.obstacle and zoneState.obstacle.cells,
@@ -90,6 +91,9 @@ local function buildACVRouter(routeConfig, zone, zoneState)
     if not plan then
       Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
       return zone.landing.acv.destination
+    end
+    if DebugFlow.isLandingTeleport(amphibOps) then
+      DebugFlow.teleport(unit.guid, plan.course[#plan.course])
     end
     return plan.course
   end
@@ -124,7 +128,7 @@ function LandingOps.launchACV(config, saveData, ship)
     bearing = zone.heading,
     distance = zone.landing.acv.distance,
     quota = AcvWave.getQuota(zoneState, amphibOps.tuning.acvWave, GameApi.ScenEdit_CurrentTime()),
-    routeACV = buildACVRouter(amphibOps.tuning.route, zone, zoneState),
+    routeACV = buildACVRouter(amphibOps, zone, zoneState),
   })
 
   if result and result.isEmpty then

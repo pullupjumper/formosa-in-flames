@@ -1574,7 +1574,12 @@ config.red.air.deployedACs = {
 -- SA-15 * 2
 
 config.red.amphibOps = {}
-config.red.amphibOps.isTesting = true
+-- Live-test shortcuts; leave enabled = false for a real run
+config.red.amphibOps.debug = {
+  enabled = true,
+  startStage = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT, -- phases before this are fast-forwarded (nil = all of them)
+  teleportLanding = true,                                -- hovercraft and ACVs jump to their parking slot
+}
 config.red.amphibOps.periodSec = 5 * 60
 config.red.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.red.amphibOps.cargo = {

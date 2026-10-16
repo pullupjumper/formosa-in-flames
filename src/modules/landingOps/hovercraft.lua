@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local constants = require("src.core.constants")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 ---Routes loaded Type 726A hovercraft from the LHD/LPDs through cleared lanes to a parking slot.
 ---Each hovercraft is routed once; after it arrives the cargo mission takes over.
@@ -120,6 +121,9 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
             finalPoint = plan.course[#plan.course],
             arrived = false,
           }
+          if DebugFlow.isLandingTeleport(amphibOps) then
+            DebugFlow.teleport(craft.guid, zoneState.hovercraft[craft.guid].finalPoint)
+          end
           report.add("OK", { hovercraft = craft.guid, beachLane = plan.beachLaneId, slot = plan.slot })
         else
           report.add("SKIP", { hovercraft = craft.guid, reason = "no_cleared_lane_slot" })
