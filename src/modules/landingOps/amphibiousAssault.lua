@@ -3,6 +3,7 @@ local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local LogFormat = require("src.utils.logFormat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 local constants = require("src.core.constants")
 
 local AmphibiousAssault = {}
@@ -213,16 +214,22 @@ end
 -- ============================================================================
 
 ---Set course for an LST to its station inside the offshore band
+---Fast-forward debug teleports it onto the station first.
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param entry {unit: CMO__Unit, alongM: number, lateralM: number}
 ---@param frame SBJ__LaneFrame
 ---@param shiftM number Meters toward shore applied to the whole formation
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveLSTToLaunchStation(entry, frame, shiftM, zone)
+local function moveLSTToLaunchStation(amphibOps, entry, frame, shiftM, zone)
   local unit = entry.unit
   local alongM = entry.alongM + shiftM
+  local station = LaneGeometry.buildPoint(frame, alongM, entry.lateralM)
 
-  unit.course = { LaneGeometry.buildPoint(frame, alongM, entry.lateralM) }
+  if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
+    DebugFlow.teleport(unit.guid, station)
+  end
+  unit.course = { station }
   unit.manualSpeed = zone.landing.lstSettings.speed
   return {
     tag = "OK",
@@ -235,16 +242,22 @@ local function moveLSTToLaunchStation(entry, frame, shiftM, zone)
 end
 
 ---Set course for a Surface Action Group
+---Fast-forward debug teleports it onto the end of its route first.
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param descriptor SBJ__SAGDescriptor
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function setCourseForSAG(descriptor)
+local function setCourseForSAG(amphibOps, descriptor)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
 
   if not unit then
     return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unit_not_found" } }
   end
 
-  unit.course = descriptor.to.amphibiousVehicleStagingArea
+  local route = descriptor.to.amphibiousVehicleStagingArea
+  if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
+    DebugFlow.teleport(unit.guid, route[#route])
+  end
+  unit.course = route
   return { tag = "OK", fields = { sag = descriptor.groupName, dest = "amphibious_vehicle_staging_area" } }
 end
 
@@ -309,21 +322,22 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
   local shiftM = -(nearM + farM) / 2 - (seawardM + shoreM) / 2
   local results = {}
   for _, entry in ipairs(entries) do
-    table.insert(results, moveLSTToLaunchStation(entry, frame, shiftM, zone))
+    table.insert(results, moveLSTToLaunchStation(amphibOps, entry, frame, shiftM, zone))
   end
 
   return true, results
 end
 
 ---Set courses for every SAG in a zone, stopping at the first failure
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param sags SBJ__SAGDescriptor[]
 ---@return boolean success True when no SAG failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function moveZoneSAGsToLaunchStations(sags)
+local function moveZoneSAGsToLaunchStations(amphibOps, sags)
   local results = {}
 
   for _, descriptor in ipairs(sags) do
-    local result = setCourseForSAG(descriptor)
+    local result = setCourseForSAG(amphibOps, descriptor)
     table.insert(results, result)
 
     if result.tag == "FAIL" then
@@ -371,7 +385,7 @@ function AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
 
   if success then
     local sagResults
-    success, sagResults = moveZoneSAGsToLaunchStations(zone.sags)
+    success, sagResults = moveZoneSAGsToLaunchStations(amphibOps, zone.sags)
     report.addAll(sagResults)
   end
 
