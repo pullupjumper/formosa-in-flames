@@ -56,18 +56,14 @@ local SHIP_ROW_LAYOUT = {
 ---Move a ship to a target location; in testing mode it teleports there instead of sailing
 ---@param unit CMO__Unit
 ---@param location CMO__Location
----@param moveCtx SBJ__ShipMoveContext
-local function moveShip(unit, location, moveCtx)
+---@param amphibOps SBJ__AmphibOpsConfig
+local function moveShip(unit, location, amphibOps)
   unit.course = { location }
-  unit.manualSpeed = moveCtx.speed
+  unit.manualSpeed = amphibOps.formationSettings.shipSpeed
 
-  if moveCtx.isTesting then
-    GameApi.ScenEdit_SetUnit({
-      guid = unit.guid,
-      latitude = location.latitude,
-      longitude = location.longitude,
-      manualSpeed = 0
-    })
+  if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MOVING) then
+    DebugFlow.teleport(unit.guid, location)
+    unit.manualSpeed = 0
   end
 end
 
@@ -106,9 +102,9 @@ end
 ---@param unit CMO__Unit
 ---@param row SBJ__ShipCalculationState|nil
 ---@param rowKey string
----@param moveCtx SBJ__ShipMoveContext
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveToNextLocation(unit, row, rowKey, moveCtx)
+local function moveToNextLocation(unit, row, rowKey, amphibOps)
   if not row or not row.locations or not row.locationIndex then
     return {
       tag = "FAIL",
@@ -125,7 +121,7 @@ local function moveToNextLocation(unit, row, rowKey, moveCtx)
     }
   end
 
-  moveShip(unit, location, moveCtx)
+  moveShip(unit, location, amphibOps)
   row.locationIndex = index + 1
   return {
     tag = "OK",
@@ -136,9 +132,9 @@ end
 ---Handle Type 071 movement with overflow to the deploy line
 ---@param unit CMO__Unit
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
----@param moveCtx SBJ__ShipMoveContext
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveType071(unit, shipRowMap, moveCtx)
+local function moveType071(unit, shipRowMap, amphibOps)
   local row = shipRowMap.type071
   local deployLineRow = shipRowMap.type071OnDeployLine
   if not row or not row.locations or not row.locationIndex or not deployLineRow or not deployLineRow.locations then
@@ -163,7 +159,7 @@ local function moveType071(unit, shipRowMap, moveCtx)
     }
   end
 
-  moveShip(unit, location, moveCtx)
+  moveShip(unit, location, amphibOps)
   row.locationIndex = index + 1
   return {
     tag = "OK",
@@ -180,18 +176,18 @@ end
 ---Match ship by DBID or name and move to next location
 ---@param unit CMO__Unit
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
----@param moveCtx SBJ__ShipMoveContext
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveMatchingShip(unit, shipRowMap, moveCtx)
+local function moveMatchingShip(unit, shipRowMap, amphibOps)
   local rowKey = findShipRowKey(unit)
   if not rowKey then
     return { tag = "SKIP", fields = { ship = unit.name, dbid = unit.dbid, reason = "unmatched" } }
   end
 
   if rowKey == "type071" then
-    return moveType071(unit, shipRowMap, moveCtx)
+    return moveType071(unit, shipRowMap, amphibOps)
   end
-  return moveToNextLocation(unit, shipRowMap[rowKey], rowKey, moveCtx)
+  return moveToNextLocation(unit, shipRowMap[rowKey], rowKey, amphibOps)
 end
 
 -- ============================================================================
@@ -236,12 +232,14 @@ local function placeSagInFormation(sagUnit, holdingPoint, heading)
     end
 
     if ship and point then
-      GameApi.ScenEdit_SetUnit({
-        guid = ship.guid,
-        latitude = point.latitude,
-        longitude = point.longitude,
-        heading = heading,
-      })
+      -- GameApi.ScenEdit_SetUnit({
+      --   guid = ship.guid,
+      --   latitude = point.latitude,
+      --   longitude = point.longitude,
+      --   heading = heading,
+      -- })
+      DebugFlow.teleport(ship.guid, { latitude = point.latitude, longitude = point.longitude })
+      ship.heading = heading
       positioned = positioned + 1
     else
       skipped = skipped + 1
@@ -255,9 +253,9 @@ end
 ---In testing mode the SAG ships are also teleported into formation
 ---@param sag SBJ__SAGDescriptor
 ---@param heading number Zone heading the SAG faces at its holding area
----@param moveCtx SBJ__ShipMoveContext
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveSag(sag, heading, moveCtx)
+local function moveSag(sag, heading, amphibOps)
   local holdingArea = sag.to and sag.to.holdingArea
   if not holdingArea or #holdingArea == 0 then
     return { tag = "FAIL", fields = { sag = sag.groupName, reason = "holding_area_missing" } }
@@ -275,7 +273,7 @@ local function moveSag(sag, heading, moveCtx)
 
   sagUnit.course = holdingArea
 
-  if not moveCtx.isTesting then
+  if not DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MOVING) then
     return { tag = "OK", fields = { sag = sag.groupName, action = "course_set" } }
   end
 
@@ -440,22 +438,17 @@ function ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits,
     return false
   end
 
-  ---@type SBJ__ShipMoveContext
-  local moveCtx = {
-    speed = amphibOps.formationSettings.shipSpeed,
-    isTesting = DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MOVING)
-  }
   local results = {}
 
   for _, sideUnit in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(sideUnit.guid)
     if unit and unit:inArea(zone.fleet.stagingArea) then
-      table.insert(results, moveMatchingShip(unit, shipRowMap, moveCtx))
+      table.insert(results, moveMatchingShip(unit, shipRowMap, amphibOps))
     end
   end
 
   for _, sag in ipairs(zone.sags) do
-    table.insert(results, moveSag(sag, zone.heading, moveCtx))
+    table.insert(results, moveSag(sag, zone.heading, amphibOps))
   end
 
   local report = LogFormat.report(constants.TAGS.SHIP_MOVEMENT, "operation=" .. zone.name, "Move to holding areas")

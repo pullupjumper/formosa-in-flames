@@ -398,8 +398,8 @@ describe("ShipMovement", function()
         guid = "SHIP-001",
         latitude = targetLocation.latitude,
         longitude = targetLocation.longitude,
-        manualSpeed = 0,
       })
+      assert.are.equal(0, unit.manualSpeed)
     end)
 
     -- Positive: SAG groups are handled
@@ -450,7 +450,7 @@ describe("ShipMovement", function()
       assert.are.equal("DDG-001", callArgs.guid)
       assert.are.equal(sagDesc.to.holdingArea[2].latitude, callArgs.latitude)
       assert.are.equal(sagDesc.to.holdingArea[2].longitude, callArgs.longitude)
-      assert.are.equal(180, callArgs.heading)
+      assert.are.equal(180, destroyer.heading)
     end)
 
     -- Positive: SAG testing mode positions second Type 052D behind first
