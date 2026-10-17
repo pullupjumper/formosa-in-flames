@@ -59,7 +59,7 @@ stateDiagram-v2
 | `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToHoldingAreas` |
 | `WAITING_ARRIVAL` | `units > zone.movement.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
 | `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `MineClearing.startMineClearing` + `setLandingMissionStartTime`（只有直升機） |
-| `MINE_CLEARING` | 529 全部走完或被摧毀 | `AssaultBoat.pairBoats` + `setCoursesForLSTs`（排除 529） |
+| `MINE_CLEARING` | 529 全部走完或被摧毀 | `AssaultBoat.pairBoats` + `moveToLaunchStations`（排除 529） |
 | `BOAT_ASSAULT` | 衝鋒舟全部到 S_lane 或被摧毀（每 tick 先 `launchBoats`） | `ObstacleClearing.startObstacleClearing` |
 | `OBSTACLE_CLEARING` | 超過 `obstacle.clearSec` | 有活衝鋒舟的灘際通道標 cleared |
 | `ASSAULT_LANDING` | 灘頭建立（ZBD-05 ≥ 1，TODO） | — |

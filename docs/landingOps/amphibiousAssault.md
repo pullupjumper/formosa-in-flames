@@ -84,15 +84,17 @@ flowchart TD
 
 ## LST 航向設定
 
-`setCoursesForLSTs` 驅動兩類艦船移動：
+`moveToLaunchStations` 驅動兩類艦船移動：
 
 ### LST 航至泛水編波區
 
 | 步驟 | 說明 |
 |---|---|
 | 過濾 | 在 `holdingAreas.deployLine` 內的 Ship 類型單元 |
-| 排除 | RORO 和 Barge（`isLST` 檢查，排除 `NON_LST_NAMES`） |
-| 計算目的地 | 從當前位置依 `bearing` 和 `distance` 投影 |
+| 排除 | RORO、Barge 和 Type 529（`isLST` 檢查） |
+| 就位帶 | 離岸 `tuning.route.launchStationNearNm`～`launchStationFarNm`（預設 2～4 nm），以 `laneCenter` 與 `zone.heading` 為座標系 |
+| 計算目的地 | 保持隊形與橫向位置，整體沿進場方位平移，使隊形縱深中心落在就位帶中央 |
+| 放不下 | 隊形縱深大於就位帶寬時回傳 FAIL（`formation_exceeds_station_band`），不改任何航線 |
 | 設定速度 | `zone.landing.lstSettings.speed` |
 
 ### SAG 移動
@@ -119,7 +121,7 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `setLandingMissionStartTime(zone, zoneState)` | 設定單一作戰區的登陸任務開始時間 |
-| `setCoursesForLSTs(zone, units)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
+| `moveToLaunchStations(zone, units)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
 | `countContactsInArea(contacts, area)` | 計算區域內目標數量 |
 | `countUnitsInEachArea(zones)` | 依 zone 的 `air.casArea` 統計已登陸的中國單位數（依單位類型）；coordinator 用來判定灘頭建立，`unitStatusUI` 經門面 `LandingOps.countUnitsInEachArea` 呼叫 |
 | `launchACV(params)` | 從登陸艦釋放兩棲步兵戰鬥車 |
@@ -133,7 +135,7 @@ flowchart TD
 三個公開函式各自建立一個 `LogFormat.report`，每條路徑只 `emit()` 一次。`FAIL` 行走 error sink，其餘留在 info log，兩邊各有自己的 rollup。
 
 ```
-[amphibiousAssault] zone=Taoyuan: Set courses for LSTs | total=3 ok=2 skip=1
+[amphibiousAssault] zone=Taoyuan: Move to launch stations | total=3 ok=2 skip=1
   [OK]   ship="Type 072A #1" bearing=270 speed=12
   [SKIP] ship=RORO reason=non_lst_auxiliary
   [OK]   sag="SAG Alpha" dest=amphibious_vehicle_staging_area

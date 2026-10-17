@@ -998,6 +998,8 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field deployLineNm number Deployment line distance offshore (water lane start)
 ---@field launchLineNm number Launch line distance offshore (L_i)
 ---@field assaultLineNm number Assault line distance offshore (A_i, A_lane)
+---@field launchStationNearNm number Inner edge of the LST station band, distance offshore
+---@field launchStationFarNm number Outer edge of the LST station band, distance offshore
 ---@field waterLaneSpacingM number Spacing between adjacent water lanes
 ---@field beachLaneOffsetsM number[] Beach lane lateral offsets from their water lane, ascending
 ---@field shoreStandoffM number S_lane distance offshore

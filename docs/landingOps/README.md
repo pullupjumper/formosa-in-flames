@@ -84,7 +84,7 @@ flowchart TB
 
     subgraph 階段三["兩棲突擊"]
         AA_TIME["amphibiousAssault<br>.setLandingMissionStartTime()"]
-        AA_COURSE["amphibiousAssault<br>.setCoursesForLSTs()"]
+        AA_COURSE["amphibiousAssault<br>.moveToLaunchStations()"]
         AA_ACV["amphibiousAssault<br>.launchACV()"]
     end
 

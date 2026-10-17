@@ -292,66 +292,125 @@ describe("AmphibiousAssault", function()
   end)
 
   -- ============================================================================
-  -- setCoursesForLSTs
+  -- moveToLaunchStations
   -- ============================================================================
 
-  describe("setCoursesForLSTs", function()
-    local stubGetUnit, stubGetPoint
+  describe("moveToLaunchStations", function()
+    local stubGetUnit, stubFindAreaLocations
+    local NM = 1852 / 111320 -- degrees of latitude per nautical mile (laneGeometry flat-earth scale)
 
-    before_each(function()
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
-      stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
-    end)
+    -- Zone heading 0 (north) with the lane center at 25.0N: along = (latitude - 25.0) in meters toward the north
+    local center = { latitude = 25.0, longitude = 121.0 }
 
-    -- Positive: sets course and speed for LST units in holding area
-    it("should set course and speed for LST ships in holding area", function()
-      local destination = { latitude = 24.5, longitude = 120.5 }
-      stubGetPoint.returns(destination)
+    local amphibOps = {
+      tuning = { route = { launchStationNearNm = 2, launchStationFarNm = 4 } },
+    }
 
-      local zone = makeZone()
+    ---Create a side unit entry as returned by the side's unit list
+    ---@param guid string
+    ---@return table
+    local function sideUnit(guid)
+      return { guid = guid, name = guid }
+    end
+
+    ---Create a zone heading north toward the shore, with the lane center set
+    ---@return table
+    local function makeNorthZone()
+      local zone = makeZone({ heading = 0 })
+      zone.landing.laneCenter = { "RP-CENTER" }
+      return zone
+    end
+
+    ---Create an LST at the given distance offshore
+    ---@param zone table
+    ---@param offshoreNm number
+    ---@param overrides? table
+    ---@return table
+    local function makeLST(zone, offshoreNm, overrides)
       local unit = makeUnit({
-        name = "LST-001",
+        latitude = center.latitude - offshoreNm * NM,
+        longitude = center.longitude,
         inArea = function(_, area)
           return area == zone.movement.holdingAreas.deployLine
         end,
       })
+      if overrides then
+        for k, v in pairs(overrides) do unit[k] = v end
+      end
+      return unit
+    end
 
+    before_each(function()
+      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
+      stubFindAreaLocations = trackStub(stub(GameUtils, "findAreaLocations").returns({ center }))
+    end)
+
+    -- Positive: the formation is shifted so its middle sits in the middle of the band
+    it("should move the formation to the middle of the 2-4 nm band keeping its shape", function()
+      local zone = makeNorthZone()
+      local rear = makeLST(zone, 12, sideUnit("SHIP-001"))
+      local front = makeLST(zone, 11.2, sideUnit("SHIP-002"))
       stubGetUnit.invokes(function(id)
-        if id == "SHIP-001" then return unit end
-        return nil
+        return id == "SHIP-001" and rear or front
       end)
 
-      local units = { { guid = "SHIP-001" } }
-
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, units)
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001"), sideUnit("SHIP-002") })
 
       assert.is_true(result)
-      assert.are.same({ destination }, unit.course)
-      assert.are.equal(zone.landing.lstSettings.speed, unit.manualSpeed)
+      assert.are.equal(1, #rear.course)
+      assert.is_near(center.latitude - 3.4 * NM, rear.course[1].latitude, 1e-6)
+      assert.is_near(center.latitude - 2.6 * NM, front.course[1].latitude, 1e-6)
+      assert.is_near(center.longitude, rear.course[1].longitude, 1e-6)
+      assert.are.equal(zone.landing.lstSettings.speed, rear.manualSpeed)
       assert.stub(logStub).was.called()
+    end)
+
+    -- Positive: lateral position of every ship is kept
+    it("should keep the lateral position of each LST", function()
+      local zone = makeNorthZone()
+      local unit = makeLST(zone, 12, { longitude = center.longitude + 0.01 })
+      stubGetUnit.returns(unit)
+
+      AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
+
+      assert.is_near(center.longitude + 0.01, unit.course[1].longitude, 1e-6)
+      assert.is_near(center.latitude - 3 * NM, unit.course[1].latitude, 1e-6)
+    end)
+
+    -- Negative: a formation deeper than the band cannot be placed
+    it("should return false and leave courses untouched when the formation is deeper than the band", function()
+      local zone = makeNorthZone()
+      local rear = makeLST(zone, 12, sideUnit("SHIP-001"))
+      local front = makeLST(zone, 9.5, sideUnit("SHIP-002"))
+      stubGetUnit.invokes(function(id)
+        return id == "SHIP-001" and rear or front
+      end)
+
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001"), sideUnit("SHIP-002") })
+
+      assert.is_false(result)
+      assert.are.same({}, rear.course)
+      assert.are.same({}, front.course)
+    end)
+
+    -- Negative: no lane center means no reference to measure the band from
+    it("should return false when the lane center is not set", function()
+      stubFindAreaLocations.returns({})
+      local zone = makeNorthZone()
+      stubGetUnit.returns(makeLST(zone, 12))
+
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
+
+      assert.is_false(result)
     end)
 
     -- Positive: does not set course for RORO ships
     it("should not set course for RORO ships even when in holding area", function()
-      local destination = { latitude = 24.5, longitude = 120.5 }
-      stubGetPoint.returns(destination)
+      local zone = makeNorthZone()
+      local unit = makeLST(zone, 12, { name = "RORO" })
+      stubGetUnit.returns(unit)
 
-      local zone = makeZone()
-      local unit = makeUnit({
-        name = "RORO",
-        inArea = function(_, area)
-          return area == zone.movement.holdingAreas.deployLine
-        end,
-      })
-
-      stubGetUnit.invokes(function(id)
-        if id == "SHIP-001" then return unit end
-        return nil
-      end)
-
-      local units = { { guid = "SHIP-001" } }
-
-      AmphibiousAssault.setCoursesForLSTs(zone, units)
+      AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
 
       assert.are.same({}, unit.course)
       assert.are.equal(0, unit.manualSpeed)
@@ -359,48 +418,23 @@ describe("AmphibiousAssault", function()
 
     -- Positive: does not set course for Barge ships
     it("should not set course for Barge ships even when in holding area", function()
-      local destination = { latitude = 24.5, longitude = 120.5 }
-      stubGetPoint.returns(destination)
+      local zone = makeNorthZone()
+      local unit = makeLST(zone, 12, { name = "Barge" })
+      stubGetUnit.returns(unit)
 
-      local zone = makeZone()
-      local unit = makeUnit({
-        name = "Barge",
-        inArea = function(_, area)
-          return area == zone.movement.holdingAreas.deployLine
-        end,
-      })
-
-      stubGetUnit.invokes(function(id)
-        if id == "SHIP-001" then return unit end
-        return nil
-      end)
-
-      local units = { { guid = "SHIP-001" } }
-
-      AmphibiousAssault.setCoursesForLSTs(zone, units)
+      AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
 
       assert.are.same({}, unit.course)
     end)
 
     -- Negative: Type 529 sweepers keep their sweep course
     it("should not set course for Type 529 sweepers in the holding area", function()
-      stubGetPoint.returns({ latitude = 24.5, longitude = 120.5 })
-
-      local zone = makeZone()
+      local zone = makeNorthZone()
       local sweepCourse = { { latitude = 24.0, longitude = 120.0 } }
-      local unit = makeUnit({
-        name = "Type 529",
-        dbid = constants.PLATFORMS.TYPE_082,
-        course = sweepCourse,
-        inArea = function(_, area)
-          return area == zone.movement.holdingAreas.deployLine
-        end,
-      })
+      local unit = makeLST(zone, 12, { name = "Type 529", dbid = constants.PLATFORMS.TYPE_082, course = sweepCourse })
       stubGetUnit.returns(unit)
 
-      local ships = { { guid = "SHIP-001" } }
-
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, ships)
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
 
       assert.is_true(result)
       assert.are.same(sweepCourse, unit.course)
@@ -423,34 +457,11 @@ describe("AmphibiousAssault", function()
         },
       }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, {})
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, {})
 
       assert.is_true(result)
       assert.are.same(sagCourse, sagUnit.course)
       assert.stub(logStub).was.called()
-    end)
-
-    -- Negative: returns false when World_GetPointFromBearing returns nil
-    it("should return false when destination calculation fails", function()
-      stubGetPoint.returns(nil)
-
-      local zone = makeZone()
-      local unit = makeUnit({
-        inArea = function(_, area)
-          return area == zone.movement.holdingAreas.deployLine
-        end,
-      })
-
-      stubGetUnit.invokes(function(id)
-        if id == "SHIP-001" then return unit end
-        return nil
-      end)
-
-      local units = { { guid = "SHIP-001" } }
-
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, units)
-
-      assert.is_false(result)
     end)
 
     -- Negative: returns false when SAG unit cannot be found
@@ -465,7 +476,7 @@ describe("AmphibiousAssault", function()
         },
       }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, {})
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, {})
 
       assert.is_false(result)
     end)
@@ -474,20 +485,17 @@ describe("AmphibiousAssault", function()
     it("should skip units that cannot be retrieved", function()
       stubGetUnit.returns(nil)
 
-      local zone = makeZone()
-      local units = { { guid = "MISSING-001" } }
+      local zone = makeNorthZone()
+      local units = { sideUnit("MISSING-001") }
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, units)
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
 
       assert.is_true(result)
     end)
 
     -- Negative: skips non-Ship type units
     it("should skip units that are not of type Ship", function()
-      local destination = { latitude = 24.5, longitude = 120.5 }
-      stubGetPoint.returns(destination)
-
-      local zone = makeZone()
+      local zone = makeNorthZone()
       local unit = makeUnit({
         type = "Aircraft",
         inArea = function(_, area)
@@ -500,18 +508,15 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local units = { { guid = "SHIP-001" } }
+      local units = { sideUnit("SHIP-001") }
 
-      AmphibiousAssault.setCoursesForLSTs(zone, units)
+      AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
 
       assert.are.same({}, unit.course)
     end)
 
     -- Boundary: ship not in any holding area
     it("should not set course for ships not in any holding area", function()
-      local destination = { latitude = 24.5, longitude = 120.5 }
-      stubGetPoint.returns(destination)
-
       local unit = makeUnit({
         inArea = function() return false end,
       })
@@ -521,10 +526,10 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local zone = makeZone()
-      local units = { { guid = "SHIP-001" } }
+      local zone = makeNorthZone()
+      local units = { sideUnit("SHIP-001") }
 
-      AmphibiousAssault.setCoursesForLSTs(zone, units)
+      AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
 
       assert.are.same({}, unit.course)
     end)
@@ -533,7 +538,7 @@ describe("AmphibiousAssault", function()
     it("should return true when units list is empty and no SAG", function()
       local zone = makeZone()
 
-      local result = AmphibiousAssault.setCoursesForLSTs(zone, {})
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, {})
 
       assert.is_true(result)
     end)

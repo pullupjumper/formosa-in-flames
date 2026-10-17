@@ -217,7 +217,7 @@ describe("LandingOps Coordinator", function()
     local stubCalculatePathDistanceAndTime
     local stubCountContactsInArea
     local stubSetLandingMissionStartTime
-    local stubSetCoursesForLSTs
+    local stubMoveToLaunchStations
     local stubCountUnitsInEachArea
     local stubStartAdminUnloading
     local stubRetransferCargos
@@ -252,7 +252,7 @@ describe("LandingOps Coordinator", function()
       stubCalculatePathDistanceAndTime = trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(0, 600))
       stubCountContactsInArea = trackStub(stub(AmphibiousAssault, "countContactsInArea").returns(99))
       stubSetLandingMissionStartTime = trackStub(stub(AmphibiousAssault, "setLandingMissionStartTime").returns(true))
-      stubSetCoursesForLSTs = trackStub(stub(AmphibiousAssault, "setCoursesForLSTs").returns(true))
+      stubMoveToLaunchStations = trackStub(stub(AmphibiousAssault, "moveToLaunchStations").returns(true))
       stubCountUnitsInEachArea = trackStub(stub(AmphibiousAssault, "countUnitsInEachArea").returns({}))
       stubStartAdminUnloading = trackStub(stub(AdminUnloading, "startAdminUnloading").returns(true))
       stubRetransferCargos = trackStub(stub(AmphibiousLogistics, "retransferCargos").returns(true))
@@ -327,7 +327,7 @@ describe("LandingOps Coordinator", function()
       assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartMineClearing).was.called(1)
       assert.are.same({ "transportHelicopter", "attackHelicopter" }, stubSetLandingMissionStartTime.calls[1].vals[3])
-      assert.stub(stubSetCoursesForLSTs).was_not.called()
+      assert.stub(stubMoveToLaunchStations).was_not.called()
     end)
 
     -- Negative: missing lane reference points keep the zone waiting
@@ -356,7 +356,7 @@ describe("LandingOps Coordinator", function()
       Coordinator.process(config, landingState, { contacts = makeContacts(), currentTime = 1000, filteredShips = makeFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubSetCoursesForLSTs).was_not.called()
+      assert.stub(stubMoveToLaunchStations).was_not.called()
     end)
 
     -- Positive: the full assault chain advances one phase per completed step
@@ -373,7 +373,7 @@ describe("LandingOps Coordinator", function()
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, zoneState.phase)
       assert.stub(stubPairBoats).was.called(1)
-      assert.stub(stubSetCoursesForLSTs).was.called(1)
+      assert.stub(stubMoveToLaunchStations).was.called(1)
       assert.stub(stubLaunchBoats).was.called(1)
       assert.stub(stubStartObstacleClearing).was.called(1)
       assert.stub(stubLaunchHovercraft).was.called(1)

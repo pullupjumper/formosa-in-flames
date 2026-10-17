@@ -100,7 +100,7 @@ local function processZone(tickCtx, zone)
   if zoneState.phase == constants.AMPHIBIOUS_PHASES.MINE_CLEARING then
     if MineClearing.updateMineClearing(amphibOps, zoneState) then
       local ok = AssaultBoat.pairBoats(zone, zoneState, filteredShips)
-          and AmphibiousAssault.setCoursesForLSTs(zone, filteredShips)
+          and AmphibiousAssault.moveToLaunchStations(amphibOps, zone, filteredShips)
 
       if ok then
         zoneState.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT

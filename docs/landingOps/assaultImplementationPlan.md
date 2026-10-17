@@ -26,7 +26,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 階段 | 做什麼 | 換下一階段 |
 |---|---|---|
 | `WAITING_ASSAULT`（改） | 原條件成立 → 直升機任務開始時間（只 `transportHelicopter`、`attackHelicopter`）、算通道、派 529 | 派完 |
-| `MINE_CLEARING` | 529 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → LST 前進（`setCoursesForLSTs`，排除 529） |
+| `MINE_CLEARING` | 529 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → LST 前進（`moveToLaunchStations`，排除 529） |
 | `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到終點或被摧毀 → 記 `obstacleStartedAt` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` |
 | `ASSAULT_LANDING`（新） | 衝擊上陸：兩棲車分波放行、氣墊船走通道 | 灘頭堡建立（先沿用現有 `hasBeachhead`：`casArea` 內 ZBD-05 ≥ 1，加 `-- TODO:` 之後換成更嚴格的條件） |
@@ -99,7 +99,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | `src/core/config.lua` | 新增 `amphibOps.mineClearing`、`assaultBoat`、`obstacle`、`minefields`、`route`（`columnSpacingM`、`queueDepth`、`queueSpacingM`、`laneTieNm`）、`acvWave`（`capacity`、`lossRatio`、`holdSec`）；operationalZones 加 `laneCenter`、`laneBearing`、`obstacleArea` |
 | `src/core/schema.lua` | `SBJ__ZoneState` 加 `lanes`、`minesweepers`、`boats`、`obstacle`、`obstacleStartedAt`、`acvGuids`、`acvPausedAt`、`acvQuotaUsed`、`queueCounters`、`hovercraft`；新 config 型別 |
 | `landingOps/coordinator.lua` | `processZone` 加 4 段 phase、拆開衝擊上陸和行政下卸；每 tick 跑氣墊船；`ARRIVED_PHASES` 加新 phase |
-| `landingOps/amphibiousAssault.lua` | `FERRY_OR_LST_DBIDS` 拿掉 `TYPE_529`；`setZoneLSTCourses` 排除 529；`setLandingMissionStartTime` 加 `categories`（不再設 `boat`）；`launchACV` 收 `quota` 與 `routes`，回傳分開「暫停」和「艙內空」；`removeCargoByPriority` 依各車種額度 |
+| `landingOps/amphibiousAssault.lua` | `FERRY_OR_LST_DBIDS` 拿掉 `TYPE_529`；`moveZoneLSTsToLaunchStations` 排除 529；`setLandingMissionStartTime` 加 `categories`（不再設 `boat`）；`launchACV` 收 `quota` 與 `routes`，回傳分開「暫停」和「艙內空」；`removeCargoByPriority` 依各車種額度 |
 | `landingOps/amphibiousLogistics.lua` | `SHIP_TRANSFER_SPECS` 的 `assignments` 拿掉 `BOATS`（只裝貨不 assign）；`AMPHIBIOUS_SHIP_DBIDS` 的 529 確認是否影響 `isUnitMoving` 判斷（529 掃雷時會一直動，但那時已過 `WAITING_ARRIVAL`，不影響） |
 | `landingOps/init.lua` | `init` 呼叫 `layMinefields`；`launchACV(config, saveData, ship)`：phase 未到 `ASSAULT_LANDING` → 不動作；額度 0 → 暫停不 RTB；艙內空 → 照舊 RTB |
 | `src/scripts/china/amphibiousOps/launchACV.lua` | 用 `PersistentState.update` 傳 state |
@@ -137,7 +137,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
    - `mineClearing_spec`：course 正確、任務區域存進 state；到終點 RTB。
    - `assaultBoat_spec` / `hovercraft_spec`：先 course 後 `Launch`；Sishu 丟外側 4 條；氣墊船到點標 `arrived`。
    - `acvWave_spec`：上限 112/112 各算；戰損 / 逾時才補；同 tick 共用額度。
-   - `coordinator_spec`：phase 依序推進（到 `ASSAULT_LANDING` → `WAITING_ADMIN_UNLOADING` → `COMPLETED`）；529 不被 `setCoursesForLSTs` 帶走。
+   - `coordinator_spec`：phase 依序推進（到 `ASSAULT_LANDING` → `WAITING_ADMIN_UNLOADING` → `COMPLETED`）；529 不被 `moveToLaunchStations` 帶走。
    - `amphibiousAssault_spec` / `init_spec`：529 不是 `isFerryOrLST`；暫停時不 RTB。
 2. `busted --lua=luajit spec` 全過（含 `spec/moduleBoundary_spec.lua`）。
 3. `bash bin/build.sh -t`，CMO 開 `isTesting` 跑：雷有佈、529 走完弓字型 RTB、衝鋒舟排隊上岸、破障後兩棲車分波出、氣墊船走完通道停在自己的位子（任務等你補 TODO）。

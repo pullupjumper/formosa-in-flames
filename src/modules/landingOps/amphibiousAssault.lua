@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local LogFormat = require("src.utils.logFormat")
+local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local constants = require("src.core.constants")
 
 local AmphibiousAssault = {}
@@ -19,6 +20,7 @@ local FERRY_OR_LST_DBIDS = {
   [constants.PLATFORMS.TYPE_073A]   = true,
 }
 local FERRY_NAME = "Ferry"
+local METERS_PER_NM = 1852
 
 ---@type table<string, boolean>
 local NON_LST_NAMES = {
@@ -210,31 +212,25 @@ end
 -- Course Setting
 -- ============================================================================
 
----Set course for an LST to approach the beach
----@param unit CMO__Unit
+---Set course for an LST to its station inside the offshore band
+---@param entry {unit: CMO__Unit, alongM: number, lateralM: number}
+---@param frame SBJ__LaneFrame
+---@param shiftM number Meters toward shore applied to the whole formation
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function setCourseForLST(unit, zone)
-  local destination = GameApi.World_GetPointFromBearing({
-    latitude = unit.latitude,
-    longitude = unit.longitude,
-    bearing = zone.heading,
-    distance = zone.landing.lstSettings.distance
-  })
+local function moveLSTToLaunchStation(entry, frame, shiftM, zone)
+  local unit = entry.unit
+  local alongM = entry.alongM + shiftM
 
-  if not destination then
-    return { tag = "FAIL", fields = { ship = unit.name, reason = "destination_calc_failed" } }
-  end
-
-  if not isLST(unit) then
-    return { tag = "SKIP", fields = { ship = unit.name, reason = "non_lst_auxiliary" } }
-  end
-
-  unit.course = { destination }
+  unit.course = { LaneGeometry.buildPoint(frame, alongM, entry.lateralM) }
   unit.manualSpeed = zone.landing.lstSettings.speed
   return {
     tag = "OK",
-    fields = { ship = unit.name, bearing = zone.heading, speed = zone.landing.lstSettings.speed }
+    fields = {
+      ship = unit.name,
+      offshoreNm = string.format("%.1f", -alongM / METERS_PER_NM),
+      speed = zone.landing.lstSettings.speed
+    }
   }
 end
 
@@ -252,25 +248,68 @@ local function setCourseForSAG(descriptor)
   return { tag = "OK", fields = { sag = descriptor.groupName, dest = "amphibious_vehicle_staging_area" } }
 end
 
----Set courses for every LST anchored in a zone, stopping at the first failure
+---Find the LSTs anchored on the deploy line with their lane coordinates
 ---@param zone SBJ__OperationalZoneDescriptor
+---@param frame SBJ__LaneFrame
 ---@param units CMO__SideUnit[]
----@return boolean success True when no LST failed
----@return SBJ__LogResult[] results Deferred log results in emission order
-local function setZoneLSTCourses(zone, units)
-  local results = {}
+---@return {unit: CMO__Unit, alongM: number, lateralM: number}[]
+local function findDeployLineLSTs(zone, frame, units)
+  local entries = {}
 
   for _, u in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if unit and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) then
-      local result = setCourseForLST(unit, zone)
-      table.insert(results, result)
-
-      if result.tag == "FAIL" then
-        return false, results
-      end
+    if unit and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) and isLST(unit) then
+      local alongM, lateralM = LaneGeometry.projectPoint(frame, unit)
+      table.insert(entries, { unit = unit, alongM = alongM, lateralM = lateralM })
     end
+  end
+
+  return entries
+end
+
+---Set courses for every LST anchored in a zone
+---The formation keeps its shape and is shifted along the landing bearing to the middle of the offshore band.
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param zone SBJ__OperationalZoneDescriptor
+---@param units CMO__SideUnit[]
+---@return boolean success True when the formation fits the band
+---@return SBJ__LogResult[] results Deferred log results in emission order
+local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
+  local center = GameUtils.findAreaLocations(constants.SIDES.RED, zone.landing.laneCenter)[1]
+  if not center then
+    return false, { { tag = "FAIL", fields = { reason = "lane_center_not_set" } } }
+  end
+
+  local frame = { origin = center, bearing = zone.heading }
+  local entries = findDeployLineLSTs(zone, frame, units)
+  if #entries == 0 then
+    return true, {}
+  end
+
+  local nearM = amphibOps.tuning.route.launchStationNearNm * METERS_PER_NM
+  local farM = amphibOps.tuning.route.launchStationFarNm * METERS_PER_NM
+  local seawardM, shoreM = entries[1].alongM, entries[1].alongM
+  for _, entry in ipairs(entries) do
+    seawardM = math.min(seawardM, entry.alongM)
+    shoreM = math.max(shoreM, entry.alongM)
+  end
+
+  if shoreM - seawardM > farM - nearM then
+    return false, { {
+      tag = "FAIL",
+      fields = {
+        reason = "formation_exceeds_station_band",
+        depthNm = string.format("%.2f", (shoreM - seawardM) / METERS_PER_NM),
+        bandNm = amphibOps.tuning.route.launchStationFarNm - amphibOps.tuning.route.launchStationNearNm,
+      }
+    } }
+  end
+
+  local shiftM = -(nearM + farM) / 2 - (seawardM + shoreM) / 2
+  local results = {}
+  for _, entry in ipairs(entries) do
+    table.insert(results, moveLSTToLaunchStation(entry, frame, shiftM, zone))
   end
 
   return true, results
@@ -280,7 +319,7 @@ end
 ---@param sags SBJ__SAGDescriptor[]
 ---@return boolean success True when no SAG failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function setZoneSAGCourses(sags)
+local function moveZoneSAGsToLaunchStations(sags)
   local results = {}
 
   for _, descriptor in ipairs(sags) do
@@ -317,20 +356,22 @@ function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, categorie
   return success
 end
 
----Set course for LSTs to approach beach and move SAGs to staging areas
----LSTs on the deploy line are directed to landing zones; RORO ships and barges stay put
+---Set course for LSTs to their offshore station and move SAGs to staging areas
+---LSTs on the deploy line keep their formation and move to launchStationNearNm..launchStationFarNm off the shore;
+---RORO ships, barges and Type 529s stay put
+---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]
 ---@return boolean # True if all LST courses were successfully set
-function AmphibiousAssault.setCoursesForLSTs(zone, units)
-  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set courses for LSTs")
+function AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Move to launch stations")
 
-  local success, results = setZoneLSTCourses(zone, units)
+  local success, results = moveZoneLSTsToLaunchStations(amphibOps, zone, units)
   report.addAll(results)
 
   if success then
     local sagResults
-    success, sagResults = setZoneSAGCourses(zone.sags)
+    success, sagResults = moveZoneSAGsToLaunchStations(zone.sags)
     report.addAll(sagResults)
   end
 
