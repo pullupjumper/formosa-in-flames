@@ -35,6 +35,14 @@ function ScenEdit_AddMinefield(params) end
 ---@return number
 function ScenEdit_DeleteMinefield(params) end
 
+---@param params CMO__DeleteMinefieldDescriptor
+---@return table<integer, CMO__Mine>|nil
+function ScenEdit_GetMinefield(params) end
+
+---@param params CMO__DeleteMineDescriptor
+---@return boolean
+function ScenEdit_DeleteMine(params) end
+
 ---@class CMO__MinefieldDescriptor: table
 ---@field side string
 ---@field dbid number
@@ -45,6 +53,10 @@ function ScenEdit_DeleteMinefield(params) end
 ---@class CMO__DeleteMinefieldDescriptor: table
 ---@field side string
 ---@field area string[]
+
+---@class CMO__DeleteMineDescriptor: table
+---@field guid string
+---@field side string
 
 ---Unit OODA (Observe, Orient, Decide, Act) loop characteristics
 ---@class CMO__OODA: table
@@ -608,16 +620,11 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field holdingArea CMO__Waypoint[] Holding area waypoints
 ---@field amphibiousVehicleStagingArea CMO__Waypoint[] Amphibious vehicle staging area waypoints
 
----Where a ship group spawns: heading plus a literal position or reference point names per ship type
+---Where a ship group spawns: heading plus a literal position or reference point names
 ---@class SBJ__Placement: table
 ---@field heading number Heading at spawn (degrees)
 ---@field pos? CMO__Location Literal coordinate (SAG, CSG, submarines)
----@field startingPoints? SBJ__StartingPoints Reference points per ship type (amphibious fleet)
-
----Reference point names of the first ship of each row (type071 used at destination only)
----@class SBJ__StartingPoints: table
----@field type075 string[]
----@field type071? string[]
+---@field startingPoint? string[] Reference point names of the first Type 075; the other ship rows derive from it (amphibious fleet)
 
 ---Ship group that spawns at `from` and sails to `to`; shared by fleet groups and SAGs
 ---@class SBJ__ShipGroup: table
@@ -669,7 +676,7 @@ function ScenEdit_DeleteMinefield(params) end
 ---Stores calculated ship formation positions for each ship type in the operation zone
 ---@class SBJ__OperationZoneCalculationState: table
 ---@field name string Operation zone name (e.g., "Taoyuan", "Penghu", "Sishu")
----@field result table<string, SBJ__ShipCalculationState> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, type071OnDeployLine, ferry, roro, barge)
+---@field result table<string, SBJ__ShipCalculationState> Ship type calculation results indexed by ship type name (type075, type071, type076, type072iii, type072a, type073a, ferry, roro, barge)
 
 ---Inputs for laying out every ship row of one fleet group
 ---@class SBJ__BuildAllShipLocationsParams
@@ -724,10 +731,26 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field endPoint CMO__Location E_lane, inland past the obstacle area
 ---@field isCleared boolean Whether obstacles on this lane are cleared
 
+---Square cell on a water or beach lane, used to find mines to remove in fast-forward
+---@class SBJ__MineCell: table
+---@field laneId string Water lane or beach lane id
+---@field corners CMO__Location[] 4 corners
+
+---One lane cut into mine cells
+---@class SBJ__MineCorridor: table
+---@field laneId string
+---@field alongMin number Seaward end, meters toward shore from the lane origin
+---@field alongMax number Shoreward end
+---@field lateralM number Center line, meters to the right of the landing bearing
+---@field halfWidthM number
+---@field cellSizeM number
+---@field cells SBJ__MineCell[] Seaward to shoreward
+
 ---@class SBJ__BuildLanesParams: table
 ---@field origin CMO__Location Lane center on the shore
 ---@field bearing number Bearing toward the shore (degrees)
 ---@field count integer Number of water lanes (Type 529 count)
+---@field laterals? number[] Lateral position per water lane; omitted spaces them evenly by waterLaneSpacingM
 ---@field inlandDepthM number E_lane distance inland
 ---@field areaMarginM number Sweep mission area margin
 ---@field routeConfig SBJ__RouteConfig
@@ -933,15 +956,14 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field type072iii integer Number of Type 072III landing ships
 ---@field type072a integer Number of Type 072A landing ships
 ---@field type073a integer Number of Type 073A landing craft
----@field type071OnDeployLine? integer Number of Type 071 ships on the deploy line
 ---@field ferry integer Number of ferries
 ---@field roro integer Number of roll-on/roll-off ships
 ---@field barge integer Number of barges
 ---@field type082 integer
 
----Fleet group destination: reference points where each ship row holds
+---Fleet group destination: the Type 075 reference point the other ship rows hold relative to
 ---@class SBJ__FleetDestination: table
----@field startingPoints SBJ__StartingPoints Holding area reference points
+---@field startingPoint string[] Reference point names of the first Type 075 holding position
 
 ---One fleet group: ships spawn at `from`, sail to `to`, composition in `shipCounts`
 ---Several groups may land in the same zone
@@ -995,7 +1017,9 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field assaultLineNm number Assault line distance offshore (A_i, A_lane)
 ---@field launchStationNearNm number Inner edge of the LST station band, distance offshore
 ---@field launchStationFarNm number Outer edge of the LST station band, distance offshore
----@field waterLaneSpacingM number Spacing between adjacent water lanes
+---@field waterLaneSpacingM number Spacing between adjacent water lanes; fallback when the ship gaps give no valid lanes
+---@field waterLaneMinSpacingM number Narrowest ship gap that can hold a water lane, and narrowest spacing between lanes
+---@field waterLaneMaxSpacingM number Widest spacing between adjacent water lanes
 ---@field beachLaneOffsetsM number[] Beach lane lateral offsets from their water lane, ascending
 ---@field shoreStandoffM number S_lane distance offshore
 ---@field inlandMarginM number How far E_lane extends past the obstacle area

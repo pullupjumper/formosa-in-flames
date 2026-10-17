@@ -13,20 +13,18 @@ local ShipMovement = {}
 -- ============================================================================
 
 ---One row of the fleet layout. A row is matched to a unit by `name` when it has one, otherwise by `dbid`.
----Order matters: `type071` must come before `type071OnDeployLine` (same dbid) so the first match wins.
 ---@type {key: string, dbid: number, name?: string}[]
 local SHIP_ROWS = {
-  { key = "type075",             dbid = constants.PLATFORMS.TYPE_075 },
-  { key = "type071",             dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "type076",             dbid = constants.PLATFORMS.TYPE_076 },
-  { key = "type072iii",          dbid = constants.PLATFORMS.TYPE_072III },
-  { key = "type072a",            dbid = constants.PLATFORMS.TYPE_072A },
-  { key = "type073a",            dbid = constants.PLATFORMS.TYPE_073A },
-  { key = "type071OnDeployLine", dbid = constants.PLATFORMS.TYPE_071 },
-  { key = "ferry",               dbid = constants.PLATFORMS.FERRY,      name = "Ferry" },
-  { key = "roro",                dbid = constants.PLATFORMS.FERRY,      name = "RORO" },
-  { key = "barge",               dbid = constants.PLATFORMS.BARGE,      name = "Barge" },
-  { key = "type082",             dbid = constants.PLATFORMS.TYPE_082 }
+  { key = "type075",    dbid = constants.PLATFORMS.TYPE_075 },
+  { key = "type071",    dbid = constants.PLATFORMS.TYPE_071 },
+  { key = "type076",    dbid = constants.PLATFORMS.TYPE_076 },
+  { key = "type072iii", dbid = constants.PLATFORMS.TYPE_072III },
+  { key = "type072a",   dbid = constants.PLATFORMS.TYPE_072A },
+  { key = "type073a",   dbid = constants.PLATFORMS.TYPE_073A },
+  { key = "ferry",      dbid = constants.PLATFORMS.FERRY,      name = "Ferry" },
+  { key = "roro",       dbid = constants.PLATFORMS.FERRY,      name = "RORO" },
+  { key = "barge",      dbid = constants.PLATFORMS.BARGE,      name = "Barge" },
+  { key = "type082",    dbid = constants.PLATFORMS.TYPE_082 }
 }
 
 local SAG_FORMATION = {
@@ -38,15 +36,15 @@ local SAG_FORMATION = {
 
 ---@type {key: string, from: string, distanceKey: string}[]
 local SHIP_ROW_LAYOUT = {
-  { key = "type076",             from = "type071",             distanceKey = "verticalDistance" },
-  { key = "barge",               from = "type075",             distanceKey = "deployLineSetback" },
-  { key = "roro",                from = "barge",               distanceKey = "verticalDistance" },
-  { key = "type072a",            from = "roro",                distanceKey = "verticalDistance" },
-  { key = "type072iii",          from = "type072a",            distanceKey = "verticalDistance" },
-  { key = "ferry",               from = "type072iii",          distanceKey = "verticalDistance" },
-  { key = "type071OnDeployLine", from = "ferry",               distanceKey = "verticalDistance" },
-  { key = "type073a",            from = "type071OnDeployLine", distanceKey = "verticalDistance" },
-  { key = "type082",             from = "type073a",            distanceKey = "verticalDistance" }
+  { key = "type071",    from = "type075",    distanceKey = "verticalDistance" },
+  { key = "type076",    from = "type071",    distanceKey = "verticalDistance" },
+  { key = "barge",      from = "type075",    distanceKey = "deployLineSetback" },
+  { key = "roro",       from = "barge",      distanceKey = "verticalDistance" },
+  { key = "ferry",      from = "roro",       distanceKey = "verticalDistance" },
+  { key = "type072a",   from = "ferry",      distanceKey = "verticalDistance" },
+  { key = "type072iii", from = "type072a",   distanceKey = "verticalDistance" },
+  { key = "type073a",   from = "type072iii", distanceKey = "verticalDistance" },
+  { key = "type082",    from = "type073a",   distanceKey = "verticalDistance" }
 }
 
 -- ============================================================================
@@ -129,50 +127,6 @@ local function moveToNextLocation(unit, row, rowKey, amphibOps)
   }
 end
 
----Handle Type 071 movement with overflow to the deploy line
----@param unit CMO__Unit
----@param shipRowMap table<string, SBJ__ShipCalculationState>
----@param amphibOps SBJ__AmphibOpsConfig
----@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveType071(unit, shipRowMap, amphibOps)
-  local row = shipRowMap.type071
-  local deployLineRow = shipRowMap.type071OnDeployLine
-  if not row or not row.locations or not row.locationIndex or not deployLineRow or not deployLineRow.locations then
-    return {
-      tag = "FAIL",
-      fields = { ship = unit.name, dbid = unit.dbid, dest = "type071", reason = "calculation_entry_missing" }
-    }
-  end
-
-  local index = row.locationIndex
-  local len = #row.locations
-  local location
-  if index > len then
-    location = deployLineRow.locations[index - len]
-  else
-    location = row.locations[index]
-  end
-  if not location then
-    return {
-      tag = "SKIP",
-      fields = { ship = unit.name, dbid = unit.dbid, dest = "type071", index = index, reason = "no_location" }
-    }
-  end
-
-  moveShip(unit, location, amphibOps)
-  row.locationIndex = index + 1
-  return {
-    tag = "OK",
-    fields = {
-      ship = unit.name,
-      dbid = unit.dbid,
-      dest = "type071",
-      area = index > len and "deployLine" or "mothership",
-      index = index
-    }
-  }
-end
-
 ---Match ship by DBID or name and move to next location
 ---@param unit CMO__Unit
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
@@ -184,9 +138,6 @@ local function moveMatchingShip(unit, shipRowMap, amphibOps)
     return { tag = "SKIP", fields = { ship = unit.name, dbid = unit.dbid, reason = "unmatched" } }
   end
 
-  if rowKey == "type071" then
-    return moveType071(unit, shipRowMap, amphibOps)
-  end
   return moveToNextLocation(unit, shipRowMap[rowKey], rowKey, amphibOps)
 end
 
@@ -201,7 +152,7 @@ end
 ---@param heading number Zone heading the SAG faces
 ---@return integer positioned
 ---@return integer skipped
-local function placeSagInFormation(sagUnit, holdingPoint, heading)
+function ShipMovement.placeSagInFormation(sagUnit, holdingPoint, heading)
   local type052d, type054a = 0, 0
   local positioned, skipped = 0, 0
 
@@ -282,7 +233,7 @@ local function moveSag(sag, heading, amphibOps)
   end
 
   sagUnit.course = nil
-  local positioned, skipped = placeSagInFormation(sagUnit, holdingPoint, heading)
+  local positioned, skipped = ShipMovement.placeSagInFormation(sagUnit, holdingPoint, heading)
 
   return {
     tag = "OK",
@@ -306,43 +257,36 @@ local function initShipRowMap(zoneName, calculationResult)
   calculationResult[zoneName] = { name = zoneName, result = shipRowMap }
 end
 
----Get a required reference point for a ship row
----@param startingPoints SBJ__StartingPoints
----@param key string
+---Get the first reference point of the Type 075 starting point area
+---@param startingPoint string[]|nil Reference point names
 ---@return CMO__Location|nil point Reference point
 ---@return table<string, any>|nil errorFields Log fields describing the failure
-local function getStartingReferencePoint(startingPoints, key)
-  local startingPointArea = startingPoints and startingPoints[key]
-  if not startingPointArea then
-    return nil, { point = key, reason = "starting_point_area_missing" }
+local function getStartingReferencePoint(startingPoint)
+  if not startingPoint then
+    return nil, { point = "type075", reason = "starting_point_area_missing" }
   end
 
-  local points = GameApi.ScenEdit_GetReferencePoints({
-    side = constants.SIDES.RED, area = startingPointArea
-  })
+  local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.RED, area = startingPoint })
 
   if not points or not points[1] then
-    return nil, { point = key, reason = "reference_point_missing" }
+    return nil, { point = "type075", reason = "reference_point_missing" }
   end
 
   return points[1]
 end
 
----Calculate starting points for all ship types from two reference points
----@param startingPoints SBJ__StartingPoints
+---Calculate starting points for all ship types from the Type 075 reference point
+---@param startingPoint string[]|nil Type 075 reference point names
 ---@param heading number Bearing the ship rows are stacked along
 ---@param formationSettings SBJ__AmphibiousFormationConfig
 ---@return table<string, CMO__Location>|nil startingPointMap Mapping of key to starting location
 ---@return table<string, any>|nil errorFields Log fields describing the failure
-local function calculateStartingPoints(startingPoints, heading, formationSettings)
+local function calculateStartingPoints(startingPoint, heading, formationSettings)
   local startingPointMap = {}
   local errorFields
 
-  startingPointMap.type075, errorFields = getStartingReferencePoint(startingPoints, "type075")
+  startingPointMap.type075, errorFields = getStartingReferencePoint(startingPoint)
   if not startingPointMap.type075 then return nil, errorFields end
-
-  startingPointMap.type071, errorFields = getStartingReferencePoint(startingPoints, "type071")
-  if not startingPointMap.type071 then return nil, errorFields end
 
   for _, row in ipairs(SHIP_ROW_LAYOUT) do
     local fromPoint = startingPointMap[row.from]
@@ -398,7 +342,7 @@ function ShipMovement.planHoldingPositions(zones, formationSettings, calculation
     for groupIndex, group in ipairs(zone.fleet.groups) do
       initShipRowMap(zone.name, calculationResult)
       local startingPointMap, errorFields = calculateStartingPoints(
-        group.to.startingPoints,
+        group.to.startingPoint,
         zone.heading,
         formationSettings
       )

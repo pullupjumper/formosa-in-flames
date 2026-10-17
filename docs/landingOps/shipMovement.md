@@ -18,40 +18,40 @@ SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、�
 
 ## 艦型分層佈局
 
-等待區的艦船佈局以兩個基準點為起始，其餘艦型依垂直距離依序排列：
+等待區的艦船佈局以 Type 075 的參考點為起始，其餘艦型依垂直距離依序排列：
 
 ```
                        ← 水平方向（horizontalDistance）→
 
   登陸母艦乘載區 (mothership):
   Type 075 起始點 ──→  [075] [075] [075] ...
-  Type 071 起始點 ──→  [071] [071] [071] ...
+  Type 071          →  [071] [071] [071] ...
   Type 076          →  [076] [076] ...
                         ↕ deployLineSetback
   登陸艦艇展開線 (deployLine):
   Barge             →  [Barge] [Barge] ...
   RORO              →  [RORO] [RORO] ...
+  Ferry             →  [Ferry] [Ferry] ...
   Type 072A         →  [072A] [072A] ...
   Type 072III       →  [072III] [072III] ...
-  Ferry             →  [Ferry] [Ferry] ...
-  Type 071 (溢出)   →  [071] ...
   Type 073A         →  [073A] [073A] ...
+  Type 082          →  [082] [082] ...
 ```
 
 ### 列排列順序
 
 | 順序 | 艦型 key | 基準來源 | 距離參數 |
 |:-:|---|---|---|
-| 1 | `type075` | 參考點 `startingPoints.type075` | — |
-| 2 | `type071` | 參考點 `startingPoints.type071` | — |
+| 1 | `type075` | 參考點 `to.startingPoint` | — |
+| 2 | `type071` | 相對 `type075` | `verticalDistance` |
 | 3 | `type076` | 相對 `type071` | `verticalDistance` |
 | 4 | `barge` | 相對 `type075` | `deployLineSetback` |
 | 5 | `roro` | 相對 `barge` | `verticalDistance` |
-| 6 | `type072a` | 相對 `roro` | `verticalDistance` |
-| 7 | `type072iii` | 相對 `type072a` | `verticalDistance` |
-| 8 | `ferry` | 相對 `type072iii` | `verticalDistance` |
-| 9 | `type071OnDeployLine` | 相對 `ferry` | `verticalDistance` |
-| 10 | `type073a` | 相對 `type071OnDeployLine` | `verticalDistance` |
+| 6 | `ferry` | 相對 `roro` | `verticalDistance` |
+| 7 | `type072a` | 相對 `ferry` | `verticalDistance` |
+| 8 | `type072iii` | 相對 `type072a` | `verticalDistance` |
+| 9 | `type073a` | 相對 `type072iii` | `verticalDistance` |
+| 10 | `type082` | 相對 `type073a` | `verticalDistance` |
 
 ---
 
@@ -63,7 +63,7 @@ flowchart TD
     ITER_OP["遍歷 operations"]
     ITER_AREA["遍歷 zone.fleet.groups"]
     INIT["initShipRowMap<br>初始化結果結構"]
-    CALC_SP["calculateStartingPoints<br>取得兩基準參考點<br>依 SHIP_ROW_LAYOUT 推算各列起始點"]
+    CALC_SP["calculateStartingPoints<br>取得 075 參考點<br>依 SHIP_ROW_LAYOUT 推算各列起始點"]
     GEN_LOC["buildAllShipLocations<br>對每列依水平間距生成 N 個位置"]
     STORE["儲存至 calculationResult"]
 
@@ -79,23 +79,18 @@ flowchart TD
 
 1. **DBID 匹配**：依 `SHIP_ROWS` 表（沒有 `name` 的列）比對艦船 DBID
 2. **名稱匹配**：若 DBID 未命中，依 `SHIP_ROWS` 表（有 `name` 的列）比對艦名（Ferry/RORO/Barge）
-3. **Type 071 特殊處理**：當乘載區位置用盡時，溢出至展開線的 `type071OnDeployLine`
 
 ```mermaid
 flowchart TD
     UNIT["艦船單元"]
     DBID_CHECK{DBID 匹配?}
-    IS_071{是 Type 071?}
     NAME_CHECK{名稱匹配?}
-    MOVE_071["moveType071<br>（含溢出邏輯）"]
     MOVE_NORMAL["moveToNextLocation"]
     MOVE_NAME["moveToNextLocation<br>（依名稱 key）"]
     SKIP["SKIP: 未匹配"]
 
     UNIT --> DBID_CHECK
-    DBID_CHECK -->|是| IS_071
-    IS_071 -->|是| MOVE_071
-    IS_071 -->|否| MOVE_NORMAL
+    DBID_CHECK -->|是| MOVE_NORMAL
     DBID_CHECK -->|否| NAME_CHECK
     NAME_CHECK -->|是| MOVE_NAME
     NAME_CHECK -->|否| SKIP
@@ -132,7 +127,7 @@ flowchart TD
 ```
 [shipMovement] operation=Taoyuan Landing: Move to holding areas | total=4 ok=3 skip=1
   [OK]   ship="Type 075 #1" dbid=3556 index=1 dest=type075
-  [OK]   area=LPD ship="Type 071 #2" dbid=2340 index=2 dest=type071
+  [OK]   ship="Type 071 #2" dbid=2340 index=2 dest=type071
   [SKIP] ship=Tugboat dbid=1044 reason=unmatched
   [OK]   sag="SAG Alpha" action=course_set positioned=3 skipped=0
 ```

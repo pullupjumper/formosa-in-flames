@@ -160,7 +160,64 @@ local function buildWaterLane(frame, params, index, lateralM)
   return waterLane
 end
 
----Build water lanes (one per Type 529), symmetric about the lane center, ordered left to right
+---Whether every step between neighboring values lies within [minM, maxM]
+---@param values number[]
+---@param first integer
+---@param last integer
+---@param minM number
+---@param maxM number
+---@return boolean
+local function isStepRangeValid(values, first, last, minM, maxM)
+  for i = first, last - 1 do
+    local step = values[i + 1] - values[i]
+    if step < minM or step > maxM then
+      return false
+    end
+  end
+  return true
+end
+
+---Place water lanes in the gaps between ships so no lane runs through a hull
+---Each gap at least waterLaneMinSpacingM wide yields a candidate at its midpoint. The chosen lanes are
+---consecutive candidates whose spacing stays within [waterLaneMinSpacingM, waterLaneMaxSpacingM];
+---among valid runs the one closest to the lane center wins.
+---@param shipLaterals number[] Lateral positions of the ships, any order
+---@param count integer Number of water lanes wanted
+---@param routeConfig SBJ__RouteConfig
+---@return number[]|nil laterals Ascending lateral per water lane; nil when no run of gaps qualifies
+function LaneGeometry.planWaterLaneLaterals(shipLaterals, count, routeConfig)
+  if count < 1 then
+    return nil
+  end
+
+  local minM, maxM = routeConfig.waterLaneMinSpacingM, routeConfig.waterLaneMaxSpacingM
+  local sorted = { table.unpack(shipLaterals) }
+  table.sort(sorted)
+
+  local candidates = {}
+  for i = 1, #sorted - 1 do
+    if sorted[i + 1] - sorted[i] >= minM then
+      table.insert(candidates, (sorted[i] + sorted[i + 1]) / 2)
+    end
+  end
+
+  local bestFirst, bestOffset = nil, math.huge
+  for first = 1, #candidates - count + 1 do
+    local last = first + count - 1
+    local offset = math.abs((candidates[first] + candidates[last]) / 2)
+    if offset < bestOffset and isStepRangeValid(candidates, first, last, minM, maxM) then
+      bestFirst, bestOffset = first, offset
+    end
+  end
+
+  if not bestFirst then
+    return nil
+  end
+  return { table.unpack(candidates, bestFirst, bestFirst + count - 1) }
+end
+
+---Build water lanes (one per Type 529), ordered left to right
+---Lanes sit at params.laterals when given, otherwise evenly spaced and symmetric about the lane center.
 ---@param params SBJ__BuildLanesParams
 ---@return SBJ__LanePlanState
 function LaneGeometry.buildLanes(params)
@@ -169,11 +226,90 @@ function LaneGeometry.buildLanes(params)
   local waterLanes = {}
 
   for i = 1, params.count do
-    local lateralM = (i - (params.count + 1) / 2) * spacing
+    local lateralM = params.laterals and params.laterals[i] or (i - (params.count + 1) / 2) * spacing
     table.insert(waterLanes, buildWaterLane(frame, params, i, lateralM))
   end
 
   return { origin = params.origin, bearing = params.bearing, waterLanes = waterLanes }
+end
+
+-- ============================================================================
+-- Mine Cells
+-- ============================================================================
+
+---Cut the strip from point a to point b into square cells, one cell wide
+---@param frame SBJ__LaneFrame
+---@param laneId string
+---@param a CMO__Location Seaward end of the strip
+---@param b CMO__Location Shoreward end of the strip
+---@param cellSizeM number
+---@return SBJ__MineCorridor
+local function buildMineCorridor(frame, laneId, a, b, cellSizeM)
+  local alongMin, lateralM = LaneGeometry.projectPoint(frame, a)
+  local alongMax = LaneGeometry.projectPoint(frame, b)
+  local halfM = cellSizeM / 2
+
+  local cells = {}
+  for along = alongMin, alongMax - 1e-6, cellSizeM do
+    local nextAlong = math.min(along + cellSizeM, alongMax)
+    table.insert(cells, {
+      laneId = laneId,
+      corners = {
+        LaneGeometry.buildPoint(frame, along, lateralM - halfM),
+        LaneGeometry.buildPoint(frame, along, lateralM + halfM),
+        LaneGeometry.buildPoint(frame, nextAlong, lateralM + halfM),
+        LaneGeometry.buildPoint(frame, nextAlong, lateralM - halfM),
+      },
+    })
+  end
+
+  return {
+    laneId = laneId,
+    alongMin = alongMin,
+    alongMax = alongMax,
+    lateralM = lateralM,
+    halfWidthM = halfM,
+    cellSizeM = cellSizeM,
+    cells = cells,
+  }
+end
+
+---Cut every water lane (deploy line to assault line) and beach lane (assault line to S_lane) into mine cells
+---Cells line up with the lane center line and are one cell wide, so neighboring lanes never overlap.
+---@param lanes SBJ__LanePlanState
+---@param cellSizeM number
+---@return SBJ__MineCorridor[]
+function LaneGeometry.buildMineCorridors(lanes, cellSizeM)
+  local frame = { origin = lanes.origin, bearing = lanes.bearing }
+  local corridors = {}
+
+  for _, waterLane in ipairs(lanes.waterLanes) do
+    table.insert(corridors, buildMineCorridor(frame, waterLane.id, waterLane.deployPoint, waterLane.assaultPoint, cellSizeM))
+    for _, beachLane in ipairs(waterLane.beachLanes) do
+      table.insert(corridors, buildMineCorridor(frame, beachLane.id, beachLane.assaultPoint, beachLane.shorePoint, cellSizeM))
+    end
+  end
+
+  return corridors
+end
+
+---Find the mine cell containing a position
+---Checks each corridor's bounds in lane coordinates, then indexes straight into its cells.
+---@param frame SBJ__LaneFrame
+---@param corridors SBJ__MineCorridor[]
+---@param pos CMO__Location
+---@return SBJ__MineCell|nil
+function LaneGeometry.findMineCell(frame, corridors, pos)
+  local along, lateral = LaneGeometry.projectPoint(frame, pos)
+
+  for _, corridor in ipairs(corridors) do
+    if math.abs(lateral - corridor.lateralM) <= corridor.halfWidthM
+        and along >= corridor.alongMin and along <= corridor.alongMax then
+      local index = math.min(math.floor((along - corridor.alongMin) / corridor.cellSizeM) + 1, #corridor.cells)
+      return corridor.cells[index]
+    end
+  end
+  return nil
 end
 
 ---Deepest inland reach of a polygon along the landing bearing

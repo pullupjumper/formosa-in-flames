@@ -147,9 +147,16 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
     distance = verticalDistance
   })
 
-  positions.type072a = GameApi.World_GetPointFromBearing({
+  positions.ferry = GameApi.World_GetPointFromBearing({
     latitude = positions.roro.latitude,
     longitude = positions.roro.longitude,
+    bearing = verticalHeading,
+    distance = verticalDistance
+  })
+
+  positions.type072a = GameApi.World_GetPointFromBearing({
+    latitude = positions.ferry.latitude,
+    longitude = positions.ferry.longitude,
     bearing = verticalHeading,
     distance = verticalDistance
   })
@@ -161,16 +168,9 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
     distance = verticalDistance
   })
 
-  positions.ferry = GameApi.World_GetPointFromBearing({
+  positions.type073a = GameApi.World_GetPointFromBearing({
     latitude = positions.type072iii.latitude,
     longitude = positions.type072iii.longitude,
-    bearing = verticalHeading,
-    distance = verticalDistance
-  })
-
-  positions.type073a = GameApi.World_GetPointFromBearing({
-    latitude = positions.ferry.latitude,
-    longitude = positions.ferry.longitude,
     bearing = verticalHeading,
     distance = verticalDistance
   })
@@ -706,7 +706,7 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
   for _, zone in ipairs(amphibOpsConfig.zones) do
     for _, group in ipairs(zone.fleet.groups) do
       local firstRp075 = GameApi.ScenEdit_GetReferencePoints({
-        side = constants.SIDES.RED, area = group.from.startingPoints.type075
+        side = constants.SIDES.RED, area = group.from.startingPoint
       })[1]
 
       local positions = calculateShipPositions(firstRp075, group.from.heading, layoutConfig.verticalDistance)
@@ -723,9 +723,9 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
       createShipsByType(positions.type076, "type076", formationCtx)
       createShipsByType(positions.barge, "barge", formationCtx)
       createShipsByType(positions.roro, "roro", formationCtx)
+      createShipsByType(positions.ferry, "ferry", formationCtx)
       createShipsByType(positions.type072a, "type072a", formationCtx)
       createShipsByType(positions.type072iii, "type072iii", formationCtx)
-      createShipsByType(positions.ferry, "ferry", formationCtx)
       createShipsByType(positions.type073a, "type073a", formationCtx)
       createShipsByType(positions.type082, "type082", formationCtx)
     end

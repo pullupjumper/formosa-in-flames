@@ -3,6 +3,7 @@ local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local constants = require("src.core.constants")
 local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
@@ -68,6 +69,61 @@ local function findSweepers(zone, frame, ships)
 end
 
 -- ============================================================================
+-- Fast-forward Mine Removal
+-- ============================================================================
+
+---Delete every mine lying in a water or beach lane cell
+---Fast-forward stand-in for the sweepers; the mine cells are rebuilt on demand and never saved.
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param lanes SBJ__LanePlanState
+---@return integer # Mines deleted
+local function removeMinesOnLanes(amphibOps, lanes)
+  local frame = { origin = lanes.origin, bearing = lanes.bearing }
+  local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.tuning.obstacle.cellSizeM)
+  local deleted = 0
+
+  for _, minefield in ipairs(amphibOps.minefields or {}) do
+    if minefield.area and #minefield.area > 0 then
+      local mines = GameApi.ScenEdit_GetMinefield({ side = constants.SIDES.BLUE, area = minefield.area })
+      for _, mine in pairs(mines or {}) do
+        if LaneGeometry.findMineCell(frame, corridors, mine)
+            and GameApi.ScenEdit_DeleteMine({ side = constants.SIDES.BLUE, guid = mine.guid }) then
+          deleted = deleted + 1
+        end
+      end
+    end
+  end
+
+  return deleted
+end
+
+-- ============================================================================
+-- Lane Placement
+-- ============================================================================
+
+---Lateral position per water lane, in the gaps between the deploy line LSTs
+---Falls back to even spacing (nil) when there are no LSTs or the gaps cannot hold the lanes; the latter is reported.
+---@param zone SBJ__OperationalZoneDescriptor
+---@param frame SBJ__LaneFrame
+---@param ships CMO__SideUnit[]
+---@param count integer
+---@param routeConfig SBJ__RouteConfig
+---@param report SBJ__LogReport
+---@return number[]|nil
+local function planLaterals(zone, frame, ships, count, routeConfig, report)
+  local shipLaterals = AmphibiousAssault.findDeployLineLSTLaterals(zone, frame, ships)
+  if #shipLaterals == 0 then
+    return nil
+  end
+
+  local laterals = LaneGeometry.planWaterLaneLaterals(shipLaterals, count, routeConfig)
+  if not laterals then
+    report.add("WARN", { reason = "ship_gaps_cannot_hold_lanes", ships = #shipLaterals, lanes = count })
+  end
+  return laterals
+end
+
+-- ============================================================================
 -- Public API
 -- ============================================================================
 
@@ -101,6 +157,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
     origin = center,
     bearing = zone.heading,
     count = #sweepers,
+    laterals = planLaterals(zone, frame, ships, #sweepers, amphibOps.tuning.route, report),
     inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.tuning.route.inlandMarginM,
     areaMarginM = amphibOps.tuning.mineClearing.areaMarginM,
     routeConfig = amphibOps.tuning.route,
@@ -118,6 +175,10 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
       "Mineclearing",
       { zone = zone.landing.acv.area }
     )
+  end
+
+  if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
+    report.add("OK", { fastForwardMinesRemoved = removeMinesOnLanes(amphibOps, lanes) })
   end
 
   for i, sweeper in ipairs(sweepers) do
@@ -165,6 +226,10 @@ function MineClearing.updateMineClearing(amphibOps, zoneState)
       elseif range and range < arrivalNm then
         unit:RTB(true)
         sweeper.isDone = true
+
+        if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
+          DebugFlow.teleport(unit.guid, { latitude = unit.base.latitude, longitude = unit.base.longitude })
+        end
       else
         isAllDone = false
       end

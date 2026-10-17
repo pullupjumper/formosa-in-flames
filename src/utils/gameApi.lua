@@ -690,17 +690,22 @@ function realApi.ScenEdit_AddMinefield(params)
   return ScenEdit_AddMinefield(params)
 end
 
----@param sideName string
----@param guid string
+---@param params CMO__DeleteMineDescriptor
 ---@return boolean # True if successful
-function realApi.ScenEdit_DeleteMine(sideName, guid)
-  return ScenEdit_DeleteMine(sideName, guid)
+function realApi.ScenEdit_DeleteMine(params)
+  return ScenEdit_DeleteMine(params)
 end
 
 ---@param params CMO__DeleteMinefieldDescriptor
 ---@return number # Number of mines actually deleted
 function realApi.ScenEdit_DeleteMinefield(params)
   return ScenEdit_DeleteMinefield(params)
+end
+
+---@param params CMO__DeleteMinefieldDescriptor
+---@return table<integer, CMO__Mine>|nil
+function realApi.ScenEdit_GetMinefield(params)
+  return ScenEdit_GetMinefield(params)
 end
 
 setmetatable(GameApi, {

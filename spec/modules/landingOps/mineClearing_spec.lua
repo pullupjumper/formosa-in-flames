@@ -12,6 +12,8 @@ describe("MineClearing", function()
   local activeStubs
   ---@type luassert.spy
   local errorStub
+  ---@type luassert.spy
+  local logStub
   ---Track and register test stub for automatic cleanup.
   ---@param s any
   ---@return luassert.spy
@@ -22,7 +24,7 @@ describe("MineClearing", function()
 
   before_each(function()
     activeStubs = {}
-    trackStub(stub(Logger, "log"))
+    logStub = trackStub(stub(Logger, "log"))
     errorStub = trackStub(stub(Logger, "error"))
   end)
 
@@ -46,6 +48,8 @@ describe("MineClearing", function()
           launchLineNm = 3,
           assaultLineNm = 2,
           waterLaneSpacingM = 750,
+          waterLaneMinSpacingM = 500,
+          waterLaneMaxSpacingM = 1000,
           beachLaneOffsetsM = { -180, -60, 60, 180 },
           shoreStandoffM = 100,
           inlandMarginM = 100,
@@ -96,6 +100,22 @@ describe("MineClearing", function()
       for k, v in pairs(overrides) do unit[k] = v end
     end
     return unit
+  end
+
+  ---@param guid string
+  ---@param lateral number
+  ---@return table
+  local function makeLST(guid, lateral)
+    local pos = LaneGeometry.buildPoint(frame, -20000, lateral)
+    return {
+      guid = guid,
+      name = guid,
+      type = "Ship",
+      dbid = constants.PLATFORMS.TYPE_071,
+      latitude = pos.latitude,
+      longitude = pos.longitude,
+      inArea = function() return true end,
+    }
   end
 
   ---@param unitMap table<string, table>
@@ -174,6 +194,74 @@ describe("MineClearing", function()
       -- E_lane = obstacle depth 300 m + inland margin 100 m
       local endAlong = LaneGeometry.projectPoint(frame, zoneState.lanes.waterLanes[1].beachLanes[1].endPoint)
       assert.is_near(400, endAlong, 0.5)
+    end)
+
+    -- Positive: lanes sit in the gaps between the deploy line LSTs, not on them
+    it("should place water lanes at the midpoints of the gaps between LSTs", function()
+      stubReferencePoints()
+      stubUnits({
+        ["529-L"] = makeSweeper("529-L", -800),
+        ["529-R"] = makeSweeper("529-R", 800),
+        ["LST-1"] = makeLST("LST-1", -750),
+        ["LST-2"] = makeLST("LST-2", 0),
+        ["LST-3"] = makeLST("LST-3", 750),
+      })
+      local zoneState = {}
+      local ships = { { guid = "529-L" }, { guid = "529-R" }, { guid = "LST-1" }, { guid = "LST-2" }, { guid = "LST-3" } }
+
+      assert.is_true(MineClearing.startMineClearing(makeConfig(), makeZone(), zoneState, ships))
+
+      local _, left = LaneGeometry.projectPoint(frame, zoneState.lanes.waterLanes[1].launchPoint)
+      local _, right = LaneGeometry.projectPoint(frame, zoneState.lanes.waterLanes[2].launchPoint)
+      assert.is_near(-375, left, 0.5)
+      assert.is_near(375, right, 0.5)
+    end)
+
+    -- Negative: gaps too narrow for the lanes fall back to even spacing with a WARN
+    it("should fall back to even spacing and warn when the LST gaps cannot hold the lanes", function()
+      stubReferencePoints()
+      stubUnits({
+        ["529-L"] = makeSweeper("529-L", -800),
+        ["529-R"] = makeSweeper("529-R", 800),
+        ["LST-1"] = makeLST("LST-1", -100),
+        ["LST-2"] = makeLST("LST-2", 100),
+      })
+      local zoneState = {}
+      local ships = { { guid = "529-L" }, { guid = "529-R" }, { guid = "LST-1" }, { guid = "LST-2" } }
+
+      assert.is_true(MineClearing.startMineClearing(makeConfig(), makeZone(), zoneState, ships))
+
+      local _, left = LaneGeometry.projectPoint(frame, zoneState.lanes.waterLanes[1].launchPoint)
+      assert.is_near(-375, left, 0.5)
+      local logged = ""
+      for _, call in ipairs(logStub.calls) do logged = logged .. tostring(call.vals[2]) end
+      assert.truthy(string.find(logged, "ship_gaps_cannot_hold_lanes"))
+    end)
+
+    -- Positive: fast-forward deletes only the mines lying on a lane
+    it("should delete only the mines inside lane cells in fast-forward", function()
+      stubReferencePoints()
+      stubUnits({ ["529-1"] = makeSweeper("529-1", 0) })
+      local onLane = LaneGeometry.buildPoint(frame, -5000, 10)
+      local offLane = LaneGeometry.buildPoint(frame, -5000, 300)
+      trackStub(stub(GameApi, "ScenEdit_GetMinefield").returns({
+        { guid = "M-ON",  latitude = onLane.latitude,  longitude = onLane.longitude },
+        { guid = "M-OFF", latitude = offLane.latitude, longitude = offLane.longitude },
+      }))
+      local deleteStub = trackStub(stub(GameApi, "ScenEdit_DeleteMine").returns(true))
+      trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+      local config = makeConfig()
+      config.debug = { enabled = true }
+      config.tuning.obstacle = { cellSizeM = 50 }
+      config.minefields = { { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 2, delay = 0 } }
+
+      local zoneState = {}
+      local ships = { { guid = "529-1" } }
+
+      assert.is_true(MineClearing.startMineClearing(config, makeZone(), zoneState, ships))
+
+      assert.stub(deleteStub).was.called(1)
+      assert.stub(deleteStub).was.called_with({ side = constants.SIDES.BLUE, guid = "M-ON" })
     end)
 
     -- Negative: missing reference points are logged and nothing changes

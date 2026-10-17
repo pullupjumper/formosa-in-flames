@@ -15,6 +15,8 @@ describe("LaneGeometry", function()
       launchLineNm = 3,
       assaultLineNm = 2,
       waterLaneSpacingM = 750,
+      waterLaneMinSpacingM = 500,
+      waterLaneMaxSpacingM = 1000,
       beachLaneOffsetsM = { -180, -60, 60, 180 },
       shoreStandoffM = 100,
       inlandMarginM = 100,
@@ -67,6 +69,93 @@ describe("LaneGeometry", function()
   end)
 
   -- ============================================================================
+  -- buildMineCorridors / findMineCell
+  -- ============================================================================
+
+  describe("mine cells", function()
+    -- Positive: one corridor per water lane and per beach lane, cells 50 m long from end to end
+    it("should cut each water and beach lane into 50 m cells", function()
+      local lanes = buildLanes(1)
+      local corridors = LaneGeometry.buildMineCorridors(lanes, 50)
+
+      assert.are.equal(5, #corridors)
+      -- water lane: deploy line 12 nm to assault line 2 nm = 18520 m
+      assert.are.equal(371, #corridors[1].cells)
+      -- beach lane: assault line 2 nm to S_lane 100 m = 3604 m
+      assert.are.equal(73, #corridors[2].cells)
+      assert.are.equal(4, #corridors[1].cells[1].corners)
+    end)
+
+    -- Positive: a position on a lane resolves to the cell containing it
+    it("should find the cell containing a position on the lane center line", function()
+      local lanes = buildLanes(1)
+      local corridors = LaneGeometry.buildMineCorridors(lanes, 50)
+      local pos = LaneGeometry.buildPoint(frame, -12 * 1852 + 120, 0)
+
+      local cell = LaneGeometry.findMineCell(frame, corridors, pos)
+
+      assert.are.same(corridors[1].cells[3], cell)
+    end)
+
+    -- Negative: positions beside the lane or outside it are not in any cell
+    it("should return nil for positions outside every lane", function()
+      local corridors = LaneGeometry.buildMineCorridors(buildLanes(1), 50)
+
+      assert.is_nil(LaneGeometry.findMineCell(frame, corridors, LaneGeometry.buildPoint(frame, -5000, 100)))
+      assert.is_nil(LaneGeometry.findMineCell(frame, corridors, LaneGeometry.buildPoint(frame, -13 * 1852, 0)))
+    end)
+
+    -- Boundary: the cell edge is inclusive and the last cell takes the shore end
+    it("should accept the lane end and the half width edge", function()
+      local lanes = buildLanes(1)
+      local corridors = LaneGeometry.buildMineCorridors(lanes, 50)
+
+      assert.is_not_nil(LaneGeometry.findMineCell(frame, corridors, lanes.waterLanes[1].assaultPoint))
+      assert.is_not_nil(LaneGeometry.findMineCell(frame, corridors, LaneGeometry.buildPoint(frame, -5000, 24.9)))
+    end)
+  end)
+
+  -- ============================================================================
+  -- planWaterLaneLaterals
+  -- ============================================================================
+
+  describe("planWaterLaneLaterals", function()
+    -- Positive: midpoints of the ship gaps, closest run to the lane center
+    it("should put lanes at the midpoints of the ship gaps", function()
+      local laterals = LaneGeometry.planWaterLaneLaterals({ 750, -750, 0 }, 2, makeRouteConfig())
+
+      assert.are.same({ -375, 375 }, laterals)
+    end)
+
+    -- Positive: with spare gaps, the run nearest the center is chosen
+    it("should choose the run of gaps nearest the lane center", function()
+      local laterals = LaneGeometry.planWaterLaneLaterals({ -1500, -750, 0, 750, 1500, 2250 }, 2, makeRouteConfig())
+
+      assert.are.same({ -375, 375 }, laterals)
+    end)
+
+    -- Negative: gaps narrower than the minimum cannot hold a lane
+    it("should return nil when the gaps are too narrow", function()
+      assert.is_nil(LaneGeometry.planWaterLaneLaterals({ -100, 100 }, 1, makeRouteConfig()))
+    end)
+
+    -- Negative: lanes further apart than the maximum spacing are rejected
+    it("should return nil when neighboring lanes would exceed the maximum spacing", function()
+      assert.is_nil(LaneGeometry.planWaterLaneLaterals({ -1000, 0, 1500 }, 2, makeRouteConfig()))
+    end)
+
+    -- Boundary: a gap exactly at the minimum is usable
+    it("should accept a gap exactly at the minimum width", function()
+      assert.are.same({ 250 }, LaneGeometry.planWaterLaneLaterals({ 0, 500 }, 1, makeRouteConfig()))
+    end)
+
+    -- Negative: asking for more lanes than gaps
+    it("should return nil when there are fewer gaps than lanes", function()
+      assert.is_nil(LaneGeometry.planWaterLaneLaterals({ 0, 750 }, 2, makeRouteConfig()))
+    end)
+  end)
+
+  -- ============================================================================
   -- buildLanes
   -- ============================================================================
 
@@ -91,6 +180,19 @@ describe("LaneGeometry", function()
       assert.are.equal(1, #lanes.waterLanes)
       assert.are.equal(4, #lanes.waterLanes[1].beachLanes)
       assert.is_near(0, lateral, 0.01)
+    end)
+
+    -- Positive: explicit laterals override the even spacing
+    it("should place water lanes at the given laterals", function()
+      local lanes = LaneGeometry.buildLanes({
+        origin = ORIGIN, bearing = BEARING, count = 2, laterals = { -300, 420 },
+        inlandDepthM = 400, areaMarginM = 60, routeConfig = makeRouteConfig(),
+      })
+      local _, left = project(lanes.waterLanes[1].launchPoint)
+      local _, right = project(lanes.waterLanes[2].launchPoint)
+
+      assert.is_near(-300, left, 0.01)
+      assert.is_near(420, right, 0.01)
     end)
 
     -- Positive: water lanes are 750 m apart and symmetric about the center

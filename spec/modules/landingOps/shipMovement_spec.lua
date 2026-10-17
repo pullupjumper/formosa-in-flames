@@ -96,7 +96,6 @@ describe("ShipMovement", function()
       type072a = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_072A }),
       type073a = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_073A }),
       type071 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_071 }),
-      type071OnDeployLine = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_071 }),
       ferry = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       roro = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
       barge = makeShipCalcResult({ dbid = constants.PLATFORMS.BARGE }),
@@ -157,12 +156,9 @@ describe("ShipMovement", function()
         stagingArea = { "RP-STAGING-1", "RP-STAGING-2" },
         groups = {
           {
-            from = { heading = 220, startingPoints = { type075 = { "RP-FROM-075" } } },
+            from = { heading = 220, startingPoint = { "RP-FROM-075" } },
             to = {
-              startingPoints = {
-                type075 = { "RP-075-1" },
-                type071 = { "RP-071-1" },
-              },
+              startingPoint = { "RP-075-1" },
             },
             shipCounts = {
               type075 = 2,
@@ -171,7 +167,6 @@ describe("ShipMovement", function()
               type072iii = 2,
               type072a = 2,
               type073a = 1,
-              type071OnDeployLine = 1,
               ferry = 1,
               roro = 1,
               barge = 1,
@@ -263,18 +258,13 @@ describe("ShipMovement", function()
       assert.are.equal(targetLocation, unit.course[1])
     end)
 
-    -- Positive: Type 071 overflow to LST area
-    it("should move a Type 071 ship to LST area when LPD area locations are exhausted", function()
-      local lstLocation = makeLocation({ latitude = 26.0 })
+    -- Negative: no overflow row; a Type 071 beyond the configured count is skipped in place
+    it("should skip a Type 071 ship when its row locations are exhausted", function()
       local resultTable = makeResultTable({
         type071 = makeShipCalcResult({
           dbid = constants.PLATFORMS.TYPE_071,
           locations = { makeLocation() },
           locationIndex = 2,
-        }),
-        type071OnDeployLine = makeShipCalcResult({
-          dbid = constants.PLATFORMS.TYPE_071,
-          locations = { lstLocation },
         }),
       })
       local unit = makeUnit({
@@ -290,7 +280,7 @@ describe("ShipMovement", function()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
-      assert.are.equal(lstLocation, unit.course[1])
+      assert.are.same({}, unit.course)
     end)
 
     -- Positive: name-based matching for Ferry
@@ -790,12 +780,10 @@ describe("ShipMovement", function()
     -- Positive: initializes calculation result structure
     it("should create the operation entry in calculationResult when it does not exist", function()
       local rp075 = makeLocation({ latitude = 25.0 })
-      local rp071 = makeLocation({ latitude = 25.5 })
       local derivedPoint = makeLocation({ latitude = 26.0 })
 
       stubGetRPs.invokes(function(rpName)
         if rpName == "RP-075-1" then return { rp075 } end
-        if rpName == "RP-071-1" then return { rp071 } end
         return { makeLocation() }
       end)
       stubGetPoint.returns(derivedPoint)
@@ -814,7 +802,6 @@ describe("ShipMovement", function()
       assert.is_not_nil(calculationResult.Taoyuan.result.type072iii)
       assert.is_not_nil(calculationResult.Taoyuan.result.type072a)
       assert.is_not_nil(calculationResult.Taoyuan.result.type073a)
-      assert.is_not_nil(calculationResult.Taoyuan.result.type071OnDeployLine)
       assert.is_not_nil(calculationResult.Taoyuan.result.ferry)
       assert.is_not_nil(calculationResult.Taoyuan.result.roro)
       assert.is_not_nil(calculationResult.Taoyuan.result.barge)
@@ -839,14 +826,13 @@ describe("ShipMovement", function()
       assert.are.equal(constants.PLATFORMS.TYPE_072III, result.type072iii.dbid)
       assert.are.equal(constants.PLATFORMS.TYPE_072A, result.type072a.dbid)
       assert.are.equal(constants.PLATFORMS.TYPE_073A, result.type073a.dbid)
-      assert.are.equal(constants.PLATFORMS.TYPE_071, result.type071OnDeployLine.dbid)
       assert.are.equal(constants.PLATFORMS.FERRY, result.ferry.dbid)
       assert.are.equal(constants.PLATFORMS.FERRY, result.roro.dbid)
       assert.are.equal(constants.PLATFORMS.BARGE, result.barge.dbid)
     end)
 
     -- Positive: calls buildLocations for each ship type
-    it("should call buildLocations for all 11 ship types per area", function()
+    it("should call buildLocations for all 10 ship types per area", function()
       local rp = makeLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
@@ -857,23 +843,21 @@ describe("ShipMovement", function()
       local config = makeAmphibOpsConfig()
       ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
-      assert.stub(stubGenerateLocations).was.called(11)
+      assert.stub(stubGenerateLocations).was.called(10)
     end)
 
-    -- Positive: derives ship positions from reference points using vertical distance
-    it("should derive Type 076 starting position from Type 071 using vertical distance", function()
+    -- Positive: Type 071 is derived from Type 075, and Type 076 from Type 071, by vertical distance
+    it("should derive Type 071 from Type 075 and Type 076 from Type 071 using vertical distance", function()
       local rp075 = makeLocation({ latitude = 25.0 })
-      local rp071 = makeLocation({ latitude = 25.5 })
-      local derivedRp076 = makeLocation({ latitude = 26.0 })
+      local derivedRp071 = makeLocation({ latitude = 25.5 })
 
       stubGetRPs.invokes(function(rpTable)
         if rpTable.area and rpTable.area[1] == "RP-075-1" then return { rp075 } end
-        if rpTable.area and rpTable.area[1] == "RP-071-1" then return { rp071 } end
         return { makeLocation() }
       end)
       stubGetPoint.invokes(function(params)
-        if params.latitude == rp071.latitude and params.distance == 1.0 then
-          return derivedRp076
+        if params.latitude == rp075.latitude and params.distance == 1.0 then
+          return derivedRp071
         end
         return makeLocation()
       end)
@@ -884,12 +868,11 @@ describe("ShipMovement", function()
       local config = makeAmphibOpsConfig()
       ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
 
-      -- Verify that World_GetPointFromBearing was called with rp071 coords and verticalDistance
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
         local p = call.vals[1]
-        if p.latitude == rp071.latitude
-            and p.longitude == rp071.longitude
+        if p.latitude == derivedRp071.latitude
+            and p.longitude == derivedRp071.longitude
             and p.distance == 1.0 then
           found = true
           break
@@ -901,11 +884,9 @@ describe("ShipMovement", function()
     -- Positive: derives barge position from Type 075 using deployLineSetback
     it("should derive barge position from Type 075 using deployLineSetback", function()
       local rp075 = makeLocation({ latitude = 25.0 })
-      local rp071 = makeLocation({ latitude = 25.5 })
 
       stubGetRPs.invokes(function(rpTable)
         if rpTable.area and rpTable.area[1] == "RP-075-1" then return { rp075 } end
-        if rpTable.area and rpTable.area[1] == "RP-071-1" then return { rp071 } end
         return { makeLocation() }
       end)
       stubGetPoint.returns(makeLocation())

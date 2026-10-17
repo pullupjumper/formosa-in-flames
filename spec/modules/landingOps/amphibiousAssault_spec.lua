@@ -464,6 +464,32 @@ describe("AmphibiousAssault", function()
       assert.stub(logStub).was.called()
     end)
 
+    -- Positive: fast-forward teleports every ship of the SAG, not just the group
+    it("should teleport every SAG ship into formation in fast-forward", function()
+      local ffConfig = {
+        tuning = amphibOps.tuning,
+        debug = { enabled = true, startStage = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT },
+      }
+      local sagCourse = { { latitude = 24.0, longitude = 120.0 } }
+      local sagUnit = makeUnit({ guid = "SAG-001", group = { unitlist = { "D-1", "F-1" } } })
+      local destroyer = makeUnit({ guid = "D-1", dbid = constants.PLATFORMS.TYPE_052D })
+      local frigate = makeUnit({ guid = "F-1", dbid = constants.PLATFORMS.TYPE_054A })
+      stubGetUnit.invokes(function(id)
+        return ({ ["SAG Alpha"] = sagUnit, ["D-1"] = destroyer, ["F-1"] = frigate })[id]
+      end)
+      trackStub(stub(GameApi, "World_GetPointFromBearing").returns({ latitude = 24.01, longitude = 120.01 }))
+      local setUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+
+      local zone = makeZone()
+      zone.sags = { { groupName = "SAG Alpha", to = { amphibiousVehicleStagingArea = sagCourse } } }
+
+      assert.is_true(AmphibiousAssault.moveToLaunchStations(ffConfig, zone, {}))
+
+      assert.stub(setUnit).was.called_with({ guid = "D-1", latitude = 24.0, longitude = 120.0 })
+      assert.stub(setUnit).was.called_with({ guid = "F-1", latitude = 24.01, longitude = 120.01 })
+      assert.are.same(sagCourse, sagUnit.course)
+    end)
+
     -- Negative: returns false when SAG unit cannot be found
     it("should return false when SAG unit is not found", function()
       stubGetUnit.returns(nil)

@@ -4,6 +4,7 @@ local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics"
 local LogFormat = require("src.utils.logFormat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local ShipMovement = require("src.modules.landingOps.shipMovement")
 local constants = require("src.core.constants")
 
 local AmphibiousAssault = {}
@@ -242,11 +243,12 @@ local function moveLSTToLaunchStation(amphibOps, entry, frame, shiftM, zone)
 end
 
 ---Set course for a Surface Action Group
----Fast-forward debug teleports it onto the end of its route first.
+---Fast-forward debug teleports every ship in the group into formation at the end of its route first.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param descriptor SBJ__SAGDescriptor
+---@param heading number Zone heading the SAG faces
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function setCourseForSAG(amphibOps, descriptor)
+local function setCourseForSAG(amphibOps, descriptor, heading)
   local unit = GameApi.ScenEdit_GetUnit(descriptor.groupName)
 
   if not unit then
@@ -254,11 +256,18 @@ local function setCourseForSAG(amphibOps, descriptor)
   end
 
   local route = descriptor.to.amphibiousVehicleStagingArea
+  local fields = { sag = descriptor.groupName, dest = "amphibious_vehicle_staging_area" }
+
   if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
-    DebugFlow.teleport(unit.guid, route[#route])
+    if not unit.group or not unit.group.unitlist then
+      return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unitlist_missing" } }
+    end
+
+    fields.positioned, fields.skipped = ShipMovement.placeSagInFormation(unit, route[#route], heading)
   end
+
   unit.course = route
-  return { tag = "OK", fields = { sag = descriptor.groupName, dest = "amphibious_vehicle_staging_area" } }
+  return { tag = "OK", fields = fields }
 end
 
 ---Find the LSTs anchored on the deploy line with their lane coordinates
@@ -331,13 +340,14 @@ end
 ---Set courses for every SAG in a zone, stopping at the first failure
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param sags SBJ__SAGDescriptor[]
+---@param heading number Zone heading the SAGs face
 ---@return boolean success True when no SAG failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
-local function moveZoneSAGsToLaunchStations(amphibOps, sags)
+local function moveZoneSAGsToLaunchStations(amphibOps, sags, heading)
   local results = {}
 
   for _, descriptor in ipairs(sags) do
-    local result = setCourseForSAG(amphibOps, descriptor)
+    local result = setCourseForSAG(amphibOps, descriptor, heading)
     table.insert(results, result)
 
     if result.tag == "FAIL" then
@@ -371,6 +381,19 @@ function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, categorie
 end
 
 ---Set course for LSTs to their offshore station and move SAGs to staging areas
+---Lateral positions of the LSTs anchored on the deploy line
+---@param zone SBJ__OperationalZoneDescriptor
+---@param frame SBJ__LaneFrame
+---@param units CMO__SideUnit[]
+---@return number[] # Meters to the right of the landing bearing
+function AmphibiousAssault.findDeployLineLSTLaterals(zone, frame, units)
+  local laterals = {}
+  for _, entry in ipairs(findDeployLineLSTs(zone, frame, units)) do
+    table.insert(laterals, entry.lateralM)
+  end
+  return laterals
+end
+
 ---LSTs on the deploy line keep their formation and move to launchStationNearNm..launchStationFarNm off the shore;
 ---RORO ships, barges and Type 529s stay put
 ---@param amphibOps SBJ__AmphibOpsConfig
@@ -385,7 +408,7 @@ function AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
 
   if success then
     local sagResults
-    success, sagResults = moveZoneSAGsToLaunchStations(amphibOps, zone.sags)
+    success, sagResults = moveZoneSAGsToLaunchStations(amphibOps, zone.sags, zone.heading)
     report.addAll(sagResults)
   end
 

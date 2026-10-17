@@ -1694,7 +1694,9 @@ config.red.amphibOps.tuning = {
     assaultLineNm = 2,                          -- 衝擊發起線，距岸
     launchStationNearNm = 2,                    -- 登陸艦就位帶近岸界，距岸
     launchStationFarNm = 4,                     -- 登陸艦就位帶外海界，距岸
-    waterLaneSpacingM = 750,                    -- 相鄰水際通道間距
+    waterLaneSpacingM = 750,                    -- 相鄰水際通道間距（備援；艦間空隙排不出通道時用，教範 500–1000 m）
+    waterLaneMinSpacingM = 500,                 -- 水際通道最小間距，也是可放通道的最小艦間空隙（教範 500–1000 m）
+    waterLaneMaxSpacingM = 1000,                -- 水際通道最大間距（教範 500–1000 m）
     beachLaneOffsetsM = { -180, -60, 60, 180 }, -- 灘際通道相對水際通道的橫向偏移
     shoreStandoffM = 100,                       -- S_lane 離岸距離
     inlandMarginM = 100,                        -- E_lane 超出障礙範圍的距離
@@ -1732,13 +1734,10 @@ config.red.amphibOps.zones = {
         {
           from = {
             heading = 220, -- departs from the north
-            startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_TAOYUAN },
+            startingPoint = constants.AREAS.STARTING_POINT_075_TAOYUAN,
           },
           to = {
-            startingPoints = {
-              type075 = constants.AREAS.DESTINATION_075_TAOYUAN,
-              type071 = constants.AREAS.DESTINATION_071_TAOYUAN,
-            },
+            startingPoint = constants.AREAS.DESTINATION_075_TAOYUAN,
           },
           shipCounts = {
             type075 = 2,
@@ -1747,7 +1746,6 @@ config.red.amphibOps.zones = {
             type072iii = 7,
             type072a = 8,
             type073a = 7,
-            type071OnDeployLine = 0,
             ferry = 4,
             roro = 2,
             barge = 1,
@@ -1962,13 +1960,10 @@ config.red.amphibOps.zones = {
         {
           from = {
             heading = 73,
-            startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_SISHU },
+            startingPoint = constants.AREAS.STARTING_POINT_075_SISHU,
           },
           to = {
-            startingPoints = {
-              type075 = constants.AREAS.DESTINATION_075_SISHU,
-              type071 = constants.AREAS.DESTINATION_071_SISHU,
-            },
+            startingPoint = constants.AREAS.DESTINATION_075_SISHU,
           },
           shipCounts = {
             type075 = 1,
@@ -1977,7 +1972,6 @@ config.red.amphibOps.zones = {
             type072iii = 2,
             type072a = 4,
             type073a = 2,
-            type071OnDeployLine = 0,
             ferry = 4,
             roro = 2,
             barge = 1,
@@ -2190,13 +2184,10 @@ config.red.amphibOps.zones = {
         {
           from = {
             heading = 82,
-            startingPoints = { type075 = constants.AREAS.STARTING_POINT_075_PENGHU },
+            startingPoint = constants.AREAS.STARTING_POINT_075_PENGHU,
           },
           to = {
-            startingPoints = {
-              type075 = constants.AREAS.DESTINATION_075_PENGHU,
-              type071 = constants.AREAS.DESTINATION_071_PENGHU,
-            },
+            startingPoint = constants.AREAS.DESTINATION_075_PENGHU,
           },
           shipCounts = {
             type075 = 1,
@@ -2205,7 +2196,6 @@ config.red.amphibOps.zones = {
             type072iii = 2,
             type072a = 3,
             type073a = 1,
-            type071OnDeployLine = 0,
             ferry = 0,
             roro = 0,
             barge = 0,

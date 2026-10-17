@@ -183,7 +183,7 @@ local function createAmphibiousTaskForceLocationDataString(config)
 
     local point = GameApi.ScenEdit_GetReferencePoint({
       side = constants.SIDES.RED,
-      name = zone.fleet.groups[1].from.startingPoints.type075[1],
+      name = zone.fleet.groups[1].from.startingPoint[1],
     })
 
     if point then
