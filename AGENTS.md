@@ -21,6 +21,12 @@ bash bin/build.sh -c -n -l -i
 ```
 Run after editing Lua; do not add new warnings.
 
+### CMO Runtime Logs
+Logs are in `$CMO_DIR/Logs/` (env var = player's CMO install dir, WSL path; if unset, ask the user). Never hardcode it.
+- `YYYY-MM-DD_HH.MM.SS.txt`: session log, grep `Lua script execution error`.
+- `LuaHistory_YYYY-MM-DD.txt`: Lua output and stack traces.
+- `CachedChunk:N` in an error is line N of `slim/main.lua`.
+
 ### Build and Deployment
 ```bash
 # Full deployment build: UI build -> Lua flatten/inject -> minify -> inject into .scen (in place, keeps .bak)
