@@ -16,15 +16,15 @@ local MISSION_TYPE = {
 
 ---Zone config keys whose missions are created as cargo transport missions.
 ---@type string[]
-local CARGO_MISSION_PLATFORMS = { "boat", "transportHelicopter" }
+local CARGO_MISSION_PLATFORMS = { "hovercraft", "transportHelicopter" }
 
 ---Zone group holding each mission platform descriptor
 ---@type table<string, "landing"|"air">
-local PLATFORM_GROUPS = { boat = "landing", transportHelicopter = "air", attackHelicopter = "air" }
+local PLATFORM_GROUPS = { hovercraft = "landing", transportHelicopter = "air", attackHelicopter = "air" }
 
 ---Look up a mission platform descriptor of a zone by its config key
 ---@param zone SBJ__OperationalZoneDescriptor
----@param platformKey string Platform config key (e.g., "boat", "transportHelicopter")
+---@param platformKey string Platform config key (e.g., "hovercraft", "transportHelicopter")
 ---@return SBJ__HovercraftMissionDescriptor|SBJ__TransportHelicopterDescriptor|SBJ__AttackHelicopterDescriptor
 local function getPlatformDescriptor(zone, platformKey)
   return zone[PLATFORM_GROUPS[platformKey]][platformKey]
@@ -50,7 +50,7 @@ local SHIP_TRANSFER_SPECS = {
     dbids = { constants.PLATFORMS.TYPE_075, constants.PLATFORMS.TYPE_076 },
     manifestKey = "type075",
     transfers = {
-      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "boat",                loadoutIdx = 1 },
+      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",  loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 2 },
     },
@@ -64,7 +64,7 @@ local SHIP_TRANSFER_SPECS = {
     dbids = { constants.PLATFORMS.TYPE_071 },
     manifestKey = "type071",
     transfers = {
-      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "boat",                loadoutIdx = 1 },
+      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",  loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
     },
     assignments = {
@@ -237,7 +237,7 @@ end
 -- ============================================================================
 
 ---Create a cargo transport mission with configured doctrine
----@param platformType string Platform config key (e.g., "boat", "transportHelicopter")
+---@param platformType string Platform config key (e.g., "hovercraft", "transportHelicopter")
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param missionName string
 ---@return boolean success True if mission was successfully created and configured
@@ -301,13 +301,19 @@ function AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
     if unit and AMPHIBIOUS_SHIP_DBIDS[unit.dbid] then
-      if unit.unitstate ~= "Unassigned" then
-        isUnitMoving = true
-        break
-      end
+      local isInHoldingArea = unit:inArea(zone.movement.holdingAreas.mothership)
+          or unit:inArea(zone.movement.holdingAreas.deployLine)
 
-      if unit:inArea(zone.movement.holdingAreas.mothership) or unit:inArea(zone.movement.holdingAreas.deployLine) then
-        table.insert(unitsInHoldingAreas, unit)
+      -- filteredUnits spans every zone; only this zone's ships may hold up its arrival
+      if isInHoldingArea or unit:inArea(zone.fleet.stagingArea) then
+        if unit.unitstate ~= "Unassigned" then
+          isUnitMoving = true
+          break
+        end
+
+        if isInHoldingArea then
+          table.insert(unitsInHoldingAreas, unit)
+        end
       end
     end
   end

@@ -104,6 +104,7 @@ describe("AmphibiousLogistics", function()
   local function makeOperationalZone(overrides)
     local zone = {
       name = "ZoneAlpha",
+      fleet = { stagingArea = { "RP-STG-1" } },
       movement = {
         holdingAreas = {
           mothership = { "RP-ANC-1", "RP-ANC-2" },
@@ -111,7 +112,7 @@ describe("AmphibiousLogistics", function()
         },
       },
       landing = {
-        boat = {
+        hovercraft = {
           dbid = 3001,
           zone = { "RP-BOAT-1" },
           settings = { throttle = "Full" },
@@ -434,6 +435,7 @@ describe("AmphibiousLogistics", function()
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_075,
         unitstate = "Tasked",
+        inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
 
@@ -446,12 +448,30 @@ describe("AmphibiousLogistics", function()
       assert.are.equal(0, #result.units)
     end)
 
+    -- Negative: ships of other zones (outside staging and holding areas) must not block arrival
+    it("should ignore moving ships that belong to another zone", function()
+      local otherZoneShip = makeUnit({
+        guid = "SHIP-OTHER",
+        dbid = constants.PLATFORMS.TYPE_075,
+        unitstate = "Tasked",
+      })
+      local filteredUnits = { { guid = "SHIP-OTHER" } }
+
+      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(otherZoneShip))
+
+      local result = AmphibiousLogistics.getUnitsInHoldingAreas(makeOperationalZone(), filteredUnits)
+
+      assert.is_false(result.isUnitMoving)
+      assert.are.equal(0, #result.units)
+    end)
+
     -- Positive: should stop processing once a moving unit is found
     it("should stop processing remaining units once a moving unit is found", function()
       local movingUnit = makeUnit({
         guid = "SHIP-001",
         dbid = constants.PLATFORMS.TYPE_075,
         unitstate = "Tasked",
+        inArea = function() return true end,
       })
       local stationaryUnit = makeUnit({
         guid = "SHIP-002",
@@ -568,7 +588,7 @@ describe("AmphibiousLogistics", function()
 
       assert.stub(stubAddMission).was.called_with(
         "China", "BoatMission-1", "Cargo",
-        { zone = zone.landing.boat.zone }
+        { zone = zone.landing.hovercraft.zone }
       )
       assert.stub(stubAddMission).was.called_with(
         "China", "HeloMission-1", "Cargo",
@@ -591,7 +611,7 @@ describe("AmphibiousLogistics", function()
     it("should create missions for all missions in a zone", function()
       local zone = makeOperationalZone({
         landing = {
-          boat = {
+          hovercraft = {
             dbid = 3001,
             zone = { "RP-BOAT-1" },
             settings = { throttle = "Full" },
@@ -687,7 +707,7 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubAssignMission).was.called_with(
         "SHIP-075", "Aircraft", zone.air.attackHelicopter.dbid, zone.air.attackHelicopter.missions)
       assert.stub(stubAssignMission).was_not.called_with(
-        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.landing.boat.dbid, zone.landing.boat.missions)
+        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.landing.hovercraft.dbid, zone.landing.hovercraft.missions)
     end)
 
     -- Positive: should treat Type 076 ships like Type 075
