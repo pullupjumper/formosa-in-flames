@@ -113,9 +113,9 @@ end
 ---Calculate ship positions
 ---@param firstRp CMO__Location
 ---@param verticalHeading number
----@param verticalDistance number
+---@param verticalDistanceNm number
 ---@return table<string, CMO__Location> # Positions of various ship types
-local function calculateShipPositions(firstRp, verticalHeading, verticalDistance)
+local function calculateShipPositions(firstRp, verticalHeading, verticalDistanceNm)
   local positions = {}
 
   positions.type075 = firstRp
@@ -123,63 +123,63 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
     latitude = firstRp.latitude,
     longitude = firstRp.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.type076 = GameApi.World_GetPointFromBearing({
     latitude = positions.type071.latitude,
     longitude = positions.type071.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.barge = GameApi.World_GetPointFromBearing({
     latitude = positions.type076.latitude,
     longitude = positions.type076.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.roro = GameApi.World_GetPointFromBearing({
     latitude = positions.barge.latitude,
     longitude = positions.barge.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.ferry = GameApi.World_GetPointFromBearing({
     latitude = positions.roro.latitude,
     longitude = positions.roro.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.type072a = GameApi.World_GetPointFromBearing({
     latitude = positions.ferry.latitude,
     longitude = positions.ferry.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.type072iii = GameApi.World_GetPointFromBearing({
     latitude = positions.type072a.latitude,
     longitude = positions.type072a.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.type073a = GameApi.World_GetPointFromBearing({
     latitude = positions.type072iii.latitude,
     longitude = positions.type072iii.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   positions.type082 = GameApi.World_GetPointFromBearing({
     latitude = positions.type073a.latitude,
     longitude = positions.type073a.longitude,
     bearing = verticalHeading,
-    distance = verticalDistance
+    distance = verticalDistanceNm
   })
 
   return positions
@@ -270,7 +270,7 @@ local function createShipsByType(position, shipType, formationCtx)
   local params = {
     initialLocation = position,
     bearing = group.from.heading - shipSettings.rowBearingOffset,
-    distance = shipSettings.horizontalDistance,
+    distance = shipSettings.horizontalDistanceNm,
     num = group.shipCounts[shipType]
   }
 
@@ -700,7 +700,7 @@ end
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig
 ---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(amphibOpsConfig)
-  local layoutConfig = amphibOpsConfig.formationSettings
+  local layoutConfig = amphibOpsConfig.formation
   local cargoMap = amphibOpsConfig.cargo
 
   for _, zone in ipairs(amphibOpsConfig.zones) do
@@ -709,7 +709,7 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
         side = constants.SIDES.RED, area = group.from.startingPoint
       })[1]
 
-      local positions = calculateShipPositions(firstRp075, group.from.heading, layoutConfig.verticalDistance)
+      local positions = calculateShipPositions(firstRp075, group.from.heading, layoutConfig.verticalDistanceNm)
 
       ---@type SBJ__ShipFormationContext
       local formationCtx = {

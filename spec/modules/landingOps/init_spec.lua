@@ -135,13 +135,13 @@ describe("LandingOps", function()
     -- Positive: delegates destination pre-calculation to ShipMovement
     it("should initialize landing operations by calculating destinations", function()
       local saveData = makeSaveData({ calculationResult = {} })
-      local cfg = { zones = {}, formationSettings = {} }
+      local cfg = { zones = {}, formation = {} }
       local stubCalc = trackStub(stub(ShipMovement, "planHoldingPositions"))
       local stubLay = trackStub(stub(MineClearing, "layMinefields"))
 
       LandingOps.init(makeConfig(cfg), saveData)
 
-      assert.stub(stubCalc).was.called_with(cfg.zones, cfg.formationSettings, saveData.red.amphibOps.calculationResult)
+      assert.stub(stubCalc).was.called_with(cfg.zones, cfg.formation, saveData.red.amphibOps.calculationResult)
       assert.stub(stubLay).was.called_with(cfg)
     end)
   end)

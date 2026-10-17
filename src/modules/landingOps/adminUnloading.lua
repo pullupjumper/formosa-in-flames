@@ -301,8 +301,7 @@ function AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
   local roros = {}
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
   local bargeEntries = {}
-  local report = LogFormat.report(
-    constants.TAGS.ADMIN_UNLOADING, "zone=" .. zone.name, "Admin unloading")
+  local report = LogFormat.report(constants.TAGS.ADMIN_UNLOADING, "zone=" .. zone.name, "Admin unloading")
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)

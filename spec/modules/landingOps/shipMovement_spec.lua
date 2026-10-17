@@ -113,10 +113,10 @@ describe("ShipMovement", function()
   local function makeFormationSettings(overrides)
     local settings = {
       shipSpeed = 12,
-      horizontalDistance = 0.5,
-      verticalDistance = 1.0,
-      deployLineSetback = 2.0,
-      transitDistance = 5.0,
+      horizontalDistanceNm = 0.5,
+      verticalDistanceNm = 1.0,
+      deployLineSetbackNm = 2.0,
+      transitDistanceNm = 5.0,
       rowBearingOffset = 90,
     }
     if overrides then
@@ -187,7 +187,7 @@ describe("ShipMovement", function()
   ---@return table
   local function makeAmphibOpsConfig(overrides)
     local cfg = {
-      formationSettings = makeFormationSettings(),
+      formation = makeFormationSettings(),
       zones = { makeZone() },
     }
     if overrides then
@@ -792,7 +792,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.are.equal("Taoyuan", calculationResult.Taoyuan.name)
@@ -817,7 +817,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       local result = calculationResult.Taoyuan.result
       assert.are.equal(constants.PLATFORMS.TYPE_075, result.type075.dbid)
@@ -841,7 +841,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.stub(stubGenerateLocations).was.called(10)
     end)
@@ -866,7 +866,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
@@ -881,8 +881,8 @@ describe("ShipMovement", function()
       assert.is_true(found)
     end)
 
-    -- Positive: derives barge position from Type 075 using deployLineSetback
-    it("should derive barge position from Type 075 using deployLineSetback", function()
+    -- Positive: derives barge position from Type 075 using deployLineSetbackNm
+    it("should derive barge position from Type 075 using deployLineSetbackNm", function()
       local rp075 = makeLocation({ latitude = 25.0 })
 
       stubGetRPs.invokes(function(rpTable)
@@ -895,7 +895,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
@@ -923,7 +923,7 @@ describe("ShipMovement", function()
         Taoyuan = { name = "Taoyuan", result = existingResult },
       }
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.are.equal(existingResult, calculationResult.Taoyuan.result)
     end)
@@ -940,7 +940,7 @@ describe("ShipMovement", function()
       config.zones = { makeZone(), makeZone({ name = "Penghu" }) }
       local calculationResult = {}
 
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.is_not_nil(calculationResult.Penghu)
@@ -956,7 +956,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       for _, call in ipairs(stubGenerateLocations.calls) do
         local params = call.vals[1]
@@ -977,7 +977,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      local result = ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -994,7 +994,7 @@ describe("ShipMovement", function()
 
       local calculationResult = {}
       local config = makeAmphibOpsConfig()
-      local result = ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      local result = ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -1014,7 +1014,7 @@ describe("ShipMovement", function()
       config.zones[1].fleet.groups[1].shipCounts.type075 = 0
       local calculationResult = {}
 
-      ShipMovement.planHoldingPositions(config.zones, config.formationSettings, calculationResult)
+      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGenerateLocations.calls) do

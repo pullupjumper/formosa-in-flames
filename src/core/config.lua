@@ -1667,15 +1667,15 @@ config.red.amphibOps.missionStartTime = {
   boat = { 41 * 60, 61 * 60, },
   reconUAV = { 0 }
 }
-config.red.amphibOps.formationSettings = {
-  deployLineSetback = 13,
-  horizontalDistance = 0.4,
-  verticalDistance = 0.4,
-  transitDistance = 13,
+config.red.amphibOps.formation = {
+  deployLineSetbackNm = 13,
+  horizontalDistanceNm = 0.4,
+  verticalDistanceNm = 0.4,
+  transitDistanceNm = 13,
   shipSpeed = 14,
   acvSpeed = 8,
-  acvTransitDistance = 5,
-  acvHorizontalDistance = 0.05,
+  acvTransitDistanceNm = 5,
+  acvHorizontalDistanceNm = 0.05,
   hovercraftSpeed = 40,
   sweeperSpeed = 25,
   rowBearingOffset = 90 -- ship rows run this many degrees off the zone heading
@@ -1686,7 +1686,7 @@ config.red.amphibOps.minefields = {
   { area = constants.AREAS.MINEFIELD_SISHU,   number = 500, delay = 0 },
   { area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
 }
--- Lane layout and routing shared by Type 529, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
+-- Lane layout and routing shared by Type 082, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
 config.red.amphibOps.tuning = {
   route = {
     deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
@@ -1925,15 +1925,15 @@ config.red.amphibOps.zones = {
             },
           }
         },
-        speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+        speed = config.red.amphibOps.formation.hovercraftSpeed
       },
       lstSettings = {
-        speed = config.red.amphibOps.formationSettings.shipSpeed,
-        distance = config.red.amphibOps.formationSettings.transitDistance
+        speed = config.red.amphibOps.formation.shipSpeed,
+        distance = config.red.amphibOps.formation.transitDistanceNm
       },
       acv = {
-        distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
-        speed = config.red.amphibOps.formationSettings.acvSpeed,
+        distance = config.red.amphibOps.formation.acvHorizontalDistanceNm,
+        speed = config.red.amphibOps.formation.acvSpeed,
         destination = {
           { latitude = "N 25.04.52", longitude = "E 121.10.05", },
           { latitude = "N 25.04.44", longitude = "E 121.13.54", },
@@ -1946,7 +1946,7 @@ config.red.amphibOps.zones = {
       sweeper = {
         missionName = "MINECLEARING/TOA/1/1",
         settings = {},
-        speed = config.red.amphibOps.formationSettings.sweeperSpeed
+        speed = config.red.amphibOps.formation.sweeperSpeed
       },
     },
   },
@@ -2149,15 +2149,15 @@ config.red.amphibOps.zones = {
             },
           }
         },
-        speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+        speed = config.red.amphibOps.formation.hovercraftSpeed
       },
       lstSettings = {
-        speed = config.red.amphibOps.formationSettings.shipSpeed,
-        distance = config.red.amphibOps.formationSettings.transitDistance
+        speed = config.red.amphibOps.formation.shipSpeed,
+        distance = config.red.amphibOps.formation.transitDistanceNm
       },
       acv = {
-        distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
-        speed = config.red.amphibOps.formationSettings.acvSpeed,
+        distance = config.red.amphibOps.formation.acvHorizontalDistanceNm,
+        speed = config.red.amphibOps.formation.acvSpeed,
         destination = {
           { latitude = "N 22.56.39", longitude = "E 120.10.37", },
           { latitude = "N 22.57.14", longitude = "E 120.12.09", },
@@ -2170,7 +2170,7 @@ config.red.amphibOps.zones = {
       sweeper = {
         missionName = "MINECLEARING/SISHU/1/1",
         settings = {},
-        speed = config.red.amphibOps.formationSettings.sweeperSpeed
+        speed = config.red.amphibOps.formation.sweeperSpeed
       },
     },
   },
@@ -2353,15 +2353,15 @@ config.red.amphibOps.zones = {
             },
           }
         },
-        speed = config.red.amphibOps.formationSettings.hovercraftSpeed
+        speed = config.red.amphibOps.formation.hovercraftSpeed
       },
       lstSettings = {
-        speed = config.red.amphibOps.formationSettings.shipSpeed,
-        distance = config.red.amphibOps.formationSettings.transitDistance
+        speed = config.red.amphibOps.formation.shipSpeed,
+        distance = config.red.amphibOps.formation.transitDistanceNm
       },
       acv = {
-        distance = config.red.amphibOps.formationSettings.acvHorizontalDistance,
-        speed = config.red.amphibOps.formationSettings.acvSpeed,
+        distance = config.red.amphibOps.formation.acvHorizontalDistanceNm,
+        speed = config.red.amphibOps.formation.acvSpeed,
         destination = {
           { latitude = "N 23.31.00", longitude = "E 119.33.54", },
           { latitude = "N 23.31.35", longitude = "E 119.35.36", },
@@ -2375,7 +2375,7 @@ config.red.amphibOps.zones = {
       sweeper = {
         missionName = "MINECLEARING/PENGHU/1/1",
         settings = {},
-        speed = config.red.amphibOps.formationSettings.sweeperSpeed
+        speed = config.red.amphibOps.formation.sweeperSpeed
       },
     },
   },

@@ -216,7 +216,7 @@ flowchart BT
 | `config.red.amphibOps.cargo` | 各艦型貨物清單（依艦型索引） |
 | `config.red.amphibOps.transferCargo` | 轉移用貨物清單（依作戰群組索引） |
 | `config.red.amphibOps.missionStartTime` | 各載具類型任務延遲時間 |
-| `config.red.amphibOps.formationSettings` | 編隊設定（間距、速度、航向） |
+| `config.red.amphibOps.formation` | 編隊設定（間距、速度、航向） |
 | `config.red.amphibOps.zones` | 作戰區設定：`fleet`（集結區→等待區）、`sags`（SAG 護航編隊）、`movement`（基地、母艦乘載區、展開線、抵達門檻）、`air`（空降區、直升機任務）、`landing`（登陸艇、LST、ACV、灘頭） |
 | `config.red.amphibOps.tuning` | 共用參數：`route`、`mineClearing`、`assaultBoat`、`obstacle`、`acvWave` |
 | `config.red.amphibOps.transportAircraft` | 運輸機配置（空降部隊） |

@@ -21,13 +21,13 @@ SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、�
 等待區的艦船佈局以 Type 075 的參考點為起始，其餘艦型依垂直距離依序排列：
 
 ```
-                       ← 水平方向（horizontalDistance）→
+                       ← 水平方向（horizontalDistanceNm）→
 
   登陸母艦乘載區 (mothership):
   Type 075 起始點 ──→  [075] [075] [075] ...
   Type 071          →  [071] [071] [071] ...
   Type 076          →  [076] [076] ...
-                        ↕ deployLineSetback
+                        ↕ deployLineSetbackNm
   登陸艦艇展開線 (deployLine):
   Barge             →  [Barge] [Barge] ...
   RORO              →  [RORO] [RORO] ...
@@ -43,15 +43,15 @@ SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、�
 | 順序 | 艦型 key | 基準來源 | 距離參數 |
 |:-:|---|---|---|
 | 1 | `type075` | 參考點 `to.startingPoint` | — |
-| 2 | `type071` | 相對 `type075` | `verticalDistance` |
-| 3 | `type076` | 相對 `type071` | `verticalDistance` |
-| 4 | `barge` | 相對 `type075` | `deployLineSetback` |
-| 5 | `roro` | 相對 `barge` | `verticalDistance` |
-| 6 | `ferry` | 相對 `roro` | `verticalDistance` |
-| 7 | `type072a` | 相對 `ferry` | `verticalDistance` |
-| 8 | `type072iii` | 相對 `type072a` | `verticalDistance` |
-| 9 | `type073a` | 相對 `type072iii` | `verticalDistance` |
-| 10 | `type082` | 相對 `type073a` | `verticalDistance` |
+| 2 | `type071` | 相對 `type075` | `verticalDistanceNm` |
+| 3 | `type076` | 相對 `type071` | `verticalDistanceNm` |
+| 4 | `barge` | 相對 `type075` | `deployLineSetbackNm` |
+| 5 | `roro` | 相對 `barge` | `verticalDistanceNm` |
+| 6 | `ferry` | 相對 `roro` | `verticalDistanceNm` |
+| 7 | `type072a` | 相對 `ferry` | `verticalDistanceNm` |
+| 8 | `type072iii` | 相對 `type072a` | `verticalDistanceNm` |
+| 9 | `type073a` | 相對 `type072iii` | `verticalDistanceNm` |
+| 10 | `type082` | 相對 `type073a` | `verticalDistanceNm` |
 
 ---
 
@@ -115,7 +115,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `planHoldingPositions(zones, formationSettings, calculationResult)` | 計算所有作戰區域的艦船等待位置 |
+| `planHoldingPositions(zones, formation, calculationResult)` | 計算所有作戰區域的艦船等待位置 |
 | `moveToHoldingAreas(zone, calculationResult, filteredUnits, amphibOps)` | 驅動艦隊從集結區移動至等待位置（單一作戰區） |
 
 ---

@@ -36,15 +36,15 @@ local SAG_FORMATION = {
 
 ---@type {key: string, from: string, distanceKey: string}[]
 local SHIP_ROW_LAYOUT = {
-  { key = "type071",    from = "type075",    distanceKey = "verticalDistance" },
-  { key = "type076",    from = "type071",    distanceKey = "verticalDistance" },
-  { key = "barge",      from = "type075",    distanceKey = "deployLineSetback" },
-  { key = "roro",       from = "barge",      distanceKey = "verticalDistance" },
-  { key = "ferry",      from = "roro",       distanceKey = "verticalDistance" },
-  { key = "type072a",   from = "ferry",      distanceKey = "verticalDistance" },
-  { key = "type072iii", from = "type072a",   distanceKey = "verticalDistance" },
-  { key = "type073a",   from = "type072iii", distanceKey = "verticalDistance" },
-  { key = "type082",    from = "type073a",   distanceKey = "verticalDistance" }
+  { key = "type071",    from = "type075",    distanceKey = "verticalDistanceNm" },
+  { key = "type076",    from = "type071",    distanceKey = "verticalDistanceNm" },
+  { key = "barge",      from = "type075",    distanceKey = "deployLineSetbackNm" },
+  { key = "roro",       from = "barge",      distanceKey = "verticalDistanceNm" },
+  { key = "ferry",      from = "roro",       distanceKey = "verticalDistanceNm" },
+  { key = "type072a",   from = "ferry",      distanceKey = "verticalDistanceNm" },
+  { key = "type072iii", from = "type072a",   distanceKey = "verticalDistanceNm" },
+  { key = "type073a",   from = "type072iii", distanceKey = "verticalDistanceNm" },
+  { key = "type082",    from = "type073a",   distanceKey = "verticalDistanceNm" }
 }
 
 -- ============================================================================
@@ -57,7 +57,7 @@ local SHIP_ROW_LAYOUT = {
 ---@param amphibOps SBJ__AmphibOpsConfig
 local function moveShip(unit, location, amphibOps)
   unit.course = { location }
-  unit.manualSpeed = amphibOps.formationSettings.shipSpeed
+  unit.manualSpeed = amphibOps.formation.shipSpeed
 
   if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MOVING) then
     DebugFlow.teleport(unit.guid, location)
@@ -183,12 +183,6 @@ function ShipMovement.placeSagInFormation(sagUnit, holdingPoint, heading)
     end
 
     if ship and point then
-      -- GameApi.ScenEdit_SetUnit({
-      --   guid = ship.guid,
-      --   latitude = point.latitude,
-      --   longitude = point.longitude,
-      --   heading = heading,
-      -- })
       DebugFlow.teleport(ship.guid, { latitude = point.latitude, longitude = point.longitude })
       ship.heading = heading
       positioned = positioned + 1
@@ -278,10 +272,10 @@ end
 ---Calculate starting points for all ship types from the Type 075 reference point
 ---@param startingPoint string[]|nil Type 075 reference point names
 ---@param heading number Bearing the ship rows are stacked along
----@param formationSettings SBJ__AmphibiousFormationConfig
+---@param formation SBJ__AmphibiousFormationConfig
 ---@return table<string, CMO__Location>|nil startingPointMap Mapping of key to starting location
 ---@return table<string, any>|nil errorFields Log fields describing the failure
-local function calculateStartingPoints(startingPoint, heading, formationSettings)
+local function calculateStartingPoints(startingPoint, heading, formation)
   local startingPointMap = {}
   local errorFields
 
@@ -298,7 +292,7 @@ local function calculateStartingPoints(startingPoint, heading, formationSettings
       latitude = fromPoint.latitude,
       longitude = fromPoint.longitude,
       bearing = heading,
-      distance = formationSettings[row.distanceKey],
+      distance = formation[row.distanceKey],
     })
 
     if not startingPointMap[row.key] then
@@ -313,15 +307,15 @@ end
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
 ---@param params SBJ__BuildAllShipLocationsParams
 local function buildAllShipLocations(shipRowMap, params)
-  local formationSettings = params.formationSettings
+  local formation = params.formation
   for _, shipRow in ipairs(SHIP_ROWS) do
     Utils.addAll(
       shipRowMap[shipRow.key].locations,
       GameUtils.buildLocations({
         initialLocation = params.startingPointMap[shipRow.key],
         num = params.shipCounts[shipRow.key],
-        bearing = params.heading - formationSettings.rowBearingOffset,
-        distance = formationSettings.horizontalDistance,
+        bearing = params.heading - formation.rowBearingOffset,
+        distance = formation.horizontalDistanceNm,
       })
     )
   end
@@ -334,18 +328,14 @@ end
 ---Pre-calculate all destination positions for amphibious assault ships
 ---Generates grid of holding positions for each ship type with layered arrangement and spacing
 ---@param zones SBJ__OperationalZoneDescriptor[]
----@param formationSettings SBJ__AmphibiousFormationConfig
+---@param formation SBJ__AmphibiousFormationConfig
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
 ---@return boolean # True if all destination positions were calculated
-function ShipMovement.planHoldingPositions(zones, formationSettings, calculationResult)
+function ShipMovement.planHoldingPositions(zones, formation, calculationResult)
   for _, zone in ipairs(zones) do
     for groupIndex, group in ipairs(zone.fleet.groups) do
       initShipRowMap(zone.name, calculationResult)
-      local startingPointMap, errorFields = calculateStartingPoints(
-        group.to.startingPoint,
-        zone.heading,
-        formationSettings
-      )
+      local startingPointMap, errorFields = calculateStartingPoints(group.to.startingPoint, zone.heading, formation)
       if not startingPointMap then
         Logger.error(LogFormat.line("ERROR", LogFormat.merge(
           { operation = zone.name, areaIndex = groupIndex },
@@ -357,7 +347,7 @@ function ShipMovement.planHoldingPositions(zones, formationSettings, calculation
         startingPointMap = startingPointMap,
         shipCounts = group.shipCounts,
         heading = zone.heading,
-        formationSettings = formationSettings,
+        formation = formation,
       })
     end
   end

@@ -22,7 +22,10 @@ local LandingOps = {}
 function LandingOps.init(config, saveData)
   local amphibOps = config.red.amphibOps
   ShipMovement.planHoldingPositions(
-    amphibOps.zones, amphibOps.formationSettings, PersistentState.landingOps(saveData).amphibOps.calculationResult)
+    amphibOps.zones,
+    amphibOps.formation,
+    PersistentState.landingOps(saveData).amphibOps.calculationResult
+  )
   MineClearing.layMinefields(amphibOps)
 end
 

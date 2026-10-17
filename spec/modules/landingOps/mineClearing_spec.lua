@@ -62,7 +62,7 @@ describe("MineClearing", function()
         mineClearing = { areaMarginM = 60 },
       },
       minefields = {},
-      formationSettings = { shipSpeed = 17 }
+      formation = { shipSpeed = 17 }
     }
   end
 

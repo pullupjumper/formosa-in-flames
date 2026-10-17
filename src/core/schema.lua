@@ -683,7 +683,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field startingPointMap table<string, CMO__Location>
 ---@field shipCounts SBJ__FleetCompositionConfig
 ---@field heading number Zone heading; ships of one type line up perpendicular to it
----@field formationSettings SBJ__AmphibiousFormationConfig
+---@field formation SBJ__AmphibiousFormationConfig
 
 ---Per-zone state for amphibious operation phase tracking
 ---@class SBJ__ZoneState: table
@@ -935,14 +935,14 @@ function ScenEdit_DeleteMine(params) end
 ---Defines spacing and movement parameters for amphibious assault ship formations
 ---Used internally for calculating ship positions during landing operations
 ---@class SBJ__AmphibiousFormationConfig: table
----@field deployLineSetback number Distance from the mothership area to the deploy line
----@field horizontalDistance number Horizontal spacing between ships in formation
----@field verticalDistance number Vertical spacing between ships in formation
----@field transitDistance number Distance for transit phase
+---@field deployLineSetbackNm number Nautical miles from the mothership area to the deploy line
+---@field horizontalDistanceNm number Horizontal spacing between ships in formation
+---@field verticalDistanceNm number Vertical spacing between ships in formation
+---@field transitDistanceNm number Distance for transit phase
 ---@field shipSpeed number Ship movement speed
 ---@field acvSpeed number Amphibious combat vehicle speed
----@field acvTransitDistance number Amphibious combat vehicle transit distance
----@field acvHorizontalDistance number Amphibious combat vehicle horizontal spacing
+---@field acvTransitDistanceNm number Amphibious combat vehicle transit distance
+---@field acvHorizontalDistanceNm number Amphibious combat vehicle horizontal spacing
 ---@field hovercraftSpeed number
 ---@field sweeperSpeed number
 ---@field rowBearingOffset number Degrees between the zone heading and the direction ships of one type line up along
@@ -995,7 +995,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field cargo table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field transferCargo table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field missionStartTime table<string, number[]> Mission start times by type (seconds)
----@field formationSettings SBJ__AmphibiousFormationConfig Ship formation layout configuration
+---@field formation SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
 ---@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
 ---@field debug SBJ__AmphibDebugConfig Live-test shortcuts

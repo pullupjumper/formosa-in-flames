@@ -115,12 +115,12 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 登陸母艦乘載區（距岸 20–30 浬） | Type 075、076、071 |
 | 登陸艦艇展開線（距岸 11–16 浬） | 其他登陸艦艇（072III、072A、073A、渡輪、駁船等） |
 
-其他艦艇再往前到泛水出發線（距岸 2–4 浬），釋放衝鋒舟與兩棲車。`formationSettings.deployLineSetback = 13`（浬）是登陸艦艇展開線與登陸母艦乘載區的距離。
+其他艦艇再往前到泛水出發線（距岸 2–4 浬），釋放衝鋒舟與兩棲車。`formation.deployLineSetbackNm = 13`（浬）是登陸艦艇展開線與登陸母艦乘載區的距離。
 
 | 單位 | 速度 | 來源 |
 |---|---|---|
-| LST / LPD / 渡輪 / 駁船 | 14 kt | `formationSettings.shipSpeed` |
-| 兩棲車 | 8 kt（約 14.8 km/h） | `formationSettings.acvSpeed`，油門 Full |
+| LST / LPD / 渡輪 / 駁船 | 14 kt | `formation.shipSpeed` |
+| 兩棲車 | 8 kt（約 14.8 km/h） | `formation.acvSpeed`，油門 Full |
 | 氣墊船（Type 726A） | 約 40 kt | CMO 實測；config 只設油門 Full |
 | 運輸直升機（Z-18） | 約 130 kt | CMO 實測；config 設轉場 Military、到站 Afterburner，高度 304 |
 | 衝鋒舟 | 30 kt | `config.red.amphibOps.tuning.assaultBoat.speed`（`manualSpeed`） |
