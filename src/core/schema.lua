@@ -2058,6 +2058,9 @@ function ScenEdit_DeleteMinefield(params) end
 ---@field currentTime number Current scenario time in seconds
 ---@field filteredShips CMO__SideUnit[] Unit list from the side filtered for ships
 
+---One amphibious phase handler: checks its exit condition and advances zoneState.phase
+---@alias SBJ__PhaseStep fun(tickCtx: SBJ__LandingTickContext, zone: SBJ__OperationalZoneDescriptor, zoneState: SBJ__ZoneState)
+
 ---Ammunition totals and weapon choice for one group-attack step
 ---@class SBJ__GroupAttackRequest: table
 ---@field totalAmmoRequested integer Total amount of ammunition requested for this attack

@@ -76,7 +76,7 @@ describe("Hovercraft", function()
     for _, beachLane in ipairs(lanes.waterLanes[1].beachLanes) do
       beachLane.isCleared = isCleared
     end
-    return { lanes = lanes, obstacle = { cells = {} }, acvFirstWaveFull = true }
+    return { lanes = lanes, obstacle = { cells = {} } }
   end
 
   ---@param calls string[]
@@ -141,19 +141,6 @@ describe("Hovercraft", function()
       assert.are.equal("LANDING/TAO/1/1", entry.missionName)
       assert.are.same(craft.course[#craft.course], entry.finalPoint)
       assert.is_false(entry.arrived)
-    end)
-
-    -- Negative: hovercraft wait until the first ACV wave is full
-    it("should not launch before the first ACV wave is full", function()
-      local calls = {}
-      stubFleet(makeCraft(calls))
-      local zoneState = makeZoneState(true)
-      zoneState.acvFirstWaveFull = nil
-
-      Hovercraft.launchHovercraft(CONFIG, zone, zoneState, { { guid = "LHD-1", name = "LHD-1" } })
-
-      assert.are.same({}, calls)
-      assert.is_nil(zoneState.hovercraft)
     end)
 
     -- Negative: no cleared lane means the craft stays aboard

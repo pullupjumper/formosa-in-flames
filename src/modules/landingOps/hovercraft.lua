@@ -1,7 +1,6 @@
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
-local AcvWave = require("src.modules.landingOps.acvWave")
 local constants = require("src.core.constants")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 
@@ -88,10 +87,6 @@ end
 ---@param ships CMO__SideUnit[]
 function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   if not zoneState.lanes then
-    return
-  end
-  -- Hovercraft unload slowly, so they sail only after the first ACV wave is out (or the wait times out)
-  if not AcvWave.isFirstWaveFull(zoneState, amphibOps.tuning.acvWave, GameApi.ScenEdit_CurrentTime()) then
     return
   end
 
