@@ -128,14 +128,15 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
     if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
       local copy = Utils.deepCopy(waterLane.sweepCourse)
       table.remove(copy, 1)
-      GameApi.ScenEdit_SetUnit({
-        guid = sweeper.guid,
-        -- latitude = copy[1].latitude,
-        -- longitude = copy[1].longitude,
-        latitude = copy[#copy].latitude,
-        longitude = copy[#copy].longitude,
-        course = copy
-      })
+      -- GameApi.ScenEdit_SetUnit({
+      --   guid = sweeper.guid,
+      --   -- latitude = copy[1].latitude,
+      --   -- longitude = copy[1].longitude,
+      --   latitude = copy[#copy].latitude,
+      --   longitude = copy[#copy].longitude,
+      --   course = copy
+      -- })
+      DebugFlow.teleport(sweeper.guid, { latitude = copy[#copy].latitude, longitude = copy[#copy].longitude })
     end
 
     zoneState.minesweepers[sweeper.guid] = {
