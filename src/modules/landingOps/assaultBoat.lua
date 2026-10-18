@@ -196,6 +196,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
         local course = RoutePlanner.buildBoatRoute(
           zoneState.lanes,
           entry.beachLaneId,
+          { latitude = ship.latitude, longitude = ship.longitude },
           zoneState.queueCounters,
           amphibOps.tuning.route
         )

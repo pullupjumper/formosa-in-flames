@@ -23,6 +23,7 @@ describe("RoutePlanner", function()
       queueDepth = 5,
       queueSpacingM = 50,
       laneTieNm = 0.5,
+      laneTieM = 100,
       arrivalNm = 0.1,
     }
   end
@@ -55,7 +56,7 @@ describe("RoutePlanner", function()
   local function makeParams(lanes, overrides)
     local params = {
       lanes = lanes,
-      launchPos = LaneGeometry.buildPoint(frame, -3 * 1852, -1125),
+      launchPos = LaneGeometry.buildPoint(frame, -4 * 1852, -1125),
       guid = "ACV-1",
       routeConfig = makeRouteConfig(),
       queueCounters = {},
@@ -198,6 +199,48 @@ describe("RoutePlanner", function()
       assert.are.same(beachLane.assaultPoint, plan.course[4])
     end)
 
+    -- Positive: released abeam of the lane, the course never heads back out to sea
+    it("should enter the lane abeam of the launch position without backtracking", function()
+      local lanes = makeLanes(1)
+      clearAll(lanes)
+      local launchPos = LaneGeometry.buildPoint(frame, -2.5 * 1852, -900)
+
+      local plan = RoutePlanner.buildRoute(makeParams(lanes, { launchPos = launchPos }))
+      local alongs = {}
+      for i, point in ipairs(plan.course) do
+        alongs[i] = LaneGeometry.projectPoint(frame, point)
+      end
+
+      assert.are.same(lanes.waterLanes[1].assaultPoint, plan.course[2])
+      assert.is_true(math.abs(alongs[1] - (-2.5 * 1852)) < 1)
+      for i = 2, #alongs do
+        assert.is_true(alongs[i] >= alongs[i - 1] - 1)
+      end
+    end)
+
+    -- Negative: the entry never goes seaward of the deploy line
+    it("should clamp the entry to the deploy line", function()
+      local lanes = makeLanes(1)
+      clearAll(lanes)
+      local launchPos = LaneGeometry.buildPoint(frame, -20 * 1852, 0)
+
+      local plan = RoutePlanner.buildRoute(makeParams(lanes, { launchPos = launchPos }))
+      local entryAlong = LaneGeometry.projectPoint(frame, plan.course[1])
+
+      assert.is_true(math.abs(entryAlong - (-12 * 1852)) < 1)
+    end)
+
+    -- Positive: a unit beside the lane field takes the sideways-nearest lane
+    it("should pick the water lane nearest sideways, whatever the along distance", function()
+      local lanes = makeLanes(4)
+      clearAll(lanes)
+      local launchPos = LaneGeometry.buildPoint(frame, -2 * 1852, 300)
+
+      local plan = RoutePlanner.buildRoute(makeParams(lanes, { launchPos = launchPos }))
+
+      assert.are.equal("W3", plan.waterLaneId)
+    end)
+
     -- Negative: only cleared beach lanes are used
     it("should only route into cleared beach lanes", function()
       local lanes = makeLanes(4)
@@ -249,12 +292,14 @@ describe("RoutePlanner", function()
   -- ============================================================================
 
   describe("buildBoatRoute", function()
+    local boatPos = LaneGeometry.buildPoint(frame, -3.5 * 1852, -375)
+
     -- Positive: boat course ends at S_lane regardless of clearance
     it("should end at S_lane of the paired beach lane", function()
       local lanes = makeLanes(4)
       local queueCounters = {}
 
-      local course = RoutePlanner.buildBoatRoute(lanes, "W2-B3", queueCounters, makeRouteConfig())
+      local course = RoutePlanner.buildBoatRoute(lanes, "W2-B3", boatPos, queueCounters, makeRouteConfig())
       local waterLane, beachLane = RoutePlanner.findBeachLane(lanes, "W2-B3")
 
       assert.are.equal(5, #course)
@@ -263,9 +308,22 @@ describe("RoutePlanner", function()
       assert.are.equal(1, queueCounters.W2)
     end)
 
+    -- Positive: a boat released shoreward of L_i skips it instead of backtracking
+    it("should skip lane points already behind the launch position", function()
+      local lanes = makeLanes(4)
+      local pos = LaneGeometry.buildPoint(frame, -2.5 * 1852, -375)
+
+      local course = RoutePlanner.buildBoatRoute(lanes, "W2-B3", pos, {}, makeRouteConfig())
+      local waterLane, beachLane = RoutePlanner.findBeachLane(lanes, "W2-B3")
+
+      assert.are.equal(4, #course)
+      assert.are.same(waterLane.assaultPoint, course[2])
+      assert.are.same(beachLane.shorePoint, course[4])
+    end)
+
     -- Negative: unknown beach lane
     it("should return nil for an unknown beach lane id", function()
-      assert.is_nil(RoutePlanner.buildBoatRoute(makeLanes(1), "W9-B9", {}, makeRouteConfig()))
+      assert.is_nil(RoutePlanner.buildBoatRoute(makeLanes(1), "W9-B9", boatPos, {}, makeRouteConfig()))
     end)
   end)
 end)

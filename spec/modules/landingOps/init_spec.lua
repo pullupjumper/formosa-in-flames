@@ -137,12 +137,10 @@ describe("LandingOps", function()
       local saveData = makeSaveData({ calculationResult = {} })
       local cfg = { zones = {}, formation = {} }
       local stubCalc = trackStub(stub(ShipMovement, "planHoldingPositions"))
-      local stubLay = trackStub(stub(MineClearing, "layMinefields"))
 
       LandingOps.init(makeConfig(cfg), saveData)
 
       assert.stub(stubCalc).was.called_with(cfg.zones, cfg.formation, saveData.red.amphibOps.calculationResult)
-      assert.stub(stubLay).was.called_with(cfg)
     end)
   end)
 
@@ -252,7 +250,8 @@ describe("LandingOps", function()
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV"))
 
-      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, makeShip())
+      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData,
+        makeShip())
 
       assert.is_false(result)
       assert.stub(stubLaunch).was_not.called()

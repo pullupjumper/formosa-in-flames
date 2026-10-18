@@ -9,28 +9,35 @@ local RoutePlanner = {}
 -- ============================================================================
 
 local METERS_PER_NM = 1852
+local SAME_POINT_M = 1 -- lane points closer than this to the entry are the entry
+
+---@param lanes SBJ__LanePlanState
+---@return SBJ__LaneFrame
+local function laneFrame(lanes)
+  return { origin = lanes.origin, bearing = lanes.bearing }
+end
 
 -- ============================================================================
 -- Lane Selection
 -- ============================================================================
 
----Order water lanes by distance from the launch position; lanes within the tie band of the
----nearest come first, least-loaded first
----@param launchPos CMO__Location
+---Order water lanes by a distance measure; lanes within the tie band of the nearest come first,
+---least-loaded first
 ---@param waterLanes SBJ__WaterLaneEntry[]
 ---@param loads table<string, integer> Units already routed per water lane id
----@param laneTieNm number
+---@param tieM number
+---@param measure fun(waterLane: SBJ__WaterLaneEntry): number
 ---@return SBJ__WaterLaneEntry[]
-function RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)
+local function sortByMeasure(waterLanes, loads, tieM, measure)
   local entries = {}
   local nearest = math.huge
   for _, waterLane in ipairs(waterLanes) do
-    local distance = LaneGeometry.calculateDistanceM(launchPos, waterLane.launchPoint)
+    local distance = measure(waterLane)
     nearest = math.min(nearest, distance)
     table.insert(entries, { waterLane = waterLane, distance = distance, load = loads[waterLane.id] or 0 })
   end
 
-  local tieLimit = nearest + laneTieNm * METERS_PER_NM
+  local tieLimit = nearest + tieM
   table.sort(entries, function(a, b)
     local aTied, bTied = a.distance <= tieLimit, b.distance <= tieLimit
     if aTied ~= bTied then return aTied end
@@ -43,6 +50,35 @@ function RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)
     table.insert(sorted, entry.waterLane)
   end
   return sorted
+end
+
+---Order water lanes by distance from the launch position; lanes within the tie band of the
+---nearest come first, least-loaded first
+---@param launchPos CMO__Location
+---@param waterLanes SBJ__WaterLaneEntry[]
+---@param loads table<string, integer> Units already routed per water lane id
+---@param laneTieNm number
+---@return SBJ__WaterLaneEntry[]
+function RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)
+  return sortByMeasure(waterLanes, loads, laneTieNm * METERS_PER_NM, function(waterLane)
+    return LaneGeometry.calculateDistanceM(launchPos, waterLane.launchPoint)
+  end)
+end
+
+---Order water lanes by sideways distance from the launch position, so a unit released beside the
+---lane field takes an adjacent lane and never crosses another ship's gap
+---@param frame SBJ__LaneFrame
+---@param launchPos CMO__Location
+---@param waterLanes SBJ__WaterLaneEntry[]
+---@param loads table<string, integer>
+---@param laneTieM number
+---@return SBJ__WaterLaneEntry[]
+function RoutePlanner.sortWaterLanesByLateral(frame, launchPos, waterLanes, loads, laneTieM)
+  local _, launchLateral = LaneGeometry.projectPoint(frame, launchPos)
+  return sortByMeasure(waterLanes, loads, laneTieM, function(waterLane)
+    local _, lateral = LaneGeometry.projectPoint(frame, waterLane.launchPoint)
+    return math.abs(lateral - launchLateral)
+  end)
 end
 
 ---Pick the water lane for a launch position
@@ -75,21 +111,63 @@ end
 -- Queueing
 -- ============================================================================
 
----Take the next queue entry point for a water lane (line abreast → column)
----Each call moves the counter, so units released together enter the lane at staggered points.
+---Take the next queue counter value for a water lane
+---Each call moves the counter, so units released together get staggered entry points.
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param queueCounters table<string, integer>
----@param routeConfig SBJ__RouteConfig
----@return CMO__Location entryPoint
----@return integer k Counter value used for this unit
-local function takeEntryPoint(waterLane, queueCounters, routeConfig)
+---@return integer k
+local function takeQueueIndex(waterLane, queueCounters)
   local k = queueCounters[waterLane.id] or 0
   queueCounters[waterLane.id] = k + 1
+  return k
+end
 
-  local backoffM = (k % routeConfig.queueDepth) * routeConfig.columnSpacingM
+---Distance a queued unit backs off toward open sea
+---@param k integer
+---@param routeConfig SBJ__RouteConfig
+---@return number
+local function calculateBackoffM(k, routeConfig)
+  return (k % routeConfig.queueDepth) * routeConfig.columnSpacingM
+end
+
+---Approach for units released far offshore: entry on the launch→deploy stretch, then L_i and A_i
+---@param waterLane SBJ__WaterLaneEntry
+---@param k integer
+---@param routeConfig SBJ__RouteConfig
+---@return CMO__Location[]
+local function buildDeployApproach(waterLane, k, routeConfig)
   local laneLengthM = LaneGeometry.calculateDistanceM(waterLane.launchPoint, waterLane.deployPoint)
-  local t = laneLengthM > 0 and math.min(backoffM / laneLengthM, 1) or 0
-  return LaneGeometry.interpolate(waterLane.launchPoint, waterLane.deployPoint, t), k
+  local t = laneLengthM > 0 and math.min(calculateBackoffM(k, routeConfig) / laneLengthM, 1) or 0
+  local entryPoint = LaneGeometry.interpolate(waterLane.launchPoint, waterLane.deployPoint, t)
+  return { entryPoint, waterLane.launchPoint, waterLane.assaultPoint }
+end
+
+---Approach for units released beside the lane: enter the lane abeam of the launch position,
+---then only the lane points still ahead (toward shore). Nothing sends the unit back out to sea
+---except the queue stagger, and the entry never goes seaward of the deploy line.
+---@param frame SBJ__LaneFrame
+---@param waterLane SBJ__WaterLaneEntry
+---@param launchPos CMO__Location
+---@param k integer
+---@param routeConfig SBJ__RouteConfig
+---@return CMO__Location[]
+local function buildSideApproach(frame, waterLane, launchPos, k, routeConfig)
+  local launchAlong, laneLateral = LaneGeometry.projectPoint(frame, waterLane.launchPoint)
+  local deployAlong = LaneGeometry.projectPoint(frame, waterLane.deployPoint)
+  local assaultAlong = LaneGeometry.projectPoint(frame, waterLane.assaultPoint)
+  local shipAlong = LaneGeometry.projectPoint(frame, launchPos)
+
+  local entryAlong = shipAlong - calculateBackoffM(k, routeConfig)
+  entryAlong = math.max(deployAlong, math.min(entryAlong, assaultAlong))
+
+  local approach = { LaneGeometry.buildPoint(frame, entryAlong, laneLateral) }
+  if launchAlong > entryAlong + SAME_POINT_M then
+    table.insert(approach, waterLane.launchPoint)
+  end
+  if assaultAlong > entryAlong + SAME_POINT_M then
+    table.insert(approach, waterLane.assaultPoint)
+  end
+  return approach
 end
 
 ---Number of parking slots between E_lane and A_lane
@@ -135,14 +213,14 @@ end
 -- Course Building
 -- ============================================================================
 
----Course to a parking slot: [entry, L_i, A_i, A_lane, (S_lane), slot]
----@param waterLane SBJ__WaterLaneEntry
+---Course to a parking slot: [approach..., A_lane, (S_lane), slot]
+---@param approach CMO__Location[]
 ---@param beachLane SBJ__BeachLaneEntry
----@param entryPoint CMO__Location
 ---@param slot {point: CMO__Location, backoffM: number}
 ---@return CMO__Location[]
-local function buildSlotCourse(waterLane, beachLane, entryPoint, slot)
-  local course = { entryPoint, waterLane.launchPoint, waterLane.assaultPoint, beachLane.assaultPoint }
+local function buildSlotCourse(approach, beachLane, slot)
+  local course = { table.unpack(approach) }
+  table.insert(course, beachLane.assaultPoint)
   if slot.backoffM < LaneGeometry.calculateDistanceM(beachLane.endPoint, beachLane.shorePoint) then
     table.insert(course, beachLane.shorePoint)
   end
@@ -187,7 +265,14 @@ end
 ---@param opts SBJ__BuildRouteOpts|nil
 ---@return SBJ__RoutePlanResult|nil
 local function planInWaterLane(waterLane, params, opts)
-  local entryPoint, k = takeEntryPoint(waterLane, params.queueCounters, params.routeConfig)
+  local k = takeQueueIndex(waterLane, params.queueCounters)
+  local isFromDeployLine = opts and opts.isFromDeployLine
+  local approach
+  if isFromDeployLine then
+    approach = buildDeployApproach(waterLane, k, params.routeConfig)
+  else
+    approach = buildSideApproach(laneFrame(params.lanes), waterLane, params.launchPos, k, params.routeConfig)
+  end
 
   for _, beachLane in ipairs(rotateClearedBeachLanes(waterLane, k)) do
     local slots = params.laneSlots[beachLane.id] or {}
@@ -195,8 +280,8 @@ local function planInWaterLane(waterLane, params, opts)
 
     if slot then
       local slotPoint, backoffM = buildSlotPoint(beachLane, slot, params.routeConfig)
-      local course = buildSlotCourse(waterLane, beachLane, entryPoint, { point = slotPoint, backoffM = backoffM })
-      if opts and opts.isFromDeployLine then
+      local course = buildSlotCourse(approach, beachLane, { point = slotPoint, backoffM = backoffM })
+      if isFromDeployLine then
         table.insert(course, 1, waterLane.deployPoint)
       end
 
@@ -224,8 +309,14 @@ function RoutePlanner.buildRoute(params, opts)
     end
   end
 
-  local sorted = RoutePlanner.sortWaterLanes(
-    params.launchPos, candidates, params.queueCounters, params.routeConfig.laneTieNm)
+  local sorted
+  if opts and opts.isFromDeployLine then
+    sorted = RoutePlanner.sortWaterLanes(
+      params.launchPos, candidates, params.queueCounters, params.routeConfig.laneTieNm)
+  else
+    sorted = RoutePlanner.sortWaterLanesByLateral(
+      laneFrame(params.lanes), params.launchPos, candidates, params.queueCounters, params.routeConfig.laneTieM)
+  end
 
   for _, waterLane in ipairs(sorted) do
     local plan = planInWaterLane(waterLane, params, opts)
@@ -237,21 +328,25 @@ function RoutePlanner.buildRoute(params, opts)
   return nil
 end
 
----Course for an assault boat to its paired beach lane: [entry, L_i, A_i, A_lane, S_lane]
+---Course for an assault boat to its paired beach lane: [entry, (L_i), (A_i), A_lane, S_lane]
 ---Ignores obstacle state; the boat is the one going ashore to clear it.
 ---@param lanes SBJ__LanePlanState
 ---@param beachLaneId string
+---@param launchPos CMO__Location Where the boat is released
 ---@param queueCounters table<string, integer>
 ---@param routeConfig SBJ__RouteConfig
 ---@return CMO__Location[]|nil # nil when the beach lane id is unknown
-function RoutePlanner.buildBoatRoute(lanes, beachLaneId, queueCounters, routeConfig)
+function RoutePlanner.buildBoatRoute(lanes, beachLaneId, launchPos, queueCounters, routeConfig)
   local waterLane, beachLane = RoutePlanner.findBeachLane(lanes, beachLaneId)
   if not waterLane or not beachLane then
     return nil
   end
 
-  local entryPoint = takeEntryPoint(waterLane, queueCounters, routeConfig)
-  return { entryPoint, waterLane.launchPoint, waterLane.assaultPoint, beachLane.assaultPoint, beachLane.shorePoint }
+  local k = takeQueueIndex(waterLane, queueCounters)
+  local course = buildSideApproach(laneFrame(lanes), waterLane, launchPos, k, routeConfig)
+  table.insert(course, beachLane.assaultPoint)
+  table.insert(course, beachLane.shorePoint)
+  return course
 end
 
 return RoutePlanner

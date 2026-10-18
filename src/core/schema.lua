@@ -1027,6 +1027,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field queueDepth integer Number of queue entry points per water lane
 ---@field queueSpacingM number Spacing between parking slots inside a beach lane
 ---@field laneTieNm number Distance difference treated as a tie when choosing a water lane
+---@field laneTieM number Sideways distance treated as a tie when a unit released beside the lanes picks a water lane
 ---@field arrivalNm number Distance to the final waypoint that counts as arrived
 
 ---@class SBJ__MineClearingConfig: table

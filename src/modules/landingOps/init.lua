@@ -26,7 +26,6 @@ function LandingOps.init(config, saveData)
     amphibOps.formation,
     PersistentState.landingOps(saveData).amphibOps.calculationResult
   )
-  MineClearing.layMinefields(amphibOps)
 end
 
 ---Process all landing operation phases for the current event tick

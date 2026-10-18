@@ -1704,6 +1704,7 @@ config.red.amphibOps.tuning = {
     queueDepth = 5,                             -- 排隊入口點數量
     queueSpacingM = 50,                         -- 通道內停車位間距
     laneTieNm = 0.5,                            -- 距離差在此內視為平手，改選負載少的通道
+    laneTieM = 100,                             -- 側邊釋放的單位選通道時，橫向距離差在此內視為平手
     arrivalNm = 0.1,                            -- 離最後航點多近算到達
   },
   mineClearing = {

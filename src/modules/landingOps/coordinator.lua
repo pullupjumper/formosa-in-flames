@@ -99,6 +99,10 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
   local ok = MineClearing.startMineClearing(amphibOps, zone, zoneState, tickCtx.filteredShips) and
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_MISSION_CATEGORIES)
   if ok then
+    if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
+      MineClearing.layMinefields(amphibOps)
+    end
+
     zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
   end
 end
