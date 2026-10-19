@@ -106,21 +106,18 @@ end
 ---Build the lateral position per water lane, in the gaps between the deploy line LSTs.
 ---Return nil (even spacing) when there are no LSTs or the gaps cannot hold the lanes. The second case is reported.
 ---@param zone SBJ__OperationalZoneDescriptor
----@param frame SBJ__LaneFrame
----@param ships CMO__SideUnit[]
----@param count integer
----@param routeConfig SBJ__RouteConfig
+---@param params SBJ__BuildLateralsParams
 ---@param report SBJ__LogReport
 ---@return number[]|nil
-local function buildLaterals(zone, frame, ships, count, routeConfig, report)
-  local shipLaterals = AmphibiousAssault.findDeployLineLSTLaterals(zone, frame, ships)
+local function buildLaterals(zone, params, report)
+  local shipLaterals = AmphibiousAssault.findDeployLineLSTLaterals(zone, params.frame, params.ships)
   if #shipLaterals == 0 then
     return nil
   end
 
-  local laterals = LaneGeometry.buildWaterLaneLaterals(shipLaterals, count, routeConfig)
+  local laterals = LaneGeometry.buildWaterLaneLaterals(shipLaterals, params.count, params.routeConfig)
   if not laterals then
-    report.add("WARN", { reason = "ship_gaps_cannot_hold_lanes", ships = #shipLaterals, lanes = count })
+    report.add("WARN", { reason = "ship_gaps_cannot_hold_lanes", ships = #shipLaterals, lanes = params.count })
   end
   return laterals
 end
@@ -159,7 +156,12 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
     origin = center,
     bearing = zone.heading,
     count = #sweepers,
-    laterals = buildLaterals(zone, frame, ships, #sweepers, amphibOps.tuning.route, report),
+    laterals = buildLaterals(zone, {
+      frame = frame,
+      ships = ships,
+      count = #sweepers,
+      routeConfig = amphibOps.tuning.route,
+    }, report),
     inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.tuning.route.inlandMarginM,
     areaMarginM = amphibOps.tuning.mineClearing.areaMarginM,
     routeConfig = amphibOps.tuning.route,

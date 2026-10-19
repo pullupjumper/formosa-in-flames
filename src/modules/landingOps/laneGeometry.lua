@@ -162,15 +162,12 @@ end
 
 ---Check if every step between neighboring values is within [minM, maxM]
 ---@param values number[]
----@param first integer
----@param last integer
----@param minM number
----@param maxM number
+---@param params SBJ__IsStepRangeValidParams
 ---@return boolean # True if every step is within [minM, maxM]
-local function isStepRangeValid(values, first, last, minM, maxM)
-  for i = first, last - 1 do
+local function isStepRangeValid(values, params)
+  for i = params.first, params.last - 1 do
     local step = values[i + 1] - values[i]
-    if step < minM or step > maxM then
+    if step < params.minM or step > params.maxM then
       return false
     end
   end
@@ -205,7 +202,7 @@ function LaneGeometry.buildWaterLaneLaterals(shipLaterals, count, routeConfig)
   for first = 1, #candidates - count + 1 do
     local last = first + count - 1
     local offset = math.abs((candidates[first] + candidates[last]) / 2)
-    if offset < bestOffset and isStepRangeValid(candidates, first, last, minM, maxM) then
+    if offset < bestOffset and isStepRangeValid(candidates, { first = first, last = last, minM = minM, maxM = maxM }) then
       bestFirst, bestOffset = first, offset
     end
   end
@@ -239,14 +236,12 @@ end
 
 ---Build the corridor of square cells, one cell wide, along the strip from point a to point b
 ---@param frame SBJ__LaneFrame
----@param laneId string
----@param a CMO__Location Seaward end of the strip
----@param b CMO__Location Shoreward end of the strip
----@param cellSizeM number
+---@param params SBJ__BuildMineCorridorParams
 ---@return SBJ__MineCorridor
-local function buildMineCorridor(frame, laneId, a, b, cellSizeM)
-  local alongMin, lateralM = LaneGeometry.projectPoint(frame, a)
-  local alongMax = LaneGeometry.projectPoint(frame, b)
+local function buildMineCorridor(frame, params)
+  local laneId, cellSizeM = params.laneId, params.cellSizeM
+  local alongMin, lateralM = LaneGeometry.projectPoint(frame, params.a)
+  local alongMax = LaneGeometry.projectPoint(frame, params.b)
   local halfM = cellSizeM / 2
 
   local cells = {}
@@ -284,9 +279,19 @@ function LaneGeometry.buildMineCorridors(lanes, cellSizeM)
   local corridors = {}
 
   for _, waterLane in ipairs(lanes.waterLanes) do
-    table.insert(corridors, buildMineCorridor(frame, waterLane.id, waterLane.deployPoint, waterLane.assaultPoint, cellSizeM))
+    table.insert(corridors, buildMineCorridor(frame, {
+      laneId = waterLane.id,
+      a = waterLane.deployPoint,
+      b = waterLane.assaultPoint,
+      cellSizeM = cellSizeM,
+    }))
     for _, beachLane in ipairs(waterLane.beachLanes) do
-      table.insert(corridors, buildMineCorridor(frame, beachLane.id, beachLane.assaultPoint, beachLane.shorePoint, cellSizeM))
+      table.insert(corridors, buildMineCorridor(frame, {
+        laneId = beachLane.id,
+        a = beachLane.assaultPoint,
+        b = beachLane.shorePoint,
+        cellSizeM = cellSizeM,
+      }))
     end
   end
 

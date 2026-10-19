@@ -195,13 +195,12 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
       local boat = GameApi.ScenEdit_GetUnit(boatGuid)
 
       if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.landing.acv.area) then
-        local course = RoutePlanner.buildBoatRoute(
-          zoneState.lanes,
-          entry.beachLaneId,
-          { latitude = ship.latitude, longitude = ship.longitude },
-          zoneState.queueCounters,
-          amphibOps.tuning.route
-        )
+        local course = RoutePlanner.buildBoatRoute(entry.beachLaneId, {
+          lanes = zoneState.lanes,
+          launchPos = { latitude = ship.latitude, longitude = ship.longitude },
+          routeConfig = amphibOps.tuning.route,
+          queueCounters = zoneState.queueCounters,
+        })
 
         if course then
           boat.course = course

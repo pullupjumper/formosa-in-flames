@@ -218,15 +218,14 @@ end
 ---Move an LST to its station inside the offshore band.
 ---In fast-forward debug, teleport it onto the station first.
 ---@param amphibOps SBJ__AmphibOpsConfig
----@param entry SBJ__LstStation
----@param frame SBJ__LaneFrame
----@param shiftM number Meters toward shore applied to the whole formation
 ---@param zone SBJ__OperationalZoneDescriptor
+---@param entry SBJ__LstStation
+---@param params SBJ__MoveLSTToLaunchStationParams
 ---@return SBJ__LogResult # Deferred log result describing the outcome
-local function moveLSTToLaunchStation(amphibOps, entry, frame, shiftM, zone)
+local function moveLSTToLaunchStation(amphibOps, zone, entry, params)
   local unit = entry.unit
-  local alongM = entry.alongM + shiftM
-  local station = LaneGeometry.buildPoint(frame, alongM, entry.lateralM)
+  local alongM = entry.alongM + params.shiftM
+  local station = LaneGeometry.buildPoint(params.frame, alongM, entry.lateralM)
 
   if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
     DebugFlow.teleport(unit.guid, station)
@@ -332,7 +331,7 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
   local shiftM = -(nearM + farM) / 2 - (seawardM + shoreM) / 2
   local results = {}
   for _, entry in ipairs(entries) do
-    table.insert(results, moveLSTToLaunchStation(amphibOps, entry, frame, shiftM, zone))
+    table.insert(results, moveLSTToLaunchStation(amphibOps, zone, entry, { frame = frame, shiftM = shiftM }))
   end
 
   return true, results

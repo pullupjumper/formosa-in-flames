@@ -768,12 +768,15 @@ function ScenEdit_DeleteMine(params) end
 ---@field acv table<string, table<integer, string>> ACV slot holders per beach lane id
 ---@field hovercraft table<string, table<integer, string>> Hovercraft slot holders per beach lane id
 
----@class SBJ__BuildRouteParams: table
+---Inputs shared by the routes that enter a water lane abeam of the launch position
+---@class SBJ__SideApproachParams: table
 ---@field lanes SBJ__LanePlanState
 ---@field launchPos CMO__Location Where the unit starts
----@field guid string Unit taking the slot
 ---@field routeConfig SBJ__RouteConfig
 ---@field queueCounters table<string, integer> Also used as water lane load
+
+---@class SBJ__BuildRouteParams: SBJ__SideApproachParams
+---@field guid string Unit taking the slot
 ---@field laneSlots table<string, table<integer, string>> Slot holders for this unit kind
 ---@field cells SBJ__ObstacleCellEntry[]|nil
 ---@field isAlive fun(guid: string): boolean
@@ -836,6 +839,32 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__AcvAllocation: table
 ---@field acvType SBJ__AcvType
 ---@field count number ACVs to launch
+
+---Inputs for MineClearing buildLaterals
+---@class SBJ__BuildLateralsParams: table
+---@field frame SBJ__LaneFrame
+---@field ships CMO__SideUnit[]
+---@field count integer Number of water lanes wanted
+---@field routeConfig SBJ__RouteConfig
+
+---Inputs for AmphibiousAssault moveLSTToLaunchStation
+---@class SBJ__MoveLSTToLaunchStationParams: table
+---@field frame SBJ__LaneFrame
+---@field shiftM number Meters toward shore applied to the whole formation
+
+---Inputs for LaneGeometry isStepRangeValid
+---@class SBJ__IsStepRangeValidParams: table
+---@field first integer Index of the first value
+---@field last integer Index of the last value
+---@field minM number Smallest allowed step
+---@field maxM number Largest allowed step
+
+---Inputs for LaneGeometry buildMineCorridor
+---@class SBJ__BuildMineCorridorParams: table
+---@field laneId string
+---@field a CMO__Location Seaward end of the strip
+---@field b CMO__Location Shoreward end of the strip
+---@field cellSizeM number
 
 ---Station of an LST in the lane frame
 ---@class SBJ__LstStation: table

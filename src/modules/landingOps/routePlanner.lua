@@ -68,15 +68,13 @@ end
 
 ---Sort water lanes by sideways distance from the launch position. A unit released beside the
 ---lane field then takes an adjacent lane and never crosses the gap of another ship
----@param frame SBJ__LaneFrame
----@param launchPos CMO__Location
 ---@param waterLanes SBJ__WaterLaneEntry[]
----@param loads table<string, integer>
----@param laneTieM number
+---@param params SBJ__SideApproachParams
 ---@return SBJ__WaterLaneEntry[]
-function RoutePlanner.sortWaterLanesByLateral(frame, launchPos, waterLanes, loads, laneTieM)
-  local _, launchLateral = LaneGeometry.projectPoint(frame, launchPos)
-  return sortByMeasure(waterLanes, loads, laneTieM, function(waterLane)
+function RoutePlanner.sortWaterLanesByLateral(waterLanes, params)
+  local frame = laneFrame(params.lanes)
+  local _, launchLateral = LaneGeometry.projectPoint(frame, params.launchPos)
+  return sortByMeasure(waterLanes, params.queueCounters, params.routeConfig.laneTieM, function(waterLane)
     local _, lateral = LaneGeometry.projectPoint(frame, waterLane.launchPoint)
     return math.abs(lateral - launchLateral)
   end)
@@ -146,19 +144,18 @@ end
 ---Build the approach for units released beside the lane: enter the lane abeam of the launch position,
 ---then use only the lane points still ahead (toward shore). Only the queue stagger sends the unit
 ---back out to sea, and the entry never goes seaward of the deploy line.
----@param frame SBJ__LaneFrame
 ---@param waterLane SBJ__WaterLaneEntry
----@param launchPos CMO__Location
 ---@param k integer
----@param routeConfig SBJ__RouteConfig
+---@param params SBJ__SideApproachParams
 ---@return CMO__Location[]
-local function buildSideApproach(frame, waterLane, launchPos, k, routeConfig)
+local function buildSideApproach(waterLane, k, params)
+  local frame = laneFrame(params.lanes)
   local launchAlong, laneLateral = LaneGeometry.projectPoint(frame, waterLane.launchPoint)
   local deployAlong = LaneGeometry.projectPoint(frame, waterLane.deployPoint)
   local assaultAlong = LaneGeometry.projectPoint(frame, waterLane.assaultPoint)
-  local shipAlong = LaneGeometry.projectPoint(frame, launchPos)
+  local shipAlong = LaneGeometry.projectPoint(frame, params.launchPos)
 
-  local entryAlong = shipAlong - calculateBackoffM(k, routeConfig)
+  local entryAlong = shipAlong - calculateBackoffM(k, params.routeConfig)
   entryAlong = math.max(deployAlong, math.min(entryAlong, assaultAlong))
 
   local approach = { LaneGeometry.buildPoint(frame, entryAlong, laneLateral) }
@@ -272,7 +269,7 @@ local function buildInWaterLane(waterLane, params, opts)
   if isFromDeployLine then
     approach = buildDeployApproach(waterLane, k, params.routeConfig)
   else
-    approach = buildSideApproach(laneFrame(params.lanes), waterLane, params.launchPos, k, params.routeConfig)
+    approach = buildSideApproach(waterLane, k, params)
   end
 
   for _, beachLane in ipairs(buildRotatedClearedBeachLanes(waterLane, k)) do
@@ -315,8 +312,7 @@ function RoutePlanner.buildRoute(params, opts)
     sorted = RoutePlanner.sortWaterLanes(
       params.launchPos, candidates, params.queueCounters, params.routeConfig.laneTieNm)
   else
-    sorted = RoutePlanner.sortWaterLanesByLateral(
-      laneFrame(params.lanes), params.launchPos, candidates, params.queueCounters, params.routeConfig.laneTieM)
+    sorted = RoutePlanner.sortWaterLanesByLateral(candidates, params)
   end
 
   for _, waterLane in ipairs(sorted) do
@@ -331,20 +327,17 @@ end
 
 ---Build the course for an assault boat to its paired beach lane: [entry, (L_i), (A_i), A_lane, S_lane].
 ---Ignore the obstacle state. The boat is the unit that goes ashore to clear it.
----@param lanes SBJ__LanePlanState
 ---@param beachLaneId string
----@param launchPos CMO__Location Where the boat is released
----@param queueCounters table<string, integer>
----@param routeConfig SBJ__RouteConfig
+---@param params SBJ__SideApproachParams launchPos is where the boat is released
 ---@return CMO__Location[]|nil # nil when the beach lane id is unknown
-function RoutePlanner.buildBoatRoute(lanes, beachLaneId, launchPos, queueCounters, routeConfig)
-  local waterLane, beachLane = RoutePlanner.findBeachLane(lanes, beachLaneId)
+function RoutePlanner.buildBoatRoute(beachLaneId, params)
+  local waterLane, beachLane = RoutePlanner.findBeachLane(params.lanes, beachLaneId)
   if not waterLane or not beachLane then
     return nil
   end
 
-  local k = updateQueueIndex(waterLane, queueCounters)
-  local course = buildSideApproach(laneFrame(lanes), waterLane, launchPos, k, routeConfig)
+  local k = updateQueueIndex(waterLane, params.queueCounters)
+  local course = buildSideApproach(waterLane, k, params)
   table.insert(course, beachLane.assaultPoint)
   table.insert(course, beachLane.shorePoint)
   return course

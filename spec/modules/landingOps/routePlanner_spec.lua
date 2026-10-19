@@ -285,7 +285,9 @@ describe("RoutePlanner", function()
       local lanes = buildLanes(4)
       local queueCounters = {}
 
-      local course = RoutePlanner.buildBoatRoute(lanes, "W2-B3", boatPos, queueCounters, buildRouteConfig())
+      local course = RoutePlanner.buildBoatRoute("W2-B3", {
+        lanes = lanes, launchPos = boatPos, queueCounters = queueCounters, routeConfig = buildRouteConfig(),
+      })
       local waterLane, beachLane = RoutePlanner.findBeachLane(lanes, "W2-B3")
 
       assert.are.equal(5, #course)
@@ -298,7 +300,9 @@ describe("RoutePlanner", function()
       local lanes = buildLanes(4)
       local pos = LaneGeometry.buildPoint(frame, -2.5 * 1852, -375)
 
-      local course = RoutePlanner.buildBoatRoute(lanes, "W2-B3", pos, {}, buildRouteConfig())
+      local course = RoutePlanner.buildBoatRoute("W2-B3", {
+        lanes = lanes, launchPos = pos, queueCounters = {}, routeConfig = buildRouteConfig(),
+      })
       local waterLane, beachLane = RoutePlanner.findBeachLane(lanes, "W2-B3")
 
       assert.are.equal(4, #course)
@@ -307,7 +311,9 @@ describe("RoutePlanner", function()
     end)
 
     it("should return nil for an unknown beach lane id", function()
-      assert.is_nil(RoutePlanner.buildBoatRoute(buildLanes(1), "W9-B9", boatPos, {}, buildRouteConfig()))
+      assert.is_nil(RoutePlanner.buildBoatRoute("W9-B9", {
+        lanes = buildLanes(1), launchPos = boatPos, queueCounters = {}, routeConfig = buildRouteConfig(),
+      }))
     end)
   end)
 end)

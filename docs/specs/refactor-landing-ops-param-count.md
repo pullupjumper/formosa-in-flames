@@ -8,17 +8,19 @@
 
 目前有 7 個函式超過 4 個參數。各自的處理方式：
 
-| 函式 | 現況 | 處理 |
+| 函式 | 現況 | 結果 |
 |---|---|---|
-| `mineClearing.buildLaterals` | 6 個（`zone, frame, ships, count, routeConfig, report`） | `zone, frame, ships` 以外的輸入包成 `params`（`SBJ__BuildLateralsParams`） |
-| `amphibiousAssault.moveLSTToLaunchStation` | 5 個（`amphibOps, entry, frame, shiftM, zone`） | `frame, shiftM` 併入 `params`（`SBJ__MoveLSTToLaunchStationParams`） |
-| `laneGeometry.isStepRangeValid` | 5 個（`values, first, last, minM, maxM`） | `minM, maxM` 併成 `range`，或 `first, last` 併成 `params` |
-| `laneGeometry.buildMineCorridor` | 5 個（`frame, laneId, a, b, cellSizeM`） | `a, b` 併成 `strip`（兩端點） |
-| `routePlanner.sortWaterLanesByLateral` | 5 個（`frame, launchPos, waterLanes, loads, laneTieM`） | `loads, laneTieM` 併入 `params` |
-| `routePlanner.buildSideApproach` | 5 個（`frame, waterLane, launchPos, k, routeConfig`） | 依「固定順序」整理，`k` 併入 `params` |
-| `routePlanner.buildBoatRoute` | 5 個（`lanes, beachLaneId, launchPos, queueCounters, routeConfig`） | `queueCounters` 與 `routeConfig` 的取用方式整理（併 `ctx` 或 `params`） |
+| `mineClearing.buildLaterals` | 6 個 | `(zone, params, report)`，`params` 為 `SBJ__BuildLateralsParams`（`frame, ships, count, routeConfig`） |
+| `amphibiousAssault.moveLSTToLaunchStation` | 5 個 | `(amphibOps, zone, entry, params)`，`params` 為 `SBJ__MoveLSTToLaunchStationParams`（`frame, shiftM`） |
+| `laneGeometry.isStepRangeValid` | 5 個 | `(values, params)`，`params` 為 `SBJ__IsStepRangeValidParams`（`first, last, minM, maxM`） |
+| `laneGeometry.buildMineCorridor` | 5 個 | `(frame, params)`，`params` 為 `SBJ__BuildMineCorridorParams`（`laneId, a, b, cellSizeM`） |
+| `routePlanner.sortWaterLanesByLateral` | 5 個 | `(waterLanes, params)`，`params` 為 `SBJ__SideApproachParams` |
+| `routePlanner.buildSideApproach` | 5 個 | `(waterLane, k, params)`，`params` 為 `SBJ__SideApproachParams` |
+| `routePlanner.buildBoatRoute` | 5 個 | `(beachLaneId, params)`，`params` 為 `SBJ__SideApproachParams` |
 
-實作時依下列規則決定包法，最終簽名以程式碼為準：
+`SBJ__SideApproachParams`（`lanes, launchPos, routeConfig, queueCounters`）是三個 routePlanner 函式共用的輸入；`SBJ__BuildRouteParams` 繼承它。
+
+包法依下列規則：
 
 - 必填輸入用 `params`，選填用 `opts`，一輪共用用 `ctx`；型別名 `SBJ__<函式名>Params`。
 - 每個函式最多一個 `params`。
