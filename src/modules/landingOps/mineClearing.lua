@@ -2,8 +2,6 @@ local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local Logger = require("src.utils.logger")
-local Utils = require("src.utils.utils")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
@@ -14,24 +12,27 @@ local MineClearing = {}
 -- Minefields
 -- ============================================================================
 
----Create the BLUE offshore minefields at scenario start. Skip minefields that have no reference points
+---Create the BLUE offshore minefields of one zone. Skip minefields that have no reference points
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig
-function MineClearing.createMinefields(amphibOpsConfig)
-  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "minefields", "Lay minefields")
+---@param zoneName string
+function MineClearing.createMinefields(amphibOpsConfig, zoneName)
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zoneName, "Lay minefields")
 
   for i, minefield in ipairs(amphibOpsConfig.minefields or {}) do
-    if not minefield.area or #minefield.area == 0 then
-      report.add("SKIP", { minefield = i, reason = "area_not_set" })
-    else
-      GameApi.ScenEdit_DeleteMinefield({ side = constants.SIDES.BLUE, area = minefield.area })
-      local laid = GameApi.ScenEdit_AddMinefield({
-        side = constants.SIDES.BLUE,
-        dbid = constants.WEAPONS.SEA_MINE,
-        number = minefield.number,
-        delay = minefield.delay,
-        area = minefield.area,
-      })
-      report.add(laid and "OK" or "FAIL", { minefield = i, laid = laid or 0 })
+    if minefield.zone == zoneName then
+      if not minefield.area or #minefield.area == 0 then
+        report.add("SKIP", { minefield = i, reason = "area_not_set" })
+      else
+        GameApi.ScenEdit_DeleteMinefield({ side = constants.SIDES.BLUE, area = minefield.area })
+        local laid = GameApi.ScenEdit_AddMinefield({
+          side = constants.SIDES.BLUE,
+          dbid = constants.WEAPONS.SEA_MINE,
+          number = minefield.number,
+          delay = minefield.delay,
+          area = minefield.area,
+        })
+        report.add(laid and "OK" or "FAIL", { minefield = i, laid = laid or 0 })
+      end
     end
   end
 
@@ -79,7 +80,7 @@ end
 ---@return integer # Mines deleted
 local function removeMinesOnLanes(amphibOps, lanes)
   local frame = { origin = lanes.origin, bearing = lanes.bearing }
-  local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.tuning.obstacle.cellSizeM)
+  local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.tuning.mineClearing.cellSizeM)
   local deleted = 0
 
   for _, minefield in ipairs(amphibOps.minefields or {}) do

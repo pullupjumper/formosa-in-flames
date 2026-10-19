@@ -43,7 +43,7 @@ CMO 的掃雷由內建任務完成。程式只把 082 指派到 `zone.landing.sw
 
 ## 佈雷（除錯用）
 
-`createMinefields` 依 `amphibOps.minefields` 每筆呼叫 `ScenEdit_AddMinefield`（藍方、`SEA_MINE`），先刪除同區域舊雷區。`area` 為空就跳過。目前只在 coordinator 的快轉路徑被呼叫，時序注意事項見 [debugFlow](debugFlow.md)。
+`createMinefields(amphibOps, zoneName)` 依 `amphibOps.minefields` 中 `zone` 相符的每筆呼叫 `ScenEdit_AddMinefield`（藍方、`SEA_MINE`），先刪除同區域舊雷區。`area` 為空就跳過。目前只在 coordinator 的快轉路徑被呼叫，時序注意事項見 [debugFlow](debugFlow.md)。
 
 快轉時 `removeMinesOnLanes` 會刪掉落在通道內的雷，作為 082 的替身。
 
@@ -55,7 +55,7 @@ CMO 的掃雷由內建任務完成。程式只把 082 指派到 `zone.landing.sw
 |---|---|
 | `startMineClearing(amphibOps, zone, zoneState, ships)` | 建通道並派 082，回傳是否成功 |
 | `updateMineClearing(amphibOps, zoneState)` | 每 tick 檢查，全部完成回 `true` |
-| `createMinefields(amphibOpsConfig)` | 佈雷 |
+| `createMinefields(amphibOpsConfig, zoneName)` | 佈雷 |
 
 ---
 
@@ -66,8 +66,9 @@ CMO 的掃雷由內建任務完成。程式只把 082 指派到 `zone.landing.sw
 | `zones[].landing.laneCenter`、`obstacleArea` | 通道原點與障礙範圍參考點（`constants.AREAS`） |
 | `zones[].landing.sweeper` | 掃雷任務名稱與速度 |
 | `tuning.mineClearing.areaMarginM` | 掃雷任務區域比最外側灘際通道多出的寬度 |
+| `tuning.mineClearing.cellSizeM` | 快轉掃雷的方塊邊長 |
 | `tuning.route.inlandMarginM`、`arrivalNm` | E_lane 超出障礙的距離、到達判斷 |
-| `amphibOps.minefields[]` | 雷區：`area`、`number`、`delay` |
+| `amphibOps.minefields[]` | 雷區：`zone`、`area`、`number`、`delay` |
 
 ---
 

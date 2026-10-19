@@ -1684,10 +1684,10 @@ config.red.amphibOps.formation = {
   rowBearingOffset = 90 -- ship rows run this many degrees off the zone heading
 }
 config.red.amphibOps.minefields = {
-  -- delay: CMO arming delay; area: BLUE-side reference points
-  { area = constants.AREAS.MINEFIELD_TAOYUAN, number = 500, delay = 0 },
-  { area = constants.AREAS.MINEFIELD_SISHU,   number = 500, delay = 0 },
-  { area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
+  -- zone: zone name that owns the minefield; delay: CMO arming delay; area: BLUE-side reference points
+  { zone = "Taoyuan", area = constants.AREAS.MINEFIELD_TAOYUAN, number = 500, delay = 0 },
+  { zone = "Sishu",   area = constants.AREAS.MINEFIELD_SISHU,   number = 500, delay = 0 },
+  { zone = "Penghu",  area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
 }
 -- Lane layout and routing shared by Type 082, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
 config.red.amphibOps.tuning = {
@@ -1712,6 +1712,7 @@ config.red.amphibOps.tuning = {
   },
   mineClearing = {
     areaMarginM = 60, -- 掃雷任務區域比最外側灘際通道再寬多少
+    cellSizeM = 300,  -- 快轉掃雷時判斷水雷在不在通道內的方塊邊長
   },
   assaultBoat = {
     speed = 30,

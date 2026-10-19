@@ -1093,9 +1093,11 @@ function ScenEdit_DeleteMine(params) end
 
 ---@class SBJ__MineClearingConfig: table
 ---@field areaMarginM number Extra width of the sweep mission area beyond the outermost beach lane
+---@field cellSizeM number Fast-forward mine cell edge length
 
 ---Offshore minefield laid for BLUE at scenario start
 ---@class SBJ__MinefieldDescriptor: table
+---@field zone string Name of the operational zone that owns this minefield
 ---@field area string[] BLUE-side reference point names; empty skips this minefield
 ---@field number integer Number of mines
 ---@field delay number CMO arming delay

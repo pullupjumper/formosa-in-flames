@@ -25,13 +25,13 @@ local Coordinator = {}
 ---Phases in which the fleet has arrived at the staging waters (used by the fire support gate)
 ---@type table<string, true>
 local ARRIVED_PHASES = {
-  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]         = true,
-  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]           = true,
-  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]            = true,
-  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]       = true,
-  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]          = true,
+  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]            = true,
+  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]             = true,
+  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]        = true,
+  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]          = true,
   [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING] = true,
-  [constants.AMPHIBIOUS_PHASES.COMPLETED]               = true,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]                = true,
 }
 
 ---Zone missions that start when the assault launches. The boat (hovercraft) missions wait for the lanes
@@ -104,13 +104,14 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
     return
   end
 
+  -- Lay this zone's mines first so the fast-forward sweep in startMineClearing has mines to remove
+  if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
+    MineClearing.createMinefields(amphibOps, zone.name)
+  end
+
   local ok = MineClearing.startMineClearing(amphibOps, zone, zoneState, tickCtx.filteredShips) and
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_MISSION_CATEGORIES)
   if ok then
-    if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
-      MineClearing.createMinefields(amphibOps)
-    end
-
     zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
   end
 end
@@ -186,13 +187,13 @@ end
 ---the next step run in the same tick. A zone can cross several phases at once.
 ---@type { phase: string, step: SBJ__PhaseStep }[]
 local PHASE_STEPS = {
-  { phase = constants.AMPHIBIOUS_PHASES.MOVING,                  step = stepMoving },
-  { phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL,         step = stepWaitingArrival },
-  { phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT,         step = stepWaitingAssault },
-  { phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING,           step = stepMineClearing },
-  { phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT,            step = stepBoatAssault },
-  { phase = constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING,       step = stepObstacleClearing },
-  { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING,         step = stepAssaultLanding },
+  { phase = constants.AMPHIBIOUS_PHASES.MOVING,                   step = stepMoving },
+  { phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL,          step = stepWaitingArrival },
+  { phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT,          step = stepWaitingAssault },
+  { phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING,            step = stepMineClearing },
+  { phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT,             step = stepBoatAssault },
+  { phase = constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING,        step = stepObstacleClearing },
+  { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING,          step = stepAssaultLanding },
   { phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING, step = stepWaitingAdminOffloading },
 }
 

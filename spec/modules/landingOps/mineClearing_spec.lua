@@ -142,9 +142,9 @@ describe("MineClearing", function()
     it("should lay BLUE sea mines for each configured minefield", function()
       local stubAdd = trackStub(stub(GameApi, "ScenEdit_AddMinefield").returns(40))
 
-      local config = { minefields = { { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 40, delay = 0 } } }
+      local config = { minefields = { { zone = "Z1", area = { "RP-M1", "RP-M2", "RP-M3" }, number = 40, delay = 0 } } }
 
-      MineClearing.createMinefields(config)
+      MineClearing.createMinefields(config, "Z1")
 
       assert.stub(stubAdd).was.called_with({
         side = constants.SIDES.BLUE,
@@ -159,11 +159,35 @@ describe("MineClearing", function()
     it("should skip minefields whose area is not set", function()
       local stubAdd = trackStub(stub(GameApi, "ScenEdit_AddMinefield"))
 
-      local config = { minefields = { { area = {}, number = 40, delay = 0 } } }
+      local config = { minefields = { { zone = "Z1", area = {}, number = 40, delay = 0 } } }
 
-      MineClearing.createMinefields(config)
+      MineClearing.createMinefields(config, "Z1")
 
       assert.stub(stubAdd).was_not.called()
+    end)
+
+    -- Each zone lays only its own minefield, so a later zone never re-mines lanes an earlier zone cleared
+    it("should lay only the minefield of the given zone", function()
+      local stubAdd = trackStub(stub(GameApi, "ScenEdit_AddMinefield").returns(40))
+      trackStub(stub(GameApi, "ScenEdit_DeleteMinefield"))
+
+      local config = {
+        minefields = {
+          { zone = "Z1", area = { "RP-A" }, number = 40, delay = 0 },
+          { zone = "Z2", area = { "RP-B" }, number = 40, delay = 0 },
+        },
+      }
+
+      MineClearing.createMinefields(config, "Z2")
+
+      assert.stub(stubAdd).was.called(1)
+      assert.stub(stubAdd).was.called_with({
+        side = constants.SIDES.BLUE,
+        dbid = constants.WEAPONS.SEA_MINE,
+        number = 40,
+        delay = 0,
+        area = { "RP-B" },
+      })
     end)
   end)
 
@@ -247,7 +271,7 @@ describe("MineClearing", function()
       trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local config = buildConfig()
       config.debug = { enabled = true }
-      config.tuning.obstacle = { cellSizeM = 50 }
+      config.tuning.mineClearing.cellSizeM = 50
       config.minefields = { { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 2, delay = 0 } }
 
       local zoneState = {}

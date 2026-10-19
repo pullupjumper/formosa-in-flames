@@ -32,9 +32,11 @@
 
 ### 為什麼佈雷只在快轉時發生？
 
-`createMinefields` 目前只在 coordinator 的 `stepWaitingAssault` 被呼叫，條件是 `MINE_CLEARING` 要快轉，且排在 `startMineClearing` **之後**。一般流程不會由程式佈雷。
+`createMinefields` 目前只在 coordinator 的 `stepWaitingAssault` 被呼叫，條件是 `MINE_CLEARING` 要快轉，且排在 `startMineClearing` **之前**。一般流程不會由程式佈雷。
 
-`removeMinesOnLanes`（快轉時刪掉通道內的雷）則在 `startMineClearing` 內執行，也就是**早於**佈雷。因此快轉時通道內的雷是否被清掉，取決於雷區在那之前是否已存在；這個順序沒有被測試或註解保證，改動時要留意。
+`removeMinesOnLanes`（快轉時刪掉通道內的雷）在 `startMineClearing` 內執行。必須先佈雷再清，否則清到 0 顆（`fastForwardMinesRemoved=0`）。
+
+`createMinefields(amphibOps, zone.name)` 只佈該區（`minefields[].zone` 相符）的雷區。若每區都佈全部雷區，後面的區會把前面區已清好的通道又佈滿雷。
 
 ---
 
