@@ -1,8 +1,6 @@
 local constants = require("src.core.constants")
-
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
-
 local AssignMission = require("src.modules.assignMission")
 
 local AmphibiousLogistics = {}

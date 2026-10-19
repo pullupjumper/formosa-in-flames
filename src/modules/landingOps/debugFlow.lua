@@ -1,5 +1,4 @@
 local constants = require("src.core.constants")
-
 local GameApi = require("src.utils.gameApi")
 
 ---Provide live-test shortcuts for the amphibious flow (config.red.amphibOps.debug).

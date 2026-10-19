@@ -1,11 +1,9 @@
 local constants = require("src.core.constants")
 local PersistentState = require("src.core.persistentState")
-
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
-
 local AttackManager = require("src.modules.attackManager")
 local AcvWave = require("src.modules.landingOps.acvWave")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
@@ -16,6 +14,66 @@ local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 
 local LandingOps = {}
+
+-- ============================================================================
+-- Helpers
+-- ============================================================================
+
+---Build the per-ACV course callback. It plans a course through the cleared lanes to a parking slot
+---and counts the ACV against the wave quota. It falls back to the zone destination when no lane has room.
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
+local function buildACVRouter(amphibOps, zone, zoneState)
+  zoneState.queueCounters = zoneState.queueCounters or {}
+  zoneState.laneSlots = zoneState.laneSlots or {}
+  zoneState.laneSlots.acv = zoneState.laneSlots.acv or {}
+
+  return function(unit, acvKey)
+    AcvWave.addACV(zoneState, acvKey, unit.guid)
+
+    local plan = zoneState.lanes and RoutePlanner.buildRoute({
+      lanes = zoneState.lanes,
+      launchPos = { latitude = unit.latitude, longitude = unit.longitude },
+      guid = unit.guid,
+      routeConfig = amphibOps.tuning.route,
+      queueCounters = zoneState.queueCounters,
+      laneSlots = zoneState.laneSlots.acv,
+      cells = zoneState.obstacle and zoneState.obstacle.cells,
+      isAlive = GameUtils.hasUnit,
+    })
+
+    if not plan then
+      Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
+      return zone.landing.acv.destination
+    end
+    if DebugFlow.isLandingTeleport(amphibOps) then
+      DebugFlow.teleport(unit.guid, plan.course[#plan.course])
+    end
+    return plan.course
+  end
+end
+
+---Find a SAG descriptor by group name across all zones
+---@param zones SBJ__OperationalZoneDescriptor[]
+---@param groupName string
+---@return SBJ__SAGDescriptor|nil
+local function findSAG(zones, groupName)
+  for _, zone in ipairs(zones) do
+    for _, sag in ipairs(zone.sags) do
+      if sag.groupName == groupName then
+        return sag
+      end
+    end
+  end
+
+  return nil
+end
+
+-- ============================================================================
+-- Public API
+-- ============================================================================
 
 ---Initialize landing operations runtime data
 ---@param config SBJ__Config
@@ -57,42 +115,6 @@ function LandingOps.process(config, saveData)
     scope = "landingOpsProcess",
     elapsedSec = string.format("%.4f", endTime - startTime)
   }))
-end
-
----Build the per-ACV course callback. It plans a course through the cleared lanes to a parking slot
----and counts the ACV against the wave quota. It falls back to the zone destination when no lane has room.
----@param amphibOps SBJ__AmphibOpsConfig
----@param zone SBJ__OperationalZoneDescriptor
----@param zoneState SBJ__ZoneState
----@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
-local function buildACVRouter(amphibOps, zone, zoneState)
-  zoneState.queueCounters = zoneState.queueCounters or {}
-  zoneState.laneSlots = zoneState.laneSlots or {}
-  zoneState.laneSlots.acv = zoneState.laneSlots.acv or {}
-
-  return function(unit, acvKey)
-    AcvWave.addACV(zoneState, acvKey, unit.guid)
-
-    local plan = zoneState.lanes and RoutePlanner.buildRoute({
-      lanes = zoneState.lanes,
-      launchPos = { latitude = unit.latitude, longitude = unit.longitude },
-      guid = unit.guid,
-      routeConfig = amphibOps.tuning.route,
-      queueCounters = zoneState.queueCounters,
-      laneSlots = zoneState.laneSlots.acv,
-      cells = zoneState.obstacle and zoneState.obstacle.cells,
-      isAlive = GameUtils.hasUnit,
-    })
-
-    if not plan then
-      Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
-      return zone.landing.acv.destination
-    end
-    if DebugFlow.isLandingTeleport(amphibOps) then
-      DebugFlow.teleport(unit.guid, plan.course[#plan.course])
-    end
-    return plan.course
-  end
 end
 
 ---Launch amphibious combat vehicles for a ship after its zone reaches the assault landing.
@@ -200,22 +222,6 @@ function LandingOps.offloadVehicles(config, saveData, ship)
   end
 
   return true
-end
-
----Find a SAG descriptor by group name across all zones
----@param zones SBJ__OperationalZoneDescriptor[]
----@param groupName string
----@return SBJ__SAGDescriptor|nil
-local function findSAG(zones, groupName)
-  for _, zone in ipairs(zones) do
-    for _, sag in ipairs(zone.sags) do
-      if sag.groupName == groupName then
-        return sag
-      end
-    end
-  end
-
-  return nil
 end
 
 ---Attack airlanding zone contacts with SAG surface fire support

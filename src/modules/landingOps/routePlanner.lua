@@ -1,5 +1,4 @@
 local constants = require("src.core.constants")
-
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 
 ---Build courses through the swept lanes for assault boats, ACVs and hovercraft.

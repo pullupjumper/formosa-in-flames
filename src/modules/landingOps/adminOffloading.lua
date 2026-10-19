@@ -1,5 +1,4 @@
 local constants = require("src.core.constants")
-
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
