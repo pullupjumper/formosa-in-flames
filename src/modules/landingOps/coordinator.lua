@@ -44,7 +44,7 @@ local HELICOPTER_MISSION_CATEGORIES = { "transportHelicopter", "attackHelicopter
 -- Helpers
 -- ============================================================================
 
----Handle the temporary loading and reconnaissance setup for Taoyuan only
+---Process the temporary loading and reconnaissance setup for Taoyuan only
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -215,7 +215,7 @@ local function processZone(tickCtx, zone)
   end
 end
 
----Handle periodic transfer of remaining cargo for zones with active airlanding missions
+---Process the periodic transfer of remaining cargo for zones with active airlanding missions
 ---@param tickCtx SBJ__LandingTickContext
 local function processRemainingCargoTransfer(tickCtx)
   local config, landingState = tickCtx.config, tickCtx.landingState
@@ -251,7 +251,7 @@ end
 ---Evaluate the fire support gate from the SRBM ammo level and the fleet arrival status.
 ---The hold starts when ammo drops below the threshold while at least one zone has not arrived.
 ---The hold ends when every zone reaches WAITING_ASSAULT or later. The phase machine only moves forward,
----so the release stays.
+---so the hold stays released.
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
 local function evaluateFireSupportGate(config, landingState)

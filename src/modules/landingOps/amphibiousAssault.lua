@@ -131,7 +131,7 @@ end
 ---@param ship CMO__Unit
 ---@param totalNum number
 ---@param quota table<string, integer> Remaining quota per ACV type key
----@return {acvType: {name: string, dbid: number, key: string}, count: number}[] # Allocation array
+---@return SBJ__AcvAllocation[] # Allocation array
 local function removeCargoByPriority(ship, totalNum, quota)
   local allocations = {}
   local remaining = totalNum
@@ -275,7 +275,7 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param units CMO__SideUnit[]
----@return {unit: CMO__Unit, alongM: number, lateralM: number}[]
+---@return SBJ__LstStation[]
 local function findDeployLineLSTs(zone, frame, units)
   local entries = {}
 

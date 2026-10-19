@@ -10,7 +10,7 @@ local DebugFlow = {}
 ---Check if the given phase must be fast-forwarded
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param phase string One of constants.AMPHIBIOUS_PHASES
----@return boolean # False when debug is off; true for every phase when startStage is unset
+---@return boolean # True if the phase must be fast-forwarded. False when debug is off; true for every phase when startStage is unset
 function DebugFlow.isFastForward(amphibOps, phase)
   local debug = amphibOps.debug
   if not debug or not debug.enabled then

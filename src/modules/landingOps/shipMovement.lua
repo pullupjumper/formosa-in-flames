@@ -129,7 +129,7 @@ local function moveToNextLocation(unit, row, rowKey, amphibOps)
   }
 end
 
----Match a ship by DBID or name and move it to the next location
+---Move the ship that matches a DBID or name to its next location
 ---@param unit CMO__Unit
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
 ---@param amphibOps SBJ__AmphibOpsConfig

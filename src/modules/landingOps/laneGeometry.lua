@@ -237,7 +237,7 @@ end
 -- Mine Cells
 -- ============================================================================
 
----Cut the strip from point a to point b into square cells, one cell wide
+---Build the corridor of square cells, one cell wide, along the strip from point a to point b
 ---@param frame SBJ__LaneFrame
 ---@param laneId string
 ---@param a CMO__Location Seaward end of the strip

@@ -28,7 +28,7 @@ local DEFAULT_CARGO_TYPE = "Facility"
 -- Course Calculation
 -- ============================================================================
 
----Calculate the course for a barge to reach the offload area.
+---Build the course for a barge to reach the offload area.
 ---Project the barge position onto the LST approach bearing line with spherical geometry.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unit CMO__Unit
@@ -74,7 +74,7 @@ local function buildCourseForBarge(zone, unit)
   return destination
 end
 
----Calculate the course for a RORO ship to follow the barge to the beach.
+---Build the course for a RORO ship to follow the barge to the beach.
 ---Return a two-waypoint course: the first at the LST approach distance, the second at the barge destination.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unit CMO__Unit
@@ -164,10 +164,10 @@ end
 -- Vehicle Offloading
 -- ============================================================================
 
----Extract cargo items from a ship, up to the given count
+---Find cargo items on a ship, up to the given count
 ---@param ship CMO__Unit
 ---@param num number
----@return { guid: string, dbid: number, name: string, type: number }[] # Extracted cargo items
+---@return { guid: string, dbid: number, name: string, type: number }[] # Cargo items found
 local function findCargoItems(ship, num)
   local cargoItems = {}
   local count = 0

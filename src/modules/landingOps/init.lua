@@ -143,7 +143,7 @@ function LandingOps.launchACV(config, saveData, ship)
   return true
 end
 
----Handle vehicle offloading workflow for barge and RORO event units
+---Offload vehicles in the workflow for barge and RORO event units
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
