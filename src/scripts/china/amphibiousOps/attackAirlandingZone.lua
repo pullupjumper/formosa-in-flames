@@ -7,4 +7,4 @@ if not ship then
   return
 end
 
-LandingOps.neutralizeAirlandingZone(config, ship)
+LandingOps.attackAirlandingZone(config, ship)

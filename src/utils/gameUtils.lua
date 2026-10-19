@@ -213,6 +213,13 @@ function GameUtils.createArea(position, params)
   return (rpTable)
 end
 
+---Check if a unit GUID still resolves
+---@param guid string
+---@return boolean
+function GameUtils.hasUnit(guid)
+  return GameApi.ScenEdit_GetUnit(guid) ~= nil
+end
+
 ---Check if current scenario time has reached or passed the specified start time
 ---@param time string|number A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
 ---@param advanceSeconds? number

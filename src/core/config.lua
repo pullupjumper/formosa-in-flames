@@ -12,7 +12,7 @@ config.logging = {
   modules = {
     [constants.TAGS.GROUND] = { verbose = true },
     [constants.TAGS.AIR] = { verbose = true },
-    [constants.TAGS.ADMIN_UNLOADING] = { verbose = true },
+    [constants.TAGS.ADMIN_OFFLOADING] = { verbose = true },
     [constants.TAGS.RECON] = { verbose = true },
     [constants.TAGS.DYNAMIC_OPERATIONS] = { verbose = true },
     [constants.TAGS.TARGETING_PROCESS] = { verbose = true },
@@ -1581,6 +1581,9 @@ config.red.amphibOps.debug = {
   teleportLanding = true,                                -- hovercraft and ACVs jump to their parking slot
 }
 config.red.amphibOps.periodSec = 5 * 60
+config.red.amphibOps.remainingCargoTransferSec = 2 * 3600 -- 空/機降任務開始後，每隔多久補運一次尚未運完的貨物
+config.red.amphibOps.airlandingFireQty = 440 -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
+config.red.amphibOps.bargeRoroPairingRangeNm = 1 -- 駁船與 RORO 距離小於此值才算同一組
 config.red.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.red.amphibOps.cargo = {
   type075 = {

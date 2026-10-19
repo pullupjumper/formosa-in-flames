@@ -1,5 +1,7 @@
 local constants = {}
 
+constants.METERS_PER_NM = 1852
+
 constants.AREAS = {
   -- START: TAIWAN_AREAS_BLOCK
   RELOAD_POINT_AMG = { "RP-197738", "RP-197739", "RP-197740", "RP-197741" },
@@ -3078,37 +3080,37 @@ constants.SIDES = {
 }
 
 constants.AMPHIBIOUS_PHASES = {
-  MOVING                  = "MOVING",
-  WAITING_ARRIVAL         = "WAITING_ARRIVAL",
-  WAITING_ASSAULT         = "WAITING_ASSAULT",
-  MINE_CLEARING           = "MINE_CLEARING",
-  BOAT_ASSAULT            = "BOAT_ASSAULT",
-  OBSTACLE_CLEARING       = "OBSTACLE_CLEARING",
-  ASSAULT_LANDING         = "ASSAULT_LANDING",
-  WAITING_ADMIN_UNLOADING = "WAITING_ADMIN_UNLOADING",
-  COMPLETED               = "COMPLETED",
+  MOVING                   = "MOVING",
+  WAITING_ARRIVAL          = "WAITING_ARRIVAL",
+  WAITING_ASSAULT          = "WAITING_ASSAULT",
+  MINE_CLEARING            = "MINE_CLEARING",
+  BOAT_ASSAULT             = "BOAT_ASSAULT",
+  OBSTACLE_CLEARING        = "OBSTACLE_CLEARING",
+  ASSAULT_LANDING          = "ASSAULT_LANDING",
+  WAITING_ADMIN_OFFLOADING = "WAITING_ADMIN_OFFLOADING",
+  COMPLETED                = "COMPLETED",
 }
 
 ---Position of each phase in the flow, for "before/after" comparisons
 ---@type table<string, integer>
 constants.AMPHIBIOUS_PHASE_ORDER = {
-  [constants.AMPHIBIOUS_PHASES.MOVING]                  = 1,
-  [constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL]         = 2,
-  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]         = 3,
-  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]           = 4,
-  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]            = 5,
-  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]       = 6,
-  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = 7,
-  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING] = 8,
-  [constants.AMPHIBIOUS_PHASES.COMPLETED]               = 9,
+  [constants.AMPHIBIOUS_PHASES.MOVING]                   = 1,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL]          = 2,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]          = 3,
+  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]            = 4,
+  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]             = 5,
+  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]        = 6,
+  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]          = 7,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING] = 8,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]                = 9,
 }
 
 ---Phases in which ACVs and hovercraft may land (assault landing has started)
 ---@type table<string, true>
 constants.AMPHIBIOUS_LANDING_PHASES = {
-  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = true,
-  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING] = true,
-  [constants.AMPHIBIOUS_PHASES.COMPLETED]               = true,
+  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]          = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING] = true,
+  [constants.AMPHIBIOUS_PHASES.COMPLETED]                = true,
 }
 
 ---Obstacle cell states on the beach (cells exist only in saveData, not on the CMO map)
@@ -3149,7 +3151,7 @@ constants.TAGS = {
   MISSILE_SYSTEM = "missileSystem",
   RECON = "recon",
   SCORE = "score",
-  ADMIN_UNLOADING = "adminUnloading",
+  ADMIN_OFFLOADING = "adminOffloading",
   SHIP_MOVEMENT = "shipMovement",
   SIGINT = "sigint",
   TARGETING_PROCESS = "targetingProcess",

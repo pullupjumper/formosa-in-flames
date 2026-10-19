@@ -20,7 +20,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | **集結** | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向等待區 |
 | **裝載** | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、運輸任務建立、單位指派 |
 | **突擊** | [amphibiousAssault](amphibiousAssault.md) | ACV 釋放、LST 航至泛水編波區、任務時序設定 |
-| **卸載** | [adminUnloading](adminUnloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
+| **卸載** | [adminOffloading](adminOffloading.md) | 駁船/RORO 船後勤鏈、車輛卸載 |
 
 ---
 
@@ -32,7 +32,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 登陸艦隊移動至等待區與 SAG 護航編隊佈陣 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物操作、平台裝載與任務指派 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | ACV 釋放、LST 航向設定與兩棲突擊協調 |
-| [adminUnloading](adminUnloading.md) | `adminUnloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載（行政下卸） |
+| [adminOffloading](adminOffloading.md) | `adminOffloading.lua` | 駁船-RORO 後勤鏈建立與車輛卸載（行政下卸） |
 | [assaultTimeline](assaultTimeline.md) | `laneGeometry.lua` | 通道幾何（純函式）：水際／灘際通道、弓字型、障礙方塊、相交判斷 |
 | [assaultTimeline](assaultTimeline.md) | `routePlanner.lua` | 走通道的航線：選通道、排隊入口點、停車位 |
 | [assaultTimeline](assaultTimeline.md) | `mineClearing.lua` | 開場佈雷、Type 529 掃雷 |
@@ -51,7 +51,7 @@ Landing Operations 是解放軍陣營的兩棲登陸作戰系統，模擬從艦�
 | `process(config, landingState, params)`（`params`：`contacts`、`currentTime`、`filteredShips`） | 轉交 [`Coordinator.process`](coordinator.md) | `landingCheck.lua` |
 | `launchACV(config, saveData, ship)` | ACV 釋放（`ASSAULT_LANDING` 起；額度 0 暫停、艙內空 RTB） | `launchACV.lua` |
 | `offloadVehicles(amphibOpsConfig, landingState, ship)` | 重裝備下卸 | `offloadVehicles.lua` |
-| `neutralizeAirlandingZone(amphibOpsConfig, ship, contacts)` | SAG 壓制空/機降區 | `neutralizeAirlandingZone.lua` |
+| `attackAirlandingZone(amphibOpsConfig, ship, contacts)` | SAG 壓制空/機降區 | `attackAirlandingZone.lua` |
 | `countUnitsInEachArea(config)` | 純轉發 [`AmphibiousAssault.countUnitsInEachArea`](amphibiousAssault.md) | `src/modules/unitStatusUI.lua` |
 
 ---
@@ -73,7 +73,7 @@ flowchart TB
 
     subgraph 階段一["艦隊移動"]
         SM["shipMovement<br>.moveToHoldingAreas()"]
-        CALC["shipMovement<br>.planHoldingPositions()"]
+        CALC["shipMovement<br>.buildHoldingPositions()"]
     end
 
     subgraph 階段二["後勤裝載"]
@@ -89,8 +89,8 @@ flowchart TB
     end
 
     subgraph 階段四["行政下卸"]
-        SW_START["adminUnloading<br>.startAdminUnloading()"]
-        SW_OFFLOAD["adminUnloading<br>.offloadVehicles()"]
+        SW_START["adminOffloading<br>.startAdminOffloading()"]
+        SW_OFFLOAD["adminOffloading<br>.offloadVehicles()"]
     end
 
     TRIGGER --> COORD
@@ -125,8 +125,8 @@ stateDiagram-v2
     MINE_CLEARING --> BOAT_ASSAULT: 529 全部走完（RTB）<br>配對衝鋒舟、LST 前進
     BOAT_ASSAULT --> OBSTACLE_CLEARING: 衝鋒舟全部到 S_lane 或被摧毀<br>切障礙方塊、開始計時
     OBSTACLE_CLEARING --> ASSAULT_LANDING: 超過 obstacle.clearSec<br>有衝鋒舟的灘際通道標 cleared
-    ASSAULT_LANDING --> WAITING_ADMIN_UNLOADING: 灘頭陣地建立（暫用 ZBD-05 ≥ 1）
-    WAITING_ADMIN_UNLOADING --> COMPLETED: 絕對安全（TODO，目前直接放行）<br>啟動行政下卸
+    ASSAULT_LANDING --> WAITING_ADMIN_OFFLOADING: 灘頭陣地建立（暫用 ZBD-05 ≥ 1）
+    WAITING_ADMIN_OFFLOADING --> COMPLETED: 絕對安全（TODO，目前直接放行）<br>啟動行政下卸
 ```
 
 `ASSAULT_LANDING` 起（含之後的 phase），兩棲車分波泛水、氣墊船走通道。流程細節見 [assaultTimeline](assaultTimeline.md)。
@@ -191,7 +191,7 @@ flowchart BT
         SM["shipMovement"]
         AL["amphibiousLogistics"]
         AA["amphibiousAssault"]
-        SW["adminUnloading"]
+        SW["adminOffloading"]
     end
 
     UI --> INIT
@@ -240,7 +240,7 @@ flowchart BT
 | `constants.PLATFORMS.TYPE_054A` | 054A 型護衛艦 DBID |
 | `constants.PLATFORMS.BRIDGE` | 後勤浮橋設施 DBID |
 | `constants.PLATFORMS.HPJ_38` | H/PJ-38 130mm 艦砲武器 ID |
-| `constants.AMPHIBIOUS_PHASES.*` | 作戰階段列舉（MOVING / WAITING_ARRIVAL / WAITING_ASSAULT / MINE_CLEARING / BOAT_ASSAULT / OBSTACLE_CLEARING / ASSAULT_LANDING / WAITING_ADMIN_UNLOADING / COMPLETED） |
+| `constants.AMPHIBIOUS_PHASES.*` | 作戰階段列舉（MOVING / WAITING_ARRIVAL / WAITING_ASSAULT / MINE_CLEARING / BOAT_ASSAULT / OBSTACLE_CLEARING / ASSAULT_LANDING / WAITING_ADMIN_OFFLOADING / COMPLETED） |
 | `constants.SIDES.RED` | 中國陣營名稱 |
 | `constants.CONTACT_TYPES.FACILITY_MOBILE` | 可移動設施接觸類型 |
 | `constants.PLATFORM_TYPES.AIRCRAFT` | 航空器平台類型 |
@@ -255,7 +255,7 @@ flowchart BT
 | `src/scripts/china/amphibiousOps/landingCheck.lua` | 主排程腳本（每 5 分鐘觸發），驅動整體狀態機 |
 | `src/scripts/china/amphibiousOps/launchACV.lua` | ACV 釋放事件腳本（單位進入區域觸發） |
 | `src/scripts/china/amphibiousOps/offloadVehicles.lua` | 重裝備下卸事件腳本（單位進入區域觸發） |
-| `src/scripts/china/amphibiousOps/neutralizeAirlandingZone.lua` | 空/機降區壓制腳本（SAG 進入區域觸發） |
+| `src/scripts/china/amphibiousOps/attackAirlandingZone.lua` | 空/機降區壓制腳本（SAG 進入區域觸發） |
 | `src/modules/assignMission.lua` | 任務指派模組 |
 | `src/modules/strikePlanner/attackManager.lua` | 打擊管理（SAG 艦砲射擊） |
 | `src/modules/unitStatusUI.lua` | 單位狀態面板；經門面 `LandingOps.countUnitsInEachArea` 顯示各區登陸單位數 |

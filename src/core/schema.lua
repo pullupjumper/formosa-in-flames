@@ -826,8 +826,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field isEmpty boolean Ship carries no ZBD/ZTD cargo
 ---@field isPaused boolean Cargo remains but the wave quota allows none of it
 
----Vehicle offload parameters for unloading vehicles from landing ships
----Input table for AdminUnloading.offloadVehicles
+---Vehicle offload parameters for offloading vehicles from landing ships
+---Input table for AdminOffloading.offloadVehicles
 ---@class SBJ__VehicleOffloadParams: table
 ---@field ship CMO__Unit Landing ship to offload from
 ---@field num integer Number of vehicles to offload
@@ -991,6 +991,9 @@ function ScenEdit_DeleteMine(params) end
 ---cargo manifests, ship layouts, operational zones, and mission timing
 ---@class SBJ__AmphibOpsConfig: table
 ---@field periodSec number Check interval in seconds
+---@field remainingCargoTransferSec number Seconds between transfers of the remaining cargo while an airlanding mission runs
+---@field airlandingFireQty number Total shots a SAG fires at the airlanding zone contacts, split among them
+---@field bargeRoroPairingRangeNm number A barge and a RORO pair when they are closer than this (nm)
 ---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
 ---@field cargo table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field transferCargo table<string, SBJ__CargoDescriptor[]> Transfer cargo groups

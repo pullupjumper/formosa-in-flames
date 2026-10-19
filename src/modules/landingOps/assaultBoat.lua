@@ -1,14 +1,16 @@
+local constants = require("src.core.constants")
+
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
+
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
-local constants = require("src.core.constants")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 local AssaultBoat = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
 local STATUS = {
@@ -28,7 +30,7 @@ local BOAT_CARRIER_DBIDS = {
 -- Pairing
 -- ============================================================================
 
----Find boat carriers anchored in the zone with their assault boat GUIDs, left to right
+---Find the boat carriers anchored in the zone with their assault boat GUIDs, from left to right
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param ships CMO__SideUnit[]
@@ -59,7 +61,7 @@ local function findCarriers(zone, frame, ships)
   return carriers
 end
 
----Pick count items spread evenly across a list
+---Select count items spread evenly across a list
 ---@generic T
 ---@param items T[]
 ---@param count integer
@@ -72,7 +74,7 @@ local function selectEvenly(items, count)
   return selected
 end
 
----Pick boats: every carrier's first boat, then second boats, ... until lanes are covered
+---Select boats: first the first boat of every carrier, then the second boats, until the lanes are covered
 ---@param carriers {guid: string, lateral: number, boats: string[]}[]
 ---@param laneCount integer
 ---@return {boatGuid: string, shipGuid: string, lateral: number}[] # Ordered left to right
@@ -100,7 +102,7 @@ local function selectBoats(carriers, laneCount)
   return picks
 end
 
----Sum of lateral gaps when pairing picks and lanes in order
+---Calculate the sum of lateral gaps when the picks and lanes pair in order
 ---@param picks {lateral: number}[]
 ---@param lanes {lateral: number}[]
 ---@return number
@@ -112,7 +114,7 @@ local function calculatePairingCost(picks, lanes)
   return cost
 end
 
----Beach lanes left to right; when boats are short, drop the outermost lanes on the cheaper side
+---Select beach lanes from left to right. When boats are short, drop the outermost lanes on the cheaper side
 ---@param lanes SBJ__LanePlanState
 ---@param frame SBJ__LaneFrame
 ---@param picks {lateral: number}[]
@@ -143,11 +145,11 @@ end
 -- Public API
 -- ============================================================================
 
----Pair assault boats with beach lanes once, by lateral order, and store the pairing in zoneState.boats
+---Pair assault boats with beach lanes once, by lateral order. Store the pairing in zoneState.boats
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param ships CMO__SideUnit[]
----@return boolean # Always true; a zone without boats just has nothing to launch
+---@return boolean # Always true. A zone without boats has nothing to launch
 function AssaultBoat.pairBoats(zone, zoneState, ships)
   local lanes = zoneState.lanes
 
@@ -179,7 +181,7 @@ function AssaultBoat.pairBoats(zone, zoneState, ships)
   return true
 end
 
----Launch paired boats whose carrier has entered the ACV staging area: course first, then Launch
+---Launch paired boats whose carrier entered the ACV staging area. Set the course first, then launch
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
@@ -219,7 +221,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
   report.emit()
 end
 
----Track boats until each reaches S_lane or is lost
+---Update boats until each one reaches S_lane or is lost
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when no boat is still pending or under way
@@ -245,7 +247,7 @@ function AssaultBoat.updateBoats(amphibOps, zoneState)
   return isAllDone
 end
 
----Beach lanes with a landed boat that is still alive
+---Find the beach lanes with a landed boat that is still alive
 ---@param zoneState SBJ__ZoneState
 ---@return table<string, true>
 function AssaultBoat.findLandedLaneIdSet(zoneState)

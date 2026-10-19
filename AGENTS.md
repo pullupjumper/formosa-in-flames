@@ -43,17 +43,13 @@ bash bin/build.sh -i
 ## Architecture Overview
 
 ### Core System Design
-The project uses a **modular event-driven architecture** centered around `src/core/init.lua` which orchestrates all game systems. Configuration is split into two files:
-- `src/core/config.lua` - Runtime configuration values (weapon counts, timing, operational parameters) using nested namespaces (`.c`, `.t`, `.u` for China, Taiwan, US)
-- `src/core/constants.lua` - Immutable constants (platform DBIDs, base GUIDs, weapon IDs, area definitions)
+The project uses a **modular event-driven architecture** centered around `src/core/init.lua` which orchestrates all game systems. Gameplay values live in `src/core/config.lua`, immutable identifiers in `src/core/constants.lua` (placement rules: `docs/coding-style.md`).
 
 ### Key Architectural Patterns
 
 - **API Abstraction**: All CMO game API calls use `src/utils/gameApi.lua` wrappers. Never call raw `ScenEdit_*` functions directly.
-- **Type Safety**: Use LuaLS annotations (`---@param`, `---@return`) with prefixes `SBJ__*` (project types) and `CMO__*` (game API types).
-- **Naming**: Follow `docs/naming.md` for file, module, function, variable, parameter, type, and config key naming.
-- **Config vs Constants**: Use `config.*` for gameplay values that may need adjustment; use `constants.*` for immutable identifiers (DBIDs, GUIDs, area definitions).
-- **No Hardcoding**: Never hardcode DBIDs, GUIDs, or coordinates directly in logic.
+- **Naming and Style**: Follow `docs/naming.md` (names, LuaLS types) and `docs/coding-style.md` (everything else). Each rule lives in one of those two files only.
+- **No Hardcoding**: Never hardcode DBIDs, GUIDs, or coordinates directly in logic; they belong in `constants.*` or `config.*`.
 - **Package Facades**: A module folder with an `init.lua` (`missileSystem/`, `strikePlanner/`, `landingOps/`) is a package. Code outside the folder requires only its `init.lua`; files inside the folder call each other directly, never through their own facade. `spec/moduleBoundary_spec.lua` enforces this. Facade functions that only forward are fine at the boundary; prefer ones that also hide internals (e.g. take `sideName` and resolve config/state themselves).
 
 ### Module Organization
@@ -73,6 +69,15 @@ src/
 
 See `docs/` for detailed module architecture documentation.
 
+### Where Docs Go
+
+- `docs/naming.md`, `docs/coding-style.md`: writing rules. Single source; skills point here, never copy.
+- `docs/<module>.md`: how a module works. May be outdated.
+- `docs/features.md`: feature map (✅ ⚠️ ❌). Update only when a feature's status changes. May be outdated.
+- `docs/specs/<branch-name>.md`: one spec per change (goal, behaviour to deliver, out of scope, acceptance); historical once merged. `/` in the branch name becomes `-`.
+
+Only a spec counts as a spec. Module docs, `features.md`, and old plans do not.
+
 ### CMO Build And Runtime Constraints
 
 CMO cannot run this project directly from modular Lua source because runtime Lua module/filesystem APIs such as normal `require` are unavailable or restricted. Treat `src/` as development source only; CMO deployment must use the generated single-file output.
@@ -85,7 +90,7 @@ Do not edit `slim/` manually. Change `src/`, `src/scripts/`, or `htmls-app/`, th
 
 ### Event System
 
-CMO drives scenario behavior through event-bound Lua scripts under `src/scripts/{faction}/{feature}/`. Register event action paths and special actions in `src/core/init.lua`; the bundler injects those script bodies into CMO actions during deployment.
+CMO drives scenario behavior through event-bound Lua scripts under `src/scripts/{faction}/{feature}/`. Registration rules: see CMO Build And Runtime Constraints.
 
 Common event usage:
 - **Scen Loaded** - One-time initialization through `src/core/init.lua`

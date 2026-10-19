@@ -10,7 +10,7 @@
 
 shipMovement 負責登陸作戰的第一階段——艦隊展開。系統將各型登陸艦（LHD/LPD/LST/渡輪/駁船/RORO）從集結區（Staging Area）移動至等待區（Holding Areas：登陸母艦乘載區、登陸艦艇展開線），每型艦船在等待區中佔據不同的列位置，形成分層編隊。
 
-位置計算分為兩步：首先透過 `planHoldingPositions` 預算所有等待位置，結果儲存至 `saveData.red.amphibOps.calculationResult`；接著 `moveToHoldingAreas` 在每次觸發時依序將集結區內的艦船分配至下一個可用位置。
+位置計算分為兩步：首先透過 `buildHoldingPositions` 預算所有等待位置，結果儲存至 `saveData.red.amphibOps.calculationResult`；接著 `moveToHoldingAreas` 在每次觸發時依序將集結區內的艦船分配至下一個可用位置。
 
 SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、護衛艦左右翼展開陣型。
 
@@ -59,7 +59,7 @@ SAG（水面行動群）護航編隊則獨立處理，以驅逐艦為中心、�
 
 ```mermaid
 flowchart TD
-    START["planHoldingPositions()"]
+    START["buildHoldingPositions()"]
     ITER_OP["遍歷 operations"]
     ITER_AREA["遍歷 zone.fleet.groups"]
     INIT["initShipRowMap<br>初始化結果結構"]
@@ -115,7 +115,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `planHoldingPositions(zones, formation, calculationResult)` | 計算所有作戰區域的艦船等待位置 |
+| `buildHoldingPositions(zones, formation, calculationResult)` | 計算所有作戰區域的艦船等待位置 |
 | `moveToHoldingAreas(zone, calculationResult, filteredUnits, amphibOps)` | 驅動艦隊從集結區移動至等待位置（單一作戰區） |
 
 ---
@@ -132,7 +132,7 @@ flowchart TD
   [OK]   sag="SAG Alpha" action=course_set positioned=3 skipped=0
 ```
 
-`planHoldingPositions` 的前置計算失敗屬於單筆事件而非批次，走 `LogFormat.line` 直接送 error sink。
+`buildHoldingPositions` 的前置計算失敗屬於單筆事件而非批次，走 `LogFormat.line` 直接送 error sink。
 
 ---
 

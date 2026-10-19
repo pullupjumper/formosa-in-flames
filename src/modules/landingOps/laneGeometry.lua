@@ -1,16 +1,16 @@
-local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
----Pure lane geometry for the assault approach. Small-area flat-earth approximation:
----positions near the lane center are converted to meters along/across the landing bearing.
+local Utils = require("src.utils.utils")
+
+---Provide pure lane geometry for the assault approach. Use a small-area flat-earth approximation:
+---positions near the lane center convert to meters along and across the landing bearing.
 local LaneGeometry = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
 local METERS_PER_DEGREE = 111320
-local METERS_PER_NM = 1852
 
 -- ============================================================================
 -- Coordinate Conversion
@@ -66,7 +66,7 @@ function LaneGeometry.projectPoint(frame, pos)
   return x * math.sin(b) + y * math.cos(b), x * math.cos(b) - y * math.sin(b)
 end
 
----Approximate distance between two nearby positions
+---Calculate the approximate distance between two nearby positions
 ---@param a CMO__Location
 ---@param b CMO__Location
 ---@return number # Meters
@@ -75,7 +75,7 @@ function LaneGeometry.calculateDistanceM(a, b)
   return math.sqrt(x * x + y * y)
 end
 
----Point a fraction of the way from a to b
+---Interpolate a point a fraction of the way from a to b
 ---@param a CMO__Location
 ---@param b CMO__Location
 ---@param fraction number 0 = a, 1 = b
@@ -117,15 +117,15 @@ end
 ---@return SBJ__WaterLaneEntry
 local function buildWaterLane(frame, params, index, lateralM)
   local route = params.routeConfig
-  local deployAlong = -route.deployLineNm * METERS_PER_NM
-  local assaultAlong = -route.assaultLineNm * METERS_PER_NM
+  local deployAlong = -route.deployLineNm * constants.METERS_PER_NM
+  local assaultAlong = -route.assaultLineNm * constants.METERS_PER_NM
   local shoreAlong = -route.shoreStandoffM
   local id = "W" .. index
 
   local waterLane = {
     id = id,
     deployPoint = LaneGeometry.buildPoint(frame, deployAlong, lateralM),
-    launchPoint = LaneGeometry.buildPoint(frame, -route.launchLineNm * METERS_PER_NM, lateralM),
+    launchPoint = LaneGeometry.buildPoint(frame, -route.launchLineNm * constants.METERS_PER_NM, lateralM),
     assaultPoint = LaneGeometry.buildPoint(frame, assaultAlong, lateralM),
     beachLanes = {},
   }
@@ -160,13 +160,13 @@ local function buildWaterLane(frame, params, index, lateralM)
   return waterLane
 end
 
----Whether every step between neighboring values lies within [minM, maxM]
+---Check if every step between neighboring values is within [minM, maxM]
 ---@param values number[]
 ---@param first integer
 ---@param last integer
 ---@param minM number
 ---@param maxM number
----@return boolean
+---@return boolean # True if every step is within [minM, maxM]
 local function isStepRangeValid(values, first, last, minM, maxM)
   for i = first, last - 1 do
     local step = values[i + 1] - values[i]
@@ -177,15 +177,15 @@ local function isStepRangeValid(values, first, last, minM, maxM)
   return true
 end
 
----Place water lanes in the gaps between ships so no lane runs through a hull
----Each gap at least waterLaneMinSpacingM wide yields a candidate at its midpoint. The chosen lanes are
----consecutive candidates whose spacing stays within [waterLaneMinSpacingM, waterLaneMaxSpacingM];
----among valid runs the one closest to the lane center wins.
+---Build the lateral positions of water lanes in the gaps between ships, so no lane runs through a hull.
+---Each gap at least waterLaneMinSpacingM wide gives a candidate at its midpoint.
+---Choose consecutive candidates whose spacing stays within [waterLaneMinSpacingM, waterLaneMaxSpacingM].
+---Among the valid runs, choose the run closest to the lane center.
 ---@param shipLaterals number[] Lateral positions of the ships, any order
 ---@param count integer Number of water lanes wanted
 ---@param routeConfig SBJ__RouteConfig
----@return number[]|nil laterals Ascending lateral per water lane; nil when no run of gaps qualifies
-function LaneGeometry.planWaterLaneLaterals(shipLaterals, count, routeConfig)
+---@return number[]|nil # Ascending lateral per water lane; nil when no run of gaps qualifies
+function LaneGeometry.buildWaterLaneLaterals(shipLaterals, count, routeConfig)
   if count < 1 then
     return nil
   end
@@ -216,8 +216,8 @@ function LaneGeometry.planWaterLaneLaterals(shipLaterals, count, routeConfig)
   return { table.unpack(candidates, bestFirst, bestFirst + count - 1) }
 end
 
----Build water lanes (one per Type 529), ordered left to right
----Lanes sit at params.laterals when given, otherwise evenly spaced and symmetric about the lane center.
+---Build water lanes (one per Type 529), ordered from left to right.
+---Put the lanes at params.laterals when given. Otherwise space them evenly and symmetric about the lane center.
 ---@param params SBJ__BuildLanesParams
 ---@return SBJ__LanePlanState
 function LaneGeometry.buildLanes(params)
@@ -274,8 +274,8 @@ local function buildMineCorridor(frame, laneId, a, b, cellSizeM)
   }
 end
 
----Cut every water lane (deploy line to assault line) and beach lane (assault line to S_lane) into mine cells
----Cells line up with the lane center line and are one cell wide, so neighboring lanes never overlap.
+---Build the mine corridors: cut every water lane (deploy line to assault line) and beach lane (assault line to S_lane) into mine cells.
+---The cells line up with the lane center line and are one cell wide, so neighboring lanes never overlap.
 ---@param lanes SBJ__LanePlanState
 ---@param cellSizeM number
 ---@return SBJ__MineCorridor[]
@@ -293,8 +293,8 @@ function LaneGeometry.buildMineCorridors(lanes, cellSizeM)
   return corridors
 end
 
----Find the mine cell containing a position
----Checks each corridor's bounds in lane coordinates, then indexes straight into its cells.
+---Find the mine cell that contains a position.
+---Check the bounds of each corridor in lane coordinates, then index straight into its cells.
 ---@param frame SBJ__LaneFrame
 ---@param corridors SBJ__MineCorridor[]
 ---@param pos CMO__Location
@@ -312,7 +312,7 @@ function LaneGeometry.findMineCell(frame, corridors, pos)
   return nil
 end
 
----Deepest inland reach of a polygon along the landing bearing
+---Calculate the deepest inland reach of a polygon along the landing bearing
 ---@param frame SBJ__LaneFrame
 ---@param polygon CMO__Location[]
 ---@return number # Meters toward shore from the origin
@@ -329,7 +329,7 @@ end
 -- Obstacle Cells
 -- ============================================================================
 
----Orientation of the triangle p, q, r (positive = counter-clockwise)
+---Calculate the orientation of the triangle p, q, r (positive = counter-clockwise)
 ---@param p CMO__Location
 ---@param q CMO__Location
 ---@param r CMO__Location
@@ -340,11 +340,11 @@ local function calculateOrientation(p, q, r)
       - (Utils.toNumber(q.latitude) - pLat) * (Utils.toNumber(r.longitude) - pLon)
 end
 
----Whether r lies within the bounding box of segment p-q
+---Check if r lies within the bounding box of segment p-q
 ---@param p CMO__Location
 ---@param q CMO__Location
 ---@param r CMO__Location
----@return boolean
+---@return boolean # True if r lies within the bounding box of p-q
 local function isWithinBox(p, q, r)
   local pLat, pLon = Utils.toNumber(p.latitude), Utils.toNumber(p.longitude)
   local qLat, qLon = Utils.toNumber(q.latitude), Utils.toNumber(q.longitude)
@@ -353,12 +353,12 @@ local function isWithinBox(p, q, r)
       and rLat >= math.min(pLat, qLat) and rLat <= math.max(pLat, qLat)
 end
 
----Whether segments p1-p2 and q1-q2 intersect, touching included
+---Check if segments p1-p2 and q1-q2 intersect, touching included
 ---@param p1 CMO__Location
 ---@param p2 CMO__Location
 ---@param q1 CMO__Location
 ---@param q2 CMO__Location
----@return boolean
+---@return boolean # True if the segments intersect, touching included
 function LaneGeometry.segmentsIntersect(p1, p2, q1, q2)
   local d1 = calculateOrientation(q1, q2, p1)
   local d2 = calculateOrientation(q1, q2, p2)
@@ -375,11 +375,11 @@ function LaneGeometry.segmentsIntersect(p1, p2, q1, q2)
       or (d4 == 0 and isWithinBox(p1, p2, q2))
 end
 
----Whether a segment touches any edge of a cell
+---Check if a segment touches any edge of a cell
 ---@param a CMO__Location
 ---@param b CMO__Location
 ---@param cell SBJ__ObstacleCellEntry
----@return boolean
+---@return boolean # True if the segment touches any edge of the cell
 function LaneGeometry.isSegmentTouchingCell(a, b, cell)
   local corners = cell.corners
   for i = 1, #corners do
@@ -390,7 +390,7 @@ function LaneGeometry.isSegmentTouchingCell(a, b, cell)
   return false
 end
 
----Tile a polygon with square cells aligned to the lane frame; keeps cells whose center is inside
+---Build square cells aligned to the lane frame that tile a polygon. Keep the cells whose center is inside
 ---@param frame SBJ__LaneFrame
 ---@param polygon CMO__Location[]
 ---@param cellSizeM number
@@ -431,10 +431,10 @@ function LaneGeometry.buildObstacleCells(frame, polygon, cellSizeM)
   return cells
 end
 
----Whether every cell a route touches is cleared
+---Check if every cell that a route touches is cleared
 ---@param route CMO__Location[]
 ---@param cells SBJ__ObstacleCellEntry[]|nil
----@return boolean
+---@return boolean # True if every cell the route touches is cleared
 function LaneGeometry.isRouteClear(route, cells)
   for _, cell in ipairs(cells or {}) do
     if cell.state ~= constants.OBSTACLE_CELL_STATES.CLEARED then

@@ -157,6 +157,6 @@ flowchart TD
 ## 相關模組
 
 - [amphibiousLogistics](amphibiousLogistics.md) — `launchACV` 呼叫 `AmphibiousLogistics.removeCargo` 刪除貨物
-- [adminUnloading](adminUnloading.md) — 後續階段：灘頭建立後啟動行政下卸
+- [adminOffloading](adminOffloading.md) — 後續階段：灘頭建立後啟動行政下卸
 - [shipMovement](shipMovement.md) — 前置階段：艦隊佈陣
 - [系統架構](README.md)

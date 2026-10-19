@@ -9,7 +9,7 @@ describe("LaneGeometry", function()
 
   ---@param overrides? table
   ---@return SBJ__RouteConfig
-  local function makeRouteConfig(overrides)
+  local function buildRouteConfig(overrides)
     local routeConfig = {
       deployLineNm = 12,
       launchLineNm = 3,
@@ -41,7 +41,7 @@ describe("LaneGeometry", function()
       count = count,
       inlandDepthM = 400,
       areaMarginM = 60,
-      routeConfig = makeRouteConfig(),
+      routeConfig = buildRouteConfig(),
     })
   end
 
@@ -59,7 +59,6 @@ describe("LaneGeometry", function()
   -- ============================================================================
 
   describe("buildPoint", function()
-    -- Positive: lane coordinates survive a round trip
     it("should round-trip along and lateral meters through projectPoint", function()
       local along, lateral = project(LaneGeometry.buildPoint(frame, -3000, 250))
 
@@ -73,7 +72,7 @@ describe("LaneGeometry", function()
   -- ============================================================================
 
   describe("mine cells", function()
-    -- Positive: one corridor per water lane and per beach lane, cells 50 m long from end to end
+    -- One corridor per water lane and per beach lane, cells 50 m long from end to end
     it("should cut each water and beach lane into 50 m cells", function()
       local lanes = buildLanes(1)
       local corridors = LaneGeometry.buildMineCorridors(lanes, 50)
@@ -86,7 +85,6 @@ describe("LaneGeometry", function()
       assert.are.equal(4, #corridors[1].cells[1].corners)
     end)
 
-    -- Positive: a position on a lane resolves to the cell containing it
     it("should find the cell containing a position on the lane center line", function()
       local lanes = buildLanes(1)
       local corridors = LaneGeometry.buildMineCorridors(lanes, 50)
@@ -97,7 +95,6 @@ describe("LaneGeometry", function()
       assert.are.same(corridors[1].cells[3], cell)
     end)
 
-    -- Negative: positions beside the lane or outside it are not in any cell
     it("should return nil for positions outside every lane", function()
       local corridors = LaneGeometry.buildMineCorridors(buildLanes(1), 50)
 
@@ -105,7 +102,7 @@ describe("LaneGeometry", function()
       assert.is_nil(LaneGeometry.findMineCell(frame, corridors, LaneGeometry.buildPoint(frame, -13 * 1852, 0)))
     end)
 
-    -- Boundary: the cell edge is inclusive and the last cell takes the shore end
+    -- The cell edge is inclusive and the last cell takes the shore end
     it("should accept the lane end and the half width edge", function()
       local lanes = buildLanes(1)
       local corridors = LaneGeometry.buildMineCorridors(lanes, 50)
@@ -116,42 +113,36 @@ describe("LaneGeometry", function()
   end)
 
   -- ============================================================================
-  -- planWaterLaneLaterals
+  -- buildWaterLaneLaterals
   -- ============================================================================
 
-  describe("planWaterLaneLaterals", function()
-    -- Positive: midpoints of the ship gaps, closest run to the lane center
+  describe("buildWaterLaneLaterals", function()
     it("should put lanes at the midpoints of the ship gaps", function()
-      local laterals = LaneGeometry.planWaterLaneLaterals({ 750, -750, 0 }, 2, makeRouteConfig())
+      local laterals = LaneGeometry.buildWaterLaneLaterals({ 750, -750, 0 }, 2, buildRouteConfig())
 
       assert.are.same({ -375, 375 }, laterals)
     end)
 
-    -- Positive: with spare gaps, the run nearest the center is chosen
     it("should choose the run of gaps nearest the lane center", function()
-      local laterals = LaneGeometry.planWaterLaneLaterals({ -1500, -750, 0, 750, 1500, 2250 }, 2, makeRouteConfig())
+      local laterals = LaneGeometry.buildWaterLaneLaterals({ -1500, -750, 0, 750, 1500, 2250 }, 2, buildRouteConfig())
 
       assert.are.same({ -375, 375 }, laterals)
     end)
 
-    -- Negative: gaps narrower than the minimum cannot hold a lane
     it("should return nil when the gaps are too narrow", function()
-      assert.is_nil(LaneGeometry.planWaterLaneLaterals({ -100, 100 }, 1, makeRouteConfig()))
+      assert.is_nil(LaneGeometry.buildWaterLaneLaterals({ -100, 100 }, 1, buildRouteConfig()))
     end)
 
-    -- Negative: lanes further apart than the maximum spacing are rejected
     it("should return nil when neighboring lanes would exceed the maximum spacing", function()
-      assert.is_nil(LaneGeometry.planWaterLaneLaterals({ -1000, 0, 1500 }, 2, makeRouteConfig()))
+      assert.is_nil(LaneGeometry.buildWaterLaneLaterals({ -1000, 0, 1500 }, 2, buildRouteConfig()))
     end)
 
-    -- Boundary: a gap exactly at the minimum is usable
     it("should accept a gap exactly at the minimum width", function()
-      assert.are.same({ 250 }, LaneGeometry.planWaterLaneLaterals({ 0, 500 }, 1, makeRouteConfig()))
+      assert.are.same({ 250 }, LaneGeometry.buildWaterLaneLaterals({ 0, 500 }, 1, buildRouteConfig()))
     end)
 
-    -- Negative: asking for more lanes than gaps
     it("should return nil when there are fewer gaps than lanes", function()
-      assert.is_nil(LaneGeometry.planWaterLaneLaterals({ 0, 750 }, 2, makeRouteConfig()))
+      assert.is_nil(LaneGeometry.buildWaterLaneLaterals({ 0, 750 }, 2, buildRouteConfig()))
     end)
   end)
 
@@ -160,7 +151,6 @@ describe("LaneGeometry", function()
   -- ============================================================================
 
   describe("buildLanes", function()
-    -- Positive: four sweepers give four water lanes and sixteen beach lanes
     it("should build 4 water lanes and 16 beach lanes for 4 sweepers", function()
       local lanes = buildLanes(4)
       local beachCount = 0
@@ -172,7 +162,6 @@ describe("LaneGeometry", function()
       assert.are.equal(16, beachCount)
     end)
 
-    -- Boundary: one sweeper gives one water lane on the center line
     it("should build 1 water lane with 4 beach lanes on the center line for 1 sweeper", function()
       local lanes = buildLanes(1)
       local _, lateral = project(lanes.waterLanes[1].launchPoint)
@@ -182,11 +171,10 @@ describe("LaneGeometry", function()
       assert.is_near(0, lateral, 0.01)
     end)
 
-    -- Positive: explicit laterals override the even spacing
     it("should place water lanes at the given laterals", function()
       local lanes = LaneGeometry.buildLanes({
         origin = ORIGIN, bearing = BEARING, count = 2, laterals = { -300, 420 },
-        inlandDepthM = 400, areaMarginM = 60, routeConfig = makeRouteConfig(),
+        inlandDepthM = 400, areaMarginM = 60, routeConfig = buildRouteConfig(),
       })
       local _, left = project(lanes.waterLanes[1].launchPoint)
       local _, right = project(lanes.waterLanes[2].launchPoint)
@@ -195,7 +183,6 @@ describe("LaneGeometry", function()
       assert.is_near(420, right, 0.01)
     end)
 
-    -- Positive: water lanes are 750 m apart and symmetric about the center
     it("should space water lanes 750 m apart symmetric about the lane center", function()
       local lanes = buildLanes(4)
       local laterals = {}
@@ -210,7 +197,7 @@ describe("LaneGeometry", function()
       assert.is_near(1125, laterals[4], 0.01)
     end)
 
-    -- Positive: inner beach lanes are 120 m apart, outer ones 120 m further
+    -- Inner beach lanes are 120 m apart, outer ones 120 m further
     it("should offset beach lanes -180/-60/+60/+180 m from their water lane", function()
       local waterLane = buildLanes(1).waterLanes[1]
       local expected = { -180, -60, 60, 180 }
@@ -221,7 +208,6 @@ describe("LaneGeometry", function()
       end
     end)
 
-    -- Positive: lane points sit on the configured lines
     it("should place deploy, launch, assault, shore and end points on their lines", function()
       local waterLane = buildLanes(1).waterLanes[1]
       local beachLane = waterLane.beachLanes[1]
@@ -235,20 +221,18 @@ describe("LaneGeometry", function()
       assert.is_false(beachLane.isCleared)
     end)
 
-    -- Positive: the sweep course runs the water lane then the serpentine
     it("should build the sweep course as water lane then A-S-S-A-A-S-S-A serpentine", function()
       local waterLane = buildLanes(1).waterLanes[1]
-      local b = waterLane.beachLanes
+      local beachLanes = waterLane.beachLanes
       local expected = {
         waterLane.deployPoint, waterLane.launchPoint, waterLane.assaultPoint,
-        b[1].assaultPoint, b[1].shorePoint, b[2].shorePoint, b[2].assaultPoint,
-        b[3].assaultPoint, b[3].shorePoint, b[4].shorePoint, b[4].assaultPoint,
+        beachLanes[1].assaultPoint, beachLanes[1].shorePoint, beachLanes[2].shorePoint, beachLanes[2].assaultPoint,
+        beachLanes[3].assaultPoint, beachLanes[3].shorePoint, beachLanes[4].shorePoint, beachLanes[4].assaultPoint,
       }
 
       assert.are.same(expected, waterLane.sweepCourse)
     end)
 
-    -- Positive: mission area spans deploy line to shore and outer lanes plus margin
     it("should build a 4-corner sweep mission area around the beach lanes", function()
       local area = buildLanes(1).waterLanes[1].missionArea
       local along1, lateral1 = project(area[1])
@@ -267,7 +251,6 @@ describe("LaneGeometry", function()
   -- ============================================================================
 
   describe("calculateInlandDepthM", function()
-    -- Positive: deepest polygon vertex along the bearing
     it("should return the deepest polygon vertex along the bearing", function()
       local polygon = {
         LaneGeometry.buildPoint(frame, 50, -500),
@@ -288,23 +271,19 @@ describe("LaneGeometry", function()
     ---@param y number
     local function p(x, y) return { longitude = x, latitude = y } end
 
-    -- Positive: crossing segments
     it("should detect crossing segments", function()
       assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 2), p(0, 2), p(2, 0)))
     end)
 
-    -- Boundary: touching at an endpoint counts
     it("should count an endpoint touching the other segment", function()
       assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(1, 1), p(1, 1), p(2, 0)))
       assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 0), p(1, 0), p(1, 5)))
     end)
 
-    -- Boundary: collinear overlap counts
     it("should count collinear overlapping segments", function()
       assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 0), p(1, 0), p(3, 0)))
     end)
 
-    -- Negative: separate segments
     it("should not report parallel or separated segments", function()
       assert.is_false(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 0), p(0, 1), p(2, 1)))
       assert.is_false(LaneGeometry.segmentsIntersect(p(0, 0), p(1, 0), p(2, 0), p(3, 0)))
@@ -324,7 +303,7 @@ describe("LaneGeometry", function()
       LaneGeometry.buildPoint(frame, 200, 0),
     }
 
-    -- Positive: a 200 x 100 m rectangle is tiled by 8 cells of 50 m
+    -- A 200 x 100 m rectangle is tiled by 8 cells of 50 m
     it("should tile the polygon with intact 50 m cells", function()
       local cells = LaneGeometry.buildObstacleCells(frame, polygon, 50)
 
@@ -335,12 +314,10 @@ describe("LaneGeometry", function()
       end
     end)
 
-    -- Boundary: degenerate polygons produce no cells
     it("should return no cells for fewer than 3 points", function()
       assert.are.same({}, LaneGeometry.buildObstacleCells(frame, { polygon[1], polygon[2] }, 50))
     end)
 
-    -- Positive: route through intact cells is blocked until they are cleared
     it("should block a route through intact cells and allow it once they are cleared", function()
       local cells = LaneGeometry.buildObstacleCells(frame, polygon, 50)
       local route = { LaneGeometry.buildPoint(frame, -100, 60), LaneGeometry.buildPoint(frame, 300, 60) }
@@ -356,7 +333,6 @@ describe("LaneGeometry", function()
       assert.is_true(LaneGeometry.isRouteClear(route, cells))
     end)
 
-    -- Negative: route beside the area is clear
     it("should allow a route that never touches a cell", function()
       local cells = LaneGeometry.buildObstacleCells(frame, polygon, 50)
       local route = { LaneGeometry.buildPoint(frame, -100, 300), LaneGeometry.buildPoint(frame, 300, 300) }

@@ -8,7 +8,7 @@
 
 ## 概述
 
-coordinator 是 Landing Operations 的主流程引擎，由 `landingCheck.lua` 每 5 分鐘呼叫 `Coordinator.process` 一次。本模組僅負責流程編排與狀態判斷，實際動作委派給 `shipMovement`、`amphibiousLogistics`、`amphibiousAssault`、`adminUnloading` 等子模組。
+coordinator 是 Landing Operations 的主流程引擎，由 `landingCheck.lua` 每 5 分鐘呼叫 `Coordinator.process` 一次。本模組僅負責流程編排與狀態判斷，實際動作委派給 `shipMovement`、`amphibiousLogistics`、`amphibiousAssault`、`adminOffloading` 等子模組。
 
 職責切分為三條主線：
 
@@ -26,7 +26,7 @@ flowchart TD
     LOOP["遍歷 zones"]
     FIND["findOperationByName<br>取得 operation 描述符"]
     ZONE["processZone<br>單一 zone 階段推進"]
-    RETRANS["processCargoRetransfer<br>每 2 小時重轉運"]
+    RETRANS["processRemainingCargoTransfer<br>每 2 小時補運剩餘貨物"]
     GATE["evaluateFireSupportGate<br>SRBM 火力閘門"]
 
     PROC --> LOOP
@@ -48,8 +48,8 @@ stateDiagram-v2
     MINE_CLEARING --> BOAT_ASSAULT: updateMineClearing() 全部完成
     BOAT_ASSAULT --> OBSTACLE_CLEARING: updateBoats() 全部完成
     OBSTACLE_CLEARING --> ASSAULT_LANDING: updateObstacleClearing() 超過 clearSec
-    ASSAULT_LANDING --> WAITING_ADMIN_UNLOADING: 灘頭建立 (ZBD-05 ≥ 1，TODO 更嚴格)
-    WAITING_ADMIN_UNLOADING --> COMPLETED: startAdminUnloading 成功
+    ASSAULT_LANDING --> WAITING_ADMIN_OFFLOADING: 灘頭建立 (ZBD-05 ≥ 1，TODO 更嚴格)
+    WAITING_ADMIN_OFFLOADING --> COMPLETED: startAdminOffloading 成功
 ```
 
 各 phase 轉換條件：
@@ -63,9 +63,9 @@ stateDiagram-v2
 | `BOAT_ASSAULT` | 衝鋒舟全部到 S_lane 或被摧毀（每 tick 先 `launchBoats`） | `ObstacleClearing.startObstacleClearing` |
 | `OBSTACLE_CLEARING` | 超過 `obstacle.clearSec` | 有活衝鋒舟的灘際通道標 cleared |
 | `ASSAULT_LANDING` | 灘頭建立（ZBD-05 ≥ 1，TODO） | — |
-| `WAITING_ADMIN_UNLOADING` | 絕對安全（TODO，目前直接放行） | `startAdminUnloading` |
+| `WAITING_ADMIN_OFFLOADING` | 絕對安全（TODO，目前直接放行） | `startAdminOffloading` |
 
-`ASSAULT_LANDING`、`WAITING_ADMIN_UNLOADING`、`COMPLETED`（`constants.AMPHIBIOUS_LANDING_PHASES`）每 tick 另跑 `Hovercraft.launchHovercraft` + `updateHovercraft`。
+`ASSAULT_LANDING`、`WAITING_ADMIN_OFFLOADING`、`COMPLETED`（`constants.AMPHIBIOUS_LANDING_PHASES`）每 tick 另跑 `Hovercraft.launchHovercraft` + `updateHovercraft`。
 
 ---
 
@@ -82,10 +82,10 @@ stateDiagram-v2
 
 ## 貨物重轉運
 
-`processCargoRetransfer` 維護長期作戰下的後勤循環：
+`processRemainingCargoTransfer` 維護長期作戰下的後勤循環：
 
 - 對所有 zone 檢查 `zoneState.airlandingMissionStartTime`
-- 距上次裝載超過 `3600 * 2` 秒（2 小時）時，呼叫 `AmphibiousLogistics.retransferCargos`
+- 距上次裝載超過 `3600 * 2` 秒（2 小時）時，呼叫 `AmphibiousLogistics.transferRemainingCargos`
 - 重轉運成功後重設計時器
 
 ---
@@ -140,7 +140,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 
 - `WAITING_ASSAULT`
 - `MINE_CLEARING`、`BOAT_ASSAULT`、`OBSTACLE_CLEARING`、`ASSAULT_LANDING`
-- `WAITING_ADMIN_UNLOADING`
+- `WAITING_ADMIN_OFFLOADING`
 - `COMPLETED`
 
 ---
@@ -181,7 +181,7 @@ local 常數 `ARRIVED_PHASES` 涵蓋：
 - [shipMovement](shipMovement.md) — Phase 1：艦隊移動
 - [amphibiousLogistics](amphibiousLogistics.md) — Phase 2：裝載
 - [amphibiousAssault](amphibiousAssault.md) — Phase 3：突擊
-- [adminUnloading](adminUnloading.md) — Phase 4：行政下卸
+- [adminOffloading](adminOffloading.md) — Phase 4：行政下卸
 - [missileSystem/init](../missileSystem/init.md) — `getAmmoInventory` 提供火力閘門所需的庫存報告
 - [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例經門面 `StrikePlanner.addReconEntry`（→ `Recon.addEntry`）排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRA/*`
 - [系統架構](README.md)

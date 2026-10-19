@@ -1,18 +1,19 @@
-local GameApi = require("src.utils.gameApi")
-local ShipMovement = require("src.modules.landingOps.shipMovement")
-local Coordinator = require("src.modules.landingOps.coordinator")
-local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local AcvWave = require("src.modules.landingOps.acvWave")
-local MineClearing = require("src.modules.landingOps.mineClearing")
-local RoutePlanner = require("src.modules.landingOps.routePlanner")
-local LogFormat = require("src.utils.logFormat")
-local AdminUnloading = require("src.modules.landingOps.adminUnloading")
-local AttackManager = require("src.modules.attackManager")
-local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
-local Logger = require("src.utils.logger")
 local PersistentState = require("src.core.persistentState")
+
+local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
+local Logger = require("src.utils.logger")
+
+local AttackManager = require("src.modules.attackManager")
+local AcvWave = require("src.modules.landingOps.acvWave")
+local AdminOffloading = require("src.modules.landingOps.adminOffloading")
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local Coordinator = require("src.modules.landingOps.coordinator")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
+local RoutePlanner = require("src.modules.landingOps.routePlanner")
+local ShipMovement = require("src.modules.landingOps.shipMovement")
 
 local LandingOps = {}
 
@@ -21,7 +22,7 @@ local LandingOps = {}
 ---@param saveData SBJ__SaveData
 function LandingOps.init(config, saveData)
   local amphibOps = config.red.amphibOps
-  ShipMovement.planHoldingPositions(
+  ShipMovement.buildHoldingPositions(
     amphibOps.zones,
     amphibOps.formation,
     PersistentState.landingOps(saveData).amphibOps.calculationResult
@@ -34,13 +35,13 @@ end
 function LandingOps.process(config, saveData)
   local contacts = GameApi.ScenEdit_GetContacts(constants.SIDES.RED)
   if not contacts then
-    Logger.error("contacts is nil")
+    Logger.error(LogFormat.line("ERROR", { scope = "landingOps", reason = "contacts_missing" }))
     return
   end
 
   local filteredShips = GameApi.VP_GetSide({ side = constants.SIDES.RED }):unitsBy(constants.UNIT_TYPES.SHIP)
   if not filteredShips then
-    Logger.error("filteredShips is nil")
+    Logger.error(LogFormat.line("ERROR", { scope = "landingOps", reason = "ships_missing" }))
     return
   end
 
@@ -58,15 +59,8 @@ function LandingOps.process(config, saveData)
   }))
 end
 
----Whether a unit GUID still resolves
----@param guid string
----@return boolean
-local function isAlive(guid)
-  return GameApi.ScenEdit_GetUnit(guid) ~= nil
-end
-
----Build the per-ACV course callback: plan through cleared lanes to a parking slot and count the
----ACV against the wave quota; falls back to the zone destination when no lane has room
+---Build the per-ACV course callback. It plans a course through the cleared lanes to a parking slot
+---and counts the ACV against the wave quota. It falls back to the zone destination when no lane has room.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
@@ -87,7 +81,7 @@ local function buildACVRouter(amphibOps, zone, zoneState)
       queueCounters = zoneState.queueCounters,
       laneSlots = zoneState.laneSlots.acv,
       cells = zoneState.obstacle and zoneState.obstacle.cells,
-      isAlive = isAlive,
+      isAlive = GameUtils.hasUnit,
     })
 
     if not plan then
@@ -101,12 +95,12 @@ local function buildACVRouter(amphibOps, zone, zoneState)
   end
 end
 
----Launch amphibious combat vehicles for a ship once its zone has reached the assault landing
----A paused wave leaves the ship waiting at the launch line; an empty ship returns to base.
+---Launch amphibious combat vehicles for a ship after its zone reaches the assault landing.
+---A paused wave leaves the ship waiting at the launch line. An empty ship returns to base.
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
----@return boolean # Whether the launch workflow was handled successfully
+---@return boolean # True if the launch workflow was handled
 function LandingOps.launchACV(config, saveData, ship)
   if not AmphibiousAssault.isFerryOrLST(ship) then
     return false
@@ -153,11 +147,11 @@ end
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
----@return boolean # Whether the offload workflow was handled successfully
+---@return boolean # True if the offload workflow was handled
 function LandingOps.offloadVehicles(config, saveData, ship)
   local barges = PersistentState.landingOps(saveData).amphibOps.barges
 
-  if ship.name == "Barge" and not AdminUnloading.hasExtendedBridge(barges, ship) then
+  if ship.name == "Barge" and not AdminOffloading.hasExtendedBridge(barges, ship) then
     ship.course = nil
     ship.manualSpeed = 0
     ship.holdposition = true
@@ -178,15 +172,16 @@ function LandingOps.offloadVehicles(config, saveData, ship)
     barges[ship.guid].bridgeGUID = bridge.guid
   end
 
-  if ship.name == "Barge" and not AdminUnloading.isBridgeDestroyed(barges, ship) then
+  if ship.name == "Barge" and not AdminOffloading.isBridgeDestroyed(barges, ship) then
     for _, guid in ipairs(barges[ship.guid].roros) do
       local roro = GameApi.ScenEdit_GetUnit(guid)
 
       if roro then
-        local zone = AdminUnloading.getBargeROROZone(config.red.amphibOps.zones, ship, roro)
+        local zone = AdminOffloading.getBargeROROZone(
+          config.red.amphibOps.zones, ship, roro, config.red.amphibOps.bargeRoroPairingRangeNm)
 
         if zone then
-          AdminUnloading.offloadVehicles({
+          AdminOffloading.offloadVehicles({
             ship = roro,
             num = 20,
             bearing = zone.heading,
@@ -223,11 +218,11 @@ local function findSAG(zones, groupName)
   return nil
 end
 
----Neutralize airlanding zone contacts with SAG surface fire support
+---Attack airlanding zone contacts with SAG surface fire support
 ---@param config SBJ__Config
 ---@param ship CMO__Unit
----@return boolean # Whether the neutralization workflow was handled successfully
-function LandingOps.neutralizeAirlandingZone(config, ship)
+---@return boolean # True if the attack workflow was handled
+function LandingOps.attackAirlandingZone(config, ship)
   if not ship.group or ship.dbid ~= constants.PLATFORMS.TYPE_052D then
     return false
   end
@@ -250,7 +245,7 @@ function LandingOps.neutralizeAirlandingZone(config, ship)
     end
   end
 
-  if Utils.getCount(filteredContacts) <= 0 then
+  if #filteredContacts == 0 then
     return false
   end
 
@@ -261,7 +256,7 @@ function LandingOps.neutralizeAirlandingZone(config, ship)
 
   AttackManager.attackContacts({
     contacts = filteredContacts,
-    qty = math.floor(440 / Utils.getCount(filteredContacts)),
+    qty = math.floor(config.red.amphibOps.airlandingFireQty / #filteredContacts),
     firingUnits = { ship },
     weaponDBID = constants.WEAPONS.HPJ_38,
   })

@@ -1,12 +1,14 @@
+local constants = require("src.core.constants")
+
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local LaneGeometry = require("src.modules.landingOps.laneGeometry")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
-local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local constants = require("src.core.constants")
-local Utils = require("src.utils.utils")
 local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
+
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
+local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 
 local MineClearing = {}
 
@@ -14,9 +16,9 @@ local MineClearing = {}
 -- Minefields
 -- ============================================================================
 
----Lay BLUE offshore minefields at scenario start; minefields without reference points are skipped
+---Create the BLUE offshore minefields at scenario start. Skip minefields that have no reference points
 ---@param amphibOpsConfig SBJ__AmphibOpsConfig
-function MineClearing.layMinefields(amphibOpsConfig)
+function MineClearing.createMinefields(amphibOpsConfig)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "minefields", "Lay minefields")
 
   for i, minefield in ipairs(amphibOpsConfig.minefields or {}) do
@@ -42,7 +44,7 @@ end
 -- Sweeper Selection
 -- ============================================================================
 
----Find Type 529s anchored in the zone, ordered left to right across the landing bearing
+---Find the Type 529s anchored in the zone, ordered from left to right across the landing bearing
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param ships CMO__SideUnit[]
@@ -72,8 +74,8 @@ end
 -- Fast-forward Mine Removal
 -- ============================================================================
 
----Delete every mine lying in a water or beach lane cell
----Fast-forward stand-in for the sweepers; the mine cells are rebuilt on demand and never saved.
+---Remove every mine that lies in a water lane or beach lane cell.
+---This is the fast-forward stand-in for the sweepers. The mine cells are rebuilt on demand and never saved.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param lanes SBJ__LanePlanState
 ---@return integer # Mines deleted
@@ -101,8 +103,8 @@ end
 -- Lane Placement
 -- ============================================================================
 
----Lateral position per water lane, in the gaps between the deploy line LSTs
----Falls back to even spacing (nil) when there are no LSTs or the gaps cannot hold the lanes; the latter is reported.
+---Build the lateral position per water lane, in the gaps between the deploy line LSTs.
+---Return nil (even spacing) when there are no LSTs or the gaps cannot hold the lanes. The second case is reported.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param ships CMO__SideUnit[]
@@ -110,13 +112,13 @@ end
 ---@param routeConfig SBJ__RouteConfig
 ---@param report SBJ__LogReport
 ---@return number[]|nil
-local function planLaterals(zone, frame, ships, count, routeConfig, report)
+local function buildLaterals(zone, frame, ships, count, routeConfig, report)
   local shipLaterals = AmphibiousAssault.findDeployLineLSTLaterals(zone, frame, ships)
   if #shipLaterals == 0 then
     return nil
   end
 
-  local laterals = LaneGeometry.planWaterLaneLaterals(shipLaterals, count, routeConfig)
+  local laterals = LaneGeometry.buildWaterLaneLaterals(shipLaterals, count, routeConfig)
   if not laterals then
     report.add("WARN", { reason = "ship_gaps_cannot_hold_lanes", ships = #shipLaterals, lanes = count })
   end
@@ -127,8 +129,8 @@ end
 -- Public API
 -- ============================================================================
 
----Build the zone's lanes and send each Type 529 down its water lane and serpentine
----Fails (logged, nothing changed) when the lane center or obstacle area reference points are missing.
+---Start mine clearing in a zone: build the lanes and send each Type 529 down its water lane and serpentine.
+---Fail (logged, nothing changed) when the lane center or obstacle area reference points are missing.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
@@ -157,7 +159,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
     origin = center,
     bearing = zone.heading,
     count = #sweepers,
-    laterals = planLaterals(zone, frame, ships, #sweepers, amphibOps.tuning.route, report),
+    laterals = buildLaterals(zone, frame, ships, #sweepers, amphibOps.tuning.route, report),
     inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.tuning.route.inlandMarginM,
     areaMarginM = amphibOps.tuning.mineClearing.areaMarginM,
     routeConfig = amphibOps.tuning.route,
@@ -196,7 +198,8 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
       finalPoint = waterLane.sweepCourse[#waterLane.sweepCourse],
       isDone = false,
     }
-    -- TODO: 建掃雷任務並 assign（使用者自己寫）。區域 4 角在 zoneState.minesweepers[guid].missionArea。
+    -- TODO: Create the minesweeping mission and assign it. The user writes this step.
+    -- The four corners of the area are in zoneState.minesweepers[guid].missionArea.
     sweeper.mission = zone.landing.sweeper.missionName
     sweeper.manualSpeed = zone.landing.sweeper.speed
     sweeper.obeyEMCON = false
@@ -208,7 +211,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
   return true
 end
 
----Send sweepers that reached the end of their serpentine home; destroyed sweepers count as done
+---Update mine clearing: send the sweepers that reached the end of their serpentine home. Destroyed sweepers count as done
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when every sweeper is done

@@ -1,14 +1,15 @@
+local constants = require("src.core.constants")
+
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 
----Plans courses through the swept lanes for assault boats, ACVs and hovercraft.
----Pure apart from the state tables it is handed (queue counters and parking slots).
+---Build courses through the swept lanes for assault boats, ACVs and hovercraft.
+---This module is pure apart from the state tables it receives (queue counters and parking slots).
 local RoutePlanner = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
-local METERS_PER_NM = 1852
 local SAME_POINT_M = 1 -- lane points closer than this to the entry are the entry
 
 ---@param lanes SBJ__LanePlanState
@@ -21,7 +22,7 @@ end
 -- Lane Selection
 -- ============================================================================
 
----Order water lanes by a distance measure; lanes within the tie band of the nearest come first,
+---Sort water lanes by a distance measure. The lanes within the tie band of the nearest lane come first,
 ---least-loaded first
 ---@param waterLanes SBJ__WaterLaneEntry[]
 ---@param loads table<string, integer> Units already routed per water lane id
@@ -52,21 +53,21 @@ local function sortByMeasure(waterLanes, loads, tieM, measure)
   return sorted
 end
 
----Order water lanes by distance from the launch position; lanes within the tie band of the
----nearest come first, least-loaded first
+---Sort water lanes by distance from the launch position. The lanes within the tie band of the
+---nearest lane come first, least-loaded first
 ---@param launchPos CMO__Location
 ---@param waterLanes SBJ__WaterLaneEntry[]
 ---@param loads table<string, integer> Units already routed per water lane id
 ---@param laneTieNm number
 ---@return SBJ__WaterLaneEntry[]
 function RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)
-  return sortByMeasure(waterLanes, loads, laneTieNm * METERS_PER_NM, function(waterLane)
+  return sortByMeasure(waterLanes, loads, laneTieNm * constants.METERS_PER_NM, function(waterLane)
     return LaneGeometry.calculateDistanceM(launchPos, waterLane.launchPoint)
   end)
 end
 
----Order water lanes by sideways distance from the launch position, so a unit released beside the
----lane field takes an adjacent lane and never crosses another ship's gap
+---Sort water lanes by sideways distance from the launch position. A unit released beside the
+---lane field then takes an adjacent lane and never crosses the gap of another ship
 ---@param frame SBJ__LaneFrame
 ---@param launchPos CMO__Location
 ---@param waterLanes SBJ__WaterLaneEntry[]
@@ -81,13 +82,13 @@ function RoutePlanner.sortWaterLanesByLateral(frame, launchPos, waterLanes, load
   end)
 end
 
----Pick the water lane for a launch position
+---Select the water lane for a launch position
 ---@param launchPos CMO__Location
 ---@param waterLanes SBJ__WaterLaneEntry[]
 ---@param loads table<string, integer>
 ---@param laneTieNm number
 ---@return SBJ__WaterLaneEntry|nil
-function RoutePlanner.chooseWaterLane(launchPos, waterLanes, loads, laneTieNm)
+function RoutePlanner.selectWaterLane(launchPos, waterLanes, loads, laneTieNm)
   return RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)[1]
 end
 
@@ -111,18 +112,18 @@ end
 -- Queueing
 -- ============================================================================
 
----Take the next queue counter value for a water lane
+---Update the queue counter of a water lane and return its previous value
 ---Each call moves the counter, so units released together get staggered entry points.
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param queueCounters table<string, integer>
----@return integer k
-local function takeQueueIndex(waterLane, queueCounters)
+---@return integer # Queue index of the unit, counted from 0
+local function updateQueueIndex(waterLane, queueCounters)
   local k = queueCounters[waterLane.id] or 0
   queueCounters[waterLane.id] = k + 1
   return k
 end
 
----Distance a queued unit backs off toward open sea
+---Calculate the distance that a queued unit backs off toward open sea
 ---@param k integer
 ---@param routeConfig SBJ__RouteConfig
 ---@return number
@@ -130,7 +131,7 @@ local function calculateBackoffM(k, routeConfig)
   return (k % routeConfig.queueDepth) * routeConfig.columnSpacingM
 end
 
----Approach for units released far offshore: entry on the launch→deploy stretch, then L_i and A_i
+---Build the approach for units released far offshore: entry on the launch→deploy stretch, then L_i and A_i
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param k integer
 ---@param routeConfig SBJ__RouteConfig
@@ -142,9 +143,9 @@ local function buildDeployApproach(waterLane, k, routeConfig)
   return { entryPoint, waterLane.launchPoint, waterLane.assaultPoint }
 end
 
----Approach for units released beside the lane: enter the lane abeam of the launch position,
----then only the lane points still ahead (toward shore). Nothing sends the unit back out to sea
----except the queue stagger, and the entry never goes seaward of the deploy line.
+---Build the approach for units released beside the lane: enter the lane abeam of the launch position,
+---then use only the lane points still ahead (toward shore). Only the queue stagger sends the unit
+---back out to sea, and the entry never goes seaward of the deploy line.
 ---@param frame SBJ__LaneFrame
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param launchPos CMO__Location
@@ -170,7 +171,7 @@ local function buildSideApproach(frame, waterLane, launchPos, k, routeConfig)
   return approach
 end
 
----Number of parking slots between E_lane and A_lane
+---Count the parking slots between E_lane and A_lane
 ---@param beachLane SBJ__BeachLaneEntry
 ---@param routeConfig SBJ__RouteConfig
 ---@return integer
@@ -179,7 +180,7 @@ local function countSlots(beachLane, routeConfig)
   return math.floor(lengthM / routeConfig.queueSpacingM) + 1
 end
 
----Position of a parking slot: slot 1 at E_lane, each next one queueSpacingM back toward A_lane
+---Build the position of a parking slot: slot 1 at E_lane, each next slot queueSpacingM further back toward A_lane
 ---@param beachLane SBJ__BeachLaneEntry
 ---@param slot integer
 ---@param routeConfig SBJ__RouteConfig
@@ -192,8 +193,8 @@ local function buildSlotPoint(beachLane, slot, routeConfig)
   return LaneGeometry.interpolate(beachLane.endPoint, beachLane.assaultPoint, t), backoffM
 end
 
----Find the first free parking slot in a beach lane
----A slot is free when empty, held by this unit, or held by a unit that no longer exists.
+---Find the first free parking slot in a beach lane.
+---A slot is free when it is empty, held by this unit, or held by a unit that no longer exists.
 ---@param beachLane SBJ__BeachLaneEntry
 ---@param slots table<integer, string>|nil
 ---@param params SBJ__BuildRouteParams
@@ -202,7 +203,7 @@ function RoutePlanner.findFreeSlot(beachLane, slots, params)
   slots = slots or {}
   for slot = 1, countSlots(beachLane, params.routeConfig) do
     local holder = slots[slot]
-    if holder == nil or holder == params.guid or not params.isAlive(holder) then
+    if not holder or holder == params.guid or not params.isAlive(holder) then
       return slot
     end
   end
@@ -213,7 +214,7 @@ end
 -- Course Building
 -- ============================================================================
 
----Course to a parking slot: [approach..., A_lane, (S_lane), slot]
+---Build the course to a parking slot: [approach..., A_lane, (S_lane), slot]
 ---@param approach CMO__Location[]
 ---@param beachLane SBJ__BeachLaneEntry
 ---@param slot {point: CMO__Location, backoffM: number}
@@ -228,11 +229,11 @@ local function buildSlotCourse(approach, beachLane, slot)
   return course
 end
 
----Cleared beach lanes of a water lane, rotated so each new unit starts at the next one
+---Build the cleared beach lanes of a water lane, rotated so that each new unit starts at the next lane
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param k integer
 ---@return SBJ__BeachLaneEntry[]
-local function rotateClearedBeachLanes(waterLane, k)
+local function buildRotatedClearedBeachLanes(waterLane, k)
   local cleared = {}
   for _, beachLane in ipairs(waterLane.beachLanes) do
     if beachLane.isCleared then
@@ -247,9 +248,9 @@ local function rotateClearedBeachLanes(waterLane, k)
   return rotated
 end
 
----Whether a water lane has at least one cleared beach lane
+---Check if a water lane has at least one cleared beach lane
 ---@param waterLane SBJ__WaterLaneEntry
----@return boolean
+---@return boolean # True if the water lane has at least one cleared beach lane
 local function hasClearedBeachLane(waterLane)
   for _, beachLane in ipairs(waterLane.beachLanes) do
     if beachLane.isCleared then
@@ -259,13 +260,13 @@ local function hasClearedBeachLane(waterLane)
   return false
 end
 
----Try every cleared beach lane of one water lane; reserve the first slot whose course is clear
+---Build a route in one water lane: try every cleared beach lane and reserve the first slot whose course is clear
 ---@param waterLane SBJ__WaterLaneEntry
 ---@param params SBJ__BuildRouteParams
 ---@param opts SBJ__BuildRouteOpts|nil
 ---@return SBJ__RoutePlanResult|nil
-local function planInWaterLane(waterLane, params, opts)
-  local k = takeQueueIndex(waterLane, params.queueCounters)
+local function buildInWaterLane(waterLane, params, opts)
+  local k = updateQueueIndex(waterLane, params.queueCounters)
   local isFromDeployLine = opts and opts.isFromDeployLine
   local approach
   if isFromDeployLine then
@@ -274,7 +275,7 @@ local function planInWaterLane(waterLane, params, opts)
     approach = buildSideApproach(laneFrame(params.lanes), waterLane, params.launchPos, k, params.routeConfig)
   end
 
-  for _, beachLane in ipairs(rotateClearedBeachLanes(waterLane, k)) do
+  for _, beachLane in ipairs(buildRotatedClearedBeachLanes(waterLane, k)) do
     local slots = params.laneSlots[beachLane.id] or {}
     local slot = RoutePlanner.findFreeSlot(beachLane, slots, params)
 
@@ -296,8 +297,8 @@ local function planInWaterLane(waterLane, params, opts)
   return nil
 end
 
----Plan a course through cleared lanes to a parking slot and reserve that slot
----Water lanes are tried nearest first; full or blocked lanes fall through to the next.
+---Build a course through the cleared lanes to a parking slot and reserve that slot.
+---Try the water lanes nearest first. Full or blocked lanes fall through to the next lane.
 ---@param params SBJ__BuildRouteParams
 ---@param opts? SBJ__BuildRouteOpts
 ---@return SBJ__RoutePlanResult|nil # nil when no cleared lane has a free slot
@@ -319,7 +320,7 @@ function RoutePlanner.buildRoute(params, opts)
   end
 
   for _, waterLane in ipairs(sorted) do
-    local plan = planInWaterLane(waterLane, params, opts)
+    local plan = buildInWaterLane(waterLane, params, opts)
     if plan then
       return plan
     end
@@ -328,8 +329,8 @@ function RoutePlanner.buildRoute(params, opts)
   return nil
 end
 
----Course for an assault boat to its paired beach lane: [entry, (L_i), (A_i), A_lane, S_lane]
----Ignores obstacle state; the boat is the one going ashore to clear it.
+---Build the course for an assault boat to its paired beach lane: [entry, (L_i), (A_i), A_lane, S_lane].
+---Ignore the obstacle state. The boat is the unit that goes ashore to clear it.
 ---@param lanes SBJ__LanePlanState
 ---@param beachLaneId string
 ---@param launchPos CMO__Location Where the boat is released
@@ -342,7 +343,7 @@ function RoutePlanner.buildBoatRoute(lanes, beachLaneId, launchPos, queueCounter
     return nil
   end
 
-  local k = takeQueueIndex(waterLane, queueCounters)
+  local k = updateQueueIndex(waterLane, queueCounters)
   local course = buildSideApproach(laneFrame(lanes), waterLane, launchPos, k, routeConfig)
   table.insert(course, beachLane.assaultPoint)
   table.insert(course, beachLane.shorePoint)

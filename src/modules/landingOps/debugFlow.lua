@@ -1,12 +1,13 @@
-local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 
----Live-test shortcuts for the amphibious flow (config.red.amphibOps.debug).
----Phases before debug.startStage are fast-forwarded: ships teleport and timed waits are skipped,
----so every earlier phase still runs and leaves the state the later phases need.
+local GameApi = require("src.utils.gameApi")
+
+---Provide live-test shortcuts for the amphibious flow (config.red.amphibOps.debug).
+---Fast-forward the phases before debug.startStage: ships teleport and timed waits are skipped.
+---Every earlier phase still runs, so the later phases get the state they need.
 local DebugFlow = {}
 
----Whether the given phase should be fast-forwarded
+---Check if the given phase must be fast-forwarded
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param phase string One of constants.AMPHIBIOUS_PHASES
 ---@return boolean # False when debug is off; true for every phase when startStage is unset
@@ -21,15 +22,15 @@ function DebugFlow.isFastForward(amphibOps, phase)
   return constants.AMPHIBIOUS_PHASE_ORDER[phase] < constants.AMPHIBIOUS_PHASE_ORDER[debug.startStage]
 end
 
----Whether hovercraft and ACVs teleport to their parking slot instead of sailing
+---Check if hovercraft and ACVs teleport to their parking slot instead of sailing
 ---@param amphibOps SBJ__AmphibOpsConfig
----@return boolean
+---@return boolean # True if hovercraft and ACVs teleport to their parking slot
 function DebugFlow.isLandingTeleport(amphibOps)
   local debug = amphibOps.debug
   return debug ~= nil and debug.enabled and debug.teleportLanding == true
 end
 
----Move a unit straight to a location
+---Teleport a unit to a location
 ---@param guid string
 ---@param location CMO__Location
 function DebugFlow.teleport(guid, location)

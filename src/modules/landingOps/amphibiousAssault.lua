@@ -1,16 +1,18 @@
+local constants = require("src.core.constants")
+
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
-local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local LogFormat = require("src.utils.logFormat")
-local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+
+local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
-local constants = require("src.core.constants")
 
 local AmphibiousAssault = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
 
@@ -22,7 +24,6 @@ local FERRY_OR_LST_DBIDS = {
   [constants.PLATFORMS.TYPE_073A]   = true,
 }
 local FERRY_NAME = "Ferry"
-local METERS_PER_NM = 1852
 
 ---@type table<string, boolean>
 local NON_LST_NAMES = {
@@ -36,7 +37,7 @@ local ACV_TYPES = {
   { name = "ZTD-05", dbid = constants.PLATFORMS.ZTD05, key = "ztd05" },
 }
 
----Unit types counted in each operational zone once landed
+---Unit types counted in each operational zone after they land
 ---@type {name: string, dbid: number}[]
 local LANDED_UNIT_TYPES = {
   { name = "ZBD-05",        dbid = constants.PLATFORMS.ZBD05 },
@@ -55,7 +56,7 @@ local LANDED_UNIT_TYPES = {
 -- Validation and Filtering
 -- ============================================================================
 
----Check if unit is a Landing Ship Tank (excludes auxiliary vessels and Type 529 sweepers)
+---Check if a unit is a Landing Ship Tank. Exclude auxiliary vessels and Type 529 sweepers
 ---@param unit CMO__Unit
 ---@return boolean # True if unit is an LST (not RORO, Barge or Type 529)
 local function isLST(unit)
@@ -66,8 +67,8 @@ end
 -- Mission Configuration
 -- ============================================================================
 
----Set start time for a single landing mission
----Calculates start time relative to current time and updates the mission
+---Set the start time of a single landing mission.
+---Calculate it relative to the current time and update the mission.
 ---@param mission SBJ__LandingMissionDescriptor
 ---@param currentTime number
 ---@return SBJ__LogResult # Deferred log result describing the outcome
@@ -83,7 +84,7 @@ local function setMissionStartTime(mission, currentTime)
   return { tag = "OK", fields = { mission = mission.name, startTime = startTime } }
 end
 
----Set start times for the missions of the given categories in a single zone
+---Set the start times of the missions of the given categories in a single zone
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param currentTime number
 ---@param categories string[] Keys of `zone.air` holding missions (e.g. "transportHelicopter", "attackHelicopter")
@@ -110,7 +111,7 @@ end
 -- ACV Spawning
 -- ============================================================================
 
----Count cargo items of one DBID aboard a ship
+---Count the cargo items of one DBID aboard a ship
 ---@param ship CMO__Unit
 ---@param dbid number
 ---@return integer
@@ -125,8 +126,8 @@ local function countCargo(ship, dbid)
   return count
 end
 
----Delete cargo by priority from ship for ACV deployment
----Iterates ACV_TYPES in order, giving each type at most its own quota
+---Remove cargo from a ship by priority for ACV deployment.
+---Iterate ACV_TYPES in order. Give each type at most its own quota.
 ---@param ship CMO__Unit
 ---@param totalNum number
 ---@param quota table<string, integer> Remaining quota per ACV type key
@@ -148,7 +149,7 @@ local function removeCargoByPriority(ship, totalNum, quota)
   return allocations
 end
 
----Spawn a single ACV unit at the specified location
+---Create a single ACV unit at the given location
 ---@param acvType {name: string, dbid: number, key: string}
 ---@param location CMO__Location
 ---@param routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
@@ -185,7 +186,7 @@ local function createSingleACV(acvType, location, routeACV)
   }
 end
 
----Spawn every allocated ACV, stopping at the first failure
+---Create every allocated ACV. Stop at the first failure
 ---@param allocations {acvType: {name: string, dbid: number, key: string}, count: number}[]
 ---@param locations CMO__Location[]
 ---@param routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
@@ -214,8 +215,8 @@ end
 -- Course Setting
 -- ============================================================================
 
----Set course for an LST to its station inside the offshore band
----Fast-forward debug teleports it onto the station first.
+---Move an LST to its station inside the offshore band.
+---In fast-forward debug, teleport it onto the station first.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param entry {unit: CMO__Unit, alongM: number, lateralM: number}
 ---@param frame SBJ__LaneFrame
@@ -236,14 +237,14 @@ local function moveLSTToLaunchStation(amphibOps, entry, frame, shiftM, zone)
     tag = "OK",
     fields = {
       ship = unit.name,
-      offshoreNm = string.format("%.1f", -alongM / METERS_PER_NM),
+      offshoreNm = string.format("%.1f", -alongM / constants.METERS_PER_NM),
       speed = zone.landing.lstSettings.speed
     }
   }
 end
 
----Set course for a Surface Action Group
----Fast-forward debug teleports every ship in the group into formation at the end of its route first.
+---Set the course of a Surface Action Group.
+---In fast-forward debug, teleport every ship in the group into formation at the end of its route first.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param descriptor SBJ__SAGDescriptor
 ---@param heading number Zone heading the SAG faces
@@ -263,7 +264,7 @@ local function setCourseForSAG(amphibOps, descriptor, heading)
       return { tag = "FAIL", fields = { sag = descriptor.groupName, reason = "sag_unitlist_missing" } }
     end
 
-    fields.positioned, fields.skipped = ShipMovement.placeSagInFormation(unit, route[#route], heading)
+    fields.positioned, fields.skipped = ShipMovement.teleportSagToFormation(unit, route[#route], heading)
   end
 
   unit.course = route
@@ -290,8 +291,8 @@ local function findDeployLineLSTs(zone, frame, units)
   return entries
 end
 
----Set courses for every LST anchored in a zone
----The formation keeps its shape and is shifted along the landing bearing to the middle of the offshore band.
+---Move every LST anchored in a zone to its launch station.
+---The formation keeps its shape. Shift it along the landing bearing to the middle of the offshore band.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]
@@ -309,8 +310,8 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
     return true, {}
   end
 
-  local nearM = amphibOps.tuning.route.launchStationNearNm * METERS_PER_NM
-  local farM = amphibOps.tuning.route.launchStationFarNm * METERS_PER_NM
+  local nearM = amphibOps.tuning.route.launchStationNearNm * constants.METERS_PER_NM
+  local farM = amphibOps.tuning.route.launchStationFarNm * constants.METERS_PER_NM
   local seawardM, shoreM = entries[1].alongM, entries[1].alongM
   for _, entry in ipairs(entries) do
     seawardM = math.min(seawardM, entry.alongM)
@@ -322,7 +323,7 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
       tag = "FAIL",
       fields = {
         reason = "formation_exceeds_station_band",
-        depthNm = string.format("%.2f", (shoreM - seawardM) / METERS_PER_NM),
+        depthNm = string.format("%.2f", (shoreM - seawardM) / constants.METERS_PER_NM),
         bandNm = amphibOps.tuning.route.launchStationFarNm - amphibOps.tuning.route.launchStationNearNm,
       }
     } }
@@ -337,7 +338,7 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
   return true, results
 end
 
----Set courses for every SAG in a zone, stopping at the first failure
+---Move every SAG in a zone to its launch station. Stop at the first failure
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param sags SBJ__SAGDescriptor[]
 ---@param heading number Zone heading the SAGs face
@@ -362,7 +363,7 @@ end
 -- Public API
 -- ============================================================================
 
----Set start times for amphibious assault missions in a single operational zone and record the start timestamp
+---Set the start times of the amphibious assault missions in a single operational zone and record the start timestamp
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param categories string[] Keys of `zone.air` holding missions to start (e.g. "transportHelicopter", "attackHelicopter")
@@ -380,8 +381,7 @@ function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, categorie
   return success
 end
 
----Set course for LSTs to their offshore station and move SAGs to staging areas
----Lateral positions of the LSTs anchored on the deploy line
+---Find the lateral positions of the LSTs anchored on the deploy line
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param units CMO__SideUnit[]
@@ -394,12 +394,13 @@ function AmphibiousAssault.findDeployLineLSTLaterals(zone, frame, units)
   return laterals
 end
 
----LSTs on the deploy line keep their formation and move to launchStationNearNm..launchStationFarNm off the shore;
----RORO ships, barges and Type 529s stay put
+---Move the LSTs to their offshore stations and the SAGs to the staging areas.
+---The LSTs on the deploy line keep their formation and move to launchStationNearNm..launchStationFarNm off the shore.
+---RORO ships, barges and Type 529s stay put.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]
----@return boolean # True if all LST courses were successfully set
+---@return boolean # True if all LST courses were set
 function AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Move to launch stations")
 
@@ -417,8 +418,8 @@ function AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
   return success
 end
 
----Count enemy ground force contacts in the air landing zone
----Only counts contacts of type FACILITY_MOBILE to assess landing zone threat level
+---Count enemy ground force contacts in the air landing zone.
+---Count only contacts of type FACILITY_MOBILE to assess the threat level of the landing zone.
 ---@param contacts CMO__Contact[]
 ---@param area CMO__ReferencePoint[]
 ---@return integer # Number of enemy ground units in the area
@@ -463,13 +464,13 @@ function AmphibiousAssault.countUnitsInEachArea(zones)
   return result
 end
 
----Launch Amphibious Combat Vehicles (ACVs) from an amphibious ship
----Spawns ZBD-05 and ZTD-05 amphibious vehicles abreast of the ship, within the per-type quota
+---Launch Amphibious Combat Vehicles (ACVs) from an amphibious ship.
+---Create ZBD-05 and ZTD-05 amphibious vehicles abreast of the ship, within the per-type quota.
 ---@param params SBJ__ACVDeploymentParams
 ---@return SBJ__LaunchACVResult|nil # nil when the ship is missing or destroyed
 function AmphibiousAssault.launchACV(params)
   local ship = params.ship
-  if ship == nil or ship.IsDestroyed then return end
+  if not ship or ship.IsDestroyed then return end
 
   local hasCargo, hasQuotaForCargo = false, false
   for _, acvType in ipairs(ACV_TYPES) do
@@ -504,19 +505,19 @@ function AmphibiousAssault.launchACV(params)
   return { count = count, isEmpty = false, isPaused = false }
 end
 
----Check if a ship is a ferry or Landing Ship Tank (LST)
----Includes Type 071/072/073 and ferries capable of launching ACVs or beaching
+---Check if a ship is a ferry or Landing Ship Tank (LST).
+---Include Type 071/072/073 and ferries that can launch ACVs or beach.
 ---@param ship CMO__Unit
 ---@return boolean # True if ship is a ferry or LST
 function AmphibiousAssault.isFerryOrLST(ship)
   return FERRY_OR_LST_DBIDS[ship.dbid] == true or ship.name == FERRY_NAME
 end
 
----Get the operational zone for a ship based on its location
----Matches ship position against ACV deployment areas to retrieve zone-specific configuration
+---Get the operational zone of a ship from its location.
+---Match the ship position against the ACV deployment areas to get the zone configuration.
 ---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param ship CMO__Unit
----@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if ship not in any zone
+---@return SBJ__OperationalZoneDescriptor|nil # Zone descriptor, or nil if the ship is not in any zone
 function AmphibiousAssault.getShipZone(zones, ship)
   for _, zone in ipairs(zones) do
     if ship:inArea(zone.landing.acv.area) then

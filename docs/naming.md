@@ -30,11 +30,12 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `calculate` | 算數值 | `calculateDistance`、`calculateStrikerFlightTime` |
 | `evaluate` | 看狀況算出結論或狀態 | `evaluateTarget`、`evaluateObservationWindow` |
 | `roll` | 機率擲骰 | `rollDetection`、`rollJammingResistance` |
-| `build` | 在記憶體組出 table ���字串，不碰遊戲 | `buildLocations`、`AtoBuilder.build` |
+| `build` | 在記憶體組出 table、字串、位置或順序，不碰遊戲 | `buildLocations`、`AtoBuilder.build` |
 | `create` | 透過 CMO API 建出遊戲物件 | `createSingleACV`、`createArea` |
-| `add` / `remove` | 集合成員增減 | `addEntry`、`removeJammerUnit` |
-| `set` / `update` | 改既有物件的屬性 | `setRoleTiming`、`updateTargetList` |
-| `resolve` | 把 key、名稱、參照換成實際物件或類別 | `resolveUnitType` |
+| `add` / `remove` | 集合成員增減。拿掉過期、已毀、多餘的項目也用 `remove` | `addEntry`、`removeJammerUnit` |
+| `set` | 把給定的值或旗標直接寫進既有物件 | `setRoleTiming` |
+| `update` | 依現況重算，再寫回既有物件 | `updateTargetList` |
+| `resolve` | 只用在把 key、名稱、參照換成實際物件。算數值用 `calculate`，做判斷用 `evaluate`，拆字串用 `parse` | `resolveUnit`、`resolvePair` |
 | `normalize` | 把輸入整理成標準形，形狀可能改變 | `normalizeToRPArray` |
 | `format` | 轉成字串或程式碼 | `formatWaypoint`、`formatConfigCode` |
 | `parse` | 字串轉物件 | `parseDatetimeToTimestamp` |
@@ -46,10 +47,29 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `schedule` | 排未來事件 | `schedule` |
 | `log` | 寫 log | `logSchedule`、`logBox` |
 | `try` | `pcall` 包裝 | `tryAddUnit`、`tryCall` |
+| `select` | 照規則從候選挑出幾個 | `selectBeachLanes`、`selectBoats` |
+| `sort` | 排序 | `sortWaterLanes` |
+| `step` | 一輪裡的一個階段，吃 `tickCtx` | `stepMoving`、`stepHovercraft` |
 
-- **領域動詞**：直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。現有：`move`、`launch`、`attack`、`assign`、`transfer`、`retransfer`、`offload`、`load`、`reload`、`repair`、`hide`、`stow`、`retire`、`abort`、`abandon`、`deploy`、`drop`（CMO 的 drop contact）、`collect`（只限 `collectSigint`）、`recover`、`activate`、`disable`、`neutralize`、`strike`、`track`、`pair`、`strip`、`complete`、`settle`。一個動作只用一個字，不要 `launch` 和 `create` 混用。
+- **領域動詞**：直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。現有：`move`（開過去，要花時間）、`teleport`（瞬移，立刻到位）、`launch`、`attack`、`assign`、`transfer`、`offload`、`load`、`reload`、`repair`、`hide`、`abort`、`deploy`、`drop`（CMO 的 drop contact）、`collect`（只限 `collectSigint`）、`recover`、`activate`、`disable`、`strike`、`track`、`pair`、`complete`。一個動作只用一個字，不要 `launch` 和 `create` 混用。
 - **工具類保留**：`deepCopy`、`compareFieldKeys`、`forEach*`、`deg` / `rad` / `atan`、`LogFormat.line` / `fields` / `merge` / `report`、`Logger.log` / `error` / `warn`。
-- `check*` 只給「有副作用又回報結果」的函式，並在註解寫清楚回傳值。純布林用 `is` / `has`。
+- **測試例外**：`spec/` 內的測試工具字 `stub`、`track`（`trackStub`、`stubUnits`）不受動詞表限制。測試資料 builder 一樣用 `build` 前綴，不用 `make`。
+- **用字原則（借 ASD-STE100 的精神，不用它的字典）：** 字只從上表和領域動詞選，不另外找字。一個字一個意思，一個意思一個字。要新增動詞，先加進上表再用。
+- **近義字只留一個。** 下列字不再用於新函式，改用右邊的字：
+  - `plan`、`rotate` → `build`
+  - `apply`、`mark`、`lock` → `set`
+  - `prune`、`retire`、`strip` → `remove`
+  - `settle` → `complete`
+  - `abandon` → `abort`
+  - `neutralize` → `attack`
+  - `send` → `move`
+  - `place` → `teleport`
+  - `lay` → `create`
+  - `choose` → `select`
+  - `retransfer`、`redeploy`、`reassign` → `transfer`、`deploy`、`assign`
+  - 只出現一次的雜字（`take`、`run`、`dump`、`print`）→ 表內的字
+- 現有函式名保留，改到那個函式時順手換字。`process`（約 55 個）是子系統入口，不改。
+- `check*` 只給「有副作用又回報結果」的函式，並在註解寫清楚回傳值。純布林用 `is` / `has`。新函式不要用 `check*`。
 - `validate*` 一律回 `SBJ__LogResult`（`{ tag, fields }`），不混用 `boolean` 或 `ok, err`。
 - 每個函式都要有 LuaLS 註解（`---@param`、`---@return`）。
 
@@ -146,3 +166,13 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 - `src/utils/gameApi.lua` 的 `realApi.ScenEdit_*` wrapper 與 CMO API 同名。
 - `config.lua` 與 `saveData` 內的 key 不加 `Map` 後綴，改 key 會動到存檔與 config 形狀。
 - `SBJ__ReconTriggeredOperationBatch`、`SBJ__GeneratedOperationsTracker`、`SBJ__LoadoutStatus`、`SBJ__UnitStatus`、`SBJ__WeaponStatus` 保留原名；新型別才用 `State`。
+
+## 10. 註解
+
+註解用英文，依 ASD-STE100（簡化技術英語）寫。另外遵守這幾條專案規則：
+
+- 第一句用命令句，動詞跟函式名的動詞一致（`findTargets` → `Find targets that ...`）。動詞照第 3 節的表。
+- 註解的名詞跟識別字同一個字。變數叫 `aircraft`，註解就寫 `aircraft`，不寫 `plane`。
+- 數值寫單位（`Seconds since scenario start`）。可能回 `nil` 的，寫出什麼情況回 `nil`。
+- 寫 why，不重複 what。程式碼已經看得出的事不用寫。
+- 若函式、參數、回傳值名稱夠明確，則說明（description）能省則省。

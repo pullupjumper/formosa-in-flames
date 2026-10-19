@@ -1,6 +1,6 @@
-# adminUnloading — 行政下卸作業
+# adminOffloading — 行政下卸作業
 
-> 原始碼：`src/modules/landingOps/adminUnloading.lua`
+> 原始碼：`src/modules/landingOps/adminOffloading.lua`
 
 **職責**：管理駁船-RORO 後勤鏈建立、重型車輛卸載與灘頭浮橋架設
 
@@ -8,7 +8,7 @@
 
 ## 概述
 
-adminUnloading 負責登陸作戰的第四階段——行政下卸（重裝備卸載）。當灘頭由第一波 ACV 建立後，系統啟動駁船（Barge）與 RORO 船的後勤鏈：
+adminOffloading 負責登陸作戰的第四階段——行政下卸（重裝備卸載）。當灘頭由第一波 ACV 建立後，系統啟動駁船（Barge）與 RORO 船的後勤鏈：
 
 1. **駁船搶灘**：計算駁船從等待區到卸載區的航向，投影至 LST 搶灘航線
 2. **RORO 跟隨**：RORO 船與同區域駁船配對，跟隨駁船前進
@@ -33,7 +33,7 @@ flowchart LR
 
 ### 駁船航向計算
 
-`createCourseForBarge` 使用球面幾何投影計算航向：
+`buildCourseForBarge` 使用球面幾何投影計算航向：
 
 1. 取得卸載區（`landing.offloadArea`）的參考點
 2. 計算參考點的球面中心點（`calculateSphericalCenter`）
@@ -43,7 +43,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    START["createCourseForBarge()"]
+    START["buildCourseForBarge()"]
     RP["取得 landing.offloadArea 參考點"]
     CENTER["計算球面中心點"]
     D1["計算距離 d1"]
@@ -57,7 +57,7 @@ flowchart TD
 
 ### RORO 航向計算
 
-`createCourseForRORO` 生成兩段航路：
+`buildCourseForRORO` 生成兩段航路：
 
 | 航路段 | 計算方式 | 說明 |
 |:-:|---|---|
@@ -70,7 +70,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START["startAdminUnloading()"]
+    START["startAdminOffloading()"]
     ITER_UNIT["遍歷 filteredUnits"]
     IS_BARGE{是 Barge<br>在 holdingAreas.deployLine?}
     IS_RORO{是 RORO<br>在 holdingAreas.deployLine?}
@@ -105,7 +105,7 @@ flowchart TD
     START["offloadVehicles(params)"]
     CHECK{船艦存在<br>且未被擊毀?}
     LOCS["buildLocations<br>計算卸載位置<br>（含 firstDistance）"]
-    EXTRACT["resolveCargoItems<br>提取貨物項目"]
+    EXTRACT["findCargoItems<br>提取貨物項目"]
     SPAWN["createOffloadedVehicle<br>刪除貨物 → 生成單位"]
     TYPE{貨物類型?}
     GROUND["生成 Ground unit"]
@@ -172,7 +172,7 @@ flowchart TD
 
 | 函數 | 說明 |
 |---|---|
-| `startAdminUnloading(zone, saveData, filteredUnits)` | 啟動行政下卸：駁船搶灘、RORO 配對（單一作戰區） |
+| `startAdminOffloading(zone, saveData, filteredUnits)` | 啟動行政下卸：駁船搶灘、RORO 配對（單一作戰區） |
 | `offloadVehicles(params)` | 從船艦下卸車輛至灘頭 |
 
 ---
@@ -182,12 +182,12 @@ flowchart TD
 兩個作業 API 各自建立一份 `LogFormat.report`。`offloadVehicles` 原本在失敗與成功兩條路徑各 emit 一次相同的 summary，現在收斂成單一 emit。
 
 ```
-[adminUnloading] zone=Taoyuan: Admin unloading | total=2 ok=2
+[adminOffloading] zone=Taoyuan: Admin offloading | total=2 ok=2
   [OK]   ship=Barge action=course_set guid=B-001
   [OK]   ship=RORO action=paired guid=R-014 barge=B-001
 ```
 ```
-[adminUnloading] ship=Barge: Offload vehicles | total=1 ok=1
+[adminOffloading] ship=Barge: Offload vehicles | total=1 ok=1
   [OK]   unit=ZBD-04A type="Ground unit" dbid=3211 index=1
 ```
 

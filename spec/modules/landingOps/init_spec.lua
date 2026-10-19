@@ -7,9 +7,8 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local MineClearing = require("src.modules.landingOps.mineClearing")
-local AdminUnloading = require("src.modules.landingOps.adminUnloading")
+local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AttackManager = require("src.modules.attackManager")
-local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 
 describe("LandingOps", function()
@@ -47,7 +46,7 @@ describe("LandingOps", function()
   ---Create a ship unit with sensible defaults
   ---@param overrides? table
   ---@return table
-  local function makeShip(overrides)
+  local function buildShip(overrides)
     local ship = {
       guid = "SHIP-001",
       name = "Ship",
@@ -72,7 +71,7 @@ describe("LandingOps", function()
   ---Create an amphibious zone descriptor
   ---@param overrides? table
   ---@return table
-  local function makeZone(overrides)
+  local function buildZone(overrides)
     local zone = {
       heading = 180,
       movement = { baseGUID = "BASE-001" },
@@ -99,7 +98,7 @@ describe("LandingOps", function()
   ---Create a mock contact with sensible defaults
   ---@param overrides? table
   ---@return table
-  local function makeContact(overrides)
+  local function buildContact(overrides)
     local contact = {
       guid = "CONTACT-001",
       typed = constants.CONTACT_TYPES.FACILITY_MOBILE,
@@ -116,14 +115,14 @@ describe("LandingOps", function()
   ---Wrap an amphibious operations config section into the global config shape
   ---@param amphibOpsConfig table
   ---@return table
-  local function makeConfig(amphibOpsConfig)
+  local function buildConfig(amphibOpsConfig)
     return { red = { amphibOps = amphibOpsConfig } }
   end
 
   ---Create save data holding China's amphibious state
   ---@param amphibOps table
   ---@return table
-  local function makeSaveData(amphibOps)
+  local function buildSaveData(amphibOps)
     return { red = { amphibOps = amphibOps, recon = {}, ground = {} } }
   end
 
@@ -132,15 +131,15 @@ describe("LandingOps", function()
   -- ============================================================================
 
   describe("init", function()
-    -- Positive: delegates destination pre-calculation to ShipMovement
+    -- Delegates destination pre-calculation to ShipMovement
     it("should initialize landing operations by calculating destinations", function()
-      local saveData = makeSaveData({ calculationResult = {} })
-      local cfg = { zones = {}, formation = {} }
-      local stubCalc = trackStub(stub(ShipMovement, "planHoldingPositions"))
+      local saveData = buildSaveData({ calculationResult = {} })
+      local configOverrides = { zones = {}, formation = {} }
+      local stubCalc = trackStub(stub(ShipMovement, "buildHoldingPositions"))
 
-      LandingOps.init(makeConfig(cfg), saveData)
+      LandingOps.init(buildConfig(configOverrides), saveData)
 
-      assert.stub(stubCalc).was.called_with(cfg.zones, cfg.formation, saveData.red.amphibOps.calculationResult)
+      assert.stub(stubCalc).was.called_with(configOverrides.zones, configOverrides.formation, saveData.red.amphibOps.calculationResult)
     end)
   end)
 
@@ -149,12 +148,11 @@ describe("LandingOps", function()
   -- ============================================================================
 
   describe("process", function()
-    -- Positive: the coordinator gets China's landing state and this tick's game snapshot
     it("should forward landing state, contacts, time and ships to coordinator", function()
       local stubProcess = trackStub(stub(Coordinator, "process"))
-      local config = makeConfig({})
-      local saveData = makeSaveData({ barges = { ["BARGE-001"] = { roros = {} } } })
-      local contacts = { makeContact() }
+      local config = buildConfig({})
+      local saveData = buildSaveData({ barges = { ["BARGE-001"] = { roros = {} } } })
+      local contacts = { buildContact() }
       local filteredShips = { { guid = "SHIP-001" } }
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
       trackStub(stub(GameApi, "VP_GetSide").returns({ unitsBy = function() return filteredShips end }))
@@ -170,12 +168,11 @@ describe("LandingOps", function()
       assert.are.same(filteredShips, args[3].filteredShips)
     end)
 
-    -- Negative: without contacts the tick stops before the coordinator runs
     it("should skip the coordinator when contacts are unavailable", function()
       local stubProcess = trackStub(stub(Coordinator, "process"))
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(nil))
 
-      LandingOps.process(makeConfig({}), makeSaveData({}))
+      LandingOps.process(buildConfig({}), buildSaveData({}))
 
       assert.stub(stubProcess).was_not.called()
     end)
@@ -191,9 +188,9 @@ describe("LandingOps", function()
     ---@param phase string
     ---@return table saveData
     ---@return table zoneState
-    local function makeZoneSaveData(phase)
+    local function buildZoneSaveData(phase)
       local zoneState = { phase = phase }
-      return makeSaveData({ zoneStates = { ZoneAlpha = zoneState } }), zoneState
+      return buildSaveData({ zoneStates = { ZoneAlpha = zoneState } }), zoneState
     end
 
     before_each(function()
@@ -201,17 +198,16 @@ describe("LandingOps", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
     end)
 
-    -- Positive: launches ACVs with the wave quota once assault landing has started
     it("should launch ACVs with quota and a router when the zone is in ASSAULT_LANDING", function()
-      local ship = makeShip()
-      local zone = makeZone({ name = "ZoneAlpha" })
-      local saveData, zoneState = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      local ship = buildShip()
+      local zone = buildZone({ name = "ZoneAlpha" })
+      local saveData, zoneState = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
       trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV")
         .returns({ count = 2, isEmpty = false, isPaused = false }))
 
-      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
+      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       local params = stubLaunch.calls[1].vals[1]
@@ -223,10 +219,9 @@ describe("LandingOps", function()
       assert.is_not_nil(zoneState.acvGuids)
     end)
 
-    -- Positive: without lanes the router counts the ACV and falls back to the zone destination
     it("should record the ACV and fall back to the zone destination when no lane is available", function()
-      local zone = makeZone({ name = "ZoneAlpha" })
-      local saveData, zoneState = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      local zone = buildZone({ name = "ZoneAlpha" })
+      local saveData, zoneState = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
       trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local course
@@ -236,56 +231,53 @@ describe("LandingOps", function()
       end))
       trackStub(stub(Logger, "warn"))
 
-      LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, makeShip())
+      LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, buildShip())
 
       assert.are.same(zone.landing.acv.destination, course)
       assert.are.same({ "ACV-1" }, zoneState.acvGuids.zbd05)
     end)
 
-    -- Negative: nothing happens before assault landing
     it("should not launch before the zone reaches ASSAULT_LANDING", function()
-      local zone = makeZone({ name = "ZoneAlpha" })
-      local saveData = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
+      local zone = buildZone({ name = "ZoneAlpha" })
+      local saveData = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
       trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV"))
 
-      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData,
-        makeShip())
+      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData,
+        buildShip())
 
       assert.is_false(result)
       assert.stub(stubLaunch).was_not.called()
     end)
 
-    -- Negative: exits when ship type is not eligible
     it("should return false when ship is not a ferry or LST", function()
-      local ship = makeShip()
+      local ship = buildShip()
       local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(false))
       local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone"))
 
-      local result = LandingOps.launchACV(makeConfig({}), makeSaveData({}), ship)
+      local result = LandingOps.launchACV(buildConfig({}), buildSaveData({}), ship)
 
       assert.is_false(result)
       assert.stub(stubIsFerry).was.called_with(ship)
       assert.stub(stubGetZone).was_not.called()
     end)
 
-    -- Boundary: hosts and RTBs when the ship is empty
     it("should host the ship back to base and RTB when the ship is empty", function()
       local wasRTB = false
-      local ship = makeShip({
+      local ship = buildShip({
         RTB = function(_, force)
           wasRTB = force
         end,
       })
-      local zone = makeZone({ name = "ZoneAlpha" })
-      local saveData = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.COMPLETED)
+      local zone = buildZone({ name = "ZoneAlpha" })
+      local saveData = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.COMPLETED)
       trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = true, isPaused = false }))
       local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent").returns(true))
 
-      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
+      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       assert.is_true(wasRTB)
@@ -295,18 +287,17 @@ describe("LandingOps", function()
       })
     end)
 
-    -- Negative: a paused wave keeps the ship on station
     it("should not RTB the ship when the wave is paused", function()
       local wasRTB = false
-      local ship = makeShip({ RTB = function() wasRTB = true end })
-      local zone = makeZone({ name = "ZoneAlpha" })
-      local saveData = makeZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      local ship = buildShip({ RTB = function() wasRTB = true end })
+      local zone = buildZone({ name = "ZoneAlpha" })
+      local saveData = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
       trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
       trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
       trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = false, isPaused = true }))
       local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent"))
 
-      local result = LandingOps.launchACV(makeConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
+      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       assert.is_false(wasRTB)
@@ -319,22 +310,21 @@ describe("LandingOps", function()
   -- ============================================================================
 
   describe("offloadVehicles", function()
-    -- Positive: creates a bridge for barges without one
     it("should create a bridge and stop the barge when no bridge exists", function()
-      local ship = makeShip({ name = "Barge" })
-      local saveData = makeSaveData({
+      local ship = buildShip({ name = "Barge" })
+      local saveData = buildSaveData({
         barges = {
           [ship.guid] = {
             roros = {},
           },
         },
       })
-      local cfg = {}
-      local stubHasBridge = trackStub(stub(AdminUnloading, "hasExtendedBridge").returns(false))
-      local stubIsBridgeDestroyed = trackStub(stub(AdminUnloading, "isBridgeDestroyed").returns(true))
+      local configOverrides = {}
+      local stubHasBridge = trackStub(stub(AdminOffloading, "hasExtendedBridge").returns(false))
+      local stubIsBridgeDestroyed = trackStub(stub(AdminOffloading, "isBridgeDestroyed").returns(true))
       local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
 
-      local result = LandingOps.offloadVehicles(makeConfig(cfg), saveData, ship)
+      local result = LandingOps.offloadVehicles(buildConfig(configOverrides), saveData, ship)
 
       assert.is_true(result)
       assert.is_nil(ship.course)
@@ -346,12 +336,11 @@ describe("LandingOps", function()
       assert.stub(stubAddUnit).was.called(1)
     end)
 
-    -- Positive: offloads vehicles for RORO units paired with a barge
     it("should offload vehicles for paired RORO units when the barge bridge is active", function()
-      local ship = makeShip({ name = "Barge", guid = "BARGE-001" })
-      local roro = makeShip({ name = "RORO", guid = "RORO-001" })
-      local zone = makeZone()
-      local saveData = makeSaveData({
+      local ship = buildShip({ name = "Barge", guid = "BARGE-001" })
+      local roro = buildShip({ name = "RORO", guid = "RORO-001" })
+      local zone = buildZone()
+      local saveData = buildSaveData({
         barges = {
           [ship.guid] = {
             bridgeGUID = "BRIDGE-001",
@@ -359,20 +348,20 @@ describe("LandingOps", function()
           },
         },
       })
-      local cfg = { zones = { zone } }
-      local stubHasBridge = trackStub(stub(AdminUnloading, "hasExtendedBridge").returns(true))
-      local stubIsBridgeDestroyed = trackStub(stub(AdminUnloading, "isBridgeDestroyed").returns(false))
+      local configOverrides = { zones = { zone }, bargeRoroPairingRangeNm = 1 }
+      local stubHasBridge = trackStub(stub(AdminOffloading, "hasExtendedBridge").returns(true))
+      local stubIsBridgeDestroyed = trackStub(stub(AdminOffloading, "isBridgeDestroyed").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(roro))
-      local stubGetZone = trackStub(stub(AdminUnloading, "getBargeROROZone").returns(zone))
-      local stubOffload = trackStub(stub(AdminUnloading, "offloadVehicles").returns(20))
+      local stubGetZone = trackStub(stub(AdminOffloading, "getBargeROROZone").returns(zone))
+      local stubOffload = trackStub(stub(AdminOffloading, "offloadVehicles").returns(20))
 
-      local result = LandingOps.offloadVehicles(makeConfig(cfg), saveData, ship)
+      local result = LandingOps.offloadVehicles(buildConfig(configOverrides), saveData, ship)
 
       assert.is_true(result)
       assert.stub(stubHasBridge).was.called_with(saveData.red.amphibOps.barges, ship)
       assert.stub(stubIsBridgeDestroyed).was.called_with(saveData.red.amphibOps.barges, ship)
       assert.stub(stubGetUnit).was.called_with(roro.guid)
-      assert.stub(stubGetZone).was.called_with({ zone }, ship, roro)
+      assert.stub(stubGetZone).was.called_with({ zone }, ship, roro, 1)
       assert.stub(stubOffload).was.called_with({
         ship = roro,
         num = 20,
@@ -382,12 +371,12 @@ describe("LandingOps", function()
       })
     end)
 
-    -- Boundary: stops a RORO ship in place without extra offload work
+    -- Stops a RORO ship in place without extra offload work
     it("should stop a RORO ship in place", function()
-      local ship = makeShip({ name = "RORO" })
-      local saveData = makeSaveData({ barges = {} })
+      local ship = buildShip({ name = "RORO" })
+      local saveData = buildSaveData({ barges = {} })
 
-      local result = LandingOps.offloadVehicles(makeConfig({}), saveData, ship)
+      local result = LandingOps.offloadVehicles(buildConfig({}), saveData, ship)
 
       assert.is_true(result)
       assert.is_nil(ship.course)
@@ -397,22 +386,22 @@ describe("LandingOps", function()
   end)
 
   -- ============================================================================
-  -- neutralizeAirlandingZone
+  -- attackAirlandingZone
   -- ============================================================================
 
-  describe("neutralizeAirlandingZone", function()
-    -- Positive: sets doctrine and attacks filtered contacts for valid SAG destroyers
+  describe("attackAirlandingZone", function()
     it("should attack filtered mobile ground contacts for a valid Type 052D SAG ship", function()
-      local ship = makeShip()
+      local ship = buildShip()
       local contacts = {
-        makeContact({ guid = "C-1" }),
-        makeContact({ guid = "C-2" }),
-        makeContact({
+        buildContact({ guid = "C-1" }),
+        buildContact({ guid = "C-2" }),
+        buildContact({
           guid = "C-3",
           typed = constants.CONTACT_TYPES.AIR,
         }),
       }
-      local cfg = {
+      local configOverrides = {
+        airlandingFireQty = 440,
         zones = {
           {
             sags = {
@@ -421,17 +410,13 @@ describe("LandingOps", function()
           },
         },
       }
-      local stubGetCount = trackStub(stub(Utils, "getCount").invokes(function(items)
-        return #items
-      end))
       local stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      local result = LandingOps.neutralizeAirlandingZone(makeConfig(cfg), ship)
+      local result = LandingOps.attackAirlandingZone(buildConfig(configOverrides), ship)
 
       assert.is_true(result)
-      assert.stub(stubGetCount).was.called(2)
       assert.stub(stubSetDoctrine).was.called_with(
         { side = ship.side, unitname = ship.group.name },
         { weapon_control_status_land = constants.WCS.FREE }
@@ -444,29 +429,27 @@ describe("LandingOps", function()
       })
     end)
 
-    -- Negative: returns false when the ship is not a valid Type 052D SAG unit
     it("should return false for ships outside the supported SAG destroyer context", function()
-      local ship = makeShip({ dbid = constants.PLATFORMS.TYPE_054A })
-      local cfg = { zones = {} }
+      local ship = buildShip({ dbid = constants.PLATFORMS.TYPE_054A })
+      local configOverrides = { zones = {} }
 
       local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
 
-      local result = LandingOps.neutralizeAirlandingZone(makeConfig(cfg), ship)
+      local result = LandingOps.attackAirlandingZone(buildConfig(configOverrides), ship)
 
       assert.is_false(result)
       assert.stub(stubAttackContacts).was_not.called()
     end)
 
-    -- Boundary: returns false when no filtered contacts remain
     it("should return false when no mobile ground contacts remain after filtering", function()
-      local ship = makeShip()
+      local ship = buildShip()
       local contacts = {
-        makeContact({
+        buildContact({
           guid = "C-1",
           inArea = function() return false end,
         }),
       }
-      local cfg = {
+      local configOverrides = {
         zones = {
           {
             sags = {
@@ -475,14 +458,12 @@ describe("LandingOps", function()
           },
         },
       }
-      local stubGetCount = trackStub(stub(Utils, "getCount").returns(0))
       local stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns(contacts))
 
-      local result = LandingOps.neutralizeAirlandingZone(makeConfig(cfg), ship)
+      local result = LandingOps.attackAirlandingZone(buildConfig(configOverrides), ship)
 
       assert.is_false(result)
-      assert.stub(stubGetCount).was.called(1)
       assert.stub(stubSetDoctrine).was_not.called()
     end)
   end)

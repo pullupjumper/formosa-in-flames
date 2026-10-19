@@ -1,18 +1,20 @@
+local constants = require("src.core.constants")
+
 local GameApi = require("src.utils.gameApi")
-local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local constants = require("src.core.constants")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
 local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
+
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 local ShipMovement = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
----One row of the fleet layout. A row is matched to a unit by `name` when it has one, otherwise by `dbid`.
+---One row of the fleet layout. A row matches a unit by `name` when it has one, otherwise by `dbid`.
 ---@type {key: string, dbid: number, name?: string}[]
 local SHIP_ROWS = {
   { key = "type075",    dbid = constants.PLATFORMS.TYPE_075 },
@@ -51,7 +53,7 @@ local SHIP_ROW_LAYOUT = {
 -- Ship Movement
 -- ============================================================================
 
----Move a ship to a target location; in testing mode it teleports there instead of sailing
+---Move a ship to a target location. In testing mode, teleport it there instead of sailing
 ---@param unit CMO__Unit
 ---@param location CMO__Location
 ---@param amphibOps SBJ__AmphibOpsConfig
@@ -79,9 +81,9 @@ local function getShipRowMap(calculationResult, zoneName)
   return zoneResult.result
 end
 
----Find which ship row a unit belongs to: by DBID first, then by name for ferries, RORO and barges
+---Find the ship row of a unit: by DBID first, then by name for ferries, RORO and barges
 ---@param unit CMO__Unit
----@return string|nil rowKey
+---@return string|nil # Row key, or nil if no row matches the unit
 local function findShipRowKey(unit)
   for _, shipRow in ipairs(SHIP_ROWS) do
     if not shipRow.name and unit.dbid == shipRow.dbid then
@@ -96,7 +98,7 @@ local function findShipRowKey(unit)
   end
 end
 
----Move ship to next pre-calculated location of its row and increment index
+---Move a ship to the next pre-calculated location of its row and increment the index
 ---@param unit CMO__Unit
 ---@param row SBJ__ShipCalculationState|nil
 ---@param rowKey string
@@ -127,7 +129,7 @@ local function moveToNextLocation(unit, row, rowKey, amphibOps)
   }
 end
 
----Match ship by DBID or name and move to next location
+---Match a ship by DBID or name and move it to the next location
 ---@param unit CMO__Unit
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
 ---@param amphibOps SBJ__AmphibOpsConfig
@@ -145,14 +147,14 @@ end
 -- SAG Movement
 -- ============================================================================
 
----Teleport SAG ships into formation around the holding point (testing mode)
----Type 052D destroyers take the center (extra ones trail behind), Type 054A frigates take the flanks
+---Teleport SAG ships into formation around the holding point (testing mode).
+---Type 052D destroyers take the center (extra ones trail behind). Type 054A frigates take the flanks.
 ---@param sagUnit CMO__Unit SAG group whose `group.unitlist` is set
 ---@param holdingPoint CMO__Location
 ---@param heading number Zone heading the SAG faces
 ---@return integer positioned
 ---@return integer skipped
-function ShipMovement.placeSagInFormation(sagUnit, holdingPoint, heading)
+function ShipMovement.teleportSagToFormation(sagUnit, holdingPoint, heading)
   local type052d, type054a = 0, 0
   local positioned, skipped = 0, 0
 
@@ -194,8 +196,8 @@ function ShipMovement.placeSagInFormation(sagUnit, holdingPoint, heading)
   return positioned, skipped
 end
 
----Send a Surface Action Group (SAG) to its holding area
----In testing mode the SAG ships are also teleported into formation
+---Move a Surface Action Group (SAG) to its holding area.
+---In testing mode, also teleport the SAG ships into formation.
 ---@param sag SBJ__SAGDescriptor
 ---@param heading number Zone heading the SAG faces at its holding area
 ---@param amphibOps SBJ__AmphibOpsConfig
@@ -227,7 +229,7 @@ local function moveSag(sag, heading, amphibOps)
   end
 
   sagUnit.course = nil
-  local positioned, skipped = ShipMovement.placeSagInFormation(sagUnit, holdingPoint, heading)
+  local positioned, skipped = ShipMovement.teleportSagToFormation(sagUnit, holdingPoint, heading)
 
   return {
     tag = "OK",
@@ -269,7 +271,7 @@ local function getStartingReferencePoint(startingPoint)
   return points[1]
 end
 
----Calculate starting points for all ship types from the Type 075 reference point
+---Calculate the starting points for all ship types from the Type 075 reference point
 ---@param startingPoint string[]|nil Type 075 reference point names
 ---@param heading number Bearing the ship rows are stacked along
 ---@param formation SBJ__AmphibiousFormationConfig
@@ -303,7 +305,7 @@ local function calculateStartingPoints(startingPoint, heading, formation)
   return startingPointMap
 end
 
----Generate and append locations for all ship types in an area
+---Build the locations for all ship types in an area and append them to the rows
 ---@param shipRowMap table<string, SBJ__ShipCalculationState>
 ---@param params SBJ__BuildAllShipLocationsParams
 local function buildAllShipLocations(shipRowMap, params)
@@ -325,13 +327,13 @@ end
 -- Public API
 -- ============================================================================
 
----Pre-calculate all destination positions for amphibious assault ships
----Generates grid of holding positions for each ship type with layered arrangement and spacing
+---Build the destination positions for the amphibious assault ships.
+---Generate a grid of holding positions for each ship type, with layers and spacing.
 ---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param formation SBJ__AmphibiousFormationConfig
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState>
----@return boolean # True if all destination positions were calculated
-function ShipMovement.planHoldingPositions(zones, formation, calculationResult)
+---@return boolean # True if all destination positions were built
+function ShipMovement.buildHoldingPositions(zones, formation, calculationResult)
   for _, zone in ipairs(zones) do
     for groupIndex, group in ipairs(zone.fleet.groups) do
       initShipRowMap(zone.name, calculationResult)
@@ -355,8 +357,8 @@ function ShipMovement.planHoldingPositions(zones, formation, calculationResult)
   return true
 end
 
----Move amphibious assault ships from staging area to designated holding positions for a single zone
----Routes ships to pre-calculated positions by class and coordinates Surface Action Group movements
+---Move the amphibious assault ships from the staging area to their holding positions in a single zone.
+---Route ships to pre-calculated positions by class and coordinate the Surface Action Group movements.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param calculationResult table<string, SBJ__OperationZoneCalculationState> Pre-calculated destination positions indexed by zone name
 ---@param filteredUnits CMO__SideUnit[]

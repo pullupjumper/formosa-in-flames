@@ -1,24 +1,30 @@
-local Logger = require("src.utils.logger")
-local Utils = require("src.utils.utils")
+local constants = require("src.core.constants")
+
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local ShipMovement = require("src.modules.landingOps.shipMovement")
-local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
-local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local AdminUnloading = require("src.modules.landingOps.adminUnloading")
-local MineClearing = require("src.modules.landingOps.mineClearing")
-local AssaultBoat = require("src.modules.landingOps.assaultBoat")
-local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
-local Hovercraft = require("src.modules.landingOps.hovercraft")
+local Logger = require("src.utils.logger")
+local Utils = require("src.utils.utils")
+
 local AcvWave = require("src.modules.landingOps.acvWave")
+local AdminOffloading = require("src.modules.landingOps.adminOffloading")
+local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local AssaultBoat = require("src.modules.landingOps.assaultBoat")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
+local Hovercraft = require("src.modules.landingOps.hovercraft")
+local MineClearing = require("src.modules.landingOps.mineClearing")
+local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
+local ShipMovement = require("src.modules.landingOps.shipMovement")
 local MissileSystem = require("src.modules.missileSystem.init")
 local StrikePlanner = require("src.modules.strikePlanner.init")
-local constants = require("src.core.constants")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
 
 local Coordinator = {}
 
----Phases considered "fleet has arrived at staging waters" for fire support gate
+-- ============================================================================
+-- Constants
+-- ============================================================================
+
+---Phases in which the fleet has arrived at the staging waters (used by the fire support gate)
 ---@type table<string, true>
 local ARRIVED_PHASES = {
   [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]         = true,
@@ -26,15 +32,19 @@ local ARRIVED_PHASES = {
   [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]            = true,
   [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]       = true,
   [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]         = true,
-  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING] = true,
+  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING] = true,
   [constants.AMPHIBIOUS_PHASES.COMPLETED]               = true,
 }
 
----Zone missions started when the assault launches; boat (hovercraft) missions wait for the lanes
+---Zone missions that start when the assault launches. The boat (hovercraft) missions wait for the lanes
 ---@type string[]
 local HELICOPTER_MISSION_CATEGORIES = { "transportHelicopter", "attackHelicopter" }
 
----Handle temporary Taoyuan-only loading and reconnaissance setup
+-- ============================================================================
+-- Helpers
+-- ============================================================================
+
+---Handle the temporary loading and reconnaissance setup for Taoyuan only
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -47,7 +57,7 @@ local function processTaoyuanTemporarySetup(config, landingState, zone)
   StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates.GJ11_RECON)
 end
 
----MOVING: sail to holding areas once the operation start time has passed
+---MOVING: sail to the holding areas after the operation start time
 ---@type SBJ__PhaseStep
 local function stepMoving(tickCtx, zone, zoneState)
   local config = tickCtx.config
@@ -66,7 +76,7 @@ local function stepMoving(tickCtx, zone, zoneState)
   end
 end
 
----WAITING_ARRIVAL: all ships settled in holding areas -> create cargo missions and load
+---WAITING_ARRIVAL: when all ships settled in the holding areas, create the cargo missions and load
 ---@type SBJ__PhaseStep
 local function stepWaitingArrival(tickCtx, zone, zoneState)
   local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, tickCtx.filteredShips)
@@ -83,7 +93,7 @@ local function stepWaitingArrival(tickCtx, zone, zoneState)
   end
 end
 
----WAITING_ASSAULT: launch when enemy contacts thin out, the wait times out, or fast-forward
+---WAITING_ASSAULT: launch when the enemy contacts thin out, the wait times out, or fast-forward applies
 ---@type SBJ__PhaseStep
 local function stepWaitingAssault(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
@@ -100,14 +110,14 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_MISSION_CATEGORIES)
   if ok then
     if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
-      MineClearing.layMinefields(amphibOps)
+      MineClearing.createMinefields(amphibOps)
     end
 
     zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
   end
 end
 
----MINE_CLEARING: lanes cleared -> pair assault boats and move ships to launch stations
+---MINE_CLEARING: when the lanes are cleared, pair the assault boats and move the ships to the launch stations
 ---@type SBJ__PhaseStep
 local function stepMineClearing(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
@@ -122,7 +132,7 @@ local function stepMineClearing(tickCtx, zone, zoneState)
   end
 end
 
----BOAT_ASSAULT: launch boats every tick; once they all arrive, start obstacle clearing
+---BOAT_ASSAULT: launch boats every tick. When all boats arrive, start obstacle clearing
 ---@type SBJ__PhaseStep
 local function stepBoatAssault(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
@@ -134,7 +144,7 @@ local function stepBoatAssault(tickCtx, zone, zoneState)
   end
 end
 
----OBSTACLE_CLEARING: obstacles cleared -> assault landing
+---OBSTACLE_CLEARING: when the obstacles are cleared, go to assault landing
 ---@type SBJ__PhaseStep
 local function stepObstacleClearing(tickCtx, _zone, zoneState)
   if ObstacleClearing.updateObstacleClearing(tickCtx.config.red.amphibOps, zoneState, tickCtx.currentTime) then
@@ -142,29 +152,29 @@ local function stepObstacleClearing(tickCtx, _zone, zoneState)
   end
 end
 
----ASSAULT_LANDING: a landed ZBD-05 in the zone counts as a beachhead
+---ASSAULT_LANDING: count a landed ZBD-05 in the zone as a beachhead
 ---@type SBJ__PhaseStep
 local function stepAssaultLanding(tickCtx, zone, zoneState)
-  -- TODO: 換成更嚴格的灘頭堡條件
+  -- TODO: Replace with a stricter beachhead condition
   local result = AmphibiousAssault.countUnitsInEachArea(tickCtx.config.red.amphibOps.zones)
   local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
   if hasBeachhead then
-    zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING
+    zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING
   end
 end
 
----WAITING_ADMIN_UNLOADING: start admin unloading, then the zone is done
+---WAITING_ADMIN_OFFLOADING: start admin offloading. Then the zone is done
 ---@type SBJ__PhaseStep
-local function stepWaitingAdminUnloading(tickCtx, zone, zoneState)
-  -- TODO: 行政下卸的「絕對安全」條件；目前直接放行
-  local ok = AdminUnloading.startAdminUnloading(zone, tickCtx.landingState.amphibOps.barges, tickCtx.filteredShips)
+local function stepWaitingAdminOffloading(tickCtx, zone, zoneState)
+  -- TODO: Add the absolute-safety condition for admin offloading. The step now passes without a check
+  local ok = AdminOffloading.startAdminOffloading(zone, tickCtx.landingState.amphibOps.barges, tickCtx.filteredShips)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
   end
 end
 
----Landing phases only: hovercraft sail after the first ACV wave is full (or the wait times out)
----Updating runs every tick; only launching is gated
+---Landing phases only: hovercraft sail after the first ACV wave is full or the wait times out.
+---The update runs every tick. Only the launch is gated.
 ---@type SBJ__PhaseStep
 local function stepHovercraft(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
@@ -174,8 +184,8 @@ local function stepHovercraft(tickCtx, zone, zoneState)
   Hovercraft.updateHovercraft(amphibOps, zoneState)
 end
 
----Phase order, top to bottom. Steps are not exclusive: a step that advances the phase lets
----the next step run in the same tick, so a zone can cross several phases at once.
+---Phase order, from top to bottom. The steps are not exclusive: a step that advances the phase lets
+---the next step run in the same tick. A zone can cross several phases at once.
 ---@type { phase: string, step: SBJ__PhaseStep }[]
 local PHASE_STEPS = {
   { phase = constants.AMPHIBIOUS_PHASES.MOVING,                  step = stepMoving },
@@ -185,7 +195,7 @@ local PHASE_STEPS = {
   { phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT,            step = stepBoatAssault },
   { phase = constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING,       step = stepObstacleClearing },
   { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING,         step = stepAssaultLanding },
-  { phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_UNLOADING, step = stepWaitingAdminUnloading },
+  { phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING, step = stepWaitingAdminOffloading },
 }
 
 ---Process a single operational zone through all amphibious phases
@@ -205,17 +215,17 @@ local function processZone(tickCtx, zone)
   end
 end
 
----Handle periodic cargo retransfer for zones with active airlanding missions
+---Handle periodic transfer of remaining cargo for zones with active airlanding missions
 ---@param tickCtx SBJ__LandingTickContext
-local function processCargoRetransfer(tickCtx)
+local function processRemainingCargoTransfer(tickCtx)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local currentTime, filteredShips = tickCtx.currentTime, tickCtx.filteredShips
   for _, zone in ipairs(config.red.amphibOps.zones) do
     local zoneState = landingState.amphibOps.zoneStates[zone.name]
-    if zoneState.airlandingMissionStartTime ~= nil then
+    if zoneState.airlandingMissionStartTime then
       local elapsed = currentTime - zoneState.airlandingMissionStartTime
-      if elapsed >= (3600 * 2) then
-        local ok = AmphibiousLogistics.retransferCargos(zone, filteredShips)
+      if elapsed >= config.red.amphibOps.remainingCargoTransferSec then
+        local ok = AmphibiousLogistics.transferRemainingCargos(zone, filteredShips)
         if ok then
           zoneState.airlandingMissionStartTime = currentTime
         end
@@ -238,10 +248,10 @@ local function hasAllZonesArrived(config, amphibOps)
   return true
 end
 
----Update fireSupportOnHold flag based on SRBM ammo level and fleet arrival status.
----Hold engages when ammo drops below threshold while at least one zone has not yet arrived;
----hold releases unconditionally once every zone reaches WAITING_ASSAULT or later (phase machine
----is monotonic, so the release latches naturally).
+---Evaluate the fire support gate from the SRBM ammo level and the fleet arrival status.
+---The hold starts when ammo drops below the threshold while at least one zone has not arrived.
+---The hold ends when every zone reaches WAITING_ASSAULT or later. The phase machine only moves forward,
+---so the release stays.
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
 local function evaluateFireSupportGate(config, landingState)
@@ -277,6 +287,10 @@ local function evaluateFireSupportGate(config, landingState)
   end
 end
 
+-- ============================================================================
+-- Public API
+-- ============================================================================
+
 ---Process all landing operation phases for the current event tick
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
@@ -294,7 +308,7 @@ function Coordinator.process(config, landingState, params)
     processZone(tickCtx, zone)
   end
 
-  processCargoRetransfer(tickCtx)
+  processRemainingCargoTransfer(tickCtx)
   evaluateFireSupportGate(config, landingState)
 end
 

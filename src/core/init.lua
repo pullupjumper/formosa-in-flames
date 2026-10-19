@@ -22,7 +22,7 @@ local function initEventActions()
   local actionNames = {
     "scripts\\china\\amphibiousOps\\landingCheck.lua",
     "scripts\\china\\amphibiousOps\\launchACV.lua",
-    "scripts\\china\\amphibiousOps\\neutralizeAirlandingZone.lua",
+    "scripts\\china\\amphibiousOps\\attackAirlandingZone.lua",
     "scripts\\china\\amphibiousOps\\offloadVehicles.lua",
     "scripts\\china\\ew\\commsJamming.lua",
     "scripts\\china\\aircraftLanding.lua",

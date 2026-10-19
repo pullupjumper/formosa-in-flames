@@ -12,7 +12,7 @@ amphibiousLogistics 負責登陸作戰的第二階段——後勤裝載。當登
 
 系統採用**資料驅動分派**（Data-Driven Dispatch）架構，透過 `SHIP_TRANSFER_SPECS` 描述符表定義各艦型的貨物轉移規格與任務指派規則，避免針對每型艦船寫硬編碼邏輯。
 
-此外，模組也提供第二波作戰時的貨物重新裝載（`retransferCargos`），用於補充已耗盡彈藥的運輸載具。
+此外，模組也提供補運尚未運完的貨物（`transferRemainingCargos`），用於補充已耗盡彈藥的運輸載具。
 
 ---
 
@@ -68,7 +68,7 @@ flowchart TD
 
 1. 取得母艦的搭載單元清單（`embarkedUnits`）
 2. 依平台 DBID 與掛載 ID（`loadoutdbid`）匹配目標載具
-3. 對每個匹配的載具執行私有函式 `updateCargo`：從母艦刪除貨物、在載具上建立對應貨物
+3. 對每個匹配的載具執行私有函式 `transferCargoItem`：從母艦刪除貨物、在載具上建立對應貨物
 4. 支援共用貨物清單（所有載具相同）與個別貨物清單（依索引分配）
 
 > 把地面單位轉成 cargo proxy 載入建築物的 `loadCargo` 已移至 [missileSystem/cargoProxy](../missileSystem/cargoProxy.md)（`CargoProxy.loadCargo`），唯一使用者是 missileSystem 的隱蔽流程。
@@ -109,17 +109,17 @@ flowchart TD
 | `createCargoMissions(zone)` | 為作戰區建立貨物運輸任務 |
 | `transferAndAssign(zone, unitsInHoldingAreas)` | 執行貨物轉移並指派登陸載具至任務 |
 | `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
-| `retransferCargos(zone, units)` | 第二波作戰的貨物重新裝載 |
+| `transferRemainingCargos(zone, units)` | 補運尚未運完的貨物 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
 
 ---
 
 ## 日誌輸出
 
-`createCargoMissions`、`transferAndAssign`、`transferAndAssignTransportAircraft`、`retransferCargos` 四個公開函式各自對應一份 `LogFormat.report`，scope 依對象而異（`zone=` / `transportAircraft`）。
+`createCargoMissions`、`transferAndAssign`、`transferAndAssignTransportAircraft`、`transferRemainingCargos` 四個公開函式各自對應一份 `LogFormat.report`，scope 依對象而異（`zone=` / `transportAircraft`）。
 
 ```
-[amphibiousLogistics] zone=Taoyuan: Retransfer cargos | total=2 ok=1 skip=1
+[amphibiousLogistics] zone=Taoyuan: Transfer remaining cargos | total=2 ok=1 skip=1
   [OK]   ship="Type 075 #1" dbid=...
   [SKIP] guid=U-4471 reason=unit_not_found
 ```

@@ -1,12 +1,14 @@
-local GameApi = require("src.utils.gameApi")
-local AssignMission = require("src.modules.assignMission")
-local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
+
+local GameApi = require("src.utils.gameApi")
+local LogFormat = require("src.utils.logFormat")
+
+local AssignMission = require("src.modules.assignMission")
 
 local AmphibiousLogistics = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
 local MISSION_TYPE = {
@@ -14,7 +16,7 @@ local MISSION_TYPE = {
 }
 
 
----Zone config keys whose missions are created as cargo transport missions.
+---Zone config keys whose missions are created as cargo transport missions
 ---@type string[]
 local CARGO_MISSION_PLATFORMS = { "hovercraft", "transportHelicopter" }
 
@@ -22,7 +24,7 @@ local CARGO_MISSION_PLATFORMS = { "hovercraft", "transportHelicopter" }
 ---@type table<string, "landing"|"air">
 local PLATFORM_GROUPS = { hovercraft = "landing", transportHelicopter = "air", attackHelicopter = "air" }
 
----Look up a mission platform descriptor of a zone by its config key
+---Get a mission platform descriptor of a zone by its config key
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param platformKey string Platform config key (e.g., "hovercraft", "transportHelicopter")
 ---@return SBJ__HovercraftMissionDescriptor|SBJ__TransportHelicopterDescriptor|SBJ__AttackHelicopterDescriptor
@@ -54,7 +56,7 @@ local SHIP_TRANSFER_SPECS = {
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 2 },
     },
-    -- Hovercraft (BOATS) are loaded here but assigned only after routing through the lanes (hovercraft.lua)
+    -- Load the hovercraft (BOATS) here. Assign them only after they route through the lanes (hovercraft.lua)
     assignments = {
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter" },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "attackHelicopter" },
@@ -77,7 +79,7 @@ local SHIP_TRANSFER_SPECS = {
 -- Cargo Operations
 -- ============================================================================
 
----Collect GUIDs of cargo elements matching a specific DBID up to requested quantity
+---Collect the GUIDs of cargo elements that match a DBID, up to the requested quantity
 ---@param cargos CMO__Cargo[]
 ---@param dbid number
 ---@param maxCount number
@@ -93,16 +95,16 @@ local function collectMatchingCargos(cargos, dbid, maxCount)
   return guids
 end
 
----Transfer cargo from source unit to destination unit
----Deletes matching cargo from source and creates matching quantity on destination
+---Transfer cargo from a source unit to a destination unit.
+---Delete the matching cargo from the source and create the same quantity on the destination.
 ---@param fromUnit CMO__Unit|nil
 ---@param toUnit CMO__Unit
 ---@param cargoItem SBJ__CargoDescriptor
-local function updateCargo(fromUnit, toUnit, cargoItem)
-  if fromUnit == nil or
-      fromUnit.cargo == nil or
-      fromUnit.cargo[1] == nil or
-      fromUnit.cargo[1].cargo == nil then
+local function transferCargoItem(fromUnit, toUnit, cargoItem)
+  if not fromUnit or
+      not fromUnit.cargo or
+      not fromUnit.cargo[1] or
+      not fromUnit.cargo[1].cargo then
     return
   end
 
@@ -115,16 +117,16 @@ local function updateCargo(fromUnit, toUnit, cargoItem)
   end
 end
 
----Delete specified cargo from a unit
----Returns the actual number of items deleted (may be less than requested)
+---Remove the specified cargo from a unit.
+---Return the number of items actually removed. This can be less than requested.
 ---@param fromUnit CMO__Unit|nil
 ---@param cargoItem SBJ__CargoDescriptor
 ---@return integer # Number of cargo items actually deleted
 function AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
-  if fromUnit == nil or
-      fromUnit.cargo == nil or
+  if not fromUnit or
+      not fromUnit.cargo or
       cargoItem.num == 0 or
-      (fromUnit.cargo and fromUnit.cargo[1] == nil) then
+      not fromUnit.cargo[1] then
     return 0
   end
 
@@ -158,8 +160,8 @@ local function isPlatformMatch(unit, platformType, platformDBID, loadoutDBID)
   return true
 end
 
----Transfer cargo from base to multiple embarked units matching platform spec
----Distributes cargo to embarked platforms matching DBID/loadout, supports per-unit or shared cargo lists
+---Transfer cargo from a base to multiple embarked units that match the platform specification.
+---Give cargo to embarked platforms that match the DBID and loadout. Support per-unit and shared cargo lists.
 ---@param fromUnit string
 ---@param params SBJ__TransferCargoParams
 ---@param cargoItems table<integer, SBJ__CargoDescriptor[]> Cargo items to transfer (single list or per-unit)
@@ -177,7 +179,7 @@ local function transferCargo(fromUnit, params, cargoItems)
     if unit and isPlatformMatch(unit, platformType, platformDBID, loadoutDBID) then
       local items = cargoItems[idx] or cargoItems[1]
       for _, item in ipairs(items) do
-        updateCargo(base, unit, item)
+        transferCargoItem(base, unit, item)
       end
     end
   end
@@ -199,7 +201,7 @@ local function findTransferSpec(shipDbid)
   return nil
 end
 
----Execute cargo transfers for a single ship based on matching spec
+---Process the cargo transfers of a single ship with its matching spec
 ---@param shipGuid string
 ---@param shipDbid number
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -218,7 +220,7 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
   end
 end
 
----Execute mission assignments for a single ship based on matching spec
+---Process the mission assignments of a single ship with its matching spec
 ---@param shipGuid string
 ---@param shipDbid number
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -236,7 +238,7 @@ end
 -- Cargo Mission Creation
 -- ============================================================================
 
----Create a cargo transport mission with configured doctrine
+---Create a cargo transport mission with the configured doctrine
 ---@param platformType string Platform config key (e.g., "hovercraft", "transportHelicopter")
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param missionName string
@@ -263,7 +265,7 @@ local function createSingleCargoMission(platformType, zone, missionName)
   return true, { tag = "OK", fields = { platform = platformType, mission = missionName } }
 end
 
----Create every cargo mission configured for a zone, stopping at the first failure
+---Create every cargo mission configured for a zone. Stop at the first failure
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return boolean success True when every mission was created
 ---@return SBJ__LogResult[] results Deferred log results in emission order
@@ -288,8 +290,8 @@ end
 -- Public API
 -- ============================================================================
 
----Get units in the holding areas and check their movement status
----Filters amphibious ships (LHD/LPD/LST) and determines if all are ready for cargo operations
+---Get the units in the holding areas and check their movement status.
+---Filter the amphibious ships (LHD/LPD/LST) and check if all are ready for cargo operations.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param filteredUnits CMO__SideUnit
 ---@return { units: CMO__Unit[], isUnitMoving: boolean } # Units in holding areas and movement status
@@ -304,7 +306,7 @@ function AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
       local isInHoldingArea = unit:inArea(zone.movement.holdingAreas.mothership)
           or unit:inArea(zone.movement.holdingAreas.deployLine)
 
-      -- filteredUnits spans every zone; only this zone's ships may hold up its arrival
+      -- filteredUnits spans every zone. Only the ships of this zone can delay its arrival
       if isInHoldingArea or unit:inArea(zone.fleet.stagingArea) then
         if unit.unitstate ~= "Unassigned" then
           isUnitMoving = true
@@ -321,10 +323,10 @@ function AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
   return { units = unitsInHoldingAreas, isUnitMoving = isUnitMoving }
 end
 
----Create cargo transport missions for an operational zone
----Sets up ferry missions for landing craft and transport helicopters with configured doctrine
+---Create the cargo transport missions for an operational zone.
+---Set up ferry missions for landing craft and transport helicopters with the configured doctrine.
 ---@param zone SBJ__OperationalZoneDescriptor
----@return boolean # True if all cargo missions were successfully created
+---@return boolean # True if all cargo missions were created
 function AmphibiousLogistics.createCargoMissions(zone)
   local success, results = createZoneCargoMissions(zone)
 
@@ -336,11 +338,11 @@ function AmphibiousLogistics.createCargoMissions(zone)
   return success
 end
 
----Transfer cargo to embarked units and assign them to missions
----Handles Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases
+---Transfer cargo to embarked units and assign them to missions.
+---Handle Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unitsInHoldingAreas CMO__Unit[]
----@return boolean # True if all transfers and assignments completed successfully
+---@return boolean # True if all transfers and assignments completed
 function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer and assign")
@@ -360,7 +362,7 @@ end
 
 ---Transfer cargo and assign missions for land-based transport aircraft
 ---@param transportAircraft SBJ__TransportAircraftDescriptor[]
----@return boolean # True if all transfers and assignments completed successfully
+---@return boolean # True if all transfers and assignments completed
 function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer and assign")
@@ -389,14 +391,14 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
   return true
 end
 
----Re-transfer cargo to embarked units for admin unloading operations
----Reloads transport helicopters and landing craft on Type 075/076 and Type 071 ships
+---Transfer the remaining cargo to embarked units for admin offloading.
+---Reload transport helicopters and landing craft on Type 075/076 and Type 071 ships.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]
----@return boolean # True if all cargo was successfully re-transferred
-function AmphibiousLogistics.retransferCargos(zone, units)
+---@return boolean # True if all remaining cargo was transferred
+function AmphibiousLogistics.transferRemainingCargos(zone, units)
   local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Retransfer cargos")
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer remaining cargos")
 
   for _, u in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)

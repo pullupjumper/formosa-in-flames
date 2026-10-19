@@ -1,22 +1,20 @@
+local constants = require("src.core.constants")
+
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
-local constants = require("src.core.constants")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 
 local ObstacleClearing = {}
 
--- ============================================================================
--- Helpers
--- ============================================================================
-
----Mark every cell the beach lane's inland line touches
+---Set the state of every cell that the inland line of the beach lane touches
 ---@param cells SBJ__ObstacleCellEntry[]
 ---@param beachLane SBJ__BeachLaneEntry
 ---@param state string constants.OBSTACLE_CELL_STATES value
----@return integer # Number of cells marked
-local function markLaneCells(cells, beachLane, state)
+---@return integer # Number of cells set
+local function setLaneCells(cells, beachLane, state)
   local count = 0
   for _, cell in ipairs(cells) do
     if LaneGeometry.isSegmentTouchingCell(beachLane.assaultPoint, beachLane.endPoint, cell) then
@@ -28,7 +26,7 @@ local function markLaneCells(cells, beachLane, state)
   return count
 end
 
----Call fn for every beach lane with a landed, living boat
+---Call fn for every beach lane that has a landed, living boat
 ---@param zoneState SBJ__ZoneState
 ---@param fn fun(beachLane: SBJ__BeachLaneEntry)
 local function forEachLandedLane(zoneState, fn)
@@ -42,17 +40,13 @@ local function forEachLandedLane(zoneState, fn)
   end
 end
 
--- ============================================================================
--- Public API
--- ============================================================================
-
----Tile the zone's obstacle area into cells, mark cells in front of landed boats as clearing,
----and start the clearing timer
+---Start obstacle clearing in a zone. Tile the obstacle area into cells and set the cells in front of landed boats to clearing.
+---Then start the clearing timer.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param currentTime number
----@return boolean # Always true; a missing obstacle area just yields no cells
+---@return boolean # Always true. A missing obstacle area gives no cells
 function ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, currentTime)
   local lanes = zoneState.lanes
 
@@ -72,7 +66,7 @@ function ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, curr
   forEachLandedLane(zoneState, function(beachLane)
     report.add("OK", {
       beachLane = beachLane.id,
-      cells = markLaneCells(cells, beachLane, constants.OBSTACLE_CELL_STATES.CLEARING),
+      cells = setLaneCells(cells, beachLane, constants.OBSTACLE_CELL_STATES.CLEARING),
     })
   end)
   report.emit()
@@ -80,7 +74,7 @@ function ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, curr
   return true
 end
 
----After clearSec, clear the cells of every lane whose boat is still alive and open those lanes
+---Update obstacle clearing in a zone. After clearSec, clear the cells of each lane whose boat is alive and open those lanes
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@param currentTime number
@@ -96,7 +90,7 @@ function ObstacleClearing.updateObstacleClearing(amphibOps, zoneState, currentTi
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "obstacle", "Clear obstacles")
 
   forEachLandedLane(zoneState, function(beachLane)
-    markLaneCells(cells, beachLane, constants.OBSTACLE_CELL_STATES.CLEARED)
+    setLaneCells(cells, beachLane, constants.OBSTACLE_CELL_STATES.CLEARED)
     beachLane.isCleared = true
     report.add("OK", { beachLane = beachLane.id })
   end)

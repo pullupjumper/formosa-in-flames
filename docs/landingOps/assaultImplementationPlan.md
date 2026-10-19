@@ -18,10 +18,10 @@
 ## 新階段
 
 ```
-WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASSAULT_LANDING → WAITING_ADMIN_UNLOADING → COMPLETED
+WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASSAULT_LANDING → WAITING_ADMIN_OFFLOADING → COMPLETED
 ```
 
-`WAITING_SECOND_WAVE` 改名為 `WAITING_ADMIN_UNLOADING`（等待行政下卸）。`secondWaveUnloading.lua` 模組名稱先不動。
+`WAITING_SECOND_WAVE` 改名為 `WAITING_ADMIN_OFFLOADING`（等待行政下卸）。`secondWaveUnloading.lua` 模組名稱先不動。
 
 | 階段 | 做什麼 | 換下一階段 |
 |---|---|---|
@@ -30,17 +30,17 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到終點或被摧毀 → 記 `obstacleStartedAt` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` |
 | `ASSAULT_LANDING`（新） | 衝擊上陸：兩棲車分波放行、氣墊船走通道 | 灘頭堡建立（先沿用現有 `hasBeachhead`：`casArea` 內 ZBD-05 ≥ 1，加 `-- TODO:` 之後換成更嚴格的條件） |
-| `WAITING_ADMIN_UNLOADING`（改名） | 等絕對安全 → `SecondWaveUnloading.startSecondWaveUnloading` | 啟動成功 → `COMPLETED` |
+| `WAITING_ADMIN_OFFLOADING`（改名） | 等絕對安全 → `SecondWaveUnloading.startSecondWaveUnloading` | 啟動成功 → `COMPLETED` |
 
 - 兩棲車分波、氣墊船在 `ASSAULT_LANDING` 開始。後面的階段（含 `COMPLETED`）也繼續跑，直到放完。
-- `WAITING_ADMIN_UNLOADING` 的「絕對安全」條件先留 `-- TODO:`，暫時直接放行（等於現在的行為）。
+- `WAITING_ADMIN_OFFLOADING` 的「絕對安全」條件先留 `-- TODO:`，暫時直接放行（等於現在的行為）。
 - 改名會讓舊存檔裡的 `"WAITING_SECOND_WAVE"` 對不上。開發中，新開局就好。
 
 ## 共用：航線計算 `routePlanner.lua`
 
 三種單位（衝鋒舟、兩棲車、氣墊船）都用它。輸入是 `zoneState.lanes`（掃雷時算好、存起來）。
 
-1. **選通道**：`chooseWaterLane(launchPos, lanes, loads)`
+1. **選通道**：`selectWaterLane(launchPos, lanes, loads)`
    依離艦位置到各水際通道入口 `L_i` 的距離選最近的；距離差在 `laneTieNm` 內就選負載少的（平均分散）。
 2. **選灘際通道**：該水際通道底下的 4 條灘際通道，只能選 `cleared` 的（衝鋒舟除外，它是去開通道的）。輪流分配。
 3. **橫隊轉縱隊（排隊）**：每條水際通道一個排隊計數器 `k`。入口點 = `L_i` 往外海退 `(k mod queueDepth) × columnSpacingM`。同時放出的單位在不同點進通道，自然排成一列。
@@ -67,7 +67,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 - `segmentsIntersect`（含相切）、`buildObstacleCells(polygon, cellSizeM)`、`isRouteClear(route, cells)`。
 
 ### `mineClearing.lua`
-- `layMinefields(amphibOpsConfig)`：開場每區 `GameApi.ScenEdit_AddMinefield({ side = BLUE, dbid, number, delay, area })`。
+- `createMinefields(amphibOpsConfig)`：開場每區 `GameApi.ScenEdit_AddMinefield({ side = BLUE, dbid, number, delay, area })`。
 - `startMineClearing(...)`：算通道存 `zoneState.lanes` → 529 依橫向排序配水際通道 → 每艘：`unit.course = 水際 + 弓字型` → 掃雷任務區域的 4 個角存進 `zoneState.minesweepers[guid].missionArea` → `-- TODO: 建掃雷任務並 assign（使用者自己寫）`。
 - `updateMineClearing(zoneState)`：到最後航點（`Tool_Range` < `arrivalNm`）或摧毀 → `RTB()`；回傳是否全部完成。
 
@@ -95,13 +95,13 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 
 | 檔案 | 改什麼 |
 |---|---|
-| `src/core/constants.lua` | `AMPHIBIOUS_PHASES` 加 `MINE_CLEARING`、`BOAT_ASSAULT`、`OBSTACLE_CLEARING`、`ASSAULT_LANDING`，`WAITING_SECOND_WAVE` 改名 `WAITING_ADMIN_UNLOADING`（全專案替換，含 spec）；`AREAS` 加每區 `LANE_CENTER_*`、`OBSTACLE_*`、`MINEFIELD_*`；水雷用現有 `constants.WEAPONS.SEA_MINE` |
+| `src/core/constants.lua` | `AMPHIBIOUS_PHASES` 加 `MINE_CLEARING`、`BOAT_ASSAULT`、`OBSTACLE_CLEARING`、`ASSAULT_LANDING`，`WAITING_SECOND_WAVE` 改名 `WAITING_ADMIN_OFFLOADING`（全專案替換，含 spec）；`AREAS` 加每區 `LANE_CENTER_*`、`OBSTACLE_*`、`MINEFIELD_*`；水雷用現有 `constants.WEAPONS.SEA_MINE` |
 | `src/core/config.lua` | 新增 `amphibOps.mineClearing`、`assaultBoat`、`obstacle`、`minefields`、`route`（`columnSpacingM`、`queueDepth`、`queueSpacingM`、`laneTieNm`）、`acvWave`（`capacity`、`lossRatio`、`holdSec`）；operationalZones 加 `laneCenter`、`laneBearing`、`obstacleArea` |
 | `src/core/schema.lua` | `SBJ__ZoneState` 加 `lanes`、`minesweepers`、`boats`、`obstacle`、`obstacleStartedAt`、`acvGuids`、`acvPausedAt`、`acvQuotaUsed`、`queueCounters`、`hovercraft`；新 config 型別 |
 | `landingOps/coordinator.lua` | `processZone` 加 4 段 phase、拆開衝擊上陸和行政下卸；每 tick 跑氣墊船；`ARRIVED_PHASES` 加新 phase |
 | `landingOps/amphibiousAssault.lua` | `FERRY_OR_LST_DBIDS` 拿掉 `TYPE_529`；`moveZoneLSTsToLaunchStations` 排除 529；`setLandingMissionStartTime` 加 `categories`（不再設 `boat`）；`launchACV` 收 `quota` 與 `routes`，回傳分開「暫停」和「艙內空」；`removeCargoByPriority` 依各車種額度 |
 | `landingOps/amphibiousLogistics.lua` | `SHIP_TRANSFER_SPECS` 的 `assignments` 拿掉 `BOATS`（只裝貨不 assign）；`AMPHIBIOUS_SHIP_DBIDS` 的 529 確認是否影響 `isUnitMoving` 判斷（529 掃雷時會一直動，但那時已過 `WAITING_ARRIVAL`，不影響） |
-| `landingOps/init.lua` | `init` 呼叫 `layMinefields`；`launchACV(config, saveData, ship)`：phase 未到 `ASSAULT_LANDING` → 不動作；額度 0 → 暫停不 RTB；艙內空 → 照舊 RTB |
+| `landingOps/init.lua` | `init` 呼叫 `createMinefields`；`launchACV(config, saveData, ship)`：phase 未到 `ASSAULT_LANDING` → 不動作；額度 0 → 暫停不 RTB；艙內空 → 照舊 RTB |
 | `src/scripts/china/amphibiousOps/launchACV.lua` | 用 `PersistentState.update` 傳 state |
 | `docs/landingOps/assaultTimeline.md` | 更新：掃雷用 CMO 任務、佈雷、航線規則、氣墊船流程、參考點清單、phase 圖 |
 
@@ -116,7 +116,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 ## 留給你自己寫的 TODO
 - `mineClearing.lua`：建掃雷任務 + assign（區域角點已存在 state）。
 - `hovercraft.lua`：到點後 assign cargo 任務。
-- `coordinator.lua`：`ASSAULT_LANDING` 的灘頭堡條件、`WAITING_ADMIN_UNLOADING` 的絕對安全條件。
+- `coordinator.lua`：`ASSAULT_LANDING` 的灘頭堡條件、`WAITING_ADMIN_OFFLOADING` 的絕對安全條件。
 
 ## 不做（以後再說）
 - 灘岸雷區、control panel 畫障礙範圍。
@@ -137,7 +137,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
    - `mineClearing_spec`：course 正確、任務區域存進 state；到終點 RTB。
    - `assaultBoat_spec` / `hovercraft_spec`：先 course 後 `Launch`；Sishu 丟外側 4 條；氣墊船到點標 `arrived`。
    - `acvWave_spec`：上限 112/112 各算；戰損 / 逾時才補；同 tick 共用額度。
-   - `coordinator_spec`：phase 依序推進（到 `ASSAULT_LANDING` → `WAITING_ADMIN_UNLOADING` → `COMPLETED`）；529 不被 `moveToLaunchStations` 帶走。
+   - `coordinator_spec`：phase 依序推進（到 `ASSAULT_LANDING` → `WAITING_ADMIN_OFFLOADING` → `COMPLETED`）；529 不被 `moveToLaunchStations` 帶走。
    - `amphibiousAssault_spec` / `init_spec`：529 不是 `isFerryOrLST`；暫停時不 RTB。
 2. `busted --lua=luajit spec` 全過（含 `spec/moduleBoundary_spec.lua`）。
 3. `bash bin/build.sh -t`，CMO 開 `isTesting` 跑：雷有佈、529 走完弓字型 RTB、衝鋒舟排隊上岸、破障後兩棲車分波出、氣墊船走完通道停在自己的位子（任務等你補 TODO）。

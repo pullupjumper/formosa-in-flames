@@ -1,15 +1,18 @@
-local GameApi = require("src.utils.gameApi")
-local LogFormat = require("src.utils.logFormat")
-local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local constants = require("src.core.constants")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
 
----Routes loaded Type 726A hovercraft from the LHD/LPDs through cleared lanes to a parking slot.
----Each hovercraft is routed once; after it arrives the cargo mission takes over.
+local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
+
+local DebugFlow = require("src.modules.landingOps.debugFlow")
+local RoutePlanner = require("src.modules.landingOps.routePlanner")
+
+---Route loaded Type 726A hovercraft from the LHD and LPDs through cleared lanes to a parking slot.
+---Route each hovercraft once. After it arrives, the cargo mission takes over.
 local Hovercraft = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
 ---@type table<number, true>
@@ -23,21 +26,14 @@ local MOTHERSHIP_DBIDS = {
 -- Helpers
 -- ============================================================================
 
----Whether a unit carries any cargo
+---Check if a unit carries any cargo
 ---@param unit CMO__Unit
----@return boolean
+---@return boolean # True if the unit carries any cargo
 local function hasCargo(unit)
   return unit.cargo ~= nil and unit.cargo[1] ~= nil and unit.cargo[1].cargo ~= nil and #unit.cargo[1].cargo > 0
 end
 
----Whether a unit GUID still resolves
----@param guid string
----@return boolean
-local function isAlive(guid)
-  return GameApi.ScenEdit_GetUnit(guid) ~= nil
-end
-
----Pick the cargo mission to fill next: the first one below its unit count, else the last one
+---Find the cargo mission to fill next: the first mission below its unit count, else the last mission
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param hovercraftMap table<string, SBJ__HovercraftState>
 ---@return string
@@ -56,7 +52,7 @@ local function findMissionName(zone, hovercraftMap)
   return missions[#missions].name
 end
 
----Ready, loaded, not-yet-routed hovercraft aboard one mothership
+---Find the hovercraft on one mothership that are ready, loaded, and not yet routed
 ---@param ship CMO__Unit
 ---@param hovercraftMap table<string, SBJ__HovercraftState>
 ---@return CMO__Unit[]
@@ -80,7 +76,7 @@ end
 -- Public API
 -- ============================================================================
 
----Route and launch ready hovercraft from motherships anchored in the zone: course first, then Launch
+---Route and launch ready hovercraft from the motherships anchored in the zone. Set the course first, then launch.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
@@ -109,7 +105,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           queueCounters = zoneState.queueCounters,
           laneSlots = zoneState.laneSlots.hovercraft,
           cells = zoneState.obstacle and zoneState.obstacle.cells,
-          isAlive = isAlive,
+          isAlive = GameUtils.hasUnit,
         }, { isFromDeployLine = true })
 
         if plan then
@@ -135,7 +131,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   report.emit()
 end
 
----Mark hovercraft that reached their parking slot
+---Update the state of hovercraft that reached their parking slot
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 function Hovercraft.updateHovercraft(amphibOps, zoneState)
@@ -148,7 +144,7 @@ function Hovercraft.updateHovercraft(amphibOps, zoneState)
       local range = GameApi.Tool_Range(guid, entry.finalPoint)
       if range and range < arrivalNm then
         entry.arrived = true
-        -- TODO: assign cargo 任務（使用者自己寫）。任務名稱在 entry.missionName。
+        -- TODO: Assign the cargo mission in entry.missionName. The user writes this mission.
         unit.mission = entry.missionName
       end
     end

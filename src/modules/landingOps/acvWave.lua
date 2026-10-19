@@ -1,17 +1,13 @@
 local GameApi = require("src.utils.gameApi")
 
----Limits each zone's living ACVs to brigade size per type and releases them in waves.
----Launched GUIDs are recorded immediately, so ships triggering in the same tick share the quota.
+---Limit each zone's living ACVs to the brigade size per type. Release the ACVs in waves.
+---Record launched GUIDs at once, so ships that trigger in the same tick share the quota.
 local AcvWave = {}
 
--- ============================================================================
--- Helpers
--- ============================================================================
-
----Drop GUIDs of destroyed ACVs and return how many remain
+---Remove destroyed ACV GUIDs and return the number of ACVs that remain
 ---@param guids string[]
 ---@return integer
-local function pruneDestroyed(guids)
+local function removeDestroyed(guids)
   for i = #guids, 1, -1 do
     if not GameApi.ScenEdit_GetUnit(guids[i]) then
       table.remove(guids, i)
@@ -20,7 +16,7 @@ local function pruneDestroyed(guids)
   return #guids
 end
 
----Remaining quota for one ACV type, pausing when it hits zero and resuming on losses or timeout
+---Calculate the remaining quota for one ACV type. The quota pauses at zero and resumes on losses or timeout
 ---@param zoneState SBJ__ZoneState
 ---@param key string ACV type key (zbd05, ztd05)
 ---@param config SBJ__AcvWaveConfig
@@ -29,7 +25,7 @@ end
 local function calculateTypeQuota(zoneState, key, config, currentTime)
   local capacity = config.capacity[key] or 0
   zoneState.acvGuids[key] = zoneState.acvGuids[key] or {}
-  local alive = pruneDestroyed(zoneState.acvGuids[key])
+  local alive = removeDestroyed(zoneState.acvGuids[key])
   local pausedAt = zoneState.acvPausedAt[key]
 
   if pausedAt then
@@ -48,11 +44,7 @@ local function calculateTypeQuota(zoneState, key, config, currentTime)
   return quota
 end
 
--- ============================================================================
--- Public API
--- ============================================================================
-
----Remaining ACV quota per type for this zone at the current time
+---Get the remaining ACV quota per type for this zone at the current time
 ---@param zoneState SBJ__ZoneState
 ---@param config SBJ__AcvWaveConfig
 ---@param currentTime number
@@ -68,12 +60,12 @@ function AcvWave.getQuota(zoneState, config, currentTime)
   return quota
 end
 
----Whether hovercraft may go: the first ACV wave filled every type to capacity, or the wait timed out
----The wait starts at the first call. Latched once true.
+---Check if hovercraft may go. This is true when the first ACV wave filled every type to capacity or the wait timed out.
+---The wait starts at the first call. The result stays true after it becomes true.
 ---@param zoneState SBJ__ZoneState
 ---@param config SBJ__AcvWaveConfig
 ---@param currentTime number
----@return boolean
+---@return boolean # True once the first wave filled every type or the wait timed out
 function AcvWave.isFirstWaveFull(zoneState, config, currentTime)
   if zoneState.acvFirstWaveFull then
     return true
@@ -88,7 +80,7 @@ function AcvWave.isFirstWaveFull(zoneState, config, currentTime)
   zoneState.acvGuids = zoneState.acvGuids or {}
   for key, capacity in pairs(config.capacity) do
     local guids = zoneState.acvGuids[key] or {}
-    if pruneDestroyed(guids) < capacity then
+    if removeDestroyed(guids) < capacity then
       return false
     end
   end
@@ -97,7 +89,7 @@ function AcvWave.isFirstWaveFull(zoneState, config, currentTime)
   return true
 end
 
----Record a launched ACV so it counts against the quota
+---Add a launched ACV so it counts against the quota
 ---@param zoneState SBJ__ZoneState
 ---@param key string ACV type key
 ---@param guid string

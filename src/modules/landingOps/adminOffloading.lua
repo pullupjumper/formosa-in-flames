@@ -1,13 +1,14 @@
-local GameApi = require("src.utils.gameApi")
-local Utils = require("src.utils.utils")
-local GameUtils = require("src.utils.gameUtils")
-local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 
-local AdminUnloading = {}
+local GameApi = require("src.utils.gameApi")
+local GameUtils = require("src.utils.gameUtils")
+local LogFormat = require("src.utils.logFormat")
+local Utils = require("src.utils.utils")
+
+local AdminOffloading = {}
 
 -- ============================================================================
--- Enumerations and Constants
+-- Constants
 -- ============================================================================
 
 
@@ -27,12 +28,12 @@ local DEFAULT_CARGO_TYPE = "Facility"
 -- Course Calculation
 -- ============================================================================
 
----Calculate course for barge to reach offload area
----Projects barge position onto LST approach bearing line using spherical geometry
+---Calculate the course for a barge to reach the offload area.
+---Project the barge position onto the LST approach bearing line with spherical geometry.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unit CMO__Unit
 ---@return CMO__Waypoint[]|nil # Destination waypoint, or nil on error
-local function createCourseForBarge(zone, unit)
+local function buildCourseForBarge(zone, unit)
   local points = GameApi.ScenEdit_GetReferencePoints({ side = constants.SIDES.RED, area = zone.landing.offloadArea })
 
   if not points then
@@ -73,13 +74,13 @@ local function createCourseForBarge(zone, unit)
   return destination
 end
 
----Calculate course for RORO ship to follow barge to beach
----Returns two-waypoint course: first at LST approach distance, second at barge destination
+---Calculate the course for a RORO ship to follow the barge to the beach.
+---Return a two-waypoint course: the first at the LST approach distance, the second at the barge destination.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unit CMO__Unit
 ---@param bargeDest CMO__Waypoint[] Barge's destination waypoint
 ---@return CMO__Waypoint[]|nil # Two-waypoint course (approach, then barge position), or nil on error
-local function createCourseForRORO(zone, unit, bargeDest)
+local function buildCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
@@ -98,15 +99,15 @@ end
 -- Unit Classification and Processing
 -- ============================================================================
 
----Process a barge unit for admin unloading
----Creates course, sets speed, and registers barge in the barge registry
+---Process a barge unit for admin offloading.
+---Create the course, set the speed, and add the barge to the barge registry.
 ---@param unit CMO__Unit
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return CMO__Waypoint[]|nil dest Barge destination for RORO pairing, nil when the course failed
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function processBarge(unit, zone, barges)
-  local destination = createCourseForBarge(zone, unit)
+  local destination = buildCourseForBarge(zone, unit)
 
   if not destination then
     return nil, {
@@ -124,15 +125,15 @@ local function processBarge(unit, zone, barges)
   }
 end
 
----Pair a RORO ship with a barge for logistics chain
----Registers RORO under barge's roros list and sets RORO course
+---Pair a RORO ship with a barge for the logistics chain.
+---Add the RORO to the roros list of the barge and set the RORO course.
 ---@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }
 ---@param bargeEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function pairROROWithBarge(roroEntry, bargeEntry, barges)
   table.insert(barges[bargeEntry.unit.guid].roros, roroEntry.unit.guid)
-  local course = createCourseForRORO(roroEntry.zone, roroEntry.unit, bargeEntry.dest)
+  local course = buildCourseForRORO(roroEntry.zone, roroEntry.unit, bargeEntry.dest)
 
   if not course then
     return {
@@ -163,11 +164,11 @@ end
 -- Vehicle Offloading
 -- ============================================================================
 
----Extract cargo items from ship up to specified count
+---Extract cargo items from a ship, up to the given count
 ---@param ship CMO__Unit
 ---@param num number
 ---@return { guid: string, dbid: number, name: string, type: number }[] # Extracted cargo items
-local function resolveCargoItems(ship, num)
+local function findCargoItems(ship, num)
   local cargoItems = {}
   local count = 0
 
@@ -183,7 +184,7 @@ local function resolveCargoItems(ship, num)
   return cargoItems
 end
 
----Spawn a single offloaded vehicle at the specified location
+---Create one offloaded vehicle at the given location
 ---@param ship CMO__Unit
 ---@param item { guid: string, dbid: number, name: string, type: number }
 ---@param location CMO__Location
@@ -215,7 +216,7 @@ local function createOffloadedVehicle(ship, item, location, index)
   }
 end
 
----Spawn every extracted cargo item, stopping at the first failure
+---Create every extracted cargo item as a vehicle. Stop at the first failure.
 ---@param ship CMO__Unit
 ---@param cargoItems { guid: string, dbid: number, name: string, type: number }[]
 ---@param locations CMO__Location[]
@@ -240,12 +241,12 @@ end
 -- Public API: Queries
 -- ============================================================================
 
----Check if a barge's logistics bridge has been destroyed
----Returns true if bridge GUID exists but unit is destroyed
+---Check if the logistics bridge of a barge is destroyed.
+---The bridge GUID must exist and its unit must be destroyed.
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
----@return boolean # True if bridge was created but is now destroyed
-function AdminUnloading.isBridgeDestroyed(barges, ship)
+---@return boolean # True if the bridge was created and is now destroyed
+function AdminOffloading.isBridgeDestroyed(barges, ship)
   if barges[ship.guid] and barges[ship.guid].bridgeGUID then
     local bridge = GameApi.ScenEdit_GetUnit(barges[ship.guid].bridgeGUID)
 
@@ -259,26 +260,27 @@ function AdminUnloading.isBridgeDestroyed(barges, ship)
   return true
 end
 
----Check if a barge has an extended logistics bridge
----Bridge is created when barge reaches offload position for vehicle transfer operations
+---Check if a barge has an extended logistics bridge.
+---The barge creates the bridge when it reaches the offload position for vehicle transfer.
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if barge has an active bridge GUID
-function AdminUnloading.hasExtendedBridge(barges, ship)
+function AdminOffloading.hasExtendedBridge(barges, ship)
   return barges[ship.guid].bridgeGUID ~= nil
 end
 
----Get the operational zone for a barge-RORO pair
----Checks if both units are in same ACV area and within 1nm of each other
+---Get the operational zone for a barge-RORO pair.
+---The units must be in the same ACV area and closer than pairingRangeNm to each other.
 ---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param barge CMO__Unit
 ---@param roro CMO__Unit
----@return SBJ__OperationalZoneDescriptor|nil # Operation zone descriptor, or nil if units not properly positioned
-function AdminUnloading.getBargeROROZone(zones, barge, roro)
+---@param pairingRangeNm number
+---@return SBJ__OperationalZoneDescriptor|nil # Zone descriptor, or nil if the units are not in position
+function AdminOffloading.getBargeROROZone(zones, barge, roro, pairingRangeNm)
   for _, zone in ipairs(zones) do
     local distance = GameApi.Tool_Range(roro.guid, barge.guid)
 
-    if distance and roro:inArea(zone.landing.acv.area) and barge:inArea(zone.landing.acv.area) and distance < 1 then
+    if distance and roro:inArea(zone.landing.acv.area) and barge:inArea(zone.landing.acv.area) and distance < pairingRangeNm then
       return zone
     end
   end
@@ -290,18 +292,18 @@ end
 -- Public API: Operations
 -- ============================================================================
 
----Initiate admin unloading operations for a single zone
----Directs barges to offload areas and RORO ships to follow, creating logistics chain RORO->Barge->Beach
+---Start admin offloading in a single zone.
+---Direct barges to the offload areas and RORO ships to follow. This creates the logistics chain RORO -> Barge -> Beach.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@param filteredUnits CMO__SideUnit[]
----@return boolean # True if admin unloading successfully started
-function AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
+---@return boolean # True if admin offloading started
+function AdminOffloading.startAdminOffloading(zone, barges, filteredUnits)
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
   local roros = {}
   ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
   local bargeEntries = {}
-  local report = LogFormat.report(constants.TAGS.ADMIN_UNLOADING, "zone=" .. zone.name, "Admin unloading")
+  local report = LogFormat.report(constants.TAGS.ADMIN_OFFLOADING, "zone=" .. zone.name, "Admin offloading")
 
   for _, u in ipairs(filteredUnits) do
     local unit = GameApi.ScenEdit_GetUnit(u.guid)
@@ -335,13 +337,13 @@ function AdminUnloading.startAdminUnloading(zone, barges, filteredUnits)
   return true
 end
 
----Offload vehicles from ship cargo to the beach
----Deletes cargo from ship and spawns facility units in line formation at calculated positions
+---Offload vehicles from the cargo of a ship to the beach.
+---Delete the cargo from the ship. Create facility units in a line at calculated positions.
 ---@param params SBJ__VehicleOffloadParams
----@return integer|nil # Number of vehicles successfully offloaded, or nil on error
-function AdminUnloading.offloadVehicles(params)
+---@return integer|nil # Number of vehicles offloaded, or nil on error
+function AdminOffloading.offloadVehicles(params)
   local ship = params.ship
-  if ship == nil or ship.IsDestroyed then return end
+  if not ship or ship.IsDestroyed then return end
 
   local acvLocations = GameUtils.buildLocations({
     initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
@@ -351,15 +353,15 @@ function AdminUnloading.offloadVehicles(params)
     firstDistance = params.firstDistance
   })
 
-  local cargoItems = resolveCargoItems(ship, params.num)
+  local cargoItems = findCargoItems(ship, params.num)
   local count, results = createOffloadedVehicles(ship, cargoItems, acvLocations)
 
   local report = LogFormat.report(
-    constants.TAGS.ADMIN_UNLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")
+    constants.TAGS.ADMIN_OFFLOADING, "ship=" .. (ship.name or ship.guid), "Offload vehicles")
   report.addAll(results)
   report.emit()
 
   return count
 end
 
-return AdminUnloading
+return AdminOffloading

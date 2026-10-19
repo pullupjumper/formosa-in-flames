@@ -1,11 +1,11 @@
--- AmphibiousAssault Unit Tests
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+-- LandingOps AmphibiousAssault Unit Tests
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local constants = require("src.core.constants")
----@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 describe("AmphibiousAssault", function()
   ---@type luassert.spy[]
   local activeStubs
@@ -42,22 +42,22 @@ describe("AmphibiousAssault", function()
   ---Create a landing mission descriptor
   ---@param overrides? table
   ---@return table
-  local function makeMission(overrides)
-    local m = {
+  local function buildMission(overrides)
+    local mission = {
       name = "TestMission",
       startTime = 3600,
     }
     if overrides then
-      for k, v in pairs(overrides) do m[k] = v end
+      for k, v in pairs(overrides) do mission[k] = v end
     end
-    return m
+    return mission
   end
 
   ---Create an operational zone descriptor
   ---@param overrides? table
   ---@return table
-  local function makeZone(overrides)
-    local z = {
+  local function buildZone(overrides)
+    local zone = {
       name = "ZoneAlpha",
       sags = {},
       heading = 270,
@@ -68,11 +68,11 @@ describe("AmphibiousAssault", function()
         },
       },
       air = {
-        transportHelicopter = { missions = { makeMission({ name = "HeloMission1" }) } },
-        attackHelicopter = { missions = { makeMission({ name = "AtkHeloMission1" }) } },
+        transportHelicopter = { missions = { buildMission({ name = "HeloMission1" }) } },
+        attackHelicopter = { missions = { buildMission({ name = "AtkHeloMission1" }) } },
       },
       landing = {
-        boat = { missions = { makeMission({ name = "BoatMission1" }) } },
+        boat = { missions = { buildMission({ name = "BoatMission1" }) } },
         lstSettings = {
           speed = 10,
           distance = 5,
@@ -87,33 +87,33 @@ describe("AmphibiousAssault", function()
     }
     if overrides then
       for k, v in pairs(overrides) do
-        if type(z[k]) == "table" and (k == "movement" or k == "air" or k == "landing" or k == "fleet") then
-          for groupKey, groupValue in pairs(v) do z[k][groupKey] = groupValue end
+        if type(zone[k]) == "table" and (k == "movement" or k == "air" or k == "landing" or k == "fleet") then
+          for groupKey, groupValue in pairs(v) do zone[k][groupKey] = groupValue end
         else
-          z[k] = v
+          zone[k] = v
         end
       end
     end
-    return z
+    return zone
   end
 
   ---Create an amphibOpsConfig
   ---@param overrides? table
   ---@return table
-  local function makeAmphibOpsConfig(overrides)
-    local cfg = {
-      zones = { makeZone() },
+  local function buildAmphibOpsConfig(overrides)
+    local config = {
+      zones = { buildZone() },
     }
     if overrides then
-      for k, v in pairs(overrides) do cfg[k] = v end
+      for k, v in pairs(overrides) do config[k] = v end
     end
-    return cfg
+    return config
   end
 
   ---Create a saveData structure
   ---@param overrides? table
   ---@return table
-  local function makeSaveData(overrides)
+  local function buildSaveData(overrides)
     local sd = {
       red = {
         amphibOps = {
@@ -130,7 +130,7 @@ describe("AmphibiousAssault", function()
   ---Create a ship unit with sensible defaults
   ---@param overrides? table
   ---@return table
-  local function makeUnit(overrides)
+  local function buildUnit(overrides)
     local unit = {
       guid = "SHIP-001",
       name = "TestShip",
@@ -163,16 +163,16 @@ describe("AmphibiousAssault", function()
   ---Create a contact
   ---@param overrides? table
   ---@return table
-  local function makeContact(overrides)
-    local c = {
+  local function buildContact(overrides)
+    local contact = {
       guid = "CONTACT-001",
       typed = 8,
       inArea = function() return true end,
     }
     if overrides then
-      for k, v in pairs(overrides) do c[k] = v end
+      for k, v in pairs(overrides) do contact[k] = v end
     end
-    return c
+    return contact
   end
 
   -- ============================================================================
@@ -188,13 +188,12 @@ describe("AmphibiousAssault", function()
       stubGetMission = trackStub(stub(GameApi, "ScenEdit_GetMission"))
     end)
 
-    -- Positive: sets start times for all missions in a zone
     it("should set start times for all missions in the operational zone", function()
       stubCurrentTime.returns(1000)
-      local missionObj = { starttime = nil }
-      stubGetMission.returns(missionObj)
+      local mission = { starttime = nil }
+      stubGetMission.returns(mission)
 
-      local zone = makeZone()
+      local zone = buildZone()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
       local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
@@ -207,12 +206,11 @@ describe("AmphibiousAssault", function()
       assert.stub(logStub).was.called()
     end)
 
-    -- Positive: records current time into zoneState
     it("should store current time as airlandingMissionStartTime in zoneState", function()
       stubCurrentTime.returns(5000)
       stubGetMission.returns({ starttime = nil })
 
-      local zone = makeZone()
+      local zone = buildZone()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
@@ -220,14 +218,13 @@ describe("AmphibiousAssault", function()
       assert.are.equal(5000, zoneState.airlandingMissionStartTime)
     end)
 
-    -- Positive: correctly calculates start time string
     it("should set mission start time using os.date format", function()
       stubCurrentTime.returns(1000)
-      local missionObj = { starttime = nil }
-      stubGetMission.returns(missionObj)
+      local mission = { starttime = nil }
+      stubGetMission.returns(mission)
 
-      local zone = makeZone({
-        air = { transportHelicopter = { missions = { makeMission({ name = "Helo1", startTime = 600 }) } }, attackHelicopter = { missions = {} } },
+      local zone = buildZone({
+        air = { transportHelicopter = { missions = { buildMission({ name = "Helo1", startTime = 600 }) } }, attackHelicopter = { missions = {} } },
         landing = { boat = { missions = {} } },
       })
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
@@ -235,19 +232,18 @@ describe("AmphibiousAssault", function()
       AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
 
       local expectedTime = "1970-01-01 00:26:40" .. constants.TIME_FORMATS
-      assert.are.equal(expectedTime, missionObj.starttime)
+      assert.are.equal(expectedTime, mission.starttime)
     end)
 
-    -- Positive: only the requested categories are started
     it("should only process missions in the requested categories", function()
       stubCurrentTime.returns(2000)
       stubGetMission.returns({ starttime = nil })
 
-      local zone = makeZone({
-        air = { transportHelicopter = { missions = { makeMission({ name = "Z1Helo" }) } }, attackHelicopter = { missions = {} } },
-        landing = { boat = { missions = { makeMission({ name = "Z1Boat" }) } } },
+      local zone = buildZone({
+        air = { transportHelicopter = { missions = { buildMission({ name = "Z1Helo" }) } }, attackHelicopter = { missions = {} } },
+        landing = { boat = { missions = { buildMission({ name = "Z1Boat" }) } } },
       })
-      local saveData = makeSaveData()
+      local saveData = buildSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
       local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, { "transportHelicopter" })
@@ -257,13 +253,12 @@ describe("AmphibiousAssault", function()
       assert.stub(stubGetMission).was.called_with(constants.SIDES.RED, "Z1Helo")
     end)
 
-    -- Negative: returns false when GetMission returns nil for a mission
     it("should return false when a mission cannot be found", function()
       stubCurrentTime.returns(1000)
       stubGetMission.returns(nil)
 
-      local zone = makeZone()
-      local saveData = makeSaveData()
+      local zone = buildZone()
+      local saveData = buildSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
       local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
@@ -273,15 +268,14 @@ describe("AmphibiousAssault", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=mission_not_found"))
     end)
 
-    -- Boundary: zone with no missions in any category
     it("should return true when all mission lists are empty", function()
       stubCurrentTime.returns(1000)
 
-      local zone = makeZone({
+      local zone = buildZone({
         air = { transportHelicopter = { missions = {} }, attackHelicopter = { missions = {} } },
         landing = { boat = { missions = {} } },
       })
-      local saveData = makeSaveData()
+      local saveData = buildSaveData()
       local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
 
       local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
@@ -315,8 +309,8 @@ describe("AmphibiousAssault", function()
 
     ---Create a zone heading north toward the shore, with the lane center set
     ---@return table
-    local function makeNorthZone()
-      local zone = makeZone({ heading = 0 })
+    local function buildNorthZone()
+      local zone = buildZone({ heading = 0 })
       zone.landing.laneCenter = { "RP-CENTER" }
       return zone
     end
@@ -326,8 +320,8 @@ describe("AmphibiousAssault", function()
     ---@param offshoreNm number
     ---@param overrides? table
     ---@return table
-    local function makeLST(zone, offshoreNm, overrides)
-      local unit = makeUnit({
+    local function buildLST(zone, offshoreNm, overrides)
+      local unit = buildUnit({
         latitude = center.latitude - offshoreNm * NM,
         longitude = center.longitude,
         inArea = function(_, area)
@@ -345,11 +339,10 @@ describe("AmphibiousAssault", function()
       stubFindAreaLocations = trackStub(stub(GameUtils, "findAreaLocations").returns({ center }))
     end)
 
-    -- Positive: the formation is shifted so its middle sits in the middle of the band
     it("should move the formation to the middle of the 2-4 nm band keeping its shape", function()
-      local zone = makeNorthZone()
-      local rear = makeLST(zone, 12, sideUnit("SHIP-001"))
-      local front = makeLST(zone, 11.2, sideUnit("SHIP-002"))
+      local zone = buildNorthZone()
+      local rear = buildLST(zone, 12, sideUnit("SHIP-001"))
+      local front = buildLST(zone, 11.2, sideUnit("SHIP-002"))
       stubGetUnit.invokes(function(id)
         return id == "SHIP-001" and rear or front
       end)
@@ -365,10 +358,9 @@ describe("AmphibiousAssault", function()
       assert.stub(logStub).was.called()
     end)
 
-    -- Positive: lateral position of every ship is kept
     it("should keep the lateral position of each LST", function()
-      local zone = makeNorthZone()
-      local unit = makeLST(zone, 12, { longitude = center.longitude + 0.01 })
+      local zone = buildNorthZone()
+      local unit = buildLST(zone, 12, { longitude = center.longitude + 0.01 })
       stubGetUnit.returns(unit)
 
       AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
@@ -377,11 +369,10 @@ describe("AmphibiousAssault", function()
       assert.is_near(center.latitude - 3 * NM, unit.course[1].latitude, 1e-6)
     end)
 
-    -- Negative: a formation deeper than the band cannot be placed
     it("should return false and leave courses untouched when the formation is deeper than the band", function()
-      local zone = makeNorthZone()
-      local rear = makeLST(zone, 12, sideUnit("SHIP-001"))
-      local front = makeLST(zone, 9.5, sideUnit("SHIP-002"))
+      local zone = buildNorthZone()
+      local rear = buildLST(zone, 12, sideUnit("SHIP-001"))
+      local front = buildLST(zone, 9.5, sideUnit("SHIP-002"))
       stubGetUnit.invokes(function(id)
         return id == "SHIP-001" and rear or front
       end)
@@ -393,21 +384,20 @@ describe("AmphibiousAssault", function()
       assert.are.same({}, front.course)
     end)
 
-    -- Negative: no lane center means no reference to measure the band from
+    -- No lane center means no reference to measure the band from
     it("should return false when the lane center is not set", function()
       stubFindAreaLocations.returns({})
-      local zone = makeNorthZone()
-      stubGetUnit.returns(makeLST(zone, 12))
+      local zone = buildNorthZone()
+      stubGetUnit.returns(buildLST(zone, 12))
 
       local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
 
       assert.is_false(result)
     end)
 
-    -- Positive: does not set course for RORO ships
     it("should not set course for RORO ships even when in holding area", function()
-      local zone = makeNorthZone()
-      local unit = makeLST(zone, 12, { name = "RORO" })
+      local zone = buildNorthZone()
+      local unit = buildLST(zone, 12, { name = "RORO" })
       stubGetUnit.returns(unit)
 
       AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
@@ -416,10 +406,9 @@ describe("AmphibiousAssault", function()
       assert.are.equal(0, unit.manualSpeed)
     end)
 
-    -- Positive: does not set course for Barge ships
     it("should not set course for Barge ships even when in holding area", function()
-      local zone = makeNorthZone()
-      local unit = makeLST(zone, 12, { name = "Barge" })
+      local zone = buildNorthZone()
+      local unit = buildLST(zone, 12, { name = "Barge" })
       stubGetUnit.returns(unit)
 
       AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
@@ -427,11 +416,10 @@ describe("AmphibiousAssault", function()
       assert.are.same({}, unit.course)
     end)
 
-    -- Negative: Type 529 sweepers keep their sweep course
     it("should not set course for Type 529 sweepers in the holding area", function()
-      local zone = makeNorthZone()
+      local zone = buildNorthZone()
       local sweepCourse = { { latitude = 24.0, longitude = 120.0 } }
-      local unit = makeLST(zone, 12, { name = "Type 529", dbid = constants.PLATFORMS.TYPE_082, course = sweepCourse })
+      local unit = buildLST(zone, 12, { name = "Type 529", dbid = constants.PLATFORMS.TYPE_082, course = sweepCourse })
       stubGetUnit.returns(unit)
 
       local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001") })
@@ -440,16 +428,15 @@ describe("AmphibiousAssault", function()
       assert.are.same(sweepCourse, unit.course)
     end)
 
-    -- Positive: sets course for SAG groups
     it("should set course for SAG groups to staging area", function()
       local sagCourse = { { latitude = 24.0, longitude = 120.0 } }
-      local sagUnit = makeUnit({ guid = "SAG-001" })
+      local sagUnit = buildUnit({ guid = "SAG-001" })
       stubGetUnit.invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
         return nil
       end)
 
-      local zone = makeZone()
+      local zone = buildZone()
       zone.sags = {
         {
           groupName = "SAG Alpha",
@@ -464,23 +451,22 @@ describe("AmphibiousAssault", function()
       assert.stub(logStub).was.called()
     end)
 
-    -- Positive: fast-forward teleports every ship of the SAG, not just the group
     it("should teleport every SAG ship into formation in fast-forward", function()
       local ffConfig = {
         tuning = amphibOps.tuning,
         debug = { enabled = true, startStage = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT },
       }
       local sagCourse = { { latitude = 24.0, longitude = 120.0 } }
-      local sagUnit = makeUnit({ guid = "SAG-001", group = { unitlist = { "D-1", "F-1" } } })
-      local destroyer = makeUnit({ guid = "D-1", dbid = constants.PLATFORMS.TYPE_052D })
-      local frigate = makeUnit({ guid = "F-1", dbid = constants.PLATFORMS.TYPE_054A })
+      local sagUnit = buildUnit({ guid = "SAG-001", group = { unitlist = { "D-1", "F-1" } } })
+      local destroyer = buildUnit({ guid = "D-1", dbid = constants.PLATFORMS.TYPE_052D })
+      local frigate = buildUnit({ guid = "F-1", dbid = constants.PLATFORMS.TYPE_054A })
       stubGetUnit.invokes(function(id)
         return ({ ["SAG Alpha"] = sagUnit, ["D-1"] = destroyer, ["F-1"] = frigate })[id]
       end)
       trackStub(stub(GameApi, "World_GetPointFromBearing").returns({ latitude = 24.01, longitude = 120.01 }))
       local setUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
 
-      local zone = makeZone()
+      local zone = buildZone()
       zone.sags = { { groupName = "SAG Alpha", to = { amphibiousVehicleStagingArea = sagCourse } } }
 
       assert.is_true(AmphibiousAssault.moveToLaunchStations(ffConfig, zone, {}))
@@ -490,11 +476,10 @@ describe("AmphibiousAssault", function()
       assert.are.same(sagCourse, sagUnit.course)
     end)
 
-    -- Negative: returns false when SAG unit cannot be found
     it("should return false when SAG unit is not found", function()
       stubGetUnit.returns(nil)
 
-      local zone = makeZone()
+      local zone = buildZone()
       zone.sags = {
         {
           groupName = "SAG Alpha",
@@ -507,11 +492,10 @@ describe("AmphibiousAssault", function()
       assert.is_false(result)
     end)
 
-    -- Negative: skips units not retrievable via GetUnit
     it("should skip units that cannot be retrieved", function()
       stubGetUnit.returns(nil)
 
-      local zone = makeNorthZone()
+      local zone = buildNorthZone()
       local units = { sideUnit("MISSING-001") }
 
       local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
@@ -519,10 +503,9 @@ describe("AmphibiousAssault", function()
       assert.is_true(result)
     end)
 
-    -- Negative: skips non-Ship type units
     it("should skip units that are not of type Ship", function()
-      local zone = makeNorthZone()
-      local unit = makeUnit({
+      local zone = buildNorthZone()
+      local unit = buildUnit({
         type = "Aircraft",
         inArea = function(_, area)
           return area == zone.movement.holdingAreas.deployLine
@@ -541,9 +524,8 @@ describe("AmphibiousAssault", function()
       assert.are.same({}, unit.course)
     end)
 
-    -- Boundary: ship not in any holding area
     it("should not set course for ships not in any holding area", function()
-      local unit = makeUnit({
+      local unit = buildUnit({
         inArea = function() return false end,
       })
 
@@ -552,7 +534,7 @@ describe("AmphibiousAssault", function()
         return nil
       end)
 
-      local zone = makeNorthZone()
+      local zone = buildNorthZone()
       local units = { sideUnit("SHIP-001") }
 
       AmphibiousAssault.moveToLaunchStations(amphibOps, zone, units)
@@ -560,9 +542,8 @@ describe("AmphibiousAssault", function()
       assert.are.same({}, unit.course)
     end)
 
-    -- Boundary: empty units list
     it("should return true when units list is empty and no SAG", function()
-      local zone = makeZone()
+      local zone = buildZone()
 
       local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, {})
 
@@ -576,16 +557,16 @@ describe("AmphibiousAssault", function()
 
   describe("countUnitsInEachArea", function()
     local config = {
-      red = { amphibOps = { zones = { makeZone({ name = "A", air = { casArea = "CAS-A" } }), makeZone({ name = "B", air = { casArea = "CAS-B" } }) } } }
+      red = { amphibOps = { zones = { buildZone({ name = "A", air = { casArea = "CAS-A" } }), buildZone({ name = "B", air = { casArea = "CAS-B" } }) } } }
     }
 
-    ---Stub China's units; each unit is a makeUnit override table
+    ---Stub China's units; each unit is a buildUnit override table
     ---@param units table[] Units China owns
     local function stubRedUnits(units)
       local byGuid = {}
       local sideUnits = {}
       for _, overrides in ipairs(units) do
-        byGuid[overrides.guid] = makeUnit(overrides)
+        byGuid[overrides.guid] = buildUnit(overrides)
         table.insert(sideUnits, { guid = overrides.guid })
       end
       trackStub(stub(GameApi, "VP_GetSide").returns({ units = sideUnits }))
@@ -597,7 +578,7 @@ describe("AmphibiousAssault", function()
       return function(_, area) return area == casArea end
     end
 
-    -- Positive: counts each type only in the zone whose CAS area holds the unit
+    -- Counts each type only in the zone whose CAS area holds the unit
     it("should count unit types separately for each zone", function()
       stubRedUnits({
         { guid = "U-1", dbid = constants.PLATFORMS.ZBD05, inArea = inCasArea("CAS-A") },
@@ -613,7 +594,6 @@ describe("AmphibiousAssault", function()
       assert.are.equal(0, result.B["ZBD-05"])
     end)
 
-    -- Negative: platforms outside the landed unit list are not counted
     it("should ignore platforms that are not landed unit types", function()
       stubRedUnits({ { guid = "U-1", dbid = constants.PLATFORMS.TYPE_071, inArea = inCasArea("CAS-A") } })
 
@@ -624,7 +604,7 @@ describe("AmphibiousAssault", function()
       end
     end)
 
-    -- Boundary: a unit listed on the side but already gone must not break the count
+    -- A unit listed on the side but already gone must not break the count
     it("should skip side units that no longer resolve", function()
       trackStub(stub(GameApi, "VP_GetSide").returns({ units = { { guid = "GONE" } } }))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
@@ -642,12 +622,12 @@ describe("AmphibiousAssault", function()
   describe("countContactsInArea", function()
     local area = { "RP-ZONE-1", "RP-ZONE-2" }
 
-    -- Positive: counts ground contacts (typed == 8) in area
+    -- Counts ground contacts (typed == 8) in area
     it("should count ground contacts in the specified area", function()
       local contacts = {
-        makeContact(),
-        makeContact({ guid = "CONTACT-002" }),
-        makeContact({ guid = "CONTACT-003" }),
+        buildContact(),
+        buildContact({ guid = "CONTACT-002" }),
+        buildContact({ guid = "CONTACT-003" }),
       }
 
       local count = AmphibiousAssault.countContactsInArea(contacts, area)
@@ -655,12 +635,11 @@ describe("AmphibiousAssault", function()
       assert.are.equal(3, count)
     end)
 
-    -- Positive: filters out non-ground contacts
     it("should not count contacts with typed other than 8", function()
       local contacts = {
-        makeContact({ typed = 8 }),
-        makeContact({ guid = "CONTACT-002", typed = 1 }),
-        makeContact({ guid = "CONTACT-003", typed = 3 }),
+        buildContact({ typed = 8 }),
+        buildContact({ guid = "CONTACT-002", typed = 1 }),
+        buildContact({ guid = "CONTACT-003", typed = 3 }),
       }
 
       local count = AmphibiousAssault.countContactsInArea(contacts, area)
@@ -668,11 +647,10 @@ describe("AmphibiousAssault", function()
       assert.are.equal(1, count)
     end)
 
-    -- Positive: filters out contacts outside the area
     it("should not count contacts outside the area", function()
       local contacts = {
-        makeContact({ inArea = function() return true end }),
-        makeContact({ guid = "CONTACT-002", inArea = function() return false end }),
+        buildContact({ inArea = function() return true end }),
+        buildContact({ guid = "CONTACT-002", inArea = function() return false end }),
       }
 
       local count = AmphibiousAssault.countContactsInArea(contacts, area)
@@ -680,11 +658,10 @@ describe("AmphibiousAssault", function()
       assert.are.equal(1, count)
     end)
 
-    -- Negative: returns zero when no contacts match
     it("should return zero when no contacts are ground type in area", function()
       local contacts = {
-        makeContact({ typed = 1 }),
-        makeContact({ guid = "CONTACT-002", inArea = function() return false end }),
+        buildContact({ typed = 1 }),
+        buildContact({ guid = "CONTACT-002", inArea = function() return false end }),
       }
 
       local count = AmphibiousAssault.countContactsInArea(contacts, area)
@@ -692,7 +669,6 @@ describe("AmphibiousAssault", function()
       assert.are.equal(0, count)
     end)
 
-    -- Boundary: empty contacts list
     it("should return zero for empty contacts list", function()
       local count = AmphibiousAssault.countContactsInArea({}, area)
 
@@ -714,7 +690,6 @@ describe("AmphibiousAssault", function()
       stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
     end)
 
-    -- Positive: launches ZBD-05 and ZTD-05 vehicles from ship
     it("should launch both ZBD and ZTD vehicles and return total count", function()
       local locations = {
         { latitude = 25.1, longitude = 121.1 },
@@ -732,7 +707,7 @@ describe("AmphibiousAssault", function()
       stubAddUnit.returns({ guid = "NEW-UNIT" })
       stubSetDoctrine.returns(true)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -750,7 +725,6 @@ describe("AmphibiousAssault", function()
       assert.stub(logStub).was.called()
     end)
 
-    -- Positive: launches only ZTD when no ZBD cargo available
     it("should launch only ZTD vehicles when ZBD cargo is zero", function()
       local locations = {
         { latitude = 25.1, longitude = 121.1 },
@@ -765,7 +739,7 @@ describe("AmphibiousAssault", function()
       stubAddUnit.returns({ guid = "NEW-UNIT" })
       stubSetDoctrine.returns(true)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -780,7 +754,6 @@ describe("AmphibiousAssault", function()
       assert.are.equal(2, count)
     end)
 
-    -- Positive: launches only ZBD when ZTD cargo is zero
     it("should launch only ZBD vehicles when ZTD cargo request is zero", function()
       local locations = {
         { latitude = 25.1, longitude = 121.1 },
@@ -796,7 +769,7 @@ describe("AmphibiousAssault", function()
       stubAddUnit.returns({ guid = "NEW-UNIT" })
       stubSetDoctrine.returns(true)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -811,7 +784,6 @@ describe("AmphibiousAssault", function()
       assert.are.equal(2, count)
     end)
 
-    -- Positive: sets throttle and course on added units
     it("should set throttle to Full and assign destination course", function()
       local locations = { { latitude = 25.1, longitude = 121.1 } }
       stubGenerateLocations.returns(locations)
@@ -825,7 +797,7 @@ describe("AmphibiousAssault", function()
       stubSetDoctrine.returns(true)
 
       local destination = { { latitude = 25.0, longitude = 121.0 } }
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -841,7 +813,6 @@ describe("AmphibiousAssault", function()
       assert.are.same(destination, addedUnit.course)
     end)
 
-    -- Negative: returns nil when ship is nil
     it("should return nil when ship is nil", function()
       local params = {
         ship = nil,
@@ -856,9 +827,8 @@ describe("AmphibiousAssault", function()
       assert.is_nil(result)
     end)
 
-    -- Negative: returns nil when ship is destroyed
     it("should return nil when ship is destroyed", function()
-      local ship = makeUnit({ IsDestroyed = true })
+      local ship = buildUnit({ IsDestroyed = true })
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -872,7 +842,6 @@ describe("AmphibiousAssault", function()
       assert.is_nil(result)
     end)
 
-    -- Negative: returns nil when ScenEdit_AddUnit fails for ZTD
     it("should return nil when adding ZTD unit fails", function()
       local locations = { { latitude = 25.1, longitude = 121.1 } }
       stubGenerateLocations.returns(locations)
@@ -883,7 +852,7 @@ describe("AmphibiousAssault", function()
       end)
       stubAddUnit.returns(nil)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -900,7 +869,6 @@ describe("AmphibiousAssault", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=add_unit_failed"))
     end)
 
-    -- Negative: returns nil when ScenEdit_SetDoctrine fails for ZTD
     it("should return nil when setting doctrine fails for ZTD unit", function()
       local locations = { { latitude = 25.1, longitude = 121.1 } }
       stubGenerateLocations.returns(locations)
@@ -912,7 +880,7 @@ describe("AmphibiousAssault", function()
       stubAddUnit.returns({ guid = "NEW-UNIT" })
       stubSetDoctrine.returns(nil)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -929,7 +897,6 @@ describe("AmphibiousAssault", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=set_doctrine_failed"))
     end)
 
-    -- Negative: returns nil when ScenEdit_AddUnit fails for ZBD
     it("should return nil when adding ZBD unit fails", function()
       local locations = {
         { latitude = 25.1, longitude = 121.1 },
@@ -944,7 +911,7 @@ describe("AmphibiousAssault", function()
       -- ZTD has 0, so only ZBD is spawned. AddUnit fails for ZBD
       stubAddUnit.returns(nil)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -961,7 +928,6 @@ describe("AmphibiousAssault", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=add_unit_failed"))
     end)
 
-    -- Negative: returns nil when ScenEdit_SetDoctrine fails for ZBD
     it("should return nil when setting doctrine fails for ZBD unit", function()
       local locations = {
         { latitude = 25.1, longitude = 121.1 },
@@ -976,7 +942,7 @@ describe("AmphibiousAssault", function()
       stubAddUnit.returns({ guid = "NEW-UNIT" })
       stubSetDoctrine.returns(nil)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -993,13 +959,12 @@ describe("AmphibiousAssault", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=set_doctrine_failed"))
     end)
 
-    -- Boundary: both ZBD and ZTD delete zero cargo
     it("should return zero when no cargo is available for deletion", function()
       local locations = {}
       stubGenerateLocations.returns(locations)
       stubDeleteCargo.returns(0)
 
-      local ship = makeUnit()
+      local ship = buildUnit()
       local params = {
         ship = ship,
         quota = { zbd05 = 99, ztd05 = 99 },
@@ -1015,9 +980,9 @@ describe("AmphibiousAssault", function()
       assert.stub(stubAddUnit).was_not.called()
     end)
 
-    -- Positive: an empty ship reports isEmpty so the caller can send it home
+    -- An empty ship reports isEmpty so the caller can send it home
     it("should report isEmpty when the ship carries no ZBD or ZTD", function()
-      local ship = makeUnit({ cargo = { [1] = { cargo = { { guid = "MC-1", dbid = constants.PLATFORMS.MC } } } } })
+      local ship = buildUnit({ cargo = { [1] = { cargo = { { guid = "MC-1", dbid = constants.PLATFORMS.MC } } } } })
 
       local result = AmphibiousAssault.launchACV({
         ship = ship,
@@ -1032,9 +997,8 @@ describe("AmphibiousAssault", function()
       assert.stub(stubDeleteCargo).was_not.called()
     end)
 
-    -- Negative: zero quota pauses without touching cargo
     it("should report isPaused and keep cargo when the quota allows none of it", function()
-      local ship = makeUnit()
+      local ship = buildUnit()
 
       local result = AmphibiousAssault.launchACV({
         ship = ship,
@@ -1049,7 +1013,6 @@ describe("AmphibiousAssault", function()
       assert.stub(stubDeleteCargo).was_not.called()
     end)
 
-    -- Boundary: each type takes at most its own quota
     it("should request at most each type's quota from cargo", function()
       stubGenerateLocations.returns({ { latitude = 25.1, longitude = 121.1 }, { latitude = 25.2, longitude = 121.2 } })
       stubDeleteCargo.invokes(function(_, cargoItem) return cargoItem.num end)
@@ -1057,7 +1020,7 @@ describe("AmphibiousAssault", function()
       stubSetDoctrine.returns(true)
 
       local result = AmphibiousAssault.launchACV({
-        ship = makeUnit(),
+        ship = buildUnit(),
         num = 5,
         bearing = 90,
         distance = 0.5,
@@ -1070,7 +1033,6 @@ describe("AmphibiousAssault", function()
       assert.are.equal(1, stubDeleteCargo.calls[2].vals[2].num)
     end)
 
-    -- Positive: each spawned ACV gets its course from routeACV with its type key
     it("should ask routeACV for each spawned ACV's course with its type key", function()
       stubGenerateLocations.returns({ { latitude = 25.1, longitude = 121.1 } })
       stubDeleteCargo.invokes(function(_, cargoItem) return cargoItem.dbid == 241 and 1 or 0 end)
@@ -1085,7 +1047,7 @@ describe("AmphibiousAssault", function()
       end
 
       AmphibiousAssault.launchACV({
-        ship = makeUnit(),
+        ship = buildUnit(),
         num = 1,
         bearing = 90,
         distance = 0.5,
@@ -1104,51 +1066,44 @@ describe("AmphibiousAssault", function()
   -- ============================================================================
 
   describe("isFerryOrLST", function()
-    -- Positive: returns true for Type 071
     it("should return true for Type 071 ship", function()
-      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_071 })
+      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_071 })
       assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Positive: returns true for Type 072III
     it("should return true for Type 072III ship", function()
-      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_072III })
+      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_072III })
       assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Positive: returns true for Type 072A
     it("should return true for Type 072A ship", function()
-      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_072A })
+      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_072A })
       assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Positive: returns true for Type 073A
     it("should return true for Type 073A ship", function()
-      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_073A })
+      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_073A })
       assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Positive: returns true for Ferry by name
     it("should return true for a ship named Ferry regardless of dbid", function()
-      local ship = makeUnit({ name = "Ferry", dbid = 99999 })
+      local ship = buildUnit({ name = "Ferry", dbid = 99999 })
       assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Negative: returns false for unrelated ship type
     it("should return false for a ship with unrecognized dbid and name", function()
-      local ship = makeUnit({ name = "Destroyer", dbid = 99999 })
+      local ship = buildUnit({ name = "Destroyer", dbid = 99999 })
       assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Negative: Type 529 sweepers no longer launch ACVs
+    -- Type 529 sweepers no longer launch ACVs
     it("should return false for Type 529 minesweeper", function()
-      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_082, name = "Type 529" })
+      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_082, name = "Type 529" })
       assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
     end)
 
-    -- Negative: returns false for Type 075 (LHD, not LST)
     it("should return false for Type 075 LHD", function()
-      local ship = makeUnit({ dbid = constants.PLATFORMS.TYPE_075, name = "Type075" })
+      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_075, name = "Type075" })
       assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
     end)
   end)
@@ -1158,56 +1113,52 @@ describe("AmphibiousAssault", function()
   -- ============================================================================
 
   describe("getShipZone", function()
-    -- Positive: returns zone when ship is in ACV area
     it("should return the matching zone when ship is in ACV area", function()
-      local zone1 = makeZone({ name = "ZoneAlpha" })
-      local zone2 = makeZone({ name = "ZoneBravo" })
+      local zone1 = buildZone({ name = "ZoneAlpha" })
+      local zone2 = buildZone({ name = "ZoneBravo" })
 
-      local ship = makeUnit({
+      local ship = buildUnit({
         inArea = function(_, area)
           return area == zone2.landing.acv.area
         end,
       })
 
-      local config = makeAmphibOpsConfig({ zones = { zone1, zone2 } })
+      local config = buildAmphibOpsConfig({ zones = { zone1, zone2 } })
 
       local result = AmphibiousAssault.getShipZone(config.zones, ship)
       assert.is_not_nil(result)
       assert.are.equal("ZoneBravo", result.name)
     end)
 
-    -- Positive: returns first matching zone when ship is in multiple zones
     it("should return the first matching zone", function()
-      local zone1 = makeZone({ name = "ZoneAlpha" })
-      local zone2 = makeZone({ name = "ZoneBravo" })
+      local zone1 = buildZone({ name = "ZoneAlpha" })
+      local zone2 = buildZone({ name = "ZoneBravo" })
 
-      local ship = makeUnit({
+      local ship = buildUnit({
         inArea = function() return true end,
       })
 
-      local config = makeAmphibOpsConfig({ zones = { zone1, zone2 } })
+      local config = buildAmphibOpsConfig({ zones = { zone1, zone2 } })
 
       local result = AmphibiousAssault.getShipZone(config.zones, ship)
       assert.are.equal("ZoneAlpha", result.name)
     end)
 
-    -- Negative: returns nil when ship is not in any ACV area
     it("should return nil when ship is not in any zone", function()
-      local ship = makeUnit({
+      local ship = buildUnit({
         inArea = function() return false end,
       })
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
 
       local result = AmphibiousAssault.getShipZone(config.zones, ship)
 
       assert.is_nil(result)
     end)
 
-    -- Boundary: empty operational zones
     it("should return nil when there are no operational zones", function()
-      local ship = makeUnit()
-      local config = makeAmphibOpsConfig({ zones = {} })
+      local ship = buildUnit()
+      local config = buildAmphibOpsConfig({ zones = {} })
 
       local result = AmphibiousAssault.getShipZone(config.zones, ship)
 

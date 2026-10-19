@@ -1,5 +1,5 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
--- ShipMovement Unit Tests
+-- LandingOps ShipMovement Unit Tests
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
@@ -43,7 +43,7 @@ describe("ShipMovement", function()
   ---Create a ship unit with sensible defaults
   ---@param overrides? table
   ---@return table
-  local function makeUnit(overrides)
+  local function buildUnit(overrides)
     local unit = {
       guid = "SHIP-001",
       name = "TestShip",
@@ -62,7 +62,7 @@ describe("ShipMovement", function()
   ---Create a location coordinate
   ---@param overrides? table
   ---@return table
-  local function makeLocation(overrides)
+  local function buildLocation(overrides)
     local loc = { latitude = 25.0, longitude = 121.0 }
     if overrides then
       for k, v in pairs(overrides) do loc[k] = v end
@@ -73,33 +73,33 @@ describe("ShipMovement", function()
   ---Create a ship calculation result entry
   ---@param overrides? table
   ---@return table
-  local function makeShipCalcResult(overrides)
-    local r = {
-      locations = { makeLocation(), makeLocation({ latitude = 25.1 }) },
+  local function buildShipRow(overrides)
+    local row = {
+      locations = { buildLocation(), buildLocation({ latitude = 25.1 }) },
       locationIndex = 1,
       dbid = constants.PLATFORMS.TYPE_075,
     }
     if overrides then
-      for k, v in pairs(overrides) do r[k] = v end
+      for k, v in pairs(overrides) do row[k] = v end
     end
-    return r
+    return row
   end
 
   ---Create a full result table for all ship types
   ---@param overrides? table
   ---@return table
-  local function makeResultTable(overrides)
+  local function buildShipRowMap(overrides)
     local result = {
-      type075 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_075 }),
-      type076 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_076 }),
-      type072iii = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_072III }),
-      type072a = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_072A }),
-      type073a = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_073A }),
-      type071 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_071 }),
-      ferry = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
-      roro = makeShipCalcResult({ dbid = constants.PLATFORMS.FERRY }),
-      barge = makeShipCalcResult({ dbid = constants.PLATFORMS.BARGE }),
-      type082 = makeShipCalcResult({ dbid = constants.PLATFORMS.TYPE_082 }),
+      type075 = buildShipRow({ dbid = constants.PLATFORMS.TYPE_075 }),
+      type076 = buildShipRow({ dbid = constants.PLATFORMS.TYPE_076 }),
+      type072iii = buildShipRow({ dbid = constants.PLATFORMS.TYPE_072III }),
+      type072a = buildShipRow({ dbid = constants.PLATFORMS.TYPE_072A }),
+      type073a = buildShipRow({ dbid = constants.PLATFORMS.TYPE_073A }),
+      type071 = buildShipRow({ dbid = constants.PLATFORMS.TYPE_071 }),
+      ferry = buildShipRow({ dbid = constants.PLATFORMS.FERRY }),
+      roro = buildShipRow({ dbid = constants.PLATFORMS.FERRY }),
+      barge = buildShipRow({ dbid = constants.PLATFORMS.BARGE }),
+      type082 = buildShipRow({ dbid = constants.PLATFORMS.TYPE_082 }),
     }
     if overrides then
       for k, v in pairs(overrides) do result[k] = v end
@@ -110,7 +110,7 @@ describe("ShipMovement", function()
   ---Create formation settings
   ---@param overrides? table
   ---@return table
-  local function makeFormationSettings(overrides)
+  local function buildFormation(overrides)
     local settings = {
       shipSpeed = 12,
       horizontalDistanceNm = 0.5,
@@ -128,7 +128,7 @@ describe("ShipMovement", function()
   ---Create a SAG descriptor
   ---@param overrides? table
   ---@return table
-  local function makeSAGDescriptor(overrides)
+  local function buildSAGDescriptor(overrides)
     local desc = {
       groupName = "SAG Alpha",
       to = {
@@ -147,7 +147,7 @@ describe("ShipMovement", function()
   ---Create an operational zone descriptor
   ---@param overrides? table
   ---@return table
-  local function makeZone(overrides)
+  local function buildZone(overrides)
     local zone = {
       name = "Taoyuan",
       heading = 180,
@@ -185,27 +185,27 @@ describe("ShipMovement", function()
   ---Create an amphibOpsConfig; `sags` overrides land in the zone
   ---@param overrides? table
   ---@return table
-  local function makeAmphibOpsConfig(overrides)
-    local cfg = {
-      formation = makeFormationSettings(),
-      zones = { makeZone() },
+  local function buildAmphibOpsConfig(overrides)
+    local config = {
+      formation = buildFormation(),
+      zones = { buildZone() },
     }
     if overrides then
       for k, v in pairs(overrides) do
-        if k == "sags" then cfg.zones[1].sags = v else cfg[k] = v end
+        if k == "sags" then config.zones[1].sags = v else config[k] = v end
       end
     end
-    return cfg
+    return config
   end
 
   ---Create a calculationResult map indexed by zone name
-  ---@param result? table Taoyuan ship calculation table (defaults to makeResultTable())
+  ---@param result? table Taoyuan ship calculation table (defaults to buildShipRowMap())
   ---@return table
-  local function makeCalculationResult(result)
+  local function buildCalculationResult(result)
     return {
       Taoyuan = {
         name = "Taoyuan",
-        result = result or makeResultTable(),
+        result = result or buildShipRowMap(),
       },
     }
   end
@@ -215,20 +215,19 @@ describe("ShipMovement", function()
   -- ============================================================================
 
   describe("moveToHoldingAreas", function()
-    -- Positive: standard ship type movement
     it("should move a Type 075 ship to the first calculated location", function()
-      local resultTable = makeResultTable()
-      local targetLocation = resultTable.type075.locations[1]
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local targetLocation = shipRowMap.type075.locations[1]
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -238,148 +237,142 @@ describe("ShipMovement", function()
       assert.stub(logStub).was.called(1)
     end)
 
-    -- Positive: Type 071 normal movement within LPD area
     it("should move a Type 071 ship to LPD area location when index is within range", function()
-      local resultTable = makeResultTable()
-      local targetLocation = resultTable.type071.locations[1]
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local targetLocation = shipRowMap.type071.locations[1]
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_071,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
 
-    -- Negative: no overflow row; a Type 071 beyond the configured count is skipped in place
+    -- No overflow row; a Type 071 beyond the configured count is skipped in place
     it("should skip a Type 071 ship when its row locations are exhausted", function()
-      local resultTable = makeResultTable({
-        type071 = makeShipCalcResult({
+      local shipRowMap = buildShipRowMap({
+        type071 = buildShipRow({
           dbid = constants.PLATFORMS.TYPE_071,
-          locations = { makeLocation() },
+          locations = { buildLocation() },
           locationIndex = 2,
         }),
       })
-      local unit = makeUnit({
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_071,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.same({}, unit.course)
     end)
 
-    -- Positive: name-based matching for Ferry
     it("should move a Ferry ship matched by name", function()
-      local resultTable = makeResultTable()
-      local targetLocation = resultTable.ferry.locations[1]
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local targetLocation = shipRowMap.ferry.locations[1]
+      local unit = buildUnit({
         name = "Ferry",
         dbid = 99999,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
 
-    -- Positive: name-based matching for RORO
     it("should move a RORO ship matched by name", function()
-      local resultTable = makeResultTable()
-      local targetLocation = resultTable.roro.locations[1]
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local targetLocation = shipRowMap.roro.locations[1]
+      local unit = buildUnit({
         name = "RORO",
         dbid = 99999,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
 
-    -- Positive: name-based matching for Barge
     it("should move a Barge ship matched by name", function()
-      local resultTable = makeResultTable()
-      local targetLocation = resultTable.barge.locations[1]
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local targetLocation = shipRowMap.barge.locations[1]
+      local unit = buildUnit({
         name = "Barge",
         dbid = 99999,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.equal(targetLocation, unit.course[1])
     end)
 
-    -- Positive: location index increments after each movement
     it("should increment locationIndex after moving a ship", function()
-      local resultTable = makeResultTable()
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" }, { guid = "SHIP-002" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
-      assert.are.equal(3, resultTable.type075.locationIndex)
+      assert.are.equal(3, shipRowMap.type075.locationIndex)
     end)
 
-    -- Positive: testing mode teleports ship via ScenEdit_SetUnit
     it("should teleport ship via SetUnit when debug is enabled", function()
-      local resultTable = makeResultTable()
-      local targetLocation = resultTable.type075.locations[1]
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local targetLocation = shipRowMap.type075.locations[1]
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig({ debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -392,38 +385,36 @@ describe("ShipMovement", function()
       assert.are.equal(0, unit.manualSpeed)
     end)
 
-    -- Positive: SAG groups are handled
     it("should issue course to SAG group ships", function()
-      local sagDesc = makeSAGDescriptor()
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = {} },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.are.same(sagDesc.to.holdingArea, sagUnit.course)
     end)
 
-    -- Positive: SAG testing mode positions Type 052D ships in formation
     it("should position Type 052D destroyer at holding point in testing mode", function()
-      local sagDesc = makeSAGDescriptor()
-      local destroyer = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local destroyer = buildUnit({
         guid = "DDG-001",
         dbid = constants.PLATFORMS.TYPE_052D,
       })
-      local sagUnit = makeUnit({
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = { "DDG-001" } },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
         if id == "SAG Alpha" then return sagUnit end
@@ -431,7 +422,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -443,18 +434,17 @@ describe("ShipMovement", function()
       assert.are.equal(180, destroyer.heading)
     end)
 
-    -- Positive: SAG testing mode positions second Type 052D behind first
     it("should position second Type 052D behind the first one in testing mode", function()
-      local sagDesc = makeSAGDescriptor()
-      local ddg1 = makeUnit({ guid = "DDG-001", dbid = constants.PLATFORMS.TYPE_052D })
-      local ddg2 = makeUnit({ guid = "DDG-002", dbid = constants.PLATFORMS.TYPE_052D })
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local ddg1 = buildUnit({ guid = "DDG-001", dbid = constants.PLATFORMS.TYPE_052D })
+      local ddg2 = buildUnit({ guid = "DDG-002", dbid = constants.PLATFORMS.TYPE_052D })
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = { "DDG-001", "DDG-002" } },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
-      local behindPoint = makeLocation({ latitude = 24.5, longitude = 120.5 })
+      local calculationResult = buildCalculationResult()
+      local behindPoint = buildLocation({ latitude = 24.5, longitude = 120.5 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(behindPoint))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
@@ -464,7 +454,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -475,18 +465,17 @@ describe("ShipMovement", function()
       assert.are.equal(behindPoint.longitude, secondCall.longitude)
     end)
 
-    -- Positive: SAG testing mode positions Type 054A frigates at flanks
     it("should position Type 054A frigates at flanking angles in testing mode", function()
-      local sagDesc = makeSAGDescriptor()
-      local frigate1 = makeUnit({ guid = "FFG-001", dbid = constants.PLATFORMS.TYPE_054A })
-      local frigate2 = makeUnit({ guid = "FFG-002", dbid = constants.PLATFORMS.TYPE_054A })
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local frigate1 = buildUnit({ guid = "FFG-001", dbid = constants.PLATFORMS.TYPE_054A })
+      local frigate2 = buildUnit({ guid = "FFG-002", dbid = constants.PLATFORMS.TYPE_054A })
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = { "FFG-001", "FFG-002" } },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
-      local flankPoint = makeLocation({ latitude = 24.3, longitude = 120.3 })
+      local calculationResult = buildCalculationResult()
+      local flankPoint = buildLocation({ latitude = 24.3, longitude = 120.3 })
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing").returns(flankPoint))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
@@ -496,7 +485,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -509,48 +498,45 @@ describe("ShipMovement", function()
       assert.are.equal(180 - 45, secondBearingCall.bearing)
     end)
 
-    -- Negative: unit not found by GetUnit returns nil
     it("should skip units that cannot be retrieved", function()
       local filteredUnits = { { guid = "MISSING-001" } }
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.is_true(result)
     end)
 
-    -- Negative: unit not in staging area
     it("should skip units not in any staging area", function()
-      local resultTable = makeResultTable()
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return false end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
-      assert.are.equal(1, resultTable.type075.locationIndex)
+      assert.are.equal(1, shipRowMap.type075.locationIndex)
     end)
 
-    -- Negative: SAG group unit not found
     it("should fail and log SAG group when group unit is not found", function()
-      local sagDesc = makeSAGDescriptor()
+      local sagDesc = buildSAGDescriptor()
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -559,9 +545,8 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=sag_group_not_found"))
     end)
 
-    -- Negative: missing calculation result should fail before issuing movement orders
     it("should fail and log when operation calculation result is missing", function()
-      local unit = makeUnit({
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
@@ -570,7 +555,7 @@ describe("ShipMovement", function()
 
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -580,13 +565,13 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=calculation_result_missing"))
     end)
 
-    -- Boundary: absent calculationResult map must fail the same way as a missing zone entry
+    -- Absent calculationResult map must fail the same way as a missing zone entry
     it("should fail and log when calculationResult is nil", function()
       local filteredUnits = { { guid = "SHIP-001" } }
 
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, nil, filteredUnits, config)
 
@@ -596,20 +581,19 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=calculation_result_missing"))
     end)
 
-    -- Negative: malformed ship calculation entry should fail without crashing
     it("should fail and log when a ship calculation entry is missing", function()
-      local resultTable = makeResultTable()
-      resultTable.type075 = nil
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      shipRowMap.type075 = nil
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -618,19 +602,18 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=calculation_entry_missing"))
     end)
 
-    -- Negative: SAG testing mode requires a group unit list
     it("should fail and log when SAG unitlist is missing in testing mode", function()
-      local sagDesc = makeSAGDescriptor()
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = nil,
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -639,15 +622,14 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=sag_unitlist_missing"))
     end)
 
-    -- Negative: SAG holding area is required
     it("should fail and log when SAG holding area is missing", function()
-      local sagDesc = makeSAGDescriptor({ to = {} })
+      local sagDesc = buildSAGDescriptor({ to = {} })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -656,15 +638,14 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=holding_area_missing"))
     end)
 
-    -- Negative: SAG individual ship not found in testing mode
     it("should skip missing ships in SAG unitlist during testing mode", function()
-      local sagDesc = makeSAGDescriptor()
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = { "MISSING-DDG" } },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
@@ -672,7 +653,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -681,16 +662,15 @@ describe("ShipMovement", function()
       assert.truthy(string.find(logStub.calls[1].vals[2], "skipped=1"))
     end)
 
-    -- Negative: SAG getNextPosition returns nil
     it("should skip positioning when getNextPosition returns nil for SAG ships", function()
-      local sagDesc = makeSAGDescriptor()
-      local frigate = makeUnit({ guid = "FFG-001", dbid = constants.PLATFORMS.TYPE_054A })
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local frigate = buildUnit({ guid = "FFG-001", dbid = constants.PLATFORMS.TYPE_054A })
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = { "FFG-001" } },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "World_GetPointFromBearing").returns(nil))
@@ -700,7 +680,7 @@ describe("ShipMovement", function()
         return nil
       end))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc }, debug = { enabled = true } })
       local zone = config.zones[1]
       local result = ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -709,30 +689,28 @@ describe("ShipMovement", function()
       assert.truthy(string.find(logStub.calls[1].vals[2], "skipped=1"))
     end)
 
-    -- Boundary: debug disabled should not call ScenEdit_SetUnit for normal ships
     it("should not teleport ship when debug is disabled", function()
-      local resultTable = makeResultTable()
-      local unit = makeUnit({
+      local shipRowMap = buildShipRowMap()
+      local unit = buildUnit({
         dbid = constants.PLATFORMS.TYPE_075,
         inArea = function() return true end,
       })
       local filteredUnits = { { guid = "SHIP-001" } }
-      local calculationResult = makeCalculationResult(resultTable)
+      local calculationResult = buildCalculationResult(shipRowMap)
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
       assert.stub(stubSetUnit).was_not.called()
     end)
 
-    -- Boundary: empty filteredUnits
     it("should return true when filteredUnits is empty", function()
-      local calculationResult = makeCalculationResult()
-      local config = makeAmphibOpsConfig()
+      local calculationResult = buildCalculationResult()
+      local config = buildAmphibOpsConfig()
       local zone = config.zones[1]
       trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
@@ -741,20 +719,19 @@ describe("ShipMovement", function()
       assert.is_true(result)
     end)
 
-    -- Boundary: SAG not in testing mode should not call ScenEdit_SetUnit
     it("should only set course for SAG and not position ships when not testing", function()
-      local sagDesc = makeSAGDescriptor()
-      local sagUnit = makeUnit({
+      local sagDesc = buildSAGDescriptor()
+      local sagUnit = buildUnit({
         guid = "SAG-001",
         group = { unitlist = { "DDG-001" } },
       })
       local filteredUnits = {}
-      local calculationResult = makeCalculationResult()
+      local calculationResult = buildCalculationResult()
 
       local stubSetUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(sagUnit))
 
-      local config = makeAmphibOpsConfig({ sags = { sagDesc } })
+      local config = buildAmphibOpsConfig({ sags = { sagDesc } })
       local zone = config.zones[1]
       ShipMovement.moveToHoldingAreas(zone, calculationResult, filteredUnits, config)
 
@@ -764,10 +741,10 @@ describe("ShipMovement", function()
   end)
 
   -- ============================================================================
-  -- planHoldingPositions
+  -- buildHoldingPositions
   -- ============================================================================
 
-  describe("planHoldingPositions", function()
+  describe("buildHoldingPositions", function()
     local stubGetRPs, stubGetPoint, stubInsertList, stubGenerateLocations
 
     before_each(function()
@@ -777,22 +754,21 @@ describe("ShipMovement", function()
       stubInsertList = trackStub(stub(Utils, "addAll"))
     end)
 
-    -- Positive: initializes calculation result structure
     it("should create the operation entry in calculationResult when it does not exist", function()
-      local rp075 = makeLocation({ latitude = 25.0 })
-      local derivedPoint = makeLocation({ latitude = 26.0 })
+      local rp075 = buildLocation({ latitude = 25.0 })
+      local derivedPoint = buildLocation({ latitude = 26.0 })
 
       stubGetRPs.invokes(function(rpName)
         if rpName == "RP-075-1" then return { rp075 } end
-        return { makeLocation() }
+        return { buildLocation() }
       end)
       stubGetPoint.returns(derivedPoint)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.are.equal("Taoyuan", calculationResult.Taoyuan.name)
@@ -807,17 +783,16 @@ describe("ShipMovement", function()
       assert.is_not_nil(calculationResult.Taoyuan.result.barge)
     end)
 
-    -- Positive: uses correct DBIDs for each ship type
     it("should assign correct DBIDs for all ship types in the result", function()
-      local rp = makeLocation()
+      local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       local result = calculationResult.Taoyuan.result
       assert.are.equal(constants.PLATFORMS.TYPE_075, result.type075.dbid)
@@ -831,49 +806,47 @@ describe("ShipMovement", function()
       assert.are.equal(constants.PLATFORMS.BARGE, result.barge.dbid)
     end)
 
-    -- Positive: calls buildLocations for each ship type
     it("should call buildLocations for all 10 ship types per area", function()
-      local rp = makeLocation()
+      local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.stub(stubGenerateLocations).was.called(10)
     end)
 
-    -- Positive: Type 071 is derived from Type 075, and Type 076 from Type 071, by vertical distance
     it("should derive Type 071 from Type 075 and Type 076 from Type 071 using vertical distance", function()
-      local rp075 = makeLocation({ latitude = 25.0 })
-      local derivedRp071 = makeLocation({ latitude = 25.5 })
+      local rp075 = buildLocation({ latitude = 25.0 })
+      local derivedRp071 = buildLocation({ latitude = 25.5 })
 
       stubGetRPs.invokes(function(rpTable)
         if rpTable.area and rpTable.area[1] == "RP-075-1" then return { rp075 } end
-        return { makeLocation() }
+        return { buildLocation() }
       end)
       stubGetPoint.invokes(function(params)
         if params.latitude == rp075.latitude and params.distance == 1.0 then
           return derivedRp071
         end
-        return makeLocation()
+        return buildLocation()
       end)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
-        local p = call.vals[1]
-        if p.latitude == derivedRp071.latitude
-            and p.longitude == derivedRp071.longitude
-            and p.distance == 1.0 then
+        local point = call.vals[1]
+        if point.latitude == derivedRp071.latitude
+            and point.longitude == derivedRp071.longitude
+            and point.distance == 1.0 then
           found = true
           break
         end
@@ -881,28 +854,27 @@ describe("ShipMovement", function()
       assert.is_true(found)
     end)
 
-    -- Positive: derives barge position from Type 075 using deployLineSetbackNm
     it("should derive barge position from Type 075 using deployLineSetbackNm", function()
-      local rp075 = makeLocation({ latitude = 25.0 })
+      local rp075 = buildLocation({ latitude = 25.0 })
 
       stubGetRPs.invokes(function(rpTable)
         if rpTable.area and rpTable.area[1] == "RP-075-1" then return { rp075 } end
-        return { makeLocation() }
+        return { buildLocation() }
       end)
-      stubGetPoint.returns(makeLocation())
+      stubGetPoint.returns(buildLocation())
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGetPoint.calls) do
-        local p = call.vals[1]
-        if p.latitude == rp075.latitude
-            and p.longitude == rp075.longitude
-            and p.distance == 2.0 then
+        local point = call.vals[1]
+        if point.latitude == rp075.latitude
+            and point.longitude == rp075.longitude
+            and point.distance == 2.0 then
           found = true
           break
         end
@@ -910,53 +882,50 @@ describe("ShipMovement", function()
       assert.is_true(found)
     end)
 
-    -- Positive: does not overwrite existing calculation result
     it("should not overwrite existing operation entry in calculationResult", function()
-      local rp = makeLocation()
+      local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
-      local existingResult = makeResultTable()
+      local existingResult = buildShipRowMap()
       local calculationResult = {
         Taoyuan = { name = "Taoyuan", result = existingResult },
       }
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.are.equal(existingResult, calculationResult.Taoyuan.result)
     end)
 
-    -- Positive: handles multiple operations
     it("should process multiple operations independently", function()
-      local rp = makeLocation()
+      local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
-      local config = makeAmphibOpsConfig({})
-      config.zones = { makeZone(), makeZone({ name = "Penghu" }) }
+      local config = buildAmphibOpsConfig({})
+      config.zones = { buildZone(), buildZone({ name = "Penghu" }) }
       local calculationResult = {}
 
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_not_nil(calculationResult.Taoyuan)
       assert.is_not_nil(calculationResult.Penghu)
     end)
 
-    -- Positive: passes horizontal distance and bearing to buildLocations
     it("should pass correct horizontal distance and bearing to buildLocations", function()
-      local rp = makeLocation()
+      local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       for _, call in ipairs(stubGenerateLocations.calls) do
         local params = call.vals[1]
@@ -965,19 +934,18 @@ describe("ShipMovement", function()
       end
     end)
 
-    -- Negative: missing starting reference point should fail and log
     it("should fail and log when a starting reference point is missing", function()
       stubGetRPs.invokes(function(rpTable)
         if rpTable.area and rpTable.area[1] == "RP-075-1" then return {} end
-        return { makeLocation() }
+        return { buildLocation() }
       end)
-      stubGetPoint.returns(makeLocation())
+      stubGetPoint.returns(buildLocation())
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      local result = ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      local result = ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -985,16 +953,15 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=reference_point_missing"))
     end)
 
-    -- Negative: derived starting point calculation should fail and log
     it("should fail and log when a derived starting point cannot be calculated", function()
-      stubGetRPs.returns({ makeLocation() })
+      stubGetRPs.returns({ buildLocation() })
       stubGetPoint.returns(nil)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
-      local config = makeAmphibOpsConfig()
-      local result = ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      local config = buildAmphibOpsConfig()
+      local result = ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_false(result)
       assert.stub(stubGenerateLocations).was_not.called()
@@ -1002,19 +969,18 @@ describe("ShipMovement", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=derived_point_failed"))
     end)
 
-    -- Boundary: area with zero ships of a type
     it("should still call buildLocations with num=0 for types not present", function()
-      local rp = makeLocation()
+      local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
       stubGenerateLocations.returns({})
       stubInsertList.invokes(function(list) return list end)
 
-      local config = makeAmphibOpsConfig()
+      local config = buildAmphibOpsConfig()
       config.zones[1].fleet.groups[1].shipCounts.type075 = 0
       local calculationResult = {}
 
-      ShipMovement.planHoldingPositions(config.zones, config.formation, calculationResult)
+      ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       local found = false
       for _, call in ipairs(stubGenerateLocations.calls) do

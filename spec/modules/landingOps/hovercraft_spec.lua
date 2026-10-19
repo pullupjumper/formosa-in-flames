@@ -31,12 +31,13 @@ describe("Hovercraft", function()
     activeStubs = {}
   end)
 
-  local CENTER = { latitude = 25.0, longitude = 121.0 }
+  local ORIGIN = { latitude = 25.0, longitude = 121.0 }
+  local FINAL_POINT = { latitude = 25.0, longitude = 121.0 }
   local BEARING = 150
-  local frame = { origin = CENTER, bearing = BEARING }
+  local frame = { origin = ORIGIN, bearing = BEARING }
 
   ---@return SBJ__RouteConfig
-  local function makeRouteConfig()
+  local function buildRouteConfig()
     return {
       deployLineNm = 12,
       launchLineNm = 3,
@@ -53,7 +54,7 @@ describe("Hovercraft", function()
     }
   end
 
-  local CONFIG = { tuning = { route = makeRouteConfig(), acvWave = { capacity = { zbd05 = 1 }, hovercraftWaitSec = 3600 } }, formation = { hovercraftSpeed = 40 } }
+  local CONFIG = { tuning = { route = buildRouteConfig(), acvWave = { capacity = { zbd05 = 1 }, hovercraftWaitSec = 3600 } }, formation = { hovercraftSpeed = 40 } }
   local zone = {
     name = "Taoyuan",
     movement = { holdingAreas = { mothership = { "RP-ANC" } } },
@@ -64,14 +65,14 @@ describe("Hovercraft", function()
 
   ---@param isCleared boolean
   ---@return SBJ__ZoneState
-  local function makeZoneState(isCleared)
+  local function buildZoneState(isCleared)
     local lanes = LaneGeometry.buildLanes({
-      origin = CENTER,
+      origin = ORIGIN,
       bearing = BEARING,
       count = 1,
       inlandDepthM = 400,
       areaMarginM = 60,
-      routeConfig = makeRouteConfig(),
+      routeConfig = buildRouteConfig(),
     })
     for _, beachLane in ipairs(lanes.waterLanes[1].beachLanes) do
       beachLane.isCleared = isCleared
@@ -82,7 +83,7 @@ describe("Hovercraft", function()
   ---@param calls string[]
   ---@param overrides? table
   ---@return table
-  local function makeCraft(calls, overrides)
+  local function buildCraft(calls, overrides)
     local craft = {
       guid = "LCAC-1",
       dbid = constants.PLATFORMS.TYPE_726A,
@@ -124,12 +125,11 @@ describe("Hovercraft", function()
   -- ============================================================================
 
   describe("launchHovercraft", function()
-    -- Positive: course through the lanes is set before Launch and the craft is recorded
     it("should set a lane course before launching and record the hovercraft", function()
       local calls = {}
-      local craft = makeCraft(calls)
+      local craft = buildCraft(calls)
       stubFleet(craft)
-      local zoneState = makeZoneState(true)
+      local zoneState = buildZoneState(true)
 
       local ships = { { guid = "LHD-1" } }
 
@@ -143,11 +143,10 @@ describe("Hovercraft", function()
       assert.is_false(entry.arrived)
     end)
 
-    -- Negative: no cleared lane means the craft stays aboard
     it("should not launch when no beach lane is cleared", function()
       local calls = {}
-      stubFleet(makeCraft(calls))
-      local zoneState = makeZoneState(false)
+      stubFleet(buildCraft(calls))
+      local zoneState = buildZoneState(false)
 
       local ships = { { guid = "LHD-1" } }
 
@@ -157,11 +156,10 @@ describe("Hovercraft", function()
       assert.is_nil(zoneState.hovercraft["LCAC-1"])
     end)
 
-    -- Negative: empty hovercraft are not sent
     it("should not launch a hovercraft without cargo", function()
       local calls = {}
-      stubFleet(makeCraft(calls, { cargo = { { cargo = {} } } }))
-      local zoneState = makeZoneState(true)
+      stubFleet(buildCraft(calls, { cargo = { { cargo = {} } } }))
+      local zoneState = buildZoneState(true)
 
       local ships = { { guid = "LHD-1" } }
 
@@ -170,12 +168,11 @@ describe("Hovercraft", function()
       assert.are.same({}, calls)
     end)
 
-    -- Boundary: a hovercraft is routed only once
     it("should not route an already recorded hovercraft again", function()
       local calls = {}
-      stubFleet(makeCraft(calls))
-      local zoneState = makeZoneState(true)
-      zoneState.hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = CENTER, arrived = true } }
+      stubFleet(buildCraft(calls))
+      local zoneState = buildZoneState(true)
+      zoneState.hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, arrived = true } }
 
       local ships = { { guid = "LHD-1" } }
 
@@ -190,22 +187,20 @@ describe("Hovercraft", function()
   -- ============================================================================
 
   describe("updateHovercraft", function()
-    -- Positive: a hovercraft at its slot is marked arrived
     it("should mark a hovercraft arrived at its parking slot", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "LCAC-1" }))
       trackStub(stub(GameApi, "Tool_Range").returns(0.05))
-      local zoneState = { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = CENTER, arrived = false } } }
+      local zoneState = { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, arrived = false } } }
 
       Hovercraft.updateHovercraft(CONFIG, zoneState)
 
       assert.is_true(zoneState.hovercraft["LCAC-1"].arrived)
     end)
 
-    -- Negative: still under way
     it("should not mark a hovercraft still under way", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "LCAC-1" }))
       trackStub(stub(GameApi, "Tool_Range").returns(2))
-      local zoneState = { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = CENTER, arrived = false } } }
+      local zoneState = { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, arrived = false } } }
 
       Hovercraft.updateHovercraft(CONFIG, zoneState)
 

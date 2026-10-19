@@ -38,7 +38,7 @@ describe("ObstacleClearing", function()
   local zone = { name = "Penghu", landing = { obstacleArea = { "RP-O1", "RP-O2", "RP-O3", "RP-O4" } } }
 
   ---@return SBJ__ZoneState
-  local function makeZoneState()
+  local function buildZoneState()
     local routeConfig = {
       deployLineNm = 12, launchLineNm = 3, assaultLineNm = 2,
       waterLaneSpacingM = 750, beachLaneOffsetsM = { -180, -60, 60, 180 }, shoreStandoffM = 100,
@@ -79,9 +79,8 @@ describe("ObstacleClearing", function()
     return count
   end
 
-  -- Positive: cells tile the area; those in front of a living boat start clearing
   it("should tile the obstacle area and mark the living boat's lane as clearing", function()
-    local zoneState = makeZoneState()
+    local zoneState = buildZoneState()
 
     ObstacleClearing.startObstacleClearing(CONFIG, zone, zoneState, 1000)
 
@@ -90,18 +89,16 @@ describe("ObstacleClearing", function()
     assert.are.equal(6, countState(zoneState.obstacle.cells, constants.OBSTACLE_CELL_STATES.CLEARING))
   end)
 
-  -- Negative: nothing clears before clearSec
   it("should not clear before clearSec has passed", function()
-    local zoneState = makeZoneState()
+    local zoneState = buildZoneState()
     ObstacleClearing.startObstacleClearing(CONFIG, zone, zoneState, 1000)
 
     assert.is_false(ObstacleClearing.updateObstacleClearing(CONFIG, zoneState, 1500))
     assert.is_false(zoneState.lanes.waterLanes[1].beachLanes[1].isCleared)
   end)
 
-  -- Positive: after clearSec only lanes with a living boat open
   it("should clear cells and open only lanes whose boat is alive after clearSec", function()
-    local zoneState = makeZoneState()
+    local zoneState = buildZoneState()
     ObstacleClearing.startObstacleClearing(CONFIG, zone, zoneState, 1000)
 
     local done = ObstacleClearing.updateObstacleClearing(CONFIG, zoneState, 1600)
