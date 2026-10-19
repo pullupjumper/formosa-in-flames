@@ -14,6 +14,7 @@
   - `bargeRoroPairingRangeNm`：駁船與 RORO 距離小於此值才算同一組。
 - 新增 `GameUtils.hasUnit(guid)`，檢查單位 GUID 是否仍存在。
 - `neutralizeAirlandingZone.lua` 改名為 `attackAirlandingZone.lua`。
+- landingOps 的 `---@param` / `---@return` 不再用 inline table，改用 `SBJ__*` class（放在 `src/core/schema.lua`）。
 - 文件：新增 `docs/coding-style.md`；`docs/FEATURES.md` 改名為 `docs/features.md`；`docs/naming.md` 與 landingOps 各文件跟著更新。
 
 ## 不做

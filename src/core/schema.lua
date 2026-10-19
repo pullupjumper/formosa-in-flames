@@ -826,6 +826,35 @@ function ScenEdit_DeleteMine(params) end
 ---@field isEmpty boolean Ship carries no ZBD/ZTD cargo
 ---@field isPaused boolean Cargo remains but the wave quota allows none of it
 
+---ACV type picked for a zone
+---@class SBJ__AcvType: table
+---@field name string Unit name
+---@field dbid number Database ID
+---@field key string Key in the ACV config
+
+---Number of ACVs to launch of one type
+---@class SBJ__AcvAllocation: table
+---@field acvType SBJ__AcvType
+---@field count number ACVs to launch
+
+---Station of an LST in the lane frame
+---@class SBJ__LstStation: table
+---@field unit CMO__Unit
+---@field alongM number Meters along the shore-normal axis
+---@field lateralM number Meters along the shore
+
+---Landing ship that carries assault boats
+---@class SBJ__BoatCarrier: table
+---@field guid string Ship GUID
+---@field lateral number Meters along the shore
+---@field boats string[] Assault boat GUIDs
+
+---Assault boat chosen for a water lane
+---@class SBJ__BoatPick: table
+---@field boatGuid string
+---@field shipGuid string
+---@field lateral number Meters along the shore
+
 ---Vehicle offload parameters for offloading vehicles from landing ships
 ---Input table for AdminOffloading.offloadVehicles
 ---@class SBJ__VehicleOffloadParams: table

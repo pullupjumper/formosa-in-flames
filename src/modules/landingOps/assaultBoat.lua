@@ -34,7 +34,7 @@ local BOAT_CARRIER_DBIDS = {
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param ships CMO__SideUnit[]
----@return {guid: string, lateral: number, boats: string[]}[]
+---@return SBJ__BoatCarrier[]
 local function findCarriers(zone, frame, ships)
   local carriers = {}
 
@@ -75,9 +75,9 @@ local function selectEvenly(items, count)
 end
 
 ---Select boats: first the first boat of every carrier, then the second boats, until the lanes are covered
----@param carriers {guid: string, lateral: number, boats: string[]}[]
+---@param carriers SBJ__BoatCarrier[]
 ---@param laneCount integer
----@return {boatGuid: string, shipGuid: string, lateral: number}[] # Ordered left to right
+---@return SBJ__BoatPick[] # Ordered left to right
 local function selectBoats(carriers, laneCount)
   local picks = {}
   local round = 1

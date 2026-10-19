@@ -150,7 +150,7 @@ local function removeCargoByPriority(ship, totalNum, quota)
 end
 
 ---Create a single ACV unit at the given location
----@param acvType {name: string, dbid: number, key: string}
+---@param acvType SBJ__AcvType
 ---@param location CMO__Location
 ---@param routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
 ---@return SBJ__LogResult # Deferred log result describing the outcome
@@ -187,7 +187,7 @@ local function createSingleACV(acvType, location, routeACV)
 end
 
 ---Create every allocated ACV. Stop at the first failure
----@param allocations {acvType: {name: string, dbid: number, key: string}, count: number}[]
+---@param allocations SBJ__AcvAllocation[]
 ---@param locations CMO__Location[]
 ---@param routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
 ---@return integer|nil count ACVs launched, nil when a spawn failed
@@ -218,7 +218,7 @@ end
 ---Move an LST to its station inside the offshore band.
 ---In fast-forward debug, teleport it onto the station first.
 ---@param amphibOps SBJ__AmphibOpsConfig
----@param entry {unit: CMO__Unit, alongM: number, lateralM: number}
+---@param entry SBJ__LstStation
 ---@param frame SBJ__LaneFrame
 ---@param shiftM number Meters toward shore applied to the whole formation
 ---@param zone SBJ__OperationalZoneDescriptor

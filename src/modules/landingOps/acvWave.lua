@@ -60,7 +60,7 @@ function AcvWave.getQuota(zoneState, config, currentTime)
   return quota
 end
 
----Check if hovercraft may go. This is true when the first ACV wave filled every type to capacity or the wait timed out.
+---Check if hovercraft can go. This is true when the first ACV wave filled every type to capacity or the wait timed out.
 ---The wait starts at the first call. The result stays true after it becomes true.
 ---@param zoneState SBJ__ZoneState
 ---@param config SBJ__AcvWaveConfig

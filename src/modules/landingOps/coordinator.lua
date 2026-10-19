@@ -146,7 +146,7 @@ end
 
 ---OBSTACLE_CLEARING: when the obstacles are cleared, go to assault landing
 ---@type SBJ__PhaseStep
-local function stepObstacleClearing(tickCtx, _zone, zoneState)
+local function stepObstacleClearing(tickCtx, zone, zoneState)
   if ObstacleClearing.updateObstacleClearing(tickCtx.config.red.amphibOps, zoneState, tickCtx.currentTime) then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
   end
