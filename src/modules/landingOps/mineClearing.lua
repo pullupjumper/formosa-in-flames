@@ -42,7 +42,7 @@ end
 -- Sweeper Selection
 -- ============================================================================
 
----Find the Type 529s anchored in the zone, ordered from left to right across the landing bearing
+---Find the Type 082s anchored in the zone, ordered from left to right across the landing bearing
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame
 ---@param ships CMO__SideUnit[]
@@ -124,7 +124,7 @@ end
 -- Public API
 -- ============================================================================
 
----Start mine clearing in a zone: build the lanes and send each Type 529 down its water lane and serpentine.
+---Start mine clearing in a zone: build the lanes and send each Type 082 down its water lane and serpentine.
 ---Fail (logged, nothing changed) when the lane center or obstacle area reference points are missing.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor

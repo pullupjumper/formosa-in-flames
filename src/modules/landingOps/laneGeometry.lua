@@ -91,7 +91,7 @@ end
 -- Lane Layout
 -- ============================================================================
 
----Build the Type 529 serpentine over the beach lanes: A→S, S→S, S→A, A→A, ...
+---Build the Type 082 serpentine over the beach lanes: A→S, S→S, S→A, A→A, ...
 ---@param beachLanes SBJ__BeachLaneEntry[]
 ---@return CMO__Location[]
 local function buildSerpentine(beachLanes)
@@ -212,7 +212,7 @@ function LaneGeometry.buildWaterLaneLaterals(shipLaterals, count, routeConfig)
   return { table.unpack(candidates, bestFirst, bestFirst + count - 1) }
 end
 
----Build water lanes (one per Type 529), ordered from left to right.
+---Build water lanes (one per Type 082), ordered from left to right.
 ---Put the lanes at params.laterals when given. Otherwise space them evenly and symmetric about the lane center.
 ---@param params SBJ__BuildLanesParams
 ---@return SBJ__LanePlanState

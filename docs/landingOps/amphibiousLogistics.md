@@ -2,146 +2,86 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousLogistics.lua`
 
-**職責**：管理登陸艦的貨物轉移、運輸任務建立與登陸載具任務指派
+**職責**：偵測艦隊是否到位、建立貨運任務、把貨物轉進搭載的載具並指派直升機任務
 
 ---
 
 ## 概述
 
-amphibiousLogistics 負責登陸作戰的第二階段——後勤裝載。當登陸艦隊到達等待區後，系統依艦型將貨物（車輛、步兵、裝備）從母艦轉移至搭載的直升機與登陸艇，同時建立貨物運輸任務（Cargo Mission）並指派登陸載具執行。
+艦隊到達等待區後，系統依艦型把貨物（車輛、步兵、裝備）從母艦轉到搭載的直升機與氣墊船，同時建立 Cargo 任務。
 
-系統採用**資料驅動分派**（Data-Driven Dispatch）架構，透過 `SHIP_TRANSFER_SPECS` 描述符表定義各艦型的貨物轉移規格與任務指派規則，避免針對每型艦船寫硬編碼邏輯。
+分派是**資料驅動**的：`SHIP_TRANSFER_SPECS` 以艦型 DBID 描述「轉哪些貨到哪些載具」與「指派哪些載具進任務」，不為每型艦寫硬編碼。新增艦型只要加一筆 spec，貨物清單本身在各區 `config` 的 `transferManifest`。
 
-此外，模組也提供補運尚未運完的貨物（`transferRemainingCargos`），用於補充已耗盡彈藥的運輸載具。
-
----
-
-## 資料驅動分派機制
-
-`SHIP_TRANSFER_SPECS` 定義了各艦型的完整裝載規格：
-
-```
-SHIP_TRANSFER_SPECS[]
-└── TransferSpec
-    ├── dbids: number[]                  -- 適用艦型 DBID
-    ├── manifestKey: string              -- 貨物清單索引鍵
-    ├── transfers[]                      -- 貨物轉移規則
-    │   ├── platform: string             -- 目標平台類型（Aircraft/Boats）
-    │   ├── configKey: string            -- 區域配置鍵
-    │   └── loadoutIdx: integer          -- 掛載索引
-    └── assignments[]                    -- 任務指派規則
-        ├── platform: string             -- 平台類型
-        └── configKey: string            -- 區域配置鍵
-```
-
-### 艦型對應規格
-
-| 艦型 | manifestKey | 轉移目標 | 任務指派 |
+| 艦型 | manifestKey | 轉貨目標 | 指派任務 |
 |---|---|---|---|
-| Type 075 / Type 076 | `type075` | 氣墊船（loadout 1）、運輸直升機（loadout 1, 2） | 氣墊船、運輸直升機、攻擊直升機 |
-| Type 071 | `type071` | 氣墊船（loadout 1）、運輸直升機（loadout 1） | 氣墊船、運輸直升機 |
+| 075、076 | `type075` | 氣墊船（loadout 1）、運輸直升機（loadout 1、2） | 運輸直升機、攻擊直升機 |
+| 071 | `type071` | 氣墊船（loadout 1）、運輸直升機（loadout 1） | 運輸直升機 |
+
+### 為什麼氣墊船只裝貨、不指派任務？
+
+氣墊船要先走掃出來的通道到停車位，才能開始運貨。所以這裡只轉貨（`transfers`），`assignments` 刻意不含氣墊船；通道走完後由 [hovercraft](hovercraft.md) 設定其任務。對應地，貨運任務在這裡只為氣墊船與運輸直升機建立（`CARGO_MISSION_PLATFORMS`），攻擊直升機的任務（如 `CAS/E`）不在這裡建立，這裡只指派載具，開始時間由 [amphibiousAssault](amphibiousAssault.md) 設定。
 
 ---
 
-## 貨物操作流程
+## 轉貨機制
 
-```mermaid
-flowchart TD
-    START["transferAndAssign()"]
-    ITER_UNIT["遍歷等待區單位"]
-    IN_AREA{單位在<br>holdingAreas.mothership?}
-    FIND_SPEC["findTransferSpec<br>匹配艦型"]
-    TRANSFER["processShipTransfers<br>依 spec.transfers 轉移貨物"]
-    ASSIGN["processShipAssignments<br>依 spec.assignments 指派任務"]
-    DONE["完成"]
+私有函式 `transferCargo` 把母艦貨物分給符合條件的搭載載具：
 
-    START --> ITER_UNIT --> IN_AREA
-    IN_AREA -->|是| FIND_SPEC --> TRANSFER --> ASSIGN
-    ASSIGN -.-> ITER_UNIT
-    IN_AREA -->|否| ITER_UNIT
-    ITER_UNIT -->|遍歷完成| DONE
-```
+1. 讀母艦的 `embarkedUnits[platformType]`
+2. 以 DBID（航空器再加 `loadoutdbid`）篩出目標載具
+3. 對每個目標呼叫 `transferCargoItem`：從母艦刪除貨物，在載具上建立同數量的貨物
+4. 貨物清單可以共用，也可以依載具序號分配
 
-### 貨物轉移細節
+### 為什麼載具序號超過清單長度時退回第一組？
 
-私有函式 `transferCargo` 將母艦貨物分配至搭載平台（由 `processShipTransfers` 與 `transferAndAssignTransportAircraft` 呼叫）：
-
-1. 取得母艦的搭載單元清單（`embarkedUnits`）
-2. 依平台 DBID 與掛載 ID（`loadoutdbid`）匹配目標載具
-3. 對每個匹配的載具執行私有函式 `transferCargoItem`：從母艦刪除貨物、在載具上建立對應貨物
-4. 支援共用貨物清單（所有載具相同）與個別貨物清單（依索引分配）
-
-> 把地面單位轉成 cargo proxy 載入建築物的 `loadCargo` 已移至 [missileSystem/cargoProxy](../missileSystem/cargoProxy.md)（`CargoProxy.loadCargo`），唯一使用者是 missileSystem 的隱蔽流程。
+`transferCargo` 用 `cargoItems[idx] or cargoItems[1]`。若 075 有第 4 艘氣墊船而 manifest 只有 3 組，第 4 艘會再拿到第 1 組的貨，不是空手。這是行為而非保護，排兵力時要注意，推算見 [hovercraftCapacity](hovercraftCapacity.md)。
 
 ---
 
-## 等待區監控
+## 到位偵測
 
-`getUnitsInHoldingAreas` 監控艦隊到達狀態：
+`getUnitsInHoldingAreas(zone, filteredUnits)` 回傳 `{ units, isUnitMoving }`，供 [coordinator](coordinator.md) 判斷是否離開 `WAITING_ARRIVAL`。
 
-| 檢查項目 | 說明 |
-|---|---|
-| 艦型過濾 | 僅計算 `AMPHIBIOUS_SHIP_DBIDS` 中的兩棲艦船 |
-| 移動狀態 | 若有艦船 `unitstate != "Unassigned"` 則判定仍在移動 |
-| 區域判定 | 艦船須在 `holdingAreas.mothership` 或 `holdingAreas.deployLine` 內 |
+- 只看 `AMPHIBIOUS_SHIP_DBIDS` 內的兩棲艦
+- 艦在本區等待區**或**本區集結區，且 `unitstate ~= "Unassigned"`，就判定仍在移動並立刻中止掃描
+- 只有在等待區內且已停妥的艦才進 `units`
 
-### 兩棲艦船 DBID 對照
+### 為什麼集結區的艦也要算「還在動」？
 
-| 艦型 | 常數路徑 |
-|---|---|
-| Type 075 LHD | `constants.PLATFORMS.TYPE_075` |
-| Type 076 LHD | `constants.PLATFORMS.TYPE_076` |
-| Type 071 LPD | `constants.PLATFORMS.TYPE_071` |
-| Type 072III LST | `constants.PLATFORMS.TYPE_072III` |
-| Type 072A LST | `constants.PLATFORMS.TYPE_072A` |
-| Type 072A (2) LST | `constants.PLATFORMS.TYPE_072A_2` |
-| Type 073A LST | `constants.PLATFORMS.TYPE_073A` |
-| Ferry | `constants.PLATFORMS.FERRY` |
-| Barge | `constants.PLATFORMS.BARGE` |
+`filteredUnits` 涵蓋全部三個區的艦。若只看等待區，其他區的艦或本區尚未出發的艦不會擋住到位判定，貨物會在艦隊沒到齊時就裝載。反過來只有「本區等待區或集結區」的艦才有資格延遲本區，避免別區拖累本區。
 
 ---
 
 ## 公開 API
 
-| 函數 | 說明 |
+| 函式 | 說明 |
 |---|---|
-| `getUnitsInHoldingAreas(zone, filteredUnits)` | 取得等待區內艦船清單及移動狀態 |
-| `createCargoMissions(zone)` | 為作戰區建立貨物運輸任務 |
-| `transferAndAssign(zone, unitsInHoldingAreas)` | 執行貨物轉移並指派登陸載具至任務 |
-| `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機貨物轉移與任務指派 |
-| `transferRemainingCargos(zone, units)` | 補運尚未運完的貨物 |
-| `removeCargo(fromUnit, cargoItem)` | 從單位刪除指定貨物 |
+| `getUnitsInHoldingAreas(zone, filteredUnits)` | 到位偵測 |
+| `createCargoMissions(zone)` | 建立貨運任務，遇到第一個失敗即停止 |
+| `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨並指派 |
+| `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機轉貨並指派 |
+| `transferRemainingCargos(zone, units)` | 補運：重新轉貨，**不重新指派**任務 |
+| `removeCargo(fromUnit, cargoItem)` | 從單位刪除貨物，回傳實際刪除數；ACV 釋放使用 |
+
+`createCargoMissions` 的失敗帶 `reason`：`add_mission_failed`、`set_mission_failed`、`set_doctrine_failed`；已建立的任務留在 info log，失敗行走 error sink。
 
 ---
 
-## 日誌輸出
+## 設定
 
-`createCargoMissions`、`transferAndAssign`、`transferAndAssignTransportAircraft`、`transferRemainingCargos` 四個公開函式各自對應一份 `LogFormat.report`，scope 依對象而異（`zone=` / `transportAircraft`）。
-
-```
-[amphibiousLogistics] zone=Taoyuan: Transfer remaining cargos | total=2 ok=1 skip=1
-  [OK]   ship="Type 075 #1" dbid=...
-  [SKIP] guid=U-4471 reason=unit_not_found
-```
-
-`createSingleCargoMission` 的三個失敗點原本一律收斂成 `false` 且不輸出任何日誌，現在各自帶具體 `reason`，並把已建立的任務留在 info log：
-
-```
-[amphibiousLogistics] zone=Taoyuan: Create cargo missions | total=1 ok=1
-  [OK]   mission="Taoyuan Boat Ferry" platform=boat
-```
-```
-（error sink）zone=Taoyuan: Create cargo missions | total=1 fail=1
-  [FAIL] mission="Taoyuan Helo Ferry" platform=transportHelicopter reason=set_doctrine_failed
-```
-
-`reason` 三值：`add_mission_failed`、`set_mission_failed`、`set_doctrine_failed`。
+| 路徑 | 用途 |
+|---|---|
+| `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、貨運任務清單、`transferManifest` |
+| `config.red.amphibOps.zones[].air.transportHelicopter`、`attackHelicopter` | 直升機 DBID、任務、`transferManifest` |
+| `config.red.amphibOps.zones[].movement.holdingAreas` | `mothership`、`deployLine` |
+| `config.red.amphibOps.transportAircraft` | 陸基運輸機清單 |
 
 ---
 
 ## 相關模組
 
-- [shipMovement](shipMovement.md) — 前置階段：艦隊移動至等待區
-- [amphibiousAssault](amphibiousAssault.md) — 後續階段：ACV 釋放時呼叫 `removeCargo`
-- `assignMission` — `transferAndAssign` 呼叫 `AssignMission.assignEmbarkedUnitsToMissions`
+- [shipMovement](shipMovement.md) — 前置：艦隊移動
+- [amphibiousAssault](amphibiousAssault.md) — `launchACV` 呼叫 `removeCargo`
+- [hovercraft](hovercraft.md) — 接手氣墊船的任務
+- `assignMission` — `AssignMission.assignEmbarkedUnitsToMissions`，見 [assignMission](../assignMission.md)
 - [系統架構](README.md)

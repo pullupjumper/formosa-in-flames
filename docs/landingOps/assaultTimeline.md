@@ -81,7 +81,7 @@
 ```
 開場：藍方近海佈雷（ScenEdit_AddMinefield）
 航渡：母艦到乘載區，其他登陸艦艇到展開線
-  → 獵雷艦（Type 529）反水雷，開水際通道與灘際通道（CMO 內建掃雷任務）
+  → 獵雷艦（Type 082）反水雷，開水際通道與灘際通道（CMO 內建掃雷任務）
   → LST 到泛水出發線，釋放衝鋒舟
   → 衝鋒舟走水際通道，衝擊發起線轉橫隊，走灘際通道上岸
   → 衝鋒舟在岸上破障（障礙區方塊）
@@ -97,8 +97,8 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 
 | Phase | 做什麼 | 換下一階段 | Code |
 |---|---|---|---|
-| `WAITING_ASSAULT` | 條件成立 → 算通道、派 529、直升機任務開始（不含氣墊船） | 派完 | `mineClearing.startMineClearing` |
-| `MINE_CLEARING` | 529 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → 配對衝鋒舟、LST 前進（排除 529） | `mineClearing.updateMineClearing` |
+| `WAITING_ASSAULT` | 條件成立 → 算通道、派 082、直升機任務開始（不含氣墊船） | 派完 | `mineClearing.startMineClearing` |
+| `MINE_CLEARING` | 082 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → 配對衝鋒舟、LST 前進（排除 082） | `mineClearing.updateMineClearing` |
 | `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到 S_lane 或被摧毀 | `assaultBoat.lua` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` | `obstacleClearing.lua` |
 | `ASSAULT_LANDING` | 衝擊上陸：兩棲車分波、氣墊船走通道 | 灘頭堡建立（暫用 `air.casArea` 內 ZBD-05 ≥ 1，TODO） | `acvWave.lua`、`hovercraft.lua` |
@@ -121,7 +121,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 |---|---|---|
 | LST / LPD / 渡輪 / 駁船 | 14 kt | `formation.shipSpeed` |
 | 兩棲車 | 8 kt（約 14.8 km/h） | `formation.acvSpeed`，油門 Full |
-| 氣墊船（Type 726A） | 約 40 kt | CMO 實測；config 只設油門 Full |
+| 氣墊船（Type 726A） | 40 kt | `formation.hovercraftSpeed`，經 `zones[].landing.hovercraft.speed` 設 `manualSpeed` |
 | 運輸直升機（Z-18） | 約 130 kt | CMO 實測；config 設轉場 Military、到站 Afterburner，高度 304 |
 | 衝鋒舟 | 30 kt | `config.red.amphibOps.tuning.assaultBoat.speed`（`manualSpeed`） |
 
@@ -139,7 +139,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 
 `config.red.amphibOps.zones[].fleet` 的 `type082` 數量需等於營數（目前 4 個作戰為 4 艘，2 個作戰為 1 艘）。
 
-## 4. 反水雷（獵雷艦 Type 529，DBID 4620）
+## 4. 反水雷（獵雷艦 Type 082，`PLATFORMS.TYPE_082`）
 
 原文（第 16 頁）由掃雷艦、獵雷艦在編隊最前沿排雷並標示航道。
 
@@ -149,8 +149,8 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 灘際通道 | 到衝擊發起線後走弓字型，掃出 4 條，長度為衝擊發起線到岸（2–6 km） |
 | 位置 | 水際通道延伸線在 4 條灘際通道正中間；偏移 -180、-60、+60、+180 m |
 | 間距 | 灘際通道中心線相距 120 m（取圖 37 下限），弓字型轉折間距同為 120 m；相鄰獵雷艦水際通道相距 750 m（500 + 250） |
-| 掃雷 | CMO 內建掃雷任務。**先設 `course`，再 assign 任務**。任務區域 4 角存在 `zoneState.minesweepers[guid].missionArea`；建任務、assign 是 `-- TODO`（使用者自己寫） |
-| 配對 | 529 依橫向位置排序，一艘配一條水際通道（左到右） |
+| 掃雷 | CMO 內建掃雷任務。**先設 `course`，再 assign 任務**。任務區域 4 角存在 `zoneState.minesweepers[guid].missionArea`；任務區域的設定是 `-- TODO`（使用者自己寫），詳見 [mineClearing](mineClearing.md) |
+| 配對 | 082 依橫向位置排序，一艘配一條水際通道（左到右） |
 | 完成 | 走到最後航點（距離 < `route.arrivalNm`）或被摧毀；通道存在 `zoneState.lanes` |
 | 結束 | 呼叫 `unit:RTB()` |
 
@@ -202,7 +202,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 | 項目 | 改版前 |
 |---|---|
 | 觸發 | 事件腳本 `launchACV.lua`，每 5 分鐘對區內每艘船各觸發一次 |
-| 可釋放的船 | 071、072III、072A、073A、529、渡輪（`isFerryOrLST`；現已拿掉 529） |
+| 可釋放的船 | 071、072III、072A、073A、渡輪（`isFerryOrLST`；舊版曾含掃雷艦） |
 | 每次數量 | 每艘船 5 輛（寫死 `num = 5`），先 ZBD-05，用完才 ZTD-05 |
 | 排列與航行 | 沿 `zone.heading` 排開，間距 0.05 浬；油門 Full，航線 `zone.landing.acv.destination` |
 | 結束 | 艙內沒有 ZBD/ZTD（`count == 0`）就掛回基地並 RTB |
@@ -240,43 +240,28 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 預計波次：桃園 3 波（224 / 224 / 192），喜樹 3 波（224 / 224 / 72），澎湖 1 波（56）。
 
-**config**（`config.red.amphibOps.tuning.acvWave`，預設值隨意給）：`capacity.zbd05`、`capacity.ztd05`（112 / 112）、`lossRatio`（0.3）、`holdSec`（30 × 60）。
+**config**（`config.red.amphibOps.tuning.acvWave`，預設值隨意給）：`capacity.zbd05`、`capacity.ztd05`（112 / 112）、`lossRatio`（0.3）、`holdSec`（30 × 60）、`hovercraftWaitSec`（氣墊船等第一波的上限）。
 
-**state**（`SBJ__ZoneState` 新增）：`acvGuids`、`acvPausedAt`。
+**state**（`SBJ__ZoneState`）：`acvGuids`、`acvPausedAt`、`acvFirstWaveFull`、`acvWaitStartedAt`。機制與取捨見 [acvWave](acvWave.md)。
 
 ### 實作
 
 - `ASSAULT_LANDING` 之前，`LandingOps.launchACV` 不動作。
 - `AmphibiousAssault.launchACV` 回傳 `{ count, isEmpty, isPaused }`：額度 0 → `isPaused`，船不 RTB；艙內沒 ZBD/ZTD → `isEmpty`，照舊掛回基地 RTB。
-- 071 沒有 ZBD/ZTD，第一次觸發就 RTB（529 已不算 `isFerryOrLST`）。
+- 071 沒有 ZBD/ZTD，第一次觸發就 RTB（掃雷艦不算 `isFerryOrLST`）。
 - `removeCargoByPriority` 依各車種額度分配（`min(5, 該車種額度)`）。
 - 每輛車放出後立刻記 GUID，同 tick 後面的船自然拿到較少額度。
 - 每輛車用 `routePlanner` 算自己的航線（走 `cleared` 灘際通道，停在自己的停車位）。沒有可用通道時退回 `zone.landing.acv.destination` 並記 WARN。
 
 ## 8. 佈雷
 
-開場（`LandingOps.init`）依 `config.red.amphibOps.minefields` 每筆呼叫一次 `ScenEdit_AddMinefield({ side = BLUE, dbid = constants.WEAPONS.SEA_MINE, number, delay, area })`。`area` 是空的就跳過。灘岸雷區以後再做。
+`MineClearing.createMinefields` 依 `config.red.amphibOps.minefields` 每筆呼叫一次 `ScenEdit_AddMinefield`（藍方、`SEA_MINE`），`area` 是空的就跳過。目前**只有快轉模式會呼叫**（見 [debugFlow](debugFlow.md)），`LandingOps.init` 並不佈雷。灘岸雷區以後再做。
 
-## 9. 航線規則（`routePlanner.lua`）
+## 9. 航線規則與氣墊船
 
-衝鋒舟、兩棲車、氣墊船共用。距離參數在 `config.red.amphibOps.tuning.route`。
+航線規則（選通道、排隊入口點、停車位）見 [routePlanner](routePlanner.md)，氣墊船放出與到達見 [hovercraft](hovercraft.md)，兩者共用的通道幾何見 [laneGeometry](laneGeometry.md)。
 
-1. **選水際通道**：氣墊船（從母艦區放出）用離艦位置到各 `L_i` 的距離，差在 `laneTieNm` 內選負載少的（負載 = 已送進該通道的單位數）。兩棲車、衝鋒舟從通道側邊放出，改用橫向距離選最近的通道，差在 `laneTieM` 內才算平手，確保只橫移半個艦間空隙。兩棲車、氣墊船只考慮至少有一條 `cleared` 灘際通道的水際通道。
-2. **排隊入口點**：每條水際通道一個計數器 `k`（`zoneState.queueCounters`）。氣墊船入口 = `L_i` 往外海退 `(k mod queueDepth) × columnSpacingM`。兩棲車、衝鋒舟入口 = 離艦位置橫向投影到通道上的點（再依 `k` 往外海退，但不超過展開線、不超過 `A_i`），直接橫著切進通道。
-3. **選灘際通道**：只選 `cleared` 的，從 `k mod 數量` 開始輪流；衝鋒舟例外（直接用配對的那條）。
-4. **停車位**：灘際通道從 `E_lane` 往 `A_lane` 每 `queueSpacingM` 一格。拿第一個空格（沒人、自己、或佔位的單位已被摧毀）。格子滿換下一條灘際通道，再滿換下一條水際通道。兩棲車、氣墊船各一套（`zoneState.laneSlots.acv` / `.hovercraft`）。
-5. **航線**：`[入口點, (L_i), (A_i), A_lane, (S_lane), 停車位]`；兩棲車、衝鋒舟的 `L_i`、`A_i` 若已在入口點後方（入口點比它更靠岸）就省略，不回頭；停車位在 `S_lane` 外海側時不經過 `S_lane`。氣墊船從母艦出發，前面多加展開線點。
-6. **安全檢查**：航線碰到任何非 `cleared` 的方塊就換下一條。
-
-## 10. 氣墊船（Type 726A）
-
-- 母艦：075、076、071（在 `zone.movement.holdingAreas.mothership` 內）。
-- `ASSAULT_LANDING` 起每 tick：`embarkedUnits[BOATS]` 裡 726A、已裝貨、`readytime_v == 0`、還沒走過通道的 → 算航線 → `course` → `Launch(true)` → 記 `zoneState.hovercraft[guid] = { missionName, finalPoint, arrived }`。
-- 在等待區**不** assign 任務（`amphibiousLogistics` 只裝貨）。`boat` 任務的開始時間也不再由 `setLandingMissionStartTime` 設。
-- 到停車位 → `arrived = true` → `-- TODO: assign cargo 任務`（使用者自己寫，任務名在 `missionName`，依 `unitCount` 依序分配）。
-- 每艘只走一次通道，之後交給 cargo 任務。
-
-## 11. `.scen` 參考點清單
+## 10. `.scen` 參考點清單
 
 `constants.AREAS` 每區（Taoyuan、Sishu、Penghu）要填：
 
@@ -290,85 +275,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 ---
 
-# 三、兵力規模與氣墊船運量 [專案設計]
-
-依 `config.red.amphibOps`（`operations.shipCounts` × `cargo`）推算，檢查三個作戰區的兵力夠不夠，以及氣墊船（Type 726A）要跑幾艘次。
-
-**艘次**：1 艘氣墊船從母艦出發，到目的地卸載，再回母艦，算 1 艘次。一艘船的氣墊船同時出發，算 1 輪。
-
-## 1. 一個兩棲合成旅的規模 [專案設計]
-
-| 裝備 | 數量 |
-|---|---|
-| ZBD-05 / ZTD-05（各） | 28 × 4 = 112 |
-| PLL-05 | 24 |
-| PLZ-96 | 27 |
-| PGZ-09 | 6 |
-| PGZ-95 | 4 |
-| SA-15 | 2 |
-
-## 2. 各作戰區現有兵力
-
-含 072/073 兩棲裝甲車、渡輪、駁船。
-
-| 裝備 | 桃園 | 喜樹 | 澎湖 | 合計 | 約幾個旅 |
-|---|---|---|---|---|---|
-| ZBD-05 / ZTD-05（各） | 320 | 260 | 28 | 608 | 5.4 |
-| PLL-05 | 71 | 45 | 26 | 142 | 5.9 |
-| PLZ-96 | 79 | 55 | 24 | 158 | 5.9 |
-| PGZ-09 | 19 | 13 | 6 | 38 | 6.3 |
-| PGZ-95 | 8 | 6 | 2 | 16 | 4 |
-| SA-15 | 9 | 7 | 2 | 18 | 9 |
-
-三區合計約 6 個旅：桃園約 3 個、喜樹約 2.5 個、澎湖約 0.25 個（ZBD 只有 28 輛）。
-
-## 3. 氣墊船載量與艘次
-
-只有 075/071 艦艙裡的重裝備靠氣墊船運；ZBD/ZTD 自己泛水或走渡輪。`cargo` 沒有 `type076`，076 不計。
-
-每艘次載量（`transferCargo`）：
-
-| 組別 | 內容 |
-|---|---|
-| `assaultLandingGroup` | PLL-05 × 4 |
-| `deepAssaultGroup1` | PLZ-96 × 1 + PGZ-09 × 1 |
-| `deepAssaultGroup2` | PLZ-96 × 1 + PGZ-95 × 1 |
-| `deepAssaultGroup3`（僅 071） | SA-15 × 1 |
-
-| 船 | 艦艙重裝備 | 艘次 | 氣墊船數 | 輪數 |
-|---|---|---|---|---|
-| 075 | PLL-05 × 21、PLZ-96 × 12 | 6 + 12 = **18** | 3 | **6** |
-| 071 | PLL-05 × 5、PLZ-96 × 12、SA-15 × 2 | 2 + 12 + 2 = **16** | 4 | **4** |
-
-| 區 | 船 | 氣墊船數 | 總艘次 | 輪數 |
-|---|---|---|---|---|
-| 桃園 | 075×2、071×4 | 22 | 100 | 6 |
-| 喜樹 | 075×1、071×3 | 15 | 66 | 6 |
-| 澎湖 | 075×1、071×1 | 7 | 34 | 6 |
-| 合計 | | 44 | **200** | |
-
-- 一個旅單獨約 35 艘次（PLL-05 6 + PLZ-96 27 + SA-15 2）。
-- 075 是瓶頸（6 輪），071 做完 4 輪後最後 2 輪閒置。
-- `transferCargo` 以氣墊船序號取載量組（`cargoItems[idx] or cargoItems[1]`）。075 的 manifest 只有 3 組，若有第 4 艘氣墊船會退回第 1 組（又載 PLL-05 × 4）。
-
-## 4. 總運送時間 [推論]
-
-座標取自 `.scen` 的參考點。母艦位置用 `DESTINATION_075_*`，目的地用 `LANDING_*` 四點的中心，氣墊船 40 kt，不含卸載與裝載。距離 28–30 浬，符合原文乘載區 20–30 浬。
-
-| 區 | 船 | 距離 | 單程 | 1 艘次（來回） | 全部運完 |
-|---|---|---|---|---|---|
-| 桃園 | 075 | 30.4 浬 | 45.6 分 | 91.2 分 | 5 × 91.2 + 45.6 = 501.6 分 |
-| 桃園 | 071 | 29.2 浬 | 43.8 分 | 87.6 分 | 3 × 87.6 + 43.8 = 306.6 分 |
-| 喜樹 | 075 | 29.1 浬 | 43.7 分 | 87.3 分 | 5 × 87.3 + 43.7 = 480.2 分 |
-| 喜樹 | 071 | 27.8 浬 | 41.7 分 | 83.4 分 | 3 × 83.4 + 41.7 = 291.9 分 |
-| 澎湖 | 075 | 29.6 浬 | 44.4 分 | 88.8 分 | 5 × 88.8 + 44.4 = 488.4 分 |
-| 澎湖 | 071 | 28.0 浬 | 42.0 分 | 84.0 分 | 3 × 84.0 + 42.0 = 294.0 分 |
-
-全部運完 = 前幾輪的來回 + 最後一輪的單程。由 075 決定：桃園約 8 小時 22 分，喜樹約 8 小時，澎湖約 8 小時 8 分。實際還要加卸載、回艦、重新裝載的時間。
-
----
-
-# 四、未解問題
+# 三、未解問題
 
 **專案設計**
 - control panel 畫障礙範圍的資料格式，以及怎麼存進 save data

@@ -272,7 +272,8 @@ describe("LandingOps Coordinator", function()
       stubIsAfterStartTime.returns(true)
       stubMoveToStagingArea.returns(true)
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubMoveToStagingArea).was.called(1)
@@ -286,7 +287,8 @@ describe("LandingOps Coordinator", function()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetUnitsInHoldingAreas.returns(buildHoldingResult())
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.are.equal(1000, landingState.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
@@ -306,7 +308,8 @@ describe("LandingOps Coordinator", function()
       }
       stubGetUnitsInHoldingAreas.returns(buildHoldingResult())
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Tainan.phase)
       assert.stub(stubTransferTransportAircraft).was_not.called()
@@ -324,7 +327,8 @@ describe("LandingOps Coordinator", function()
       })
       stubCountContactsInArea.returns(1)
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartMineClearing).was.called(1)
@@ -343,7 +347,8 @@ describe("LandingOps Coordinator", function()
       stubCountContactsInArea.returns(1)
       stubStartMineClearing.returns(false)
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubSetLandingMissionStartTime).was_not.called()
@@ -354,7 +359,8 @@ describe("LandingOps Coordinator", function()
       local landingState = buildLandingState()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubMoveToLaunchStations).was_not.called()
@@ -369,7 +375,8 @@ describe("LandingOps Coordinator", function()
       stubUpdateBoats.returns(true)
       stubUpdateObstacleClearing.returns(true)
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, zoneState.phase)
       assert.stub(stubPairBoats).was.called(1)
@@ -386,7 +393,8 @@ describe("LandingOps Coordinator", function()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
       stubIsFirstWaveFull.returns(false)
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.stub(stubLaunchHovercraft).was_not.called()
       assert.stub(stubUpdateHovercraft).was.called(1)
@@ -397,7 +405,8 @@ describe("LandingOps Coordinator", function()
       local landingState = buildLandingState()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubLaunchBoats).was.called(1)
@@ -417,7 +426,8 @@ describe("LandingOps Coordinator", function()
         },
       })
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.COMPLETED, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartAdminOffloading).was.called(1)
@@ -431,7 +441,8 @@ describe("LandingOps Coordinator", function()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
       stubCountUnitsInEachArea.returns({ Taoyuan = { ["ZBD-05"] = 0 } })
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartAdminOffloading).was_not.called()
@@ -446,7 +457,8 @@ describe("LandingOps Coordinator", function()
         airlandingMissionStartTime = 100,
       })
 
-      Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 7300, filteredShips = buildFilteredShips() })
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 7300, filteredShips = buildFilteredShips() })
 
       assert.are.equal(7300, landingState.amphibOps.zoneStates.Taoyuan.airlandingMissionStartTime)
       assert.stub(stubTransferRemainingCargos).was.called(1)
@@ -496,7 +508,8 @@ describe("LandingOps Coordinator", function()
         landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
         trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(40)))
 
-        Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+        Coordinator.process(config, landingState,
+          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.is_true(landingState.amphibOps.fireSupportOnHold)
       end)
@@ -507,7 +520,8 @@ describe("LandingOps Coordinator", function()
         landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
         trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(50)))
 
-        Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+        Coordinator.process(config, landingState,
+          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
       end)
@@ -522,7 +536,8 @@ describe("LandingOps Coordinator", function()
           Tainan  = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING }),
         }
 
-        Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+        Coordinator.process(config, landingState,
+          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.is_false(landingState.amphibOps.fireSupportOnHold)
       end)
@@ -538,7 +553,8 @@ describe("LandingOps Coordinator", function()
         }
         trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(40)))
 
-        Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+        Coordinator.process(config, landingState,
+          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.is_true(landingState.amphibOps.fireSupportOnHold)
       end)
@@ -551,7 +567,8 @@ describe("LandingOps Coordinator", function()
         landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
         local invStub = trackStub(stub(MissileSystem, "getAmmoInventory"))
 
-        Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+        Coordinator.process(config, landingState,
+          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.stub(invStub).was_not.called()
       end)
@@ -563,8 +580,9 @@ describe("LandingOps Coordinator", function()
         landingState.ground = nil
         landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
 
-        assert.has_no.errors(function()
-          Coordinator.process(config, landingState, { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+        assert.has_no.Error(function()
+          Coordinator.process(config, landingState,
+            { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
         end)
         assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
       end)

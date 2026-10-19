@@ -691,7 +691,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field amphibiousAssaultStartTime? number Amphibious assault start timestamp
 ---@field airlandingMissionStartTime? number Air landing mission start timestamp
 ---@field lanes? SBJ__LanePlanState Water and beach lanes, built when mine clearing starts
----@field minesweepers? table<string, SBJ__MinesweeperState> Type 529 progress indexed by GUID
+---@field minesweepers? table<string, SBJ__MinesweeperState> Type 082 progress indexed by GUID
 ---@field boats? table<string, SBJ__AssaultBoatState> Assault boat pairing and progress indexed by boat GUID
 ---@field obstacle? SBJ__ObstacleState Beach obstacle cells
 ---@field obstacleStartedAt? number Time all boats finished and obstacle clearing began
@@ -712,7 +712,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__LanePlanState: SBJ__LaneFrame
 ---@field waterLanes SBJ__WaterLaneEntry[] Water lanes ordered left to right (facing the shore)
 
----One water lane (one Type 529 / one battalion)
+---One water lane (one Type 082 / one battalion)
 ---@class SBJ__WaterLaneEntry: table
 ---@field id string Water lane id ("W1")
 ---@field deployPoint CMO__Location Point on the deployment line
@@ -749,7 +749,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__BuildLanesParams: table
 ---@field origin CMO__Location Lane center on the shore
 ---@field bearing number Bearing toward the shore (degrees)
----@field count integer Number of water lanes (Type 529 count)
+---@field count integer Number of water lanes (Type 082 count)
 ---@field laterals? number[] Lateral position per water lane; omitted spaces them evenly by waterLaneSpacingM
 ---@field inlandDepthM number E_lane distance inland
 ---@field areaMarginM number Sweep mission area margin
@@ -1066,7 +1066,7 @@ function ScenEdit_DeleteMine(params) end
 ---Shared parameters used by every zone of the amphibious operations
 ---@class SBJ__AmphibTuningConfig: table
 ---@field route SBJ__RouteConfig Lane layout and routing through swept lanes
----@field mineClearing SBJ__MineClearingConfig Type 529 mine clearing settings
+---@field mineClearing SBJ__MineClearingConfig Type 082 mine clearing settings
 ---@field assaultBoat SBJ__AssaultBoatConfig Assault boat settings
 ---@field obstacle SBJ__ObstacleConfig Beach obstacle settings
 ---@field acvWave SBJ__AcvWaveConfig ACV wave limits

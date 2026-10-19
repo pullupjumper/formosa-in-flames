@@ -54,9 +54,9 @@ local LANDED_UNIT_TYPES = {
 -- Validation and Filtering
 -- ============================================================================
 
----Check if a unit is a Landing Ship Tank. Exclude auxiliary vessels and Type 529 sweepers
+---Check if a unit is a Landing Ship Tank. Exclude auxiliary vessels and Type 082 sweepers
 ---@param unit CMO__Unit
----@return boolean # True if unit is an LST (not RORO, Barge or Type 529)
+---@return boolean # True if unit is an LST (not RORO, Barge or Type 082)
 local function isLST(unit)
   return not NON_LST_NAMES[unit.name] and unit.dbid ~= constants.PLATFORMS.TYPE_082
 end
@@ -393,7 +393,7 @@ end
 
 ---Move the LSTs to their offshore stations and the SAGs to the staging areas.
 ---The LSTs on the deploy line keep their formation and move to launchStationNearNm..launchStationFarNm off the shore.
----RORO ships, barges and Type 529s stay put.
+---RORO ships, barges and Type 082s stay put.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param units CMO__SideUnit[]

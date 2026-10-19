@@ -2,186 +2,145 @@
 
 > 原始碼：`src/modules/landingOps/coordinator.lua`
 
-**職責**：驅動各作戰區（zone）的階段機推進、貨物重轉運、火力支援暫停閘門
+**職責**：驅動各作戰區（zone）的階段機推進、貨物補運、火力支援暫停閘門
 
 ---
 
 ## 概述
 
-coordinator 是 Landing Operations 的主流程引擎，由 `landingCheck.lua` 每 5 分鐘呼叫 `Coordinator.process` 一次。本模組僅負責流程編排與狀態判斷，實際動作委派給 `shipMovement`、`amphibiousLogistics`、`amphibiousAssault`、`adminOffloading` 等子模組。
+coordinator 是 Landing Operations 的主流程引擎。[門面](README.md#門面-api)的 `process` 每 5 分鐘呼叫一次 `Coordinator.process`，傳入 `config`、`SBJ__LandingOpsState` 與 `{ contacts, currentTime, filteredShips }`。coordinator 只做編排與判斷，實際動作委派給各階段模組。
 
-職責切分為三條主線：
+三條主線：
 
-1. **逐區階段推進**：對每個 `operationalZone` 依當前 `phase` 執行對應動作（移動 → 等待到達 → 兩棲突擊 → 行政下卸）
-2. **貨物重轉運**：對已啟動空/機降任務的 zone，每 2 小時觸發一次貨物重新裝載
-3. **火力支援暫停閘門**：依 SRBM 彈藥水平與各 zone 到位狀況，動態暫停／恢復偵察驅動的 SRBM 打擊
-
----
-
-## 主流程
+1. **逐區階段推進**：對每個 zone 依當前 `phase` 執行對應的 step 函式
+2. **貨物補運**：已啟動空/機降任務的 zone，定期重新裝載
+3. **火力支援暫停閘門**：依 SRBM 庫存與各 zone 到位狀況，暫停／恢復偵察驅動的 SRBM 打擊
 
 ```mermaid
 flowchart TD
-    PROC["Coordinator.process()"]
-    LOOP["遍歷 zones"]
-    FIND["findOperationByName<br>取得 operation 描述符"]
-    ZONE["processZone<br>單一 zone 階段推進"]
-    RETRANS["processRemainingCargoTransfer<br>每 2 小時補運剩餘貨物"]
-    GATE["evaluateFireSupportGate<br>SRBM 火力閘門"]
+    PROC["process"]
+    ZONE["processZone（每個 zone）"]
+    CARGO["processRemainingCargoTransfer"]
+    GATE["evaluateFireSupportGate"]
 
-    PROC --> LOOP
-    LOOP --> FIND --> ZONE
-    LOOP -.->|遍歷完成| RETRANS
-    RETRANS --> GATE
+    PROC --> ZONE --> CARGO --> GATE
 ```
 
 ---
 
-## 單一 zone 階段機
+## 階段機
+
+每個階段是一個 `SBJ__PhaseStep` 函式，登記在 `PHASE_STEPS` 表。`processZone` 依表的順序走一遍，phase 吻合的 step 才執行。
 
 ```mermaid
-stateDiagram-v2
-    [*] --> MOVING: saveData 初始化
-    MOVING --> WAITING_ARRIVAL: ShipMovement.moveToHoldingAreas() done
-    WAITING_ARRIVAL --> WAITING_ASSAULT: 艦數 > arrivalThreshold<br>且裝載與任務建立成功
-    WAITING_ASSAULT --> MINE_CLEARING: 接觸數 < contactThreshold<br>或等待逾時 (periodSec)
-    MINE_CLEARING --> BOAT_ASSAULT: updateMineClearing() 全部完成
-    BOAT_ASSAULT --> OBSTACLE_CLEARING: updateBoats() 全部完成
-    OBSTACLE_CLEARING --> ASSAULT_LANDING: updateObstacleClearing() 超過 clearSec
-    ASSAULT_LANDING --> WAITING_ADMIN_OFFLOADING: 灘頭建立 (ZBD-05 ≥ 1，TODO 更嚴格)
-    WAITING_ADMIN_OFFLOADING --> COMPLETED: startAdminOffloading 成功
+flowchart TD
+    A["MOVING"] --> B["WAITING_ARRIVAL"]
+    B --> C["WAITING_ASSAULT"]
+    C --> D["MINE_CLEARING"]
+    D --> E["BOAT_ASSAULT"]
+    E --> F["OBSTACLE_CLEARING"]
+    F --> G["ASSAULT_LANDING"]
+    G --> H["WAITING_ADMIN_OFFLOADING"]
+    H --> I["COMPLETED"]
 ```
 
-各 phase 轉換條件：
-
-| 起始 phase | 觸發條件 | 對應動作 |
+| 階段 | 離開條件 | 離開時的動作 |
 |---|---|---|
-| `MOVING` | `saveData.red.amphibOps.startTime` 到達 | `ShipMovement.moveToHoldingAreas` |
-| `WAITING_ARRIVAL` | `units > zone.movement.arrivalThreshold` 且非移動中 | `createCargoMissions` + `transferAndAssign`（含 Taoyuan 特例） |
-| `WAITING_ASSAULT` | 接觸 < `contactThreshold` 或 `elapsed >= periodSec` | `MineClearing.startMineClearing` + `setLandingMissionStartTime`（只有直升機） |
-| `MINE_CLEARING` | 529 全部走完或被摧毀 | `AssaultBoat.pairBoats` + `moveToLaunchStations`（排除 529） |
-| `BOAT_ASSAULT` | 衝鋒舟全部到 S_lane 或被摧毀（每 tick 先 `launchBoats`） | `ObstacleClearing.startObstacleClearing` |
-| `OBSTACLE_CLEARING` | 超過 `obstacle.clearSec` | 有活衝鋒舟的灘際通道標 cleared |
-| `ASSAULT_LANDING` | 灘頭建立（ZBD-05 ≥ 1，TODO） | — |
-| `WAITING_ADMIN_OFFLOADING` | 絕對安全（TODO，目前直接放行） | `startAdminOffloading` |
+| `MOVING` | 到達 `triggers.amphibiousOps.startTime` | `ShipMovement.moveToHoldingAreas` 發出全部命令 |
+| `WAITING_ARRIVAL` | 等待區艦數 > `arrivalThreshold` 且沒有艦在動 | 建貨運任務、轉移貨物並指派；Taoyuan 另有特例 |
+| `WAITING_ASSAULT` | 接觸數 < `contactThreshold`，或等待達 `periodSec` | `MineClearing.startMineClearing` + 設直升機任務開始時間 |
+| `MINE_CLEARING` | `updateMineClearing` 回報 082 全部完成 | `AssaultBoat.pairBoats` + `AmphibiousAssault.moveToLaunchStations` |
+| `BOAT_ASSAULT` | `updateBoats` 回報衝鋒舟全部到達或被摧毀 | `ObstacleClearing.startObstacleClearing` |
+| `OBSTACLE_CLEARING` | `updateObstacleClearing` 回報計時結束 | 有衝鋒舟的灘際通道標為 cleared |
+| `ASSAULT_LANDING` | `casArea` 內 ZBD-05 ≥ 1（暫代的灘頭條件，TODO） | — |
+| `WAITING_ADMIN_OFFLOADING` | 無條件放行（TODO：絕對安全） | `AdminOffloading.startAdminOffloading` |
 
-`ASSAULT_LANDING`、`WAITING_ADMIN_OFFLOADING`、`COMPLETED`（`constants.AMPHIBIOUS_LANDING_PHASES`）每 tick 另跑 `Hovercraft.launchHovercraft` + `updateHovercraft`。
+`BOAT_ASSAULT` 每 tick 先 `launchBoats` 再檢查到達。`ASSAULT_LANDING`、`WAITING_ADMIN_OFFLOADING`、`COMPLETED`（`constants.AMPHIBIOUS_LANDING_PHASES`）每 tick 另跑氣墊船，見 [hovercraft](hovercraft.md)。
+
+### 為什麼一個 tick 能跨好幾個階段？
+
+step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 step 在同一 tick 立刻吻合並執行。這是刻意的，除錯快轉時（見 [debugFlow](debugFlow.md)）一個區可以在單一 tick 內從 `MOVING` 衝到 `BOAT_ASSAULT`。順序依賴表的排列，新增階段時要照作戰順序插入。
+
+### 為什麼氣墊船的放出要等第一波車？
+
+氣墊船載的是重裝備，不能搶在兩棲車之前佔住通道。`stepHovercraft` 只在 `AcvWave.isFirstWaveFull` 成立後才呼叫 `launchHovercraft`；但 `updateHovercraft` 每 tick 都跑，因為已出發的船要持續追蹤到達。
+
+### 灘頭條件為什麼暫用 ZBD-05？
+
+`stepAssaultLanding` 用 `AmphibiousAssault.countUnitsInEachArea` 查 `air.casArea` 內有沒有 ZBD-05。這是占位邏輯，程式碼內標了 TODO；真正的條件（站穩灘頭、絕對安全）還沒設計，所以 `WAITING_ADMIN_OFFLOADING` 目前也不檢查任何條件。
 
 ---
 
 ## Taoyuan 特例
 
-`processTaoyuanTemporarySetup` 僅在 Taoyuan 進入 `WAITING_ASSAULT` 時觸發：
+`processTaoyuanTemporarySetup` 在 Taoyuan 離開 `WAITING_ARRIVAL` 時觸發：
 
-1. 對運輸機隊執行貨物轉移與任務指派（`AmphibiousLogistics.transferAndAssignTransportAircraft`）
-2. 經門面 [`StrikePlanner.addReconEntry(saveData.red.recon, config.red.recon.templates.GJ11_RECON)`](../strikePlanner/README.md)（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）排入一架 GJ-11 偵察任務；coordinator 不直接 require strikePlanner 內部模組
+1. `AmphibiousLogistics.transferAndAssignTransportAircraft` 對陸基運輸機隊轉貨並指派任務
+2. 經 [strikePlanner 門面](../strikePlanner/README.md) 的 `StrikePlanner.addReconEntry` 排入一架 GJ-11 偵察（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）
 
-由於未傳入 `startTime`，`addEntry` 以當前遊戲時間為起飛錨點，並自行完成範本深拷貝、`takeoffTime`/`endTime` 推算、欄位重設（`hasLaunched`/`isFinished`/`trackingTargetGUID`）與寫入佇列。插入是**有條件**的：偵察佇列中沒有可錨定的衛星空窗、或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入（GJ-11 偵察當輪不啟動），兩棲流程其餘部分不受影響。
+`addEntry` 未傳 `startTime` 時以當前遊戲時間為起飛錨點。插入是**有條件**的：偵察佇列沒有可錨定的衛星空窗，或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入，兩棲流程不受影響。
 
 ---
 
-## 貨物重轉運
+## 貨物補運
 
-`processRemainingCargoTransfer` 維護長期作戰下的後勤循環：
-
-- 對所有 zone 檢查 `zoneState.airlandingMissionStartTime`
-- 距上次裝載超過 `3600 * 2` 秒（2 小時）時，呼叫 `AmphibiousLogistics.transferRemainingCargos`
-- 重轉運成功後重設計時器
+`processRemainingCargoTransfer` 對 `airlandingMissionStartTime` 已設定的 zone，距上次裝載達 `remainingCargoTransferSec` 就呼叫 `AmphibiousLogistics.transferRemainingCargos`，成功才重設計時器。失敗時下個 tick 會再試。
 
 ---
 
 ## 火力支援暫停閘門
 
-私有函式 `evaluateFireSupportGate`（在 `Coordinator.process` 末尾呼叫）防止 SRBM 在艦隊抵達等待區之前耗盡彈藥。閘門狀態存於 `saveData.red.amphibOps.fireSupportOnHold`（boolean），由 [strikePlanner/recon](../strikePlanner/recon.md) 於排程偵察驅動打擊時讀取，用以跳過 `STRIKE/INFRA/*` 映射。
-
-### 狀態轉移
-
-```mermaid
-stateDiagram-v2
-    [*] --> 未暫停
-    未暫停 --> 暫停: SRBM total% < threshold<br>且 !hasAllZonesArrived
-    暫停 --> 未暫停: hasAllZonesArrived
-    note right of 暫停: STRIKE/INFRA/* 被 recon 跳過
-```
-
-### 判定流程
+`evaluateFireSupportGate` 在 `process` 末尾執行，防止 SRBM 在艦隊抵達之前耗盡彈藥。旗標存於 `amphibOps.fireSupportOnHold`，由 [strikePlanner/recon](../strikePlanner/recon.md) 在排程偵察驅動打擊時讀取，用來跳過 `STRIKE/INFRA/*`。
 
 ```mermaid
 flowchart TD
     START["evaluateFireSupportGate"]
-    ARRIVED{hasAllZonesArrived?<br>所有 zone 已進入<br>WAITING_ASSAULT 或之後?}
-    HOLDFLAG{當前 fireSupportOnHold?}
-
-    RESUME["fireSupportOnHold = false<br>[RESUME] 日誌"]
-    NOOP["不動作"]
-    GET_INV["MissileSystem.getAmmoInventory<br>查詢 SRBM 庫存報告"]
-    BELOW{total% < threshold?}
-    HOLD["fireSupportOnHold = true<br>[HOLD] 日誌"]
+    ARRIVED{"所有 zone 已到位"}
+    RESUME["解除暫停"]
+    SKIP["不動作"]
+    LOW{"SRBM 總量 < 門檻"}
+    HOLD["啟動暫停"]
 
     START --> ARRIVED
-    ARRIVED -->|是 + 已暫停| RESUME
-    ARRIVED -->|是 + 未暫停| NOOP
-    ARRIVED -->|否 + 已暫停| NOOP
-    ARRIVED -->|否 + 未暫停| GET_INV
-    GET_INV --> BELOW
-    BELOW -->|是| HOLD
-    BELOW -->|否| NOOP
+    ARRIVED -->|是且已暫停| RESUME
+    ARRIVED -->|否| LOW
+    ARRIVED -->|是且未暫停| SKIP
+    LOW -->|是| HOLD
+    LOW -->|否| SKIP
 ```
 
-### 設計重點
+圖上省略兩個提早 return：已暫停且未到位時直接略過；`landingState.ground` 缺失或查不到庫存報告時靜默略過（測試存檔或部分初始化的情境）。
 
-- **單調釋放**：phase 機只往前推進，「所有 zone 到位」一旦達成即永久釋放，不會在 HOLD/RESUME 間反覆 toggle
-- **省一次查詢**：已 `fireSupportOnHold=true` 時直接 return，避免重複呼叫 `getAmmoInventory`
-- **防禦性**：`saveData.red.ground.missileSystemTypes.srbm` 缺失時靜默 return（測試保存或部分初始化情境）
+### 為什麼釋放後不會再暫停？
 
-### 已抵達狀態定義
+phase 機只往前走，「所有 zone 到位」一旦成立就永遠成立，所以閘門是單調的：HOLD → RESUME 之後不會再 toggle。已暫停時也不再查庫存，省一次 `getAmmoInventory`。
 
-local 常數 `ARRIVED_PHASES` 涵蓋：
-
-- `WAITING_ASSAULT`
-- `MINE_CLEARING`、`BOAT_ASSAULT`、`OBSTACLE_CLEARING`、`ASSAULT_LANDING`
-- `WAITING_ADMIN_OFFLOADING`
-- `COMPLETED`
+「到位」由 local 的 `ARRIVED_PHASES` 定義：`WAITING_ASSAULT` 以及之後的所有階段。
 
 ---
 
 ## 公開 API
 
-| 函數 | 說明 |
+| 函式 | 說明 |
 |---|---|
-| `process(config, landingState, params)`（`params`：`contacts`、`currentTime`、`filteredShips`） | 主入口：執行全 zone 階段推進、貨物重轉運，最後呼叫私有 `evaluateFireSupportGate` 更新火力閘門 |
+| `process(config, landingState, params)` | 唯一入口。`params` 為 `SBJ__LandingTickParams`（`contacts`、`currentTime`、`filteredShips`） |
 
 ---
 
-## 資料寫入摘要
+## 設定
 
-| 路徑 | 寫入時機 |
+| 路徑 | 用途 |
 |---|---|
-| `saveData.red.amphibOps.zoneStates[zoneName].phase` | 階段轉換 |
-| `saveData.red.amphibOps.zoneStates[zoneName].amphibiousAssaultStartTime` | 進入 `WAITING_ASSAULT` |
-| `saveData.red.amphibOps.zoneStates[zoneName].airlandingMissionStartTime` | `setLandingMissionStartTime` 與重轉運後 |
-| `saveData.red.amphibOps.fireSupportOnHold` | 閘門 HOLD / RESUME |
-| `saveData.red.recon.queue` | Taoyuan 特例經 `StrikePlanner.addReconEntry` → `Recon.addEntry` 插入 GJ-11 偵察項目（有衛星空窗才插入） |
-
----
-
-## 設定檔參考
-
-| 設定路徑 | 用途 |
-|---|---|
-| `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 等待逾時上限（秒） |
-| `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限；低於此值且尚未到位即進入 HOLD |
-| `config.red.amphibOps.zones[].movement.arrivalThreshold` | 認定艦隊抵達等待區的最低艦數 |
+| `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 的等待上限（秒） |
+| `config.red.amphibOps.remainingCargoTransferSec` | 補運貨物的間隔 |
+| `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限 |
+| `config.red.amphibOps.zones[].movement.arrivalThreshold` | 認定艦隊抵達的艦數門檻 |
 | `config.red.amphibOps.zones[].air.contactThreshold` | 空/機降區可接受的最大接觸數 |
 
 ---
 
 ## 相關模組
 
-- [shipMovement](shipMovement.md) — Phase 1：艦隊移動
-- [amphibiousLogistics](amphibiousLogistics.md) — Phase 2：裝載
-- [amphibiousAssault](amphibiousAssault.md) — Phase 3：突擊
-- [adminOffloading](adminOffloading.md) — Phase 4：行政下卸
-- [missileSystem/init](../missileSystem/init.md) — `getAmmoInventory` 提供火力閘門所需的庫存報告
-- [strikePlanner/recon](../strikePlanner/recon.md) — Taoyuan 特例經門面 `StrikePlanner.addReconEntry`（→ `Recon.addEntry`）排 GJ-11 偵察；recon 反向讀取 `fireSupportOnHold` 跳過 `STRIKE/INFRA/*`
-- [系統架構](README.md)
+- 各階段模組見 [README](README.md#模組一覽)
+- [missileSystem/init](../missileSystem/init.md) — `getAmmoInventory` 提供閘門所需的庫存報告
+- [strikePlanner/recon](../strikePlanner/recon.md) — 反向讀取 `fireSupportOnHold`

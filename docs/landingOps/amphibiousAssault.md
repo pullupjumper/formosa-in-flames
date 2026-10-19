@@ -2,161 +2,112 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousAssault.lua`
 
-**職責**：協調 ACV 釋放、LST 航至泛水編波區航向設定、任務時序設定與空/機降區威脅評估
+**職責**：LST 與 SAG 就位、ACV 釋放、直升機任務計時、空/機降區威脅與登陸單位統計
 
 ---
 
 ## 概述
 
-amphibiousAssault 負責登陸作戰的第三階段——兩棲突擊。系統協調三項核心作業：
+amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」做，時機由 [coordinator](coordinator.md) 與事件腳本決定。它處理五件事：
 
-1. **任務時序設定**：計算各登陸任務（直升機、氣墊船、攻擊直升機）的開始時間，確保各波次按既定間隔投入
-2. **LST 航向設定**：驅動在等待區的 LST 向泛水編波區前進，同時引導 SAG 至兩棲載具集結區
-3. **ACV 釋放**：從登陸艦刪除貨物並生成兩棲戰車單位，以編隊形式向灘頭推進
+1. **直升機任務計時**：`setLandingMissionStartTime` 在 `WAITING_ASSAULT` 離開時，把指定類別的任務開始時間設為「現在 + `mission.startTime`」
+2. **LST 就位**：`moveToLaunchStations` 把展開線上的 LST 移到離岸 2～4 nm 的就位帶，SAG 移到兩棲載具集結區
+3. **ACV 釋放**：`launchACV` 從艦艙刪除貨物，在船側生成兩棲車並交給 `routeACV` 回呼排航線
+4. **威脅評估**：`countContactsInArea` 數空/機降區內的敵方可移動設施
+5. **登陸統計**：`countUnitsInEachArea` 數各區 `casArea` 內已登陸的紅方單位
 
-系統透過 `landingCheck.lua` 的狀態機驅動，在空/機降區威脅清除（敵方地面接觸目標數低於門檻）或等待超時後自動發起突擊。
+通道與航線不在這裡處理，見 [laneGeometry](laneGeometry.md)、[routePlanner](routePlanner.md)。
 
 ---
 
-## ACV 發射機制
+## 直升機任務計時
 
-ACV（兩棲步兵戰鬥車）發射是兩棲突擊的核心。系統從 LST/渡輪刪除貨物並在船側生成兩棲戰鬥車單位：
+呼叫端傳入 `categories`（目前是 `transportHelicopter`、`attackHelicopter`），函式只處理這些類別。
+
+### 為什麼不再設氣墊船任務的開始時間？
+
+舊版會一併設 `boat` 類別。現在氣墊船要等通道掃完、第一波車放滿才出發（見 [hovercraft](hovercraft.md)），開始時間沒有意義，所以 coordinator 傳入的 `HELICOPTER_MISSION_CATEGORIES` 刻意不含氣墊船。同時 `airlandingMissionStartTime` 也是貨物補運的計時起點。
+
+---
+
+## LST 就位
+
+`moveToLaunchStations` 的流程：
+
+1. 以 `landing.laneCenter` 和 `zone.heading` 建座標系
+2. 找展開線上的 LST（Ship 型別、非 RORO、非 Barge、非 Type 082，見 `isLST`）
+3. 保持隊形，整體沿進場方位平移，讓隊形縱深中心落在 `launchStationNearNm ~ launchStationFarNm` 的正中
+4. 設航點與 `lstSettings.speed`
+
+隊形縱深大於就位帶寬度時回 FAIL（`formation_exceeds_station_band`），**不改任何航線**，階段停在 `MINE_CLEARING`，下個 tick 重試。
+
+### 為什麼 082 與 RORO 不跟著走？
+
+Type 082 在反水雷階段已經 RTB，RORO 與駁船要留在展開線等 [adminOffloading](adminOffloading.md)。`isLST` 因此用名稱與 DBID 排除它們。
+
+### 為什麼先掃雷再移 LST？
+
+通道的橫向位置取自展開線上 LST 之間的空隙（`findDeployLineLSTLaterals`），讓通道不穿過船體。LST 一旦前進，這個參考就變了，所以順序是先算通道、掃完、再移 LST。
+
+---
+
+## ACV 釋放
 
 ```mermaid
 flowchart TD
-    START["launchACV(params)"]
-    CHECK{船艦存在<br>且未被擊毀?}
-    LOCS["buildLocations<br>計算編隊位置"]
-    DELETE["removeCargoByPriority<br>依優先序刪除貨物"]
-    SPAWN["createSingleACV<br>生成 ZBD-05 / ZTD-05"]
-    DOCTRINE["設定 Doctrine<br>關閉自動迴避"]
-    COURSE["設定航向<br>全速前進"]
-    COUNT["回傳釋放數量"]
+    START["launchACV"]
+    EMPTY["isEmpty"]
+    PAUSED["isPaused"]
+    SPAWN["刪貨、生成、排航線"]
 
-    START --> CHECK
-    CHECK -->|否| RETURN_NIL["回傳 nil"]
-    CHECK -->|是| LOCS --> DELETE --> SPAWN --> DOCTRINE --> COURSE --> COUNT
+    START -->|艙內無 ZBD/ZTD| EMPTY
+    START -->|有貨但額度為 0| PAUSED
+    START --> SPAWN
 ```
 
-### ACV 類型優先序
+回傳 `SBJ__LaunchACVResult`（`count`、`isEmpty`、`isPaused`）；船不存在或已被摧毀時回 `nil`。
 
-| 優先順序 | 車型 | 常數 | 說明 |
-|:-:|---|---|---|
-| 1 | ZBD-05 | `constants.PLATFORMS.ZBD05` | 兩棲步兵戰鬥車 |
-| 2 | ZTD-05 | `constants.PLATFORMS.ZTD05` | 兩棲突擊車 |
+- `isEmpty`：由門面讓船掛回基地並 RTB
+- `isPaused`：船留在泛水出發線，等 [acvWave](acvWave.md) 補下一波
+- 一般情況：`removeCargoByPriority` 依 `ACV_TYPES` 的順序（ZBD-05、ZTD-05）分配，每型最多取自己剩餘額度，再逐輛 `createSingleACV`，遇到第一個失敗即停
 
-`removeCargoByPriority` 依序嘗試刪除各型 ACV，以 `remaining` 計數器確保不超過總需求數。
-
-### 釋放腳本觸發
-
-`launchACV.lua` 事件腳本（Unit Remains in Area）在 ACV 區域內觸發：
-
-1. 判斷船艦是否為 Ferry 或 LST（`isFerryOrLST`）
-2. 取得對應作戰區（`getShipZone`）
-3. 發射 5 輛 ACV
-4. 若貨物已清空（`count == 0`），將船艦指派至基地並 RTB
-
----
-
-## 任務時序設定
-
-```mermaid
-flowchart TD
-    START["setLandingMissionStartTime()"]
-    TIME["取得當前時間<br>ScenEdit_CurrentTime()"]
-    SAVE["記錄至<br>zoneState<br>.airlandingMissionStartTime"]
-    CAT["遍歷任務類別<br>transportHelicopter / boat / attackHelicopter"]
-    CALC["計算 startTime<br>= currentTime + mission.startTime"]
-    SET["設定任務開始時間<br>mission.starttime = startTime"]
-
-    START --> TIME --> SAVE --> CAT --> CALC --> SET
-```
-
-任務類別與延遲：
-
-| 類別 | 配置路徑 | 延遲（秒） |
-|---|---|---|
-| transportHelicopter | `missionStartTime.transportHelicopter` | 2520 / 4320 / 5520 / 6720 |
-| boat | `missionStartTime.boat` | 2460 / 3660 |
-| attackHelicopter | `missionStartTime.attackHelicopter` | 2400 |
-
----
-
-## LST 航向設定
-
-`moveToLaunchStations` 驅動兩類艦船移動：
-
-### LST 航至泛水編波區
-
-| 步驟 | 說明 |
-|---|---|
-| 過濾 | 在 `holdingAreas.deployLine` 內的 Ship 類型單元 |
-| 排除 | RORO、Barge 和 Type 529（`isLST` 檢查） |
-| 就位帶 | 離岸 `tuning.route.launchStationNearNm`～`launchStationFarNm`（預設 2～4 nm），以 `laneCenter` 與 `zone.heading` 為座標系 |
-| 計算目的地 | 保持隊形與橫向位置，整體沿進場方位平移，使隊形縱深中心落在就位帶中央 |
-| 放不下 | 隊形縱深大於就位帶寬時回傳 FAIL（`formation_exceeds_station_band`），不改任何航線 |
-| 設定速度 | `zone.landing.lstSettings.speed` |
-
-### SAG 移動
-
-| 步驟 | 說明 |
-|---|---|
-| 取得 SAG 群組 | 依 `descriptor.groupName` |
-| 設定航向 | 前往 `amphibiousVehicleStagingArea` |
-
----
-
-## 空降區威脅評估
-
-`countContactsInArea` 計算空/機降區內的目標數量：
-
-- 篩選條件：`contact.typed == FACILITY_MOBILE`（地面可移動設施）
-- 結果用於 `landingCheck.lua` 判斷是否可發起突擊
-- 當接觸數 < `zone.air.contactThreshold` 或等待超時，觸發突擊
+單輛生成後設 `throttle = "Full"` 與關閉自動迴避，航線由 `routeACV` 回呼決定。
 
 ---
 
 ## 公開 API
 
-| 函數 | 說明 |
+| 函式 | 說明 |
 |---|---|
-| `setLandingMissionStartTime(zone, zoneState)` | 設定單一作戰區的登陸任務開始時間 |
-| `moveToLaunchStations(zone, units)` | 設定 LST 航至泛水編波區航向與 SAG 移動 |
-| `countContactsInArea(contacts, area)` | 計算區域內目標數量 |
-| `countUnitsInEachArea(zones)` | 依 zone 的 `air.casArea` 統計已登陸的中國單位數（依單位類型）；coordinator 用來判定灘頭建立，`unitStatusUI` 經門面 `LandingOps.countUnitsInEachArea` 呼叫 |
-| `launchACV(params)` | 從登陸艦釋放兩棲步兵戰鬥車 |
-| `isFerryOrLST(ship)` | 判斷艦船是否為渡輪或 LST |
-| `getShipZone(zones, ship)` | 取得艦船所在的作戰區 |
+| `setLandingMissionStartTime(zone, zoneState, categories)` | 設任務開始時間並記錄 `airlandingMissionStartTime` |
+| `moveToLaunchStations(amphibOps, zone, units)` | LST 與 SAG 就位；任一失敗回 `false` |
+| `findDeployLineLSTLaterals(zone, frame, units)` | 展開線 LST 的橫向位置，供 [mineClearing](mineClearing.md) 排通道 |
+| `launchACV(params)` | 釋放兩棲車，`params` 為 `SBJ__ACVDeploymentParams` |
+| `isFerryOrLST(ship)` | 071／072／073 或名稱為 Ferry |
+| `getShipZone(zones, ship)` | 以 `landing.acv.area` 判斷船所屬作戰區 |
+| `countContactsInArea(contacts, area)` | 只數 `FACILITY_MOBILE` |
+| `countUnitsInEachArea(zones)` | 單位類別清單在程式碼的 `LANDED_UNIT_TYPES` |
+
+`countUnitsInEachArea` 有兩個用途：coordinator 用 ZBD-05 數量判定灘頭，`unitStatusUI` 經門面顯示。
 
 ---
 
-## 日誌輸出
+## 設定
 
-三個公開函式各自建立一個 `LogFormat.report`，每條路徑只 `emit()` 一次。`FAIL` 行走 error sink，其餘留在 info log，兩邊各有自己的 rollup。
-
-```
-[amphibiousAssault] zone=Taoyuan: Move to launch stations | total=3 ok=2 skip=1
-  [OK]   ship="Type 072A #1" bearing=270 speed=12
-  [SKIP] ship=RORO reason=non_lst_auxiliary
-  [OK]   sag="SAG Alpha" dest=amphibious_vehicle_staging_area
-```
-
-`launchACV` 遇到失敗會停在該筆，已成功的 ACV 仍留在 info log：
-
-```
-[amphibiousAssault] ship=Type 071 #2: Launch ACV | total=1 ok=1
-  [OK]   unit=ZBD-05 lat=25.1042 lon=121.1337
-```
-```
-（error sink）ship=Type 071 #2: Launch ACV | total=1 fail=1
-  [FAIL] unit=ZTD-05 reason=add_unit_failed
-```
+| 路徑 | 用途 |
+|---|---|
+| `config.red.amphibOps.tuning.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
+| `zones[].landing.lstSettings.speed` | LST 速度 |
+| `zones[].landing.acv` | `area`（判斷船所屬區）、`distance`、`destination` |
+| `zones[].air.casArea` | 登陸單位統計範圍 |
+| `zones[].air.landingZone`、`contactThreshold` | 威脅評估範圍與門檻 |
 
 ---
 
 ## 相關模組
 
-- [amphibiousLogistics](amphibiousLogistics.md) — `launchACV` 呼叫 `AmphibiousLogistics.removeCargo` 刪除貨物
-- [adminOffloading](adminOffloading.md) — 後續階段：灘頭建立後啟動行政下卸
-- [shipMovement](shipMovement.md) — 前置階段：艦隊佈陣
+- [amphibiousLogistics](amphibiousLogistics.md) — `removeCargo`
+- [acvWave](acvWave.md) — 額度與分波
+- [shipMovement](shipMovement.md) — `teleportSagToFormation`
+- [adminOffloading](adminOffloading.md) — 後續階段
 - [系統架構](README.md)
