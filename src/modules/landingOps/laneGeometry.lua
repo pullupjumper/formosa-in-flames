@@ -21,7 +21,7 @@ local METERS_PER_DEGREE = 111320
 ---@param pos CMO__Location
 ---@return number x Meters east
 ---@return number y Meters north
-local function toLocalXY(frame, pos)
+local function convertToLocalXY(frame, pos)
   local originLat, originLon = Utils.toNumber(frame.origin.latitude), Utils.toNumber(frame.origin.longitude)
   local cosLat = math.cos(math.rad(originLat))
   local x = (Utils.toNumber(pos.longitude) - originLon) * METERS_PER_DEGREE * cosLat
@@ -34,7 +34,7 @@ end
 ---@param x number
 ---@param y number
 ---@return CMO__Location
-local function toGeo(frame, x, y)
+local function convertToGeo(frame, x, y)
   local originLat, originLon = Utils.toNumber(frame.origin.latitude), Utils.toNumber(frame.origin.longitude)
   local cosLat = math.cos(math.rad(originLat))
   return {
@@ -52,7 +52,7 @@ function LaneGeometry.buildPoint(frame, alongM, lateralM)
   local b = math.rad(frame.bearing)
   local x = alongM * math.sin(b) + lateralM * math.cos(b)
   local y = alongM * math.cos(b) - lateralM * math.sin(b)
-  return toGeo(frame, x, y)
+  return convertToGeo(frame, x, y)
 end
 
 ---Project a position onto lane coordinates
@@ -62,7 +62,7 @@ end
 ---@return number lateralM Meters to the right of the landing bearing
 function LaneGeometry.projectPoint(frame, pos)
   local b = math.rad(frame.bearing)
-  local x, y = toLocalXY(frame, pos)
+  local x, y = convertToLocalXY(frame, pos)
   return x * math.sin(b) + y * math.cos(b), x * math.cos(b) - y * math.sin(b)
 end
 
@@ -71,7 +71,7 @@ end
 ---@param b CMO__Location
 ---@return number # Meters
 function LaneGeometry.calculateDistanceM(a, b)
-  local x, y = toLocalXY({ origin = a, bearing = 0 }, b)
+  local x, y = convertToLocalXY({ origin = a, bearing = 0 }, b)
   return math.sqrt(x * x + y * y)
 end
 

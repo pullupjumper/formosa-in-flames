@@ -79,12 +79,12 @@ local SHIP_TRANSFER_SPECS = {
 -- Cargo Operations
 -- ============================================================================
 
----Collect the GUIDs of cargo elements that match a DBID, up to the requested quantity
+---Find the GUIDs of cargo elements that match a DBID, up to the requested quantity
 ---@param cargos CMO__Cargo[]
 ---@param dbid number
 ---@param maxCount number
 ---@return string[] # Array of matching cargo GUIDs
-local function collectMatchingCargos(cargos, dbid, maxCount)
+local function findMatchingCargos(cargos, dbid, maxCount)
   local guids = {}
   for _, element in ipairs(cargos) do
     if element.dbid == dbid then
@@ -108,7 +108,7 @@ local function transferCargoItem(fromUnit, toUnit, cargoItem)
     return
   end
 
-  local guids = collectMatchingCargos(fromUnit.cargo[1].cargo, cargoItem.dbid, cargoItem.num)
+  local guids = findMatchingCargos(fromUnit.cargo[1].cargo, cargoItem.dbid, cargoItem.num)
   for _, guid in ipairs(guids) do
     fromUnit:deleteUnitCargo(guid)
   end
@@ -130,7 +130,7 @@ function AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
     return 0
   end
 
-  local guids = collectMatchingCargos(fromUnit.cargo[1].cargo, cargoItem.dbid, cargoItem.num)
+  local guids = findMatchingCargos(fromUnit.cargo[1].cargo, cargoItem.dbid, cargoItem.num)
   local resultCount = 0
   for _, guid in ipairs(guids) do
     if fromUnit:deleteUnitCargo(guid) then

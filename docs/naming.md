@@ -37,6 +37,8 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `update` | 依現況重算，再寫回既有物件 | `updateTargetList` |
 | `resolve` | 只用在把 key、名稱、參照換成實際物件。算數值用 `calculate`，做判斷用 `evaluate`，拆字串用 `parse` | `resolveUnit`、`resolvePair` |
 | `normalize` | 把輸入整理成標準形，形狀可能改變 | `normalizeToRPArray` |
+| `convert` | 換座標系或單位，純數學，不碰遊戲 | `convertToLocalXY`、`convertToGeo` |
+| `project` | 把位置投影到另一個座標軸 | `projectPoint` |
 | `format` | 轉成字串或程式碼 | `formatWaypoint`、`formatConfigCode` |
 | `parse` | 字串轉物件 | `parseDatetimeToTimestamp` |
 | `validate` | 驗證，回 `SBJ__LogResult` | |

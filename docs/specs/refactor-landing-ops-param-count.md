@@ -35,11 +35,17 @@
 - `DebugFlow.isFastForward` 的 `boolean` 說明補上 `true` 的意思。
 - `removeCargoByPriority`、`findDeployLineLSTs` 的 `@return` 改用 `SBJ__AcvAllocation[]`、`SBJ__LstStation[]`。
 
+### 命名對齊（已完成）
+
+- `collectMatchingCargos` 改為 `findMatchingCargos`（`collect` 只准用於 `collectSigint`）。
+- `toLocalXY`、`toGeo` 改為 `convertToLocalXY`、`convertToGeo`；`convert`、`project` 加進 `docs/naming.md` 動詞表。
+- `laneFrame` 改為 `buildLaneFrame`。
+
 ## 不做
 
 - 不改遊戲行為與數值。
 - 不動 landingOps 以外的模組。
-- 不處理 `docs/naming.md` 的其他規則。尚未改名、之後改到再順手換：`collectMatchingCargos`（`collect` 只准用於 `collectSigint`）、`toLocalXY` / `toGeo` / `projectPoint`（不在動詞表）、`laneFrame`（不是動詞開頭）、`buildRotatedClearedBeachLanes`（`rotate` 是禁用字）。
+- 不處理 `docs/naming.md` 的其他規則。尚未改名、之後改到再順手換：`buildRotatedClearedBeachLanes`（`rotate` 是禁用字）。
 
 ## 驗收
 
