@@ -178,7 +178,7 @@ end
 ---@type SBJ__PhaseStep
 local function stepHovercraft(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
-  if AcvWave.isFirstWaveFull(zoneState, AcvWave.zoneConfig(amphibOps.tuning.acvWave, zone), tickCtx.currentTime) then
+  if AcvWave.isFirstWaveFull(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone), tickCtx.currentTime) then
     Hovercraft.launchHovercraft(amphibOps, zone, zoneState, tickCtx.filteredShips)
   end
   Hovercraft.updateHovercraft(amphibOps, zoneState)

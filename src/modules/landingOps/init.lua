@@ -145,7 +145,7 @@ function LandingOps.launchACV(config, saveData, ship)
     num = 5,
     bearing = zone.heading,
     distance = zone.landing.acv.distance,
-    quota = AcvWave.getQuota(zoneState, AcvWave.zoneConfig(amphibOps.tuning.acvWave, zone), GameApi.ScenEdit_CurrentTime()),
+    quota = AcvWave.getQuota(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone), GameApi.ScenEdit_CurrentTime()),
     routeACV = buildACVRouter(amphibOps, zone, zoneState),
   })
 

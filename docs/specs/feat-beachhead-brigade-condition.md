@@ -14,7 +14,7 @@
 
 ### 設定與型別
 
-- `zones[i].landing.acv.capacity`：兩棲車存活上限。Taoyuan、Sishu 各 112，Penghu 28（旅的 1/4）。氣墊船放行（`isFirstWaveFull`）要等它放滿，所以要跟區的規模一致。`AcvWave.zoneConfig` 把它併進共用參數。
+- `zones[i].landing.acv.capacity`：兩棲車存活上限。Taoyuan、Sishu 各 112，Penghu 28（旅的 1/4）。氣墊船放行（`isFirstWaveFull`）要等它放滿，所以要跟區的規模一致。`AcvWave.buildZoneWaveConfig` 把它併進共用參數。
 
 - `config.red.amphibOps.zones[i].landing.beachheadVehicles`，型別 `SBJ__ZoneLanding`（`src/core/schema.lua`）。
 

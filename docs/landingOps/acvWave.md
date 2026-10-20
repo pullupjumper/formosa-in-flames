@@ -51,14 +51,14 @@
 |---|---|
 | `getQuota(zoneState, config, currentTime)` | 各車種剩餘額度（key 為 `zbd05`、`ztd05`） |
 | `isFirstWaveFull(zoneState, config, currentTime)` | 氣墊船是否可放行 |
-| `zoneConfig(tuning, zone)` | 共用參數加上該區的 `capacity` |
+| `buildZoneWaveConfig(tuning, zone)` | 共用參數加上該區的 `capacity` |
 | `addACV(zoneState, key, guid)` | 登記新放出的車 |
 
 ---
 
 ## 設定
 
-上限依作戰區規模各自設定：`zones[i].landing.acv.capacity`（Taoyuan、Sishu 各 112，Penghu 營級 28）。呼叫端用 `zoneConfig(tuning, zone)` 把它併入共用參數。
+上限依作戰區規模各自設定：`zones[i].landing.acv.capacity`（Taoyuan、Sishu 各 112，Penghu 營級 28）。呼叫端用 `buildZoneWaveConfig(tuning, zone)` 把它併入共用參數。
 
 `config.red.amphibOps.tuning.acvWave`（各區共用）：
 

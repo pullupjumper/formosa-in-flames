@@ -99,12 +99,12 @@ describe("AcvWave", function()
 
     assert.are.equal(1, AcvWave.getQuota(zoneState, CONFIG, 700).zbd05)
   end)
-  describe("zoneConfig", function()
+  describe("buildZoneWaveConfig", function()
     it("should take the cap from the zone and keep the shared tuning", function()
       local tuning = { lossRatio = 0.5, holdSec = 600 }
       local zone = { landing = { acv = { capacity = { zbd05 = 28, ztd05 = 28 } } } }
 
-      local config = AcvWave.zoneConfig(tuning, zone)
+      local config = AcvWave.buildZoneWaveConfig(tuning, zone)
 
       assert.are.same({ zbd05 = 28, ztd05 = 28 }, config.capacity)
       assert.are.equal(0.5, config.lossRatio)

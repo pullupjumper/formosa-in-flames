@@ -48,7 +48,7 @@ end
 ---@param tuning SBJ__AcvWaveConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return SBJ__AcvZoneWaveConfig
-function AcvWave.zoneConfig(tuning, zone)
+function AcvWave.buildZoneWaveConfig(tuning, zone)
   return {
     capacity = zone.landing.acv.capacity,
     lossRatio = tuning.lossRatio,

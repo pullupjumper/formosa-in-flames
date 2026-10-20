@@ -1116,7 +1116,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field holdSec number Resume when paused longer than this
 ---@field hovercraftWaitSec number Hovercraft stop waiting for the first ACV wave after this many seconds
 
----Shared wave tuning plus one zone's alive cap (built by AcvWave.zoneConfig)
+---Shared wave tuning plus one zone's alive cap (built by AcvWave.buildZoneWaveConfig)
 ---@class SBJ__AcvZoneWaveConfig: SBJ__AcvWaveConfig
 ---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
 
