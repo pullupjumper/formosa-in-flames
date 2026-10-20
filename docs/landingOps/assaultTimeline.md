@@ -240,7 +240,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 預計波次：桃園 3 波（224 / 224 / 192），喜樹 3 波（224 / 224 / 72），澎湖 1 波（56）。
 
-**config**（`config.red.amphibOps.tuning.acvWave`，預設值隨意給）：`capacity.zbd05`、`capacity.ztd05`（112 / 112）、`lossRatio`（0.3）、`holdSec`（30 × 60）、`hovercraftWaitSec`（氣墊船等第一波的上限）。
+**config**（`config.red.amphibOps.tuning.acvWave`；各區的 `capacity` 在 `zones[i].landing.acv.capacity`）：`lossRatio`（0.3）、`holdSec`（30 × 60）、`hovercraftWaitSec`（氣墊船等第一波的上限）。
 
 **state**（`SBJ__ZoneState`）：`acvGuids`、`acvPausedAt`、`acvFirstWaveFull`、`acvWaitStartedAt`。機制與取捨見 [acvWave](acvWave.md)。
 

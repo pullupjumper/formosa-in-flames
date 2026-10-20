@@ -19,7 +19,7 @@ end
 ---Calculate the remaining quota for one ACV type. The quota pauses at zero and resumes on losses or timeout
 ---@param zoneState SBJ__ZoneState
 ---@param key string ACV type key (zbd05, ztd05)
----@param config SBJ__AcvWaveConfig
+---@param config SBJ__AcvZoneWaveConfig
 ---@param currentTime number
 ---@return integer
 local function calculateTypeQuota(zoneState, key, config, currentTime)
@@ -44,9 +44,22 @@ local function calculateTypeQuota(zoneState, key, config, currentTime)
   return quota
 end
 
+---Build the wave config of one zone: the shared wave tuning plus the zone's own alive cap per type
+---@param tuning SBJ__AcvWaveConfig
+---@param zone SBJ__OperationalZoneDescriptor
+---@return SBJ__AcvZoneWaveConfig
+function AcvWave.zoneConfig(tuning, zone)
+  return {
+    capacity = zone.landing.acv.capacity,
+    lossRatio = tuning.lossRatio,
+    holdSec = tuning.holdSec,
+    hovercraftWaitSec = tuning.hovercraftWaitSec,
+  }
+end
+
 ---Get the remaining ACV quota per type for this zone at the current time
 ---@param zoneState SBJ__ZoneState
----@param config SBJ__AcvWaveConfig
+---@param config SBJ__AcvZoneWaveConfig
 ---@param currentTime number
 ---@return table<string, integer> # Quota keyed by ACV type key
 function AcvWave.getQuota(zoneState, config, currentTime)
@@ -64,7 +77,7 @@ end
 ---The wave is full when every type filled to capacity or the wait timed out.
 ---The wait starts at the first call. The result stays true after it becomes true.
 ---@param zoneState SBJ__ZoneState
----@param config SBJ__AcvWaveConfig
+---@param config SBJ__AcvZoneWaveConfig
 ---@param currentTime number
 ---@return boolean # True once the first wave filled every type or the wait timed out
 function AcvWave.isFirstWaveFull(zoneState, config, currentTime)

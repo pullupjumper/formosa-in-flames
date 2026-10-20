@@ -1722,10 +1722,9 @@ config.red.amphibOps.tuning = {
     clearSec = 20 * 60,
   },
   acvWave = {
-    capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
-    lossRatio = 0.3,                         -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
-    holdSec = 30 * 60,                       -- 暫停超過此秒數就補下一波
-    hovercraftWaitSec = 60 * 60,             -- 氣墊船等第一波車波放滿的上限秒數，逾時直接放行
+    lossRatio = 0.3,             -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
+    holdSec = 30 * 60,           -- 暫停超過此秒數就補下一波
+    hovercraftWaitSec = 60 * 60, -- 氣墊船等第一波車波放滿的上限秒數，逾時直接放行
   },
 }
 config.red.amphibOps.zones = {
@@ -1943,6 +1942,7 @@ config.red.amphibOps.zones = {
           { latitude = "N 25.04.52", longitude = "E 121.10.05", },
           { latitude = "N 25.04.44", longitude = "E 121.13.54", },
         },
+        capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
         area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
       },
       beachheadVehicles = 168, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（旅級約 3/4）
@@ -2168,6 +2168,7 @@ config.red.amphibOps.zones = {
           { latitude = "N 22.56.39", longitude = "E 120.10.37", },
           { latitude = "N 22.57.14", longitude = "E 120.12.09", },
         },
+        capacity = { zbd05 = 112, ztd05 = 112 }, -- 每區同時存活上限（旅級規模）
         area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
       },
       beachheadVehicles = 168, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（旅級約 3/4）
@@ -2374,6 +2375,7 @@ config.red.amphibOps.zones = {
           { latitude = "N 23.31.35", longitude = "E 119.35.36", },
           { latitude = "N 23.34.09", longitude = "E 119.37.41", },
         },
+        capacity = { zbd05 = 28, ztd05 = 28 }, -- 每區同時存活上限（營級，旅的 1/4）
         area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
       },
       beachheadVehicles = 42, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（營級）

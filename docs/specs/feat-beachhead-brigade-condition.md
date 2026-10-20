@@ -14,13 +14,15 @@
 
 ### 設定與型別
 
+- `zones[i].landing.acv.capacity`：兩棲車存活上限。Taoyuan、Sishu 各 112，Penghu 28（旅的 1/4）。氣墊船放行（`isFirstWaveFull`）要等它放滿，所以要跟區的規模一致。`AcvWave.zoneConfig` 把它併進共用參數。
+
 - `config.red.amphibOps.zones[i].landing.beachheadVehicles`，型別 `SBJ__ZoneLanding`（`src/core/schema.lua`）。
 
 ## 不在範圍內
 
 - `WAITING_ADMIN_OFFLOADING` 的絕對安全條件（另有 TODO）。
 - 其他車種（PLL-05、PLZ-96 等）不計入門檻。
-- 兩棲車補波規則（`acvWave`）不變。
+- 兩棲車補波規則（`acvWave`）不變；只是 `capacity` 改成每區各自設定。
 
 ## 驗收
 

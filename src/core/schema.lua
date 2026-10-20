@@ -903,6 +903,7 @@ function ScenEdit_DeleteMine(params) end
 ---Air Cushion Vehicle deployment configuration
 ---@class SBJ__ACVDescriptor: table
 ---@field distance number Horizontal spacing between ACVs (nautical miles)
+---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05); sized to the zone's landing force
 ---@field speed number ACV transit speed (knots)
 ---@field destination CMO__Waypoint[] Destination waypoints
 ---@field area string[] Staging area reference points
@@ -1111,10 +1112,13 @@ function ScenEdit_DeleteMine(params) end
 ---@field clearSec number Seconds after all boats land before obstacles are cleared
 
 ---@class SBJ__AcvWaveConfig: table
----@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
 ---@field lossRatio number Resume when alive drops below capacity * (1 - lossRatio)
 ---@field holdSec number Resume when paused longer than this
 ---@field hovercraftWaitSec number Hovercraft stop waiting for the first ACV wave after this many seconds
+
+---Shared wave tuning plus one zone's alive cap (built by AcvWave.zoneConfig)
+---@class SBJ__AcvZoneWaveConfig: SBJ__AcvWaveConfig
+---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
 
 ---Land-Attack Cruise Missile context managing LACM operations state
 ---@class SBJ__LACMContext: table

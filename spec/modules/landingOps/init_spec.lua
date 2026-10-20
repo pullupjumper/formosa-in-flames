@@ -78,6 +78,7 @@ describe("LandingOps", function()
       landing = {
         acv = {
           distance = 0.5,
+          capacity = { zbd05 = 112, ztd05 = 112 },
           speed = 20,
           destination = { { latitude = 25.0, longitude = 121.0 } },
         },
@@ -183,7 +184,7 @@ describe("LandingOps", function()
   -- ============================================================================
 
   describe("launchACV", function()
-    local ACV_WAVE = { capacity = { zbd05 = 112, ztd05 = 112 }, lossRatio = 0.3, holdSec = 1800 }
+    local ACV_WAVE = { lossRatio = 0.3, holdSec = 1800 }
 
     ---@param phase string
     ---@return table saveData

@@ -66,7 +66,7 @@ describe("LandingOps Coordinator", function()
         contactThreshold = 2,
       },
       sags = { { groupName = "SAG Alpha" } },
-      landing = { beachheadVehicles = 10 },
+      landing = { beachheadVehicles = 10, acv = { capacity = { zbd05 = 4, ztd05 = 4 } } },
     }
     if overrides then
       for k, v in pairs(overrides) do
