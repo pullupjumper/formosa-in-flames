@@ -66,6 +66,7 @@ describe("LandingOps Coordinator", function()
         contactThreshold = 2,
       },
       sags = { { groupName = "SAG Alpha" } },
+      landing = { beachheadVehicles = 10 },
     }
     if overrides then
       for k, v in pairs(overrides) do
@@ -422,7 +423,8 @@ describe("LandingOps Coordinator", function()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
       stubCountUnitsInEachArea.returns({
         Taoyuan = {
-          ["ZBD-05"] = 1,
+          ["ZBD-05"] = 6,
+          ["ZTD-05"] = 4,
         },
       })
 
@@ -435,11 +437,24 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubUpdateHovercraft).was.called(1)
     end)
 
-    it("should stay in ASSAULT_LANDING without a beachhead", function()
+    it("should use the zone's own beachhead size", function()
+      local config = buildConfig()
+      config.red.amphibOps.zones = { buildZone({ landing = { beachheadVehicles = 5 } }) }
+      local landingState = buildLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      stubCountUnitsInEachArea.returns({ Taoyuan = { ["ZBD-05"] = 3, ["ZTD-05"] = 2 } })
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.COMPLETED, landingState.amphibOps.zoneStates.Taoyuan.phase)
+    end)
+
+    it("should stay in ASSAULT_LANDING below the zone's beachhead size", function()
       local config = buildConfig()
       local landingState = buildLandingState()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
-      stubCountUnitsInEachArea.returns({ Taoyuan = { ["ZBD-05"] = 0 } })
+      stubCountUnitsInEachArea.returns({ Taoyuan = { ["ZBD-05"] = 6, ["ZTD-05"] = 3 } })
 
       Coordinator.process(config, landingState,
         { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })

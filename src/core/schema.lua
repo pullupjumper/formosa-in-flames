@@ -984,6 +984,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field hovercraft SBJ__HovercraftMissionDescriptor Landing craft configuration
 ---@field lstSettings SBJ__LSTMovementDescriptor LST movement configuration
 ---@field acv SBJ__ACVDescriptor Amphibious combat vehicle configuration
+---@field beachheadVehicles integer Landed ZBD-05 + ZTD-05 in the zone needed to count as a secured beachhead (force size differs per zone)
 ---@field laneCenter string[] Reference point name of the lane center on the shore (one point)
 ---@field obstacleArea string[] Beach obstacle polygon reference point names (BLUE side)
 ---@field offloadArea string[] Vehicle offload area reference points

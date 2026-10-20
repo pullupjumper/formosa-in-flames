@@ -151,12 +151,13 @@ local function stepObstacleClearing(tickCtx, zone, zoneState)
   end
 end
 
----ASSAULT_LANDING: count a landed ZBD-05 in the zone as a beachhead
+---ASSAULT_LANDING: the beachhead is held once the zone's own force size (ZBD-05 + ZTD-05) has landed
 ---@type SBJ__PhaseStep
 local function stepAssaultLanding(tickCtx, zone, zoneState)
-  -- TODO: Replace with a stricter beachhead condition
-  local result = AmphibiousAssault.countUnitsInEachArea(tickCtx.config.red.amphibOps.zones)
-  local hasBeachhead = result[zone.name] and result[zone.name]["ZBD-05"] >= 1
+  local amphibOps = tickCtx.config.red.amphibOps
+  local counts = AmphibiousAssault.countUnitsInEachArea(amphibOps.zones)[zone.name]
+  local landedVehicles = counts and ((counts["ZBD-05"] or 0) + (counts["ZTD-05"] or 0)) or 0
+  local hasBeachhead = landedVehicles >= zone.landing.beachheadVehicles
   if hasBeachhead then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING
   end

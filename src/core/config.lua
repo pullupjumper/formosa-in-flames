@@ -1945,6 +1945,7 @@ config.red.amphibOps.zones = {
         },
         area = constants.AREAS.AMPH_VEH_STAGING_AREA_TAOYUAN
       },
+      beachheadVehicles = 168, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（旅級約 3/4）
       laneCenter = constants.AREAS.LANE_CENTER_TAOYUAN,
       obstacleArea = constants.AREAS.OBSTACLE_TAOYUAN,
       offloadArea = constants.AREAS.OFFLOAD_AREA_TAOYUAN,
@@ -2169,6 +2170,7 @@ config.red.amphibOps.zones = {
         },
         area = constants.AREAS.AMPH_VEH_STAGING_AREA_SHISHU
       },
+      beachheadVehicles = 168, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（旅級約 3/4）
       laneCenter = constants.AREAS.LANE_CENTER_SISHU,
       obstacleArea = constants.AREAS.OBSTACLE_SISHU,
       offloadArea = constants.AREAS.OFFLOAD_AREA_SISHU,
@@ -2374,6 +2376,7 @@ config.red.amphibOps.zones = {
         },
         area = constants.AREAS.AMPH_VEH_STAGING_AREA_PENGHU
       },
+      beachheadVehicles = 42, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（營級）
       laneCenter = constants.AREAS.LANE_CENTER_PENGHU,
       obstacleArea = constants.AREAS.OBSTACLE_PENGHU,
       offloadArea = constants.AREAS.OFFLOAD_AREA_PENGHU,
