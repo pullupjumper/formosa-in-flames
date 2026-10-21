@@ -42,17 +42,17 @@ local HELICOPTER_MISSION_CATEGORIES = { "transportHelicopter", "attackHelicopter
 -- Helpers
 -- ============================================================================
 
----Process the temporary loading and reconnaissance setup for Taoyuan only
+---Airlift the zone's land-based transport aircraft and queue its recon flight
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
 ---@param zone SBJ__OperationalZoneDescriptor
-local function processTaoyuanTemporarySetup(config, landingState, zone)
-  if zone.name ~= "Taoyuan" then
-    return
+local function processZoneAirSetup(config, landingState, zone)
+  if zone.air.transportAircraft then
+    AmphibiousLogistics.transferAndAssignTransportAircraft(zone.air.transportAircraft)
   end
-
-  AmphibiousLogistics.transferAndAssignTransportAircraft(config.red.amphibOps.transportAircraft)
-  StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates.GJ11_RECON)
+  if zone.air.reconTemplate then
+    StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates[zone.air.reconTemplate])
+  end
 end
 
 ---MOVING: sail to the holding areas after the operation start time
@@ -87,7 +87,7 @@ local function stepWaitingArrival(tickCtx, zone, zoneState)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
     zoneState.amphibiousAssaultStartTime = tickCtx.currentTime
-    processTaoyuanTemporarySetup(tickCtx.config, tickCtx.landingState, zone)
+    processZoneAirSetup(tickCtx.config, tickCtx.landingState, zone)
   end
 end
 

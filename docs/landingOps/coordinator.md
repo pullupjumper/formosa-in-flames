@@ -71,12 +71,12 @@ step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 ste
 
 ---
 
-## Taoyuan 特例
+## 各區空中設定
 
-`processTaoyuanTemporarySetup` 在 Taoyuan 離開 `WAITING_ARRIVAL` 時觸發：
+`processZoneAirSetup` 在每個 zone 離開 `WAITING_ARRIVAL` 時依該區 `zone.air` 設定觸發：
 
-1. `AmphibiousLogistics.transferAndAssignTransportAircraft` 對陸基運輸機隊轉貨並指派任務
-2. 經 [strikePlanner 門面](../strikePlanner/README.md) 的 `StrikePlanner.addReconEntry` 排入一架 GJ-11 偵察（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）
+1. `zone.air.transportAircraft` 有值時，`AmphibiousLogistics.transferAndAssignTransportAircraft` 對陸基運輸機隊轉貨並指派任務
+2. `zone.air.reconTemplate` 有值時，經 [strikePlanner 門面](../strikePlanner/README.md) 的 `StrikePlanner.addReconEntry` 排入一架 GJ-11 偵察（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）
 
 `addEntry` 未傳 `startTime` 時以當前遊戲時間為起飛錨點。插入是**有條件**的：偵察佇列沒有可錨定的衛星空窗，或同 `templateId` 的 UAV 已覆蓋該空窗時就不插入，兩棲流程不受影響。
 

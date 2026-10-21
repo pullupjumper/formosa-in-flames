@@ -358,31 +358,29 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
   return true
 end
 
----Transfer cargo and assign missions for land-based transport aircraft
----@param transportAircraft SBJ__TransportAircraftDescriptor[]
+---Transfer cargo and assign missions for a zone's land-based transport aircraft
+---@param transportAircraft SBJ__TransportAircraftDescriptor
 ---@return boolean # True if all transfers and assignments completed
 function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer and assign")
 
-  for _, item in ipairs(transportAircraft) do
-    transferCargo(
-      item.guid,
-      {
-        platformType = constants.PLATFORM_TYPES.AIRCRAFT,
-        platformDBID = item.dbid,
-        loadoutDBID = item.cargoItemsForTransfer[1].loadoutId
-      },
-      item.cargoItemsForTransfer[1].cargoItems
-    )
-    AssignMission.assignEmbarkedUnitsToMissions(
-      item.guid,
-      constants.PLATFORM_TYPES.AIRCRAFT,
-      item.dbid,
-      item.missions
-    )
-    report.add("OK", { aircraft = item.name or item.guid, dbid = item.dbid })
-  end
+  transferCargo(
+    transportAircraft.guid,
+    {
+      platformType = constants.PLATFORM_TYPES.AIRCRAFT,
+      platformDBID = transportAircraft.dbid,
+      loadoutDBID = transportAircraft.cargoItemsForTransfer[1].loadoutId
+    },
+    transportAircraft.cargoItemsForTransfer[1].cargoItems
+  )
+  AssignMission.assignEmbarkedUnitsToMissions(
+    transportAircraft.guid,
+    constants.PLATFORM_TYPES.AIRCRAFT,
+    transportAircraft.dbid,
+    transportAircraft.missions
+  )
+  report.add("OK", { aircraft = transportAircraft.name or transportAircraft.guid, dbid = transportAircraft.dbid })
 
   report.emit()
 

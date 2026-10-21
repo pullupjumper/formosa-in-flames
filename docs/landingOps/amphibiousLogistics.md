@@ -59,7 +59,7 @@
 | `getUnitsInHoldingAreas(zone, filteredUnits)` | 到位偵測 |
 | `createCargoMissions(zone)` | 建立貨運任務，遇到第一個失敗即停止 |
 | `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨並指派 |
-| `transferAndAssignTransportAircraft(transportAircraft)` | 陸基運輸機轉貨並指派 |
+| `transferAndAssignTransportAircraft(transportAircraft)` | 單一陸基運輸機轉貨並指派 |
 | `transferRemainingCargos(zone, units)` | 補運：重新轉貨，**不重新指派**任務 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除貨物，回傳實際刪除數；ACV 釋放使用 |
 
@@ -74,7 +74,7 @@
 | `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、貨運任務清單、`transferManifest` |
 | `config.red.amphibOps.zones[].air.transportHelicopter`、`attackHelicopter` | 直升機 DBID、任務、`transferManifest` |
 | `config.red.amphibOps.zones[].movement.holdingAreas` | `mothership`、`deployLine` |
-| `config.red.amphibOps.transportAircraft` | 陸基運輸機清單 |
+| `zone.air.transportAircraft` | 陸基運輸機清單 |
 
 ---
 

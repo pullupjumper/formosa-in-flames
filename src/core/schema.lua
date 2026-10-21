@@ -982,6 +982,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field landingZone string[] Air landing zone reference area
 ---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
 ---@field casArea string[] CAS area reference points
+---@field transportAircraft? SBJ__TransportAircraftDescriptor Land-based transport aircraft airlifted when the zone leaves WAITING_ARRIVAL (nil = none)
+---@field reconTemplate? string Key of config.red.recon.templates queued when the zone leaves WAITING_ARRIVAL (nil = none)
 ---@field transportHelicopter SBJ__TransportHelicopterDescriptor Transport helicopter configuration
 ---@field attackHelicopter SBJ__AttackHelicopterDescriptor Attack helicopter configuration
 
@@ -1065,7 +1067,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field missionStartTime table<string, number[]> Mission start times by type (seconds)
 ---@field formation SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
----@field transportAircraft SBJ__TransportAircraftDescriptor[] Transport aircraft configuration
 ---@field debug SBJ__AmphibDebugConfig Live-test shortcuts
 ---@field tuning SBJ__AmphibTuningConfig Shared lane, boat, obstacle and ACV wave parameters
 ---@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start

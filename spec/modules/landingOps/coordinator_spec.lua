@@ -108,7 +108,6 @@ describe("LandingOps Coordinator", function()
           periodSec = 3600,
           remainingCargoTransferSec = 7200,
           tuning = { acvWave = {} },
-          transportAircraft = { { guid = "TA-001", name = "Transport 1" } },
         },
         triggers = {
           amphibiousOps = { startTime = "2026-04-03 00:00:00" },
@@ -287,8 +286,9 @@ describe("LandingOps Coordinator", function()
       assert.are.same(landingState.amphibOps.calculationResult, stubMoveToStagingArea.calls[1].vals[2])
     end)
 
-    it("should queue the GJ-11 recon entry after Taoyuan arrival logistics succeeds", function()
+    it("should queue the zone's recon template after arrival logistics succeeds", function()
       local config = buildConfig()
+      config.red.amphibOps.zones[1].air.reconTemplate = "GJ11_RECON"
       local landingState = buildLandingState()
 
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
@@ -301,24 +301,35 @@ describe("LandingOps Coordinator", function()
       assert.are.equal(1000, landingState.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
       assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
-      assert.stub(stubTransferTransportAircraft).was.called(1)
       assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.red.recon.templates.GJ11_RECON)
     end)
 
-    -- Non-Taoyuan zones skip transport-aircraft transfer and recon insertion
-    it("should not run Taoyuan temporary setup for a non-Taoyuan zone", function()
+    it("should airlift the zone's transport aircraft after arrival logistics succeeds", function()
       local config = buildConfig()
-      config.red.amphibOps.zones = { buildZone({ name = "Tainan" }) }
+      local transportAircraft = { { guid = "TA-001", name = "Transport 1" } }
+      config.red.amphibOps.zones[1].air.transportAircraft = transportAircraft
       local landingState = buildLandingState()
-      landingState.amphibOps.zoneStates = {
-        Tainan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
-      }
+
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
       stubGetUnitsInHoldingAreas.returns(buildHoldingResult())
 
       Coordinator.process(config, landingState,
         { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
-      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Tainan.phase)
+      assert.stub(stubTransferTransportAircraft).was.called_with(transportAircraft)
+    end)
+
+    it("should skip transport aircraft transfer and recon when the zone configures neither", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
+      stubGetUnitsInHoldingAreas.returns(buildHoldingResult())
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubTransferTransportAircraft).was_not.called()
       assert.stub(stubAddReconEntry).was_not.called()
     end)
