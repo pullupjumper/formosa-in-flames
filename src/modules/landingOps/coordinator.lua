@@ -163,10 +163,24 @@ local function stepAssaultLanding(tickCtx, zone, zoneState)
   end
 end
 
----WAITING_ADMIN_OFFLOADING: start admin offloading. Then the zone is done
+---Check if every ship and craft on the deploy line has released its ACVs, hovercraft and boats
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@return boolean
+local function isDeployLineReleased(tickCtx, zone, zoneState)
+  return not AmphibiousAssault.hasUnreleasedACV(zone, tickCtx.filteredShips) and
+      not Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, tickCtx.filteredShips) and
+      not AssaultBoat.hasPendingBoats(zoneState)
+end
+
+---WAITING_ADMIN_OFFLOADING: once the deploy line has released everything, start admin offloading. Then the zone is done
 ---@type SBJ__PhaseStep
 local function stepWaitingAdminOffloading(tickCtx, zone, zoneState)
-  -- TODO: Add the absolute-safety condition for admin offloading. The step now passes without a check
+  if not isDeployLineReleased(tickCtx, zone, zoneState) then
+    return
+  end
+
   local ok = AdminOffloading.startAdminOffloading(zone, tickCtx.landingState.amphibOps.barges, tickCtx.filteredShips)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED

@@ -502,6 +502,25 @@ function AmphibiousAssault.launchACV(params)
   return { count = count, isEmpty = false, isPaused = false }
 end
 
+---Check if any LST or ferry on the deploy line still carries ACVs
+---@param zone SBJ__OperationalZoneDescriptor
+---@param ships CMO__SideUnit[]
+---@return boolean # True if some ship in the ACV area still holds ZBD/ZTD cargo
+function AmphibiousAssault.hasUnreleasedACV(zone, ships)
+  for _, u in ipairs(ships) do
+    local ship = GameApi.ScenEdit_GetUnit(u.guid)
+    if ship and AmphibiousAssault.isFerryOrLST(ship) and ship:inArea(zone.landing.acv.area) then
+      for _, acvType in ipairs(ACV_TYPES) do
+        if countCargo(ship, acvType.dbid) > 0 then
+          return true
+        end
+      end
+    end
+  end
+
+  return false
+end
+
 ---Check if a ship is a ferry or Landing Ship Tank (LST).
 ---Include Type 071/072/073 and ferries that can launch ACVs or beach.
 ---@param ship CMO__Unit

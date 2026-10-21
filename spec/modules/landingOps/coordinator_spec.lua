@@ -235,8 +235,14 @@ describe("LandingOps Coordinator", function()
     local stubLaunchHovercraft
     local stubIsFirstWaveFull
     local stubUpdateHovercraft
+    local stubHasUnreleasedACV
+    local stubHasUnlaunchedHovercraft
+    local stubHasPendingBoats
 
     before_each(function()
+      stubHasUnreleasedACV = trackStub(stub(AmphibiousAssault, "hasUnreleasedACV").returns(false))
+      stubHasUnlaunchedHovercraft = trackStub(stub(Hovercraft, "hasUnlaunchedHovercraft").returns(false))
+      stubHasPendingBoats = trackStub(stub(AssaultBoat, "hasPendingBoats").returns(false))
       stubStartMineClearing = trackStub(stub(MineClearing, "startMineClearing").returns(true))
       stubUpdateMineClearing = trackStub(stub(MineClearing, "updateMineClearing").returns(false))
       stubPairBoats = trackStub(stub(AssaultBoat, "pairBoats").returns(true))
@@ -436,6 +442,26 @@ describe("LandingOps Coordinator", function()
       assert.are.same(landingState.amphibOps.barges, stubStartAdminOffloading.calls[1].vals[2])
       assert.stub(stubUpdateHovercraft).was.called(1)
     end)
+
+    for name, getStub in pairs({
+      ACVs = function() return stubHasUnreleasedACV end,
+      hovercraft = function() return stubHasUnlaunchedHovercraft end,
+      boats = function() return stubHasPendingBoats end,
+    }) do
+      it("should hold admin offloading while the deploy line still has unreleased " .. name, function()
+        local config = buildConfig()
+        local landingState = buildLandingState()
+        landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING
+        getStub().returns(true)
+
+        Coordinator.process(config, landingState,
+          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+        assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING,
+          landingState.amphibOps.zoneStates.Taoyuan.phase)
+        assert.stub(stubStartAdminOffloading).was_not.called()
+      end)
+    end
 
     it("should use the zone's own beachhead size", function()
       local config = buildConfig()

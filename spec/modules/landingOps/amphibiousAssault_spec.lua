@@ -1165,4 +1165,50 @@ describe("AmphibiousAssault", function()
       assert.is_nil(result)
     end)
   end)
+
+  describe("hasUnreleasedACV", function()
+    ---@param units table<string, table>
+    local function stubUnits(units)
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return units[guid] end))
+    end
+
+    it("should return true when a ship in the ACV area still carries ACVs", function()
+      local zone = buildZone()
+      stubUnits({ ["SHIP-001"] = buildUnit({ inArea = function() return true end }) })
+
+      assert.is_true(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+    end)
+
+    it("should return false when the ship carries no ZBD or ZTD", function()
+      local zone = buildZone()
+      local ship = buildUnit({
+        inArea = function() return true end,
+        cargo = { [1] = { cargo = { { guid = "C-1", dbid = constants.PLATFORMS.PLL05 } } } },
+      })
+      stubUnits({ ["SHIP-001"] = ship })
+
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+    end)
+
+    it("should ignore a loaded ship outside the ACV area", function()
+      local zone = buildZone()
+      stubUnits({ ["SHIP-001"] = buildUnit({ inArea = function() return false end }) })
+
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+    end)
+
+    it("should ignore a loaded ship that is not an LST or ferry", function()
+      local zone = buildZone()
+      stubUnits({ ["SHIP-001"] = buildUnit({ dbid = 1, inArea = function() return true end }) })
+
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+    end)
+
+    it("should skip a unit that no longer exists", function()
+      local zone = buildZone()
+      stubUnits({})
+
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+    end)
+  end)
 end)

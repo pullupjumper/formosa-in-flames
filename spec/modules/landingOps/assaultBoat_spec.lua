@@ -254,4 +254,25 @@ describe("AssaultBoat", function()
       assert.is_false(AssaultBoat.updateBoats(buildConfig(), zoneState))
     end)
   end)
+
+  describe("hasPendingBoats", function()
+    it("should return true when a boat is still pending", function()
+      local zoneState = { boats = {
+        ["BOAT-1"] = { status = "launched" },
+        ["BOAT-2"] = { status = "pending" },
+      } }
+
+      assert.is_true(AssaultBoat.hasPendingBoats(zoneState))
+    end)
+
+    it("should return false when no boat is pending", function()
+      local zoneState = { boats = { ["BOAT-1"] = { status = "launched" } } }
+
+      assert.is_false(AssaultBoat.hasPendingBoats(zoneState))
+    end)
+
+    it("should return false when no boats were paired", function()
+      assert.is_false(AssaultBoat.hasPendingBoats({}))
+    end)
+  end)
 end)

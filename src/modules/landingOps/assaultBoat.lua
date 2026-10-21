@@ -253,6 +253,19 @@ end
 
 ---Find the beach lanes with a landed boat that is still alive
 ---@param zoneState SBJ__ZoneState
+---Check if any paired boat is still waiting on its carrier
+---@param zoneState SBJ__ZoneState
+---@return boolean
+function AssaultBoat.hasPendingBoats(zoneState)
+  for _, entry in pairs(zoneState.boats or {}) do
+    if entry.status == STATUS.PENDING then
+      return true
+    end
+  end
+
+  return false
+end
+
 ---@return table<string, true>
 function AssaultBoat.findLandedLaneIdSet(zoneState)
   local laneIdSet = {}

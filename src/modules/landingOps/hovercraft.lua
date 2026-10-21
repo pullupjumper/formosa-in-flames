@@ -74,6 +74,23 @@ end
 -- Public API
 -- ============================================================================
 
+---Check if any mothership in the zone still holds a loaded hovercraft that is not routed yet
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@param ships CMO__SideUnit[]
+---@return boolean
+function Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships)
+  for _, u in ipairs(ships) do
+    local ship = GameApi.ScenEdit_GetUnit(u.guid)
+    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) and
+        #findReadyHovercraft(ship, zoneState.hovercraft or {}) > 0 then
+      return true
+    end
+  end
+
+  return false
+end
+
 ---Route and launch ready hovercraft from the motherships anchored in the zone. Set the course first, then launch.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
