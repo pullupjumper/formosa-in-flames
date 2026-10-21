@@ -277,6 +277,31 @@ describe("RoutePlanner", function()
   -- buildBoatRoute
   -- ============================================================================
 
+  describe("reserveShoreSlot", function()
+    it("should hold the slot on S_lane so the next unit parks behind the boat", function()
+      local lanes = buildLanes(1)
+      clearAll(lanes)
+      local params = buildParams(lanes)
+      local reserveParams = { lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }
+      local beachLane = lanes.waterLanes[1].beachLanes[1]
+
+      local slot = RoutePlanner.reserveShoreSlot(beachLane.id, reserveParams)
+
+      assert.is_true(slot > 1)
+      assert.are.equal("BOAT-1", params.laneSlots[beachLane.id][slot])
+      local plan = RoutePlanner.buildRoute(params)
+      assert.are_not.equal(slot, plan.slot)
+    end)
+
+    it("should return nil for an unknown beach lane", function()
+      local lanes = buildLanes(1)
+      local params = buildParams(lanes)
+
+      assert.is_nil(RoutePlanner.reserveShoreSlot("NOPE", {
+        lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }))
+    end)
+  end)
+
   describe("buildBoatRoute", function()
     local boatPos = LaneGeometry.buildPoint(frame, -3.5 * 1852, -375)
 

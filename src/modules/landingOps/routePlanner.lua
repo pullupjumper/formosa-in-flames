@@ -207,6 +207,27 @@ function RoutePlanner.findFreeSlot(beachLane, slots, params)
   return nil
 end
 
+---Reserve the parking slot that lies on S_lane for an assault boat.
+---The boat stays at S_lane after it lands, so the slot nearest to it is not free for other units.
+---@param beachLaneId string
+---@param params SBJ__ReserveShoreSlotParams
+---@return integer|nil # The reserved slot, or nil when the beach lane id is unknown
+function RoutePlanner.reserveShoreSlot(beachLaneId, params)
+  local _, beachLane = RoutePlanner.findBeachLane(params.lanes, beachLaneId)
+  if not beachLane then
+    return nil
+  end
+
+  local shoreToEndM = LaneGeometry.calculateDistanceM(beachLane.endPoint, beachLane.shorePoint)
+  local slot = math.min(
+    math.floor(shoreToEndM / params.routeConfig.queueSpacingM + 0.5) + 1,
+    countSlots(beachLane, params.routeConfig))
+  local slots = params.laneSlots[beachLaneId] or {}
+  slots[slot] = params.guid
+  params.laneSlots[beachLaneId] = slots
+  return slot
+end
+
 -- ============================================================================
 -- Course Building
 -- ============================================================================

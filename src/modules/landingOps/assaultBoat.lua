@@ -185,6 +185,7 @@ end
 ---@param zoneState SBJ__ZoneState
 function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
   zoneState.queueCounters = zoneState.queueCounters or {}
+  zoneState.laneSlots = zoneState.laneSlots or {}
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Launch assault boats")
 
   for boatGuid, entry in pairs(zoneState.boats or {}) do
@@ -206,6 +207,12 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
           boat:Launch(true)
           entry.status = STATUS.LAUNCHED
           entry.finalPoint = course[#course]
+          RoutePlanner.reserveShoreSlot(entry.beachLaneId, {
+            lanes = zoneState.lanes,
+            routeConfig = amphibOps.tuning.route,
+            laneSlots = zoneState.laneSlots,
+            guid = boatGuid,
+          })
           if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT) then
             DebugFlow.teleport(boatGuid, entry.finalPoint)
           end

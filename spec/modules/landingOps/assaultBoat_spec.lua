@@ -197,6 +197,10 @@ describe("AssaultBoat", function()
       assert.are.equal(30, boat.manualSpeed)
       assert.are.equal(5, #boat.course)
       assert.are.equal("launched", zoneState.boats["BOAT-1"].status)
+      local heldSlots = zoneState.laneSlots["W1-B2"]
+      local holders = {}
+      for _, holder in pairs(heldSlots) do table.insert(holders, holder) end
+      assert.are.same({ "BOAT-1" }, holders)
       assert.are.same(zoneState.lanes.waterLanes[1].beachLanes[2].shorePoint, zoneState.boats["BOAT-1"].finalPoint)
     end)
 

@@ -87,7 +87,6 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   zoneState.hovercraft = zoneState.hovercraft or {}
   zoneState.queueCounters = zoneState.queueCounters or {}
   zoneState.laneSlots = zoneState.laneSlots or {}
-  zoneState.laneSlots.hovercraft = zoneState.laneSlots.hovercraft or {}
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Launch hovercraft")
 
   for _, u in ipairs(ships) do
@@ -101,7 +100,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           guid = craft.guid,
           routeConfig = amphibOps.tuning.route,
           queueCounters = zoneState.queueCounters,
-          laneSlots = zoneState.laneSlots.hovercraft,
+          laneSlots = zoneState.laneSlots,
           cells = zoneState.obstacle and zoneState.obstacle.cells,
           isAlive = GameUtils.hasUnit,
         }, { isFromDeployLine = true })

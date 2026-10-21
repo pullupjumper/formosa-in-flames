@@ -25,7 +25,7 @@ flowchart TD
 
 對每艘：
 
-1. `RoutePlanner.buildRoute(..., { isFromDeployLine = true })` 算航線並預約停車位（氣墊船自己一套 `laneSlots.hovercraft`）
+1. `RoutePlanner.buildRoute(..., { isFromDeployLine = true })` 算航線並預約停車位（與兩棲車共用 `zoneState.laneSlots`）
 2. 成功：設 `course`、`manualSpeed`，再 `Launch(true)`（**先 course 再 Launch**），登記 `zoneState.hovercraft[guid] = { missionName, finalPoint, arrived = false }`
 3. 沒有可用通道或停車位：記 SKIP（`no_cleared_lane_slot`）。這艘不會登記，**下個 tick 再試**
 

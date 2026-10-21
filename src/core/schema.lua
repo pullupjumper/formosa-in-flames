@@ -764,9 +764,8 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__ObstacleState: table
 ---@field cells SBJ__ObstacleCellEntry[]
 
----@class SBJ__LaneSlotsState: table
----@field acv table<string, table<integer, string>> ACV slot holders per beach lane id
----@field hovercraft table<string, table<integer, string>> Hovercraft slot holders per beach lane id
+---Slot holders per beach lane id, shared by ACVs and hovercraft so no two units take the same slot
+---@alias SBJ__LaneSlotsState table<string, table<integer, string>>
 
 ---Inputs shared by the routes that enter a water lane abeam of the launch position
 ---@class SBJ__SideApproachParams: table
@@ -775,9 +774,15 @@ function ScenEdit_DeleteMine(params) end
 ---@field routeConfig SBJ__RouteConfig
 ---@field queueCounters table<string, integer> Also used as water lane load
 
+---@class SBJ__ReserveShoreSlotParams: table
+---@field lanes SBJ__LanePlanState
+---@field routeConfig SBJ__RouteConfig
+---@field laneSlots SBJ__LaneSlotsState
+---@field guid string Unit holding the slot
+
 ---@class SBJ__BuildRouteParams: SBJ__SideApproachParams
 ---@field guid string Unit taking the slot
----@field laneSlots table<string, table<integer, string>> Slot holders for this unit kind
+---@field laneSlots table<string, table<integer, string>> Slot holders per beach lane id (shared by every unit kind)
 ---@field cells SBJ__ObstacleCellEntry[]|nil
 ---@field isAlive fun(guid: string): boolean
 

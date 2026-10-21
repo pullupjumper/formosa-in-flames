@@ -28,7 +28,6 @@ local LandingOps = {}
 local function buildACVRouter(amphibOps, zone, zoneState)
   zoneState.queueCounters = zoneState.queueCounters or {}
   zoneState.laneSlots = zoneState.laneSlots or {}
-  zoneState.laneSlots.acv = zoneState.laneSlots.acv or {}
 
   return function(unit, acvKey)
     AcvWave.addACV(zoneState, acvKey, unit.guid)
@@ -39,7 +38,7 @@ local function buildACVRouter(amphibOps, zone, zoneState)
       guid = unit.guid,
       routeConfig = amphibOps.tuning.route,
       queueCounters = zoneState.queueCounters,
-      laneSlots = zoneState.laneSlots.acv,
+      laneSlots = zoneState.laneSlots,
       cells = zoneState.obstacle and zoneState.obstacle.cells,
       isAlive = GameUtils.hasUnit,
     })
