@@ -917,17 +917,18 @@ function ScenEdit_DeleteMine(params) end
 ---Common configuration for platforms that conduct landing missions with cargo transfer
 ---@class SBJ__CargoLandingPlatformDescriptor: table
 ---@field dbid number Platform database ID
----@field missions SBJ__LandingMissionDescriptor[] Landing mission descriptors
 ---@field zone string[] Landing zone reference points
 ---@field settings CMO__Mission Mission behavior settings (throttle, altitude, active status)
 ---@field transferManifest SBJ__ShipTypeCargoManifest Cargo transfer manifest by ship type
 
 ---Landing craft mission configuration for boat-based amphibious landings
 ---@class SBJ__HovercraftMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
+---@field missionName string Cargo mission the hovercraft are assigned to
 ---@field speed number
 
 ---Transport helicopter mission configuration for air assault operations
 ---@class SBJ__TransportHelicopterDescriptor: SBJ__CargoLandingPlatformDescriptor
+---@field missions SBJ__LandingMissionDescriptor[] Landing mission descriptors
 
 ---Attack helicopter mission configuration for close air support
 ---No cargo transfer capability

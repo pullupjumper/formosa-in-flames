@@ -31,25 +31,6 @@ local function hasCargo(unit)
   return unit.cargo ~= nil and unit.cargo[1] ~= nil and unit.cargo[1].cargo ~= nil and #unit.cargo[1].cargo > 0
 end
 
----Find the cargo mission to fill next: the first mission below its unit count, else the last mission
----@param zone SBJ__OperationalZoneDescriptor
----@param hovercraftMap table<string, SBJ__HovercraftState>
----@return string
-local function findMissionName(zone, hovercraftMap)
-  local missions = zone.landing.hovercraft.missions
-  local counts = {}
-  for _, entry in pairs(hovercraftMap) do
-    counts[entry.missionName] = (counts[entry.missionName] or 0) + 1
-  end
-
-  for _, mission in ipairs(missions) do
-    if (counts[mission.name] or 0) < mission.unitCount then
-      return mission.name
-    end
-  end
-  return missions[#missions].name
-end
-
 ---Find the hovercraft on one mothership that are ready, loaded, and not yet routed
 ---@param ship CMO__Unit
 ---@param hovercraftMap table<string, SBJ__HovercraftState>
@@ -127,7 +108,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           craft.manualSpeed = zone.landing.hovercraft.speed
           craft:Launch(true)
           zoneState.hovercraft[craft.guid] = {
-            missionName = findMissionName(zone, zoneState.hovercraft),
+            missionName = zone.landing.hovercraft.missionName,
             finalPoint = plan.course[#plan.course],
             arrived = false,
           }

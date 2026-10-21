@@ -14,10 +14,6 @@ local MISSION_TYPE = {
 }
 
 
----Zone config keys whose missions are created as cargo transport missions
----@type string[]
-local CARGO_MISSION_PLATFORMS = { "hovercraft", "transportHelicopter" }
-
 ---Zone group holding each mission platform descriptor
 ---@type table<string, "landing"|"air">
 local PLATFORM_GROUPS = { hovercraft = "landing", transportHelicopter = "air", attackHelicopter = "air" }
@@ -263,21 +259,24 @@ local function createSingleCargoMission(platformType, zone, missionName)
   return true, { tag = "OK", fields = { platform = platformType, mission = missionName } }
 end
 
----Create every cargo mission configured for a zone. Stop at the first failure
+---Create every cargo mission configured for a zone: the hovercraft mission first, then the helicopter missions.
+---Stop at the first failure
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return boolean success True when every mission was created
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function createZoneCargoMissions(zone)
   local results = {}
+  local missionNames = { { platformType = "hovercraft", name = zone.landing.hovercraft.missionName } }
+  for _, mission in ipairs(zone.air.transportHelicopter.missions) do
+    table.insert(missionNames, { platformType = "transportHelicopter", name = mission.name })
+  end
 
-  for _, platformType in ipairs(CARGO_MISSION_PLATFORMS) do
-    for _, mission in ipairs(getPlatformDescriptor(zone, platformType).missions) do
-      local created, result = createSingleCargoMission(platformType, zone, mission.name)
-      table.insert(results, result)
+  for _, item in ipairs(missionNames) do
+    local created, result = createSingleCargoMission(item.platformType, zone, item.name)
+    table.insert(results, result)
 
-      if not created then
-        return false, results
-      end
+    if not created then
+      return false, results
     end
   end
 

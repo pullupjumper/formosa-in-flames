@@ -59,7 +59,7 @@ describe("Hovercraft", function()
     name = "Taoyuan",
     movement = { holdingAreas = { mothership = { "RP-ANC" } } },
     landing = {
-      hovercraft = { speed = 40, missions = { { name = "LANDING/TAO/1/1", unitCount = 1 }, { name = "LANDING/TAO/1/2", unitCount = 3 } } },
+      hovercraft = { speed = 40, missionName = "LANDING/TAO/1/1" },
     },
   }
 

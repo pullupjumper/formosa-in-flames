@@ -33,11 +33,11 @@ flowchart TD
 
 ### 貨運任務怎麼分配？
 
-`findMissionName` 依 `zone.landing.hovercraft.missions` 的順序，找第一個已登記氣墊船數未達 `unitCount` 的任務；全滿就用最後一個。分配在**放出時**決定，不是到達時。
+每區只有一個氣墊船任務，放出時直接記入 `zone.landing.hovercraft.missionName`，到達停車位後才設到單位上。
 
 ### 為什麼等待區不指派氣墊船任務？
 
-氣墊船必須先走 cleared 通道到停車位，才能開始運貨。所以 [amphibiousLogistics](amphibiousLogistics.md) 只替氣墊船裝貨，通道走完才在這裡設任務；`boat` 類別的任務開始時間也不再設定。
+氣墊船必須先走 cleared 通道到停車位，才能開始運貨。所以 [amphibiousLogistics](amphibiousLogistics.md) 只替氣墊船裝貨，通道走完才在這裡設任務。
 
 ---
 
@@ -60,7 +60,7 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `zones[].landing.hovercraft` | `speed`、`missions[]`（`name`、`unitCount`） |
+| `zones[].landing.hovercraft` | `speed`、`missionName` |
 | `tuning.route.arrivalNm` | 到達判斷 |
 | `tuning.acvWave.hovercraftWaitSec` | 等第一波的上限，見 [acvWave](acvWave.md) |
 

@@ -1667,7 +1667,6 @@ config.red.amphibOps.transferCargo = {
 config.red.amphibOps.missionStartTime = {
   transportHelicopter = { 42 * 60, 72 * 60, 92 * 60, 112 * 60 },
   attackHelicopter = { 40 * 60, },
-  boat = { 41 * 60, 61 * 60, },
   reconUAV = { 0 }
 }
 config.red.amphibOps.formation = {
@@ -1886,20 +1885,7 @@ config.red.amphibOps.zones = {
     landing = {
       hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
-        missions = {
-          {
-            name = "LANDING/TAO/1/1",
-            loadoutId = 0,
-            unitCount = 1,
-            startTime = config.red.amphibOps.missionStartTime.boat[1],
-          },
-          -- {
-          --   name = "LANDING/TAO/1/2",
-          --   loadoutId = 0,
-          --   unitCount = 3,
-          --   startTime = config.red.amphibOps.missionStartTime.boat[2],
-          -- },
-        },
+        missionName = "LANDING/TAO/1/1",
         zone = constants.AREAS.LANDING_TAOYUAN,
         settings = {
           Subtype = "delivery",
@@ -2112,20 +2098,7 @@ config.red.amphibOps.zones = {
     landing = {
       hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
-        missions = {
-          {
-            name = "LANDING/SISHU/1/1",
-            loadoutId = 0,
-            unitCount = 1,
-            startTime = config.red.amphibOps.missionStartTime.boat[1],
-          },
-          -- {
-          --   name = "LANDING/SISHU/1/2",
-          --   loadoutId = 0,
-          --   unitCount = 3,
-          --   startTime = config.red.amphibOps.missionStartTime.boat[2],
-          -- },
-        },
+        missionName = "LANDING/SISHU/1/1",
         zone = constants.AREAS.LANDING_SISHU,
         settings = {
           Subtype = "delivery",
@@ -2337,20 +2310,7 @@ config.red.amphibOps.zones = {
     landing = {
       hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
-        missions = {
-          {
-            name = "LANDING/PENGHU/1/1",
-            loadoutId = 0,
-            unitCount = 1,
-            startTime = config.red.amphibOps.missionStartTime.boat[1],
-          },
-          -- {
-          --   name = "LANDING/PENGHU/1/2",
-          --   loadoutId = 0,
-          --   unitCount = 3,
-          --   startTime = config.red.amphibOps.missionStartTime.boat[2],
-          -- },
-        },
+        missionName = "LANDING/PENGHU/1/1",
         zone = constants.AREAS.LANDING_PENGHU,
         settings = {
           Subtype = "delivery",

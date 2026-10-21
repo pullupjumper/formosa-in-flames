@@ -116,9 +116,7 @@ describe("AmphibiousLogistics", function()
           dbid = 3001,
           zone = { "RP-BOAT-1" },
           settings = { throttle = "Full" },
-          missions = {
-            { name = "BoatMission-1", loadoutId = 10, unitCount = 2, startTime = 0 },
-          },
+          missionName = "BoatMission-1",
           transferManifest = {
             type075 = {
               [1] = { loadoutId = 10, cargoItems = { [1] = { buildCargoItem() } } },
@@ -587,17 +585,14 @@ describe("AmphibiousLogistics", function()
       )
     end)
 
-    it("should create missions for all missions in a zone", function()
+    it("should create the hovercraft mission and every helicopter mission in a zone", function()
       local zone = buildOperationalZone({
         landing = {
           hovercraft = {
             dbid = 3001,
             zone = { "RP-BOAT-1" },
             settings = { throttle = "Full" },
-            missions = {
-              { name = "BoatMission-1A", loadoutId = 10, unitCount = 1, startTime = 0 },
-              { name = "BoatMission-1B", loadoutId = 11, unitCount = 1, startTime = 0 },
-            },
+            missionName = "BoatMission-1A",
             transferManifest = { type075 = {}, type071 = {} },
           },
         },
@@ -617,8 +612,8 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_true(result)
-      -- 2 boat missions + 1 helo mission = 3
-      assert.stub(stubAddMission).was.called(3)
+      -- 1 boat mission + 1 helo mission = 2
+      assert.stub(stubAddMission).was.called(2)
     end)
 
     it("should return false when AddMission fails for boat mission", function()
@@ -683,7 +678,7 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubAssignMission).was.called_with(
         "SHIP-075", "Aircraft", zone.air.attackHelicopter.dbid, zone.air.attackHelicopter.missions)
       assert.stub(stubAssignMission).was_not.called_with(
-        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.landing.hovercraft.dbid, zone.landing.hovercraft.missions)
+        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.landing.hovercraft.dbid, zone.landing.hovercraft.missionName)
     end)
 
     it("should transfer cargo and assign missions for Type 076 ships", function()
