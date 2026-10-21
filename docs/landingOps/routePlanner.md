@@ -33,6 +33,24 @@
 
 兩棲車、氣墊船與衝鋒舟共用一張停車位表（`zoneState.laneSlots`），同一格只會被一個單位預約。衝鋒舟登陸後停在 S_lane，`reserveShoreSlot` 在它出發時就預約該處最近的一格，後到的單位排在它後面；船被摧毀後該格視為空。
 
+### 停車位表的資料格式
+
+`zoneState.laneSlots`（型別 `SBJ__LaneSlotsState`）：每條灘際通道一個陣列，第 N 格存佔住那格的單位 GUID。
+
+```lua
+zoneState.laneSlots = {
+  ["W1-B2"] = { "guid-ZBD", "guid-ZBD", false, false, "guid-BOAT", "guid-HOV" },
+  ["W2-B1"] = { "guid-ZTD" },
+}
+```
+
+- key 是灘際通道 id（`W1-B2` 是第 1 條水際通道的第 2 條灘際通道）。
+- 格號：第 1 格在 E_lane，每往後一格退 `queueSpacingM` 往 A_lane 靠。
+- 空格：值是 `nil`、`false`、自己的 GUID，或那個單位已不存在（`isAlive` 回 `false`）。
+- 誰寫入：`buildRoute` 拿第一個空格；`reserveShoreSlot` 替衝鋒舟預約 S_lane 最近的一格。
+
+**表必須是連續陣列，不能有洞。** 存檔是 JSON：連續陣列存成 `[...]`，讀回來 index 還是數字；有洞的表存成 `{"8": ...}`，key 讀回來變字串，`slots[8]` 就查不到，每格都被當成空的，所有單位會疊在第 1 格。所以 `reserveShoreSlot` 預約中間的格子時，會把前面的洞填 `false`。
+
 ### 為什麼兩棲車從側邊切入？
 
 兩棲車從展開線艦艇的側邊放出。改用橫向距離選通道，單位就會選相鄰的通道，只橫移半個艦間空隙，不會穿過別艘船所在的間隙。入口點是放出位置投影到通道上，且不會比展開線更靠外海、不會比 A_i 更靠岸；`L_i`、`A_i` 若已在入口點後方（入口點比它更靠岸）就省略，所以不回頭。
