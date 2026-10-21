@@ -293,6 +293,22 @@ describe("RoutePlanner", function()
       assert.are_not.equal(slot, plan.slot)
     end)
 
+    it("should leave no gap below the slot, so the table saves as a JSON array", function()
+      local lanes = buildLanes(1)
+      local params = buildParams(lanes)
+      local beachLane = lanes.waterLanes[1].beachLanes[1]
+
+      local slot = RoutePlanner.reserveShoreSlot(beachLane.id, {
+        lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" })
+
+      local slots = params.laneSlots[beachLane.id]
+      assert.is_true(slot > 1)
+      for i = 1, slot do
+        assert.is_not_nil(slots[i])
+      end
+      assert.are.equal(slot, #slots)
+    end)
+
     it("should return nil for an unknown beach lane", function()
       local lanes = buildLanes(1)
       local params = buildParams(lanes)

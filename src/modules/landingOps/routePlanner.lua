@@ -193,7 +193,7 @@ end
 ---Find the first free parking slot in a beach lane.
 ---A slot is free when it is empty, held by this unit, or held by a unit that no longer exists.
 ---@param beachLane SBJ__BeachLaneEntry
----@param slots table<integer, string>|nil
+---@param slots table<integer, string|false>|nil
 ---@param params SBJ__BuildRouteParams
 ---@return integer|nil
 function RoutePlanner.findFreeSlot(beachLane, slots, params)
@@ -223,6 +223,10 @@ function RoutePlanner.reserveShoreSlot(beachLaneId, params)
     math.floor(shoreToEndM / params.routeConfig.queueSpacingM + 0.5) + 1,
     countSlots(beachLane, params.routeConfig))
   local slots = params.laneSlots[beachLaneId] or {}
+  -- Fill the gap below with false. A sparse table saves as a JSON object, and its integer keys load back as strings
+  for i = #slots + 1, slot - 1 do
+    slots[i] = false
+  end
   slots[slot] = params.guid
   params.laneSlots[beachLaneId] = slots
   return slot
