@@ -272,7 +272,9 @@ describe("AssaultBoat", function()
     end)
 
     it("should return false when no boats were paired", function()
-      assert.is_false(AssaultBoat.hasPendingBoats({}))
+      local zoneState = {}
+
+      assert.is_false(AssaultBoat.hasPendingBoats(zoneState))
     end)
   end)
 end)

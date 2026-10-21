@@ -209,36 +209,44 @@ describe("Hovercraft", function()
   end)
 
   describe("hasUnlaunchedHovercraft", function()
+    local ships = { { guid = "LHD-1" } }
+
     it("should return true when a mothership holds a loaded, unrouted hovercraft", function()
       stubFleet(buildCraft({}))
+      local zoneState = {}
 
-      assert.is_true(Hovercraft.hasUnlaunchedHovercraft(zone, {}, { { guid = "LHD-1" } }))
+      assert.is_true(Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships))
     end)
 
     it("should return false once the hovercraft is routed", function()
       stubFleet(buildCraft({}))
+      local zoneState = { hovercraft = { ["LCAC-1"] = {} } }
 
-      assert.is_false(Hovercraft.hasUnlaunchedHovercraft(zone, { hovercraft = { ["LCAC-1"] = {} } }, { { guid = "LHD-1" } }))
+      assert.is_false(Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships))
     end)
 
     it("should return false when the hovercraft carries no cargo", function()
       stubFleet(buildCraft({}, { cargo = { { cargo = {} } } }))
+      local zoneState = {}
 
-      assert.is_false(Hovercraft.hasUnlaunchedHovercraft(zone, {}, { { guid = "LHD-1" } }))
+      assert.is_false(Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships))
     end)
 
     it("should return false when the mothership is outside the holding area", function()
       local craft = buildCraft({})
-      stubFleet(craft)
-      local outside = { guid = "LHD-2", dbid = constants.PLATFORMS.TYPE_075, inArea = function() return false end,
-        embarkedUnits = { [constants.PLATFORM_TYPES.BOATS] = { craft.guid } } }
-      GameApi.ScenEdit_GetUnit:revert()
+      local outside = {
+        guid = "LHD-1",
+        dbid = constants.PLATFORMS.TYPE_075,
+        inArea = function() return false end,
+        embarkedUnits = { [constants.PLATFORM_TYPES.BOATS] = { craft.guid } },
+      }
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "LHD-2" then return outside end
+        if guid == "LHD-1" then return outside end
         return craft
       end))
+      local zoneState = {}
 
-      assert.is_false(Hovercraft.hasUnlaunchedHovercraft(zone, {}, { { guid = "LHD-2" } }))
+      assert.is_false(Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships))
     end)
   end)
 end)

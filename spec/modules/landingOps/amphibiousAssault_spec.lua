@@ -1167,6 +1167,8 @@ describe("AmphibiousAssault", function()
   end)
 
   describe("hasUnreleasedACV", function()
+    local ships = { { guid = "SHIP-001" } }
+
     ---@param units table<string, table>
     local function stubUnits(units)
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return units[guid] end))
@@ -1176,7 +1178,7 @@ describe("AmphibiousAssault", function()
       local zone = buildZone()
       stubUnits({ ["SHIP-001"] = buildUnit({ inArea = function() return true end }) })
 
-      assert.is_true(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+      assert.is_true(AmphibiousAssault.hasUnreleasedACV(zone, ships))
     end)
 
     it("should return false when the ship carries no ZBD or ZTD", function()
@@ -1187,28 +1189,28 @@ describe("AmphibiousAssault", function()
       })
       stubUnits({ ["SHIP-001"] = ship })
 
-      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, ships))
     end)
 
     it("should ignore a loaded ship outside the ACV area", function()
       local zone = buildZone()
       stubUnits({ ["SHIP-001"] = buildUnit({ inArea = function() return false end }) })
 
-      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, ships))
     end)
 
     it("should ignore a loaded ship that is not an LST or ferry", function()
       local zone = buildZone()
       stubUnits({ ["SHIP-001"] = buildUnit({ dbid = 1, inArea = function() return true end }) })
 
-      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, ships))
     end)
 
     it("should skip a unit that no longer exists", function()
       local zone = buildZone()
       stubUnits({})
 
-      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, { { guid = "SHIP-001" } }))
+      assert.is_false(AmphibiousAssault.hasUnreleasedACV(zone, ships))
     end)
   end)
 end)
