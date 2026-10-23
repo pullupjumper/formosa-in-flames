@@ -185,6 +185,25 @@ local function calculateShipPositions(firstRp, verticalHeading, verticalDistance
   return positions
 end
 
+---Copy the embarked units, naming unnamed ones after the fleet
+---@param embarkedUnits SBJ__EmbarkedUnit[]|nil
+---@param fleetName string
+---@return SBJ__EmbarkedUnit[]|nil
+local function nameEmbarkedUnits(embarkedUnits, fleetName)
+  if not embarkedUnits then return nil end
+
+  local named = {}
+  for _, embarkedUnit in ipairs(embarkedUnits) do
+    local copy = {}
+    for key, value in pairs(embarkedUnit) do
+      copy[key] = value
+    end
+    copy.name = copy.name or fleetName
+    table.insert(named, copy)
+  end
+  return named
+end
+
 ---Create ships by type
 ---@param position CMO__Location
 ---@param shipType SBJ__AmphibiousShipType
@@ -192,78 +211,7 @@ end
 local function createShipsByType(position, shipType, formationCtx)
   local group, fleet = formationCtx.group, formationCtx.fleet
   local shipSettings, cargoMap = formationCtx.shipSettings, formationCtx.cargoMap
-  local shipConfigs = {
-    type075 = {
-      dbid = constants.PLATFORMS.TYPE_075,
-      name = "Type 075",
-      cargo = cargoMap.type075,
-      embarkedUnits = {
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
-      }
-    },
-    type071 = {
-      dbid = constants.PLATFORMS.TYPE_071,
-      name = "Type 071",
-      cargo = cargoMap.type071,
-      embarkedUnits = {
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 4 } } }
-      }
-    },
-    type076 = {
-      dbid = constants.PLATFORMS.TYPE_076,
-      name = "Type 076",
-      cargo = cargoMap.type075,
-      embarkedUnits = {
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z18,       loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 }, { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.Z10,       loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.AIRCRAFT, name = fleet.names[1], dbid = constants.PLATFORMS.GJ11,      loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } } },
-        { side = constants.SIDES.RED, type = constants.UNIT_TYPES.SHIP,     name = "Warbird",           dbid = constants.PLATFORMS.TYPE_726A, loadouts = { { loadoutId = 0, num = 3 } } }
-      }
-    },
-    barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge", cargo = nil, embarkedUnits = nil },
-    roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargo = cargoMap.barge, embarkedUnits = nil },
-    type072a = {
-      dbid = constants.PLATFORMS.TYPE_072A,
-      name = "Type 072A",
-      cargo = cargoMap.type072a,
-      embarkedUnits = {
-        {
-          side = constants.SIDES.RED,
-          type = constants.UNIT_TYPES.SHIP,
-          name = "Assault Boat",
-          dbid = constants.PLATFORMS.ASSAULT_BOAT,
-          loadouts = { { loadoutId = 0, num = 2 } }
-        }
-      }
-    },
-    type072iii = {
-      dbid = constants.PLATFORMS.TYPE_072III,
-      name = "Type 072III",
-      cargo = cargoMap.type072iii,
-      embarkedUnits = {
-        {
-          side = constants.SIDES.RED,
-          type = constants.UNIT_TYPES.SHIP,
-          name = "Assault Boat",
-          dbid = constants.PLATFORMS.ASSAULT_BOAT,
-          loadouts = { { loadoutId = 0, num = 2 } }
-        }
-      }
-    },
-    ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargo = cargoMap.ferry, embarkedUnits = nil },
-    type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = cargoMap.type073a, embarkedUnits = nil },
-    type082 = {
-      dbid = constants.PLATFORMS.TYPE_082,
-      name = "Type 082",
-      cargo = nil,
-      embarkedUnits = nil
-    },
-  }
-
-  local shipConfig = shipConfigs[shipType]
+  local shipConfig = formationCtx.ships[shipType]
   if not shipConfig then return end
 
   ---@type SBJ__LinearPlacementParams
@@ -279,12 +227,12 @@ local function createShipsByType(position, shipType, formationCtx)
     type = constants.UNIT_TYPES.SHIP,
     name = shipConfig.name,
     dbid = shipConfig.dbid,
-    cargo = shipConfig.cargo,
+    cargo = shipConfig.cargoKey and cargoMap[shipConfig.cargoKey] or nil,
     heading = group.from.heading,
     manualSpeed = shipSettings.shipSpeed,
   }
 
-  addUnitsByRP(params, unitDescriptor, shipConfig.embarkedUnits)
+  addUnitsByRP(params, unitDescriptor, nameEmbarkedUnits(shipConfig.embarkedUnits, fleet.names[1]))
 end
 
 ---Get SAG formation configuration
@@ -716,7 +664,8 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
         group = group,
         fleet = zone.fleet,
         shipSettings = layoutConfig,
-        cargoMap = cargoMap
+        cargoMap = cargoMap,
+        ships = amphibOpsConfig.ships
       }
       createShipsByType(positions.type075, "type075", formationCtx)
       createShipsByType(positions.type071, "type071", formationCtx)

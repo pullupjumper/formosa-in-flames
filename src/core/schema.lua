@@ -555,7 +555,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__EmbarkedUnit: table
 ---@field side string Side name (e.g., "China", "Taiwan", "US")
 ---@field type string Unit type (e.g., "Aircraft", "Helicopter")
----@field name string Unit name
+---@field name? string Unit name; nil takes the fleet name
 ---@field platformName string Display name of aircraft platform
 ---@field dbid number Unit database ID
 ---@field loadouts? SBJ__Loadout[] Unit ammunition configuration
@@ -1054,6 +1054,13 @@ function ScenEdit_DeleteMine(params) end
 ---@field startStage? string Phase to start testing at (constants.AMPHIBIOUS_PHASES); earlier phases are fast-forwarded. nil fast-forwards all phases
 ---@field teleportLanding boolean Hovercraft and ACVs teleport to their parking slot instead of sailing
 
+---Ship definition created for each fleet group
+---@class SBJ__AmphibShipDescriptor: table
+---@field dbid number Platform database ID
+---@field name string Unit name
+---@field cargoKey? string Key of the manifest in SBJ__AmphibOpsConfig.cargo
+---@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft and boats carried aboard
+
 ---Amphibious Operations system configuration
 ---Comprehensive configuration for amphibious assault operations including
 ---cargo manifests, ship layouts, operational zones, and mission timing
@@ -1065,6 +1072,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
 ---@field cargo table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field transferCargo table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
+---@field ships table<SBJ__AmphibiousShipType, SBJ__AmphibShipDescriptor> Ship definitions by ship type
 ---@field missionStartTime table<string, number[]> Mission start times by type (seconds)
 ---@field formation SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
@@ -2191,6 +2199,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field fleet SBJ__FleetDescriptor Fleet configuration of the zone
 ---@field shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
 ---@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
+---@field ships table<SBJ__AmphibiousShipType, SBJ__AmphibShipDescriptor> Ship definitions
 
 ---Inputs for inserting one evaluated FSEM
 ---@class SBJ__MatrixInsertParams: table

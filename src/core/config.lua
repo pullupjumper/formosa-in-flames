@@ -1620,7 +1620,7 @@ config.red.amphibOps.cargo = {
     { type = 2, num = 56, dbid = constants.PLATFORMS.ZBD05 }, -- ZBD-05
     { type = 2, num = 56, dbid = constants.PLATFORMS.ZTD05 }, -- ZTD-05
   },
-  barge = {
+  roro = {
     { type = 2, num = 28, dbid = constants.PLATFORMS.ZBD04 },  -- ZBD-04
     { type = 2, num = 28, dbid = constants.PLATFORMS.ZTZ96A }, -- ZTZ-96A
     { type = 2, num = 9,  dbid = constants.PLATFORMS.PLL05 },  -- PLL-05
@@ -1630,6 +1630,127 @@ config.red.amphibOps.cargo = {
     { type = 3, num = 1,  dbid = constants.PLATFORMS.SA15 },   -- SA-15
     { type = 2, num = 4,  dbid = constants.PLATFORMS.M977 },   -- M977
   }
+}
+-- Ships created for each fleet group. cargoKey picks the manifest in config.red.amphibOps.cargo.
+-- An embarked unit without a name takes the zone's fleet name.
+config.red.amphibOps.ships = {
+  type075 = {
+    dbid = constants.PLATFORMS.TYPE_075,
+    name = "Type 075",
+    cargoKey = "type075",
+    embarkedUnits = {
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.AIRCRAFT,
+        dbid = constants.PLATFORMS.Z18,
+        loadouts = {
+          { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 },
+          { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 }
+        }
+      },
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.AIRCRAFT,
+        dbid = constants.PLATFORMS.Z10,
+        loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } }
+      },
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.SHIP,
+        name = "Warbird",
+        dbid = constants.PLATFORMS.TYPE_726A,
+        loadouts = { { loadoutId = 0, num = 3 } }
+      }
+    }
+  },
+  type071 = {
+    dbid = constants.PLATFORMS.TYPE_071,
+    name = "Type 071",
+    cargoKey = "type071",
+    embarkedUnits = {
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.AIRCRAFT,
+        dbid = constants.PLATFORMS.Z18,
+        loadouts = { { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 4 } }
+      },
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.SHIP,
+        name = "Warbird",
+        dbid = constants.PLATFORMS.TYPE_726A,
+        loadouts = { { loadoutId = 0, num = 4 } }
+      }
+    }
+  },
+  type076 = {
+    dbid = constants.PLATFORMS.TYPE_076,
+    name = "Type 076",
+    cargoKey = "type075",
+    embarkedUnits = {
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.AIRCRAFT,
+        dbid = constants.PLATFORMS.Z18,
+        loadouts = {
+          { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1, num = 6 },
+          { loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2, num = 6 }
+        }
+      },
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.AIRCRAFT,
+        dbid = constants.PLATFORMS.Z10,
+        loadouts = { { loadoutId = constants.LOADOUTS.Z10_ATTACK, num = 13 } }
+      },
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.AIRCRAFT,
+        dbid = constants.PLATFORMS.GJ11,
+        loadouts = { { loadoutId = constants.LOADOUTS.GJ11_RECON, num = 8 } }
+      },
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.SHIP,
+        name = "Warbird",
+        dbid = constants.PLATFORMS.TYPE_726A,
+        loadouts = { { loadoutId = 0, num = 3 } }
+      }
+    }
+  },
+  barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge" },
+  roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargoKey = "roro" },
+  type072a = {
+    dbid = constants.PLATFORMS.TYPE_072A,
+    name = "Type 072A",
+    cargoKey = "type072a",
+    embarkedUnits = {
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.SHIP,
+        name = "Assault Boat",
+        dbid = constants.PLATFORMS.ASSAULT_BOAT,
+        loadouts = { { loadoutId = 0, num = 2 } }
+      }
+    }
+  },
+  type072iii = {
+    dbid = constants.PLATFORMS.TYPE_072III,
+    name = "Type 072III",
+    cargoKey = "type072iii",
+    embarkedUnits = {
+      {
+        side = constants.SIDES.RED,
+        type = constants.UNIT_TYPES.SHIP,
+        name = "Assault Boat",
+        dbid = constants.PLATFORMS.ASSAULT_BOAT,
+        loadouts = { { loadoutId = 0, num = 2 } }
+      }
+    }
+  },
+  ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargoKey = "ferry" },
+  type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargoKey = "type073a" },
+  type082 = { dbid = constants.PLATFORMS.TYPE_082, name = "Type 082" },
 }
 config.red.amphibOps.transferCargo = {
   boat = {
