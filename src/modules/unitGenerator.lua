@@ -210,7 +210,7 @@ end
 ---@param formationCtx SBJ__ShipFormationContext
 local function createShipsByType(position, shipType, formationCtx)
   local group, fleet = formationCtx.group, formationCtx.fleet
-  local shipSettings, cargoMap = formationCtx.shipSettings, formationCtx.cargoMap
+  local shipSettings = formationCtx.shipSettings
   local shipConfig = formationCtx.ships[shipType]
   if not shipConfig then return end
 
@@ -227,7 +227,7 @@ local function createShipsByType(position, shipType, formationCtx)
     type = constants.UNIT_TYPES.SHIP,
     name = shipConfig.name,
     dbid = shipConfig.dbid,
-    cargo = shipConfig.cargoKey and cargoMap[shipConfig.cargoKey] or nil,
+    cargo = shipConfig.cargo,
     heading = group.from.heading,
     manualSpeed = shipSettings.shipSpeed,
   }
@@ -649,7 +649,6 @@ end
 ---@return boolean # Whether successful
 function UnitGenerator.addLandingShips(amphibOpsConfig)
   local layoutConfig = amphibOpsConfig.formation
-  local cargoMap = amphibOpsConfig.cargo
 
   for _, zone in ipairs(amphibOpsConfig.zones) do
     for _, group in ipairs(zone.fleet.groups) do
@@ -664,7 +663,6 @@ function UnitGenerator.addLandingShips(amphibOpsConfig)
         group = group,
         fleet = zone.fleet,
         shipSettings = layoutConfig,
-        cargoMap = cargoMap,
         ships = amphibOpsConfig.ships
       }
       createShipsByType(positions.type075, "type075", formationCtx)

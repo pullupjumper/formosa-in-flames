@@ -1644,13 +1644,13 @@ config.red.amphibOps.cargo = {
     { type = 2, num = 2,  dbid = constants.PLATFORMS.M977 },   -- M977
   }
 }
--- Ships created for each fleet group. cargoKey picks the manifest in config.red.amphibOps.cargo.
+-- Ships created for each fleet group. cargo is the manifest loaded aboard.
 -- An embarked unit without a name takes the zone's fleet name.
 config.red.amphibOps.ships = {
   type075 = {
     dbid = constants.PLATFORMS.TYPE_075,
     name = "Type 075",
-    cargoKey = "type075",
+    cargo = config.red.amphibOps.cargo.type075,
     embarkedUnits = {
       {
         side = constants.SIDES.RED,
@@ -1679,7 +1679,7 @@ config.red.amphibOps.ships = {
   type071 = {
     dbid = constants.PLATFORMS.TYPE_071,
     name = "Type 071",
-    cargoKey = "type071",
+    cargo = config.red.amphibOps.cargo.type071,
     embarkedUnits = {
       {
         side = constants.SIDES.RED,
@@ -1699,7 +1699,7 @@ config.red.amphibOps.ships = {
   type076 = {
     dbid = constants.PLATFORMS.TYPE_076,
     name = "Type 076",
-    cargoKey = "type075",
+    cargo = config.red.amphibOps.cargo.type075,
     embarkedUnits = {
       {
         side = constants.SIDES.RED,
@@ -1732,11 +1732,11 @@ config.red.amphibOps.ships = {
     }
   },
   barge = { dbid = constants.PLATFORMS.BARGE, name = "Barge" },
-  roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargoKey = "roro" },
+  roro = { dbid = constants.PLATFORMS.FERRY, name = "RORO", cargo = config.red.amphibOps.cargo.roro },
   type072a = {
     dbid = constants.PLATFORMS.TYPE_072A,
     name = "Type 072A",
-    cargoKey = "type072a",
+    cargo = config.red.amphibOps.cargo.type072a,
     embarkedUnits = {
       {
         side = constants.SIDES.RED,
@@ -1750,7 +1750,7 @@ config.red.amphibOps.ships = {
   type072iii = {
     dbid = constants.PLATFORMS.TYPE_072III,
     name = "Type 072III",
-    cargoKey = "type072iii",
+    cargo = config.red.amphibOps.cargo.type072iii,
     embarkedUnits = {
       {
         side = constants.SIDES.RED,
@@ -1761,8 +1761,8 @@ config.red.amphibOps.ships = {
       }
     }
   },
-  ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargoKey = "ferry" },
-  type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargoKey = "type073a" },
+  ferry = { dbid = constants.PLATFORMS.FERRY, name = "Ferry", cargo = config.red.amphibOps.cargo.ferry },
+  type073a = { dbid = constants.PLATFORMS.TYPE_073A, name = "Type 073A", cargo = config.red.amphibOps.cargo.type073a },
   type082 = { dbid = constants.PLATFORMS.TYPE_082, name = "Type 082" },
 }
 config.red.amphibOps.transferCargo = {

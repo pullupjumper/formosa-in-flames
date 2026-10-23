@@ -1058,7 +1058,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__AmphibShipDescriptor: table
 ---@field dbid number Platform database ID
 ---@field name string Unit name
----@field cargoKey? string Key of the manifest in SBJ__AmphibOpsConfig.cargo
+---@field cargo? SBJ__CargoDescriptor[] Manifest loaded aboard
 ---@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft and boats carried aboard
 
 ---Amphibious Operations system configuration
@@ -2198,7 +2198,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field group SBJ__FleetGroup Group configuration
 ---@field fleet SBJ__FleetDescriptor Fleet configuration of the zone
 ---@field shipSettings SBJ__AmphibiousFormationConfig Amphibious layout configuration
----@field cargoMap table<string, SBJ__CargoDescriptor[]> Cargo list
 ---@field ships table<SBJ__AmphibiousShipType, SBJ__AmphibShipDescriptor> Ship definitions
 
 ---Inputs for inserting one evaluated FSEM
