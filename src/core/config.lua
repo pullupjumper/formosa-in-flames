@@ -1573,6 +1573,19 @@ config.red.air.deployedACs = {
 -- PLZ-96 * 27
 -- SA-15 * 2
 
+-- MC * 32
+-- HMMWV * 21
+-- ZDB-03 * 21
+
+-- ZBD-04 * 28 * 4
+-- ZTZ-96A * 28 * 4
+-- PLL-05 * 36
+-- PGZ-95 * 9
+-- PGZ-09 * 3
+-- PLZ-07/PLZ-96 * 27
+-- SA-15 * 1
+-- M977 * 4
+
 config.red.amphibOps = {}
 -- Live-test shortcuts; leave enabled = false for a real run
 config.red.amphibOps.debug = {
@@ -1587,19 +1600,19 @@ config.red.amphibOps.bargeRoroPairingRangeNm = 1 -- 駁船與 RORO 距離小於�
 config.red.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.red.amphibOps.cargo = {
   type075 = {
-    { type = 2, num = 21, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
-    { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
-    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 3 (2x 35mm/90 PGZ-09 SPAAG)
-    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 1 (2x 25mm Quad PGZ04A PGZ95 Type 95 SPAAG/SAM)
-    { type = 3, num = 30, dbid = constants.PLATFORMS.HMMWV }, -- HMMWV 30
-    { type = 3, num = 76, dbid = constants.PLATFORMS.MC },    -- MC 76 (4x Infantry Section [7.62mm MG/Unguided Infantry Anti Tank Weapon])
+    { type = 2, num = 16, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05
+    { type = 2, num = 11, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96
+    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 (2x 35mm/90 PGZ-09 SPAAG)
+    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 (2x 25mm Quad PGZ04A PGZ95 Type 95 SPAAG/SAM)
+    { type = 3, num = 50, dbid = constants.PLATFORMS.HMMWV }, -- HMMWV
+    { type = 3, num = 41, dbid = constants.PLATFORMS.MC },    -- MC (4x Infantry Section [7.62mm MG/Unguided Infantry Anti Tank Weapon])
   },
   type071 = {
-    { type = 2, num = 5,  dbid = constants.PLATFORMS.PLL05 }, -- PLL-05 11
-    { type = 2, num = 12, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96 12
-    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 3 (2x 35mm/90 PGZ-09 SPAAG)
-    { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 1 (2x 25mm Quad PGZ04A PGZ95 Type 95 SPAAG/SAM)
-    { type = 3, num = 2,  dbid = constants.PLATFORMS.SA15 },  -- SA-15 2 (2x SA-15e Gauntlet [9A331] TELAR)
+    { type = 2, num = 5,  dbid = constants.PLATFORMS.PLL05 }, -- PLL-05
+    { type = 2, num = 10, dbid = constants.PLATFORMS.PLZ96 }, -- PLZ-96
+    { type = 3, num = 2,  dbid = constants.PLATFORMS.PGZ09 }, -- PGZ-09 (2x 35mm/90 PGZ-09 SPAAG)
+    { type = 3, num = 2,  dbid = constants.PLATFORMS.PGZ95 }, -- PGZ-95 (2x 25mm Quad PGZ04A PGZ95 Type 95 SPAAG/SAM)
+    { type = 3, num = 1,  dbid = constants.PLATFORMS.SA15 },  -- SA-15 (2x SA-15e Gauntlet [9A331] TELAR)
     { type = 3, num = 22, dbid = constants.PLATFORMS.MC }     -- MC (4x Infantry Section [7.62mm MG/Unguided Infantry Anti Tank Weapon])
   },
   type072iii = {
@@ -1621,14 +1634,14 @@ config.red.amphibOps.cargo = {
     { type = 2, num = 56, dbid = constants.PLATFORMS.ZTD05 }, -- ZTD-05
   },
   roro = {
-    { type = 2, num = 28, dbid = constants.PLATFORMS.ZBD04 },  -- ZBD-04
-    { type = 2, num = 28, dbid = constants.PLATFORMS.ZTZ96A }, -- ZTZ-96A
-    { type = 2, num = 9,  dbid = constants.PLATFORMS.PLL05 },  -- PLL-05
-    { type = 3, num = 2,  dbid = constants.PLATFORMS.PGZ95 },  -- PGZ-95
+    { type = 2, num = 42, dbid = constants.PLATFORMS.ZBD04 },  -- ZBD-04
+    { type = 2, num = 42, dbid = constants.PLATFORMS.ZTZ96A }, -- ZTZ-96A
+    { type = 2, num = 14, dbid = constants.PLATFORMS.PLL05 },  -- PLL-05
+    { type = 3, num = 3,  dbid = constants.PLATFORMS.PGZ95 },  -- PGZ-95
     { type = 3, num = 1,  dbid = constants.PLATFORMS.PGZ09 },  -- PGZ-09
-    { type = 2, num = 7,  dbid = constants.PLATFORMS.PLZ96 },  -- PLZ-07/PLZ-96
+    { type = 2, num = 10, dbid = constants.PLATFORMS.PLZ96 },  -- PLZ-07/PLZ-96
     { type = 3, num = 1,  dbid = constants.PLATFORMS.SA15 },   -- SA-15
-    { type = 2, num = 4,  dbid = constants.PLATFORMS.M977 },   -- M977
+    { type = 2, num = 2,  dbid = constants.PLATFORMS.M977 },   -- M977
   }
 }
 -- Ships created for each fleet group. cargoKey picks the manifest in config.red.amphibOps.cargo.
@@ -1871,7 +1884,7 @@ config.red.amphibOps.zones = {
             type072a = 8,
             type073a = 7,
             ferry = 4,
-            roro = 2,
+            roro = 3,
             barge = 1,
             type082 = 4
           },
@@ -2087,7 +2100,7 @@ config.red.amphibOps.zones = {
             type072a = 4,
             type073a = 2,
             ferry = 4,
-            roro = 2,
+            roro = 3,
             barge = 1,
             type082 = 4
           },
