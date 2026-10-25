@@ -114,8 +114,8 @@ function IntegratedAirDefenseSystem.setSamDoctrine(entries)
     if unit then
       local wcs = entry.weaponFree and constants.WCS.TIGHT or constants.WCS.HOLD
       local emissionFlag = entry.weaponFree and 1 or 0
-      local useInterval = emissionFlag == 0 and 1 or 0
-      local interval = useInterval == 1 and SLEEP_EMISSION_INTERVAL_SEC or 0
+      local useInterval = entry.weaponFree and 0 or 1
+      local interval = entry.weaponFree and 0 or SLEEP_EMISSION_INTERVAL_SEC
 
       GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = wcs })
       GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",

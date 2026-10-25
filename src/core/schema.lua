@@ -811,7 +811,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__HovercraftState: table
 ---@field missionName string Cargo mission to assign after arrival
 ---@field finalPoint CMO__Location Parking slot
----@field phase string "enroute", "unloading" or "returning"
+---@field phase SBJ__HovercraftPhaseType
 
 ---Helicopter wave progress of one zone. Hold only the wave in the air; a new wave replaces it
 ---@class SBJ__HeliWaveState: table
@@ -830,9 +830,9 @@ function ScenEdit_DeleteMine(params) end
 
 ---One helicopter of the current wave
 ---@class SBJ__HeliState: table
----@field role string "transport" or "attack"
----@field wing string "left" or "right"
----@field phase string "enroute", "unloading", "loitering" or "returning"
+---@field role SBJ__HeliRoleType
+---@field wing SBJ__HeliWingType
+---@field phase SBJ__HeliPhaseType
 ---@field landingPoint CMO__Location Where this helicopter lands (transport) or loiters (attack)
 
 ---Amphibious operations context managing all amphibious operation state

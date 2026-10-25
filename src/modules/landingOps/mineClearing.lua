@@ -79,7 +79,7 @@ end
 ---@param lanes SBJ__LanePlanState
 ---@return integer # Mines deleted
 local function removeMinesOnLanes(amphibOps, lanes)
-  local frame = { origin = lanes.origin, bearing = lanes.bearing }
+  local frame = LaneGeometry.buildFrame(lanes)
   local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.tuning.mineClearing.cellSizeM)
   local deleted = 0
 

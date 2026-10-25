@@ -1,6 +1,7 @@
 local constants = {}
 
 constants.METERS_PER_NM = 1852
+constants.SECONDS_PER_HOUR = 3600
 
 constants.AREAS = {
   -- START: TAIWAN_AREAS_BLOCK
@@ -538,6 +539,14 @@ constants.PLATFORMS = {
   ASSAULT_BOAT = 3948,
   -- TYPE_082 = 4682
   TYPE_082 = 2647
+}
+
+---Amphibious ships that carry helicopters and hovercraft
+---@type table<number, true>
+constants.MOTHERSHIP_DBID_SET = {
+  [constants.PLATFORMS.TYPE_075] = true,
+  [constants.PLATFORMS.TYPE_076] = true,
+  [constants.PLATFORMS.TYPE_071] = true,
 }
 
 constants.SENSORS = {

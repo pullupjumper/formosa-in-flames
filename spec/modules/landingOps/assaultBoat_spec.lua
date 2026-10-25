@@ -3,6 +3,7 @@
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local GameApi = require("src.utils.gameApi")
+local DebugFlow = require("src.modules.landingOps.debugFlow")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 describe("AssaultBoat", function()
@@ -239,6 +240,21 @@ describe("AssaultBoat", function()
       assert.are.equal("arrived", zoneState.boats["BOAT-1"].status)
       assert.are.equal("lost", zoneState.boats["BOAT-2"].status)
       assert.are.same({ ["W1-B1"] = true }, AssaultBoat.findLandedLaneIdSet(zoneState))
+    end)
+
+    it("should mark a destroyed boat lost during fast-forward without touching it", function()
+      stubUnits({})
+      trackStub(stub(DebugFlow, "isFastForward").returns(true))
+      local teleport = trackStub(stub(DebugFlow, "teleport"))
+      trackStub(stub(GameApi, "Tool_Range").returns(2))
+      local zoneState = {
+        phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT,
+        boats = { ["BOAT-1"] = { beachLaneId = "W1-B1", status = "launched", finalPoint = FINAL_POINT } },
+      }
+
+      assert.is_true(AssaultBoat.updateBoats(buildConfig(), zoneState))
+      assert.are.equal("lost", zoneState.boats["BOAT-1"].status)
+      assert.stub(teleport).was.called(0)
     end)
 
     it("should not finish while a boat is still under way or pending", function()

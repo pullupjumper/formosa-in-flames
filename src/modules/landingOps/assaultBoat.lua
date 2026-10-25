@@ -154,7 +154,7 @@ function AssaultBoat.pairBoats(zone, zoneState, ships)
     return false
   end
 
-  local frame = { origin = lanes.origin, bearing = lanes.bearing }
+  local frame = LaneGeometry.buildFrame(lanes)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Pair assault boats")
 
   local laneCount = 0
@@ -233,7 +233,7 @@ function AssaultBoat.updateBoats(amphibOps, zoneState)
     if entry.status == STATUS.PENDING or entry.status == STATUS.LAUNCHED then
       local boat = GameApi.ScenEdit_GetUnit(guid)
 
-      if DebugFlow.isFastForward(amphibOps, zoneState.phase) then
+      if boat and DebugFlow.isFastForward(amphibOps, zoneState.phase) then
         boat.course = nil
         DebugFlow.teleport(guid, entry.finalPoint)
       end

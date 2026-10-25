@@ -13,13 +13,7 @@ local Hovercraft = {}
 -- Constants
 -- ============================================================================
 
----@type table<number, true>
-local MOTHERSHIP_DBIDS = {
-  [constants.PLATFORMS.TYPE_075] = true,
-  [constants.PLATFORMS.TYPE_076] = true,
-  [constants.PLATFORMS.TYPE_071] = true,
-}
-
+---@enum SBJ__HovercraftPhaseType
 local PHASE = {
   ENROUTE   = "enroute",
   UNLOADING = "unloading",
@@ -69,7 +63,7 @@ end
 function Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships)
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
-    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) and
+    if ship and constants.MOTHERSHIP_DBID_SET[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) and
         #findReadyHovercraft(ship, zoneState.hovercraft or {}) > 0 then
       return true
     end
@@ -96,7 +90,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
 
-    if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) then
+    if ship and constants.MOTHERSHIP_DBID_SET[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) then
       for _, craft in ipairs(findReadyHovercraft(ship, zoneState.hovercraft)) do
         local plan = RoutePlanner.buildRoute({
           lanes = zoneState.lanes,
@@ -130,11 +124,11 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   report.emit()
 end
 
----Move one hovercraft through unloading: at its parking slot unload the cargo, then head home
+---Update one hovercraft through unloading: at its parking slot unload the cargo, then head home
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param craft CMO__Unit
 ---@param entry SBJ__HovercraftState
-local function advanceHovercraft(amphibOps, craft, entry)
+local function updateHovercraftPhase(amphibOps, craft, entry)
   if entry.phase == PHASE.ENROUTE then
     if DebugFlow.isLandingTeleport(amphibOps) then
       craft.course = nil
@@ -161,7 +155,7 @@ function Hovercraft.updateHovercraft(amphibOps, zoneState)
     local craft = GameApi.ScenEdit_GetUnit(guid)
 
     if craft then
-      advanceHovercraft(amphibOps, craft, entry)
+      updateHovercraftPhase(amphibOps, craft, entry)
     end
   end
 end

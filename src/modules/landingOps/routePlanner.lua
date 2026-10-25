@@ -11,13 +11,6 @@ local RoutePlanner = {}
 
 local SAME_POINT_M = 1 -- lane points closer than this to the entry are the entry
 
----Build the lane frame of a lane plan
----@param lanes SBJ__LanePlanState
----@return SBJ__LaneFrame
-local function buildLaneFrame(lanes)
-  return { origin = lanes.origin, bearing = lanes.bearing }
-end
-
 -- ============================================================================
 -- Lane Selection
 -- ============================================================================
@@ -72,7 +65,7 @@ end
 ---@param params SBJ__SideApproachParams
 ---@return SBJ__WaterLaneEntry[]
 function RoutePlanner.sortWaterLanesByLateral(waterLanes, params)
-  local frame = buildLaneFrame(params.lanes)
+  local frame = LaneGeometry.buildFrame(params.lanes)
   local _, launchLateral = LaneGeometry.projectPoint(frame, params.launchPos)
   return sortByMeasure(waterLanes, params.queueCounters, params.routeConfig.laneTieM, function(waterLane)
     local _, lateral = LaneGeometry.projectPoint(frame, waterLane.launchPoint)
@@ -149,7 +142,7 @@ end
 ---@param params SBJ__SideApproachParams
 ---@return CMO__Location[]
 local function buildSideApproach(waterLane, k, params)
-  local frame = buildLaneFrame(params.lanes)
+  local frame = LaneGeometry.buildFrame(params.lanes)
   local launchAlong, laneLateral = LaneGeometry.projectPoint(frame, waterLane.launchPoint)
   local deployAlong = LaneGeometry.projectPoint(frame, waterLane.deployPoint)
   local assaultAlong = LaneGeometry.projectPoint(frame, waterLane.assaultPoint)

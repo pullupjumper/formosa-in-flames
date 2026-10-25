@@ -268,13 +268,20 @@ local function buildMineCorridor(frame, params)
   }
 end
 
+---Build the lane frame of a lane plan
+---@param lanes SBJ__LanePlanState
+---@return SBJ__LaneFrame
+function LaneGeometry.buildFrame(lanes)
+  return { origin = lanes.origin, bearing = lanes.bearing }
+end
+
 ---Build the mine corridors: cut every water lane (deploy line to assault line) and beach lane (assault line to S_lane) into mine cells.
 ---The cells line up with the lane center line and are one cell wide, so neighboring lanes never overlap.
 ---@param lanes SBJ__LanePlanState
 ---@param cellSizeM number
 ---@return SBJ__MineCorridor[]
 function LaneGeometry.buildMineCorridors(lanes, cellSizeM)
-  local frame = { origin = lanes.origin, bearing = lanes.bearing }
+  local frame = LaneGeometry.buildFrame(lanes)
   local corridors = {}
 
   for _, waterLane in ipairs(lanes.waterLanes) do
