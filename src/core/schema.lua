@@ -702,6 +702,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field queueCounters? table<string, integer> Units routed per water lane id
 ---@field laneSlots? SBJ__LaneSlotsState Parking slot holders per beach lane
 ---@field hovercraft? table<string, SBJ__HovercraftState> Routed hovercraft indexed by GUID
+---@field heliWave? SBJ__HeliWaveState Transport and escort helicopter waves, set when the boat assault begins
 
 ---Local flat frame for lane geometry
 ---@class SBJ__LaneFrame: table
@@ -810,7 +811,29 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__HovercraftState: table
 ---@field missionName string Cargo mission to assign after arrival
 ---@field finalPoint CMO__Location Parking slot
----@field arrived boolean
+---@field phase string "enroute", "unloading" or "returning"
+
+---Helicopter wave progress of one zone. Hold only the wave in the air; a new wave replaces it
+---@class SBJ__HeliWaveState: table
+---@field waveIndex integer Waves launched so far (0 = none yet)
+---@field launchAt number Time the first wave launches (boat arrival minus flight time)
+---@field waveLaunchedAt? number Time the current wave launched; drives the timeout
+---@field units table<string, SBJ__HeliState> Helicopters of the current wave indexed by GUID
+---@field isFinished boolean All waves launched and the last one is done
+---@field isWaitingLogged? boolean Latched after logging that no loaded helicopter is available
+
+---Geometry shared by every course of one helicopter wave
+---@class SBJ__HeliFlightPlan: table
+---@field frame SBJ__LaneFrame Lane frame; wings are lateral offsets from its center line
+---@field center CMO__Location Center of the air landing zone
+---@field heliConfig SBJ__HeliWaveConfig
+
+---One helicopter of the current wave
+---@class SBJ__HeliState: table
+---@field role string "transport" or "attack"
+---@field wing string "left" or "right"
+---@field phase string "enroute", "unloading", "loitering" or "returning"
+---@field landingPoint CMO__Location Where this helicopter lands (transport) or loiters (attack)
 
 ---Amphibious operations context managing all amphibious operation state
 ---@class SBJ__AmphibOpsContext: table
@@ -903,7 +926,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field name string Mission name
 ---@field loadoutId number Loadout configuration ID
 ---@field unitCount integer Number of units
----@field startTime number Mission start time
+---@field startTime? number Mission start time; unused by helicopter waves
 
 ---Air Cushion Vehicle deployment configuration
 ---@class SBJ__ACVDescriptor: table
@@ -1087,6 +1110,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field assaultBoat SBJ__AssaultBoatConfig Assault boat settings
 ---@field obstacle SBJ__ObstacleConfig Beach obstacle settings
 ---@field acvWave SBJ__AcvWaveConfig ACV wave limits
+---@field heliWave SBJ__HeliWaveConfig Helicopter wave size, timing and wing routes
 
 ---Lane layout and routing settings (distances measured from the lane center on the shore)
 ---@class SBJ__RouteConfig: table
@@ -1121,6 +1145,16 @@ function ScenEdit_DeleteMine(params) end
 
 ---@class SBJ__AssaultBoatConfig: table
 ---@field speed number Manual speed (knots)
+
+---@class SBJ__HeliWaveConfig: table
+---@field waveSize integer Transport helicopters per wave
+---@field escortSize integer Attack helicopters per wave
+---@field waveTimeoutSec number A wave still in the air after this long counts as finished
+---@field arrivalNm number Distance to the landing point that counts as arrived
+---@field cruiseSpeedKt number Cruise speed used to work back the launch time from the boat arrival
+---@field wingOffsetM number Lateral distance of each wing from the lane center line
+---@field inlandEntryM number Distance inland where a wing turns toward its landing point
+---@field landingSpreadM number Lateral offset of each wing's landing point from the landing zone center
 
 ---@class SBJ__ObstacleConfig: table
 ---@field cellSizeM number Obstacle cell edge length

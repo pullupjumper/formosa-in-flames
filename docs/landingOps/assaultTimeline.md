@@ -97,7 +97,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 
 | Phase | 做什麼 | 換下一階段 | Code |
 |---|---|---|---|
-| `WAITING_ASSAULT` | 條件成立 → 算通道、派 082、直升機任務開始（不含氣墊船） | 派完 | `mineClearing.startMineClearing` |
+| `WAITING_ASSAULT` | 條件成立 → 算通道、派 082 | 派完 | `mineClearing.startMineClearing` |
 | `MINE_CLEARING` | 082 走到最後航點（或被摧毀）→ `RTB()` | 全部完成 → 配對衝鋒舟、LST 前進（排除 082） | `mineClearing.updateMineClearing` |
 | `BOAT_ASSAULT` | 072A/072III 進 `zone.landing.acv.area` 就放衝鋒舟 | 衝鋒舟全部到 S_lane 或被摧毀 | `assaultBoat.lua` |
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` | `obstacleClearing.lua` |
@@ -122,7 +122,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | LST / LPD / 渡輪 / 駁船 | 14 kt | `formation.shipSpeed` |
 | 兩棲車 | 8 kt（約 14.8 km/h） | `formation.acvSpeed`，油門 Full |
 | 氣墊船（Type 726A） | 40 kt | `formation.hovercraftSpeed`，經 `zones[].landing.hovercraft.speed` 設 `manualSpeed` |
-| 運輸直升機（Z-18） | 約 130 kt | CMO 實測；config 設轉場 Military、到站 Afterburner，高度 304 |
+| 運輸直升機（Z-18） | 約 130 kt | CMO 實測；倒推放飛時間用 `tuning.heliWave.cruiseSpeedKt` |
 | 衝鋒舟 | 30 kt | `config.red.amphibOps.tuning.assaultBoat.speed`（`manualSpeed`） |
 
 兩棲車與 LST 都比原文快（原文泛水編波約 7 km/h，過渡航態 14.4 km/h）。

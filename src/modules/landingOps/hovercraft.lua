@@ -20,6 +20,12 @@ local MOTHERSHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_071] = true,
 }
 
+local PHASE = {
+  ENROUTE   = "enroute",
+  UNLOADING = "unloading",
+  RETURNING = "returning",
+}
+
 -- ============================================================================
 -- Helpers
 -- ============================================================================
@@ -110,11 +116,9 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           zoneState.hovercraft[craft.guid] = {
             missionName = zone.landing.hovercraft.missionName,
             finalPoint = plan.course[#plan.course],
-            arrived = false,
+            phase = PHASE.ENROUTE,
           }
-          if DebugFlow.isLandingTeleport(amphibOps) then
-            DebugFlow.teleport(craft.guid, zoneState.hovercraft[craft.guid].finalPoint)
-          end
+
           report.add("OK", { hovercraft = craft.guid, beachLane = plan.beachLaneId, slot = plan.slot })
         else
           report.add("SKIP", { hovercraft = craft.guid, reason = "no_cleared_lane_slot" })
@@ -126,22 +130,38 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   report.emit()
 end
 
----Update the state of hovercraft that reached their parking slot
+---Move one hovercraft through unloading: at its parking slot unload the cargo, then head home
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param craft CMO__Unit
+---@param entry SBJ__HovercraftState
+local function advanceHovercraft(amphibOps, craft, entry)
+  if entry.phase == PHASE.ENROUTE then
+    if DebugFlow.isLandingTeleport(amphibOps) then
+      craft.course = nil
+      DebugFlow.teleport(craft.guid, entry.finalPoint)
+    end
+
+    local range = GameApi.Tool_Range(craft.guid, entry.finalPoint)
+
+    if range and range < amphibOps.tuning.route.arrivalNm then
+      GameApi.ScenEdit_UnloadCargo(craft.guid)
+      entry.phase = PHASE.UNLOADING
+    end
+  elseif entry.phase == PHASE.UNLOADING and GameUtils.isCargoUnloaded(craft) then
+    craft:RTB(true)
+    entry.phase = PHASE.RETURNING
+  end
+end
+
+---Update the hovercraft: unload at the parking slot, then return to base once the cargo is out
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 function Hovercraft.updateHovercraft(amphibOps, zoneState)
-  local arrivalNm = amphibOps.tuning.route.arrivalNm
-
   for guid, entry in pairs(zoneState.hovercraft or {}) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
+    local craft = GameApi.ScenEdit_GetUnit(guid)
 
-    if not entry.arrived and unit then
-      local range = GameApi.Tool_Range(guid, entry.finalPoint)
-      if range and range < arrivalNm then
-        entry.arrived = true
-        -- TODO: Assign the cargo mission in entry.missionName. The user writes this mission.
-        unit.mission = entry.missionName
-      end
+    if craft then
+      advanceHovercraft(amphibOps, craft, entry)
     end
   end
 end

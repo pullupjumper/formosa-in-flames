@@ -26,7 +26,7 @@ flowchart TD
 對每艘：
 
 1. `RoutePlanner.buildRoute(..., { isFromDeployLine = true })` 算航線並預約停車位（與兩棲車共用 `zoneState.laneSlots`）
-2. 成功：設 `course`、`manualSpeed`，再 `Launch(true)`（**先 course 再 Launch**），登記 `zoneState.hovercraft[guid] = { missionName, finalPoint, arrived = false }`
+2. 成功：設 `course`、`manualSpeed`，再 `Launch(true)`（**先 course 再 Launch**），登記 `zoneState.hovercraft[guid] = { missionName, finalPoint, phase = "enroute" }`
 3. 沒有可用通道或停車位：記 SKIP（`no_cleared_lane_slot`）。這艘不會登記，**下個 tick 再試**
 
 沒有 `zoneState.lanes` 時整個函式直接返回。
@@ -43,7 +43,15 @@ flowchart TD
 
 ## 到達
 
-`updateHovercraft` 對每艘未到達的氣墊船檢查離 `finalPoint` 的距離，小於 `tuning.route.arrivalNm` 就標 `arrived = true` 並設 `unit.mission = entry.missionName`。程式碼內仍留有 TODO，指出貨運任務的細部指派（依 `unitCount` 分配）預期由使用者補完。
+`updateHovercraft` 依 `entry.phase` 推進每艘氣墊船：
+
+| phase | 動作 | 下一個 phase |
+|---|---|---|
+| `enroute` | 離 `finalPoint` 小於 `tuning.route.arrivalNm` 時 `ScenEdit_UnloadCargo` | `unloading` |
+| `unloading` | `GameUtils.isCargoUnloaded`（`condition` 是 `"Underway"` 且不是 `"Transfering Cargo"`）成立時 `RTB(true)` | `returning` |
+| `returning` | 不再處理 | — |
+
+流程與直升機一致，見 [heliWave](heliWave.md)。卸貨後直接返航，所以不再設 `unit.mission`；`missionName` 欄位目前沒有用到。舊存檔沒有 `phase` 的氣墊船不會被推進。
 
 ---
 

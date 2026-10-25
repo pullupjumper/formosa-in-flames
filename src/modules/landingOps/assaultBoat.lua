@@ -4,7 +4,6 @@ local LogFormat = require("src.utils.logFormat")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
-
 local AssaultBoat = {}
 
 -- ============================================================================
@@ -213,9 +212,6 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
             laneSlots = zoneState.laneSlots,
             guid = boatGuid,
           })
-          if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT) then
-            DebugFlow.teleport(boatGuid, entry.finalPoint)
-          end
           report.add("OK", { boat = boatGuid, beachLane = entry.beachLaneId })
         end
       end
@@ -233,10 +229,16 @@ function AssaultBoat.updateBoats(amphibOps, zoneState)
   local arrivalNm = amphibOps.tuning.route.arrivalNm
   local isAllDone = true
 
-  for boatGuid, entry in pairs(zoneState.boats or {}) do
+  for guid, entry in pairs(zoneState.boats or {}) do
     if entry.status == STATUS.PENDING or entry.status == STATUS.LAUNCHED then
-      local boat = GameApi.ScenEdit_GetUnit(boatGuid)
-      local range = boat and entry.finalPoint and GameApi.Tool_Range(boatGuid, entry.finalPoint)
+      local boat = GameApi.ScenEdit_GetUnit(guid)
+
+      if DebugFlow.isFastForward(amphibOps, zoneState.phase) then
+        boat.course = nil
+        DebugFlow.teleport(guid, entry.finalPoint)
+      end
+
+      local range = boat and entry.finalPoint and GameApi.Tool_Range(guid, entry.finalPoint)
 
       if not boat then
         entry.status = STATUS.LOST
@@ -251,8 +253,6 @@ function AssaultBoat.updateBoats(amphibOps, zoneState)
   return isAllDone
 end
 
----Find the beach lanes with a landed boat that is still alive
----@param zoneState SBJ__ZoneState
 ---Check if any paired boat is still waiting on its carrier
 ---@param zoneState SBJ__ZoneState
 ---@return boolean
@@ -266,6 +266,8 @@ function AssaultBoat.hasPendingBoats(zoneState)
   return false
 end
 
+---Find the beach lanes with a landed boat that is still alive
+---@param zoneState SBJ__ZoneState
 ---@return table<string, true>
 function AssaultBoat.findLandedLaneIdSet(zoneState)
   local laneIdSet = {}

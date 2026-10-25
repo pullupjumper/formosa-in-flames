@@ -9,6 +9,7 @@ local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local HeliWave = require("src.modules.landingOps.heliWave")
 local Hovercraft = require("src.modules.landingOps.hovercraft")
 local MineClearing = require("src.modules.landingOps.mineClearing")
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
@@ -33,10 +34,6 @@ local ARRIVED_PHASES = {
   [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING] = true,
   [constants.AMPHIBIOUS_PHASES.COMPLETED]                = true,
 }
-
----Zone missions that start when the assault launches. The boat (hovercraft) missions wait for the lanes
----@type string[]
-local HELICOPTER_MISSION_CATEGORIES = { "transportHelicopter", "attackHelicopter" }
 
 -- ============================================================================
 -- Helpers
@@ -109,9 +106,8 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
     MineClearing.createMinefields(amphibOps, zone.name)
   end
 
-  local ok = MineClearing.startMineClearing(amphibOps, zone, zoneState, tickCtx.filteredShips) and
-      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_MISSION_CATEGORIES)
-  if ok then
+  if MineClearing.startMineClearing(amphibOps, zone, zoneState, tickCtx.filteredShips) then
+    AmphibiousAssault.recordLandingStartTime(zoneState)
     zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
   end
 end
@@ -128,6 +124,7 @@ local function stepMineClearing(tickCtx, zone, zoneState)
       AmphibiousAssault.moveToLaunchStations(amphibOps, zone, tickCtx.filteredShips)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT
+    HeliWave.schedule(tickCtx, zone, zoneState)
   end
 end
 
@@ -223,6 +220,8 @@ local function processZone(tickCtx, zone)
       entry.step(tickCtx, zone, zoneState)
     end
   end
+
+  HeliWave.update(tickCtx, zone, zoneState)
 
   if constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
     stepHovercraft(tickCtx, zone, zoneState)

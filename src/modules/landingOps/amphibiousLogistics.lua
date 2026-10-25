@@ -40,7 +40,7 @@ local AMPHIBIOUS_SHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_082]    = true
 }
 
----@type {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[], assignments: {platform: string, configKey: string}[]}[]
+---@type {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[]}[]
 local SHIP_TRANSFER_SPECS = {
   {
     dbids = { constants.PLATFORMS.TYPE_075, constants.PLATFORMS.TYPE_076 },
@@ -50,11 +50,8 @@ local SHIP_TRANSFER_SPECS = {
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 2 },
     },
-    -- Load the hovercraft (BOATS) here. Assign them only after they route through the lanes (hovercraft.lua)
-    assignments = {
-      { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter" },
-      { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "attackHelicopter" },
-    },
+    -- Load the hovercraft (BOATS) here. They get their mission only after they route through the lanes (hovercraft.lua).
+    -- Helicopters take no mission: heliWave.lua launches and routes them by hand
   },
   {
     dbids = { constants.PLATFORMS.TYPE_071 },
@@ -62,9 +59,6 @@ local SHIP_TRANSFER_SPECS = {
     transfers = {
       { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",  loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
-    },
-    assignments = {
-      { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter" },
     },
   },
 }
@@ -185,7 +179,7 @@ end
 
 ---Find matching transfer spec for a ship DBID
 ---@param shipDbid number
----@return {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[], assignments: {platform: string, configKey: string}[]}|nil # Matching spec or nil
+---@return {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[]}|nil # Matching spec or nil
 local function findTransferSpec(shipDbid)
   for _, spec in ipairs(SHIP_TRANSFER_SPECS) do
     for _, dbid in ipairs(spec.dbids) do
@@ -211,20 +205,6 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
       { platformType = transfer.platform, platformDBID = cfg.dbid, loadoutDBID = manifest.loadoutId },
       manifest.cargoItems
     )
-  end
-end
-
----Process the mission assignments of a single ship with its matching spec
----@param shipGuid string
----@param shipDbid number
----@param zone SBJ__OperationalZoneDescriptor
-local function processShipAssignments(shipGuid, shipDbid, zone)
-  local spec = findTransferSpec(shipDbid)
-  if not spec then return end
-
-  for _, assignment in ipairs(spec.assignments) do
-    local cfg = getPlatformDescriptor(zone, assignment.configKey)
-    AssignMission.assignEmbarkedUnitsToMissions(shipGuid, assignment.platform, cfg.dbid, cfg.missions)
   end
 end
 
@@ -259,28 +239,13 @@ local function createSingleCargoMission(platformType, zone, missionName)
   return true, { tag = "OK", fields = { platform = platformType, mission = missionName } }
 end
 
----Create every cargo mission configured for a zone: the hovercraft mission first, then the helicopter missions.
----Stop at the first failure
+---Create the cargo mission of a zone's hovercraft. Helicopters take no cargo mission
 ---@param zone SBJ__OperationalZoneDescriptor
----@return boolean success True when every mission was created
+---@return boolean success True when the mission was created
 ---@return SBJ__LogResult[] results Deferred log results in emission order
 local function createZoneCargoMissions(zone)
-  local results = {}
-  local missionNames = { { platformType = "hovercraft", name = zone.landing.hovercraft.missionName } }
-  for _, mission in ipairs(zone.air.transportHelicopter.missions) do
-    table.insert(missionNames, { platformType = "transportHelicopter", name = mission.name })
-  end
-
-  for _, item in ipairs(missionNames) do
-    local created, result = createSingleCargoMission(item.platformType, zone, item.name)
-    table.insert(results, result)
-
-    if not created then
-      return false, results
-    end
-  end
-
-  return true, results
+  local created, result = createSingleCargoMission("hovercraft", zone, zone.landing.hovercraft.missionName)
+  return created, { result }
 end
 
 -- ============================================================================
@@ -320,8 +285,8 @@ function AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
   return { units = unitsInHoldingAreas, isUnitMoving = isUnitMoving }
 end
 
----Create the cargo transport missions for an operational zone.
----Set up ferry missions for landing craft and transport helicopters with the configured doctrine.
+---Create the cargo transport mission for an operational zone.
+---Set up the landing craft ferry mission with the configured doctrine.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return boolean # True if all cargo missions were created
 function AmphibiousLogistics.createCargoMissions(zone)
@@ -335,11 +300,10 @@ function AmphibiousLogistics.createCargoMissions(zone)
   return success
 end
 
----Transfer cargo to embarked units and assign them to missions.
----Handle Type 075/076 LHDs, Type 071 LPDs, and transport aircraft from other bases.
+---Transfer cargo to the embarked units of Type 075/076 LHDs and Type 071 LPDs.
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unitsInHoldingAreas CMO__Unit[]
----@return boolean # True if all transfers and assignments completed
+---@return boolean # True if all transfers completed
 function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer and assign")
@@ -347,7 +311,6 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
   for _, u in ipairs(unitsInHoldingAreas) do
     if u:inArea(zone.movement.holdingAreas.mothership) then
       processShipTransfers(u.guid, u.dbid, zone)
-      processShipAssignments(u.guid, u.dbid, zone)
       report.add("OK", { ship = u.name or u.guid, dbid = u.dbid })
     end
   end
@@ -359,7 +322,7 @@ end
 
 ---Transfer cargo and assign missions for a zone's land-based transport aircraft
 ---@param transportAircraft SBJ__TransportAircraftDescriptor
----@return boolean # True if all transfers and assignments completed
+---@return boolean # True if all transfers completed
 function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
   local report = LogFormat.report(
     constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer and assign")

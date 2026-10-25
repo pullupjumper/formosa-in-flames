@@ -199,8 +199,6 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
       finalPoint = waterLane.sweepCourse[#waterLane.sweepCourse],
       isDone = false,
     }
-    -- TODO: Create the minesweeping mission and assign it. The user writes this step.
-    -- The four corners of the area are in zoneState.minesweepers[guid].missionArea.
     sweeper.mission = zone.landing.sweeper.missionName
     sweeper.manualSpeed = zone.landing.sweeper.speed
     sweeper.obeyEMCON = false
@@ -220,19 +218,19 @@ function MineClearing.updateMineClearing(amphibOps, zoneState)
   local arrivalNm = amphibOps.tuning.route.arrivalNm
   local isAllDone = true
 
-  for guid, sweeper in pairs(zoneState.minesweepers or {}) do
-    if not sweeper.isDone then
-      local unit = GameApi.ScenEdit_GetUnit(guid)
-      local range = unit and GameApi.Tool_Range(guid, sweeper.finalPoint)
+  for guid, entry in pairs(zoneState.minesweepers or {}) do
+    if not entry.isDone then
+      local sweeper = GameApi.ScenEdit_GetUnit(guid)
+      local range = sweeper and GameApi.Tool_Range(guid, entry.finalPoint)
 
-      if not unit then
-        sweeper.isDone = true
+      if not sweeper then
+        entry.isDone = true
       elseif range and range < arrivalNm then
-        unit:RTB(true)
-        sweeper.isDone = true
+        sweeper:RTB(true)
+        entry.isDone = true
 
-        if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
-          DebugFlow.teleport(unit.guid, { latitude = unit.base.latitude, longitude = unit.base.longitude })
+        if DebugFlow.isFastForward(amphibOps, zoneState.phase) then
+          DebugFlow.teleport(sweeper.guid, { latitude = sweeper.base.latitude, longitude = sweeper.base.longitude })
         end
       else
         isAllDone = false

@@ -62,50 +62,6 @@ local function isLST(unit)
 end
 
 -- ============================================================================
--- Mission Configuration
--- ============================================================================
-
----Set the start time of a single landing mission.
----Calculate it relative to the current time and update the mission.
----@param mission SBJ__LandingMissionDescriptor
----@param currentTime number
----@return SBJ__LogResult # Deferred log result describing the outcome
-local function setMissionStartTime(mission, currentTime)
-  local startTime = os.date(constants.DATE_FORMAT, (currentTime + mission.startTime))
-  local cmoMission = GameApi.ScenEdit_GetMission(constants.SIDES.RED, mission.name)
-
-  if not cmoMission then
-    return { tag = "FAIL", fields = { mission = mission.name, reason = "mission_not_found" } }
-  end
-
-  cmoMission.starttime = startTime .. constants.TIME_FORMATS
-  return { tag = "OK", fields = { mission = mission.name, startTime = startTime } }
-end
-
----Set the start times of the missions of the given categories in a single zone
----@param zone SBJ__OperationalZoneDescriptor
----@param currentTime number
----@param categories string[] Keys of `zone.air` holding missions (e.g. "transportHelicopter", "attackHelicopter")
----@return boolean success True if all missions were set
----@return SBJ__LogResult[] results Deferred log results in emission order
-local function setZoneMissionStartTimes(zone, currentTime, categories)
-  local results = {}
-
-  for _, category in ipairs(categories) do
-    for _, mission in ipairs(zone.air[category].missions) do
-      local result = setMissionStartTime(mission, currentTime)
-      table.insert(results, result)
-
-      if result.tag == "FAIL" then
-        return false, results
-      end
-    end
-  end
-
-  return true, results
-end
-
--- ============================================================================
 -- ACV Spawning
 -- ============================================================================
 
@@ -360,22 +316,10 @@ end
 -- Public API
 -- ============================================================================
 
----Set the start times of the amphibious assault missions in a single operational zone and record the start timestamp
----@param zone SBJ__OperationalZoneDescriptor
+---Record when the air landing began. It starts the clock for the periodic remaining-cargo transfer
 ---@param zoneState SBJ__ZoneState
----@param categories string[] Keys of `zone.air` holding missions to start (e.g. "transportHelicopter", "attackHelicopter")
----@return boolean # True if all mission start times were successfully set
-function AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, categories)
-  local currentTime = GameApi.ScenEdit_CurrentTime()
-  zoneState.airlandingMissionStartTime = currentTime
-  local success, results = setZoneMissionStartTimes(zone, currentTime, categories)
-
-  local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Set landing mission start times")
-  report.addAll(results)
-  report.emit()
-
-  return success
+function AmphibiousAssault.recordLandingStartTime(zoneState)
+  zoneState.airlandingMissionStartTime = GameApi.ScenEdit_CurrentTime()
 end
 
 ---Find the lateral positions of the LSTs anchored on the deploy line

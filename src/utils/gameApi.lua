@@ -678,7 +678,7 @@ end
 
 ---Unload cargo from a unit
 ---@param fromUnit CMO__UnitSelector|string
----@param cargos string[]|number[][]
+---@param cargos? string[]|number[][]
 ---@return boolean # True if Successful or false if not
 function realApi.ScenEdit_UnloadCargo(fromUnit, cargos)
   return ScenEdit_UnloadCargo(fromUnit, cargos)

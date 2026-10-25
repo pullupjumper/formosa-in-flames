@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousAssault.lua`
 
-**職責**：LST 與 SAG 就位、ACV 釋放、直升機任務計時、空/機降區威脅與登陸單位統計
+**職責**：LST 與 SAG 就位、ACV 釋放、記錄機降開始時間、空/機降區威脅與登陸單位統計
 
 ---
 
@@ -10,7 +10,7 @@
 
 amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」做，時機由 [coordinator](coordinator.md) 與事件腳本決定。它處理五件事：
 
-1. **直升機任務計時**：`setLandingMissionStartTime` 在 `WAITING_ASSAULT` 離開時，把指定類別的任務開始時間設為「現在 + `mission.startTime`」
+1. **記錄機降開始時間**：`recordLandingStartTime` 在 `WAITING_ASSAULT` 離開時，把現在時間存進 `airlandingMissionStartTime`，作為貨物補運的計時起點
 2. **LST 就位**：`moveToLaunchStations` 把展開線上的 LST 移到離岸 2～4 nm 的就位帶，SAG 移到兩棲載具集結區
 3. **ACV 釋放**：`launchACV` 從艦艙刪除貨物，在船側生成兩棲車並交給 `routeACV` 回呼排航線
 4. **威脅評估**：`countContactsInArea` 數空/機降區內的敵方可移動設施
@@ -20,13 +20,9 @@ amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」�
 
 ---
 
-## 直升機任務計時
+## 記錄機降開始時間
 
-呼叫端傳入 `categories`（目前是 `transportHelicopter`、`attackHelicopter`），函式只處理這些類別。
-
-### 為什麼不再設氣墊船任務的開始時間？
-
-舊版會一併設 `boat` 類別。現在氣墊船要等通道掃完、第一波車放滿才出發（見 [hovercraft](hovercraft.md)），開始時間沒有意義，所以 coordinator 傳入的 `HELICOPTER_MISSION_CATEGORIES` 刻意不含氣墊船。同時 `airlandingMissionStartTime` 也是貨物補運的計時起點。
+直升機不再靠 CMO 任務的開始時間起飛（改由 [heliWave](heliWave.md) 手動放飛），所以這裡只剩記錄 `airlandingMissionStartTime`。它是貨物補運（`processRemainingCargoTransfer`）的計時起點。
 
 ---
 
@@ -79,7 +75,7 @@ flowchart TD
 
 | 函式 | 說明 |
 |---|---|
-| `setLandingMissionStartTime(zone, zoneState, categories)` | 設任務開始時間並記錄 `airlandingMissionStartTime` |
+| `recordLandingStartTime(zoneState)` | 記錄 `airlandingMissionStartTime` |
 | `moveToLaunchStations(amphibOps, zone, units)` | LST 與 SAG 就位；任一失敗回 `false` |
 | `findDeployLineLSTLaterals(zone, frame, units)` | 展開線 LST 的橫向位置，供 [mineClearing](mineClearing.md) 排通道 |
 | `launchACV(params)` | 釋放兩棲車，`params` 為 `SBJ__ACVDeploymentParams` |

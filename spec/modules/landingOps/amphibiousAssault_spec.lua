@@ -176,112 +176,17 @@ describe("AmphibiousAssault", function()
   end
 
   -- ============================================================================
-  -- setLandingMissionStartTime
+  -- recordLandingStartTime
   -- ============================================================================
 
-  describe("setLandingMissionStartTime", function()
-    local HELICOPTER_CATEGORIES = { "transportHelicopter", "attackHelicopter" }
-    local stubCurrentTime, stubGetMission
+  describe("recordLandingStartTime", function()
+    it("should store the current time as airlandingMissionStartTime", function()
+      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
+      local zoneState = { phase = "assault" }
 
-    before_each(function()
-      stubCurrentTime = trackStub(stub(GameApi, "ScenEdit_CurrentTime"))
-      stubGetMission = trackStub(stub(GameApi, "ScenEdit_GetMission"))
-    end)
-
-    it("should set start times for all missions in the operational zone", function()
-      stubCurrentTime.returns(1000)
-      local mission = { starttime = nil }
-      stubGetMission.returns(mission)
-
-      local zone = buildZone()
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
-
-      assert.is_true(result)
-      assert.are.equal(1000, zoneState.airlandingMissionStartTime)
-      -- 2 missions (helo + atkHelo), each calls GetMission once
-      assert.stub(stubGetMission).was.called(2)
-      assert.stub(stubGetMission).was_not.called_with(constants.SIDES.RED, "BoatMission1")
-      assert.stub(logStub).was.called()
-    end)
-
-    it("should store current time as airlandingMissionStartTime in zoneState", function()
-      stubCurrentTime.returns(5000)
-      stubGetMission.returns({ starttime = nil })
-
-      local zone = buildZone()
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
+      AmphibiousAssault.recordLandingStartTime(zoneState)
 
       assert.are.equal(5000, zoneState.airlandingMissionStartTime)
-    end)
-
-    it("should set mission start time using os.date format", function()
-      stubCurrentTime.returns(1000)
-      local mission = { starttime = nil }
-      stubGetMission.returns(mission)
-
-      local zone = buildZone({
-        air = { transportHelicopter = { missions = { buildMission({ name = "Helo1", startTime = 600 }) } }, attackHelicopter = { missions = {} } },
-        landing = { boat = { missions = {} } },
-      })
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
-
-      local expectedTime = "1970-01-01 00:26:40" .. constants.TIME_FORMATS
-      assert.are.equal(expectedTime, mission.starttime)
-    end)
-
-    it("should only process missions in the requested categories", function()
-      stubCurrentTime.returns(2000)
-      stubGetMission.returns({ starttime = nil })
-
-      local zone = buildZone({
-        air = { transportHelicopter = { missions = { buildMission({ name = "Z1Helo" }) } }, attackHelicopter = { missions = {} } },
-        landing = { boat = { missions = { buildMission({ name = "Z1Boat" }) } } },
-      })
-      local saveData = buildSaveData()
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, { "transportHelicopter" })
-
-      assert.is_true(result)
-      assert.stub(stubGetMission).was.called(1)
-      assert.stub(stubGetMission).was.called_with(constants.SIDES.RED, "Z1Helo")
-    end)
-
-    it("should return false when a mission cannot be found", function()
-      stubCurrentTime.returns(1000)
-      stubGetMission.returns(nil)
-
-      local zone = buildZone()
-      local saveData = buildSaveData()
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
-
-      assert.is_false(result)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=mission_not_found"))
-    end)
-
-    it("should return true when all mission lists are empty", function()
-      stubCurrentTime.returns(1000)
-
-      local zone = buildZone({
-        air = { transportHelicopter = { missions = {} }, attackHelicopter = { missions = {} } },
-        landing = { boat = { missions = {} } },
-      })
-      local saveData = buildSaveData()
-      local zoneState = { phase = "assault", amphibiousAssaultStartTime = nil, airlandingMissionStartTime = nil }
-
-      local result = AmphibiousAssault.setLandingMissionStartTime(zone, zoneState, HELICOPTER_CATEGORIES)
-
-      assert.is_true(result)
-      assert.stub(stubGetMission).was_not.called()
     end)
   end)
 

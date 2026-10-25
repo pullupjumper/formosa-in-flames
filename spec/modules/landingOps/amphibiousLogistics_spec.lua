@@ -550,14 +550,14 @@ describe("AmphibiousLogistics", function()
       stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine").returns({}))
     end)
 
-    it("should create cargo missions for all boat and helicopter missions", function()
+    it("should create the hovercraft cargo mission", function()
       local zone = buildOperationalZone()
       local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_true(result)
-      assert.stub(stubAddMission).was.called(2)
-      assert.stub(stubSetMission).was.called(2)
-      assert.stub(stubSetDoctrine).was.called(2)
+      assert.stub(stubAddMission).was.called(1)
+      assert.stub(stubSetMission).was.called(1)
+      assert.stub(stubSetDoctrine).was.called(1)
       assert.stub(logStub).was.called(1)
     end)
 
@@ -569,7 +569,7 @@ describe("AmphibiousLogistics", function()
         "China", "BoatMission-1", "Cargo",
         { zone = zone.landing.hovercraft.zone }
       )
-      assert.stub(stubAddMission).was.called_with(
+      assert.stub(stubAddMission).was_not.called_with(
         "China", "HeloMission-1", "Cargo",
         { zone = zone.air.transportHelicopter.zone }
       )
@@ -585,35 +585,15 @@ describe("AmphibiousLogistics", function()
       )
     end)
 
-    it("should create the hovercraft mission and every helicopter mission in a zone", function()
-      local zone = buildOperationalZone({
-        landing = {
-          hovercraft = {
-            dbid = 3001,
-            zone = { "RP-BOAT-1" },
-            settings = { throttle = "Full" },
-            missionName = "BoatMission-1A",
-            transferManifest = { type075 = {}, type071 = {} },
-          },
-        },
-        air = {
-          transportHelicopter = {
-            dbid = 4001,
-            zone = { "RP-HELO-1" },
-            settings = { throttle = "Full" },
-            missions = {
-              { name = "HeloMission-1", loadoutId = 20, unitCount = 1, startTime = 0 },
-            },
-            transferManifest = { type075 = {}, type071 = {} },
-          },
-        },
-      })
+    it("should create only the hovercraft mission, since helicopters take no cargo mission", function()
+      local zone = buildOperationalZone()
 
       local result = AmphibiousLogistics.createCargoMissions(zone)
 
       assert.is_true(result)
-      -- 1 boat mission + 1 helo mission = 2
-      assert.stub(stubAddMission).was.called(2)
+      assert.stub(stubAddMission).was.called(1)
+      assert.stub(stubAddMission).was.called_with(
+        "China", "BoatMission-1", "Cargo", { zone = { "RP-BOAT-1" } })
     end)
 
     it("should return false when AddMission fails for boat mission", function()
@@ -655,15 +635,12 @@ describe("AmphibiousLogistics", function()
   -- ============================================================================
 
   describe("transferAndAssign", function()
-    local stubAssignMission
-
     before_each(function()
       stubUnitLookup()
-      stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
     end)
 
     -- Load boats and both helicopter loadouts on Type 075 ships
-    it("should transfer cargo and assign missions for Type 075 ships", function()
+    it("should transfer cargo for Type 075 ships", function()
       local ship, creates = buildFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       local zone = buildOperationalZone()
 
@@ -673,15 +650,9 @@ describe("AmphibiousLogistics", function()
       assert.stub(creates.boat).was.called()
       assert.stub(creates.helo).was.called()
       assert.stub(creates.heloAlt).was.called()
-      -- transport helo + attack helo; hovercraft are assigned after routing, not here
-      assert.stub(stubAssignMission).was.called(2)
-      assert.stub(stubAssignMission).was.called_with(
-        "SHIP-075", "Aircraft", zone.air.attackHelicopter.dbid, zone.air.attackHelicopter.missions)
-      assert.stub(stubAssignMission).was_not.called_with(
-        "SHIP-075", constants.PLATFORM_TYPES.BOATS, zone.landing.hovercraft.dbid, zone.landing.hovercraft.missionName)
     end)
 
-    it("should transfer cargo and assign missions for Type 076 ships", function()
+    it("should transfer cargo for Type 076 ships", function()
       local ship, creates = buildFleetShip("SHIP-076", constants.PLATFORMS.TYPE_076)
       local zone = buildOperationalZone()
 
@@ -689,11 +660,10 @@ describe("AmphibiousLogistics", function()
 
       assert.is_true(result)
       assert.stub(creates.heloAlt).was.called()
-      assert.stub(stubAssignMission).was.called(2)
     end)
 
     -- Load boats and one helicopter loadout on Type 071 ships
-    it("should transfer cargo and assign missions for Type 071 ships", function()
+    it("should transfer cargo for Type 071 ships", function()
       local ship, creates = buildFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = buildOperationalZone()
 
@@ -704,8 +674,6 @@ describe("AmphibiousLogistics", function()
       assert.stub(creates.helo).was.called()
       -- Type 071 manifest has no second helicopter loadout
       assert.stub(creates.heloAlt).was_not.called()
-      -- transport helo only; no attack helo, hovercraft assigned later
-      assert.stub(stubAssignMission).was.called(1)
     end)
 
     it("should process both Type 075 and Type 071 ships in same zone", function()
@@ -718,7 +686,15 @@ describe("AmphibiousLogistics", function()
       assert.is_true(result)
       assert.stub(creates075.heloAlt).was.called()
       assert.stub(creates071.boat).was.called()
-      assert.stub(stubAssignMission).was.called(3)
+    end)
+
+    it("should assign no mission to the helicopters", function()
+      local stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
+      local ship = buildFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
+
+      AmphibiousLogistics.transferAndAssign(buildOperationalZone(), { ship })
+
+      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should skip ships not in holding area", function()
@@ -729,7 +705,6 @@ describe("AmphibiousLogistics", function()
       AmphibiousLogistics.transferAndAssign(zone, { ship })
 
       assert.stub(creates.boat).was_not.called()
-      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should skip units that are not Type 075/076 or Type 071", function()
@@ -740,7 +715,6 @@ describe("AmphibiousLogistics", function()
 
       assert.stub(creates.boat).was_not.called()
       assert.stub(creates.helo).was_not.called()
-      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should return true with empty units list", function()
@@ -748,7 +722,6 @@ describe("AmphibiousLogistics", function()
       local result = AmphibiousLogistics.transferAndAssign(zone, {})
 
       assert.is_true(result)
-      assert.stub(stubAssignMission).was_not.called()
     end)
   end)
 

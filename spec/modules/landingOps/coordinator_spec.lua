@@ -11,6 +11,7 @@ local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local MineClearing = require("src.modules.landingOps.mineClearing")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
+local HeliWave = require("src.modules.landingOps.heliWave")
 local Hovercraft = require("src.modules.landingOps.hovercraft")
 local AcvWave = require("src.modules.landingOps.acvWave")
 local MissileSystem = require("src.modules.missileSystem.init")
@@ -218,7 +219,7 @@ describe("LandingOps Coordinator", function()
     local stubTransferTransportAircraft
     local stubCalculatePathDistanceAndTime
     local stubCountContactsInArea
-    local stubSetLandingMissionStartTime
+    local stubRecordLandingStartTime, stubScheduleHeliWave, stubUpdateHeliWave
     local stubMoveToLaunchStations
     local stubCountUnitsInEachArea
     local stubStartAdminOffloading
@@ -261,7 +262,9 @@ describe("LandingOps Coordinator", function()
       stubTransferTransportAircraft = trackStub(stub(AmphibiousLogistics, "transferAndAssignTransportAircraft"))
       stubCalculatePathDistanceAndTime = trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(0, 600))
       stubCountContactsInArea = trackStub(stub(AmphibiousAssault, "countContactsInArea").returns(99))
-      stubSetLandingMissionStartTime = trackStub(stub(AmphibiousAssault, "setLandingMissionStartTime").returns(true))
+      stubRecordLandingStartTime = trackStub(stub(AmphibiousAssault, "recordLandingStartTime"))
+      stubScheduleHeliWave = trackStub(stub(HeliWave, "schedule"))
+      stubUpdateHeliWave = trackStub(stub(HeliWave, "update"))
       stubMoveToLaunchStations = trackStub(stub(AmphibiousAssault, "moveToLaunchStations").returns(true))
       stubCountUnitsInEachArea = trackStub(stub(AmphibiousAssault, "countUnitsInEachArea").returns({}))
       stubStartAdminOffloading = trackStub(stub(AdminOffloading, "startAdminOffloading").returns(true))
@@ -334,7 +337,7 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubAddReconEntry).was_not.called()
     end)
 
-    -- Assault launch starts mine clearing and helicopter missions only
+    -- Assault launch starts mine clearing and records the landing start time
     it("should move a zone from WAITING_ASSAULT to MINE_CLEARING when assault launches", function()
       local config = buildConfig()
       local landingState = buildLandingState()
@@ -350,7 +353,7 @@ describe("LandingOps Coordinator", function()
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartMineClearing).was.called(1)
-      assert.are.same({ "transportHelicopter", "attackHelicopter" }, stubSetLandingMissionStartTime.calls[1].vals[3])
+      assert.stub(stubRecordLandingStartTime).was.called(1)
       assert.stub(stubMoveToLaunchStations).was_not.called()
     end)
 
@@ -369,7 +372,7 @@ describe("LandingOps Coordinator", function()
         { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubSetLandingMissionStartTime).was_not.called()
+      assert.stub(stubRecordLandingStartTime).was_not.called()
     end)
 
     it("should keep MINE_CLEARING and LSTs anchored while sweepers are working", function()
@@ -402,6 +405,17 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubLaunchBoats).was.called(1)
       assert.stub(stubStartObstacleClearing).was.called(1)
       assert.stub(stubLaunchHovercraft).was.called(1)
+      assert.stub(stubScheduleHeliWave).was.called(1)
+    end)
+
+    it("should update the helicopter waves of every zone each tick", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.stub(stubUpdateHeliWave).was.called(#config.red.amphibOps.zones)
     end)
 
     -- Hovercraft wait for the first ACV wave, but are still updated

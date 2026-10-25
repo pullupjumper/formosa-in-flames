@@ -140,7 +140,7 @@ describe("Hovercraft", function()
       local entry = zoneState.hovercraft["LCAC-1"]
       assert.are.equal("LANDING/TAO/1/1", entry.missionName)
       assert.are.same(craft.course[#craft.course], entry.finalPoint)
-      assert.is_false(entry.arrived)
+      assert.are.equal("enroute", entry.phase)
     end)
 
     it("should not launch when no beach lane is cleared", function()
@@ -172,7 +172,7 @@ describe("Hovercraft", function()
       local calls = {}
       stubFleet(buildCraft(calls))
       local zoneState = buildZoneState(true)
-      zoneState.hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, arrived = true } }
+      zoneState.hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, phase = "returning" } }
 
       local ships = { { guid = "LHD-1" } }
 
@@ -187,24 +187,74 @@ describe("Hovercraft", function()
   -- ============================================================================
 
   describe("updateHovercraft", function()
-    it("should mark a hovercraft arrived at its parking slot", function()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "LCAC-1" }))
-      trackStub(stub(GameApi, "Tool_Range").returns(0.05))
-      local zoneState = { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, arrived = false } } }
+    local stubUnload
 
-      Hovercraft.updateHovercraft(CONFIG, zoneState)
-
-      assert.is_true(zoneState.hovercraft["LCAC-1"].arrived)
+    before_each(function()
+      stubUnload = trackStub(stub(GameApi, "ScenEdit_UnloadCargo"))
     end)
 
-    it("should not mark a hovercraft still under way", function()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "LCAC-1" }))
-      trackStub(stub(GameApi, "Tool_Range").returns(2))
-      local zoneState = { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, arrived = false } } }
+    ---@param phase string
+    ---@return SBJ__ZoneState
+    local function buildState(phase)
+      return { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, phase = phase } } }
+    end
+
+    it("should unload a hovercraft that reaches its parking slot", function()
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "LCAC-1", RTB = spy.new(function() end) }))
+      trackStub(stub(GameApi, "Tool_Range").returns(0.05))
+      local zoneState = buildState("enroute")
 
       Hovercraft.updateHovercraft(CONFIG, zoneState)
 
-      assert.is_false(zoneState.hovercraft["LCAC-1"].arrived)
+      assert.stub(stubUnload).was.called_with("LCAC-1")
+      assert.are.equal("unloading", zoneState.hovercraft["LCAC-1"].phase)
+    end)
+
+    it("should neither unload nor return a hovercraft still under way", function()
+      local craft = { guid = "LCAC-1", condition = constants.UNIT_CONDITIONS.UNDERWAY, RTB = spy.new(function() end) }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(craft))
+      trackStub(stub(GameApi, "Tool_Range").returns(2))
+      local zoneState = buildState("enroute")
+
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+
+      assert.stub(stubUnload).was_not.called()
+      assert.spy(craft.RTB).was_not.called()
+      assert.are.equal("enroute", zoneState.hovercraft["LCAC-1"].phase)
+    end)
+
+    it("should keep waiting while the cargo is still transferring", function()
+      local craft = { guid = "LCAC-1", condition = constants.UNIT_CONDITIONS.TRANSFERRING_CARGO, RTB = spy.new(function() end) }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(craft))
+      local zoneState = buildState("unloading")
+
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+
+      assert.spy(craft.RTB).was_not.called()
+      assert.are.equal("unloading", zoneState.hovercraft["LCAC-1"].phase)
+    end)
+
+    it("should send a hovercraft home once its cargo is out", function()
+      local craft = { guid = "LCAC-1", condition = constants.UNIT_CONDITIONS.UNDERWAY, RTB = spy.new(function() end) }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(craft))
+      local zoneState = buildState("unloading")
+
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+
+      assert.spy(craft.RTB).was.called(1)
+      assert.is_true(craft.RTB.calls[1].vals[2])
+      assert.are.equal("returning", zoneState.hovercraft["LCAC-1"].phase)
+    end)
+
+    it("should not touch a hovercraft already returning", function()
+      local craft = { guid = "LCAC-1", condition = constants.UNIT_CONDITIONS.UNDERWAY, RTB = spy.new(function() end) }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(craft))
+      local zoneState = buildState("returning")
+
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+
+      assert.stub(stubUnload).was_not.called()
+      assert.spy(craft.RTB).was_not.called()
     end)
   end)
 

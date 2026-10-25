@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousLogistics.lua`
 
-**職責**：偵測艦隊是否到位、建立貨運任務、把貨物轉進搭載的載具並指派直升機任務
+**職責**：偵測艦隊是否到位、建立氣墊船貨運任務、把貨物轉進搭載的載具
 
 ---
 
@@ -10,16 +10,16 @@
 
 艦隊到達等待區後，系統依艦型把貨物（車輛、步兵、裝備）從母艦轉到搭載的直升機與氣墊船，同時建立 Cargo 任務。
 
-分派是**資料驅動**的：`SHIP_TRANSFER_SPECS` 以艦型 DBID 描述「轉哪些貨到哪些載具」與「指派哪些載具進任務」，不為每型艦寫硬編碼。新增艦型只要加一筆 spec，貨物清單本身在各區 `config` 的 `transferManifest`。
+分派是**資料驅動**的：`SHIP_TRANSFER_SPECS` 以艦型 DBID 描述「轉哪些貨到哪些載具」，不為每型艦寫硬編碼。新增艦型只要加一筆 spec，貨物清單本身在各區 `config` 的 `transferManifest`。
 
-| 艦型 | manifestKey | 轉貨目標 | 指派任務 |
-|---|---|---|---|
-| 075、076 | `type075` | 氣墊船（loadout 1）、運輸直升機（loadout 1、2） | 運輸直升機、攻擊直升機 |
-| 071 | `type071` | 氣墊船（loadout 1）、運輸直升機（loadout 1） | 運輸直升機 |
+| 艦型 | manifestKey | 轉貨目標 |
+|---|---|---|
+| 075、076 | `type075` | 氣墊船（loadout 1）、運輸直升機（loadout 1、2） |
+| 071 | `type071` | 氣墊船（loadout 1）、運輸直升機（loadout 1） |
 
-### 為什麼氣墊船只裝貨、不指派任務？
+### 為什麼這裡不指派任務？
 
-氣墊船要先走掃出來的通道到停車位，才能開始運貨。所以這裡只轉貨（`transfers`），`assignments` 刻意不含氣墊船；通道走完後由 [hovercraft](hovercraft.md) 設定其任務。對應地，貨運任務在這裡只為氣墊船與運輸直升機建立（`CARGO_MISSION_PLATFORMS`），攻擊直升機的任務（如 `CAS/E`）不在這裡建立，這裡只指派載具，開始時間由 [amphibiousAssault](amphibiousAssault.md) 設定。
+氣墊船要先走掃出來的通道到停車位，才能開始運貨，通道走完後由 [hovercraft](hovercraft.md) 設定其任務。直升機也不指派任務：[heliWave](heliWave.md) 手動放飛、給航線、卸貨，若被指派 CMO 任務會互相干擾。所以貨運任務在這裡只為氣墊船建立，`zone.air.transportHelicopter.missions` 只當波次表使用。
 
 ---
 
@@ -58,7 +58,7 @@
 |---|---|
 | `getUnitsInHoldingAreas(zone, filteredUnits)` | 到位偵測 |
 | `createCargoMissions(zone)` | 建立貨運任務，遇到第一個失敗即停止 |
-| `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨並指派 |
+| `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨 |
 | `transferAndAssignTransportAircraft(transportAircraft)` | 單一陸基運輸機轉貨並指派 |
 | `transferRemainingCargos(zone, units)` | 補運：重新轉貨，**不重新指派**任務 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除貨物，回傳實際刪除數；ACV 釋放使用 |

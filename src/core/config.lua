@@ -1591,13 +1591,13 @@ config.red.amphibOps = {}
 config.red.amphibOps.debug = {
   enabled = true,
   startStage = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT, -- phases before this are fast-forwarded (nil = all of them)
-  teleportLanding = true,                                -- hovercraft and ACVs jump to their parking slot
+  teleportLanding = true,                                     -- hovercraft and ACVs jump to their parking slot
 }
 config.red.amphibOps.periodSec = 5 * 60
 config.red.amphibOps.remainingCargoTransferSec = 2 * 3600 -- 空/機降任務開始後，每隔多久補運一次尚未運完的貨物
-config.red.amphibOps.airlandingFireQty = 440 -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
-config.red.amphibOps.bargeRoroPairingRangeNm = 1 -- 駁船與 RORO 距離小於此值才算同一組
-config.red.amphibOps.fireSupportHoldThreshold = 50 -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
+config.red.amphibOps.airlandingFireQty = 440              -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
+config.red.amphibOps.bargeRoroPairingRangeNm = 1          -- 駁船與 RORO 距離小於此值才算同一組
+config.red.amphibOps.fireSupportHoldThreshold = 50        -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
 config.red.amphibOps.cargo = {
   type075 = {
     { type = 2, num = 16, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05
@@ -1799,8 +1799,6 @@ config.red.amphibOps.transferCargo = {
   },
 }
 config.red.amphibOps.missionStartTime = {
-  transportHelicopter = { 42 * 60, 72 * 60, 92 * 60, 112 * 60 },
-  attackHelicopter = { 40 * 60, },
   reconUAV = { 0 }
 }
 config.red.amphibOps.formation = {
@@ -1854,9 +1852,19 @@ config.red.amphibOps.tuning = {
     cellSizeM = 50,
     clearSec = 20 * 60,
   },
+  heliWave = {
+    waveSize = 8,             -- 每波運輸直升機架數（左右翼各半）
+    escortSize = 4,           -- 每波攻擊直升機架數（左右翼各半）
+    waveTimeoutSec = 30 * 60, -- 一波放飛後超過此秒數，還在空中的視為結束
+    arrivalNm = 0.5,          -- 離降落點多近算到達
+    cruiseSpeedKt = 130,      -- 倒推放飛時間用的巡航速度（Z-18）
+    wingOffsetM = 8000,       -- 左右翼離通道中心線的橫向距離
+    inlandEntryM = 3000,      -- 進內陸多深後轉向降落點
+    landingSpreadM = 500,     -- 左右翼降落點離降落區中心的橫向偏移
+  },
   acvWave = {
-    lossRatio = 0.3,             -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
-    holdSec = 30 * 60,           -- 暫停超過此秒數就補下一波
+    lossRatio = 0.3,            -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
+    holdSec = 30 * 60,          -- 暫停超過此秒數就補下一波
     hovercraftWaitSec = 60 * 60, -- 氣墊船等第一波車波放滿的上限秒數，逾時直接放行
   },
 }
@@ -1955,25 +1963,21 @@ config.red.amphibOps.zones = {
             name = "AIRLANDING/TAO/1/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
           },
           {
             name = "AIRLANDING/TAO/1/2",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
           },
           {
             name = "AIRLANDING/TAO/2/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
           },
           {
             name = "AIRLANDING/TAO/2/2",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
           },
         },
         zone = constants.AREAS.AIRLANDING_TAOYUAN,
@@ -2011,7 +2015,6 @@ config.red.amphibOps.zones = {
             name = "CAS/E",
             loadoutId = constants.LOADOUTS.Z10_ATTACK,
             unitCount = 13,
-            startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
           },
         }
       },
@@ -2168,25 +2171,21 @@ config.red.amphibOps.zones = {
             name = "AIRLANDING/CHANGLONG/1/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
           },
           {
             name = "AIRLANDING/CHANGLONG/1/2",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
           },
           {
             name = "AIRLANDING/CHANGLONG/2/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
           },
           {
             name = "AIRLANDING/CHANGLONG/2/2",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
           },
         },
         zone = constants.AREAS.AIRLANDING_CHANGLONG,
@@ -2224,7 +2223,6 @@ config.red.amphibOps.zones = {
             name = "CAS/S",
             loadoutId = constants.LOADOUTS.Z10_ATTACK,
             unitCount = 13,
-            startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
           },
         }
       },
@@ -2380,25 +2378,21 @@ config.red.amphibOps.zones = {
             name = "AIRLANDING/PENGHU/1/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[1],
           },
           {
             name = "AIRLANDING/PENGHU/1/2",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[2],
           },
           {
             name = "AIRLANDING/PENGHU/2/1",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[3],
           },
           {
             name = "AIRLANDING/PENGHU/2/2",
             loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
             unitCount = 3,
-            startTime = config.red.amphibOps.missionStartTime.transportHelicopter[4],
           },
         },
         zone = constants.AREAS.AIRLANDING_PENGHU,
@@ -2436,7 +2430,6 @@ config.red.amphibOps.zones = {
             name = "CAS/PENGHU",
             loadoutId = constants.LOADOUTS.Z10_ATTACK,
             unitCount = 13,
-            startTime = config.red.amphibOps.missionStartTime.attackHelicopter[1],
           },
         }
       },

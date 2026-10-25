@@ -330,15 +330,15 @@ constants.AREAS = {
   LANDING_PENGHU = { "RP-46296", "RP-46297", "RP-46298", "RP-46299" },
   AIRLANDING_PENGHU = { "RP-59968", "RP-59969", "RP-59970", "RP-59971" },
   AMPH_VEH_STAGING_AREA_PENGHU = { "RP-46329", "RP-46330", "RP-46331", "RP-46332" },
-  -- TODO: 填 .scen 參考點名稱（通道中心：岸邊 1 點）
+  -- .scen 參考點名稱（通道中心：岸邊 1 點）
   LANE_CENTER_TAOYUAN = { "RP-211569" },
   LANE_CENTER_SISHU = { "RP-211568" },
   LANE_CENTER_PENGHU = { "RP-211567" },
-  -- TODO: 填 .scen 參考點名稱（岸上障礙範圍，多邊形）
+  -- .scen 參考點名稱（岸上障礙範圍，多邊形）
   OBSTACLE_TAOYUAN = { "RP-211555", "RP-211556", "RP-211557", "RP-211558" },
   OBSTACLE_SISHU = { "RP-211559", "RP-211560", "RP-211561", "RP-211562" },
   OBSTACLE_PENGHU = { "RP-211563", "RP-211564", "RP-211565", "RP-211566" },
-  -- TODO: 填 .scen 參考點名稱（近海雷區，多邊形）
+  -- .scen 參考點名稱（近海雷區，多邊形）
   MINEFIELD_TAOYUAN = { "RP-211570", "RP-211571", "RP-211572", "RP-211573" },
   MINEFIELD_SISHU = { "RP-211574", "RP-211575", "RP-211576", "RP-211577" },
   MINEFIELD_PENGHU = { "RP-211578", "RP-211579", "RP-211580", "RP-211581" },
@@ -649,7 +649,8 @@ constants.WEAPONS = {
   MIM104F_PAC3 = 1150, -- MIM-104F PAC-3 Air Defense Missile
   MIM104F_PAC2 = 642,  -- MIM-104F PAC-2 Air Defense Missile
   TK3 = 888,           -- TK-3 Air-to-Surface Missile
-  SEA_MINE = 634
+  SEA_MINE = 634,
+  AT_MINE = 770
 }
 
 constants.UNIT_TYPES = {
@@ -701,6 +702,7 @@ constants.THROTTLES = {
   FLANK = "Flank",
   FULL = "Full",
   CRUSE = "Cruse",
+  STOP = "Stop"
 }
 
 ---@type table<string, SBJ__OperationalArea>
@@ -3059,6 +3061,8 @@ constants.MISSILE_SYSTEM_STATE = {
 
 constants.UNIT_CONDITIONS = {
   AIRBORNE = "Airborne",
+  UNDERWAY = "Underway",
+  TRANSFERRING_CARGO = "Transfering Cargo",
 }
 
 constants.PLATFORM_TYPES = {

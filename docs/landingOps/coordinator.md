@@ -47,13 +47,15 @@ flowchart TD
 | 階段 | 離開條件 | 離開時的動作 |
 |---|---|---|
 | `MOVING` | 到達 `triggers.amphibiousOps.startTime` | `ShipMovement.moveToHoldingAreas` 發出全部命令 |
-| `WAITING_ARRIVAL` | 等待區艦數 > `arrivalThreshold` 且沒有艦在動 | 建貨運任務、轉移貨物並指派；Taoyuan 另有特例 |
-| `WAITING_ASSAULT` | 接觸數 < `contactThreshold`，或等待達 `periodSec` | `MineClearing.startMineClearing` + 設直升機任務開始時間 |
-| `MINE_CLEARING` | `updateMineClearing` 回報 082 全部完成 | `AssaultBoat.pairBoats` + `AmphibiousAssault.moveToLaunchStations` |
+| `WAITING_ARRIVAL` | 等待區艦數 > `arrivalThreshold` 且沒有艦在動 | 建氣墊船貨運任務、轉移貨物；Taoyuan 另有特例 |
+| `WAITING_ASSAULT` | 接觸數 < `contactThreshold`，或等待達 `periodSec` | `MineClearing.startMineClearing` + 記錄機降開始時間 |
+| `MINE_CLEARING` | `updateMineClearing` 回報 082 全部完成 | `AssaultBoat.pairBoats` + `AmphibiousAssault.moveToLaunchStations` + `HeliWave.schedule`（估第一波放飛時間） |
 | `BOAT_ASSAULT` | `updateBoats` 回報衝鋒舟全部到達或被摧毀 | `ObstacleClearing.startObstacleClearing` |
 | `OBSTACLE_CLEARING` | `updateObstacleClearing` 回報計時結束 | 有衝鋒舟的灘際通道標為 cleared |
 | `ASSAULT_LANDING` | `casArea` 內 ZBD-05 ≥ 1（暫代的灘頭條件，TODO） | — |
 | `WAITING_ADMIN_OFFLOADING` | 無條件放行（TODO：絕對安全） | `AdminOffloading.startAdminOffloading` |
+
+`HeliWave.update` 每區每 tick 執行（計畫建立後），不隨階段結束而停，見 [heliWave](heliWave.md)。
 
 `BOAT_ASSAULT` 每 tick 先 `launchBoats` 再檢查到達。`ASSAULT_LANDING`、`WAITING_ADMIN_OFFLOADING`、`COMPLETED`（`constants.AMPHIBIOUS_LANDING_PHASES`）每 tick 另跑氣墊船，見 [hovercraft](hovercraft.md)。
 

@@ -24,7 +24,7 @@ local LandingOps = {}
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
----@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
+---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]|nil
 local function buildACVRouter(amphibOps, zone, zoneState)
   zoneState.queueCounters = zoneState.queueCounters or {}
   zoneState.laneSlots = zoneState.laneSlots or {}
@@ -47,9 +47,12 @@ local function buildACVRouter(amphibOps, zone, zoneState)
       Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
       return zone.landing.acv.destination
     end
+
     if DebugFlow.isLandingTeleport(amphibOps) then
       DebugFlow.teleport(unit.guid, plan.course[#plan.course])
+      return nil
     end
+
     return plan.course
   end
 end
