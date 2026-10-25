@@ -27,6 +27,9 @@ local BLUE_SAM_DBIDS = {
   [constants.PLATFORMS.PAC3] = true,
 }
 
+---Emission interval that keeps a held SAM asleep, in seconds
+local SLEEP_EMISSION_INTERVAL_SEC = 3600
+
 local BLUE_MRAD_DBIDS = {
   [constants.PLATFORMS.TC2] = true,
   [constants.PLATFORMS.SKY_GUARD] = true,
@@ -112,7 +115,7 @@ function IntegratedAirDefenseSystem.setSamDoctrine(entries)
       local wcs = entry.weaponFree and constants.WCS.TIGHT or constants.WCS.HOLD
       local emissionFlag = entry.weaponFree and 1 or 0
       local useInterval = emissionFlag == 0 and 1 or 0
-      local interval = useInterval == 1 and 3600 or 0
+      local interval = useInterval == 1 and SLEEP_EMISSION_INTERVAL_SEC or 0
 
       GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = wcs })
       GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",

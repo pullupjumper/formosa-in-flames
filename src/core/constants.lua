@@ -702,7 +702,8 @@ constants.THROTTLES = {
   FLANK = "Flank",
   FULL = "Full",
   CRUSE = "Cruse",
-  STOP = "Stop"
+  STOP = "Stop",
+  MILITARY = "Military"
 }
 
 ---@type table<string, SBJ__OperationalArea>

@@ -823,7 +823,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field isWaitingLogged? boolean Latched after logging that no loaded helicopter is available
 
 ---Geometry shared by every course of one helicopter wave
----@class SBJ__HeliFlightPlan: table
+---@class SBJ__HeliFlightContext: table
 ---@field frame SBJ__LaneFrame Lane frame; wings are lateral offsets from its center line
 ---@field center CMO__Location Center of the air landing zone
 ---@field heliConfig SBJ__HeliWaveConfig
@@ -1152,6 +1152,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field waveTimeoutSec number A wave still in the air after this long counts as finished
 ---@field arrivalNm number Distance to the landing point that counts as arrived
 ---@field cruiseSpeedKt number Cruise speed used to work back the launch time from the boat arrival
+---@field cruiseAltitudeM number Altitude the helicopters fly at after launch
 ---@field wingOffsetM number Lateral distance of each wing from the lane center line
 ---@field inlandEntryM number Distance inland where a wing turns toward its landing point
 ---@field landingSpreadM number Lateral offset of each wing's landing point from the landing zone center

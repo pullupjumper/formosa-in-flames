@@ -47,7 +47,6 @@ local MOTHERSHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_071] = true,
 }
 
-local METERS_PER_NM = 1852
 local SECONDS_PER_HOUR = 3600
 
 -- ============================================================================
@@ -68,8 +67,8 @@ end
 local function findMotherships(zone, ships)
   local motherships = {}
 
-  for _, u in ipairs(ships) do
-    local ship = GameApi.ScenEdit_GetUnit(u.guid)
+  for _, sideUnit in ipairs(ships) do
+    local ship = GameApi.ScenEdit_GetUnit(sideUnit.guid)
     if ship and MOTHERSHIP_DBIDS[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) then
       table.insert(motherships, ship)
     end
@@ -105,12 +104,12 @@ local function findCandidates(zone, motherships)
   return transports, attackers
 end
 
----Pick count items at random
+---Select count items at random
 ---@generic T
 ---@param items T[]
 ---@param count integer
 ---@return T[]
-local function pickRandom(items, count)
+local function selectRandom(items, count)
   local pool = {}
   for i, item in ipairs(items) do
     pool[i] = item
@@ -137,20 +136,20 @@ local function findLandingCenter(zone)
   end
 
   local latSum, lonSum = 0, 0
-  for _, p in ipairs(points) do
-    latSum = latSum + Utils.toNumber(p.latitude)
-    lonSum = lonSum + Utils.toNumber(p.longitude)
+  for _, point in ipairs(points) do
+    latSum = latSum + Utils.toNumber(point.latitude)
+    lonSum = lonSum + Utils.toNumber(point.longitude)
   end
   return { latitude = latSum / #points, longitude = lonSum / #points }
 end
 
 ---Build the course of one wing: sideways to the wing, along it past the shore, then to the wing's landing point
----@param plan SBJ__HeliFlightPlan
+---@param flightCtx SBJ__HeliFlightContext
 ---@param startPos CMO__Location
 ---@param wing string
 ---@return CMO__Waypoint[] course
-local function buildWingCourse(plan, startPos, wing)
-  local frame, center, heliConfig = plan.frame, plan.center, plan.heliConfig
+local function buildWingCourse(flightCtx, startPos, wing)
+  local frame, center, heliConfig = flightCtx.frame, flightCtx.center, flightCtx.heliConfig
   local sign = WING_SIGN[wing]
   local startAlong = LaneGeometry.projectPoint(frame, startPos)
   local centerAlong, centerLateral = LaneGeometry.projectPoint(frame, center)
@@ -167,8 +166,8 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param heliConfig SBJ__HeliWaveConfig
----@return SBJ__HeliFlightPlan|nil # nil when the lanes or the landing zone are missing
-local function buildFlightPlan(zone, zoneState, heliConfig)
+---@return SBJ__HeliFlightContext|nil # nil when the lanes or the landing zone are missing
+local function buildFlightContext(zone, zoneState, heliConfig)
   local center = findLandingCenter(zone)
   if not (zoneState.lanes and center) then
     return nil
@@ -194,13 +193,13 @@ local function calculateCourseLengthM(startPos, course)
   return length
 end
 
----Estimate when the paired assault boats reach the shore line.
+---Calculate when the paired assault boats reach the shore line.
 ---The farthest carrier sails to the outer edge of the launch station band, then its boats run in to the shore.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@param currentTime number
 ---@return number # Time of the boat arrival
-local function estimateBoatArrivalTime(amphibOps, zoneState, currentTime)
+local function calculateBoatArrivalTime(amphibOps, zoneState, currentTime)
   local lanes = zoneState.lanes
   if not lanes then
     return currentTime
@@ -214,34 +213,34 @@ local function estimateBoatArrivalTime(amphibOps, zoneState, currentTime)
     local carrier = GameApi.ScenEdit_GetUnit(entry.shipGuid)
     if carrier then
       local along = LaneGeometry.projectPoint(frame, carrier)
-      farthestNm = math.max(farthestNm, -along / METERS_PER_NM)
+      farthestNm = math.max(farthestNm, -along / constants.METERS_PER_NM)
     end
   end
 
   local sailHours = math.max(0, farthestNm - route.launchStationFarNm) / amphibOps.formation.shipSpeed
-  local runInNm = route.launchStationFarNm - route.shoreStandoffM / METERS_PER_NM
+  local runInNm = route.launchStationFarNm - route.shoreStandoffM / constants.METERS_PER_NM
   local runHours = runInNm / amphibOps.tuning.assaultBoat.speed
 
   return currentTime + (sailHours + runHours) * SECONDS_PER_HOUR
 end
 
----Estimate the flight time of a wave from the first mothership along the longer wing
----@param plan SBJ__HeliFlightPlan|nil
+---Calculate the flight time of a wave from the first mothership along the longer wing
+---@param flightCtx SBJ__HeliFlightContext|nil
 ---@param motherships CMO__Unit[]
 ---@return number # Seconds. 0 when the route cannot be built
-local function estimateFlightSec(plan, motherships)
+local function calculateFlightSec(flightCtx, motherships)
   local start = motherships[1]
-  if not (plan and start) then
+  if not (flightCtx and start) then
     return 0
   end
 
   local startPos = { latitude = start.latitude, longitude = start.longitude }
   local longestM = 0
   for _, wing in pairs(WING) do
-    longestM = math.max(longestM, calculateCourseLengthM(startPos, buildWingCourse(plan, startPos, wing)))
+    longestM = math.max(longestM, calculateCourseLengthM(startPos, buildWingCourse(flightCtx, startPos, wing)))
   end
 
-  return longestM / METERS_PER_NM / plan.heliConfig.cruiseSpeedKt * SECONDS_PER_HOUR
+  return longestM / constants.METERS_PER_NM / flightCtx.heliConfig.cruiseSpeedKt * SECONDS_PER_HOUR
 end
 
 -- ============================================================================
@@ -252,14 +251,14 @@ end
 ---@param heli CMO__Unit
 ---@param role string
 ---@param wing string
----@param plan SBJ__HeliFlightPlan
+---@param flightCtx SBJ__HeliFlightContext
 ---@return SBJ__HeliState
-local function launchHeli(heli, role, wing, plan)
-  local course = buildWingCourse(plan, { latitude = heli.latitude, longitude = heli.longitude }, wing)
-  course[1].desiredAltitude = 304
+local function launchHeli(heli, role, wing, flightCtx)
+  local course = buildWingCourse(flightCtx, { latitude = heli.latitude, longitude = heli.longitude }, wing)
+  course[1].desiredAltitude = flightCtx.heliConfig.cruiseAltitudeM
   heli:Launch(true)
   heli.course = course
-  heli.throttle = "Military"
+  heli.throttle = constants.THROTTLES.MILITARY
   GameApi.ScenEdit_SetDoctrine({ side = constants.SIDES.RED, guid = heli.guid }, { automatic_evasion = false })
 
   return { role = role, wing = wing, phase = PHASE.ENROUTE, landingPoint = course[#course] }
@@ -269,11 +268,11 @@ end
 ---@param helis CMO__Unit[]
 ---@param role string
 ---@param units table<string, SBJ__HeliState> Wave units, filled in
----@param plan SBJ__HeliFlightPlan
-local function launchGroup(helis, role, units, plan)
+---@param flightCtx SBJ__HeliFlightContext
+local function launchGroup(helis, role, units, flightCtx)
   for i, heli in ipairs(helis) do
     local wing = i % 2 == 1 and WING.LEFT or WING.RIGHT
-    units[heli.guid] = launchHeli(heli, role, wing, plan)
+    units[heli.guid] = launchHeli(heli, role, wing, flightCtx)
   end
 end
 
@@ -295,8 +294,8 @@ end
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param state SBJ__HeliWaveState
----@param plan SBJ__HeliFlightPlan
-local function launchWave(tickCtx, zone, state, plan)
+---@param flightCtx SBJ__HeliFlightContext
+local function launchWave(tickCtx, zone, state, flightCtx)
   local transports, attackers = findCandidates(zone, findMotherships(zone, tickCtx.filteredShips))
   if #transports == 0 then
     if not state.isWaitingLogged then
@@ -308,8 +307,8 @@ local function launchWave(tickCtx, zone, state, plan)
   end
 
   local units = {}
-  launchGroup(pickRandom(transports, plan.heliConfig.waveSize), ROLE.TRANSPORT, units, plan)
-  launchGroup(pickRandom(attackers, plan.heliConfig.escortSize), ROLE.ATTACK, units, plan)
+  launchGroup(selectRandom(transports, flightCtx.heliConfig.waveSize), ROLE.TRANSPORT, units, flightCtx)
+  launchGroup(selectRandom(attackers, flightCtx.heliConfig.escortSize), ROLE.ATTACK, units, flightCtx)
 
   state.units = units
   state.waveIndex = state.waveIndex + 1
@@ -329,10 +328,10 @@ end
 -- Wave Progress
 -- ============================================================================
 
----Send a helicopter home
+---Move a helicopter home
 ---@param heli CMO__Unit
 ---@param entry SBJ__HeliState
-local function sendHome(heli, entry)
+local function moveHome(heli, entry)
   heli:RTB(true)
   entry.phase = PHASE.RETURNING
 end
@@ -340,7 +339,7 @@ end
 ---Check if every transport of the wave is done: back on its way home or destroyed
 ---@param units table<string, SBJ__HeliState>
 ---@return boolean
-local function areTransportsDone(units)
+local function isTransportsDone(units)
   for guid, entry in pairs(units) do
     if entry.role == ROLE.TRANSPORT and entry.phase ~= PHASE.RETURNING and GameApi.ScenEdit_GetUnit(guid) then
       return false
@@ -349,11 +348,11 @@ local function areTransportsDone(units)
   return true
 end
 
----Move one transport through unloading
+---Update one transport through unloading
 ---@param heli CMO__Unit
 ---@param entry SBJ__HeliState
 ---@param arrivalNm number
-local function advanceTransport(heli, entry, arrivalNm)
+local function updateTransport(heli, entry, arrivalNm)
   if entry.phase == PHASE.ENROUTE then
     local range = GameApi.Tool_Range(heli.guid, entry.landingPoint)
     if range and range < arrivalNm then
@@ -361,15 +360,15 @@ local function advanceTransport(heli, entry, arrivalNm)
       entry.phase = PHASE.UNLOADING
     end
   elseif entry.phase == PHASE.UNLOADING and GameUtils.isCargoUnloaded(heli) then
-    sendHome(heli, entry)
+    moveHome(heli, entry)
   end
 end
 
----Move one attack helicopter to its loiter point
+---Update one attack helicopter on its way to the loiter point
 ---@param heli CMO__Unit
 ---@param entry SBJ__HeliState
 ---@param arrivalNm number
-local function advanceAttacker(heli, entry, arrivalNm)
+local function updateAttacker(heli, entry, arrivalNm)
   if entry.phase == PHASE.ENROUTE then
     local range = GameApi.Tool_Range(heli.guid, entry.landingPoint)
     if range and range < arrivalNm then
@@ -378,36 +377,36 @@ local function advanceAttacker(heli, entry, arrivalNm)
   end
 end
 
----Advance every helicopter of the wave. Escorts go home once the transports are done
+---Update every helicopter of the wave. Escorts go home once the transports are done
 ---@param units table<string, SBJ__HeliState>
 ---@param arrivalNm number
-local function advanceUnits(units, arrivalNm)
+local function updateUnits(units, arrivalNm)
   for guid, entry in pairs(units) do
     local heli = GameApi.ScenEdit_GetUnit(guid)
     if heli and entry.role == ROLE.TRANSPORT then
-      advanceTransport(heli, entry, arrivalNm)
+      updateTransport(heli, entry, arrivalNm)
     elseif heli then
-      advanceAttacker(heli, entry, arrivalNm)
+      updateAttacker(heli, entry, arrivalNm)
     end
   end
 
-  if areTransportsDone(units) then
+  if isTransportsDone(units) then
     for guid, entry in pairs(units) do
       local heli = entry.role == ROLE.ATTACK and entry.phase ~= PHASE.RETURNING and GameApi.ScenEdit_GetUnit(guid)
       if heli then
-        sendHome(heli, entry)
+        moveHome(heli, entry)
       end
     end
   end
 end
 
----Send home every helicopter of the wave still in the air
+---Move home every helicopter of the wave still in the air
 ---@param units table<string, SBJ__HeliState>
 local function recallWave(units)
   for guid, entry in pairs(units) do
     local heli = entry.phase ~= PHASE.RETURNING and GameApi.ScenEdit_GetUnit(guid)
     if heli then
-      sendHome(heli, entry)
+      moveHome(heli, entry)
     end
   end
 end
@@ -435,9 +434,9 @@ end
 ---@param zoneState SBJ__ZoneState
 function HeliWave.schedule(tickCtx, zone, zoneState)
   local amphibOps, currentTime = tickCtx.config.red.amphibOps, tickCtx.currentTime
-  local plan = buildFlightPlan(zone, zoneState, amphibOps.tuning.heliWave)
-  local boatArrivalAt = estimateBoatArrivalTime(amphibOps, zoneState, currentTime)
-  local flightSec = estimateFlightSec(plan, findMotherships(zone, tickCtx.filteredShips))
+  local flightCtx = buildFlightContext(zone, zoneState, amphibOps.tuning.heliWave)
+  local boatArrivalAt = calculateBoatArrivalTime(amphibOps, zoneState, currentTime)
+  local flightSec = calculateFlightSec(flightCtx, findMotherships(zone, tickCtx.filteredShips))
 
   zoneState.heliWave = {
     waveIndex = 0,
@@ -455,7 +454,7 @@ function HeliWave.schedule(tickCtx, zone, zoneState)
   }))
 end
 
----Run the helicopter waves of a zone for one tick. Do nothing before the wave plan exists
+---Run the helicopter waves of a zone for one tick. Do nothing before the wave flightCtx exists
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
@@ -466,7 +465,7 @@ function HeliWave.update(tickCtx, zone, zoneState)
   end
 
   local heliConfig = tickCtx.config.red.amphibOps.tuning.heliWave
-  advanceUnits(state.units, heliConfig.arrivalNm)
+  updateUnits(state.units, heliConfig.arrivalNm)
 
   if state.waveLaunchedAt and tickCtx.currentTime - state.waveLaunchedAt >= heliConfig.waveTimeoutSec and
       not isWaveDone(state.units) then
@@ -488,13 +487,13 @@ function HeliWave.update(tickCtx, zone, zoneState)
     return
   end
 
-  local plan = buildFlightPlan(zone, zoneState, heliConfig)
-  if not plan then
+  local flightCtx = buildFlightContext(zone, zoneState, heliConfig)
+  if not flightCtx then
     Logger.error(LogFormat.line("ERROR", { scope = "heliWave", zone = zone.name, reason = "landing_geometry_missing" }))
     return
   end
 
-  launchWave(tickCtx, zone, state, plan)
+  launchWave(tickCtx, zone, state, flightCtx)
 end
 
 return HeliWave

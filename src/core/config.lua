@@ -1858,6 +1858,7 @@ config.red.amphibOps.tuning = {
     waveTimeoutSec = 30 * 60, -- 一波放飛後超過此秒數，還在空中的視為結束
     arrivalNm = 0.5,          -- 離降落點多近算到達
     cruiseSpeedKt = 130,      -- 倒推放飛時間用的巡航速度（Z-18）
+    cruiseAltitudeM = 304,    -- 放飛後的巡航高度（公尺）
     wingOffsetM = 8000,       -- 左右翼離通道中心線的橫向距離
     inlandEntryM = 3000,      -- 進內陸多深後轉向降落點
     landingSpreadM = 500,     -- 左右翼降落點離降落區中心的橫向偏移

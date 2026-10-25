@@ -102,7 +102,7 @@ describe("HeliWave", function()
         route = { launchStationFarNm = 4, shoreStandoffM = 100 },
         assaultBoat = { speed = 30 },
         heliWave = {
-          waveSize = 8, escortSize = 4, waveTimeoutSec = 1800, arrivalNm = 0.5, cruiseSpeedKt = 130,
+          waveSize = 8, escortSize = 4, waveTimeoutSec = 1800, arrivalNm = 0.5, cruiseSpeedKt = 130, cruiseAltitudeM = 304,
           wingOffsetM = 8000, inlandEntryM = 3000, landingSpreadM = 500,
         },
       },

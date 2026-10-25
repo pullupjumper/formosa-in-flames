@@ -15,7 +15,7 @@
 - 第二波起：上一波全部結束（見「放下一波」）就放，不看 `startTime`。
 - `zone.air.transportHelicopter.missions` 的每一筆 = 一個波次，提供 `loadoutId` 等資料；不再呼叫 `setMissionStartTime`，CMO 任務不會自動起飛。`missions[n].startTime` 不再使用。
 - 所有作戰區用同樣的波次大小（8 運輸 + 4 攻擊）。
-- 候選：該區 Type 075/071 上、機上有 cargo 的運輸直升機，隨機挑。
+- 候選：該區 Type 075/076/071 上、機上有 cargo 的運輸直升機，隨機挑。
 - 每波起飛時記錄這波的 GUID 清單到 `zoneState`（新欄位，型別補進 `schema.lua` 的 `SBJ__ZoneState`）。
 - 沒有候選直升機時，記 log，下個 tick 再試（貨會由 `transferRemainingCargos` 補上，見「補貨」）。
 - 全部 `missions` 的波次都放完，機波就結束。
@@ -35,7 +35,7 @@
 ### 卸貨與返航
 
 - 到降落點（距離小於 `arrivalNm`）就呼叫 `GameApi.ScenEdit_UnloadCargo(guid)`，不指派任何 mission。
-- 判斷「卸完」：`unit.condition ~= "Transfering Cargo"` 且 `unit.condition == "Underway"`（暫定；遊戲內實際狀態字串還沒確認，見「待確認」）。
+- 判斷「卸完」：`unit.condition ~= "Transfering Cargo"` 且 `unit.condition == "Underway"`（遊戲內已確認可用；實作簡化成只判 `== "Underway"`，兩者等價）。
 - 卸完就 `unit:RTB(true)`，在 `zoneState` 記下已返航。
 - `ScenEdit_GetUnit(guid)` 回 `nil` 視為被擊殺。
 
@@ -61,7 +61,7 @@
 
 ### 設定
 
-放進 `config.red.amphibOps`，不寫死在邏輯裡：
+放進 `config.red.amphibOps.tuning.heliWave`，不寫死在邏輯裡：
 
 | 欄位 | 用途 |
 |---|---|
@@ -69,9 +69,10 @@
 | `escortSize = 4` | 攻擊直升機每波架數 |
 | `waveTimeoutSec` | 逾時放行 |
 | `arrivalNm` | 到降落點的判定距離 |
-| 左右翼航點 | 各翼沿船團外側、進內陸、到登陸點的航點 |
+| `wingOffsetM`、`inlandEntryM`、`landingSpreadM` | 左右翼航點的偏移量；航點由程式用 `LaneGeometry` 算出，不直接寫在設定裡 |
+| `cruiseAltitudeM` | 放飛後的巡航高度 |
 | 巡航速度 | 倒推飛行時間用（Z-18 約 130 kt） |
-| 每翼架數 | 運輸 4、攻擊 2（`waveSize`、`escortSize` 的一半） |
+| 每翼架數 | 不另設欄位；依序輪流分到左右翼，各得 `waveSize`、`escortSize` 的一半 |
 
 `zone.air.transportHelicopter.missions` **保留**，作為波次表（見「機波」）；`missionStartTime.transportHelicopter` 不再使用，移除。`attackHelicopter.missions` 同樣保留，跟著波次放飛，不再設 CMO 任務開始時間。
 
@@ -107,18 +108,24 @@
 - `AmphibiousLogistics`：移除直升機的 CMO 貨運任務建立與 `assignments` 指派；只剩氣墊船任務，直升機仍轉貨。
 - `AmphibiousAssault.setLandingMissionStartTime` 改名 `recordLandingStartTime(zoneState)`，只記 `airlandingMissionStartTime`（補運計時用）。
 - `HeliWave.schedule(tickCtx, zone, zoneState)`、`HeliWave.update(tickCtx, zone, zoneState)`：沿用 `SBJ__LandingTickContext`。
+- 氣墊船、衝鋒舟、掃雷艦為了「卸貨判斷」與 fast-forward 一致，一併調整（見下，這些是必要的連動，不是新功能）：
+  - `GameUtils.isCargoUnloaded(unit)`：氣墊船與直升機共用卸貨完成判斷。
+  - `Hovercraft`：到停泊點改成呼叫 `UnloadCargo`，卸完 `RTB`；狀態 `arrived` 改成 `phase`（`enroute`／`unloading`／`returning`）。原本「指派貨運任務」的 TODO 移除。
+  - `AssaultBoat`：fast-forward 的 teleport 從放艇時移到每 tick 更新時，並清掉航線。`init.lua` 的 ACV 航線 router 在 teleport 時回 `nil`。
+  - `MineClearing`：fast-forward 判斷改用 `zoneState.phase`，移除已完成的 TODO。
+  - `constants`：新增 `WEAPONS.AT_MINE`、`THROTTLES.STOP`、`THROTTLES.MILITARY`、`UNIT_CONDITIONS`。
 - 第一波放飛時間 = max(現在, T − 飛行時間)；T 與飛行時間的算法見 `docs/landingOps/heliWave.md`。
 
 ## 不做
 
 - 不處理降落點的敵方威脅（卸貨時被打就被打）。
-- 不改氣墊船、衝鋒舟、兩棲車的流程。
+- 不改氣墊船、衝鋒舟、兩棲車的任務目標與路線；只動上面列出的卸貨判斷與 fast-forward 連動。
 - 不改 `transferAndAssign`、`transferRemainingCargos` 的轉貨邏輯。
 - 不做多降落點。
 
 ## 待確認
 
-1. **卸貨判斷**：`condition` 字串暫定 `"Transfering Cargo"` 與 `"Underway"`，放進 `constants`，之後用日誌校正。
+1. **卸貨判斷**：已在遊戲內確認 `"Underway"` 可正常判斷卸完。
 2. **降落失敗**（一直卡在 `Transfering Cargo`）靠 `waveTimeoutSec` 處理。
 
 ## 驗收
