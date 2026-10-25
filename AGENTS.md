@@ -74,7 +74,7 @@ See `docs/` for detailed module architecture documentation.
 - `docs/naming.md`, `docs/coding-style.md`: writing rules. Single source; skills point here, never copy.
 - `docs/<module>.md`: how a module works. May be outdated.
 - `docs/features.md`: feature map (✅ ⚠️ ❌). Update only when a feature's status changes. May be outdated.
-- `docs/specs/<branch-name>.md`: one spec per change (goal, behaviour to deliver, out of scope, acceptance); historical once merged. `/` in the branch name becomes `-`.
+- `docs/specs/<branch-name>.md`: one spec per change that alters behaviour (goal, behaviour to deliver, out of scope, acceptance); historical once merged. `/` in the branch name becomes `-`. Skip the spec for a pure rename, move, or field-shape change with identical behaviour; the commit message and passing tests are the record. Write one when behaviour, trigger timing, or a cross-module interface changes.
 
 Only a spec counts as a spec. Module docs, `features.md`, and old plans do not.
 
