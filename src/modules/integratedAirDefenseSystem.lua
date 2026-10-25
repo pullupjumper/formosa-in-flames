@@ -106,15 +106,17 @@ end
 ---@param entries SBJ__SamDoctrineEntry[]
 function IntegratedAirDefenseSystem.setSamDoctrine(entries)
   for _, entry in ipairs(entries) do
-    local unit = GameApi.ScenEdit_GetUnit(entry.guid)
+    local unit = GameApi.ScenEdit_GetUnit(entry.name, constants.SIDES.BLUE)
 
     if unit then
       local wcs = entry.weaponFree and constants.WCS.TIGHT or constants.WCS.HOLD
       local emissionFlag = entry.weaponFree and 1 or 0
+      local useInterval = emissionFlag == 0 and 1 or 0
+      local interval = useInterval == 1 and 3600 or 0
 
       GameApi.ScenEdit_SetDoctrine({ guid = unit.guid }, { weapon_control_status_air = wcs })
       GameApi.ScenEdit_SetUnitIntermittentEmissionConfig(unit.guid, "Green",
-        { WakeWhenDetectingThreat = emissionFlag, UseEmissionInterval = emissionFlag }
+        { WakeWhenDetectingThreat = emissionFlag, UseEmissionInterval = useInterval, EmissionInterval = interval }
       )
     end
   end

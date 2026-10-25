@@ -96,23 +96,23 @@ describe("IntegratedAirDefenseSystem", function()
 
     -- Positive: only the named SAM is changed, and it wakes on threat
     it("should set WCS tight and wake emissions for a weapons-free SAM", function()
-      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "PAC-1", name = "PAC-3", weaponFree = true } })
+      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "PAC-1", name = "PAC-1", weaponFree = true } })
 
       assert.stub(setDoctrineStub).was.called(1)
       assert.stub(setDoctrineStub).was.called_with({ guid = "PAC-1" },
         { weapon_control_status_air = constants.WCS.TIGHT })
       assert.stub(setEmissionStub).was.called_with("PAC-1", "Green",
-        { WakeWhenDetectingThreat = 1, UseEmissionInterval = 1 })
+        { WakeWhenDetectingThreat = 1, UseEmissionInterval = 0, EmissionInterval = 0 })
     end)
 
     -- Positive: weapons hold keeps emissions asleep
     it("should set WCS hold and keep emissions asleep when weapons are not free", function()
-      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "TC2-1", name = "TC-2", weaponFree = false } })
+      IntegratedAirDefenseSystem.setSamDoctrine({ { guid = "TC2-1", name = "TC2-1", weaponFree = false } })
 
       assert.stub(setDoctrineStub).was.called_with({ guid = "TC2-1" },
         { weapon_control_status_air = constants.WCS.HOLD })
       assert.stub(setEmissionStub).was.called_with("TC2-1", "Green",
-        { WakeWhenDetectingThreat = 0, UseEmissionInterval = 0 })
+        { WakeWhenDetectingThreat = 0, UseEmissionInterval = 1, EmissionInterval = 3600 })
     end)
 
     -- Negative: destroyed units (unknown guid) touch nothing
@@ -157,7 +157,7 @@ describe("IntegratedAirDefenseSystem", function()
 
       IntegratedAirDefenseSystem.reassignSamUnits(iads, {
         { guid = "GONE", type = "rocc", name = "Gone", sam = { S1 = { guid = "S1", name = "SAM" } } },
-        { guid = "A", type = "nope", name = "A", sam = {} },
+        { guid = "A",    type = "nope", name = "A",    sam = {} },
       })
 
       assert.is_not_nil(iads.rocc.A.sam.S1)
