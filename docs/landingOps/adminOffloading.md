@@ -15,7 +15,7 @@
 - [coordinator](coordinator.md) 在 `WAITING_ADMIN_OFFLOADING` 呼叫 `startAdminOffloading`，派出駁船與 RORO
 - 事件腳本 `offloadVehicles.lua`（單位進入 ACV 區域）經門面 `LandingOps.offloadVehicles` 執行架橋與下卸；浮橋的建立與下卸的流程編排寫在**門面**，本模組只提供查詢與 `offloadVehicles` 動作
 
-駁船與 RORO 的對應存在 `amphibOps.barges`（`SBJ__BargeContext`，見 `schema.lua`）：駁船 GUID、`bridgeGUID`、配對的 RORO GUID 清單。
+駁船與 RORO 的對應存在 `amphibOps.barges`（`SBJ__BargeState`，見 `schema.lua`）：駁船 GUID、`bridgeGUID`、配對的 RORO GUID 清單。
 
 ```mermaid
 flowchart LR

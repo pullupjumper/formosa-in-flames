@@ -10,10 +10,10 @@ describe("MissileSystem StatusView", function()
   -- Shared mock data builders
   -- ============================================================================
 
-  ---Create a firing unit context that is mid-reload
+  ---Create a firing unit state that is mid-reload
   ---@param overrides? table
   ---@return table
-  local function makeFiringUnitCtx(overrides)
+  local function makeFiringUnitState(overrides)
     local ctx = {
       name = "FU-1",
       state = STATE.RELOAD,
@@ -26,10 +26,10 @@ describe("MissileSystem StatusView", function()
     return ctx
   end
 
-  ---Create a resupply unit context that is not reloading
+  ---Create a resupply unit state that is not reloading
   ---@param overrides? table
   ---@return table
-  local function makeResupplyUnitCtx(overrides)
+  local function makeResupplyUnitState(overrides)
     local ctx = { name = "RS-1", state = STATE.HIDE, weaponCountCurrent = 4, ammunition = "AHA-1" }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
@@ -37,18 +37,18 @@ describe("MissileSystem StatusView", function()
     return ctx
   end
 
-  ---Create an SRBM ground context with one paired battery and one idle resupply unit
-  ---@param firingUnitCtx? table
-  ---@param resupplyUnitCtx? table
+  ---Create an SRBM ground state with one paired battery and one idle resupply unit
+  ---@param firingUnitState? table
+  ---@param resupplyUnitState? table
   ---@return table
-  local function makeGroundCtx(firingUnitCtx, resupplyUnitCtx)
+  local function makeGroundState(firingUnitState, resupplyUnitState)
     return {
       missileSystemTypes = {
         srbm = {
-          firingUnits = { ["FU-1"] = firingUnitCtx or makeFiringUnitCtx() },
+          firingUnits = { ["FU-1"] = firingUnitState or makeFiringUnitState() },
           resupplyUnits = {
-            ["RS-1"] = resupplyUnitCtx or makeResupplyUnitCtx(),
-            ["RS-2"] = makeResupplyUnitCtx({ name = "RS-2" })
+            ["RS-1"] = resupplyUnitState or makeResupplyUnitState(),
+            ["RS-2"] = makeResupplyUnitState({ name = "RS-2" })
           },
           ammunitions = { ["AHA-1"] = { weaponCountCurrent = 12 } }
         }
@@ -59,11 +59,11 @@ describe("MissileSystem StatusView", function()
   local missileSystemConfigMap = { srbm = { reloadTime = 1800 }, mlrs = { reloadTime = 600 } }
 
   ---Build statuses for SRBM and return the FU-1 status
-  ---@param groundCtx table
+  ---@param groundState table
   ---@param now number
   ---@return table
-  local function buildRow(groundCtx, now)
-    return StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, now)[1]
+  local function buildRow(groundState, now)
+    return StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, now)[1]
   end
 
   -- ============================================================================
@@ -73,7 +73,7 @@ describe("MissileSystem StatusView", function()
   describe("buildBatteryStatuses", function()
     -- Positive: one status per firing unit
     it("should build one status per firing unit", function()
-      local rows = StatusView.buildBatteryStatuses(makeGroundCtx(), missileSystemConfigMap, 1120)
+      local rows = StatusView.buildBatteryStatuses(makeGroundState(), missileSystemConfigMap, 1120)
 
       assert.are.same({
         {
@@ -91,10 +91,10 @@ describe("MissileSystem StatusView", function()
     end)
 
     it("should report the default ammo counts of the resupply unit and its depot", function()
-      local groundCtx = makeGroundCtx(nil, makeResupplyUnitCtx({ weaponCountDefault = 8 }))
-      groundCtx.missileSystemTypes.srbm.ammunitions["AHA-1"].weaponCountDefault = 24
+      local groundState = makeGroundState(nil, makeResupplyUnitState({ weaponCountDefault = 8 }))
+      groundState.missileSystemTypes.srbm.ammunitions["AHA-1"].weaponCountDefault = 24
 
-      local row = buildRow(groundCtx, 1120)
+      local row = buildRow(groundState, 1120)
 
       assert.are.equal(8, row.missilesInTransloaderDefault)
       assert.are.equal(24, row.missilesInAHADefault)
@@ -102,7 +102,7 @@ describe("MissileSystem StatusView", function()
 
     -- Positive: idle resupply units have no firing unit, so they produce no status
     it("should skip resupply units without a firing unit", function()
-      local rows = StatusView.buildBatteryStatuses(makeGroundCtx(), missileSystemConfigMap, 1120)
+      local rows = StatusView.buildBatteryStatuses(makeGroundState(), missileSystemConfigMap, 1120)
 
       assert.are.equal(1, #rows)
     end)
@@ -117,45 +117,45 @@ describe("MissileSystem StatusView", function()
       }
 
       for state, label in pairs(labels) do
-        local groundCtx = makeGroundCtx(makeFiringUnitCtx({ state = state }), makeResupplyUnitCtx({ state = state }))
-        local row = buildRow(groundCtx, 1120)
+        local groundState = makeGroundState(makeFiringUnitState({ state = state }), makeResupplyUnitState({ state = state }))
+        local row = buildRow(groundState, 1120)
         assert.are.equal(label, row.firingUnitState)
         assert.are.equal(label, row.resupplyUnitState)
       end
     end)
 
-    -- Negative: a ground context without any missile system state produces no rows
+    -- Negative: a ground state without any missile system state produces no rows
     it("should return no statuses when there are no system contexts", function()
-      local groundCtx = makeGroundCtx()
-      groundCtx.missileSystemTypes = {}
+      local groundState = makeGroundState()
+      groundState.missileSystemTypes = {}
 
-      local rows = StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, 1120)
+      local rows = StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, 1120)
 
       assert.are.same({}, rows)
     end)
 
     -- Negative: an unexpected state still renders
     it("should label an unknown state as UNKNOWN", function()
-      local row = buildRow(makeGroundCtx(makeFiringUnitCtx({ state = -99 })), 1120)
+      local row = buildRow(makeGroundState(makeFiringUnitState({ state = -99 })), 1120)
 
       assert.are.equal("UNKNOWN", row.firingUnitState)
     end)
 
     -- Boundary: 40 s is 0.666... minutes, which must round up rather than truncate
     it("should round elapsed reload minutes to 2 decimals", function()
-      local row = buildRow(makeGroundCtx(), 1040)
+      local row = buildRow(makeGroundState(), 1040)
 
       assert.are.equal(0.67, row.firingUnitReloadTime)
     end)
 
     -- Boundary: a start time after now must not show a negative countdown
     it("should clamp a reload that starts in the future to 0", function()
-      local groundCtx = makeGroundCtx(
-        makeFiringUnitCtx({ reloadStartTime = 2000 }),
-        makeResupplyUnitCtx({ reloadStartTime = 3000 })
+      local groundState = makeGroundState(
+        makeFiringUnitState({ reloadStartTime = 2000 }),
+        makeResupplyUnitState({ reloadStartTime = 3000 })
       )
 
-      local row = buildRow(groundCtx, 1000)
+      local row = buildRow(groundState, 1000)
 
       assert.are.equal(0, row.firingUnitReloadTime)
       assert.are.equal(0, row.resupplyUnitReloadTime)

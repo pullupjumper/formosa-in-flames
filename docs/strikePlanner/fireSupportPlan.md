@@ -106,7 +106,7 @@ flowchart TD
     DEPLOY_TASK["遍歷已達 startTime 的 FST"]
     DEPLOY_UNIT["deployTaskFiringUnits()"]
     GET_UNIT["GameApi.ScenEdit_GetUnit()"]
-    GET_CTX["讀取 firingUnitCtx"]
+    GET_CTX["讀取 firingUnitState"]
     SEND["MissileSystem.sendToFiringPoint()"]
     STATIC{"已在射擊位置?"}
     ALL_READY{"matrix.allFiringUnitsInPosition?"}
@@ -176,7 +176,7 @@ saveData.red.ground
 │                   ├── minTargetCount: number  # 上游建置 FSEM 時使用；本模組不讀取
 │                   └── ammoPerTarget: number
 ├── mlrs / glcm / srbm / mrbm / ascm / sam
-│   └── firingUnits: table<string, SBJ__FiringUnitContext>
+│   └── firingUnits: table<string, SBJ__FiringUnitState>
 │       └── <firingUnitName>
 │           ├── state: constants.MISSILE_SYSTEM_STATE
 │           ├── ammoThreshold: number
@@ -206,8 +206,8 @@ saveData.red.ground
 | `config.logging.modules[constants.TAGS.GROUND]` | 控制 `constants.TAGS.GROUND` 日誌是否 verbose。 |
 | `config.red.ground.missileSystemTypes.<system>.reloadTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
 | `config.red.ground.missileSystemTypes.<system>.stowTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.stowTime`，供打擊後 stow 視窗使用。 |
-| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitContext` 後由 `MissileSystem.isLowAmmo()` 使用。 |
-| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitContext` 後用於彈量檢查與發射單元武器設定。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitState` 後由 `MissileSystem.isLowAmmo()` 使用。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitState` 後用於彈量檢查與發射單元武器設定。 |
 | `config.red.fireSupportTaskTemplates.*.target.minTargetCount` | 上游 `fsemBuilder` 建立 FSEM 前用來過濾目標數不足的 FST；本模組執行時不直接讀取。 |
 | `config.red.fireSupportTaskTemplates.*.target.ammoPerTarget` | 進入 executable FST 後成為 `task.target.ammoPerTarget`，本模組傳給 `AttackManager.attackContacts()` 的 `qty`。 |
 

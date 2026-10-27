@@ -96,10 +96,10 @@ end
 -- ============================================================================
 
 ---Classify unit type based on context name
----@param unitCtxName string
+---@param unitStateName string
 ---@return string # UNIT_TYPE enum value
-local function resolveUnitType(unitCtxName)
-  if string.find(unitCtxName, "ROCC") or string.find(unitCtxName, "TAAOC") then
+local function resolveUnitType(unitStateName)
+  if string.find(unitStateName, "ROCC") or string.find(unitStateName, "TAAOC") then
     return UNIT_TYPE.C2
   end
   return UNIT_TYPE.MOBILE
@@ -108,11 +108,11 @@ end
 ---Check if unit is emitting signal with enhanced logic
 ---@param config SBJ__Config
 ---@param unit CMO__Unit
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context Unit data (Battery units check movement, C2 units always emit)
+---@param unitState SBJ__FiringUnitState|SBJ__C2State Unit data (Battery units check movement, C2 units always emit)
 ---@param enemySide string
 ---@return boolean isEmitting Whether unit is emitting signal
 ---@return string reason Reason for emission status
-local function isUnitEmitting(config, unit, unitCtx, enemySide)
+local function isUnitEmitting(config, unit, unitState, enemySide)
   -- Check for specific platform types that always emit
   if unit.dbid == constants.PLATFORMS.C2 then
     return true, "C2 (always emitting)"
@@ -141,12 +141,12 @@ local function isUnitEmitting(config, unit, unitCtx, enemySide)
   end
 
   -- Check if leaving restricted launch area (only for Battery units)
-  if not unitCtx.operationalArea.RL[1].area or #unitCtx.operationalArea.RL[1].area == 0 then
+  if not unitState.operationalArea.RL[1].area or #unitState.operationalArea.RL[1].area == 0 then
     return false, "No RL area defined"
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not GameUtils.isInArea(enemySide, lastCoursePoint, unitCtx.operationalArea.RL[1].area) and
+  local isLeavingRL = not GameUtils.isInArea(enemySide, lastCoursePoint, unitState.operationalArea.RL[1].area) and
       unit.speed > 0
   return isLeavingRL, isLeavingRL and "Leaving real point" or "Within reload point"
 end
@@ -156,15 +156,15 @@ end
 -- Signal Detection
 -- ============================================================================
 
----Resolve actual unit from unit context
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context
+---Resolve actual unit from unit state
+---@param unitState SBJ__FiringUnitState|SBJ__C2State
 ---@param enemySide string
 ---@return CMO__Unit|nil # Resolved unit or nil if not found
-local function resolveUnit(unitCtx, enemySide)
-  if unitCtx.weaponDBID then
-    return GameApi.ScenEdit_GetUnit(unitCtx.name, enemySide)
+local function resolveUnit(unitState, enemySide)
+  if unitState.weaponDBID then
+    return GameApi.ScenEdit_GetUnit(unitState.name, enemySide)
   end
-  return GameApi.ScenEdit_GetUnit(unitCtx.guid)
+  return GameApi.ScenEdit_GetUnit(unitState.guid)
 end
 
 ---Build undetected result object
@@ -180,18 +180,18 @@ local function buildUndetectedResult()
 end
 
 ---Attempt SIGINT detection against an enemy unit using all airborne recon aircraft
----@param sigintCtx SBJ__SIGINTContext
+---@param sigintState SBJ__SIGINTState
 ---@param enemyGUID string
 ---@param isEmitting boolean
 ---@param config SBJ__SIGINTConfig|nil
 ---@return SBJ__SIGINTResult # Detection result with position, confidence, and metadata
-local function rollDetection(sigintCtx, enemyGUID, isEmitting, config)
+local function rollDetection(sigintState, enemyGUID, isEmitting, config)
   local enemy = GameApi.ScenEdit_GetUnit(enemyGUID)
   if not enemy then
     return buildUndetectedResult()
   end
 
-  for _, ctx in pairs(sigintCtx.reconAircraft) do
+  for _, ctx in pairs(sigintState.reconAircraft) do
     local actualReconAC = GameApi.ScenEdit_GetUnit(ctx.guid)
     if not actualReconAC or actualReconAC.condition ~= constants.UNIT_CONDITIONS.AIRBORNE then
       goto continue
@@ -284,21 +284,21 @@ end
 ---Update or create transmission record after successful SIGINT detection
 ---Creates new transmission record if first detection, otherwise updates existing record
 ---Increments currentDetectionLevel and checks autodetectable threshold
----@param sigintCtx SBJ__SIGINTContext
----@param unitCtx SBJ__FiringUnitContext|SBJ__C2Context
+---@param sigintState SBJ__SIGINTState
+---@param unitState SBJ__FiringUnitState|SBJ__C2State
 ---@param hit SBJ__SIGINTHit Detected unit paired with its detection result
 ---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
-local function updateTransmissionData(sigintCtx, unitCtx, hit, maxCount)
+local function updateTransmissionData(sigintState, unitState, hit, maxCount)
   local unit, result = hit.unit, hit.result
-  local transmission = sigintCtx.transmissions[unit.guid]
+  local transmission = sigintState.transmissions[unit.guid]
 
   if not transmission then
-    local unitType = resolveUnitType(unitCtx.name)
+    local unitType = resolveUnitType(unitState.name)
     transmission = {
-      name = unitCtx.name,
+      name = unitState.name,
       guid = unit.guid,
-      msg = unitCtx.msg,
+      msg = unitState.msg,
       type = unitType,
       latitude = result.latitude,
       longitude = result.longitude,
@@ -310,7 +310,7 @@ local function updateTransmissionData(sigintCtx, unitCtx, hit, maxCount)
       detectionCount = 0,
       confidence = result.confidence
     }
-    sigintCtx.transmissions[unit.guid] = transmission
+    sigintState.transmissions[unit.guid] = transmission
   end
 
   transmission.latitude = result.latitude
@@ -338,12 +338,12 @@ end
 ---Handle undetected case for SIGINT target
 ---Decrements currentDetectionLevel when unit is not detected, simulating signal fade
 ---Resets autodetectable state to false if currently autodetectable
----@param sigintCtx SBJ__SIGINTContext
+---@param sigintState SBJ__SIGINTState
 ---@param unit CMO__Unit Unit object that was not detected this cycle
 ---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
-local function processUndetected(sigintCtx, unit, maxCount)
-  local transmission = sigintCtx.transmissions[unit.guid]
+local function processUndetected(sigintState, unit, maxCount)
+  local transmission = sigintState.transmissions[unit.guid]
   if not transmission then
     return DETECTION_STATUS.NO_CHANGE
   end
@@ -367,7 +367,7 @@ end
 -- ============================================================================
 
 ---Enhanced SIGINT detection handler
----Monitors several unit context groups, consolidating results and log output
+---Monitors several unit state groups, consolidating results and log output
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param sideName string
@@ -375,7 +375,7 @@ end
 ---@return table<string, SBJ__SIGINTResult> # Detection results by unit GUID
 local function collectSigint(config, saveData, sideName, isShown)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
-  local sigintCtx = PersistentState.sigint(saveData, sideName)
+  local sigintState = PersistentState.sigint(saveData, sideName)
   local sigintConfig = config[sideConfig.field].sigint
   local emitterGroups = PersistentState.sigintEmitters(saveData, sideName)
   local enemySide = sideConfig.enemySide
@@ -389,14 +389,14 @@ local function collectSigint(config, saveData, sideName, isShown)
   local totalDetected = 0
   local totalUnits = 0
 
-  for _, unitCtxMap in ipairs(emitterGroups) do
-    totalUnits = totalUnits + Utils.getCount(unitCtxMap)
+  for _, unitStateMap in ipairs(emitterGroups) do
+    totalUnits = totalUnits + Utils.getCount(unitStateMap)
 
-    for _, unitCtx in pairs(unitCtxMap) do
-      local ctxName = unitCtx.name or unitCtx.guid or "?"
+    for _, unitState in pairs(unitStateMap) do
+      local ctxName = unitState.name or unitState.guid or "?"
 
       -- Resolve actual unit
-      local actualUnit = resolveUnit(unitCtx, enemySide)
+      local actualUnit = resolveUnit(unitState, enemySide)
       if not actualUnit then
         report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND], { unit = ctxName, reason = "unit_not_found" })
         goto continue
@@ -410,22 +410,22 @@ local function collectSigint(config, saveData, sideName, isShown)
 
       totalProcessed = totalProcessed + 1
 
-      local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitCtx, enemySide)
+      local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitState, enemySide)
 
       -- Perform SIGINT detection
-      local result = rollDetection(sigintCtx, actualUnit.guid, isEmitting, sigintConfig)
+      local result = rollDetection(sigintState, actualUnit.guid, isEmitting, sigintConfig)
       resultMap[actualUnit.guid] = result
 
       if result.isDetected then
         totalDetected = totalDetected + 1
-        local status = updateTransmissionData(sigintCtx, unitCtx, { unit = actualUnit, result = result }, maxCount)
+        local status = updateTransmissionData(sigintState, unitState, { unit = actualUnit, result = result }, maxCount)
         report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
 
         if isShown then
-          createDetectionNotification(result, unitCtx.msg, sigintConfig)
+          createDetectionNotification(result, unitState.msg, sigintConfig)
         end
       else
-        local status = processUndetected(sigintCtx, actualUnit, maxCount)
+        local status = processUndetected(sigintState, actualUnit, maxCount)
         report.add(SIGINT_RESULT_TAGS[status], {
           unit = ctxName,
           result = status,
@@ -446,26 +446,26 @@ end
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 function Sigint.processSide(config, saveData, sideName)
-  local sigintCtx = PersistentState.sigint(saveData, sideName)
-  if not sigintCtx.enabled then
+  local sigintState = PersistentState.sigint(saveData, sideName)
+  if not sigintState.enabled then
     return
   end
 
   collectSigint(config, saveData, sideName, true)
 end
 
----Initialize reconnaissance aircraft contexts for SIGINT operations
+---Initialize reconnaissance aircraft states for SIGINT operations
 ---Scans all aircraft units for the specified side and registers RC-135V and Y-9DZ reconnaissance aircraft
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 ---@return number # Number of reconnaissance aircraft initialized
 function Sigint.initSide(config, saveData, sideName)
-  local sigintCtx = PersistentState.sigint(saveData, sideName)
+  local sigintState = PersistentState.sigint(saveData, sideName)
   local aircraftDefaults = config.red.commsJamming.aircraftDefaults
   local filteredUnits = GameApi.VP_GetSide({ side = sideName }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
 
-  if not sigintCtx.enabled then
+  if not sigintState.enabled then
     return 0
   end
 
@@ -480,7 +480,7 @@ function Sigint.initSide(config, saveData, sideName)
 
     if unit and unit.type == "Aircraft" and
         (unit.dbid == constants.PLATFORMS.RC135V or unit.dbid == constants.PLATFORMS.Y9DZ) then
-      sigintCtx.reconAircraft[unit.guid] = {
+      sigintState.reconAircraft[unit.guid] = {
         guid = unit.guid,
         OODA = unit.OODA,
         commsLevel = aircraftDefaults.commsLevel,

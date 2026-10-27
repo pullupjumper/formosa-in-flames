@@ -35,31 +35,31 @@ local function calculateReloadMinutes(reloadStartTime, currentTime)
 end
 
 ---Build one status per battery (a firing unit plus its paired resupply unit)
----@param groundCtx SBJ__GroundContext
+---@param groundState SBJ__GroundState
 ---@param missileSystemConfigMap table<string,SBJ__MissileSystemConfig>
 ---@param currentTime number
 ---@return SBJ__BatteryStatus[] # One status per battery
-function StatusView.buildBatteryStatuses(groundCtx, missileSystemConfigMap, currentTime)
+function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, currentTime)
   local statuses = {}
 
-  for missileSystemType, missileSystemCtx in pairs(groundCtx.missileSystemTypes) do
-    local firingUnitCtxs = missileSystemCtx.firingUnits
+  for missileSystemType, missileSystemState in pairs(groundState.missileSystemTypes) do
+    local firingUnitStates = missileSystemState.firingUnits
 
-    if firingUnitCtxs then
-      for _, firingUnitCtx in pairs(firingUnitCtxs) do
-        local resupplyUnitCtx = missileSystemCtx.resupplyUnits[firingUnitCtx.resupplyUnit]
+    if firingUnitStates then
+      for _, firingUnitState in pairs(firingUnitStates) do
+        local resupplyUnitState = missileSystemState.resupplyUnits[firingUnitState.resupplyUnit]
 
         table.insert(statuses, {
-          name = firingUnitCtx.name,
+          name = firingUnitState.name,
           missileSystemType = missileSystemType,
-          firingUnitState = formatState(firingUnitCtx.state),
-          resupplyUnitState = formatState(resupplyUnitCtx.state),
-          missilesInAmmoVehicles = resupplyUnitCtx.weaponCountCurrent,
-          missilesInTransloaderDefault = resupplyUnitCtx.weaponCountDefault,
-          missilesInAHA = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].weaponCountCurrent,
-          missilesInAHADefault = missileSystemCtx.ammunitions[resupplyUnitCtx.ammunition].weaponCountDefault,
-          firingUnitReloadTime = calculateReloadMinutes(firingUnitCtx.reloadStartTime, currentTime),
-          resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitCtx.reloadStartTime, currentTime),
+          firingUnitState = formatState(firingUnitState.state),
+          resupplyUnitState = formatState(resupplyUnitState.state),
+          missilesInAmmoVehicles = resupplyUnitState.weaponCountCurrent,
+          missilesInTransloaderDefault = resupplyUnitState.weaponCountDefault,
+          missilesInAHA = missileSystemState.ammunitions[resupplyUnitState.ammunition].weaponCountCurrent,
+          missilesInAHADefault = missileSystemState.ammunitions[resupplyUnitState.ammunition].weaponCountDefault,
+          firingUnitReloadTime = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
+          resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
           defaultReloadTime = missileSystemConfigMap[missileSystemType].reloadTime / 60
         })
       end

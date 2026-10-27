@@ -388,52 +388,52 @@ function ScenEdit_DeleteMine(params) end
 ---@field score SBJ__ScoringConfig Scoring system configuration
 ---@field [SBJ__SideKey] SBJ__RedConfig|SBJ__BlueConfig|SBJ__AllyConfig
 
----GNSS jamming context managing GNSS denial operations state
----@class SBJ__GNSSJammingContext: table
+---GNSS jamming state: GNSS denial operations
+---@class SBJ__GNSSJammingState: table
 ---@field enabled boolean Whether GNSS jamming system is activated
----@field jammers table<string, SBJ__GNSSJammerContext> GNSS jammer contexts indexed by jammer name
+---@field jammers table<string, SBJ__GNSSJammerState> GNSS jammer states indexed by jammer name
 
----Submarine-launched cruise missile context managing SLCM operations state
----@class SBJ__SLCMContext: table
+---Submarine-launched cruise missile state: SLCM operations
+---@class SBJ__SLCMState: table
 ---@field enabled boolean Whether SLCM system is activated
 
----Surface operations context managing surface-launched weapons
----@class SBJ__SurfaceOperationsContext: table
----@field lacm SBJ__LACMContext Land-Attack Cruise Missile context
+---Surface operations state managing surface-launched weapons
+---@class SBJ__SurfaceOperationsState: table
+---@field lacm SBJ__LACMState Land-Attack Cruise Missile state
 
----Subsurface operations context managing submarine-launched weapons
----@class SBJ__SubsurfaceOperationsContext: table
----@field slcm SBJ__SLCMContext Submarine-launched cruise missile context
+---Subsurface operations state managing submarine-launched weapons
+---@class SBJ__SubsurfaceOperationsState: table
+---@field slcm SBJ__SLCMState Submarine-launched cruise missile state
 
 ---Red side saved data structure
 ---@class SBJ__RedSaveData: table
 ---@field targetlist SBJ__TargetEntry[] Target list for strike planning
----@field sigint SBJ__SIGINTContext Signals intelligence context
----@field iads SBJ__IADSContext Integrated Air Defense System context
----@field commsJamming SBJ__CommsJammingContext Communications jamming context
----@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
----@field ground SBJ__StrikingGroundContext Ground force systems context with fire support
----@field recon SBJ__ReconContext Reconnaissance operations context
----@field air SBJ__AirOperationsContext Air operations context
----@field amphibOps SBJ__AmphibOpsContext Amphibious operations context
----@field surface SBJ__SurfaceOperationsContext Surface operations context
----@field subSurface SBJ__SubsurfaceOperationsContext Subsurface operations context
----@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
----@field dynamicOperations SBJ__DynamicOperationsContext Dynamic operations context
+---@field sigint SBJ__SIGINTState Signals intelligence state
+---@field iads SBJ__IADSState Integrated Air Defense System state
+---@field commsJamming SBJ__CommsJammerState Communications jamming state
+---@field gnssJamming SBJ__GNSSJammingState GNSS jamming state
+---@field ground SBJ__StrikingGroundState Ground force systems state with fire support
+---@field recon SBJ__ReconState Reconnaissance operations state
+---@field air SBJ__AirOperationsState Air operations state
+---@field amphibOps SBJ__AmphibOpsState Amphibious operations state
+---@field surface SBJ__SurfaceOperationsState Surface operations state
+---@field subSurface SBJ__SubsurfaceOperationsState Subsurface operations state
+---@field repairRunway SBJ__RunwayRepairmentState Runway repair state
+---@field dynamicOperations SBJ__DynamicOperationsState Dynamic operations state
 ---@field isDeploymentLocked boolean Play-mode control panel deployment already submitted
 
 ---Blue side saved data structure
 ---@class SBJ__BlueSaveData: table
----@field ground SBJ__GroundContext Ground force systems context
----@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
----@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
----@field air SBJ__AircraftSliceContext Aircraft context
----@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
+---@field ground SBJ__GroundState Ground force systems state
+---@field repairRunway SBJ__RunwayRepairmentState Runway repair state
+---@field iads SBJ__IADSState Integrated Air Defense System state (includes ROCC and TAAOC)
+---@field air SBJ__AircraftSliceState Aircraft state
+---@field gnssJamming SBJ__GNSSJammingState GNSS jamming state
 ---@field isDeploymentLocked boolean Play-mode control panel deployment already submitted
 
 ---Ally side saved data structure
 ---@class SBJ__AllySaveData: table
----@field sigint SBJ__SIGINTContext Signals intelligence context
+---@field sigint SBJ__SIGINTState Signals intelligence state
 
 ---Saved data structure for persistent state
 ---@class SBJ__SaveData: table
@@ -660,8 +660,8 @@ function ScenEdit_DeleteMine(params) end
 -- ============================================================================
 -- Amphibious operations types for amphibiousAssault and landingOps modules
 
----Barge context for tracking barge operations and associated units
----@class SBJ__BargeContext: table
+---Barge state for tracking barge operations and associated units
+---@class SBJ__BargeState: table
 ---@field guid string Barge unit GUID
 ---@field bridgeGUID? string Bridge unit GUID for barge connection
 ---@field roros string[] Array of RORO ship GUIDs transported by this barge
@@ -860,11 +860,11 @@ function ScenEdit_DeleteMine(params) end
 ---@field phase SBJ__HeliPhaseType
 ---@field landingPoint CMO__Location Where this helicopter lands (transport) or loiters (attack)
 
----Amphibious operations context managing all amphibious operation state
----@class SBJ__AmphibOpsContext: table
+---Amphibious operations state: all amphibious operations
+---@class SBJ__AmphibOpsState: table
 ---@field zoneStates table<string, SBJ__ZoneState> Per-zone state indexed by zone name
 ---@field calculationResult table<string, SBJ__OperationZoneCalculationState> Operation zone calculation results indexed by zone name
----@field barges table<string, SBJ__BargeContext> Barge contexts indexed by barge GUID
+---@field barges table<string, SBJ__BargeState> Barge states indexed by barge GUID
 ---@field fireSupportOnHold? boolean Whether SRBM fire-support strikes are on hold for ammo conservation; set true when ammo low and not all zones arrived, cleared once all zones reach staging
 
 ---ACV deployment parameters for launching amphibious combat vehicles
@@ -1197,8 +1197,8 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__AcvZoneWaveConfig: SBJ__AcvWaveConfig
 ---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
 
----Land-Attack Cruise Missile context managing LACM operations state
----@class SBJ__LACMContext: table
+---Land-Attack Cruise Missile state: LACM operations
+---@class SBJ__LACMState: table
 ---@field enabled boolean Sticky flag set true once the CSG reaches its station; never cleared, so it reads as "the LACM element is committed" rather than "the salvo is pending"
 ---@field hasLaunched boolean Whether the salvo has already been fired
 
@@ -1244,8 +1244,8 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__TankerMissionDeploymentDescriptor: SBJ__MissionDeploymentDescriptor
 ---@field missionCreationParams SBJ__TankerMissionCreationParams The tanker mission parameters
 
----Air operations context managing air tasking orders and aircraft status
----@class SBJ__AirOperationsContext: table
+---Air operations state managing air tasking orders and aircraft status
+---@class SBJ__AirOperationsState: table
 ---@field enabled boolean Whether air operations system is activated
 ---@field airTaskingOrder table<string, SBJ__Wave> Air Tasking Order waves indexed by wave name
 
@@ -1341,29 +1341,29 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__FiringUnitWithWeaponRangeDescriptor: SBJ__FiringUnitDescriptor
 ---@field weaponRange number
 
----Ammunition context data structure
+---Ammunition state data structure
 ---Tracks ammunition unit status and remaining ammunition counts
----@class SBJ__AmmunitionContext: SBJ__AmmunitionUnitDescriptor
+---@class SBJ__AmmunitionState: SBJ__AmmunitionUnitDescriptor
 
----Resupply unit context data structure
----Extends ammunition context with operational area and resupply management
----@class SBJ__ResupplyUnitContext: SBJ__ResupplyUnitDescriptor
+---Resupply unit state data structure
+---Extends ammunition state with operational area and resupply management
+---@class SBJ__ResupplyUnitState: SBJ__ResupplyUnitDescriptor
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 
----Firing unit context data structure
----Extends resupply unit context with weapon system configuration
----@class SBJ__FiringUnitContext: SBJ__FiringUnitDescriptor
+---Firing unit state data structure
+---Extends resupply unit state with weapon system configuration
+---@class SBJ__FiringUnitState: SBJ__FiringUnitDescriptor
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 ---@field stowStartTime number|nil Stowing start timestamp, nil if not currently stowing
 
----Missile system runtime context data structure
+---Missile system runtime state data structure
 ---Contains the missile system name, runtime status, and all system components
----@class SBJ__MissileSystemContext: table
+---@class SBJ__MissileSystemState: table
 ---@field name string Missile system identifier
 ---@field enabled boolean Whether the weapon system is currently active
----@field firingUnits table<string, SBJ__FiringUnitContext> Firing units indexed by GUID for attack operations
----@field resupplyUnits table<string, SBJ__ResupplyUnitContext> Resupply units indexed by GUID for ammunition replenishment
----@field ammunitions table<string, SBJ__AmmunitionContext> Ammunition units indexed by GUID for tracking available munitions
+---@field firingUnits table<string, SBJ__FiringUnitState> Firing units indexed by GUID for attack operations
+---@field resupplyUnits table<string, SBJ__ResupplyUnitState> Resupply units indexed by GUID for ammunition replenishment
+---@field ammunitions table<string, SBJ__AmmunitionState> Ammunition units indexed by GUID for tracking available munitions
 ---@field test? table Test data structure
 
 ---Ammunition subtotal with current/max counts and usage percentage
@@ -1375,18 +1375,18 @@ function ScenEdit_DeleteMine(params) end
 ---Ammunition inventory report aggregating firing/resupply/ammo subtotals and overall total
 ---@class SBJ__AmmoInventoryResult: table
 ---@field firing SBJ__AmmoSubtotalEntry Firing units total (queried from live game state)
----@field resupply SBJ__AmmoSubtotalEntry Resupply units total (sum of context weaponCountCurrent/weaponCountDefault)
----@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of context weaponCountCurrent/weaponCountDefault)
+---@field resupply SBJ__AmmoSubtotalEntry Resupply units total (sum of state weaponCountCurrent/weaponCountDefault)
+---@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of state weaponCountCurrent/weaponCountDefault)
 ---@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + ammo
 
----Ground context base - common missile systems for all ground operations
----@class SBJ__GroundContext: table
+---Ground state base - common missile systems for all ground operations
+---@class SBJ__GroundState: table
 ---@field enabled boolean Whether ground force systems are activated
----@field missileSystemTypes table<string, SBJ__MissileSystemContext> Missile system runtime state by type
+---@field missileSystemTypes table<string, SBJ__MissileSystemState> Missile system runtime state by type
 
----Ground context with fire support - for strike operations (China/Taiwan)
----Extends base context with dynamic fire support execution matrices
----@class SBJ__StrikingGroundContext: SBJ__GroundContext
+---Ground state with fire support - for strike operations (China/Taiwan)
+---Extends base state with dynamic fire support execution matrices
+---@class SBJ__StrikingGroundState: SBJ__GroundState
 ---@field fireSupportPlan table<string, SBJ__FireSupportExecutionMatrix> Fire Support Plan execution matrices (always initialized)
 
 ---Optional unit property overrides for ground units
@@ -1493,7 +1493,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Input parameters for missileSystem UnitEntersArea event handling
 ---@class SBJ__MoveToPositionEventParams: table
----@field groundCtx table<string, SBJ__MissileSystemContext> Missile system runtime contexts by type
+---@field groundState table<string, SBJ__MissileSystemState> Missile system runtime states by type
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
@@ -1619,7 +1619,7 @@ function ScenEdit_DeleteMine(params) end
 ---Built once per pass by buildFilterParams and shared by every filter function
 ---@class SBJ__FilterParams: table
 ---@field config? SBJ__Config Configuration data
----@field transmissions? table<string, SBJ__RadioTransmissionContext> SIGINT transmissions read by findRadioDirection
+---@field transmissions? table<string, SBJ__RadioTransmissionState> SIGINT transmissions read by findRadioDirection
 ---@field task SBJ__Task Task information
 ---@field contacts CMO__Contact[] Contact array
 
@@ -1630,7 +1630,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Firing unit definition for fire support operations
 ---Invariant: name is always present. FsemBuilder rejects an entry whose name does not
----resolve to a runtime context, so downstream code indexes name without a nil guard.
+---resolve to a runtime state, so downstream code indexes name without a nil guard.
 ---@class SBJ__FiringUnit: table
 ---@field name string Firing unit name
 ---@field weaponDBID number Firing unit weapon database ID
@@ -1759,8 +1759,8 @@ function ScenEdit_DeleteMine(params) end
 ---Union of every queued reconnaissance entry
 ---@alias SBJ__ReconQueueEntry SBJ__ReconUAVEntry|SBJ__ReconPassiveEntry
 
----Reconnaissance context managing reconnaissance operations state
----@class SBJ__ReconContext: table
+---Reconnaissance operations state
+---@class SBJ__ReconState: table
 ---@field enabled boolean Whether reconnaissance system is activated
 ---@field queue SBJ__ReconQueueEntry[] Reconnaissance mission queue
 ---@field frontlineRedirected boolean Sticky flag set true once frontline strike redirect activates; never cleared
@@ -1768,9 +1768,9 @@ function ScenEdit_DeleteMine(params) end
 ---Shared runtime inputs for processing reconnaissance queue entries
 ---@class SBJ__ReconQueueProcessingContext: table
 ---@field config SBJ__Config Configuration data
----@field reconCtx SBJ__ReconContext Reconnaissance runtime context
+---@field reconState SBJ__ReconState Reconnaissance runtime state
 ---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
----@field lacmCtx SBJ__LACMContext LACM context data
+---@field lacmState SBJ__LACMState LACM state data
 ---@field fireSupportOnHold boolean Whether SRBM-driven mappings should be skipped to conserve ammo
 
 ---Reconnaissance-Strike mapping entry
@@ -1818,8 +1818,8 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__AirOperationProcessResult: SBJ__OperationProcessResult
 ---@field timing? SBJ__LogResult[] Complete rows for the separate timing report
 
----Dynamic operations context managing intelligence-driven adaptive strike planning
----@class SBJ__DynamicOperationsContext: table
+---Dynamic operations state managing intelligence-driven adaptive strike planning
+---@class SBJ__DynamicOperationsState: table
 ---@field enabled boolean Whether dynamic operations system is enabled
 ---@field generatedOperations SBJ__GeneratedOperationsTracker Generated operation name tracker
 ---@field reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Reconnaissance-triggered operation batches
@@ -1934,8 +1934,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field randomRadiusNm number Position randomization radius (nautical miles)
 ---@field radiusNm number GNSS jamming effectiveness radius (nautical miles)
 
----GNSS jammer context extending descriptor with runtime state
----@class SBJ__GNSSJammerContext: SBJ__GNSSJammerDescriptor
+---GNSS jammer state extending descriptor with runtime state
+---@class SBJ__GNSSJammerState: SBJ__GNSSJammerDescriptor
 
 ---Enhanced SIGINT detection result with confidence and metadata
 ---@class SBJ__SIGINTResult: table
@@ -1946,9 +1946,9 @@ function ScenEdit_DeleteMine(params) end
 ---@field detectorId? string ID of detecting unit
 ---@field timestamp number Detection timestamp
 
----Radio transmission context data structure
+---Radio transmission state data structure
 ---Tracks and manages detected radio transmission sources with detection metadata
----@class SBJ__RadioTransmissionContext: table
+---@class SBJ__RadioTransmissionState: table
 ---@field name string Unit name of the transmission source
 ---@field guid string Unit GUID of the transmission source
 ---@field msg string Message content
@@ -1963,42 +1963,42 @@ function ScenEdit_DeleteMine(params) end
 ---@field detectionCount number Number of times this transmission has been detected
 ---@field confidence number Confidence level/reliability of the detection
 
----SIGINT context managing all transmission tracking
----@class SBJ__SIGINTContext: table
----@field transmissions table<string, SBJ__RadioTransmissionContext> Radio transmission contexts indexed by GUID
----@field reconAircraft table<string, SBJ__AircraftContext> Recon aircraft context data structure indexed by GUID
+---SIGINT state managing all transmission tracking
+---@class SBJ__SIGINTState: table
+---@field transmissions table<string, SBJ__RadioTransmissionState> Radio transmission states indexed by GUID
+---@field reconAircraft table<string, SBJ__AircraftState> Recon aircraft state data structure indexed by GUID
 ---@field enabled boolean Whether SIGINT is activated
 
----Communications jamming context managing electronic warfare jamming operations
----@class SBJ__CommsJammingContext: table
+---Communications jamming state managing electronic warfare jamming operations
+---@class SBJ__CommsJammerState: table
 ---@field enabled boolean Whether communications jamming system is activated
----@field jammers table<string, SBJ__AircraftContext> Jamming aircraft indexed by GUID
+---@field jammers table<string, SBJ__AircraftState> Jamming aircraft indexed by GUID
 
 ---State slices the China strike planner reads and mutates in one tick
 ---@class SBJ__StrikePlannerState: table
 ---@field targetlist SBJ__TargetEntry[] Persisted fixed-target list, refilled in place at init
----@field transmissions table<string, SBJ__RadioTransmissionContext> China SIGINT transmissions read by radio-direction targeting
----@field recon SBJ__ReconContext China recon context
----@field dynamicOperations SBJ__DynamicOperationsContext Recon-triggered batches and generated operation names
----@field air SBJ__AirOperationsContext China air operations, including the ATO
----@field ground SBJ__StrikingGroundContext China ground forces, including the FSP
----@field lacm SBJ__LACMContext CSG land-attack cruise missile state
----@field slcm SBJ__SLCMContext Submarine-launched cruise missile state
+---@field transmissions table<string, SBJ__RadioTransmissionState> China SIGINT transmissions read by radio-direction targeting
+---@field recon SBJ__ReconState China recon state
+---@field dynamicOperations SBJ__DynamicOperationsState Recon-triggered batches and generated operation names
+---@field air SBJ__AirOperationsState China air operations, including the ATO
+---@field ground SBJ__StrikingGroundState China ground forces, including the FSP
+---@field lacm SBJ__LACMState CSG land-attack cruise missile state
+---@field slcm SBJ__SLCMState Submarine-launched cruise missile state
 ---@field fireSupportOnHold boolean Landing ops hold on SRBM fire support, read at slice time
 
 ---State slices landing operations read and mutate: own amphibious state, recon queue, SRBM inventory
 ---@class SBJ__LandingOpsState: table
----@field amphibOps SBJ__AmphibOpsContext China amphibious operations context
----@field recon SBJ__ReconContext China recon context the Taoyuan setup queues GJ-11 recon into
----@field ground SBJ__GroundContext China ground forces the fire support gate reads SRBM ammo from
+---@field amphibOps SBJ__AmphibOpsState China amphibious operations state
+---@field recon SBJ__ReconState China recon state the Taoyuan setup queues GJ-11 recon into
+---@field ground SBJ__GroundState China ground forces the fire support gate reads SRBM ammo from
 
 ---State slices read and mutated by one comms jamming cycle
 ---@class SBJ__CommsJammingState: table
 ---@field enabled boolean Whether China comms jamming is active
----@field jammers table<string, SBJ__AircraftContext> China jamming aircraft indexed by GUID
----@field iads SBJ__IADSContext Taiwan IADS whose SAM/radar comms are jammed
----@field aircraft table<string, SBJ__AircraftContext> Taiwan land-based aircraft indexed by GUID
----@field aew table<string, SBJ__AircraftContext> Taiwan AEW aircraft indexed by GUID
+---@field jammers table<string, SBJ__AircraftState> China jamming aircraft indexed by GUID
+---@field iads SBJ__IADSState Taiwan IADS whose SAM/radar comms are jammed
+---@field aircraft table<string, SBJ__AircraftState> Taiwan land-based aircraft indexed by GUID
+---@field aew table<string, SBJ__AircraftState> Taiwan AEW aircraft indexed by GUID
 
 
 -- ============================================================================
@@ -2006,8 +2006,8 @@ function ScenEdit_DeleteMine(params) end
 -- ============================================================================
 -- Command & Control and Integrated Air Defense System types for IADS module
 
----Radar context for tracking radar status and communications
----@class SBJ__RadarContext: table
+---Radar state for tracking radar status and communications
+---@class SBJ__RadarState: table
 ---@field name string Radar unit name
 ---@field guid string Radar unit GUID
 ---@field OODA CMO__OODA Radar OODA data
@@ -2020,15 +2020,15 @@ function ScenEdit_DeleteMine(params) end
 
 ---@class SBJ__C2TypeKey: table
 
----Command and Control (C2) context data structure
----@class SBJ__C2Context: table
+---Command and Control (C2) state data structure
+---@class SBJ__C2State: table
 ---@field name string C2 node name
 ---@field msg string Status message
 ---@field guid string C2 node GUID
 ---@field areas table<number, string[]> Associated operational areas
----@field sam table<string, SBJ__RadarContext> Surface-to-Air Missile systems
----@field radar? table<string, SBJ__RadarContext> Radar systems
----@field [SBJ__C2UnitKey] table<string, SBJ__RadarContext>
+---@field sam table<string, SBJ__RadarState> Surface-to-Air Missile systems
+---@field radar? table<string, SBJ__RadarState> Radar systems
+---@field [SBJ__C2UnitKey] table<string, SBJ__RadarState>
 
 ---C2 node deployment descriptor
 ---Defines how to create and deploy a single Command and Control node
@@ -2045,22 +2045,22 @@ function ScenEdit_DeleteMine(params) end
 ---@field radarDistanceNm number Backup radar search distance when a radar is destroyed (nautical miles)
 ---@field c2Deployments SBJ__C2Descriptor[] C2 node deployment descriptors
 
----IADS context managing air defense system state
+---IADS state: integrated air defense system
 ---Tracks all Command and Control nodes and system activation status
----@class SBJ__IADSContext: table
----@field c2? table<string, SBJ__C2Context> C2 node context data structure indexed by GUID
----@field rocc? table<string, SBJ__C2Context> ROCC context data structure indexed by GUID
----@field taaoc? table<string, SBJ__C2Context> TAAOC context data structure indexed by GUID
+---@class SBJ__IADSState: table
+---@field c2? table<string, SBJ__C2State> C2 node state data structure indexed by GUID
+---@field rocc? table<string, SBJ__C2State> ROCC state data structure indexed by GUID
+---@field taaoc? table<string, SBJ__C2State> TAAOC state data structure indexed by GUID
 ---@field enabled boolean Whether IADS is activated
----@field [SBJ__C2TypeKey] table<string, SBJ__C2Context>
+---@field [SBJ__C2TypeKey] table<string, SBJ__C2State>
 
 -- ============================================================================
 -- Aircraft & Communications Tracking
 -- ============================================================================
 -- Aircraft and communications tracking types for commsJamming and other modules
 
----Aircraft context for tracking aircraft status and communications
----@class SBJ__AircraftContext: table
+---Aircraft state for tracking aircraft status and communications
+---@class SBJ__AircraftState: table
 ---@field guid string Aircraft unit GUID
 ---@field OODA CMO__OODA Aircraft OODA data
 ---@field commsLevel number Aircraft communications level
@@ -2069,9 +2069,9 @@ function ScenEdit_DeleteMine(params) end
 ---@field outofcomms number Aircraft out of communications threshold
 
 ---Aircraft slice tracking aircraft and AEW
----@class SBJ__AircraftSliceContext: table
----@field ac table<string, SBJ__AircraftContext> Aircraft context data structure indexed by GUID
----@field aew table<string, SBJ__AircraftContext> AEW aircraft context data structure indexed by GUID
+---@class SBJ__AircraftSliceState: table
+---@field ac table<string, SBJ__AircraftState> Aircraft state data structure indexed by GUID
+---@field aew table<string, SBJ__AircraftState> AEW aircraft state data structure indexed by GUID
 
 
 -- ============================================================================
@@ -2095,8 +2095,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field airBases string[] List of Taiwan airbases with runways to repair
 ---@field runwaySubTypes string[] Array of runway facility sub-type patterns to match
 
----Runway repair context managing runway damage repair operations
----@class SBJ__RunwayRepairmentContext: table
+---Runway repair state managing runway damage repair operations
+---@class SBJ__RunwayRepairmentState: table
 ---@field enabled boolean Whether runway repair system is activated
 ---@field runways SBJ__RunwayEntry[] Array of runways being tracked for repair
 
@@ -2173,7 +2173,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field name string SAM unit name
 ---@field weaponFree boolean True for weapons free, false for hold fire
 
----A C2 node whose SAM units changed, shaped like SBJ__C2Context
+---A C2 node whose SAM units changed, shaped like SBJ__C2State
 ---@class SBJ__C2ContextEntry: table
 ---@field guid string GUID of the C2 node
 ---@field type SBJ__C2TypeKey IADS group the node lives in ('c2', 'rocc' or 'taaoc')
@@ -2279,7 +2279,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field key string Operational-area key (e.g. "ANW")
 ---@field map table<string, table<string, string>> Phase 2's [opKey][posType_index] -> AREAS const-name map
 
----Shared context for Phase 4 field serializers
+---Shared state for Phase 4 field serializers
 ---@class SBJ__FieldSerializerContext
 ---@field configPath string Current config.{side}.ground.missileSystemTypes.{sys} path
 ---@field opAreaMap table<table, string> opArea table ref -> constant key

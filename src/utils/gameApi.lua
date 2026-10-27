@@ -307,7 +307,7 @@ function realApi.ScenEdit_AddUnit(opts)
   return result
 end
 
----Get the current context unit (UnitX)
+---Get the current state unit (UnitX)
 ---@return CMO__Unit|nil # The current unit being processed
 function realApi.ScenEdit_UnitX()
   local result = ScenEdit_UnitX()
@@ -611,7 +611,7 @@ function realApi.ScenEdit_SetLoadout(opts)
   return ScenEdit_SetLoadout(opts)
 end
 
----Get the current context event (EventX)
+---Get the current state event (EventX)
 ---@return CMO__Event # The current event being processed
 function realApi.ScenEdit_EventX()
   local result = ScenEdit_EventX()

@@ -336,7 +336,7 @@ local FIELD_ORDER = {
   "weaponDBID", "ammoThreshold", "resupplyUnit", "dbid", "missileSystem", "mountDescriptors"
 }
 
----Runtime-only fields that live in saveData contexts and never belong in generated config
+---Runtime-only fields that live in saveData states and never belong in generated config
 local RUNTIME_FIELDS = { guid = true }
 
 ---Sort a table's string keys alphabetically (ignores non-string keys)

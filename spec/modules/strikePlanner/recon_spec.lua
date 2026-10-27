@@ -134,11 +134,11 @@ describe("Recon", function()
     return entry
   end
 
-  ---Create a minimal reconCtx
+  ---Create a minimal reconState
   ---@param queue? table[]
   ---@param overrides? table
   ---@return table
-  local function makeReconContext(queue, overrides)
+  local function makeReconState(queue, overrides)
     local ctx = { queue = queue or {}, frontlineRedirected = false }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
@@ -179,10 +179,10 @@ describe("Recon", function()
     return cfg
   end
 
-  ---Create a minimal LACM context.
+  ---Create a minimal LACM state.
   ---@param enabled? boolean
-  ---@return SBJ__LACMContext
-  local function makeLacmContext(enabled)
+  ---@return SBJ__LACMState
+  local function makeLacmState(enabled)
     return { enabled = enabled or false, startTime = "2026-02-14 06:00:00" }
   end
 
@@ -218,7 +218,7 @@ describe("Recon", function()
   describe("launchWZ8", function()
     local h6n
     local entry
-    local reconCtx
+    local reconState
     local wz8Course = constants.COURSES.WZ8
 
     before_each(function()
@@ -229,7 +229,7 @@ describe("Recon", function()
         longitude = 119.0,
       })
       entry = { type = "UAV", unitGUID = "H6N-001", isFinished = false }
-      reconCtx = { queue = { entry } }
+      reconState = { queue = { entry } }
     end)
 
     -- Positive: successful WZ-8 launch
@@ -242,7 +242,7 @@ describe("Recon", function()
       local setEMCONStub = trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
       local rtbSpy = spy.on(h6n, "RTB")
 
-      local result = Recon.launchWZ8(reconCtx, h6n)
+      local result = Recon.launchWZ8(reconState, h6n)
 
       assert.is_not_nil(result)
       assert.are.equal("WZ8-001", result.guid)
@@ -276,7 +276,7 @@ describe("Recon", function()
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       local rtbSpy = spy.on(h6n, "RTB")
 
-      local result = Recon.launchWZ8(reconCtx, h6n)
+      local result = Recon.launchWZ8(reconState, h6n)
 
       assert.is_nil(result)
       assert.stub(deleteUnitStub).was.called_with({ guid = "WZ8-001" })
@@ -295,7 +295,7 @@ describe("Recon", function()
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
       local rtbSpy = spy.on(h6n, "RTB")
 
-      local result = Recon.launchWZ8(reconCtx, h6n)
+      local result = Recon.launchWZ8(reconState, h6n)
 
       assert.is_nil(result)
       assert.stub(deleteUnitStub).was.called_with({ guid = "WZ8-001" })
@@ -308,7 +308,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(nil))
       local deleteUnitStub = trackStub(stub(GameApi, "ScenEdit_DeleteUnit"))
 
-      local result = Recon.launchWZ8(reconCtx, h6n)
+      local result = Recon.launchWZ8(reconState, h6n)
 
       assert.is_nil(result)
       assert.stub(deleteUnitStub).was_not.called()
@@ -322,7 +322,7 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
 
-      Recon.launchWZ8(reconCtx, h6n)
+      Recon.launchWZ8(reconState, h6n)
 
       assert.are.equal("WZ8-001", entry.unitGUID)
     end)
@@ -331,7 +331,7 @@ describe("Recon", function()
     it("should keep the entry on the H-6N when the launch fails", function()
       trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(nil))
 
-      Recon.launchWZ8(reconCtx, h6n)
+      Recon.launchWZ8(reconState, h6n)
 
       assert.are.equal("H6N-001", entry.unitGUID)
     end)
@@ -341,7 +341,7 @@ describe("Recon", function()
       local addUnitStub = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
       entry.unitGUID = "OTHER-001"
 
-      local result = Recon.launchWZ8(reconCtx, h6n)
+      local result = Recon.launchWZ8(reconState, h6n)
 
       assert.is_nil(result)
       assert.stub(addUnitStub).was_not.called()
@@ -355,9 +355,9 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "ScenEdit_SetEMCON").returns(true))
       local settledEntry = { type = "UAV", unitGUID = "H6N-001", isFinished = true }
-      reconCtx.queue = { settledEntry, entry }
+      reconState.queue = { settledEntry, entry }
 
-      Recon.launchWZ8(reconCtx, h6n)
+      Recon.launchWZ8(reconState, h6n)
 
       assert.stub(addUnitStub).was.called(1)
       assert.are.equal("H6N-001", settledEntry.unitGUID)
@@ -370,24 +370,24 @@ describe("Recon", function()
   -- ============================================================================
 
   describe("processQueue", function()
-    local config, reconTriggeredOperationBatches, lacmCtx
+    local config, reconTriggeredOperationBatches, lacmState
 
     before_each(function()
       config = makeConfig()
       reconTriggeredOperationBatches = {}
-      lacmCtx = makeLacmContext()
+      lacmState = makeLacmState()
     end)
 
     ---Create a reconnaissance queue processing context
-    ---@param reconCtx table Reconnaissance runtime context
+    ---@param reconState table Reconnaissance runtime state
     ---@param fireSupportOnHold? boolean Whether SRBM-driven mappings should be skipped
     ---@return SBJ__ReconQueueProcessingContext
-    local function makeProcessingContext(reconCtx, fireSupportOnHold)
+    local function makeProcessingContext(reconState, fireSupportOnHold)
       return {
         config = config,
-        reconCtx = reconCtx,
+        reconState = reconState,
         reconTriggeredOperationBatches = reconTriggeredOperationBatches,
-        lacmCtx = lacmCtx,
+        lacmState = lacmState,
         fireSupportOnHold = fireSupportOnHold == true
       }
     end
@@ -410,8 +410,8 @@ describe("Recon", function()
       end))
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(entry.hasLaunched)
       assert.are.equal("UAV-001", entry.unitGUID)
@@ -423,8 +423,8 @@ describe("Recon", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_false(entry.hasLaunched)
       assert.is_nil(entry.unitGUID)
@@ -438,8 +438,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(base))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_false(entry.hasLaunched)
       assert.is_nil(entry.unitGUID)
@@ -461,8 +461,8 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
       local launchSpy = spy.on(uav, "Launch")
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.spy(launchSpy).was_not.called()
       assert.is_false(entry.hasLaunched)
@@ -491,8 +491,8 @@ describe("Recon", function()
         ["UAV-003"] = spy.on(aircraft["UAV-003"], "Launch"),
       }
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.spy(launchSpies["UAV-001"]).was.called(1)
       assert.spy(launchSpies["UAV-002"]).was_not.called()
@@ -519,8 +519,8 @@ describe("Recon", function()
       end))
       trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(entry.hasLaunched)
       assert.are.equal("UAV-001", entry.unitGUID)
@@ -539,8 +539,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local getUnitStub = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_false(entry.hasLaunched)
       assert.is_true(hasErrorCall("reason=launch_failed"))
@@ -561,9 +561,9 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(base))
 
-      local reconCtx = makeReconContext({ entry })
+      local reconState = makeReconState({ entry })
       assert.has_no.Error(function()
-        Recon.processQueue(makeProcessingContext(reconCtx))
+        Recon.processQueue(makeProcessingContext(reconState))
       end)
 
       assert.is_false(entry.hasLaunched)
@@ -579,9 +579,9 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(base))
 
-      local reconCtx = makeReconContext({ entry })
+      local reconState = makeReconState({ entry })
       assert.has_no.Error(function()
-        Recon.processQueue(makeProcessingContext(reconCtx))
+        Recon.processQueue(makeProcessingContext(reconState))
       end)
 
       assert.is_false(entry.hasLaunched)
@@ -596,8 +596,8 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(uav))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       -- Phase 2b is the only path emitting this reason, so the log identifies it
       assert.is_true(hasLogCall("recon", "reason=course_not_completed"))
@@ -613,8 +613,8 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(uav))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       -- Phase 2c is the only UAV path emitting this state, so the log identifies it
       assert.is_true(hasLogCall("recon", "state=waiting_end_time"))
@@ -635,8 +635,8 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       -- Phase 3a is the only path emitting this reason, so the error log identifies it
       assert.is_true(hasErrorCall("reason=destroyed_before_end_time"))
@@ -655,8 +655,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(hasLogCall("recon", "reason=end_time_reached"))
       assert.is_true(entry.isFinished)
@@ -676,8 +676,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(hasLogCall("recon", "action=complete_mission"))
       assert.is_true(entry.isFinished)
@@ -704,8 +704,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(target))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.are.same({
         latitude = 23.0,
@@ -736,8 +736,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(target))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.are.equal(3300, uav.course[1].desiredSpeed)
       assert.is_false(entry.isFinished)
@@ -761,8 +761,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(target))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.are.equal(3300, uav.course[1].desiredSpeed)
       assert.is_false(hasErrorCall("reason=speed_not_configured"))
@@ -784,8 +784,8 @@ describe("Recon", function()
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(nil))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       -- The specific tracking reason reaches the log; state keeps the coarse token greppable
       assert.is_true(hasErrorCall("state=tracking_failed"))
@@ -810,8 +810,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       -- No trackingTargetGUID never enters the tracking path, so this is a normal completion
       assert.is_true(hasLogCall("recon", "action=complete_mission"))
@@ -835,8 +835,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(hasErrorCall("reason=speed_not_configured"))
       assert.is_true(hasErrorCall("state=tracking_failed"))
@@ -859,22 +859,22 @@ describe("Recon", function()
       }))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
+      local reconState = makeReconState({ entry })
 
       -- Tick 1: course and endTime complete, so the entry settles and queues its wave
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      Recon.processQueue(makeProcessingContext(reconState))
       assert.is_true(entry.isFinished)
       assert.is_true(entry.hasScheduledOperations)
       assert.stub(scheduleStub).was.called(1)
 
       -- targetingProcess hands the still-airborne UAV a contact to shadow
-      Recon.trackTargets(reconCtx, { { platformDBID = entry.unitDBID, target = { guid = "CONTACT-001" } } })
+      Recon.trackTargets(reconState, { { platformDBID = entry.unitDBID, target = { guid = "CONTACT-001" } } })
       assert.are.equal("CONTACT-001", entry.trackingTargetGUID)
       assert.is_false(entry.isFinished)
 
       -- Tick 2: the contact is lost, re-settling the entry
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(nil))
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(entry.isFinished)
       assert.stub(scheduleStub).was.called(1)
@@ -891,8 +891,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(entry.isFinished)
       assert.stub(scheduleStub).was.called(1)
@@ -904,8 +904,8 @@ describe("Recon", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_false(entry.isFinished)
     end)
@@ -917,8 +917,8 @@ describe("Recon", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ entry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(entry.isFinished)
       assert.stub(scheduleStub).was.called(1)
@@ -943,8 +943,8 @@ describe("Recon", function()
       end))
       local scheduleStub = trackStub(stub(OperationScheduler, "schedule"))
 
-      local reconCtx = makeReconContext({ uavEntry, satEntry })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ uavEntry, satEntry })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(hasLogCall("recon", "reason=takeoff_time_not_reached"))
       -- called(1) proves the loop reached the satellite and settled it alone
@@ -964,8 +964,8 @@ describe("Recon", function()
         attritionPct = "62.5",
       }))
 
-      local reconCtx = makeReconContext({})
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({})
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_true(hasLogCall("recon", "%[RESUME%].*scope=frontlineRedirect"))
       assert.is_true(hasLogCall("recon", "reason=attrition_threshold_reached"))
@@ -976,8 +976,8 @@ describe("Recon", function()
       local entry1 = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001", isFinished = true })
       local entry2 = makeSatelliteEntry({ isFinished = true })
 
-      local reconCtx = makeReconContext({ entry1, entry2 })
-      Recon.processQueue(makeProcessingContext(reconCtx))
+      local reconState = makeReconState({ entry1, entry2 })
+      Recon.processQueue(makeProcessingContext(reconState))
 
       assert.is_false(hasLogCall("recon", "."))
       assert.stub(errorStub).was_not.called()
@@ -1022,7 +1022,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_true(queueEntry.isTracking)
       assert.are.equal("CONTACT-001", queueEntry.trackingTargetGUID)
@@ -1038,7 +1038,7 @@ describe("Recon", function()
       end))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      Recon.trackTargets(makeReconContext({ entry1, entry2 }), {
+      Recon.trackTargets(makeReconState({ entry1, entry2 }), {
         makeRequest({ guid = "CONTACT-001" }),
         makeRequest({ guid = "CONTACT-002" }),
       })
@@ -1055,7 +1055,7 @@ describe("Recon", function()
       local entry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001", trackingTargetGUID = "CONTACT-001" })
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "UAV-001" })))
 
-      Recon.trackTargets(makeReconContext({ entry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ entry }), { makeRequest(target) })
 
       assert.stub(vpGetSideStub).was_not.called()
     end)
@@ -1069,7 +1069,7 @@ describe("Recon", function()
       })
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      Recon.trackTargets(makeReconContext({ entry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ entry }), { makeRequest(target) })
 
       assert.stub(vpGetSideStub).was.called(1)
     end)
@@ -1079,7 +1079,7 @@ describe("Recon", function()
       local queueEntry = makeUAVEntry({ hasLaunched = true, unitGUID = "UAV-001" })
       vpGetSideStub.invokes(function() return nil end)
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_nil(queueEntry.trackingTargetGUID)
     end)
@@ -1088,7 +1088,7 @@ describe("Recon", function()
     it("should not track when the side has no aircraft", function()
       aircraft = nil
 
-      Recon.trackTargets(makeReconContext({}), { makeRequest({ guid = "CONTACT-001" }), makeRequest({ guid = "CONTACT-002" }) })
+      Recon.trackTargets(makeReconState({}), { makeRequest({ guid = "CONTACT-001" }), makeRequest({ guid = "CONTACT-002" }) })
 
       -- A nil aircraft list would reach the UAV search and fail on ipairs
       assert.stub(vpGetSideStub).was.called(1)
@@ -1096,7 +1096,7 @@ describe("Recon", function()
 
     -- Boundary: nothing requested
     it("should do nothing for an empty request list", function()
-      Recon.trackTargets(makeReconContext({}), {})
+      Recon.trackTargets(makeReconState({}), {})
 
       assert.stub(vpGetSideStub).was_not.called()
     end)
@@ -1124,7 +1124,7 @@ describe("Recon", function()
       end))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      Recon.trackTargets(makeReconContext({ settledEntry, freeEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ settledEntry, freeEntry }), { makeRequest(target) })
 
       assert.are.equal("CONTACT-001", freeEntry.trackingTargetGUID)
       assert.is_false(freeEntry.isFinished)
@@ -1140,7 +1140,7 @@ describe("Recon", function()
       })
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(makeUnit({ guid = "SAT-001" })))
 
-      Recon.trackTargets(makeReconContext({ satEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ satEntry }), { makeRequest(target) })
 
       assert.stub(vpGetSideStub).was.called(1)
     end)
@@ -1181,7 +1181,7 @@ describe("Recon", function()
         return 100                                  -- closeUAV
       end))
 
-      Recon.trackTargets(makeReconContext({ farEntry, queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ farEntry, queueEntry }), { makeRequest(target) })
 
       assert.is_true(queueEntry.isTracking)
       assert.are.equal("CONTACT-001", queueEntry.trackingTargetGUID)
@@ -1197,7 +1197,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Landed" })))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_nil(queueEntry.trackingTargetGUID)
       assert.is_true(hasLogCall("recon", "reason=no_available_uav"))
@@ -1211,7 +1211,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-001", dbid = 9999, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_nil(queueEntry.trackingTargetGUID)
     end)
@@ -1223,7 +1223,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-NOTINQUEUE", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(50))
 
-      Recon.trackTargets(makeReconContext({}), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({}), { makeRequest(target) })
 
       assert.is_true(hasErrorCall("reason=uav_not_in_recon_queue"))
     end)
@@ -1236,7 +1236,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(1500))
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_nil(queueEntry.trackingTargetGUID)
     end)
@@ -1249,7 +1249,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-001", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(nil))
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_nil(queueEntry.trackingTargetGUID)
     end)
@@ -1260,7 +1260,7 @@ describe("Recon", function()
       aircraft = { { guid = "UAV-001" } }
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
 
-      Recon.trackTargets(makeReconContext({ queueEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ queueEntry }), { makeRequest(target) })
 
       assert.is_nil(queueEntry.trackingTargetGUID)
       assert.is_true(hasLogCall("recon", "reason=no_available_uav"))
@@ -1295,7 +1295,7 @@ describe("Recon", function()
         return 100
       end))
 
-      Recon.trackTargets(makeReconContext({ busyEntry, freeEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ busyEntry, freeEntry }), { makeRequest(target) })
 
       -- The nearer UAV keeps the target it was already watching
       assert.are.equal("CONTACT-OTHER", busyEntry.trackingTargetGUID)
@@ -1316,7 +1316,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-BUSY", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      Recon.trackTargets(makeReconContext({ busyEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ busyEntry }), { makeRequest(target) })
 
       assert.are.equal("CONTACT-OTHER", busyEntry.trackingTargetGUID)
       assert.is_true(hasLogCall("recon", "reason=no_available_uav"))
@@ -1337,7 +1337,7 @@ describe("Recon", function()
         makeUnit({ guid = "UAV-SETTLED", dbid = UAVDBID, condition = "Airborne" })))
       trackStub(stub(GameApi, "Tool_Range").returns(10))
 
-      Recon.trackTargets(makeReconContext({ settledEntry }), { makeRequest(target) })
+      Recon.trackTargets(makeReconState({ settledEntry }), { makeRequest(target) })
 
       assert.are.equal("CONTACT-001", settledEntry.trackingTargetGUID)
       assert.is_false(settledEntry.isFinished)
@@ -1368,11 +1368,11 @@ describe("Recon", function()
           },
         },
       }
-      local reconCtx = {}
+      local reconState = {}
 
-      Recon.initQueue(reconConfig, reconCtx)
+      Recon.initQueue(reconConfig, reconState)
 
-      local planned = reconCtx.queue[1]
+      local planned = reconState.queue[1]
       assert.is_false(planned.hasLaunched)
       assert.is_false(planned.isFinished)
       assert.is_false(planned.hasScheduledOperations)
@@ -1393,9 +1393,9 @@ describe("Recon", function()
 
       Recon.processQueue({
         config = makeConfig(),
-        reconCtx = reconCtx,
+        reconState = reconState,
         reconTriggeredOperationBatches = {},
-        lacmCtx = makeLacmContext(),
+        lacmState = makeLacmState(),
         fireSupportOnHold = false,
       })
 
@@ -1425,40 +1425,40 @@ describe("Recon", function()
           },
         },
       }
-      local reconCtx = {}
+      local reconState = {}
 
-      Recon.initQueue(reconConfig, reconCtx)
+      Recon.initQueue(reconConfig, reconState)
 
-      assert.are.equal(4, #reconCtx.queue)
-      assert.is_false(reconCtx.queue[1].hasLaunched)
-      assert.is_false(reconCtx.queue[1].isFinished)
-      assert.is_false(reconCtx.queue[2].isFinished)
-      assert.is_false(reconCtx.queue[3].isFinished)
-      assert.is_false(reconCtx.queue[4].hasLaunched)
-      assert.is_false(reconCtx.queue[4].isFinished)
+      assert.are.equal(4, #reconState.queue)
+      assert.is_false(reconState.queue[1].hasLaunched)
+      assert.is_false(reconState.queue[1].isFinished)
+      assert.is_false(reconState.queue[2].isFinished)
+      assert.is_false(reconState.queue[3].isFinished)
+      assert.is_false(reconState.queue[4].hasLaunched)
+      assert.is_false(reconState.queue[4].isFinished)
       -- Every entry type gates follow-on scheduling on this flag, so all four are reset
       for index = 1, 4 do
-        assert.is_false(reconCtx.queue[index].hasScheduledOperations)
+        assert.is_false(reconState.queue[index].hasScheduledOperations)
       end
     end)
 
     -- Boundary: empty queue
     it("should handle empty queue config", function()
       local reconConfig = { queue = {} }
-      local reconCtx = {}
+      local reconState = {}
 
-      Recon.initQueue(reconConfig, reconCtx)
+      Recon.initQueue(reconConfig, reconState)
 
-      assert.is_table(reconCtx.queue)
-      assert.are.equal(0, #reconCtx.queue)
+      assert.is_table(reconState.queue)
+      assert.are.equal(0, #reconState.queue)
     end)
 
     -- Boundary: deep copy is used (original not mutated)
     it("should deep copy the config queue to avoid mutating the original", function()
       local reconConfig = { queue = { { type = "satellite", endTime = "2026-02-14 08:00:00" } } }
-      local reconCtx = {}
+      local reconState = {}
       local deepCopySpy = trackStub(spy.on(Utils, "deepCopy"))
-      Recon.initQueue(reconConfig, reconCtx)
+      Recon.initQueue(reconConfig, reconState)
 
       assert.spy(deepCopySpy).was.called()
       -- Original should not have isFinished field
@@ -1523,14 +1523,14 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
       local template = makeUAVTemplate()
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_not_nil(result)
-      assert.are.equal(3, #reconCtx.queue)
-      local inserted = reconCtx.queue[3]
+      assert.are.equal(3, #reconState.queue)
+      local inserted = reconState.queue[3]
       assert.are.equal("UAV", inserted.type)
       assert.is_false(inserted.hasLaunched)
       assert.is_false(inserted.isFinished)
@@ -1547,13 +1547,13 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
       local template = makeUAVTemplate()
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_not_nil(result)
-      assert.are_not.equal(template, reconCtx.queue[3])
+      assert.are_not.equal(template, reconState.queue[3])
       assert.is_nil(template.hasLaunched)
       assert.is_nil(template.takeoffTime)
       assert.is_nil(template.endTime)
@@ -1567,9 +1567,9 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate(), "2026-02-14 05:30:00")
+      local result = Recon.addEntry(reconState, makeUAVTemplate(), "2026-02-14 05:30:00")
 
       assert.is_not_nil(result)
       assert.are.equal(os.date(constants.DATE_FORMAT, 5500), result and result.takeoffTime)
@@ -1585,12 +1585,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate(), "2026-02-14 05:30:00")
+      local result = Recon.addEntry(reconState, makeUAVTemplate(), "2026-02-14 05:30:00")
 
       assert.is_nil(result)
-      assert.are.equal(2, #reconCtx.queue)
+      assert.are.equal(2, #reconState.queue)
     end)
 
     -- Negative: no upcoming entry in queue (all passes already ended)
@@ -1599,12 +1599,12 @@ describe("Recon", function()
       local queue = {
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconState, makeUAVTemplate())
 
       assert.is_nil(result)
-      assert.are.equal(1, #reconCtx.queue)
+      assert.are.equal(1, #reconState.queue)
     end)
 
     -- Negative: UAV flight would finish after the next pass ends (lands too late to fit the gap)
@@ -1614,12 +1614,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconState, makeUAVTemplate())
 
       assert.is_nil(result)
-      assert.are.equal(2, #reconCtx.queue)
+      assert.are.equal(2, #reconState.queue)
     end)
 
     -- Negative: an unfinished same-template UAV already covers the window
@@ -1638,12 +1638,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
         blockingUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_nil(result)
-      assert.are.equal(3, #reconCtx.queue)
+      assert.are.equal(3, #reconState.queue)
     end)
 
     -- Boundary: a finished same-template UAV in the window does not block insertion
@@ -1661,12 +1661,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
         finishedUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_not_nil(result)
-      assert.are.equal(4, #reconCtx.queue)
+      assert.are.equal(4, #reconState.queue)
     end)
 
     -- Boundary: a same-template UAV whose flight ended before the window does not block
@@ -1683,12 +1683,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
         oldUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_not_nil(result)
-      assert.are.equal(4, #reconCtx.queue)
+      assert.are.equal(4, #reconState.queue)
     end)
 
     -- Boundary: a different-template UAV in the window does not block, even with identical course
@@ -1706,12 +1706,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
         otherTemplateUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_not_nil(result)
-      assert.are.equal(4, #reconCtx.queue)
+      assert.are.equal(4, #reconState.queue)
     end)
 
     -- Boundary: a legacy UAV entry without templateId never blocks insertion
@@ -1726,12 +1726,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
         legacyUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconState, makeUAVTemplate())
 
       assert.is_not_nil(result)
-      assert.are.equal(4, #reconCtx.queue)
+      assert.are.equal(4, #reconState.queue)
     end)
 
     -- Boundary: flight end exactly equals next pass endTime still counts as covering the gap
@@ -1741,12 +1741,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 04:00:00", isFinished = true }),
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconState, makeUAVTemplate())
 
       assert.is_not_nil(result)
-      assert.are.equal(3, #reconCtx.queue)
+      assert.are.equal(3, #reconState.queue)
     end)
 
     -- Boundary: no past pass yet (window start unbounded) still detects covering UAV
@@ -1763,23 +1763,23 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 08:00:00" }),
         coveringUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_nil(result)
-      assert.are.equal(2, #reconCtx.queue)
+      assert.are.equal(2, #reconState.queue)
     end)
 
     -- Boundary: empty queue has no next pass to anchor the window
     it("should return nil for an empty queue", function()
       stubTimeline(3500)
-      local reconCtx = makeReconContext({})
+      local reconState = makeReconState({})
 
-      local result = Recon.addEntry(reconCtx, makeUAVTemplate())
+      local result = Recon.addEntry(reconState, makeUAVTemplate())
 
       assert.is_nil(result)
-      assert.are.equal(0, #reconCtx.queue)
+      assert.are.equal(0, #reconState.queue)
     end)
 
     -- Boundary: a previously inserted UAV must NOT anchor the gap window. Satellites end at
@@ -1816,12 +1816,12 @@ describe("Recon", function()
         makeSatelliteEntry({ endTime = "2026-02-14 12:00:00" }),
         insertedUAV,
       }
-      local reconCtx = makeReconContext(queue)
+      local reconState = makeReconState(queue)
 
-      local result = Recon.addEntry(reconCtx, template)
+      local result = Recon.addEntry(reconState, template)
 
       assert.is_not_nil(result)
-      assert.are.equal(5, #reconCtx.queue)
+      assert.are.equal(5, #reconState.queue)
     end)
   end)
 end)

@@ -12,7 +12,7 @@
 
 `movement.lua` 把路徑移動與武器管制設定集中處理，避免各流程重複拼接 `ScenEdit_SetUnit` / Doctrine 參數。所有移動最終都透過私有函式 `moveUnitToPosition` 執行。
 
-當狀態改變時，會同步更新 `unitCtx.state` 與 `reloadStartTime`，確保 `cycle.lua` 可用同一套條件運算。
+當狀態改變時，會同步更新 `unitState.state` 與 `reloadStartTime`，確保 `cycle.lua` 可用同一套條件運算。
 
 在玩家控制流程下，`isRepositioning` 會直接回傳 true，讓事件流程更寬鬆地接受玩家操作。
 
@@ -48,16 +48,16 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `moveToReloadPoint` | `unitCtx, unit` | `boolean, table?` | 移動至 RL |
-| `moveToHideArea` | `firingUnitCtx, firingUnit` | `boolean, table?` | 移動至 HA |
-| `moveToAmmoHoldingArea` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 移動至 AHA |
-| `moveResupplyUnitToReloadPoint` | `resupplyUnitCtx, resupplyUnit` | `boolean, table?` | 彈藥補給車回 RL |
-| `moveToFiringPoint` | `firingUnitCtx, firingUnit` | `boolean, table?` | 移動至 FP |
-| `setReloadStartTime` | `firingUnitCtx, firingUnit, runCtx` | `nil` | 設 `RELOAD` 與起始時間 |
-| `setWCSToFree` | `firingUnitCtx, firingUnit, runCtx` | `nil` | 設 `STATIC` + `WCS.FREE` |
-| `setStateToHide` | `firingUnitCtx, firingUnit, runCtx` | `nil` | 設 `HIDE` + `WCS.HOLD` |
-| `setStateToStatic` | `systemCtx, firingUnit, runCtx` | `nil` | 清空 reload timer 並設 `STATIC` |
-| `isRepositioning` | `firingUnitCtx, runCtx` | `boolean` | 判斷事件是否可接受 |
+| `moveToReloadPoint` | `unitState, unit` | `boolean, table?` | 移動至 RL |
+| `moveToHideArea` | `firingUnitState, firingUnit` | `boolean, table?` | 移動至 HA |
+| `moveToAmmoHoldingArea` | `resupplyUnitState, resupplyUnit` | `boolean, table?` | 移動至 AHA |
+| `moveResupplyUnitToReloadPoint` | `resupplyUnitState, resupplyUnit` | `boolean, table?` | 彈藥補給車回 RL |
+| `moveToFiringPoint` | `firingUnitState, firingUnit` | `boolean, table?` | 移動至 FP |
+| `setReloadStartTime` | `firingUnitState, firingUnit, runCtx` | `nil` | 設 `RELOAD` 與起始時間 |
+| `setWCSToFree` | `firingUnitState, firingUnit, runCtx` | `nil` | 設 `STATIC` + `WCS.FREE` |
+| `setStateToHide` | `firingUnitState, firingUnit, runCtx` | `nil` | 設 `HIDE` + `WCS.HOLD` |
+| `setStateToStatic` | `systemState, firingUnit, runCtx` | `nil` | 清空 reload timer 並設 `STATIC` |
+| `isRepositioning` | `firingUnitState, runCtx` | `boolean` | 判斷事件是否可接受 |
 
 移動失敗時第二個回傳值是 log 欄位表而非散文訊息，呼叫端直接併進自己的 row：
 

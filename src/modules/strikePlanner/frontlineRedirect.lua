@@ -28,11 +28,11 @@ end
 
 ---Apply configured frontline redirect mappings when sticky redirect is active
 ---@param config SBJ__Config
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param strikeMappings SBJ__ReconStrikeMapping[]
 ---@return SBJ__ReconStrikeMapping[] # Original or rewritten mappings
-function FrontlineRedirect.updateMappings(config, reconCtx, strikeMappings)
-  if reconCtx.frontlineRedirected and
+function FrontlineRedirect.updateMappings(config, reconState, strikeMappings)
+  if reconState.frontlineRedirected and
       config.red.recon.frontlineRedirect and
       config.red.recon.frontlineRedirect.mappings then
     return buildRewrittenMappings(strikeMappings, config.red.recon.frontlineRedirect.mappings)
@@ -46,13 +46,13 @@ end
 -- ============================================================================
 
 ---Decide whether frontline strike packages should be redirected to rear bases with AAR
----Sticky: mutates reconCtx.frontlineRedirected on first trigger; skips recompute thereafter.
+---Sticky: mutates reconState.frontlineRedirected on first trigger; skips recompute thereafter.
 ---@param config SBJ__Config
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@return boolean isRedirected Whether redirect is active after this evaluation
 ---@return table<string, any>|nil activationFields Non-nil only on the tick redirect just activated; caller should log it
-function FrontlineRedirect.evaluate(config, reconCtx)
-  if reconCtx.frontlineRedirected then
+function FrontlineRedirect.evaluate(config, reconState)
+  if reconState.frontlineRedirected then
     return true, nil
   end
 
@@ -64,7 +64,7 @@ function FrontlineRedirect.evaluate(config, reconCtx)
   local summary = AirbaseAttrition.calculate(config.red.air.deployedACs, cfg.frontlineBaseNames)
 
   if summary.attritionPct >= cfg.attritionThresholdPct then
-    reconCtx.frontlineRedirected = true
+    reconState.frontlineRedirected = true
 
     return true, {
       action = "activate",

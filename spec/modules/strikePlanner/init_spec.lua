@@ -246,7 +246,7 @@ describe("StrikePlanner", function()
         addEntryStub = trackStub(stub(Recon, "addEntry"))
       end)
 
-      -- Positive: the context carries every plannerState slice recon needs.
+      -- Positive: the state carries every plannerState slice recon needs.
       it("should hand recon a processing context built from plannerState slices", function()
         trackStub(stub(math, "random").returns(0))
         local config = makeConfig()
@@ -257,9 +257,9 @@ describe("StrikePlanner", function()
 
         assert.stub(processQueueStub).was.called_with({
           config = config,
-          reconCtx = plannerState.recon,
+          reconState = plannerState.recon,
           reconTriggeredOperationBatches = plannerState.dynamicOperations.reconTriggeredOperationBatches,
-          lacmCtx = plannerState.lacm,
+          lacmState = plannerState.lacm,
           fireSupportOnHold = true,
         })
       end)

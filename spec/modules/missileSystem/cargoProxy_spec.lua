@@ -138,7 +138,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1", weaponDBID = 500 }
+      local unitState = { name = "Infantry-1", weaponDBID = 500 }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -147,7 +147,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.stub(stubUpdateCargo).was.called(1)
       assert.stub(stubClearMags).was.called(1)
@@ -191,7 +191,7 @@ describe("MissileSystem CargoProxy", function()
           }
         },
       })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return member1 end
         if identifier == "MEM-001" then return member1 end
@@ -201,7 +201,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.stub(stubUpdateCargo).was.called(2)
       assert.stub(stubDeleteUnit).was.called(2)
@@ -209,10 +209,10 @@ describe("MissileSystem CargoProxy", function()
 
     -- Negative: should return early when unit not found
     it("should return early when unit not found", function()
-      local unitCtx = { name = "NonExistent" }
+      local unitState = { name = "NonExistent" }
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      CargoProxy.loadCargo(makeBase({ guid = "BASE-001" }), unitCtx, "Red")
+      CargoProxy.loadCargo(makeBase({ guid = "BASE-001" }), unitState, "Red")
 
       assert.stub(stubUpdateCargo).was_not.called()
       assert.stub(stubDeleteUnit).was_not.called()
@@ -235,7 +235,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return member1 end
@@ -244,7 +244,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       -- Only 1 cargo addition (for member1, not GHOST-002)
       assert.stub(stubUpdateCargo).was.called(1)
@@ -255,7 +255,7 @@ describe("MissileSystem CargoProxy", function()
     it("should skip when cargo proxy creation fails", function()
       local sourceUnit = makeLoadCargoUnit({ guid = "SRC-001", name = "Infantry-1", dbid = 7001, mounts = {} })
       local base = makeBase({ guid = "BASE-001", name = "BaseShip", cargo = nil })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -263,7 +263,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.stub(stubUpdateCargo).was.called(1)
       assert.stub(stubClearMags).was_not.called()
@@ -299,7 +299,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1", weaponDBID = 500 }
+      local unitState = { name = "Infantry-1", weaponDBID = 500 }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -308,7 +308,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       -- 1 clear (remove=true) + 1 set = 2
       assert.stub(stubAddReloads).was.called(2)
@@ -355,7 +355,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1", weaponDBID = { 500, 600 } }
+      local unitState = { name = "Infantry-1", weaponDBID = { 500, 600 } }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -364,7 +364,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       -- 2 clears + 2 sets = 4
       assert.stub(stubAddReloads).was.called(4)
@@ -390,7 +390,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -399,7 +399,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.stub(stubAddReloads).was_not.called()
     end)
@@ -419,7 +419,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -428,7 +428,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.are.equal("Alpha", cargoProxy.group)
       assert.are.equal("Infantry-1", cargoProxy.name)
@@ -448,7 +448,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -457,7 +457,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.is_nil(cargoProxy.group)
       assert.are.equal("Infantry-1", cargoProxy.name)
@@ -477,7 +477,7 @@ describe("MissileSystem CargoProxy", function()
         name = "BaseShip",
         cargo = { [1] = { cargo = { [1] = { guid = "CARGO-001" } } } },
       })
-      local unitCtx = { name = "Infantry-1" }
+      local unitState = { name = "Infantry-1" }
 
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(identifier, side)
         if identifier == "Infantry-1" and side == "Red" then return sourceUnit end
@@ -486,7 +486,7 @@ describe("MissileSystem CargoProxy", function()
         return nil
       end)
 
-      CargoProxy.loadCargo(base, unitCtx, "Red")
+      CargoProxy.loadCargo(base, unitState, "Red")
 
       assert.stub(logStub).was.called(1)
       local callArgs = logStub.calls[1].vals

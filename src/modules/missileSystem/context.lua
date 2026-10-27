@@ -4,24 +4,24 @@ local Context = {}
 
 ---Handle logic when resupply unit is destroyed
 ---@param unit CMO__Unit
----@param systemCtx SBJ__MissileSystemContext
+---@param systemState SBJ__MissileSystemState
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
-function Context.processSupplyAssetDestruction(unit, systemCtx)
-  local ammoDepotCtx = systemCtx.ammunitions[unit.name]
+function Context.processSupplyAssetDestruction(unit, systemState)
+  local ammoDepotState = systemState.ammunitions[unit.name]
 
-  if ammoDepotCtx and unit.group == nil and ammoDepotCtx.weaponCountCurrent > 0 then
-    local ammoBefore = ammoDepotCtx.weaponCountCurrent
-    ammoDepotCtx.weaponCountCurrent = 0
+  if ammoDepotState and unit.group == nil and ammoDepotState.weaponCountCurrent > 0 then
+    local ammoBefore = ammoDepotState.weaponCountCurrent
+    ammoDepotState.weaponCountCurrent = 0
     return true, {
       tag = "OK",
-      system = systemCtx.name or "unknown",
+      system = systemState.name or "unknown",
       unitName = unit.name,
-      contextName = ammoDepotCtx.name,
+      contextName = ammoDepotState.name,
       role = "ammo_depot",
       ammoBefore = ammoBefore,
-      ammoAfter = ammoDepotCtx.weaponCountCurrent,
-      delta = ammoDepotCtx.weaponCountCurrent - ammoBefore
+      ammoAfter = ammoDepotState.weaponCountCurrent,
+      delta = ammoDepotState.weaponCountCurrent - ammoBefore
     }
   end
 
@@ -29,26 +29,26 @@ function Context.processSupplyAssetDestruction(unit, systemCtx)
     return false, nil
   end
 
-  local resupplyUnitCtx = systemCtx.resupplyUnits[unit.group.name]
+  local resupplyUnitState = systemState.resupplyUnits[unit.group.name]
 
-  if resupplyUnitCtx and resupplyUnitCtx.weaponCountCurrent > 0 then
-    local ammoBefore = resupplyUnitCtx.weaponCountCurrent
-    local ammoPerUnit = resupplyUnitCtx.weaponCountDefault / resupplyUnitCtx.unitCount
+  if resupplyUnitState and resupplyUnitState.weaponCountCurrent > 0 then
+    local ammoBefore = resupplyUnitState.weaponCountCurrent
+    local ammoPerUnit = resupplyUnitState.weaponCountDefault / resupplyUnitState.unitCount
 
-    if (resupplyUnitCtx.weaponCountCurrent - ammoPerUnit) < 0 then
-      resupplyUnitCtx.weaponCountCurrent = 0
+    if (resupplyUnitState.weaponCountCurrent - ammoPerUnit) < 0 then
+      resupplyUnitState.weaponCountCurrent = 0
     else
-      resupplyUnitCtx.weaponCountCurrent = resupplyUnitCtx.weaponCountCurrent - ammoPerUnit
+      resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent - ammoPerUnit
     end
     return true, {
       tag = "OK",
-      system = systemCtx.name or "unknown",
+      system = systemState.name or "unknown",
       unitName = unit.name,
-      contextName = resupplyUnitCtx.name,
+      contextName = resupplyUnitState.name,
       role = "resupply_unit",
       ammoBefore = ammoBefore,
-      ammoAfter = resupplyUnitCtx.weaponCountCurrent,
-      delta = resupplyUnitCtx.weaponCountCurrent - ammoBefore
+      ammoAfter = resupplyUnitState.weaponCountCurrent,
+      delta = resupplyUnitState.weaponCountCurrent - ammoBefore
     }
   end
 
@@ -58,43 +58,43 @@ end
 ---Fill the default per-system state for every system in config
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
----@param groundCtx SBJ__GroundContext
-function Context.ensureGroundState(missileSystemConfigMap, groundCtx)
-  groundCtx.missileSystemTypes = groundCtx.missileSystemTypes or {}
+---@param groundState SBJ__GroundState
+function Context.ensureGroundState(missileSystemConfigMap, groundState)
+  groundState.missileSystemTypes = groundState.missileSystemTypes or {}
   for system, _ in pairs(missileSystemConfigMap) do
-    local systemCtx = groundCtx.missileSystemTypes[system] or {}
-    systemCtx.name = system
-    if systemCtx.enabled == nil then
-      systemCtx.enabled = true
+    local systemState = groundState.missileSystemTypes[system] or {}
+    systemState.name = system
+    if systemState.enabled == nil then
+      systemState.enabled = true
     end
-    systemCtx.ammunitions = systemCtx.ammunitions or {}
-    systemCtx.resupplyUnits = systemCtx.resupplyUnits or {}
-    systemCtx.firingUnits = systemCtx.firingUnits or {}
-    groundCtx.missileSystemTypes[system] = systemCtx
+    systemState.ammunitions = systemState.ammunitions or {}
+    systemState.resupplyUnits = systemState.resupplyUnits or {}
+    systemState.firingUnits = systemState.firingUnits or {}
+    groundState.missileSystemTypes[system] = systemState
   end
 end
 
----Initialize missile system runtime contexts from configuration
+---Initialize missile system runtime states from configuration
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
----@param groundCtx SBJ__GroundContext
-function Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
+---@param groundState SBJ__GroundState
+function Context.initMissileSystemContexts(missileSystemConfigMap, groundState)
   for system, systemConfig in pairs(missileSystemConfigMap) do
     local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
     for _, descriptor in pairs(firingUnitMap) do
       local ctx = descriptor
-      groundCtx.missileSystemTypes[system].firingUnits[ctx.name] = ctx
+      groundState.missileSystemTypes[system].firingUnits[ctx.name] = ctx
     end
 
     local resupplyUnitMap = Utils.deepCopy(systemConfig.resupplyUnits)
     for _, descriptor in pairs(resupplyUnitMap) do
       local ctx = descriptor
-      groundCtx.missileSystemTypes[system].resupplyUnits[ctx.name] = ctx
+      groundState.missileSystemTypes[system].resupplyUnits[ctx.name] = ctx
     end
 
     local ammunitionMap = Utils.deepCopy(systemConfig.ammunitions)
     for _, descriptor in pairs(ammunitionMap) do
       local ctx = descriptor
-      groundCtx.missileSystemTypes[system].ammunitions[ctx.name] = ctx
+      groundState.missileSystemTypes[system].ammunitions[ctx.name] = ctx
     end
   end
 end

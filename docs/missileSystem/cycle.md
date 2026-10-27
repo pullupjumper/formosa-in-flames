@@ -22,13 +22,13 @@
 
 ### Stow 等待視窗（新）
 
-`startReloadMovement` 在機動發射車目前是 `STATIC` 且 `isAuto=true` 時才會運作，並引入 `firingUnitCtx.stowStartTime` 作為倒數起點：
+`startReloadMovement` 在機動發射車目前是 `STATIC` 且 `isAuto=true` 時才會運作，並引入 `firingUnitState.stowStartTime` 作為倒數起點：
 
 - 觸發來源有兩個：
   - 低於 `ammoThreshold`（由 `Ammo.isLowAmmo` 判定）
   - FSP 射擊後由 `strikePlanner/fireSupportPlan.lua` 把 `stowStartTime` 設為當前時間
 - 第一個偵測到觸發的循環會把 `stowStartTime` 寫入並 return，留到下個循環才推進
-- 在 `elapsedTime < systemCtx.stowTime` 期間，車組維持 STATIC 不動，模擬射擊後的收車／撤收時間
+- 在 `elapsedTime < systemState.stowTime` 期間，車組維持 STATIC 不動，模擬射擊後的收車／撤收時間
 - 倒數結束後依當下彈量分流：
   - **彈量充足**：呼叫 `Movement.moveToHideArea` 收回 HA，並清掉 `stowStartTime`（典型 FSP 一波打完後的撤收路徑）
   - **仍然低彈量**：先把對應的彈藥補給車從 HA 拉出（`Concealment.moveFromHideArea`）並送往 RL，再把機動發射車送往 RL，最後清掉 `stowStartTime`
@@ -44,7 +44,7 @@
   - `Ammo.isLowAmmo` 仍為 `true`，避免重複裝填
 - 條件達成才呼叫 `Ammo.reloadFiringUnit` 實際補彈
 - 自動模式下，補完後依系統類別決定下一步：
-  - `systemCtx.name == "sam"` → `Movement.moveToFiringPoint`，盡快恢復防空火網
+  - `systemState.name == "sam"` → `Movement.moveToFiringPoint`，盡快恢復防空火網
   - 其他 TEL 類 → `Movement.moveToHideArea`，回到 HA 等下一輪
   - 若彈藥補給車仍有存彈且還在作戰區，加碼呼叫 `Concealment.hideUnit` 把它藏回 MASK 建築
 
@@ -125,7 +125,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `Cycle.process` | `systemCtx: SBJ__MissileSystemContext, runCtx: SBJ__CycleRunContext, sideName: string` | `SBJ__LogResult[]` | 對單一飛彈系統執行一次完整補給循環，回傳本次有實際進度的動作清單 |
+| `Cycle.process` | `systemState: SBJ__MissileSystemState, runCtx: SBJ__CycleRunContext, sideName: string` | `SBJ__LogResult[]` | 對單一飛彈系統執行一次完整補給循環，回傳本次有實際進度的動作清單 |
 
 ---
 
@@ -149,12 +149,12 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `systemCtx.reloadTime`（對應 `config.*.ground.missileSystemTypes.<type>.reloadTime`） | reload 倒數時長 |
-| `systemCtx.stowTime`（對應 `config.*.ground.missileSystemTypes.<type>.stowTime`） | 射擊／低彈量後的 stow 等待時長 |
-| `firingUnitCtx.ammoThreshold` | 低彈量觸發門檻，傳給 `Ammo.isLowAmmo` |
-| `firingUnitCtx.weaponDBID` | 用來鎖定要回補的武器類別 |
-| `firingUnitCtx.stowStartTime` / `reloadStartTime` | 倒數時間錨點，存在 `saveData.*.ground.missileSystemTypes.<system>.firingUnits[*]` |
-| `resupplyUnitCtx.weaponCountCurrent` | 二級補給觸發條件 |
+| `systemState.reloadTime`（對應 `config.*.ground.missileSystemTypes.<type>.reloadTime`） | reload 倒數時長 |
+| `systemState.stowTime`（對應 `config.*.ground.missileSystemTypes.<type>.stowTime`） | 射擊／低彈量後的 stow 等待時長 |
+| `firingUnitState.ammoThreshold` | 低彈量觸發門檻，傳給 `Ammo.isLowAmmo` |
+| `firingUnitState.weaponDBID` | 用來鎖定要回補的武器類別 |
+| `firingUnitState.stowStartTime` / `reloadStartTime` | 倒數時間錨點，存在 `saveData.*.ground.missileSystemTypes.<system>.firingUnits[*]` |
+| `resupplyUnitState.weaponCountCurrent` | 二級補給觸發條件 |
 | `constants.MISSILE_SYSTEM_STATE.STATIC` / `RELOAD` | stow 觸發與 reload 完成判斷的狀態守門 |
 | `constants.MISSILE_SYSTEM_TYPES.SAM` | 補完後是否回 FP 的分流 |
 

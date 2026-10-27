@@ -21,7 +21,7 @@ describe("MissileSystem Ammo And Meeting", function()
     return s
   end
 
-  local function makeSystemCtx(overrides)
+  local function makeSystemState(overrides)
     local ctx = {
       name = "srbm",
       reloadTime = 60,
@@ -195,13 +195,13 @@ describe("MissileSystem Ammo And Meeting", function()
   describe("getInventory", function()
     -- Boundary: empty system returns zero subtotals and zero percentages
     it("should return zeros when system has no firing/resupply/ammo entries", function()
-      local systemCtx = {
+      local systemState = {
         firingUnits = {},
         resupplyUnits = {},
         ammunitions = {},
       }
 
-      local report = Ammo.getInventory(systemCtx, "Taiwan")
+      local report = Ammo.getInventory(systemState, "Taiwan")
 
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.resupply)
@@ -211,7 +211,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: aggregates subtotals from firing/resupply/ammo and computes overall total
     it("should aggregate subtotals across firing units, resupply units, and depots", function()
-      local systemCtx = {
+      local systemState = {
         firingUnits = {
           ["FU-Alpha"] = { name = "FU-Alpha", weaponDBID = 1234 },
         },
@@ -229,7 +229,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 8, maxWeapons = 20 })
 
-      local report = Ammo.getInventory(systemCtx, "Taiwan")
+      local report = Ammo.getInventory(systemState, "Taiwan")
 
       assert.are.same({ current = 8, max = 20, percentage = 40 }, report.firing)
       assert.are.same({ current = 10, max = 20, percentage = 50 }, report.resupply)
@@ -241,7 +241,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Boundary: missing firing unit (game lookup returns nil) does not break aggregation
     it("should skip firing units that cannot be resolved in game state", function()
-      local systemCtx = {
+      local systemState = {
         firingUnits = {
           ["FU-Ghost"] = { name = "FU-Ghost", weaponDBID = 1234 },
         },
@@ -253,7 +253,7 @@ describe("MissileSystem Ammo And Meeting", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 99, maxWeapons = 99 })
 
-      local report = Ammo.getInventory(systemCtx, "Taiwan")
+      local report = Ammo.getInventory(systemState, "Taiwan")
 
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
       assert.are.same({ current = 5, max = 10, percentage = 50 }, report.resupply)
@@ -264,7 +264,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Boundary: percentage stays at 0 when max is 0 (no divide-by-zero)
     it("should return percentage 0 when subtotal max is zero", function()
-      local systemCtx = {
+      local systemState = {
         firingUnits = {},
         resupplyUnits = {
           ["RU-Empty"] = { name = "RU-Empty", weaponCountCurrent = 0, weaponCountDefault = 0 },
@@ -272,7 +272,7 @@ describe("MissileSystem Ammo And Meeting", function()
         ammunitions = {},
       }
 
-      local report = Ammo.getInventory(systemCtx, "Taiwan")
+      local report = Ammo.getInventory(systemState, "Taiwan")
 
       assert.are.equal(0, report.resupply.percentage)
       assert.are.equal(0, report.total.percentage)
@@ -280,7 +280,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: aggregates ammo across multiple weapon DBIDs and group units for firing
     it("should expand groups and multi-weaponDBID for firing units", function()
-      local systemCtx = {
+      local systemState = {
         firingUnits = {
           ["FU-Group"] = { name = "FU-Group", weaponDBID = { 1111, 2222 } },
         },
@@ -303,7 +303,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return { availableWeapons = 0, maxWeapons = 0 }
       end)
 
-      local report = Ammo.getInventory(systemCtx, "Taiwan")
+      local report = Ammo.getInventory(systemState, "Taiwan")
 
       assert.are.equal(10, report.firing.current)
       assert.are.equal(40, report.firing.max)
@@ -316,16 +316,16 @@ describe("MissileSystem Ammo And Meeting", function()
   -- ============================================================================
 
   describe("hasMetResupplyUnit", function()
-    local mockSystemCtx
+    local mockSystemState
 
     before_each(function()
-      mockSystemCtx = makeSystemCtx()
+      mockSystemState = makeSystemState()
     end)
 
     -- Boundary: returns false when unit is unknown
     it("should return false when unit name not in firingUnits or resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "Taiwan" }
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, unit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, unit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -339,7 +339,7 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function() return false end
       }
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -353,7 +353,7 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function() return false end
       }
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -381,7 +381,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
@@ -409,7 +409,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, resupplyUnit, true)
       assert.is_true(hasMet)
       assert.are.equal("Firing Unit Alpha", ctx.name)
     end)
@@ -436,14 +436,14 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
     -- Negative: rejects STATIC state in auto mode
     it("should not match when state is STATIC in auto mode", function()
-      mockSystemCtx.firingUnits["Firing Unit Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+      mockSystemState.firingUnits["Firing Unit Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
 
       local firingUnit = {
         guid = "FIRING-001",
@@ -452,14 +452,14 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function(_, area) return area[1] == "RP-001" end
       }
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, true)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
     -- Positive: allows STATIC state in manual mode
     it("should match when state is STATIC in manual mode", function()
-      mockSystemCtx.firingUnits["Firing Unit Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+      mockSystemState.firingUnits["Firing Unit Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
 
       local firingUnit = {
         guid = "FIRING-001",
@@ -482,7 +482,7 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
       trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemCtx, firingUnit, false)
+      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, false)
       assert.is_true(hasMet)
       assert.is_not_nil(ctx)
     end)
@@ -493,10 +493,10 @@ describe("MissileSystem Ammo And Meeting", function()
   -- ============================================================================
 
   describe("hasMetAmmoDepot", function()
-    local mockSystemCtx
+    local mockSystemState
 
     before_each(function()
-      mockSystemCtx = makeSystemCtx({
+      mockSystemState = makeSystemState({
         firingUnits = {},
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
@@ -516,7 +516,7 @@ describe("MissileSystem Ammo And Meeting", function()
     -- Boundary: returns false when unit is unknown
     it("should return false when unit name not in resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "China" }
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, unit, true)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, unit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -540,7 +540,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -564,7 +564,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
       assert.is_true(hasMet)
       assert.are.equal("Ammo Sec, Alpha", ctx.name)
     end)
@@ -588,7 +588,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
@@ -604,14 +604,14 @@ describe("MissileSystem Ammo And Meeting", function()
 
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
     -- Negative: rejects STATIC state in auto mode
     it("should not match when state is STATIC in auto mode", function()
-      mockSystemCtx.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+      mockSystemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
 
       local resupplyUnit = {
         guid = "RESUPPLY-001",
@@ -620,14 +620,14 @@ describe("MissileSystem Ammo And Meeting", function()
         inArea = function(_, area) return area[1] == "RP-101" end
       }
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, true)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
       assert.is_false(hasMet)
       assert.is_nil(ctx)
     end)
 
     -- Positive: allows STATIC state in manual mode
     it("should match when state is STATIC in manual mode", function()
-      mockSystemCtx.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+      mockSystemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
 
       local resupplyUnit = {
         guid = "RESUPPLY-001",
@@ -646,7 +646,7 @@ describe("MissileSystem Ammo And Meeting", function()
         return nil
       end)
 
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemCtx, resupplyUnit, false)
+      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, false)
       assert.is_true(hasMet)
       assert.is_not_nil(ctx)
     end)

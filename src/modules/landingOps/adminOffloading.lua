@@ -102,7 +102,7 @@ end
 ---Create the course, set the speed, and add the barge to the barge registry.
 ---@param unit CMO__Unit
 ---@param zone SBJ__OperationalZoneDescriptor
----@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
+---@param barges table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@return CMO__Waypoint[]|nil dest Barge destination for RORO pairing, nil when the course failed
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function processBarge(unit, zone, barges)
@@ -128,7 +128,7 @@ end
 ---Add the RORO to the roros list of the barge and set the RORO course.
 ---@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }
 ---@param bargeEntry SBJ__BargeEntry
----@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
+---@param barges table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function pairROROWithBarge(roroEntry, bargeEntry, barges)
   table.insert(barges[bargeEntry.unit.guid].roros, roroEntry.unit.guid)
@@ -242,7 +242,7 @@ end
 
 ---Check if the logistics bridge of a barge is destroyed.
 ---The bridge GUID must exist and its unit must be destroyed.
----@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
+---@param barges table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if the bridge was created and is now destroyed
 function AdminOffloading.isBridgeDestroyed(barges, ship)
@@ -261,7 +261,7 @@ end
 
 ---Check if a barge has an extended logistics bridge.
 ---The barge creates the bridge when it reaches the offload position for vehicle transfer.
----@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
+---@param barges table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if barge has an active bridge GUID
 function AdminOffloading.hasExtendedBridge(barges, ship)
@@ -294,7 +294,7 @@ end
 ---Start admin offloading in a single zone.
 ---Direct barges to the offload areas and RORO ships to follow. This creates the logistics chain RORO -> Barge -> Beach.
 ---@param zone SBJ__OperationalZoneDescriptor
----@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
+---@param barges table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@param filteredUnits CMO__SideUnit[]
 ---@return boolean # True if admin offloading started
 function AdminOffloading.startAdminOffloading(zone, barges, filteredUnits)

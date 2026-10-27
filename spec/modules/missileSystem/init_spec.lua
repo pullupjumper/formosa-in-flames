@@ -68,27 +68,27 @@ describe("MissileSystem", function()
 
     -- Positive: a hiding unit with ammo leaves its hide area and heads to FP
     it("should unload and move a hiding unit with enough ammo", function()
-      local firingUnitCtx = { name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 }
+      local firingUnitState = { name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 }
       local firingUnit = { name = "FU1" }
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local moveStub = trackStub(Movement, "moveToFiringPoint").returns(true)
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 1)
-      assert.stub(moveFromHideAreaStub).was.called_with(firingUnitCtx, firingUnit)
-      assert.stub(moveStub).was.called_with(firingUnitCtx, firingUnit)
+      assert.stub(moveFromHideAreaStub).was.called_with(firingUnitState, firingUnit)
+      assert.stub(moveStub).was.called_with(firingUnitState, firingUnit)
       assert.stub(errorStub).was_not.called()
     end)
 
     -- Positive: a unit already at its firing point reports in position without new commands
     it("should report in position for a STATIC unit without moving it", function()
-      local firingUnitCtx = { name = "FU1", state = STATE.STATIC }
+      local firingUnitState = { name = "FU1", state = STATE.STATIC }
       local firingUnit = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_true(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -97,11 +97,11 @@ describe("MissileSystem", function()
 
     -- Negative: a unit on its way is not commanded again
     it("should not command a REPOSITIONING unit", function()
-      local firingUnitCtx = { name = "FU1", state = STATE.REPOSITIONING }
+      local firingUnitState = { name = "FU1", state = STATE.REPOSITIONING }
       local firingUnit = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -109,13 +109,13 @@ describe("MissileSystem", function()
 
     -- Negative: low ammo keeps the unit hidden
     it("should keep a hiding unit with low ammo in place", function()
-      local firingUnitCtx = { name = "FU1", state = STATE.HIDE }
+      local firingUnitState = { name = "FU1", state = STATE.HIDE }
       local firingUnit = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(true)
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -124,14 +124,14 @@ describe("MissileSystem", function()
 
     -- Negative: logs when movement fails with structured fields
     it("should log an error when movement fails", function()
-      local firingUnitCtx = { name = "FU1", state = STATE.HIDE }
+      local firingUnitState = { name = "FU1", state = STATE.HIDE }
       local firingUnit = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveToFiringPoint")
           .returns(false, { reason = "no_positions_available", position = "FP", area = "OPAREA-1" })
 
-      MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+      MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.stub(errorStub).was.called(1)
       assert.stub(errorStub).was.called_with(
@@ -141,13 +141,13 @@ describe("MissileSystem", function()
 
     -- Boundary: failure without error fields should not log (avoid "[FAIL] nil")
     it("should not log when movement fails without error fields", function()
-      local firingUnitCtx = { name = "FU1", state = STATE.HIDE }
+      local firingUnitState = { name = "FU1", state = STATE.HIDE }
       local firingUnit = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveToFiringPoint").returns(false)
 
-      MissileSystem.sendToFiringPoint(firingUnitCtx, firingUnit)
+      MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.stub(errorStub).was_not.called()
     end)
@@ -160,14 +160,14 @@ describe("MissileSystem", function()
   describe("process", function()
     -- Positive: each enabled system gets a run context with its own config and the shared isAuto, plus sideName
     it("should call Cycle.process with each system context and its config", function()
-      local srbmCtx = { enabled = true, id = "srbm" }
-      local mrbmCtx = { enabled = true, id = "mrbm" }
+      local srbmState = { enabled = true, id = "srbm" }
+      local mrbmState = { enabled = true, id = "mrbm" }
       local srbmConfig = { reloadTime = 300 }
       local mrbmConfig = { reloadTime = 600 }
-      local groundCtx = {
+      local groundState = {
         missileSystemTypes = {
-          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
-          [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmState,
+          [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmState,
         }
       }
       local missileSystemConfigMap = {
@@ -177,39 +177,39 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, missileSystemConfigMap, true, "Taiwan")
+      MissileSystem.process(groundState, missileSystemConfigMap, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2)
-      assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = true }),
+      assert.stub(cycleProcessStub).was.called_with(srbmState, match.is_same({ systemConfig = srbmConfig, isAuto = true }),
         "Taiwan")
-      assert.stub(cycleProcessStub).was.called_with(mrbmCtx, match.is_same({ systemConfig = mrbmConfig, isAuto = true }),
+      assert.stub(cycleProcessStub).was.called_with(mrbmState, match.is_same({ systemConfig = mrbmConfig, isAuto = true }),
         "Taiwan")
     end)
 
     -- Positive: results from multiple systems are aggregated into one tagged log call
     it("should aggregate per-system results into a single tagged log entry", function()
-      local srbmCtx = { enabled = true, id = "srbm" }
-      local mrbmCtx = { enabled = true, id = "mrbm" }
-      local mlrsCtx = { enabled = false, id = "mlrs" }
-      local groundCtx = {
+      local srbmState = { enabled = true, id = "srbm" }
+      local mrbmState = { enabled = true, id = "mrbm" }
+      local mlrsState = { enabled = false, id = "mlrs" }
+      local groundState = {
         missileSystemTypes = {
-          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
-          [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmCtx,
-          [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsCtx,
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmState,
+          [constants.MISSILE_SYSTEM_TYPES.MRBM] = mrbmState,
+          [constants.MISSILE_SYSTEM_TYPES.MLRS] = mlrsState,
         }
       }
       local missileSystemConfigMap = {}
 
-      local cycleProcessStub = trackStub(Cycle, "process").invokes(function(systemCtx)
-        if systemCtx.id == "srbm" then
+      local cycleProcessStub = trackStub(Cycle, "process").invokes(function(systemState)
+        if systemState.id == "srbm" then
           return { { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } }
-        elseif systemCtx.id == "mrbm" then
+        elseif systemState.id == "mrbm" then
           return { { tag = "WARN", fields = { unit = "MRBM1", action = "low_ammo" } } }
         end
         return {}
       end)
 
-      MissileSystem.process(groundCtx, missileSystemConfigMap, true, "Taiwan")
+      MissileSystem.process(groundState, missileSystemConfigMap, true, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
       assert.stub(logStub).was.called(1)
@@ -230,11 +230,11 @@ describe("MissileSystem", function()
 
     -- Positive: the log names the run mode so auto and manual sides can be told apart
     it("should report the run mode in the log", function()
-      local groundCtx = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true } } }
+      local groundState = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true } } }
       local missileSystemConfigMap = {}
       trackStub(Cycle, "process").returns({ { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } })
 
-      MissileSystem.process(groundCtx, missileSystemConfigMap, false, "Taiwan")
+      MissileSystem.process(groundState, missileSystemConfigMap, false, "Taiwan")
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "mode=manual", 1, true))
@@ -242,10 +242,10 @@ describe("MissileSystem", function()
 
     -- Negative: failures are logged through Logger.error so they are not hidden by verbose settings
     it("should log reload cycle failures through Logger.error", function()
-      local srbmCtx = { enabled = true, id = "srbm" }
-      local groundCtx = {
+      local srbmState = { enabled = true, id = "srbm" }
+      local groundState = {
         missileSystemTypes = {
-          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmState,
         }
       }
       local missileSystemConfigMap = {}
@@ -257,7 +257,7 @@ describe("MissileSystem", function()
         }
       })
 
-      MissileSystem.process(groundCtx, missileSystemConfigMap, true, "Taiwan")
+      MissileSystem.process(groundState, missileSystemConfigMap, true, "Taiwan")
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -268,11 +268,11 @@ describe("MissileSystem", function()
 
     -- Negative: skips disabled systems and does not log when no events occurred
     it("should skip disabled systems and not log when no results are returned", function()
-      local srbmCtx = { enabled = true }
+      local srbmState = { enabled = true }
       local srbmConfig = { reloadTime = 300 }
-      local groundCtx = {
+      local groundState = {
         missileSystemTypes = {
-          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmCtx,
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = srbmState,
           [constants.MISSILE_SYSTEM_TYPES.MRBM] = { enabled = false },
         }
       }
@@ -280,10 +280,10 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundCtx, missileSystemConfigMap, false, "Taiwan")
+      MissileSystem.process(groundState, missileSystemConfigMap, false, "Taiwan")
 
       assert.stub(cycleProcessStub).was.called(1)
-      assert.stub(cycleProcessStub).was.called_with(srbmCtx, match.is_same({ systemConfig = srbmConfig, isAuto = false }),
+      assert.stub(cycleProcessStub).was.called_with(srbmState, match.is_same({ systemConfig = srbmConfig, isAuto = false }),
         "Taiwan")
       assert.stub(logStub).was_not.called()
     end)
@@ -340,7 +340,7 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("initSide", function()
-    -- Positive: an enabled side builds contexts from its own ground config into its own slice
+    -- Positive: an enabled side builds states from its own ground config into its own slice
     it("should init contexts from the side's ground config when the side is enabled", function()
       local config, saveData = makeSides()
       saveData.blue.ground.enabled = true
@@ -367,7 +367,7 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("deploySide", function()
-    -- Positive: units and contexts are built from the side's ground config into the side's slice
+    -- Positive: units and states are built from the side's ground config into the side's slice
     it("should add units and init contexts from the side's ground config", function()
       local config, saveData = makeSides()
       local addStub = trackStub(Deployment, "addMissileSystems")
@@ -464,10 +464,10 @@ describe("MissileSystem", function()
       local config, saveData = makeSides()
       local unit = { name = "FU1", guid = "guid-fu1", side = constants.SIDES.RED }
       local event = { triggers = { { UnitEntersArea = { Description = "(China) Arrive in HA - 1 - AreaA" } } } }
-      local firingUnitCtx = { name = "FU1" }
+      local firingUnitState = { name = "FU1" }
       saveData.red.ground = {
         missileSystemTypes = {
-          [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = {} }
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitState }, resupplyUnits = {} }
         }
       }
       local contact = { actualunitid = unit.guid, DropContact = function() end }
@@ -480,7 +480,7 @@ describe("MissileSystem", function()
 
       assert.stub(getContactsStub).was.called_with(constants.SIDES.RED)
       assert.stub(dropContactStub).was.called(1)
-      assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit, true)
+      assert.stub(setStateToHideStub).was.called_with(firingUnitState, unit, true)
     end)
 
     -- Positive: a Taiwan unit gets the manual policy and the Taiwan slice
@@ -489,15 +489,15 @@ describe("MissileSystem", function()
       local unit = { name = "RS1", guid = "guid-rs1", side = constants.SIDES.BLUE }
       local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in AHA - 1 - AreaA" } } } }
 
-      local systemCtx = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
-      saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemCtx } }
+      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
+      saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
       trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)
 
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
+      assert.stub(setStateToStaticStub).was.called_with(systemState, unit, false)
     end)
   end)
 
@@ -508,7 +508,7 @@ describe("MissileSystem", function()
   describe("startStow", function()
     local STATE = constants.MISSILE_SYSTEM_STATE
 
-    local function makeGroundCtx()
+    local function makeGroundState()
       return {
         missileSystemTypes = {
           srbm = {
@@ -533,59 +533,59 @@ describe("MissileSystem", function()
 
     -- Positive: upper-case system name resolves and every unit without a countdown is stamped
     it("should stamp stowStartTime on every listed unit regardless of state", function()
-      local groundCtx = makeGroundCtx()
+      local groundState = makeGroundState()
       local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.startStow(groundCtx, "SRBM", firingUnits)
+      MissileSystem.startStow(groundState, "SRBM", firingUnits)
 
-      assert.are.equal(9000, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
-      assert.are.equal(9000, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
+      assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
     end)
 
     -- Boundary: a running countdown is preserved
     it("should keep an existing stowStartTime", function()
-      local groundCtx = makeGroundCtx()
+      local groundState = makeGroundState()
       local firingUnits = { { name = "FU-Stowing" } }
 
-      MissileSystem.startStow(groundCtx, "srbm", firingUnits)
+      MissileSystem.startStow(groundState, "srbm", firingUnits)
 
-      assert.are.equal(500, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Stowing"].stowStartTime)
+      assert.are.equal(500, groundState.missileSystemTypes.srbm.firingUnits["FU-Stowing"].stowStartTime)
     end)
 
     -- Boundary: onlyDeployed leaves units still in their hide area alone
     it("should skip non-deployed units when onlyDeployed is set", function()
-      local groundCtx = makeGroundCtx()
+      local groundState = makeGroundState()
       local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.startStow(groundCtx, "SRBM", firingUnits, { onlyDeployed = true })
+      MissileSystem.startStow(groundState, "SRBM", firingUnits, { onlyDeployed = true })
 
-      assert.are.equal(9000, groundCtx.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
-      assert.is_nil(groundCtx.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
+      assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.is_nil(groundState.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
     end)
 
     -- Negative: SAM never stows
     it("should not stamp SAM firing units", function()
-      local groundCtx = makeGroundCtx()
+      local groundState = makeGroundState()
       local firingUnits = { { name = "SAM-1" } }
 
-      MissileSystem.startStow(groundCtx, "SAM", firingUnits)
+      MissileSystem.startStow(groundState, "SAM", firingUnits)
 
-      assert.is_nil(groundCtx.missileSystemTypes.sam.firingUnits["SAM-1"].stowStartTime)
+      assert.is_nil(groundState.missileSystemTypes.sam.firingUnits["SAM-1"].stowStartTime)
     end)
 
     -- Negative: unknown units, unknown systems and missing inputs are ignored
     it("should ignore missing contexts and nil inputs", function()
-      local groundCtx = makeGroundCtx()
+      local groundState = makeGroundState()
       local ghostUnits = { { name = "Ghost" } }
       local staticUnits = { { name = "FU-Static" } }
 
       assert.has_no.Error(function()
-        MissileSystem.startStow(groundCtx, "SRBM", ghostUnits)
-        MissileSystem.startStow(groundCtx, "GLCM", staticUnits)
-        MissileSystem.startStow(groundCtx, nil, staticUnits)
-        MissileSystem.startStow(groundCtx, "SRBM", nil)
+        MissileSystem.startStow(groundState, "SRBM", ghostUnits)
+        MissileSystem.startStow(groundState, "GLCM", staticUnits)
+        MissileSystem.startStow(groundState, nil, staticUnits)
+        MissileSystem.startStow(groundState, "SRBM", nil)
       end)
-      assert.is_nil(groundCtx.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.is_nil(groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
     end)
   end)
 
@@ -596,7 +596,7 @@ describe("MissileSystem", function()
   describe("processSupplyAssetDestruction", function()
     -- Positive: finds the owning system on the unit's side and logs the ammunition delta
     it("should zero the depot of whichever system on the unit's side owns it and log the delta", function()
-      local srbmCtx = {
+      local srbmState = {
         name = "srbm",
         resupplyUnits = {},
         ammunitions = {
@@ -609,7 +609,7 @@ describe("MissileSystem", function()
           ground = {
             missileSystemTypes = {
               mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
-              srbm = srbmCtx,
+              srbm = srbmState,
             },
           },
         },
@@ -619,7 +619,7 @@ describe("MissileSystem", function()
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 
       assert.is_true(processed)
-      assert.are.equal(0, srbmCtx.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
+      assert.are.equal(0, srbmState.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]
@@ -649,11 +649,11 @@ describe("MissileSystem", function()
   describe("isLowAmmo", function()
     -- Positive: the unit's own threshold and weapon DBID drive the check
     it("should report low ammo using the firing unit's threshold and weapon", function()
-      local firingUnitCtx = { name = "FU1", ammoThreshold = 40, weaponDBID = 7 }
+      local firingUnitState = { name = "FU1", ammoThreshold = 40, weaponDBID = 7 }
       local firingUnit = { name = "FU1" }
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(true)
 
-      local isLow = MissileSystem.isLowAmmo(firingUnitCtx, firingUnit)
+      local isLow = MissileSystem.isLowAmmo(firingUnitState, firingUnit)
 
       assert.is_true(isLow)
       assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 7)
@@ -665,27 +665,27 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("getFiringUnitContext", function()
-    local function makeGroundCtx()
+    local function makeGroundState()
       return { missileSystemTypes = { srbm = { firingUnits = { FU1 = { name = "FU1" } } } } }
     end
 
     -- Positive: the system name is matched in any case
     it("should resolve the context from an upper-case system name", function()
-      local groundCtx = makeGroundCtx()
+      local groundState = makeGroundState()
 
-      local firingUnitCtx = MissileSystem.getFiringUnitContext(groundCtx, "SRBM", "FU1")
+      local firingUnitState = MissileSystem.getFiringUnitContext(groundState, "SRBM", "FU1")
 
-      assert.are.equal(groundCtx.missileSystemTypes.srbm.firingUnits.FU1, firingUnitCtx)
+      assert.are.equal(groundState.missileSystemTypes.srbm.firingUnits.FU1, firingUnitState)
     end)
 
     -- Negative: an unknown unit resolves to nothing
     it("should return nil for an unknown firing unit", function()
-      assert.is_nil(MissileSystem.getFiringUnitContext(makeGroundCtx(), "srbm", "Ghost"))
+      assert.is_nil(MissileSystem.getFiringUnitContext(makeGroundState(), "srbm", "Ghost"))
     end)
 
     -- Negative: an unknown system resolves to nothing
     it("should return nil for an unknown system", function()
-      assert.is_nil(MissileSystem.getFiringUnitContext(makeGroundCtx(), "glcm", "FU1"))
+      assert.is_nil(MissileSystem.getFiringUnitContext(makeGroundState(), "glcm", "FU1"))
     end)
   end)
 
@@ -694,23 +694,23 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("getAmmoInventory", function()
-    -- Positive: delegates with the system context picked from groundCtx
+    -- Positive: delegates with the system state picked from groundState
     it("should report inventory for the requested system", function()
-      local srbmCtx = { name = "srbm" }
-      local groundCtx = { missileSystemTypes = { srbm = srbmCtx } }
+      local srbmState = { name = "srbm" }
+      local groundState = { missileSystemTypes = { srbm = srbmState } }
 
       local inventoryStub = trackStub(Ammo, "getInventory").returns({ total = { percentage = 80 } })
 
-      local report = MissileSystem.getAmmoInventory(groundCtx, "srbm", "China")
+      local report = MissileSystem.getAmmoInventory(groundState, "srbm", "China")
 
       assert.are.equal(80, report.total.percentage)
-      assert.stub(inventoryStub).was.called_with(srbmCtx, "China")
+      assert.stub(inventoryStub).was.called_with(srbmState, "China")
     end)
 
     -- Negative: absent system yields nil
     it("should return nil when the system is absent", function()
-      local groundCtx = { missileSystemTypes = {} }
-      assert.is_nil(MissileSystem.getAmmoInventory(groundCtx, "srbm", "China"))
+      local groundState = { missileSystemTypes = {} }
+      assert.is_nil(MissileSystem.getAmmoInventory(groundState, "srbm", "China"))
     end)
   end)
 
@@ -737,17 +737,17 @@ describe("MissileSystem", function()
       return unit
     end
 
-    ---@param overrides? table Fields to override on the default enabled, empty system context
-    local function makeSystemCtx(overrides)
-      local systemCtx = { enabled = true, firingUnits = {}, resupplyUnits = {} }
+    ---@param overrides? table Fields to override on the default enabled, empty system state
+    local function makeSystemState(overrides)
+      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = {} }
       for k, v in pairs(overrides or {}) do
-        systemCtx[k] = v
+        systemState[k] = v
       end
-      return systemCtx
+      return systemState
     end
 
-    ---Move context the handlers receive when the policy overrides nothing
-    ---@param overrides? table Fields to override on the default policy-derived context
+    ---Move state the handlers receive when the policy overrides nothing
+    ---@param overrides? table Fields to override on the default policy-derived state
     local function makeMoveCtx(overrides)
       local moveCtx = {
         isAuto = true,
@@ -762,17 +762,17 @@ describe("MissileSystem", function()
       return moveCtx
     end
 
-    local function groundCtxWith(systemCtx)
-      return { missileSystemTypes = { [SYSTEM_KEY] = systemCtx } }
+    local function groundStateWith(systemState)
+      return { missileSystemTypes = { [SYSTEM_KEY] = systemState } }
     end
 
     ---Fire UnitEntersArea for the unit's side, with that side's slice and policy built from params
-    ---@param params {groundCtx: table, unit: table, event: table, contacts?: table, policy?: table}
+    ---@param params {groundState: table, unit: table, event: table, contacts?: table, policy?: table}
     local function enterArea(params)
       local field = GameUtils.getCachedSideConfig(params.unit.side).field
       local policy = { isAuto = true, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
       local config = { [field] = { ground = { policy = policy } } }
-      local saveData = { [field] = { ground = params.groundCtx } }
+      local saveData = { [field] = { ground = params.groundState } }
       for k, v in pairs(params.policy or {}) do
         policy[k] = v
       end
@@ -802,20 +802,20 @@ describe("MissileSystem", function()
     -- Positive: FP + repositioning triggers setWCSToFree exactly once
     it("should set WCS to free exactly once when entering FP while repositioning", function()
       local unit = makeUnit()
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("FP"),
       })
 
       assert.stub(setWCSToFreeStub).was.called(1)
-      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, makeMoveCtx().isAuto)
+      assert.stub(setWCSToFreeStub).was.called_with(firingUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]
@@ -828,13 +828,13 @@ describe("MissileSystem", function()
     -- Negative: FP + not repositioning keeps WCS untouched
     it("should not set WCS to free when entering FP and not repositioning", function()
       local unit = makeUnit()
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = { name = "FU1" } } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
 
       trackStub(Movement, "isRepositioning").returns(false)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("FP"),
       })
@@ -848,13 +848,13 @@ describe("MissileSystem", function()
     it("should not drop contacts when entering FP", function()
       local unit = makeUnit()
       local contact = { actualunitid = unit.guid, DropContact = function() end }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = { name = "FU1" } } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
 
       local dropContactStub = trackStub(contact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("FP"),
         contacts = { contact }
@@ -868,15 +868,15 @@ describe("MissileSystem", function()
     -- Negative: HA + no forced hide + not repositioning leaves state untouched
     it("should leave HA state untouched when not repositioning and hideOnEnterHA is off", function()
       local unit = makeUnit({ side = "Taiwan" })
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       trackStub(Movement, "isRepositioning").returns(false)
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("HA"),
         policy = {
@@ -894,17 +894,17 @@ describe("MissileSystem", function()
     -- Boundary: HA path drops only matching contacts
     it("should drop only contacts whose actualunitid matches the incoming unit", function()
       local unit = makeUnit({ side = "Taiwan" })
-      local firingUnitCtx = { name = "FU1" }
+      local firingUnitState = { name = "FU1" }
       local matchingContact = { actualunitid = unit.guid, DropContact = function() end }
       local otherContact = { actualunitid = "guid-other", DropContact = function() end }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       local matchingDropContactStub = trackStub(matchingContact, "DropContact")
       local otherDropContactStub = trackStub(otherContact, "DropContact")
       trackStub(Movement, "isRepositioning").returns(false)
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("HA"),
         contacts = { matchingContact, otherContact },
@@ -921,15 +921,15 @@ describe("MissileSystem", function()
     -- Positive: HA + hideOnEnterHA enables both state change and concealment
     it("should force hide flow on HA when hideOnEnterHA is enabled", function()
       local unit = makeUnit()
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       trackStub(Movement, "isRepositioning").returns(false)
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("HA"),
         policy = {
@@ -939,10 +939,10 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setStateToHideStub).was.called(1)
-      assert.stub(setStateToHideStub).was.called_with(firingUnitCtx, unit,
+      assert.stub(setStateToHideStub).was.called_with(firingUnitState, unit,
         makeMoveCtx({ hideOnEnterHA = true }).isAuto)
       assert.stub(hideUnitStub).was.called(1)
-      assert.stub(hideUnitStub).was.called_with(firingUnitCtx, unit)
+      assert.stub(hideUnitStub).was.called_with(firingUnitState, unit)
       assert.stub(logStub).was.called(1)
 
       local message = logStub.calls[1].vals[2]
@@ -953,8 +953,8 @@ describe("MissileSystem", function()
     -- WARN rows ride the info log: report routes only FAIL/ERROR to the error sink.
     it("should log warning when HA concealment fails", function()
       local unit = makeUnit()
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       trackStub(Movement, "isRepositioning").returns(false)
       trackStub(Movement, "setStateToHide")
@@ -962,7 +962,7 @@ describe("MissileSystem", function()
           .returns(false, { reason = "no_buildings_in_mask", area = "OPAREA-1" })
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("HA"),
         policy = {
@@ -982,14 +982,14 @@ describe("MissileSystem", function()
     -- Boundary: HA handler early-returns when unit is not a firing unit of the system
     it("should skip HA handling when unit is not a firing unit of the system", function()
       local unit = makeUnit({ name = "Unknown", guid = "guid-x" })
-      local systemCtx = makeSystemCtx()
+      local systemState = makeSystemState()
 
       local isRepositioningStub = trackStub(Movement, "isRepositioning").returns(true)
       local setStateToHideStub = trackStub(Movement, "setStateToHide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("HA"),
         policy = {
@@ -1008,21 +1008,21 @@ describe("MissileSystem", function()
     -- Positive: RL + firing unit + meeting confirmed starts reload
     it("should set reload start time on RL when firing unit has met resupply unit", function()
       local unit = makeUnit()
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx }, resupplyUnits = { RS1 = { name = "RS1" } } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState }, resupplyUnits = { RS1 = { name = "RS1" } } })
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitCtx)
+      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitState)
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
       })
 
       assert.stub(setReloadStartTimeStub).was.called(1)
-      assert.stub(setReloadStartTimeStub).was.called_with(firingUnitCtx, unit, makeMoveCtx().isAuto)
+      assert.stub(setReloadStartTimeStub).was.called_with(firingUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(setStateToStaticStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
@@ -1033,15 +1033,15 @@ describe("MissileSystem", function()
     -- Negative: a confirmed meeting whose firing unit cannot be found in game starts nothing
     it("should warn and not start reload when the met firing unit is not in the game", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = { RS1 = { name = "RS1" } } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { RS1 = { name = "RS1" } } })
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitCtx)
+      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitState)
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
       })
@@ -1056,31 +1056,31 @@ describe("MissileSystem", function()
     -- so a firing unit that drifts through RL during repositioning does not halt mid-move.
     it("should fall back to no-meeting path on RL when firing unit exists but no meeting", function()
       local unit = makeUnit()
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
       })
 
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
+      assert.stub(setStateToStaticStub).was.called_with(systemState, unit, false)
       assert.stub(logStub).was_not.called()
     end)
 
     -- Positive: RL no-meeting + hideResupplyOnRLNoMeeting + ammo sufficient hides resupply unit
     it("should hide resupply unit on RL no-meeting when firing unit ammo is sufficient", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitCtx = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemCtx = makeSystemCtx({ firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
+      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
+      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
       local firingUnit = { name = "FU1" }
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
@@ -1090,7 +1090,7 @@ describe("MissileSystem", function()
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
         policy = {
@@ -1100,13 +1100,13 @@ describe("MissileSystem", function()
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
+      assert.stub(setStateToStaticStub).was.called_with(systemState, unit, false)
       assert.stub(getUnitStub).was.called(1)
       assert.stub(getUnitStub).was.called_with("FU1", "China")
       assert.stub(isLowAmmoStub).was.called(1)
       assert.stub(isLowAmmoStub).was.called_with(firingUnit, 30, 123)
       assert.stub(hideUnitStub).was.called(1)
-      assert.stub(hideUnitStub).was.called_with(resupplyUnitCtx, unit)
+      assert.stub(hideUnitStub).was.called_with(resupplyUnitState, unit)
       assert.stub(logStub).was.called(1)
 
       local message = logStub.calls[1].vals[2]
@@ -1116,9 +1116,9 @@ describe("MissileSystem", function()
     -- Negative: RL no-meeting + low ammo must not hide the resupply unit
     it("should not hide resupply unit on RL no-meeting when firing unit ammo is low", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitCtx = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemCtx = makeSystemCtx({ firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
+      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
+      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
@@ -1127,7 +1127,7 @@ describe("MissileSystem", function()
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
         policy = {
@@ -1144,9 +1144,9 @@ describe("MissileSystem", function()
     -- Boundary: ScenEdit_GetUnit returning nil short-circuits before ammo/hide checks
     it("should skip ammo and hide checks on RL no-meeting when ScenEdit_GetUnit returns nil", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitCtx = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemCtx = makeSystemCtx({ firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
+      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
+      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       trackStub(Movement, "setStateToStatic")
@@ -1155,7 +1155,7 @@ describe("MissileSystem", function()
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
         policy = {
@@ -1168,11 +1168,11 @@ describe("MissileSystem", function()
       assert.stub(hideUnitStub).was_not.called()
     end)
 
-    -- Boundary: firingUnitCtx lookup failure on RL no-meeting short-circuits before API call
+    -- Boundary: firingUnitState lookup failure on RL no-meeting short-circuits before API call
     it("should skip hide flow on RL no-meeting when resupply unit references an unknown firing unit", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1", firingUnit = "MISSING" }
-      local systemCtx = makeSystemCtx({ resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1", firingUnit = "MISSING" }
+      local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
@@ -1181,7 +1181,7 @@ describe("MissileSystem", function()
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
         policy = {
@@ -1201,21 +1201,21 @@ describe("MissileSystem", function()
     -- Positive: AHA + meeting confirmed starts reload
     it("should set reload start time on AHA when ammo depot meeting is confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1" }
-      local systemCtx = makeSystemCtx({ resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1" }
+      local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
-      trackStub(Meeting, "hasMetAmmoDepot").returns(true, resupplyUnitCtx)
+      trackStub(Meeting, "hasMetAmmoDepot").returns(true, resupplyUnitState)
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("AHA"),
       })
 
       assert.stub(setReloadStartTimeStub).was.called(1)
-      assert.stub(setReloadStartTimeStub).was.called_with(resupplyUnitCtx, unit, makeMoveCtx().isAuto)
+      assert.stub(setReloadStartTimeStub).was.called_with(resupplyUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(setStateToStaticStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
@@ -1226,22 +1226,22 @@ describe("MissileSystem", function()
     -- Negative: AHA fallback resets state when meeting fails
     it("should set state to static on AHA when ammo depot meeting is not confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1" }
-      local systemCtx = makeSystemCtx({ resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1" }
+      local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
       local setReloadStartTimeStub = trackStub(Movement, "setReloadStartTime")
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("AHA"),
       })
 
       assert.stub(setReloadStartTimeStub).was_not.called()
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, makeMoveCtx().isAuto)
+      assert.stub(setStateToStaticStub).was.called_with(systemState, unit, makeMoveCtx().isAuto)
       assert.stub(logStub).was_not.called()
     end)
 
@@ -1251,7 +1251,7 @@ describe("MissileSystem", function()
     it("should return early when event description has no position type token", function()
       local unit = makeUnit()
       local contact = { actualunitid = unit.guid, DropContact = function() end }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = { name = "FU1" } } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
 
       local dropContactStub = trackStub(contact, "DropContact")
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
@@ -1260,7 +1260,7 @@ describe("MissileSystem", function()
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEventRaw("(China) Arrive in MASK - 1 - AreaA"),
         contacts = { contact }
@@ -1276,7 +1276,7 @@ describe("MissileSystem", function()
     -- Boundary: descriptions outside the "Arrive in <TYPE> " format must not be matched
     it("should ignore descriptions that do not follow the 'Arrive in <TYPE>' format", function()
       local unit = makeUnit()
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = { name = "FU1" } } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
 
       trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
@@ -1293,7 +1293,7 @@ describe("MissileSystem", function()
 
       for _, description in ipairs(bogus) do
         enterArea({
-          groundCtx = groundCtxWith(systemCtx),
+          groundState = groundStateWith(systemState),
           unit = unit,
           event = enterEventRaw(description),
         })
@@ -1308,8 +1308,8 @@ describe("MissileSystem", function()
     -- Boundary: real position type is preferred when areaName contains position-like substrings
     it("should match the real position type when areaName contains position-like substrings", function()
       local unit = makeUnit()
-      local firingUnitCtx = { name = "FU1" }
-      local systemCtx = makeSystemCtx({ firingUnits = { [unit.name] = firingUnitCtx } })
+      local firingUnitState = { name = "FU1" }
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
@@ -1317,22 +1317,22 @@ describe("MissileSystem", function()
 
       -- areaName "HALLWAY-RL-FP" contains HA/RL/FP substrings; pos type must still be FP
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("FP", "HALLWAY-RL-FP"),
       })
 
       assert.stub(setWCSToFreeStub).was.called(1)
-      assert.stub(setWCSToFreeStub).was.called_with(firingUnitCtx, unit, makeMoveCtx().isAuto)
+      assert.stub(setWCSToFreeStub).was.called_with(firingUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(setStateToHideStub).was_not.called()
     end)
 
     -- Boundary: with a paired firing unit that has ammo, the policy switch alone keeps the resupply unit out
     it("should not hide on RL no-meeting when hideResupplyOnRLNoMeeting is off", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitCtx = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitCtx = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemCtx = makeSystemCtx({ firingUnits = { FU1 = firingUnitCtx }, resupplyUnits = { [unit.name] = resupplyUnitCtx } })
+      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
+      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
+      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       local setStateToStaticStub = trackStub(Movement, "setStateToStatic")
@@ -1341,14 +1341,14 @@ describe("MissileSystem", function()
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
-        groundCtx = groundCtxWith(systemCtx),
+        groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
         policy = { hideResupplyOnRLNoMeeting = false }
       })
 
       assert.stub(setStateToStaticStub).was.called(1)
-      assert.stub(setStateToStaticStub).was.called_with(systemCtx, unit, false)
+      assert.stub(setStateToStaticStub).was.called_with(systemState, unit, false)
       assert.stub(getUnitStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
     end)
@@ -1356,13 +1356,13 @@ describe("MissileSystem", function()
     -- Boundary: disabled systems must be skipped before any delegate is invoked
     it("should skip processing when the missile system is disabled", function()
       local unit = makeUnit()
-      local disabledCtx = makeSystemCtx({ enabled = false, firingUnits = { [unit.name] = { name = "FU1" } } })
+      local disabledState = makeSystemState({ enabled = false, firingUnits = { [unit.name] = { name = "FU1" } } })
 
       local isRepositioningStub = trackStub(Movement, "isRepositioning").returns(true)
       local setWCSToFreeStub = trackStub(Movement, "setWCSToFree")
 
       enterArea({
-        groundCtx = groundCtxWith(disabledCtx),
+        groundState = groundStateWith(disabledState),
         unit = unit,
         event = enterEvent("FP"),
       })
@@ -1380,7 +1380,7 @@ describe("MissileSystem", function()
     -- Positive: layouts are applied first, then zones, units and state are rebuilt in order
     it("should apply layouts, then rebuild triggers, units and contexts in order", function()
       local missileSystemConfigMap = {}
-      local groundCtx = {}
+      local groundState = {}
       local layouts = { { category = "srbm", unitname = "FU-1", operationalArea = { name = "#NEW" } } }
       local newAreas = { { name = "#NEW" } }
       local oldAreas = { { name = "OPAREA-OLD" } }
@@ -1400,7 +1400,7 @@ describe("MissileSystem", function()
         table.insert(calls, "initMissileSystemContexts")
       end)
 
-      MissileSystem.redeploy(missileSystemConfigMap, groundCtx, "Taiwan", layouts)
+      MissileSystem.redeploy(missileSystemConfigMap, groundState, "Taiwan", layouts)
 
       assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
@@ -1410,7 +1410,7 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, "Taiwan")
       assert.stub(addStub).was.called_with(missileSystemConfigMap, "Taiwan", { ["FU-1"] = true })
-      assert.stub(contextStub).was.called_with(missileSystemConfigMap, groundCtx)
+      assert.stub(contextStub).was.called_with(missileSystemConfigMap, groundState)
     end)
   end)
 end)

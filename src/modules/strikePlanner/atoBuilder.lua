@@ -129,7 +129,7 @@ local function getFreeAircraftCount(freeAircraftCache, baseGUID, requiredUnitDBI
 end
 
 ---Validate aircraft availability and resolve baseGUID via fallback candidates
----Mutates roleData.baseGUID and context.reservedAircraft when a candidate clears the ratio.
+---Mutates roleData.baseGUID and state.reservedAircraft when a candidate clears the ratio.
 ---@param roleData SBJ__MissionDeploymentDescriptor
 ---@param role SBJ__RoleKey Role name for error messages (e.g., "striker", "escort", "SEAD")
 ---@param packageIndex integer

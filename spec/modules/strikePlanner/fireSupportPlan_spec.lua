@@ -158,7 +158,7 @@ describe("FireSupportPlan", function()
   -- ============================================================================
 
   describe("firing unit deployment", function()
-    -- Positive: each live unit is handed to missileSystem with its runtime context
+    -- Positive: each live unit is handed to missileSystem with its runtime state
     it("should send each firing unit to its firing point through MissileSystem", function()
       local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
       local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
@@ -206,7 +206,7 @@ describe("FireSupportPlan", function()
       assert.stub(stubAttack).was_not.called()
     end)
 
-    -- Boundary: a unit without runtime context is dropped like a destroyed one
+    -- Boundary: a unit without runtime state is dropped like a destroyed one
     it("should remove a firing unit that has no runtime context", function()
       local plannerState = makePlannerState({})
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"] = nil

@@ -128,7 +128,7 @@ flowchart TD
 
 ## WZ-8 發射
 
-`Recon.launchWZ8(reconCtx, h6n)` 由事件腳本 `src/scripts/china/launchWZ8.lua` 經門面 `StrikePlanner.launchWZ8` 呼叫。它先在佇列裡找「正在由這架 H-6N 執行、尚未結算」的 UAV entry，找不到就什麼都不做。
+`Recon.launchWZ8(reconState, h6n)` 由事件腳本 `src/scripts/china/launchWZ8.lua` 經門面 `StrikePlanner.launchWZ8` 呼叫。它先在佇列裡找「正在由這架 H-6N 執行、尚未結算」的 UAV entry，找不到就什麼都不做。
 
 找到後由私有函式 `createWZ8` 發射超高速偵察無人機：生成後掛載雷達感測器、指定歸屬基地、開啟 EMCON，全部成功才寫入 `constants.COURSES.WZ8` 並讓 H-6N `RTB(true)`。
 
@@ -151,7 +151,7 @@ flowchart TD
     ACT{"回傳 activation 欄位?"}
     ACTLOG["輸出 RESUME 列"]
     REPORT["建立 LogFormat.report"]
-    LOOP["逐筆 reconCtx.queue"]
+    LOOP["逐筆 reconState.queue"]
     TYPE{"entry.type"}
     UAV["processUAVEntry"]
     PASSIVE["processPassiveEntry"]
@@ -231,19 +231,19 @@ flowchart TD
 | 函數 | 說明 |
 |---|---|
 | `processQueue(processingCtx)` | 處理偵察佇列；同時更新前線重導向 sticky 旗標，並把該 tick 的所有 RECON log 統一從此處輸出 |
-| `launchWZ8(reconCtx, h6n)` | 從執行中 entry 的 H-6N 發射 WZ-8 並把 entry 交接給它；沒有對應 entry 或發射失敗回傳 `nil`（建立後的任一步驟失敗會刪除該架無人機）；套件外經門面 `StrikePlanner.launchWZ8` 呼叫 |
-| `trackTargets(reconCtx, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標（私有 `isTargetAlreadyTracked`）跳過，側別飛機最多列舉一次，再交給私有 `trackTarget` 指派 |
-| `addEntry(reconCtx, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil`；套件外經門面 `StrikePlanner.addReconEntry` 呼叫 |
-| `initQueue(reconConfig, reconCtx)` | 把 `config.red.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
+| `launchWZ8(reconState, h6n)` | 從執行中 entry 的 H-6N 發射 WZ-8 並把 entry 交接給它；沒有對應 entry 或發射失敗回傳 `nil`（建立後的任一步驟失敗會刪除該架無人機）；套件外經門面 `StrikePlanner.launchWZ8` 呼叫 |
+| `trackTargets(reconState, requests)` | 消化 targetingProcess 提出的追蹤請求；已追蹤的目標（私有 `isTargetAlreadyTracked`）跳過，側別飛機最多列舉一次，再交給私有 `trackTarget` 指派 |
+| `addEntry(reconState, entryTemplate, startTime?)` | 在衛星過境空窗中動態插入 UAV entry，成功時回傳該筆 entry，否則回傳 `nil`；套件外經門面 `StrikePlanner.addReconEntry` 呼叫 |
+| `initQueue(reconConfig, reconState)` | 把 `config.red.recon.queue` 的 plan 深拷貝並補上 run-state 旗標（不重置 `frontlineRedirected`） |
 
 `processingCtx`（`SBJ__ReconQueueProcessingContext`）欄位：
 
 | 欄位 | 型別 | 用途 |
 |---|---|---|
 | `config` | `SBJ__Config` | 偵察設定、strike mappings 與後續任務模板 |
-| `reconCtx` | `SBJ__ReconContext` | 偵察 runtime 狀態與 `queue` |
+| `reconState` | `SBJ__ReconState` | 偵察 runtime 狀態與 `queue` |
 | `reconTriggeredOperationBatches` | `SBJ__ReconTriggeredOperationBatch[]` | 已觸發的動態作戰批次，供 scheduler 去重與追加 |
-| `lacmCtx` | `SBJ__LACMContext` | 建立後續 LACM 任務時使用的狀態 |
+| `lacmState` | `SBJ__LACMState` | 建立後續 LACM 任務時使用的狀態 |
 | `fireSupportOnHold` | `boolean` | 為保存彈藥而暫停 SRBM-driven mappings 時設為 `true` |
 
 ---

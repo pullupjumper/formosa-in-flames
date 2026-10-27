@@ -114,7 +114,7 @@ describe("AirTaskingOrder", function()
 
     return {
       air = { airTaskingOrder = ato },
-      recon = overrides.reconCtx or { queue = {} }
+      recon = overrides.reconState or { queue = {} }
     }
   end
 
@@ -1055,7 +1055,7 @@ describe("AirTaskingOrder", function()
       })
       local plannerState = makePlannerState({
         packages = { pkg },
-        reconCtx = {
+        reconState = {
           queue = {
             {
               type = "satellite",

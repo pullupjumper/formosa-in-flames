@@ -160,14 +160,14 @@ end
 ---Simulate loading ground units onto a ship by creating cargo proxies
 ---Resolves unit group, clones weapon loadouts to cargo proxies, and removes originals
 ---@param base CMO__Unit
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param sideName string
-function CargoProxy.loadCargo(base, unitCtx, sideName)
-  local actualUnit = GameApi.ScenEdit_GetUnit(unitCtx.name, sideName)
+function CargoProxy.loadCargo(base, unitState, sideName)
+  local actualUnit = GameApi.ScenEdit_GetUnit(unitState.name, sideName)
   if not actualUnit then return end
 
   local group = actualUnit.group and actualUnit.group.unitlist or { actualUnit.guid }
-  local loadCtx = { weaponDBIDSet = normalizeWeaponDBIDs(unitCtx.weaponDBID), sideName = sideName }
+  local loadCtx = { weaponDBIDSet = normalizeWeaponDBIDs(unitState.weaponDBID), sideName = sideName }
   local report = LogFormat.report(
     constants.TAGS.MISSILE_SYSTEM, "ship=" .. (base.name or base.guid), "Load cargo")
 

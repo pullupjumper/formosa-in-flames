@@ -85,14 +85,14 @@ end
 
 ---Calculate jammer impact on communication modifier
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param jammerMap table<string, SBJ__AircraftContext>
+---@param jammerMap table<string, SBJ__AircraftState>
 ---@param affectedUnitGUID string
 ---@return number # Jammer impact on communication modifier
 local function calculateJammerImpact(commsJammingConfig, jammerMap, affectedUnitGUID)
   local impact = 0
 
-  for _, jammerCtx in pairs(jammerMap) do
-    local actualJammer = GameApi.ScenEdit_GetUnit(jammerCtx.guid)
+  for _, jammerState in pairs(jammerMap) do
+    local actualJammer = GameApi.ScenEdit_GetUnit(jammerState.guid)
 
     if actualJammer and actualJammer.condition == constants.UNIT_CONDITIONS.AIRBORNE and actualJammer.jammer then
       impact = commsJammingConfig.baseJammingPower +
@@ -106,14 +106,14 @@ end
 
 ---Calculate AEW support contribution to communication modifier
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param aewContextMap table<string, SBJ__AircraftContext>
+---@param aewStateMap table<string, SBJ__AircraftState>
 ---@param affectedUnitGUID string
 ---@return number # AEW support contribution
-local function calculateAEWSupport(commsJammingConfig, aewContextMap, affectedUnitGUID)
+local function calculateAEWSupport(commsJammingConfig, aewStateMap, affectedUnitGUID)
   local support = 0
 
-  for _, AEWCtx in pairs(aewContextMap) do
-    local actualAEW = GameApi.ScenEdit_GetUnit(AEWCtx.guid)
+  for _, AEWState in pairs(aewStateMap) do
+    local actualAEW = GameApi.ScenEdit_GetUnit(AEWState.guid)
 
     if actualAEW and actualAEW.condition == constants.UNIT_CONDITIONS.AIRBORNE then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualAEW.guid)
@@ -134,12 +134,12 @@ end
 ---Calculate ROCC support contribution to communication modifier
 ---Only the first valid ROCC is used for calculation
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param roccContextMap table<string, SBJ__C2Context>
+---@param roccStateMap table<string, SBJ__C2State>
 ---@param affectedUnitGUID string
 ---@return number # ROCC support contribution
-local function calculateROCCSupport(commsJammingConfig, roccContextMap, affectedUnitGUID)
-  for _, C2Ctx in pairs(roccContextMap) do
-    local actualROCC = GameApi.ScenEdit_GetUnit(C2Ctx.guid)
+local function calculateROCCSupport(commsJammingConfig, roccStateMap, affectedUnitGUID)
+  for _, C2State in pairs(roccStateMap) do
+    local actualROCC = GameApi.ScenEdit_GetUnit(C2State.guid)
 
     if actualROCC then
       local distance = GameApi.Tool_Range(affectedUnitGUID, actualROCC.guid)
@@ -223,66 +223,66 @@ end
 ---Apply jamming state transition to an affected unit
 ---Handles: successful jamming, resistance, cooldown transition, and cooldown recovery
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param affectedUnitCtx SBJ__RadarContext
+---@param affectedUnitState SBJ__RadarState
 ---@param shouldJam boolean
 ---@return string # JAMMING_RESULT enum value
-local function updateJammingState(commsJammingConfig, affectedUnitCtx, shouldJam)
-  if affectedUnitCtx.isOutOfComms ~= false then
+local function updateJammingState(commsJammingConfig, affectedUnitState, shouldJam)
+  if affectedUnitState.isOutOfComms ~= false then
     return COMMS_JAMMING_RESULT.SKIPPED
   end
 
-  if affectedUnitCtx.outofcomms < 0 then
-    GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
-    affectedUnitCtx.isOutOfComms = false
-    affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
+  if affectedUnitState.outofcomms < 0 then
+    GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = false })
+    affectedUnitState.isOutOfComms = false
+    affectedUnitState.outofcomms = affectedUnitState.outofcomms + 1
     return COMMS_JAMMING_RESULT.RECOVERY
   end
 
   local jammingThreshold = math.random(commsJammingConfig.jammingTime.min, commsJammingConfig.jammingTime.max)
 
-  if affectedUnitCtx.outofcomms < jammingThreshold and affectedUnitCtx.outofcomms >= 0 then
+  if affectedUnitState.outofcomms < jammingThreshold and affectedUnitState.outofcomms >= 0 then
     if shouldJam then
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
-      affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
-      affectedUnitCtx.isOutOfComms = true
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = true })
+      affectedUnitState.outofcomms = affectedUnitState.outofcomms + 1
+      affectedUnitState.isOutOfComms = true
       return COMMS_JAMMING_RESULT.JAMMED
     else
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
-      affectedUnitCtx.outofcomms = 0
-      affectedUnitCtx.isOutOfComms = false
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = false })
+      affectedUnitState.outofcomms = 0
+      affectedUnitState.isOutOfComms = false
       return COMMS_JAMMING_RESULT.RESISTED
     end
   end
 
-  GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
-  affectedUnitCtx.isOutOfComms = false
-  affectedUnitCtx.outofcomms = math.random(commsJammingConfig.cooldownTime.min, commsJammingConfig.cooldownTime.max)
+  GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = false })
+  affectedUnitState.isOutOfComms = false
+  affectedUnitState.outofcomms = math.random(commsJammingConfig.cooldownTime.min, commsJammingConfig.cooldownTime.max)
   return COMMS_JAMMING_RESULT.COOLDOWN
 end
 
 
 ---Apply omnidirectional communication jamming effects to a unit with pre-calculated distance
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param entry { unitCtx: SBJ__RadarContext, distance: number } Target unit context with pre-calculated distance
+---@param entry { unitState: SBJ__RadarState, distance: number } Target unit state with pre-calculated distance
 ---@param jammer CMO__Unit
 ---@return string # JAMMING_RESULT enum value
 omnidirectionalJammingWithDistance = function(commsJammingConfig, entry, jammer)
   local effectiveness = calculateOmnidirectionalEffectiveness(commsJammingConfig, entry.distance)
   local shouldJam = effectiveness ~= nil and effectiveness > (math.random() / 2)
 
-  return updateJammingState(commsJammingConfig, entry.unitCtx, shouldJam)
+  return updateJammingState(commsJammingConfig, entry.unitState, shouldJam)
 end
 
 
 ---Apply directional communication jamming effects to a unit with pre-calculated distance
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param entry { unitCtx: SBJ__RadarContext, distance: number } Target unit context with pre-calculated distance
+---@param entry { unitState: SBJ__RadarState, distance: number } Target unit state with pre-calculated distance
 ---@param jammer CMO__Unit
 ---@return string # JAMMING_RESULT enum value
 directionalJammingWithDistance = function(commsJammingConfig, entry, jammer)
-  local shouldJam = calculateDirectionalEffectiveness(jammer, entry.unitCtx.guid, entry.distance)
+  local shouldJam = calculateDirectionalEffectiveness(jammer, entry.unitState.guid, entry.distance)
 
-  return updateJammingState(commsJammingConfig, entry.unitCtx, shouldJam)
+  return updateJammingState(commsJammingConfig, entry.unitState, shouldJam)
 end
 
 
@@ -292,23 +292,23 @@ end
 
 ---Recover communications for a jammed unit based on recovery time configuration
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param affectedUnitCtx SBJ__RadarContext
-local function recoverComms(commsJammingConfig, affectedUnitCtx)
-  if affectedUnitCtx.isOutOfComms then
-    if affectedUnitCtx.outofcomms <= math.random(commsJammingConfig.recoveryTime.min, commsJammingConfig.recoveryTime.max) then
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = true })
-      affectedUnitCtx.outofcomms = affectedUnitCtx.outofcomms + 1
+---@param affectedUnitState SBJ__RadarState
+local function recoverComms(commsJammingConfig, affectedUnitState)
+  if affectedUnitState.isOutOfComms then
+    if affectedUnitState.outofcomms <= math.random(commsJammingConfig.recoveryTime.min, commsJammingConfig.recoveryTime.max) then
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = true })
+      affectedUnitState.outofcomms = affectedUnitState.outofcomms + 1
     else
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
-      affectedUnitCtx.outofcomms = 0
-      affectedUnitCtx.isOutOfComms = false
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = false })
+      affectedUnitState.outofcomms = 0
+      affectedUnitState.isOutOfComms = false
     end
-  elseif affectedUnitCtx.isOutOfComms == false then
-    local actualAffectedUnit = GameApi.ScenEdit_GetUnit(affectedUnitCtx.guid)
+  elseif affectedUnitState.isOutOfComms == false then
+    local actualAffectedUnit = GameApi.ScenEdit_GetUnit(affectedUnitState.guid)
 
     if actualAffectedUnit and actualAffectedUnit.outOfComms then
-      GameApi.ScenEdit_SetUnit({ guid = affectedUnitCtx.guid, outofcomms = false })
-      affectedUnitCtx.outofcomms = 0
+      GameApi.ScenEdit_SetUnit({ guid = affectedUnitState.guid, outofcomms = false })
+      affectedUnitState.outofcomms = 0
     end
   end
 end
@@ -318,8 +318,8 @@ end
 -- Target Collection
 -- ============================================================================
 
----Find all airborne communication jammerMap from the jammer context table
----@param jammerMap table<string, SBJ__AircraftContext> Map of jammer GUIDs to aircraft contexts from saveData
+---Find all airborne communication jammerMap from the jammer state table
+---@param jammerMap table<string, SBJ__AircraftState> Map of jammer GUIDs to aircraft states from saveData
 ---@return CMO__Unit[] # List of active airborne jammer units with active jamming capabilities
 local function findJammers(jammerMap)
   local airborneJammers = {}
@@ -337,26 +337,26 @@ end
 
 
 ---Collect all SAM and radar units from IADS systems for jamming operations
----@param iadsCtx SBJ__IADSContext
----@return table<string, SBJ__RadarContext> unitCtxs Map of unit GUIDs to radar/SAM unit contexts for jamming targets
+---@param iadsState SBJ__IADSState
+---@return table<string, SBJ__RadarState> unitStates Map of unit GUIDs to radar/SAM unit states for jamming targets
 ---@return integer unitCount Total number of collected units
-local function findSAMAndRadar(iadsCtx)
+local function findSAMAndRadar(iadsState)
   local unitTemp = {}
   local unitCount = 0
 
-  for _, c2Ctx in pairs(iadsCtx.rocc) do
-    for _, ctx in pairs(c2Ctx.sam) do
+  for _, c2State in pairs(iadsState.rocc) do
+    for _, ctx in pairs(c2State.sam) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
     end
-    for _, ctx in pairs(c2Ctx.radar) do
+    for _, ctx in pairs(c2State.radar) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
     end
   end
 
-  for _, c2Ctx in pairs(iadsCtx.taaoc) do
-    for _, ctx in pairs(c2Ctx.sam) do
+  for _, c2State in pairs(iadsState.taaoc) do
+    for _, ctx in pairs(c2State.sam) do
       unitTemp[ctx.guid] = ctx
       unitCount = unitCount + 1
     end
@@ -372,9 +372,9 @@ end
 
 ---Recover communications for all tracked units
 ---@param commsJammingConfig SBJ__CommsJammingConfig
----@param unitCtxMap table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
-local function recoverAllComms(commsJammingConfig, unitCtxMap)
-  for _, ctx in pairs(unitCtxMap) do
+---@param unitStateMap table<string, SBJ__RadarState> Map of unit GUIDs to radar/SAM states
+local function recoverAllComms(commsJammingConfig, unitStateMap)
+  for _, ctx in pairs(unitStateMap) do
     recoverComms(commsJammingConfig, ctx)
   end
 end
@@ -383,11 +383,11 @@ end
 ---Process jamming cycle for all jammers against all targets
 ---@param commsJammingConfig SBJ__CommsJammingConfig
 ---@param jammers CMO__Unit[]
----@param unitCtxMap table<string, SBJ__RadarContext> Map of unit GUIDs to radar/SAM contexts
+---@param unitStateMap table<string, SBJ__RadarState> Map of unit GUIDs to radar/SAM states
 ---@return integer totalAttempts Total jamming attempts made
 ---@return integer totalJammed Total units processed
 ---@return SBJ__LogResult[] results Per-jammer result rows for batch logging
-local function processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
+local function processJammingCycle(commsJammingConfig, jammers, unitStateMap)
   local totalJammedUnits = 0
   local totalAttempts = 0
   local reportLines = {}
@@ -395,11 +395,11 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
 
   for _, jammer in ipairs(jammers) do
     local unitsWithDistance = {}
-    for _, unitCtx in pairs(unitCtxMap) do
-      local distance = GameApi.Tool_Range(jammer.guid, unitCtx.guid)
+    for _, unitState in pairs(unitStateMap) do
+      local distance = GameApi.Tool_Range(jammer.guid, unitState.guid)
 
       if distance then
-        table.insert(unitsWithDistance, { unitCtx = unitCtx, distance = distance })
+        table.insert(unitsWithDistance, { unitState = unitState, distance = distance })
       end
     end
 
@@ -418,7 +418,7 @@ local function processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
         tag = COMMS_RESULT_TAGS[result],
         fields = {
           jammer = jammer.name,
-          target = entry.unitCtx.name,
+          target = entry.unitState.name,
           distanceNm = math.floor(entry.distance),
           result = result
         }
@@ -445,15 +445,15 @@ local function processAircraftComms(commsJammingConfig, jammingState)
   local aircraftRTB = 0
   local reportLines = {}
 
-  for _, aircraftCtx in pairs(jammingState.aircraft) do
-    local actualAircraft = GameApi.ScenEdit_GetUnit(aircraftCtx.guid)
+  for _, aircraftState in pairs(jammingState.aircraft) do
+    local actualAircraft = GameApi.ScenEdit_GetUnit(aircraftState.guid)
 
     if actualAircraft and actualAircraft.condition == constants.UNIT_CONDITIONS.AIRBORNE then
       aircraftProcessed = aircraftProcessed + 1
-      aircraftCtx.commsLevel = aircraftCtx.commsBase + getCommsLevel(commsJammingConfig, jammingState, actualAircraft.guid)
+      aircraftState.commsLevel = aircraftState.commsBase + getCommsLevel(commsJammingConfig, jammingState, actualAircraft.guid)
 
-      if aircraftCtx.commsLevel < aircraftCtx.commsThreshold then
-        GameApi.ScenEdit_SetUnit({ guid = aircraftCtx.guid, outofcomms = true, RTB = true })
+      if aircraftState.commsLevel < aircraftState.commsThreshold then
+        GameApi.ScenEdit_SetUnit({ guid = aircraftState.guid, outofcomms = true, RTB = true })
         aircraftRTB = aircraftRTB + 1
         -- An RTB is this module's intended effect, not an error: tagging it FAIL
         -- would route successful jamming into the error sink.
@@ -462,8 +462,8 @@ local function processAircraftComms(commsJammingConfig, jammingState)
           fields = {
             aircraft = actualAircraft.name,
             action = "rtb",
-            commsLevel = aircraftCtx.commsLevel,
-            threshold = aircraftCtx.commsThreshold
+            commsLevel = aircraftState.commsLevel,
+            threshold = aircraftState.commsThreshold
           }
         })
       end
@@ -490,10 +490,10 @@ function CommsJamming.process(config, saveData)
 
   local commsJammingConfig = config.red.commsJamming
   local jammers = findJammers(jammingState.jammers)
-  local unitCtxMap, targetCount = findSAMAndRadar(jammingState.iads)
+  local unitStateMap, targetCount = findSAMAndRadar(jammingState.iads)
 
-  recoverAllComms(commsJammingConfig, unitCtxMap)
-  local totalAttempts, totalJammed, jammingResults = processJammingCycle(commsJammingConfig, jammers, unitCtxMap)
+  recoverAllComms(commsJammingConfig, unitStateMap)
+  local totalAttempts, totalJammed, jammingResults = processJammingCycle(commsJammingConfig, jammers, unitStateMap)
   local aircraftProcessed, aircraftRTB, rtbResults = processAircraftComms(commsJammingConfig, jammingState)
 
   local report = LogFormat.report(constants.TAGS.COMMS_JAMMING, "commsJamming", "Handle comms jamming")
@@ -548,10 +548,10 @@ end
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 function CommsJamming.updateTargetAircraft(config, saveData)
-  local aircraftCtx = PersistentState.aircraft(saveData, constants.SIDES.BLUE)
+  local aircraftState = PersistentState.aircraft(saveData, constants.SIDES.BLUE)
   local aircraftDefaults = config.red.commsJamming.aircraftDefaults
-  aircraftCtx.aew = {}
-  aircraftCtx.ac = {}
+  aircraftState.aew = {}
+  aircraftState.ac = {}
 
   local filteredUnits = GameApi.VP_GetSide({ side = constants.SIDES.BLUE }):unitsBy(constants.UNIT_TYPES.AIRCRAFT)
   if not filteredUnits then
@@ -566,7 +566,7 @@ function CommsJamming.updateTargetAircraft(config, saveData)
 
     if actualUnit and actualUnit.type == constants.UNIT_TYPES.AIRCRAFT then
       local isAEW = actualUnit.dbid == constants.PLATFORMS.E2K
-      local group = isAEW and aircraftCtx.aew or aircraftCtx.ac
+      local group = isAEW and aircraftState.aew or aircraftState.ac
       group[actualUnit.guid] = {
         guid = actualUnit.guid,
         OODA = actualUnit.OODA,

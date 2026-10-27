@@ -158,7 +158,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 ## 型別與寫入副作用
 
-本模組操作的型別（`SBJ__FireSupportExecutionMatrixTemplate`、`SBJ__FireSupportExecutionMatrix`、`SBJ__FireSupportTaskTemplate`、`SBJ__FireSupportTask`、`SBJ__FiringUnit`、`SBJ__FiringUnitContext`、`SBJ__BatchedOperation`、`SBJ__OperationProcessResult`、`SBJ__FiringUnitStatusResult`、`SBJ__FsemPassContext`）欄位定義一律以 `src/core/schema.lua` 為準。
+本模組操作的型別（`SBJ__FireSupportExecutionMatrixTemplate`、`SBJ__FireSupportExecutionMatrix`、`SBJ__FireSupportTaskTemplate`、`SBJ__FireSupportTask`、`SBJ__FiringUnit`、`SBJ__FiringUnitState`、`SBJ__BatchedOperation`、`SBJ__OperationProcessResult`、`SBJ__FiringUnitStatusResult`、`SBJ__FsemPassContext`）欄位定義一律以 `src/core/schema.lua` 為準。
 
 | 路徑或 API | 行為 |
 |---|---|

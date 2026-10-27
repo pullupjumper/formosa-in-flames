@@ -101,7 +101,7 @@ describe("LogFormat", function()
       assert.are.equal("", LogFormat.fields(nil))
     end)
 
-    -- Positive: extraFields merge on top of the shared context table
+    -- Positive: extraFields merge on top of the shared state table
     it("should merge extra fields over the base table", function()
       local context = { system = "srbm", role = "firing" }
       local result = LogFormat.fields(context, { role = "resupply", reason = "add_unit_failed" })
@@ -109,7 +109,7 @@ describe("LogFormat", function()
       assert.are.equal("system=srbm role=resupply reason=add_unit_failed", result)
     end)
 
-    -- Negative: merging must not mutate the caller's shared context table
+    -- Negative: merging must not mutate the caller's shared state table
     it("should not mutate the base table when merging", function()
       local context = { system = "srbm", role = "firing" }
       LogFormat.fields(context, { role = "resupply" })

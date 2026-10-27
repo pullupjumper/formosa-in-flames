@@ -78,15 +78,15 @@ describe("OperationScheduler", function()
     return config
   end
 
-  ---Create a minimal recon context.
+  ---Create a minimal recon state.
   ---@param overrides? table
-  ---@return SBJ__ReconContext
-  local function makeReconContext(overrides)
-    local reconCtx = { queue = {}, frontlineRedirected = false }
+  ---@return SBJ__ReconState
+  local function makeReconState(overrides)
+    local reconState = { queue = {}, frontlineRedirected = false }
     if overrides then
-      for k, v in pairs(overrides) do reconCtx[k] = v end
+      for k, v in pairs(overrides) do reconState[k] = v end
     end
-    return reconCtx
+    return reconState
   end
 
   ---Create a reconnaissance queue entry.
@@ -105,27 +105,27 @@ describe("OperationScheduler", function()
     return reconEntry
   end
 
-  ---Create a minimal LACM context.
+  ---Create a minimal LACM state.
   ---@param enabled? boolean
-  ---@return SBJ__LACMContext
-  local function makeLacmContext(enabled)
+  ---@return SBJ__LACMState
+  local function makeLacmState(enabled)
     return { enabled = enabled or false, startTime = "2026-02-14 06:00:00" }
   end
 
   ---Create a reconnaissance queue processing context.
   ---@param config SBJ__Config Configuration data
-  ---@param reconCtx SBJ__ReconContext Reconnaissance runtime context
+  ---@param reconState SBJ__ReconState Reconnaissance runtime state
   ---@param reconTriggeredOperationBatches SBJ__ReconTriggeredOperationBatch[] Operation batches triggered by reconnaissance
-  ---@param lacmCtx SBJ__LACMContext LACM context data
+  ---@param lacmState SBJ__LACMState LACM state data
   ---@param fireSupportOnHold? boolean Whether SRBM-driven mappings should be skipped
   ---@return SBJ__ReconQueueProcessingContext
-  local function makeProcessingContext(config, reconCtx, reconTriggeredOperationBatches, lacmCtx,
+  local function makeProcessingContext(config, reconState, reconTriggeredOperationBatches, lacmState,
                                        fireSupportOnHold)
     return {
       config = config,
-      reconCtx = reconCtx,
+      reconState = reconState,
       reconTriggeredOperationBatches = reconTriggeredOperationBatches,
-      lacmCtx = lacmCtx,
+      lacmState = lacmState,
       fireSupportOnHold = fireSupportOnHold == true
     }
   end
@@ -196,7 +196,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -212,7 +212,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ reconObjectiveId = "UNKNOWN_OBJECTIVE" })
       )
 
@@ -229,7 +229,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({
           type = "SIGINT",
           reconObjectiveId = "C2_EMITTER_TARGETING",
@@ -263,7 +263,7 @@ describe("OperationScheduler", function()
       } }
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -294,7 +294,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), true),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), true),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -305,7 +305,7 @@ describe("OperationScheduler", function()
         "%[HOLD%].*operation=GND/STRIKE/INFRA/ALL/1.*reason=fire_support_on_hold"))
     end)
 
-    -- Negative: the LACM strike stays out of the batch until the LACM context activates.
+    -- Negative: the LACM strike stays out of the batch until the LACM state activates.
     it("should skip a requiresLACM mapping when LACM is not committed", function()
       local config = makeConfig()
       config.red.recon.strikeMappings.FIXED_SITE_TARGETING = {
@@ -321,7 +321,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -345,7 +345,7 @@ describe("OperationScheduler", function()
       addExecutedSeries(operationBatches, "AIR/STRIKE/AB/E/1", "air")
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -366,7 +366,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -385,7 +385,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -402,7 +402,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -423,7 +423,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -447,14 +447,14 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
       assert.stub(logStub).was.called(1)
       local message = logStub.calls[1].vals[2]
 
-      -- One mapping produced exactly one entry; context fields must not inflate the rollup.
+      -- One mapping produced exactly one entry; state fields must not inflate the rollup.
       assert.is_not_nil(string.find(message, "total=1 ok=1", 1, true))
       -- Scope metadata sits on the report header, not in an entry.
       assert.is_not_nil(string.find(message, "scheduled=1", 1, true))
@@ -477,7 +477,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -494,7 +494,7 @@ describe("OperationScheduler", function()
       local operationBatches = {}
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), true),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), true),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -520,7 +520,7 @@ describe("OperationScheduler", function()
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground")
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -549,7 +549,7 @@ describe("OperationScheduler", function()
       config.red.fireSupportTaskTemplates.GND_STRIKE_C2_N_2 = nil
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -578,7 +578,7 @@ describe("OperationScheduler", function()
       config.red.fireSupportTaskTemplates.GND_STRIKE_C2_N_2 = nil
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -633,7 +633,7 @@ describe("OperationScheduler", function()
 
       for _, endTime in ipairs({ "2027-06-09 02:00:00", "2027-06-09 03:00:00", "2027-06-09 04:00:00" }) do
         OperationScheduler.schedule(
-          makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+          makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
           makeReconEntry({ type = "satellite", reconObjectiveId = "C2_NORTH_TARGETING", endTime = endTime })
         )
       end
@@ -659,9 +659,9 @@ describe("OperationScheduler", function()
       OperationScheduler.schedule(
         makeProcessingContext(
           config,
-          makeReconContext({ frontlineRedirected = true }),
+          makeReconState({ frontlineRedirected = true }),
           operationBatches,
-          makeLacmContext(true),
+          makeLacmState(true),
           false
         ),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
@@ -688,7 +688,7 @@ describe("OperationScheduler", function()
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1.5", "ground")
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -710,7 +710,7 @@ describe("OperationScheduler", function()
       addExecutedSeries(operationBatches, "SEA/STRIKE/PORT/1", "naval")
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
       )
 
@@ -726,7 +726,7 @@ describe("OperationScheduler", function()
       addExecutedSeries(operationBatches, "GND/STRIKE/C2/N/1", "ground")
 
       OperationScheduler.schedule(
-        makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+        makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
         makeReconEntry({ type = "UAV", reconObjectiveId = "C2_NORTH_TARGETING" })
       )
 
@@ -767,7 +767,7 @@ describe("OperationScheduler", function()
       ---@param operationBatches table[]
       local function schedule(config, operationBatches)
         OperationScheduler.schedule(
-          makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(false), false),
+          makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(false), false),
           makeReconEntry({ reconObjectiveId = "C2_NORTH_TARGETING" })
         )
       end
@@ -864,7 +864,7 @@ describe("OperationScheduler", function()
         local batchCountBefore = #operationBatches
 
         OperationScheduler.schedule(
-          makeProcessingContext(config, makeReconContext(), operationBatches, makeLacmContext(true), false),
+          makeProcessingContext(config, makeReconState(), operationBatches, makeLacmState(true), false),
           makeReconEntry({ reconObjectiveId = "FIXED_SITE_TARGETING" })
         )
 

@@ -97,7 +97,7 @@ ACV 的航線要走已掃出的通道，需要 `zoneState`、`obstacle`、`laneS
 | 型別 | 用途 |
 |---|---|
 | `SBJ__LandingOpsState` | persistent state 切片：`amphibOps`、recon、ground |
-| `SBJ__AmphibOpsContext` | `zoneStates`、`calculationResult`、`barges`、`fireSupportOnHold` |
+| `SBJ__AmphibOpsState` | `zoneStates`、`calculationResult`、`barges`、`fireSupportOnHold` |
 | `SBJ__ZoneState` | 單一作戰區的階段與通道、衝鋒舟、ACV、氣墊船狀態 |
 | `SBJ__LanePlanState` | 水際／灘際通道 |
 | `SBJ__LandingTickContext`、`SBJ__PhaseStep` | coordinator 每 tick 的上下文與階段函式簽名 |

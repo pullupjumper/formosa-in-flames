@@ -23,18 +23,18 @@ local function createC2NodeDataString(saveData, sideName, types)
   local rows = {}
 
   for _, type in pairs(types) do
-    local c2Ctxs = iads[type]
+    local c2States = iads[type]
 
-    if c2Ctxs then
-      for _, c2Ctx in pairs(c2Ctxs) do
-        rows[c2Ctx.guid] = { type = type, name = c2Ctx.name, areas = {} }
-        local c2 = GameApi.ScenEdit_GetUnit(c2Ctx.guid, sideName)
+    if c2States then
+      for _, c2State in pairs(c2States) do
+        rows[c2State.guid] = { type = type, name = c2State.name, areas = {} }
+        local c2 = GameApi.ScenEdit_GetUnit(c2State.guid, sideName)
 
         if c2 then
-          rows[c2Ctx.guid].pos = { latitude = c2.latitude, longitude = c2.longitude }
+          rows[c2State.guid].pos = { latitude = c2.latitude, longitude = c2.longitude }
         end
 
-        for _, rps in ipairs(c2Ctx.areas or {}) do
+        for _, rps in ipairs(c2State.areas or {}) do
           local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = rps })
 
           if points then
@@ -44,29 +44,29 @@ local function createC2NodeDataString(saveData, sideName, types)
               table.insert(area, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
             end
 
-            table.insert(rows[c2Ctx.guid].areas, area)
+            table.insert(rows[c2State.guid].areas, area)
           end
         end
 
-        if c2Ctx.sam then
-          rows[c2Ctx.guid].sam = {}
+        if c2State.sam then
+          rows[c2State.guid].sam = {}
 
-          for _, SAMCtx in pairs(c2Ctx.sam) do
-            local unit = GameApi.ScenEdit_GetUnit(SAMCtx.guid)
+          for _, SAMState in pairs(c2State.sam) do
+            local unit = GameApi.ScenEdit_GetUnit(SAMState.guid)
 
             -- A destroyed unit no longer exists in the game, so it is skipped instead of drawn
             if not unit then
               goto continue
             end
 
-            local doctrine = GameApi.ScenEdit_GetDoctrine(SAMCtx.guid)
-            rows[c2Ctx.guid].sam[SAMCtx.guid] = {
+            local doctrine = GameApi.ScenEdit_GetDoctrine(SAMState.guid)
+            rows[c2State.guid].sam[SAMState.guid] = {
               type = type,
-              name = SAMCtx.name,
-              OODADetection = tostring(SAMCtx.currOODA.detection) .. "/" .. tostring(SAMCtx.OODA.detection),
-              OODATargeting = tostring(SAMCtx.currOODA.targeting) .. "/" .. tostring(SAMCtx.OODA.targeting),
-              isOutOfComms = SAMCtx.isOutOfComms,
-              EMCONSetting = SAMCtx.EMCONSetting,
+              name = SAMState.name,
+              OODADetection = tostring(SAMState.currOODA.detection) .. "/" .. tostring(SAMState.OODA.detection),
+              OODATargeting = tostring(SAMState.currOODA.targeting) .. "/" .. tostring(SAMState.OODA.targeting),
+              isOutOfComms = SAMState.isOutOfComms,
+              EMCONSetting = SAMState.EMCONSetting,
               isDestroyed = false,
               weaponFree = doctrine.weapon_control_status_air ~= constants.WCS.HOLD,
               pos = { latitude = unit.latitude, longitude = unit.longitude }
@@ -76,24 +76,24 @@ local function createC2NodeDataString(saveData, sideName, types)
           end
         end
 
-        if c2Ctx.radar then
-          rows[c2Ctx.guid].radar = {}
+        if c2State.radar then
+          rows[c2State.guid].radar = {}
 
-          for _, radarCtx in pairs(c2Ctx.radar) do
-            local unit = GameApi.ScenEdit_GetUnit(radarCtx.guid)
+          for _, radarState in pairs(c2State.radar) do
+            local unit = GameApi.ScenEdit_GetUnit(radarState.guid)
 
             -- A destroyed unit no longer exists in the game, so it is skipped instead of drawn
             if not unit then
               goto continue
             end
 
-            rows[c2Ctx.guid].radar[radarCtx.guid] = {
+            rows[c2State.guid].radar[radarState.guid] = {
               type = type,
-              name = radarCtx.name,
-              OODADetection = tostring(radarCtx.currOODA.detection) .. "/" .. tostring(radarCtx.OODA.detection),
-              OODATargeting = tostring(radarCtx.currOODA.targeting) .. "/" .. tostring(radarCtx.OODA.targeting),
-              isOutOfComms = radarCtx.isOutOfComms,
-              EMCONSetting = radarCtx.EMCONSetting,
+              name = radarState.name,
+              OODADetection = tostring(radarState.currOODA.detection) .. "/" .. tostring(radarState.OODA.detection),
+              OODATargeting = tostring(radarState.currOODA.targeting) .. "/" .. tostring(radarState.OODA.targeting),
+              isOutOfComms = radarState.isOutOfComms,
+              EMCONSetting = radarState.EMCONSetting,
               isDestroyed = false,
               pos = { latitude = unit.latitude, longitude = unit.longitude }
             }

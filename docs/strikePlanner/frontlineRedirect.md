@@ -8,7 +8,7 @@
 
 ## 概述
 
-`frontlineRedirect` 將前線空軍基地的戰損情況轉成動態作戰排程的 mapping rewrite。當 `AirbaseAttrition.calculate` 回報的整體 `attritionPct` 達到 `config.red.recon.frontlineRedirect.attritionThresholdPct`，模組會把 `reconCtx.frontlineRedirected` 設為 `true`。
+`frontlineRedirect` 將前線空軍基地的戰損情況轉成動態作戰排程的 mapping rewrite。當 `AirbaseAttrition.calculate` 回報的整體 `attritionPct` 達到 `config.red.recon.frontlineRedirect.attritionThresholdPct`，模組會把 `reconState.frontlineRedirected` 設為 `true`。
 
 這個旗標是 sticky 狀態，觸發後不會由本模組清回 `false`。後續 tick 若再次呼叫 `evaluate`，會直接回傳 `true, nil`，避免每次都列舉整個 side 的 aircraft。
 
@@ -20,9 +20,9 @@
 
 ### 戰損門檻評估
 
-`evaluate(config, reconCtx)` 只在以下條件成立時呼叫 [airbaseAttrition](airbaseAttrition.md)：
+`evaluate(config, reconState)` 只在以下條件成立時呼叫 [airbaseAttrition](airbaseAttrition.md)：
 
-- `reconCtx.frontlineRedirected ~= true`
+- `reconState.frontlineRedirected ~= true`
 - `config.red.recon.frontlineRedirect` 存在
 - `config.red.recon.frontlineRedirect.enabled == true`
 
@@ -69,8 +69,8 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    START["updateMappings(config, reconCtx, strikeMappings)"]
-    ACTIVE{"reconCtx.frontlineRedirected<br>且 mappings 存在?"}
+    START["updateMappings(config, reconState, strikeMappings)"]
+    ACTIVE{"reconState.frontlineRedirected<br>且 mappings 存在?"}
     RETURN_ORIGINAL["回傳原 strikeMappings"]
     COPY["Utils.deepCopy(strikeMappings)"]
     LOOP["逐筆 mapping / rule 比對"]
@@ -98,7 +98,7 @@ saveData.red.recon
 └── queue: SBJ__ReconQueueEntry[]
 ```
 
-`frontlineRedirect` 只改寫 `reconCtx.frontlineRedirected`。在實際情境中，這個 `reconCtx` 由 `saveData.red.recon` 傳入，因此 sticky 旗標會隨 saveData 保存。
+`frontlineRedirect` 只改寫 `reconState.frontlineRedirected`。在實際情境中，這個 `reconState` 由 `saveData.red.recon` 傳入，因此 sticky 旗標會隨 saveData 保存。
 
 ---
 
@@ -119,8 +119,8 @@ saveData.red.recon
 
 | 函數 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `evaluate(config, reconCtx)` | `SBJ__Config`, `SBJ__ReconContext` | `boolean, table|nil` | 評估前線基地戰損是否達門檻；首次啟用時寫入 sticky 旗標並回傳 activation 欄位表 |
-| `updateMappings(config, reconCtx, strikeMappings)` | `SBJ__Config`, `SBJ__ReconContext`, `SBJ__ReconStrikeMapping[]` | `SBJ__ReconStrikeMapping[]` | 當 sticky redirect 已啟用且有規則時，回傳改寫後 mapping 副本 |
+| `evaluate(config, reconState)` | `SBJ__Config`, `SBJ__ReconState` | `boolean, table|nil` | 評估前線基地戰損是否達門檻；首次啟用時寫入 sticky 旗標並回傳 activation 欄位表 |
+| `updateMappings(config, reconState, strikeMappings)` | `SBJ__Config`, `SBJ__ReconState`, `SBJ__ReconStrikeMapping[]` | `SBJ__ReconStrikeMapping[]` | 當 sticky redirect 已啟用且有規則時，回傳改寫後 mapping 副本 |
 
 ---
 

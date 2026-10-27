@@ -19,7 +19,7 @@ describe("MissileSystem Concealment", function()
     return s
   end
 
-  local function makeHideUnitCtx()
+  local function makeHideUnitState()
     return {
       name = "TEL Alpha",
       operationalArea = {
@@ -57,12 +57,12 @@ describe("MissileSystem Concealment", function()
   describe("hideUnit", function()
     -- Negative: returns false when no buildings are found
     it("should return false when no buildings found in mask area", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
 
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide(nil))
 
-      local success, errorFields = Concealment.hideUnit(unitCtx, unit)
+      local success, errorFields = Concealment.hideUnit(unitState, unit)
 
       assert.is_false(success)
       assert.are.equal("no_buildings_in_mask", errorFields.reason)
@@ -70,20 +70,20 @@ describe("MissileSystem Concealment", function()
 
     -- Negative: returns false when buildings cannot be retrieved
     it("should return false when no buildings can be retrieved", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
 
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide({ { guid = "B1" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
-      local success, errorFields = Concealment.hideUnit(unitCtx, unit)
+      local success, errorFields = Concealment.hideUnit(unitState, unit)
       assert.is_false(success)
       assert.are.equal("no_available_building", errorFields.reason)
     end)
 
     -- Negative: returns false when all buildings are occupied
     it("should return false when all buildings are occupied", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
       local mockBuilding = {
         guid = "B1",
@@ -93,14 +93,14 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide({ { guid = "B1" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
 
-      local success, errorFields = Concealment.hideUnit(unitCtx, unit)
+      local success, errorFields = Concealment.hideUnit(unitState, unit)
       assert.is_false(success)
       assert.are.equal("no_available_building", errorFields.reason)
     end)
 
     -- Positive: loads cargo when building exists
     it("should call loadCargo when building exists and return true", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
       local mockBuilding = { guid = "B1", name = "Building 1" }
 
@@ -109,19 +109,19 @@ describe("MissileSystem Concealment", function()
       trackStub(math, "random").returns(1)
       local stubLoadCargo = trackStub(CargoProxy, "loadCargo")
 
-      local success, errorMsg = Concealment.hideUnit(unitCtx, unit)
+      local success, errorMsg = Concealment.hideUnit(unitState, unit)
 
       assert.is_true(success)
       assert.is_nil(errorMsg)
       assert.stub(stubLoadCargo).was.called(1)
       assert.are.same(mockBuilding, stubLoadCargo.calls[1].vals[1])
-      assert.are.same(unitCtx, stubLoadCargo.calls[1].vals[2])
+      assert.are.same(unitState, stubLoadCargo.calls[1].vals[2])
       assert.are.equal("China", stubLoadCargo.calls[1].vals[3])
     end)
 
     -- Positive: selects a random building from the list
     it("should select a random building from the list", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
       local mockBuilding2 = { guid = "B2", name = "Building 2" }
 
@@ -132,7 +132,7 @@ describe("MissileSystem Concealment", function()
       trackStub(math, "random").returns(2)
       local stubLoadCargo = trackStub(CargoProxy, "loadCargo")
 
-      Concealment.hideUnit(unitCtx, unit)
+      Concealment.hideUnit(unitState, unit)
 
       assert.stub(stubLoadCargo).was.called(1)
       assert.are.same(mockBuilding2, stubLoadCargo.calls[1].vals[1])
@@ -146,12 +146,12 @@ describe("MissileSystem Concealment", function()
   describe("moveFromHideArea", function()
     -- Negative: returns false when no buildings are found
     it("should return false when no buildings found in mask area", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
 
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide(nil))
 
-      local success, errorFields = Concealment.moveFromHideArea(unitCtx, unit)
+      local success, errorFields = Concealment.moveFromHideArea(unitState, unit)
 
       assert.is_false(success)
       assert.are.equal("no_buildings_in_mask", errorFields.reason)
@@ -159,7 +159,7 @@ describe("MissileSystem Concealment", function()
 
     -- Positive: unloads cargo when unit is found in building
     it("should unload cargo when unit is found in building", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
       local mockBuilding = {
         guid = "B1",
@@ -170,7 +170,7 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
       local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
 
-      local success = Concealment.moveFromHideArea(unitCtx, unit)
+      local success = Concealment.moveFromHideArea(unitState, unit)
 
       assert.is_true(success)
       assert.stub(stubUnload).was.called(1)
@@ -179,7 +179,7 @@ describe("MissileSystem Concealment", function()
 
     -- Negative: does not unload when unit is not in building cargo
     it("should not unload when unit is not in building cargo", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
       local mockBuilding = {
         guid = "B1",
@@ -190,7 +190,7 @@ describe("MissileSystem Concealment", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(mockBuilding)
       local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
 
-      local success = Concealment.moveFromHideArea(unitCtx, unit)
+      local success = Concealment.moveFromHideArea(unitState, unit)
 
       assert.is_true(success)
       assert.stub(stubUnload).was_not.called()
@@ -198,7 +198,7 @@ describe("MissileSystem Concealment", function()
 
     -- Positive: unloads all group units from buildings
     it("should unload all group units from buildings", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "G1", side = "China", group = { unitlist = { "U1", "U2" } } }
 
       local mockBuilding1 = {
@@ -218,7 +218,7 @@ describe("MissileSystem Concealment", function()
       end)
       local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
 
-      local success = Concealment.moveFromHideArea(unitCtx, unit)
+      local success = Concealment.moveFromHideArea(unitState, unit)
 
       assert.is_true(success)
       assert.stub(stubUnload).was.called(2)
@@ -228,14 +228,14 @@ describe("MissileSystem Concealment", function()
 
     -- Boundary: skips buildings that cannot be retrieved
     it("should skip buildings that cannot be retrieved", function()
-      local unitCtx = makeHideUnitCtx()
+      local unitState = makeHideUnitState()
       local unit = { guid = "U1", side = "China" }
 
       trackStub(GameApi, "VP_GetSide").returns(makeMockSide({ { guid = "B1" }, { guid = "B2" } }))
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       local stubUnload = trackStub(GameApi, "ScenEdit_UnloadCargo")
 
-      local success = Concealment.moveFromHideArea(unitCtx, unit)
+      local success = Concealment.moveFromHideArea(unitState, unit)
 
       assert.is_true(success)
       assert.stub(stubUnload).was_not.called()

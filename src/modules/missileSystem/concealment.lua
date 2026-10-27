@@ -28,17 +28,17 @@ local function isHideSiteOccupied(building, unitGUID)
 end
 
 ---Find buildings within the mask area for TEL concealment
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param sideName string
 ---@return CMO__Unit[]|nil # Array of building units or nil
-local function findBuildingsInMaskArea(unitCtx, sideName)
+local function findBuildingsInMaskArea(unitState, sideName)
   local side = GameApi.VP_GetSide({ name = sideName })
-  if not side or not side.unitsInArea or not unitCtx.operationalArea.mask or not unitCtx.operationalArea.mask.area then
+  if not side or not side.unitsInArea or not unitState.operationalArea.mask or not unitState.operationalArea.mask.area then
     return nil
   end
 
   return side:unitsInArea({
-    Area = unitCtx.operationalArea.mask.area,
+    Area = unitState.operationalArea.mask.area,
     TargetFilter = {
       TargetType = constants.UNIT_TYPES.FACILITY,
       TargetSubType = constants.FIXED_FACILITY_CATEGORIES.BUILDING_SURFACE,
@@ -68,16 +68,16 @@ local function getRandomBuilding(buildings)
 end
 
 ---Unload firing unit group from hide area buildings
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param unit CMO__Unit
 ---@return boolean success Whether unload was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
-function Concealment.moveFromHideArea(unitCtx, unit)
+function Concealment.moveFromHideArea(unitState, unit)
   local group = Shared.getGroupUnits(unit)
-  local buildings = findBuildingsInMaskArea(unitCtx, unit.side)
+  local buildings = findBuildingsInMaskArea(unitState, unit.side)
 
   if not buildings then
-    return false, { reason = "no_buildings_in_mask", area = unitCtx.operationalArea.name }
+    return false, { reason = "no_buildings_in_mask", area = unitState.operationalArea.name }
   end
 
   for _, u in ipairs(buildings) do
@@ -98,24 +98,24 @@ end
 ---Load firing unit into a random building within mask area
 ---Failure fields omit the unit name because every caller already labels the row
 ---with the unit it was acting on.
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param unit CMO__Unit
 ---@return boolean success Whether hide was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
-function Concealment.hideUnit(unitCtx, unit)
-  local buildings = findBuildingsInMaskArea(unitCtx, unit.side)
+function Concealment.hideUnit(unitState, unit)
+  local buildings = findBuildingsInMaskArea(unitState, unit.side)
 
   if not buildings then
-    return false, { reason = "no_buildings_in_mask", area = unitCtx.operationalArea.name }
+    return false, { reason = "no_buildings_in_mask", area = unitState.operationalArea.name }
   end
 
   local building = getRandomBuilding(buildings)
 
   if not building then
-    return false, { reason = "no_available_building", area = unitCtx.operationalArea.name }
+    return false, { reason = "no_available_building", area = unitState.operationalArea.name }
   end
 
-  CargoProxy.loadCargo(building, unitCtx, unit.side)
+  CargoProxy.loadCargo(building, unitState, unit.side)
   return true, nil
 end
 

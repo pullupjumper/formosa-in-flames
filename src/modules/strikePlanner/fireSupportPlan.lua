@@ -16,15 +16,15 @@ local FireSupportPlan = {}
 ---@param task SBJ__FireSupportTask
 ---@param firingUnit SBJ__FiringUnit
 ---@return boolean inPosition Whether the unit is at firing point
----@return boolean unitMissing Whether the unit no longer exists in game or has no runtime context
+---@return boolean unitMissing Whether the unit no longer exists in game or has no runtime state
 local function deploySingleFiringUnit(plannerState, task, firingUnit)
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
-  local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, task.missileSystemType, firingUnit.name)
-  if not actualUnit or not firingUnitCtx then
+  local firingUnitState = MissileSystem.getFiringUnitContext(plannerState.ground, task.missileSystemType, firingUnit.name)
+  if not actualUnit or not firingUnitState then
     return false, true
   end
 
-  return MissileSystem.sendToFiringPoint(firingUnitCtx, actualUnit), false
+  return MissileSystem.sendToFiringPoint(firingUnitState, actualUnit), false
 end
 
 ---Deploy all firing units in a task and check if all are in position

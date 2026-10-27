@@ -146,11 +146,11 @@ local function getCachedFiringUnit(firingUnitCache, firingUnitName)
 end
 
 ---Validate one firing unit against assignment, existence, state and ammo
----@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnitState SBJ__FiringUnitState
 ---@param passCtx SBJ__FsemPassContext
 ---@return string # Firing unit status code from FIRING_UNIT_STATUS
-local function validateFiringUnitStatus(firingUnitCtx, passCtx)
-  local firingUnitName = firingUnitCtx.name
+local function validateFiringUnitStatus(firingUnitState, passCtx)
+  local firingUnitName = firingUnitState.name
 
   if passCtx.assignedFiringUnitNames[firingUnitName] then
     return FIRING_UNIT_STATUS.ASSIGNED
@@ -161,11 +161,11 @@ local function validateFiringUnitStatus(firingUnitCtx, passCtx)
     return FIRING_UNIT_STATUS.UNIT_NOT_FOUND
   end
 
-  if firingUnitCtx.state ~= constants.MISSILE_SYSTEM_STATE.HIDE then
+  if firingUnitState.state ~= constants.MISSILE_SYSTEM_STATE.HIDE then
     return FIRING_UNIT_STATUS.BAD_STATE
   end
 
-  if MissileSystem.isLowAmmo(firingUnitCtx, actualUnit) then
+  if MissileSystem.isLowAmmo(firingUnitState, actualUnit) then
     return FIRING_UNIT_STATUS.LOW_AMMO
   end
 
@@ -182,13 +182,13 @@ local function filterAvailableFiringUnits(plannerState, taskTemplate, firingUnit
   local availableFiringUnits = {}
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
-    -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil context and
+    -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil state and
     -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
-    local firingUnitCtx = MissileSystem.getFiringUnitContext(plannerState.ground, taskTemplate.missileSystemType, firingUnit.name)
+    local firingUnitState = MissileSystem.getFiringUnitContext(plannerState.ground, taskTemplate.missileSystemType, firingUnit.name)
     local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
 
-    if firingUnitCtx then
-      status = validateFiringUnitStatus(firingUnitCtx, passCtx)
+    if firingUnitState then
+      status = validateFiringUnitStatus(firingUnitState, passCtx)
     end
 
     updateFiringUnitStatus(firingUnitStatusCounter, status)

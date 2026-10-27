@@ -137,10 +137,10 @@ describe("IntegratedAirDefenseSystem", function()
       }
     end
 
-    -- Positive: the unit moves with its existing context
+    -- Positive: the unit moves with its existing state
     it("should move a SAM context to the node that now commands it", function()
       local iads = makeIads()
-      local samCtx = iads.rocc.A.sam.S1
+      local samState = iads.rocc.A.sam.S1
 
       IntegratedAirDefenseSystem.reassignSamUnits(iads, {
         { guid = "A", type = "rocc", name = "A", sam = {} },
@@ -148,7 +148,7 @@ describe("IntegratedAirDefenseSystem", function()
       })
 
       assert.is_nil(iads.rocc.A.sam.S1)
-      assert.are.equal(samCtx, iads.rocc.B.sam.S1)
+      assert.are.equal(samState, iads.rocc.B.sam.S1)
     end)
 
     -- Negative: unknown nodes are skipped and nothing else changes
@@ -178,10 +178,10 @@ describe("IntegratedAirDefenseSystem", function()
       }
     end
 
-    -- Positive: a rebuilt unit keeps its node and context under the new GUID
+    -- Positive: a rebuilt unit keeps its node and state under the new GUID
     it("should re-key a rebuilt unit's context to its new GUID", function()
       local iads = makeIads()
-      local samCtx = iads.rocc.A.sam.OLD
+      local samState = iads.rocc.A.sam.OLD
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
         if name == "SAM-1" then return makeUnit({ guid = "NEW", name = "SAM-1" }) end
         return nil
@@ -190,8 +190,8 @@ describe("IntegratedAirDefenseSystem", function()
       IntegratedAirDefenseSystem.relinkRebuiltUnits(iads, constants.SIDES.BLUE, { "SAM-1" })
 
       assert.is_nil(iads.rocc.A.sam.OLD)
-      assert.are.equal(samCtx, iads.rocc.A.sam.NEW)
-      assert.are.equal("NEW", samCtx.guid)
+      assert.are.equal(samState, iads.rocc.A.sam.NEW)
+      assert.are.equal("NEW", samState.guid)
     end)
 
     -- Positive: units that were not rebuilt are left alone
@@ -205,7 +205,7 @@ describe("IntegratedAirDefenseSystem", function()
       assert.stub(lookup).was_not.called()
     end)
 
-    -- Negative: a unit that failed to come back drops its context instead of erroring every cycle
+    -- Negative: a unit that failed to come back drops its state instead of erroring every cycle
     it("should drop the context when the rebuilt unit cannot be found", function()
       local iads = makeIads()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
@@ -254,7 +254,7 @@ describe("IntegratedAirDefenseSystem", function()
       assert.stub(stubSetUnit).was.called_with({ guid = "SAM-1", outofcomms = true })
     end)
 
-    -- Negative: no-op when guid not found in any context
+    -- Negative: no-op when guid not found in any state
     it("should not disable any unit when c2 guid is not tracked", function()
       local c2 = makeUnit({ guid = "C2-MISSING", side = constants.SIDES.BLUE })
       local saveData = { blue = { iads = { c2 = {}, rocc = {}, taaoc = {} } } }
@@ -584,11 +584,11 @@ describe("IntegratedAirDefenseSystem", function()
 
       IntegratedAirDefenseSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
-      local iadsCtx = saveData.blue.iads
-      assert.are.equal("PAC3", iadsCtx.rocc["ROCC-1"].sam["PAC3-1"].name)
-      assert.are.equal("FPS117", iadsCtx.rocc["ROCC-1"].radar["FPS-1"].name)
-      assert.are.equal("TC2", iadsCtx.taaoc["TAAOC-1"].sam["TC2-1"].name)
-      assert.is_nil(iadsCtx.taaoc["TAAOC-1"].radar)
+      local iadsState = saveData.blue.iads
+      assert.are.equal("PAC3", iadsState.rocc["ROCC-1"].sam["PAC3-1"].name)
+      assert.are.equal("FPS117", iadsState.rocc["ROCC-1"].radar["FPS-1"].name)
+      assert.are.equal("TC2", iadsState.taaoc["TAAOC-1"].sam["TC2-1"].name)
+      assert.is_nil(iadsState.taaoc["TAAOC-1"].radar)
     end)
 
     -- Positive: China builds C2 nodes rather than ROCC/TAAOC ones

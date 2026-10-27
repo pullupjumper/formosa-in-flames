@@ -14,7 +14,7 @@
 
 `processSupplyAssetDestruction` 會在分數腳本觸發時被呼叫：
 
-- 若擊毀彈藥儲備點（非 group），直接將對應 `ammoDepotCtx.weaponCountCurrent = 0`
+- 若擊毀彈藥儲備點（非 group），直接將對應 `ammoDepotState.weaponCountCurrent = 0`
 - 若擊毀彈藥補給車群組成員，按每車平均彈量扣減群組 `weaponCountCurrent`
 
 ---
@@ -24,10 +24,10 @@
 ```mermaid
 flowchart TD
     A[processSupplyAssetDestruction] --> B{unit 是否對應 ammoDepot?}
-    B -->|Yes| C[ammoDepotCtx.weaponCountCurrent = 0]
+    B -->|Yes| C[ammoDepotState.weaponCountCurrent = 0]
     B -->|No| D{unit 是否有 group?}
     D -->|No| E[return false]
-    D -->|Yes| F[找 resupplyUnitCtx]
+    D -->|Yes| F[找 resupplyUnitState]
     F --> G[按每車平均扣減 weaponCountCurrent]
 ```
 
@@ -37,8 +37,8 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `processSupplyAssetDestruction` | `unit, systemCtx` | `boolean` | 補給資產戰損後同步修正庫存 |
-| `initMissileSystemContexts` | `missileSystemConfigMap, groundCtx` | `nil` | 初始化 runtime context |
+| `processSupplyAssetDestruction` | `unit, systemState` | `boolean` | 補給資產戰損後同步修正庫存 |
+| `initMissileSystemContexts` | `missileSystemConfigMap, groundState` | `nil` | 初始化 runtime context |
 
 ---
 

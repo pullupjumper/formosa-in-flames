@@ -22,15 +22,15 @@
 
 ## 主要機制
 
-- `reloadUnit`（私有）依每種武器 `max - available` 計算缺口，再受 `resupplyUnitCtx.weaponCountCurrent` 上限約束。
+- `reloadUnit`（私有）依每種武器 `max - available` 計算缺口，再受 `resupplyUnitState.weaponCountCurrent` 上限約束。
 - `reloadFiringUnit` 會遍歷group裡的 GUID，對每個單位呼叫 `reloadUnit` 進行再裝填。
 - `isLowAmmo` 將group與所有 `weaponDBID` 的 `available/max` 比率，比對門檻百分比。
 - `getInventory` 聚合三個子總和：firing 由 `ScenEdit_GetUnit` + `getWeaponInfo` 即時查詢，resupply / ammunitions 由 context 中的 `weaponCountCurrent` / `weaponCountDefault` 累加；缺單位（找不到 unit）會被略過，max=0 時百分比固定 0 以避免除零。
 
 ```mermaid
 flowchart LR
-    AD[ammoDepotCtx.weaponCountCurrent] --> TA[transferAmmunition]
-    TA --> RU[resupplyUnitCtx.weaponCountCurrent]
+    AD[ammoDepotState.weaponCountCurrent] --> TA[transferAmmunition]
+    TA --> RU[resupplyUnitState.weaponCountCurrent]
 
     RU --> RF[reloadFiringUnit]
     RF --> R1[reloadUnit for each GUID]
@@ -49,10 +49,10 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `transferAmmunition` | `resupplyUnitCtx, ammoDepotCtx` | `nil` | 從彈藥儲備點補滿彈藥補給車（受庫存限制） |
-| `reloadFiringUnit` | `firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName` | `integer` | 機動車組裝填，回傳總裝填量 |
+| `transferAmmunition` | `resupplyUnitState, ammoDepotState` | `nil` | 從彈藥儲備點補滿彈藥補給車（受庫存限制） |
+| `reloadFiringUnit` | `firingUnitState, resupplyUnitState, weaponDBID, sideName` | `integer` | 機動車組裝填，回傳總裝填量 |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 低彈量判定 |
-| `getInventory` | `systemCtx, sideName` | `SBJ__AmmoInventoryResult` | 聚合 firing / resupply / ammo 三類子總和並算出整體百分比 |
+| `getInventory` | `systemState, sideName` | `SBJ__AmmoInventoryResult` | 聚合 firing / resupply / ammo 三類子總和並算出整體百分比 |
 
 ---
 

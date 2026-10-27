@@ -372,7 +372,7 @@ end
 ---Check if target is within range of a radio transmission source
 ---@param config SBJ__Config
 ---@param distance number Distance in nautical miles to radio source
----@param transmission SBJ__RadioTransmissionContext
+---@param transmission SBJ__RadioTransmissionState
 ---@return boolean # true if target is within max range and transmission exceeds count threshold
 local function isWithinRange(config, distance, transmission)
   return distance <= config.red.sigint.maxRangeNm and transmission.currentDetectionLevel > config.red.sigint.maxCount
@@ -381,7 +381,7 @@ end
 ---Filter targets that are within range of SIGINT-detected radio sources
 ---Cross-references contacts with SIGINT transmissions
 ---@param config SBJ__Config
----@param transmissions table<string, SBJ__RadioTransmissionContext>
+---@param transmissions table<string, SBJ__RadioTransmissionState>
 ---@param contacts string[]
 ---@return string[] # Array of contact GUIDs near radio sources
 local function filterTargetsWithinRangeOfRadioSource(config, transmissions, contacts)

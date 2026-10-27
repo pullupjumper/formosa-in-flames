@@ -6,26 +6,26 @@ local Shared = require("src.modules.missileSystem.shared")
 local Ammo = {}
 
 ---Transfer ammunition from ammunition depot to resupply unit
----@param resupplyUnitCtx SBJ__ResupplyUnitContext
----@param ammoDepotCtx SBJ__AmmunitionContext
-function Ammo.transferAmmunition(resupplyUnitCtx, ammoDepotCtx)
-  if ammoDepotCtx.weaponCountCurrent > 0 and resupplyUnitCtx.weaponCountCurrent < resupplyUnitCtx.weaponCountDefault then
-    local deficit = resupplyUnitCtx.weaponCountDefault - resupplyUnitCtx.weaponCountCurrent
-    local ammoToTransfer = math.min(deficit, ammoDepotCtx.weaponCountCurrent)
-    resupplyUnitCtx.weaponCountCurrent = resupplyUnitCtx.weaponCountCurrent + ammoToTransfer
-    ammoDepotCtx.weaponCountCurrent = ammoDepotCtx.weaponCountCurrent - ammoToTransfer
+---@param resupplyUnitState SBJ__ResupplyUnitState
+---@param ammoDepotState SBJ__AmmunitionState
+function Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
+  if ammoDepotState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < resupplyUnitState.weaponCountDefault then
+    local deficit = resupplyUnitState.weaponCountDefault - resupplyUnitState.weaponCountCurrent
+    local ammoToTransfer = math.min(deficit, ammoDepotState.weaponCountCurrent)
+    resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + ammoToTransfer
+    ammoDepotState.weaponCountCurrent = ammoDepotState.weaponCountCurrent - ammoToTransfer
   end
 
-  resupplyUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
-  resupplyUnitCtx.reloadStartTime = nil
+  resupplyUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  resupplyUnitState.reloadStartTime = nil
 end
 
 ---Reload ammunition for a single unit
 ---@param unit CMO__Unit|nil
 ---@param weaponDBID number|number[]
----@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@return integer # Total ammunition consumed
-local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
+local function reloadUnit(unit, weaponDBID, resupplyUnitState)
   if not unit then return 0 end
   local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
   local totalLoaded = 0
@@ -34,10 +34,10 @@ local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
     local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
     local required = wpnInfo.maxWeapons - wpnInfo.availableWeapons
 
-    if required > 0 and resupplyUnitCtx.weaponCountCurrent > 0 then
-      local ammoToLoad = math.min(required, resupplyUnitCtx.weaponCountCurrent)
+    if required > 0 and resupplyUnitState.weaponCountCurrent > 0 then
+      local ammoToLoad = math.min(required, resupplyUnitState.weaponCountCurrent)
       GameApi.ScenEdit_AddReloadsToUnit({ guid = unit.guid, side = unit.side, wpn_dbid = dbid, number = ammoToLoad })
-      resupplyUnitCtx.weaponCountCurrent = resupplyUnitCtx.weaponCountCurrent - ammoToLoad
+      resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent - ammoToLoad
       totalLoaded = totalLoaded + ammoToLoad
     end
   end
@@ -46,24 +46,24 @@ local function reloadUnit(unit, weaponDBID, resupplyUnitCtx)
 end
 
 ---Execute reload for firing unit
----@param firingUnitCtx SBJ__FiringUnitContext
----@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param firingUnitState SBJ__FiringUnitState
+---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param weaponDBID number|number[]
 ---@param sideName string
 ---@return integer # Total ammunition loaded
-function Ammo.reloadFiringUnit(firingUnitCtx, resupplyUnitCtx, weaponDBID, sideName)
-  local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitCtx.name, sideName)
+function Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, weaponDBID, sideName)
+  local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitState.name, sideName)
   if not firingUnit then return 0 end
   local units = Shared.getGroupUnits(firingUnit)
 
   local totalLoaded = 0
   for _, guid in ipairs(units) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
-    totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitCtx)
+    totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitState)
   end
 
-  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
-  firingUnitCtx.reloadStartTime = nil
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  firingUnitState.reloadStartTime = nil
   return totalLoaded
 end
 
@@ -108,16 +108,16 @@ local function calculatePercentage(current, max)
 end
 
 ---Sum ammunition across all firing units of a missile system by querying live game state
----@param firingUnitMap table<string, SBJ__FiringUnitContext>
+---@param firingUnitMap table<string, SBJ__FiringUnitState>
 ---@param sideName string
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countFiringUnits(firingUnitMap, sideName)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for _, firingCtx in pairs(firingUnitMap) do
-    local firingUnit = GameApi.ScenEdit_GetUnit(firingCtx.name, sideName)
+  for _, firingState in pairs(firingUnitMap) do
+    local firingUnit = GameApi.ScenEdit_GetUnit(firingState.name, sideName)
     if firingUnit then
-      local weaponDBIDs = Shared.normalizeWeaponDBIDs(firingCtx.weaponDBID)
+      local weaponDBIDs = Shared.normalizeWeaponDBIDs(firingState.weaponDBID)
       local units = Shared.getGroupUnits(firingUnit)
       for _, guid in ipairs(units) do
         local unit = GameApi.ScenEdit_GetUnit(guid)
@@ -136,13 +136,13 @@ local function countFiringUnits(firingUnitMap, sideName)
   return subtotal
 end
 
----Sum ammunition across context-tracked units (resupply trucks or ammo depots)
----@param contextMap table<string, SBJ__ResupplyUnitContext|SBJ__AmmunitionContext>
+---Sum ammunition across state-tracked units (resupply trucks or ammo depots)
+---@param stateMap table<string, SBJ__ResupplyUnitState|SBJ__AmmunitionState>
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
-local function countContextUnits(contextMap)
+local function countStateUnits(stateMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for _, ctx in pairs(contextMap) do
+  for _, ctx in pairs(stateMap) do
     subtotal.current = subtotal.current + ctx.weaponCountCurrent
     subtotal.max = subtotal.max + ctx.weaponCountDefault
   end
@@ -152,13 +152,13 @@ local function countContextUnits(contextMap)
 end
 
 ---Calculate ammunition inventory across firing units, resupply units, and ammo depots
----@param systemCtx SBJ__MissileSystemContext
+---@param systemState SBJ__MissileSystemState
 ---@param sideName string
 ---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
-function Ammo.getInventory(systemCtx, sideName)
-  local firing = countFiringUnits(systemCtx.firingUnits, sideName)
-  local resupply = countContextUnits(systemCtx.resupplyUnits)
-  local ammo = countContextUnits(systemCtx.ammunitions)
+function Ammo.getInventory(systemState, sideName)
+  local firing = countFiringUnits(systemState.firingUnits, sideName)
+  local resupply = countStateUnits(systemState.resupplyUnits)
+  local ammo = countStateUnits(systemState.ammunitions)
 
   local total = {
     current = firing.current + resupply.current + ammo.current,

@@ -53,140 +53,140 @@ local function moveUnitToPosition(params)
 end
 
 ---Command unit to move to reload point (RL)
----@param unitCtx SBJ__FiringUnitContext|SBJ__ResupplyUnitContext
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param unit CMO__Unit
 ---@param positions? SBJ__Position[]
 ---@return boolean success
 ---@return table<string, any>? errorFields
-function Movement.moveToReloadPoint(unitCtx, unit, positions)
-  unitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+function Movement.moveToReloadPoint(unitState, unit, positions)
+  unitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
-    unitName = unitCtx.name,
+    unitName = unitState.name,
     firingUnit = unit,
-    positions = positions or unitCtx.operationalArea.RL,
+    positions = positions or unitState.operationalArea.RL,
     positionType = constants.POSITION_TYPES.RELOAD_POINT,
-    areaName = unitCtx.operationalArea.name,
+    areaName = unitState.operationalArea.name,
     wcs = constants.WCS.HOLD
   })
 end
 
 ---Command firing unit to move to hide area (HA)
----@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnitState SBJ__FiringUnitState
 ---@param firingUnit CMO__Unit
 ---@return boolean success
 ---@return table<string, any>? errorFields
-function Movement.moveToHideArea(firingUnitCtx, firingUnit)
-  if not firingUnitCtx.operationalArea.HA then
+function Movement.moveToHideArea(firingUnitState, firingUnit)
+  if not firingUnitState.operationalArea.HA then
     return false, {
       reason = "no_ha_defined",
-      area = firingUnitCtx.operationalArea.name
+      area = firingUnitState.operationalArea.name
     }
   end
 
-  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
-    unitName = firingUnitCtx.name,
+    unitName = firingUnitState.name,
     firingUnit = firingUnit,
-    positions = firingUnitCtx.operationalArea.HA,
+    positions = firingUnitState.operationalArea.HA,
     positionType = constants.POSITION_TYPES.HIDE_AREA,
-    areaName = firingUnitCtx.operationalArea.name,
+    areaName = firingUnitState.operationalArea.name,
     wcs = constants.WCS.HOLD
   })
 end
 
 ---Command resupply unit to move to ammunition holding area (AHA)
----@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param resupplyUnit CMO__Unit
 ---@return boolean success
 ---@return table<string, any>? errorFields
-function Movement.moveToAmmoHoldingArea(resupplyUnitCtx, resupplyUnit)
-  resupplyUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+function Movement.moveToAmmoHoldingArea(resupplyUnitState, resupplyUnit)
+  resupplyUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
-    unitName = resupplyUnitCtx.name,
+    unitName = resupplyUnitState.name,
     firingUnit = resupplyUnit,
-    positions = resupplyUnitCtx.operationalArea.AHA,
+    positions = resupplyUnitState.operationalArea.AHA,
     positionType = constants.POSITION_TYPES.AMMO_HOLDING_AREA,
-    areaName = resupplyUnitCtx.operationalArea.name
+    areaName = resupplyUnitState.operationalArea.name
   })
 end
 
 ---Command resupply unit to move to reload point (RL)
----@param resupplyUnitCtx SBJ__ResupplyUnitContext
+---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param resupplyUnit CMO__Unit
 ---@return boolean success
 ---@return table<string, any>? errorFields
-function Movement.moveResupplyUnitToReloadPoint(resupplyUnitCtx, resupplyUnit)
-  resupplyUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+function Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, resupplyUnit)
+  resupplyUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
-    unitName = resupplyUnitCtx.name,
+    unitName = resupplyUnitState.name,
     firingUnit = resupplyUnit,
-    positions = resupplyUnitCtx.operationalArea.RL,
+    positions = resupplyUnitState.operationalArea.RL,
     positionType = constants.POSITION_TYPES.RELOAD_POINT,
-    areaName = resupplyUnitCtx.operationalArea.name,
+    areaName = resupplyUnitState.operationalArea.name,
     useLastCourse = true
   })
 end
 
 ---Command firing unit to move to firing point (FP)
----@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnitState SBJ__FiringUnitState
 ---@param firingUnit CMO__Unit
 ---@return boolean success
 ---@return table<string, any>? errorFields
-function Movement.moveToFiringPoint(firingUnitCtx, firingUnit)
-  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+function Movement.moveToFiringPoint(firingUnitState, firingUnit)
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
-    unitName = firingUnitCtx.name,
+    unitName = firingUnitState.name,
     firingUnit = firingUnit,
-    positions = firingUnitCtx.operationalArea.FP,
+    positions = firingUnitState.operationalArea.FP,
     positionType = constants.POSITION_TYPES.FIRING_POINT,
-    areaName = firingUnitCtx.operationalArea.name
+    areaName = firingUnitState.operationalArea.name
   })
 end
 
 ---Set firing unit reload start time
----@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnitState SBJ__FiringUnitState
 ---@param firingUnit CMO__Unit
 ---@param isAuto boolean
-function Movement.setReloadStartTime(firingUnitCtx, firingUnit, isAuto)
-  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.RELOAD
-  firingUnitCtx.reloadStartTime = GameApi.ScenEdit_CurrentTime()
+function Movement.setReloadStartTime(firingUnitState, firingUnit, isAuto)
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.RELOAD
+  firingUnitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   Shared.setGroupUnitProperties(firingUnit, function(unit)
     return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
   end)
 end
 
 ---Set firing unit weapon control status to free fire
----@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnitState SBJ__FiringUnitState
 ---@param firingUnit CMO__Unit
 ---@param isAuto boolean
-function Movement.setWCSToFree(firingUnitCtx, firingUnit, isAuto)
-  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
+function Movement.setWCSToFree(firingUnitState, firingUnit, isAuto)
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
   Shared.setGroupUnitProperties(firingUnit, function(unit)
     return Shared.buildModeProperties(isAuto, constants.WCS.FREE)
   end)
 end
 
 ---Set firing unit status to hide
----@param firingUnitCtx SBJ__FiringUnitContext
+---@param firingUnitState SBJ__FiringUnitState
 ---@param firingUnit CMO__Unit
 ---@param isAuto boolean
-function Movement.setStateToHide(firingUnitCtx, firingUnit, isAuto)
-  firingUnitCtx.state = constants.MISSILE_SYSTEM_STATE.HIDE
+function Movement.setStateToHide(firingUnitState, firingUnit, isAuto)
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.HIDE
   Shared.setGroupUnitProperties(firingUnit, function(unit)
     return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
   end)
 end
 
 ---Reset unit state to STATIC and clear reload timer
----@param systemCtx SBJ__MissileSystemContext
+---@param systemState SBJ__MissileSystemState
 ---@param firingUnit CMO__Unit
 ---@param isAuto boolean
-function Movement.setStateToStatic(systemCtx, firingUnit, isAuto)
-  local unitCtx = systemCtx.firingUnits[firingUnit.name] or systemCtx.resupplyUnits[firingUnit.name]
+function Movement.setStateToStatic(systemState, firingUnit, isAuto)
+  local unitState = systemState.firingUnits[firingUnit.name] or systemState.resupplyUnits[firingUnit.name]
 
-  if unitCtx then
-    unitCtx.state = constants.MISSILE_SYSTEM_STATE.STATIC
-    unitCtx.reloadStartTime = nil
+  if unitState then
+    unitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+    unitState.reloadStartTime = nil
     Shared.setGroupUnitProperties(firingUnit, function(unit)
       return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
     end)
@@ -194,16 +194,16 @@ function Movement.setStateToStatic(systemCtx, firingUnit, isAuto)
 end
 
 ---Check if firing unit is currently repositioning
----@param firingUnitCtx SBJ__FiringUnitContext|nil
+---@param firingUnitState SBJ__FiringUnitState|nil
 ---@param isAuto boolean
 ---@return boolean # Whether the unit is repositioning
-function Movement.isRepositioning(firingUnitCtx, isAuto)
-  if not firingUnitCtx then
+function Movement.isRepositioning(firingUnitState, isAuto)
+  if not firingUnitState then
     return false
   end
 
   if isAuto then
-    return firingUnitCtx.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+    return firingUnitState.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   end
 
   return true

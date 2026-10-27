@@ -78,14 +78,14 @@ end
 
 ---China recon slice
 ---@param state SBJ__SaveData
----@return SBJ__ReconContext
+---@return SBJ__ReconState
 function PersistentState.recon(state)
   return state.red.recon
 end
 
 ---China CSG land-attack cruise missile slice
 ---@param state SBJ__SaveData
----@return SBJ__LACMContext
+---@return SBJ__LACMState
 function PersistentState.lacm(state)
   return state.red.surface.lacm
 end
@@ -93,7 +93,7 @@ end
 ---Runway repair slice for a side
 ---@param state SBJ__SaveData
 ---@param sideName string
----@return SBJ__RunwayRepairmentContext
+---@return SBJ__RunwayRepairmentState
 function PersistentState.runwayRepair(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].repairRunway
 end
@@ -101,7 +101,7 @@ end
 ---Aircraft slice (AC and AEW) for a side
 ---@param state SBJ__SaveData
 ---@param sideName string
----@return SBJ__AircraftSliceContext
+---@return SBJ__AircraftSliceState
 function PersistentState.aircraft(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].air
 end
@@ -109,7 +109,7 @@ end
 ---Ground force (missile system) slice for a side
 ---@param state SBJ__SaveData
 ---@param sideName string
----@return SBJ__GroundContext|SBJ__StrikingGroundContext
+---@return SBJ__GroundState|SBJ__StrikingGroundState
 function PersistentState.ground(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].ground
 end
@@ -117,15 +117,15 @@ end
 ---SIGINT slice for a collecting side
 ---@param state SBJ__SaveData
 ---@param sideName string
----@return SBJ__SIGINTContext
+---@return SBJ__SIGINTState
 function PersistentState.sigint(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].sigint
 end
 
----Enemy unit context groups a SIGINT collector monitors
+---Enemy unit state groups a SIGINT collector monitors
 ---@param state SBJ__SaveData
 ---@param collectorSide string
----@return table<string, SBJ__FiringUnitContext|SBJ__C2Context>[]
+---@return table<string, SBJ__FiringUnitState|SBJ__C2State>[]
 function PersistentState.sigintEmitters(state, collectorSide)
   local targets = SIGINT_TARGETS[collectorSide]
   local enemy = state[GameUtils.getCachedSideConfig(targets.side).field]
@@ -144,7 +144,7 @@ end
 ---IADS slice for a side
 ---@param state SBJ__SaveData
 ---@param sideName string
----@return SBJ__IADSContext
+---@return SBJ__IADSState
 function PersistentState.iads(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].iads
 end

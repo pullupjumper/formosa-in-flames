@@ -66,10 +66,10 @@ describe("FrontlineRedirect", function()
     return cfg
   end
 
-  ---Create a minimal recon context.
+  ---Create a minimal recon state.
   ---@param overrides? table
-  ---@return SBJ__ReconContext
-  local function makeReconContext(overrides)
+  ---@return SBJ__ReconState
+  local function makeReconState(overrides)
     local ctx = { queue = {}, frontlineRedirected = false }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
@@ -92,7 +92,7 @@ describe("FrontlineRedirect", function()
         attritionPct = 100,
       }))
 
-      local isRedirected, message = FrontlineRedirect.evaluate(cfg, makeReconContext())
+      local isRedirected, message = FrontlineRedirect.evaluate(cfg, makeReconState())
 
       assert.is_false(isRedirected)
       assert.is_nil(message)
@@ -102,7 +102,7 @@ describe("FrontlineRedirect", function()
     -- Negative: attrition below threshold keeps the sticky flag false.
     it("should keep redirect inactive when attrition is below threshold", function()
       local cfg = makeConfig({ attritionThresholdPct = 50 })
-      local reconCtx = makeReconContext()
+      local reconState = makeReconState()
       trackStub(stub(AirbaseAttrition, "calculate").returns({
         expectedTotal = 4,
         currentTotal = 4,
@@ -110,17 +110,17 @@ describe("FrontlineRedirect", function()
         attritionPct = 0,
       }))
 
-      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconCtx)
+      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconState)
 
       assert.is_false(isRedirected)
       assert.is_nil(message)
-      assert.is_false(reconCtx.frontlineRedirected)
+      assert.is_false(reconState.frontlineRedirected)
     end)
 
     -- Positive: threshold breach activates the sticky flag.
     it("should set sticky flag and return activation message when attrition reaches threshold", function()
       local cfg = makeConfig({ attritionThresholdPct = 50 })
-      local reconCtx = makeReconContext()
+      local reconState = makeReconState()
       trackStub(stub(AirbaseAttrition, "calculate").returns({
         expectedTotal = 4,
         currentTotal = 0,
@@ -128,9 +128,9 @@ describe("FrontlineRedirect", function()
         attritionPct = 100,
       }))
 
-      local isRedirected, activationFields = FrontlineRedirect.evaluate(cfg, reconCtx)
+      local isRedirected, activationFields = FrontlineRedirect.evaluate(cfg, reconState)
       assert.is_true(isRedirected)
-      assert.is_true(reconCtx.frontlineRedirected)
+      assert.is_true(reconState.frontlineRedirected)
       assert.are.equal("attrition_threshold_reached", activationFields.reason)
       assert.are.equal("100.0", activationFields.attritionPct)
     end)
@@ -138,7 +138,7 @@ describe("FrontlineRedirect", function()
     -- Positive: sticky flag skips recomputing attrition.
     it("should skip attrition recompute when sticky flag is already true", function()
       local cfg = makeConfig()
-      local reconCtx = makeReconContext({ frontlineRedirected = true })
+      local reconState = makeReconState({ frontlineRedirected = true })
       local calculateStub = trackStub(stub(AirbaseAttrition, "calculate").returns({
         expectedTotal = 4,
         currentTotal = 4,
@@ -146,7 +146,7 @@ describe("FrontlineRedirect", function()
         attritionPct = 0,
       }))
 
-      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconCtx)
+      local isRedirected, message = FrontlineRedirect.evaluate(cfg, reconState)
 
       assert.is_true(isRedirected)
       assert.is_nil(message)
@@ -168,7 +168,7 @@ describe("FrontlineRedirect", function()
         { name = "AIR/STRIKE/AB/W/1", type = "ground" },
       }
 
-      local result = FrontlineRedirect.updateMappings(cfg, makeReconContext({ frontlineRedirected = true }), mappings)
+      local result = FrontlineRedirect.updateMappings(cfg, makeReconState({ frontlineRedirected = true }), mappings)
 
       assert.are.equal("AIR/STRIKE/AB/W/AAR/1", result[1].name)
       assert.are.equal("AIR/STRIKE/AB/E/1", result[2].name)
@@ -181,7 +181,7 @@ describe("FrontlineRedirect", function()
       local cfg = makeConfig()
       local mappings = { { name = "AIR/STRIKE/AB/W/1", type = "air" } }
 
-      local result = FrontlineRedirect.updateMappings(cfg, makeReconContext(), mappings)
+      local result = FrontlineRedirect.updateMappings(cfg, makeReconState(), mappings)
 
       assert.are.equal(mappings, result)
       assert.are.equal("AIR/STRIKE/AB/W/1", result[1].name)

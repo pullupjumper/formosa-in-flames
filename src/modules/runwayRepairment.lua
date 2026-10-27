@@ -53,10 +53,10 @@ end
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
 function RunwayRepairment.processRunwayDamage(saveData, unit)
-  local repairCtx = PersistentState.runwayRepair(saveData, unit.side)
-  repairCtx.enabled = true
+  local repairState = PersistentState.runwayRepair(saveData, unit.side)
+  repairState.enabled = true
 
-  for _, runway in ipairs(repairCtx.runways) do
+  for _, runway in ipairs(repairState.runways) do
     if unit.guid == runway.guid and runway.startTime == nil then
       runway.startTime = GameApi.ScenEdit_CurrentTime()
     end

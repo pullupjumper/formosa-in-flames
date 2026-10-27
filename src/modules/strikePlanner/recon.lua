@@ -129,11 +129,11 @@ end
 ---Release a WZ-8 from an H-6N flying a recon entry and hand the entry over to it
 ---Only the unsettled entry is matched: a settled entry may still hold this airframe's
 ---GUID from an earlier sortie whose WZ-8 release failed.
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@return CMO__Unit|nil # The launched WZ-8, or nil when no entry is flying this H-6N or the launch failed
-function Recon.launchWZ8(reconCtx, h6n)
-  for _, entry in ipairs(reconCtx.queue) do
+function Recon.launchWZ8(reconState, h6n)
+  for _, entry in ipairs(reconState.queue) do
     if entry.type == ENTRY_TYPE.UAV and entry.unitGUID == h6n.guid and not entry.isFinished then
       local wz8 = createWZ8(h6n, constants.COURSES.WZ8)
 
@@ -451,11 +451,11 @@ end
 ---@param processingCtx SBJ__ReconQueueProcessingContext
 function Recon.processQueue(processingCtx)
   local config = processingCtx.config
-  local reconCtx = processingCtx.reconCtx
+  local reconState = processingCtx.reconState
 
   -- Evaluated every tick so a quiet queue still activates the rewrite in time; the
   -- activation row is emitted here so processQueue owns all log output.
-  local _, activationFields = FrontlineRedirect.evaluate(config, reconCtx)
+  local _, activationFields = FrontlineRedirect.evaluate(config, reconState)
   if activationFields then
     Logger.log(constants.TAGS.RECON,
       LogFormat.line("RESUME", LogFormat.merge({ scope = "frontlineRedirect" }, activationFields)))
@@ -463,7 +463,7 @@ function Recon.processQueue(processingCtx)
 
   local report = LogFormat.report(constants.TAGS.RECON, "reconQueue", "Process queue")
 
-  for _, entry in ipairs(reconCtx.queue) do
+  for _, entry in ipairs(reconState.queue) do
     local result
 
     if entry.type == ENTRY_TYPE.UAV then
@@ -484,13 +484,13 @@ end
 ---Assign UAV to track a specific target contact
 ---Finds available UAV of specified type and assigns it to shadow the target
 ---Callers must skip targets that are already tracked (see isTargetAlreadyTracked).
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param sideUnits CMO__SideUnit[]
 ---@param uavDBID number
 ---@param target CMO__Contact
 ---@return boolean # True if UAV was assigned to track target, false otherwise
-local function trackTarget(reconCtx, sideUnits, uavDBID, target)
-  local uav = findClosestUAV(reconCtx.queue, sideUnits, uavDBID, target)
+local function trackTarget(reconState, sideUnits, uavDBID, target)
+  local uav = findClosestUAV(reconState.queue, sideUnits, uavDBID, target)
   if not uav then
     Logger.log(constants.TAGS.RECON, LogFormat.line("SKIP", {
       scope = "targetTracking",
@@ -501,7 +501,7 @@ local function trackTarget(reconCtx, sideUnits, uavDBID, target)
     return false
   end
 
-  local queueEntry = findQueueEntryByUnitGUID(reconCtx.queue, uav.guid)
+  local queueEntry = findQueueEntryByUnitGUID(reconState.queue, uav.guid)
   if not queueEntry then
     Logger.error(LogFormat.line("FAIL", {
       module = constants.TAGS.RECON,
@@ -528,12 +528,12 @@ end
 ---Each target is checked against the queue before the side sweep, and the sweep runs at most
 ---once per call: the atoBuilder observation window re-evaluates targets every tick, so an
 ---already-shadowed target must cost nothing.
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param requests SBJ__TrackingRequestEntry[]
-function Recon.trackTargets(reconCtx, requests)
+function Recon.trackTargets(reconState, requests)
   local aircraft
   for _, request in ipairs(requests) do
-    if not isTargetAlreadyTracked(reconCtx.queue, request.target.guid) then
+    if not isTargetAlreadyTracked(reconState.queue, request.target.guid) then
       if aircraft == nil then
         local side = GameApi.VP_GetSide({ side = constants.SIDES.RED })
         aircraft = side and side:unitsBy(constants.UNIT_TYPES.AIRCRAFT) or false
@@ -542,7 +542,7 @@ function Recon.trackTargets(reconCtx, requests)
         return
       end
 
-      trackTarget(reconCtx, aircraft, request.platformDBID, request.target)
+      trackTarget(reconState, aircraft, request.platformDBID, request.target)
     end
   end
 end
@@ -550,8 +550,8 @@ end
 ---Turn the configured queue plans into runtime entries
 ---Deep-copied so the config table stays pristine across scenario reloads.
 ---@param reconConfig SBJ__ReconConfig
----@param reconCtx SBJ__ReconContext
-function Recon.initQueue(reconConfig, reconCtx)
+---@param reconState SBJ__ReconState
+function Recon.initQueue(reconConfig, reconState)
   local entries = Utils.deepCopy(reconConfig.queue)
 
   for _, entry in ipairs(entries) do
@@ -566,22 +566,22 @@ function Recon.initQueue(reconConfig, reconCtx)
     end
   end
 
-  reconCtx.queue = entries
+  reconState.queue = entries
 end
 
 ---Locate the queue entries bracketing current time by endTime
 ---Scans the reconnaissance queue for the entry whose endTime most recently passed and the next upcoming one.
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@return SBJ__ReconQueueEntry|nil mostRecentEntry Entry with the latest endTime at or before current time
 ---@return SBJ__ReconQueueEntry|nil nextEntry Entry with the earliest endTime after current time
-local function findSatellitePassWindow(reconCtx)
+local function findSatellitePassWindow(reconState)
   local currentTimestamp = GameApi.ScenEdit_CurrentTime()
   local mostRecentEntry = nil
   local mostRecentTimestamp = -1
   local nextEntry = nil
   local nextTimestamp = math.huge
 
-  for _, entry in ipairs(reconCtx.queue) do
+  for _, entry in ipairs(reconState.queue) do
     -- Only satellite passes anchor the gap window. Dynamically inserted UAVs (and SIGINT
     -- entries) must be excluded, or a prior UAV would skew the boundary and let duplicates in.
     if entry.type == ENTRY_TYPE.SATELLITE then
@@ -603,17 +603,17 @@ end
 
 ---Find an unfinished UAV entry from the same template already covering the time window
 ---The window spans (mostRecentEntry.endTime, nextEntry.endTime]; both takeoffTime and endTime must fall within it.
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param templateId string
 ---@param mostRecentEntry SBJ__ReconQueueEntry|nil Entry bounding the window start (nil treats start as unbounded)
 ---@param nextEntry SBJ__ReconQueueEntry
 ---@return SBJ__ReconQueueEntry|nil entry Matching UAV entry or nil if none covers the window
-local function findMatchingUAVEntry(reconCtx, templateId, mostRecentEntry, nextEntry)
+local function findMatchingUAVEntry(reconState, templateId, mostRecentEntry, nextEntry)
   -- Window bounds are loop invariants and parseDatetimeToTimestamp is not cheap.
   local mostRecentTimestamp = mostRecentEntry and Utils.parseDatetimeToTimestamp(mostRecentEntry.endTime) or -1
   local nextTimestamp = Utils.parseDatetimeToTimestamp(nextEntry.endTime)
 
-  for _, entry in ipairs(reconCtx.queue) do
+  for _, entry in ipairs(reconState.queue) do
     if not entry.isFinished and entry.type == ENTRY_TYPE.UAV
         and entry.templateId == templateId then
       local takeoffTimestamp = Utils.parseDatetimeToTimestamp(entry.takeoffTime)
@@ -633,23 +633,23 @@ end
 
 ---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
 ---Skips insertion when a matching UAV already exists, or when the flight would end after the next scheduled endTime.
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param entryTemplate SBJ__ReconUAVTemplate
 ---@param startTime string|nil Timestamp or datetime string for the start time of the entry
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
-function Recon.addEntry(reconCtx, entryTemplate, startTime)
+function Recon.addEntry(reconState, entryTemplate, startTime)
   local entry = Utils.deepCopy(entryTemplate)
   ---@cast entry SBJ__ReconUAVEntry
   local _, flightTime = GameUtils.calculatePathDistanceAndTime(entry.course, entry.speed)
   local startTimestamp = startTime and Utils.parseDatetimeToTimestamp(startTime) or GameApi.ScenEdit_CurrentTime()
   local endTime = startTimestamp + flightTime
-  local mostRecentEntry, nextEntry = findSatellitePassWindow(reconCtx)
+  local mostRecentEntry, nextEntry = findSatellitePassWindow(reconState)
 
   if not nextEntry then
     return nil
   end
 
-  local matchingUAVEntry = findMatchingUAVEntry(reconCtx, entryTemplate.templateId, mostRecentEntry,
+  local matchingUAVEntry = findMatchingUAVEntry(reconState, entryTemplate.templateId, mostRecentEntry,
     nextEntry)
 
   if not matchingUAVEntry then
@@ -662,7 +662,7 @@ function Recon.addEntry(reconCtx, entryTemplate, startTime)
       entry.isFinished = false
       entry.hasScheduledOperations = false
       entry.trackingTargetGUID = nil
-      table.insert(reconCtx.queue, entry)
+      table.insert(reconState.queue, entry)
       return entry
     end
   end

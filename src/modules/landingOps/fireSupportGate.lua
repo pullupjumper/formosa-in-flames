@@ -16,7 +16,7 @@ local ARRIVED_PHASES = {
 
 ---Check whether all configured operational zones have reached staging waters
 ---@param config SBJ__Config
----@param amphibOps SBJ__AmphibOpsContext
+---@param amphibOps SBJ__AmphibOpsState
 ---@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
 local function hasAllZonesArrived(config, amphibOps)
   for _, zone in ipairs(config.red.amphibOps.zones) do

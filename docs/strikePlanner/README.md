@@ -79,8 +79,8 @@ Strike Planner 是 China side 的聯合打擊規劃系統，模擬從偵察到�
 |---|---|---|
 | `init(config, plannerState)` | —（自身協調） | `src/core/init.lua` 開局初始化 |
 | `process(config, plannerState, contacts)` | —（自身協調） | `src/scripts/china/scheduledStrikePlanner.lua` |
-| `launchWZ8(reconCtx, h6n)` | [`Recon.launchWZ8`](recon.md) | `src/scripts/china/launchWZ8.lua` |
-| `addReconEntry(reconCtx, entryTemplate, startTime?)` | [`Recon.addEntry`](recon.md) | [landingOps/coordinator](../landingOps/coordinator.md) 各區 `air.reconTemplate` 設定 |
+| `launchWZ8(reconState, h6n)` | [`Recon.launchWZ8`](recon.md) | `src/scripts/china/launchWZ8.lua` |
+| `addReconEntry(reconState, entryTemplate, startTime?)` | [`Recon.addEntry`](recon.md) | [landingOps/coordinator](../landingOps/coordinator.md) 各區 `air.reconTemplate` 設定 |
 | `filterTargetsByTypeAndBase(targetlist, queryParams)` | [`TargetingProcess.filterTargetsByTypeAndBase`](targetingProcess.md) | `src/modules/runwayRepairment.lua` |
 
 ---

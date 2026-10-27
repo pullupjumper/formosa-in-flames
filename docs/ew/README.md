@@ -116,7 +116,7 @@ flowchart LR
 
 ```
 saveData.red.commsJamming
-└── jammers: table<string, SBJ__AircraftContext>
+└── jammers: table<string, SBJ__AircraftState>
     └── AircraftContext
         ├── guid / OODA
         ├── commsLevel / commsBase
@@ -124,15 +124,15 @@ saveData.red.commsJamming
         └── outofcomms: number
 
 saveData.blue.iads (作用目標)
-├── rocc: table<string, SBJ__C2Context>
+├── rocc: table<string, SBJ__C2State>
 │   └── C2Context
-│       ├── sam: table<string, SBJ__RadarContext>
-│       └── radar: table<string, SBJ__RadarContext>
-└── taaoc: table<string, SBJ__C2Context>
+│       ├── sam: table<string, SBJ__RadarState>
+│       └── radar: table<string, SBJ__RadarState>
+└── taaoc: table<string, SBJ__C2State>
     └── C2Context
-        └── sam: table<string, SBJ__RadarContext>
+        └── sam: table<string, SBJ__RadarState>
 
-SBJ__RadarContext (被干擾目標)
+SBJ__RadarState (被干擾目標)
 ├── guid / name
 ├── isOutOfComms: boolean
 └── outofcomms: number (狀態計數器)
@@ -155,7 +155,7 @@ config.*.gnssJamming
 
 ```
 saveData.*.sigint
-├── reconAircraft: table<string, SBJ__AircraftContext>
+├── reconAircraft: table<string, SBJ__AircraftState>
 │   └── AircraftContext
 │       ├── guid / OODA
 │       ├── commsLevel / commsBase

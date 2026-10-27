@@ -20,12 +20,12 @@ CMO 沒有「把地面單位塞進建築」的原生操作，`cargoProxy.lua` �
 
 ## 主要機制
 
-`loadCargo(base, unitCtx, sideName)` 的流程：
+`loadCargo(base, unitState, sideName)` 的流程：
 
-1. 依 `unitCtx.name` 取得來源單位，並展開 group member 清單（無 group 時只處理自身）
+1. 依 `unitState.name` 取得來源單位，並展開 group member 清單（無 group 時只處理自身）
 2. 透過 `createCargoProxy` 在目標載具或建築物上建立對應 cargo proxy
 3. 對 cargo proxy 執行 `stripCargoProxyMounts`：清空彈匣並移除原有 mounts
-4. 將來源單位的 mounts 複製到 cargo proxy（`countWeaponsAndCloneMounts`），並根據 `unitCtx.weaponDBID` 統計需要保留的武器數量
+4. 將來源單位的 mounts 複製到 cargo proxy（`countWeaponsAndCloneMounts`），並根據 `unitState.weaponDBID` 統計需要保留的武器數量
 5. 執行 `updateWeaponReloads`：先清除 cargo proxy 現有 mount weapon 的 reload，再依統計結果回填實際彈量
 6. 複製群組名稱與單位名稱後，刪除原始來源單位
 
@@ -49,7 +49,7 @@ flowchart TD
 | 步驟 | 行為 |
 |---|---|
 | 清除既有 reload | 掃描 cargo proxy 目前 `mounts[].mount_weapons[]`，若 `wpn_default > 0` 則以 `remove = true` 清除 reload |
-| 回填目標 reload | 僅針對 `unitCtx.weaponDBID` 指定的武器，依來源單位實際 `wpn_current` 回填數量 |
+| 回填目標 reload | 僅針對 `unitState.weaponDBID` 指定的武器，依來源單位實際 `wpn_current` 回填數量 |
 
 這表示 `weaponDBID` 控制的是「哪些武器要保留並回填」，而不是「哪些武器要先被清除」。
 
@@ -59,7 +59,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `loadCargo` | `base, unitCtx, sideName` | `nil` | 將地面單位（含 group）轉為 cargo proxy 並載入目標載具或建築物；`unitCtx` 為 `SBJ__FiringUnitContext` 或 `SBJ__ResupplyUnitContext` |
+| `loadCargo` | `base, unitState, sideName` | `nil` | 將地面單位（含 group）轉為 cargo proxy 並載入目標載具或建築物；`unitState` 為 `SBJ__FiringUnitState` 或 `SBJ__ResupplyUnitState` |
 
 ---
 
@@ -78,7 +78,7 @@ flowchart TD
 | `unit_not_found` | `SKIP` | group member GUID 查不到單位 |
 | `cargo_proxy_creation_failed` | `FAIL` | `add_cargo` 後在目標上取不到對應 cargo 單位 |
 
-來源單位本身（`unitCtx.name`）查不到時直接 return，不輸出 report。
+來源單位本身（`unitState.name`）查不到時直接 return，不輸出 report。
 
 ---
 

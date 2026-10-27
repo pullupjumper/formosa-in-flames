@@ -41,7 +41,7 @@ describe("RunwayRepairment", function()
     }
   end
 
-  ---Create save data holding the target list and both sides' runway repair contexts
+  ---Create save data holding the target list and both sides' runway repair states
   ---@param overrides {targetlist?: table[], redRepair?: table, blueRepair?: table}|nil
   ---@return table
   local function makeSaveData(overrides)

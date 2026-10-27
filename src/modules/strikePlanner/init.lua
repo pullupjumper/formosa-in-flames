@@ -51,9 +51,9 @@ local function processRecon(config, plannerState)
 
   Recon.processQueue({
     config = config,
-    reconCtx = plannerState.recon,
+    reconState = plannerState.recon,
     reconTriggeredOperationBatches = plannerState.dynamicOperations.reconTriggeredOperationBatches,
-    lacmCtx = plannerState.lacm,
+    lacmState = plannerState.lacm,
     fireSupportOnHold = plannerState.fireSupportOnHold
   })
 
@@ -66,13 +66,13 @@ end
 ---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 local function launchLACMSalvo(config, plannerState)
-  local lacmCtx = plannerState.lacm
+  local lacmState = plannerState.lacm
 
   -- lacm.enabled is sticky once the CSG reaches station, so hasLaunched is what
   -- keeps the salvo one-shot. Strike scheduling reads enabled to tell whether the
   -- LACM element is committed at all.
-  if not lacmCtx.enabled
-      or lacmCtx.hasLaunched
+  if not lacmState.enabled
+      or lacmState.hasLaunched
       or not GameUtils.isAfterStartTime(config.red.triggers.launchLACM.startTime) then
     return
   end
@@ -92,16 +92,16 @@ local function launchLACMSalvo(config, plannerState)
     firingUnits = ships,
     weaponDBID = config.red.surface.lacm.weaponDBID
   })
-  lacmCtx.hasLaunched = true
+  lacmState.hasLaunched = true
 end
 
 ---Surface the SLCM submarines to launch depth and fire the one-shot salvo
 ---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 local function launchSLCMSalvo(config, plannerState)
-  local slcmCtx = plannerState.slcm
+  local slcmState = plannerState.slcm
 
-  if not slcmCtx.enabled or not GameUtils.isAfterStartTime(config.red.triggers.launchSLCM.startTime) then
+  if not slcmState.enabled or not GameUtils.isAfterStartTime(config.red.triggers.launchSLCM.startTime) then
     return
   end
 
@@ -125,7 +125,7 @@ local function launchSLCMSalvo(config, plannerState)
     weaponDBID = config.red.subSurface.slcm.weaponDBID
   })
 
-  slcmCtx.enabled = false
+  slcmState.enabled = false
 end
 
 ---Advance active FSPs and ATO waves, including any inserted earlier this tick
@@ -162,20 +162,20 @@ function StrikePlanner.process(config, saveData)
 end
 
 ---Release a WZ-8 from an H-6N flying a recon entry and hand the entry over to it
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param h6n CMO__Unit The H-6N bomber unit to launch from
 ---@return CMO__Unit|nil # The launched WZ-8, or nil when no entry is flying this H-6N or the launch failed
-function StrikePlanner.launchWZ8(reconCtx, h6n)
-  return Recon.launchWZ8(reconCtx, h6n)
+function StrikePlanner.launchWZ8(reconState, h6n)
+  return Recon.launchWZ8(reconState, h6n)
 end
 
 ---Insert a UAV reconnaissance entry from a template if no equivalent entry covers the window
----@param reconCtx SBJ__ReconContext
+---@param reconState SBJ__ReconState
 ---@param entryTemplate SBJ__ReconUAVTemplate
 ---@param startTime string|nil Timestamp or datetime string for the start time of the entry
 ---@return SBJ__ReconUAVEntry|nil # The inserted entry, or nil if no entry was inserted
-function StrikePlanner.addReconEntry(reconCtx, entryTemplate, startTime)
-  return Recon.addEntry(reconCtx, entryTemplate, startTime)
+function StrikePlanner.addReconEntry(reconState, entryTemplate, startTime)
+  return Recon.addEntry(reconState, entryTemplate, startTime)
 end
 
 ---Filter targets by type and base name

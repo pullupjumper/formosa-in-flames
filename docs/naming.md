@@ -1,7 +1,7 @@
 # 命名規範（`src/`）
 
 `src/` 下 Lua 程式碼的命名規則。新增或修改程式碼時照這份寫。
-`htmls-app/` 前端另見 `htmls-app/CLAUDE-FRONTEND.md`。
+`htmls-app/` 前端另見 `docs/frontend.md`。
 
 ## 1. 檔名
 
@@ -101,7 +101,8 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | 區域 | `zone` / `area` |
 | 目前時間（秒） | `currentTime` |
 | 布林旗標 | `isXxx` |
-| context 物件 | `xxxCtx`（型別名用全名 `SBJ__XxxContext`） |
+| 一輪內共用的 context 物件 | `xxxCtx`（型別名用全名 `SBJ__XxxContext`） |
+| 存進 `saveData` 的狀態物件 | `xxxState`（型別名用全名 `SBJ__XxxState`），不用 `xxxCtx` |
 
 ### 參數數量與順序
 
@@ -119,7 +120,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 
 - 只准四種包裝名：`params`（必填）、`opts`（選填）、`ctx`（一輪共用）、`state`（會被改寫）。不准 `xxxSpec`、`xxxRef`、`xxxFields`、`xxxCfg`。
 - 一個函式最多一個 `params`。第二包要換成有意義的名詞（`unit`、`target`、`pos`）。
-- 只有 `ctx` 可以加前綴表示屬於誰（`firingCtx`）。`params`、`opts`、`state` 不加前綴。
+- 只有 `ctx` 和 `state` 可以加前綴表示屬於誰（`passCtx`、`firingUnitState`）。`params`、`opts` 不加前綴。
 - 不縮寫：`Cfg` 寫成 `config` 或 `systemConfig`。
 - 型別名跟函式走：`SBJ__<函式名>Params`。多個函式共用才用領域名。
 - `---@param` 不寫 inline `{a: x, b: y}`，超過 2 欄位就開 `---@class`。
@@ -136,8 +137,8 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `Config` | `config.lua` 裡的設定區塊，開局後不變 | `SBJ__ReconConfig`、`SBJ__AirfieldPatternConfig` |
 | `Descriptor` | config 裡「描述要建什麼」的一筆 | `SBJ__SAGDescriptor`、`SBJ__ReconUAVDescriptor` |
 | `Template` | config 裡可被實例化的樣板 | `SBJ__PackageTemplate` |
-| `Context` | 執行期傳遞的 context 物件 | `SBJ__ReconContext` |
-| `State` | 存進 `saveData`、會被改寫 | `SBJ__ReconRunState` |
+| `Context` | 一輪或一次呼叫內共用、不存檔的 context 物件 | `SBJ__LandingTickContext`、`SBJ__CycleRunContext` |
+| `State` | 存進 `saveData`、會被改寫（含 `saveData` 底下的子系統資料） | `SBJ__ReconState`、`SBJ__IADSState`、`SBJ__ReconRunState` |
 | `Params` | 必填輸入 table | `SBJ__AreaParams` |
 | `Opts` | 選填輸入 table | `SBJ__SetUnitPropertiesOpts` |
 | `Result` | 函式回傳結果 | `SBJ__LogResult`、`SBJ__AirbaseAttritionResult` |

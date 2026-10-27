@@ -264,14 +264,14 @@ local function buildOperationsForReconObjective(processingCtx, reconEntry)
 
   strikeMappings = FrontlineRedirect.updateMappings(
     processingCtx.config,
-    processingCtx.reconCtx,
+    processingCtx.reconState,
     strikeMappings
   )
 
   for _, strikeMapping in ipairs(strikeMappings) do
     -- Sits at mapping level, not inside the builder, so the first wave and every
     -- follow-on wave share one LACM check.
-    if strikeMapping.requiresLACM and not processingCtx.lacmCtx.enabled then
+    if strikeMapping.requiresLACM and not processingCtx.lacmState.enabled then
       table.insert(results, {
         tag = "SKIP",
         fields = {
