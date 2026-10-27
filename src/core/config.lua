@@ -5881,7 +5881,7 @@ config.blue.air.deployedACs = {
         platformName = "Chung Shyang II",
         name = "1st Maritime Tactical Recon Sqn",
         loadouts = {
-          { name = "Reconnaissance", loadoutId = constants.LOADOUTS.CHUNG_SHYANG_II_RECON, num = 3, missionName = "RECON/3" },
+          { name = "Reconnaissance", loadoutId = constants.LOADOUTS.CHUNG_SHYANG_II_RECON, num = 3 },
         }
       }
     }
