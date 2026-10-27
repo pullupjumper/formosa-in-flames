@@ -124,7 +124,7 @@ export function ControlDeploymentTab({
           <C2NodesSection
             nodes={c2.nodes}
             isSamWeaponsFree={c2.isAllSamWeaponsFree}
-            onIsSamWeaponsFreeChange={c2.setSamWeaponsFreeChoice}
+            onSamWeaponsFreeChange={c2.setSamWeaponsFreeChoice}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}
