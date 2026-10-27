@@ -68,7 +68,7 @@ local function createC2NodeDataString(saveData, sideName, types)
               isOutOfComms = SAMCtx.isOutOfComms,
               EMCONSetting = SAMCtx.EMCONSetting,
               isDestroyed = false,
-              weaponFree = doctrine.weapon_control_status_air == constants.WCS.HOLD and false or true,
+              weaponFree = doctrine.weapon_control_status_air ~= constants.WCS.HOLD,
               pos = { latitude = unit.latitude, longitude = unit.longitude }
             }
 

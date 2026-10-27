@@ -7,6 +7,8 @@ local UnitGenerator = require("src.modules.unitGenerator")
 local CommsJamming = require("src.modules.ew.commsJamming")
 local MissileSystem = require("src.modules.missileSystem.init")
 local LandingOps = require("src.modules.landingOps.init")
+local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSystem")
+local gKH = require("src.core.gKH_State_Standalone")
 local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
@@ -190,6 +192,30 @@ describe("UnitStatusUI", function()
       assert.stub(sagStub).was_not.called()
     end)
 
+    it("should hand the submitted C2 nodes to the IADS of the side", function()
+      local reassignStub = trackStub(stub(IntegratedAirDefenseSystem, "reassignSamUnits"))
+      submit({
+        summaryData = AIRCRAFT_FORM.summaryData,
+        emconData = "'{\"c2Nodes\":[{\"guid\":\"C2-1\",\"type\":\"rocc\",\"name\":\"ROCC-1\",\"sam\":{}}]}'",
+      })
+
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+      assert.stub(reassignStub).was.called_with(
+        saveData.blue.iads,
+        { { guid = "C2-1", type = "rocc", name = "ROCC-1", sam = {} } }
+      )
+    end)
+
+    it("should leave the IADS alone when the submission has no C2 nodes", function()
+      local reassignStub = trackStub(stub(IntegratedAirDefenseSystem, "reassignSamUnits"))
+      submit({ summaryData = AIRCRAFT_FORM.summaryData, emconData = "'{\"c2Nodes\":[]}'" })
+
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+      assert.stub(reassignStub).was_not.called()
+    end)
+
     -- Negative: dismissing the dialog neither applies nor locks
     it("should neither apply nor lock when the dialog is dismissed", function()
       dialogStub.returns({})
@@ -198,6 +224,140 @@ describe("UnitStatusUI", function()
 
       assert.stub(addAircraftStub).was_not.called()
       assert.is_not_true(saveData.blue.deploymentLocked)
+    end)
+
+    describe("C2 node payload", function()
+      local stringifySpy
+
+      ---@param guid string
+      ---@param latitude number
+      ---@return table
+      local function buildUnit(guid, latitude)
+        return { guid = guid, latitude = latitude, longitude = 121.5 }
+      end
+
+      ---Find the payload the page receives for the C2 nodes: the table keyed by C2 node guid
+      ---@param guid string
+      ---@return table|nil
+      local function findC2Payload(guid)
+        for _, call in ipairs(stringifySpy.calls) do
+          local payload = call.vals[1]
+          if type(payload) == "table" and payload[guid] then
+            return payload
+          end
+        end
+        return nil
+      end
+
+      before_each(function()
+        stringifySpy = trackStub(spy.on(gKH.json, "stringify"))
+        saveData.blue.iads = {
+          rocc = {
+            {
+              guid = "C2-1",
+              name = "ROCC-1",
+              areas = { { "RP-1", "RP-2", "RP-3" } },
+              sam = {
+                ["SAM-1"] = {
+                  guid = "SAM-1",
+                  name = "SAM-1",
+                  currOODA = { detection = 1, targeting = 2 },
+                  OODA = { detection = 3, targeting = 4 },
+                  isOutOfComms = false,
+                  EMCONSetting = "Green",
+                },
+                ["SAM-GONE"] = {
+                  guid = "SAM-GONE",
+                  name = "SAM-GONE",
+                  currOODA = { detection = 1, targeting = 2 },
+                  OODA = { detection = 3, targeting = 4 },
+                },
+              },
+              radar = {
+                ["RAD-1"] = {
+                  guid = "RAD-1",
+                  name = "RAD-1",
+                  currOODA = { detection = 5, targeting = 6 },
+                  OODA = { detection = 7, targeting = 8 },
+                  isOutOfComms = true,
+                  EMCONSetting = "Red",
+                },
+              },
+            },
+          },
+        }
+        local unitMap = {
+          ["C2-1"] = buildUnit("C2-1", 24.0),
+          ["SAM-1"] = buildUnit("SAM-1", 25.0),
+          ["RAD-1"] = buildUnit("RAD-1", 26.0),
+        }
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return unitMap[guid] end))
+        trackStub(stub(GameApi, "ScenEdit_GetDoctrine").returns({ weapon_control_status_air = constants.WCS.HOLD }))
+        trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").returns({
+          { latitude = "24.5", longitude = "121.25" },
+          { latitude = "24.75", longitude = "121.5" },
+        }))
+      end)
+
+      it("should key each node by guid and carry its type, name and position", function()
+        UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+        local node = findC2Payload("C2-1")["C2-1"]
+        assert.are.equal("rocc", node.type)
+        assert.are.equal("ROCC-1", node.name)
+        assert.are.same({ latitude = 24.0, longitude = 121.5 }, node.pos)
+      end)
+
+      it("should resolve each area to numeric points", function()
+        UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+        local node = findC2Payload("C2-1")["C2-1"]
+        assert.are.same({
+          {
+            { latitude = 24.5, longitude = 121.25 },
+            { latitude = 24.75, longitude = 121.5 },
+          },
+        }, node.areas)
+      end)
+
+      it("should describe each SAM with its OODA, comms, doctrine and position", function()
+        UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+        local sam = findC2Payload("C2-1")["C2-1"].sam["SAM-1"]
+        assert.are.equal("SAM-1", sam.name)
+        assert.are.equal("1/3", sam.OODADetection)
+        assert.are.equal("2/4", sam.OODATargeting)
+        assert.is_false(sam.isOutOfComms)
+        assert.are.equal("Green", sam.EMCONSetting)
+        assert.is_false(sam.weaponFree)
+        assert.are.same({ latitude = 25.0, longitude = 121.5 }, sam.pos)
+      end)
+
+      it("should describe each radar without a doctrine", function()
+        UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+        local radar = findC2Payload("C2-1")["C2-1"].radar["RAD-1"]
+        assert.are.equal("5/7", radar.OODADetection)
+        assert.are.equal("6/8", radar.OODATargeting)
+        assert.is_true(radar.isOutOfComms)
+        assert.is_nil(radar.weaponFree)
+        assert.are.same({ latitude = 26.0, longitude = 121.5 }, radar.pos)
+      end)
+
+      it("should skip a SAM that no longer exists in the game", function()
+        UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+        assert.is_nil(findC2Payload("C2-1")["C2-1"].sam["SAM-GONE"])
+      end)
+
+      it("should mark a SAM weapons free when its doctrine is not hold", function()
+        GameApi.ScenEdit_GetDoctrine:revert()
+        trackStub(stub(GameApi, "ScenEdit_GetDoctrine").returns({ weapon_control_status_air = constants.WCS.TIGHT }))
+
+        UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+        assert.is_true(findC2Payload("C2-1")["C2-1"].sam["SAM-1"].weaponFree)
+      end)
     end)
   end)
 end)
