@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { parseInjectedJSON, readInjectedString } from '@/utils/inject';
+import { parseInjectedJSON, readInjectedBoolean, readInjectedString } from '@/utils/inject';
 
 const FALLBACK = { mock: true };
 
@@ -49,4 +49,23 @@ describe('readInjectedString', () => {
   it.each([undefined, '', '   '])('falls back on %o', (raw) => {
     expect(readInjectedString(raw, 'fallback')).toBe('fallback');
   });
+});
+
+describe('readInjectedBoolean', () => {
+  it.each([
+    ['true', true],
+    ['false', false],
+    ['  TRUE  ', true],
+    [' False ', false],
+  ])('reads %o as %s whatever the case or spacing', (raw, expected) => {
+    expect(readInjectedBoolean(raw, !expected)).toBe(expected);
+  });
+
+  it.each([undefined, '', '   ', 'yes', '1', '%s'])(
+    'falls back on the unfilled or unknown value %o',
+    (raw) => {
+      expect(readInjectedBoolean(raw, true)).toBe(true);
+      expect(readInjectedBoolean(raw, false)).toBe(false);
+    }
+  );
 });
