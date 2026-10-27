@@ -3,7 +3,6 @@
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local GameApi = require("src.utils.gameApi")
-local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 local StubTracker = require("spec.support.stubTracker")
@@ -49,7 +48,7 @@ describe("ObstacleClearing", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       return guid == "BOAT-ALIVE" and { guid = guid } or nil
     end))
-    trackStub(stub(GameUtils, "findAreaLocations").returns({
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").returns({
       LaneGeometry.buildPoint(frame, 0, -500),
       LaneGeometry.buildPoint(frame, 0, 500),
       LaneGeometry.buildPoint(frame, 300, 500),

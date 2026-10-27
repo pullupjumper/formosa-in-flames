@@ -2,8 +2,6 @@
 -- LandingOps ShipMovement Unit Tests
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local GameApi = require("src.utils.gameApi")
-local Utils = require("src.utils.utils")
-local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 local StubTracker = require("spec.support.stubTracker")
@@ -24,10 +22,6 @@ describe("ShipMovement", function()
   after_each(function()
     StubTracker.revertAll()
   end)
-
-  -- ============================================================================
-  -- Shared mock data builders
-  -- ============================================================================
 
   ---Create a ship unit with sensible defaults
   ---@param overrides? table
@@ -198,10 +192,6 @@ describe("ShipMovement", function()
       },
     }
   end
-
-  -- ============================================================================
-  -- moveToHoldingAreas
-  -- ============================================================================
 
   describe("moveToHoldingAreas", function()
     it("should move a Type 075 ship to the first calculated location", function()
@@ -729,18 +719,12 @@ describe("ShipMovement", function()
     end)
   end)
 
-  -- ============================================================================
-  -- buildHoldingPositions
-  -- ============================================================================
-
   describe("buildHoldingPositions", function()
-    local stubGetRPs, stubGetPoint, stubInsertList, stubGenerateLocations
+    local stubGetRPs, stubGetPoint
 
     before_each(function()
       stubGetRPs = trackStub(stub(GameApi, "ScenEdit_GetReferencePoints"))
       stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
-      stubGenerateLocations = trackStub(stub(GameUtils, "buildLocations"))
-      stubInsertList = trackStub(stub(Utils, "addAll"))
     end)
 
     it("should create the operation entry in calculationResult when it does not exist", function()
@@ -752,8 +736,6 @@ describe("ShipMovement", function()
         return { buildLocation() }
       end)
       stubGetPoint.returns(derivedPoint)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
@@ -776,8 +758,6 @@ describe("ShipMovement", function()
       local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
@@ -795,18 +775,20 @@ describe("ShipMovement", function()
       assert.are.equal(constants.PLATFORMS.BARGE, result.barge.dbid)
     end)
 
-    it("should call buildLocations for all 10 ship types per area", function()
+    it("should build one location per ship for every ship type", function()
       local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
       ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
-      assert.stub(stubGenerateLocations).was.called(10)
+      local result = calculationResult.Taoyuan.result
+      local counts = config.zones[1].fleet.groups[1].shipCounts
+      for key, count in pairs(counts) do
+        assert.are.equal(count, #result[key].locations, key)
+      end
     end)
 
     it("should derive Type 071 from Type 075 and Type 076 from Type 071 using vertical distance", function()
@@ -823,8 +805,6 @@ describe("ShipMovement", function()
         end
         return buildLocation()
       end)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
@@ -851,8 +831,6 @@ describe("ShipMovement", function()
         return { buildLocation() }
       end)
       stubGetPoint.returns(buildLocation())
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
@@ -875,8 +853,6 @@ describe("ShipMovement", function()
       local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local existingResult = buildShipRowMap()
       local calculationResult = {
@@ -892,8 +868,6 @@ describe("ShipMovement", function()
       local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local config = buildAmphibOpsConfig({})
       config.zones = { buildZone(), buildZone({ name = "Penghu" }) }
@@ -905,22 +879,24 @@ describe("ShipMovement", function()
       assert.is_not_nil(calculationResult.Penghu)
     end)
 
-    it("should pass correct horizontal distance and bearing to buildLocations", function()
+    it("should space ships by the horizontal distance along the row bearing", function()
       local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
       ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
-      for _, call in ipairs(stubGenerateLocations.calls) do
-        local params = call.vals[1]
-        assert.are.equal(0.5, params.distance)
-        assert.are.equal(90, params.bearing)
+      local found = false
+      for _, call in ipairs(stubGetPoint.calls) do
+        local point = call.vals[1]
+        if point.distance == 0.5 and point.bearing == 90 then
+          found = true
+          break
+        end
       end
+      assert.is_true(found)
     end)
 
     it("should fail and log when a starting reference point is missing", function()
@@ -929,15 +905,12 @@ describe("ShipMovement", function()
         return { buildLocation() }
       end)
       stubGetPoint.returns(buildLocation())
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
       local result = ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_false(result)
-      assert.stub(stubGenerateLocations).was_not.called()
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=reference_point_missing"))
     end)
@@ -945,25 +918,20 @@ describe("ShipMovement", function()
     it("should fail and log when a derived starting point cannot be calculated", function()
       stubGetRPs.returns({ buildLocation() })
       stubGetPoint.returns(nil)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local calculationResult = {}
       local config = buildAmphibOpsConfig()
       local result = ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
       assert.is_false(result)
-      assert.stub(stubGenerateLocations).was_not.called()
       assert.stub(errorStub).was.called(1)
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=derived_point_failed"))
     end)
 
-    it("should still call buildLocations with num=0 for types not present", function()
+    it("should leave a ship type empty when its count is zero", function()
       local rp = buildLocation()
       stubGetRPs.returns({ rp })
       stubGetPoint.returns(rp)
-      stubGenerateLocations.returns({})
-      stubInsertList.invokes(function(list) return list end)
 
       local config = buildAmphibOpsConfig()
       config.zones[1].fleet.groups[1].shipCounts.type075 = 0
@@ -971,15 +939,7 @@ describe("ShipMovement", function()
 
       ShipMovement.buildHoldingPositions(config.zones, config.formation, calculationResult)
 
-      local found = false
-      for _, call in ipairs(stubGenerateLocations.calls) do
-        local params = call.vals[1]
-        if params.num == 0 then
-          found = true
-          break
-        end
-      end
-      assert.is_true(found)
+      assert.are.same({}, calculationResult.Taoyuan.result.type075.locations)
     end)
   end)
 end)

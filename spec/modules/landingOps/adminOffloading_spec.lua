@@ -1,9 +1,7 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps AdminOffloading Unit Tests
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
-local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
-local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local StubTracker = require("spec.support.stubTracker")
 
@@ -23,10 +21,6 @@ describe("AdminOffloading", function()
   after_each(function()
     StubTracker.revertAll()
   end)
-
-  -- ============================================================================
-  -- Shared mock data builders
-  -- ============================================================================
 
   ---Create an operational zone descriptor
   ---@param overrides? table
@@ -163,18 +157,13 @@ describe("AdminOffloading", function()
     return params
   end
 
-  -- ============================================================================
-  -- startAdminOffloading
-  -- ============================================================================
-
   describe("startAdminOffloading", function()
-    local stubGetUnit, stubGetRefPoints, stubCalcCenter, stubToolRange, stubToolBearing
+    local stubGetUnit, stubGetRefPoints, stubToolRange, stubToolBearing
     local stubGetPointFromBearing
 
     before_each(function()
       stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
       stubGetRefPoints = trackStub(stub(GameApi, "ScenEdit_GetReferencePoints"))
-      stubCalcCenter = trackStub(stub(Utils, "calculateSphericalCenter"))
       stubToolRange = trackStub(stub(GameApi, "Tool_Range"))
       stubToolBearing = trackStub(stub(GameApi, "Tool_Bearing"))
       stubGetPointFromBearing = trackStub(stub(GameApi, "World_GetPointFromBearing"))
@@ -198,14 +187,12 @@ describe("AdminOffloading", function()
         return nil
       end)
 
-      local centerPoint = { latitude = 25.0, longitude = 121.0 }
       stubGetRefPoints.returns({
         { latitude = 25.1, longitude = 121.1 },
         { latitude = 25.1, longitude = 120.9 },
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns(centerPoint)
       stubToolRange.returns(5.0)
       stubToolBearing.returns(300)
       local destination = { latitude = 24.8, longitude = 120.8 }
@@ -240,7 +227,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(5.0)
       stubToolBearing.returns(300)
       stubGetPointFromBearing.returns({ latitude = 24.8, longitude = 120.8 })
@@ -292,7 +278,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(5.0)
       stubToolBearing.returns(300)
 
@@ -377,7 +362,7 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns(nil)
+      stubGetRefPoints.returns({})
 
       AdminOffloading.startAdminOffloading(
         zone, barges, { buildSideUnit({ guid = "BARGE-001" }) }
@@ -405,7 +390,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(nil)
 
       AdminOffloading.startAdminOffloading(
@@ -434,7 +418,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(5.0)
       stubToolBearing.returns(nil)
 
@@ -464,7 +447,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(5.0)
       stubToolBearing.returns(300)
       stubGetPointFromBearing.returns(nil)
@@ -512,7 +494,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(5.0)
       stubToolBearing.returns(300)
 
@@ -625,7 +606,6 @@ describe("AdminOffloading", function()
         { latitude = 24.9, longitude = 120.9 },
         { latitude = 24.9, longitude = 121.1 },
       })
-      stubCalcCenter.returns({ latitude = 25.0, longitude = 121.0 })
       stubToolRange.returns(5.0)
       stubToolBearing.returns(300)
       stubGetPointFromBearing.returns({ latitude = 24.8, longitude = 120.8 })
@@ -644,23 +624,29 @@ describe("AdminOffloading", function()
     end)
   end)
 
-  -- ============================================================================
-  -- offloadVehicles
-  -- ============================================================================
-
   describe("offloadVehicles", function()
-    local stubGenerateLocations, stubAddUnit
+    local stubGetPoint, stubAddUnit
 
     before_each(function()
-      stubGenerateLocations = trackStub(stub(GameUtils, "buildLocations"))
+      stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
       stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
     end)
+
+    ---Make successive placement requests resolve to the given locations
+    ---@param locations table[]
+    local function placeAt(locations)
+      local calls = 0
+      stubGetPoint.invokes(function()
+        calls = calls + 1
+        return locations[calls]
+      end)
+    end
 
     it("should offload vehicles and return count of successfully created units", function()
       local params = buildOffloadParams()
       local deleteStub = trackStub(stub(params.ship, "deleteUnitCargo"))
 
-      stubGenerateLocations.returns({
+      placeAt({
         { latitude = 25.1, longitude = 121.1 },
         { latitude = 25.2, longitude = 121.2 },
       })
@@ -689,9 +675,7 @@ describe("AdminOffloading", function()
       })
       trackStub(stub(params.ship, "deleteUnitCargo"))
 
-      stubGenerateLocations.returns({
-        { latitude = 25.1, longitude = 121.1 },
-      })
+      placeAt({ { latitude = 25.1, longitude = 121.1 }, })
       stubAddUnit.returns({ guid = "CREATED-001" })
 
       AdminOffloading.offloadVehicles(params)
@@ -722,7 +706,7 @@ describe("AdminOffloading", function()
       })
       trackStub(stub(params.ship, "deleteUnitCargo"))
 
-      stubGenerateLocations.returns({
+      placeAt({
         { latitude = 25.1, longitude = 121.1 },
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
@@ -740,11 +724,11 @@ describe("AdminOffloading", function()
       assert.stub(logStub).was.called(1)
     end)
 
-    it("should pass ship location and spacing parameters to buildLocations", function()
+    it("should place vehicles along the bearing starting at the first distance from the ship", function()
       local params = buildOffloadParams()
       trackStub(stub(params.ship, "deleteUnitCargo"))
 
-      stubGenerateLocations.returns({
+      placeAt({
         { latitude = 25.1, longitude = 121.1 },
         { latitude = 25.2, longitude = 121.2 },
       })
@@ -752,13 +736,18 @@ describe("AdminOffloading", function()
 
       AdminOffloading.offloadVehicles(params)
 
-      assert.stub(stubGenerateLocations).was.called_with({
-        initialLocation = { latitude = params.ship.latitude, longitude = params.ship.longitude },
-        num = 2,
+      assert.are.same({
+        latitude = params.ship.latitude,
+        longitude = params.ship.longitude,
+        bearing = 90,
+        distance = 0.3,
+      }, stubGetPoint.calls[1].vals[1])
+      assert.are.same({
+        latitude = 25.1,
+        longitude = 121.1,
         bearing = 90,
         distance = 0.5,
-        firstDistance = 0.3,
-      })
+      }, stubGetPoint.calls[2].vals[1])
       assert.stub(logStub).was.called(1)
     end)
 
@@ -769,7 +758,7 @@ describe("AdminOffloading", function()
       local result = AdminOffloading.offloadVehicles(params)
 
       assert.is_nil(result)
-      assert.stub(stubGenerateLocations).was_not.called()
+      assert.stub(stubGetPoint).was_not.called()
       assert.stub(logStub).was_not.called()
     end)
 
@@ -780,7 +769,7 @@ describe("AdminOffloading", function()
       local result = AdminOffloading.offloadVehicles(params)
 
       assert.is_nil(result)
-      assert.stub(stubGenerateLocations).was_not.called()
+      assert.stub(stubGetPoint).was_not.called()
       assert.stub(logStub).was_not.called()
     end)
 
@@ -788,7 +777,7 @@ describe("AdminOffloading", function()
       local params = buildOffloadParams()
       trackStub(stub(params.ship, "deleteUnitCargo"))
 
-      stubGenerateLocations.returns({
+      placeAt({
         { latitude = 25.1, longitude = 121.1 },
         { latitude = 25.2, longitude = 121.2 },
       })
@@ -811,7 +800,7 @@ describe("AdminOffloading", function()
       local params = buildOffloadParams({ num = 1 })
       trackStub(stub(params.ship, "deleteUnitCargo"))
 
-      stubGenerateLocations.returns({
+      placeAt({
         { latitude = 25.1, longitude = 121.1 },
       })
       stubAddUnit.returns({ guid = "CREATED-001" })
@@ -823,10 +812,6 @@ describe("AdminOffloading", function()
       assert.stub(logStub).was.called(1)
     end)
   end)
-
-  -- ============================================================================
-  -- isBridgeDestroyed
-  -- ============================================================================
 
   describe("isBridgeDestroyed", function()
     local stubGetUnit
@@ -894,10 +879,6 @@ describe("AdminOffloading", function()
     end)
   end)
 
-  -- ============================================================================
-  -- hasExtendedBridge
-  -- ============================================================================
-
   describe("hasExtendedBridge", function()
     it("should return true when barge has bridgeGUID in the barge registry", function()
       local barges = {
@@ -929,10 +910,6 @@ describe("AdminOffloading", function()
     end)
   end)
 
-  -- ============================================================================
-  -- getBargeROROZone
-  -- ============================================================================
-
   describe("getBargeROROZone", function()
     local stubToolRange
 
@@ -956,7 +933,6 @@ describe("AdminOffloading", function()
       stubToolRange.returns(0.5)
 
       local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-      assert.is_not_nil(result)
       assert.are.equal("ZoneAlpha", result.name)
     end)
 
@@ -1058,7 +1034,6 @@ describe("AdminOffloading", function()
 
       local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
 
-      assert.is_not_nil(result)
       assert.are.equal("Zone2", result.name)
     end)
 

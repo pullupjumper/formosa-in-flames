@@ -109,10 +109,6 @@ describe("Hovercraft", function()
     end))
   end
 
-  -- ============================================================================
-  -- launchHovercraft
-  -- ============================================================================
-
   describe("launchHovercraft", function()
     it("should set a lane course before launching and record the hovercraft", function()
       local calls = {}
@@ -170,10 +166,6 @@ describe("Hovercraft", function()
       assert.are.same({}, calls)
     end)
   end)
-
-  -- ============================================================================
-  -- updateHovercraft
-  -- ============================================================================
 
   describe("updateHovercraft", function()
     local stubUnload

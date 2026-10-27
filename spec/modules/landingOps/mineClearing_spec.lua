@@ -3,7 +3,6 @@
 local MineClearing = require("src.modules.landingOps.mineClearing")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local GameApi = require("src.utils.gameApi")
-local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 local StubTracker = require("spec.support.stubTracker")
@@ -113,8 +112,8 @@ describe("MineClearing", function()
   end
 
   local function stubReferencePoints()
-    trackStub(stub(GameUtils, "findAreaLocations").invokes(function(_, area)
-      if area[1] == "RP-CENTER" then return { CENTER } end
+    trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").invokes(function(query)
+      if query.area[1] == "RP-CENTER" then return { CENTER } end
       return {
         LaneGeometry.buildPoint(frame, 0, -2000),
         LaneGeometry.buildPoint(frame, 300, 0),
@@ -122,10 +121,6 @@ describe("MineClearing", function()
       }
     end))
   end
-
-  -- ============================================================================
-  -- createMinefields
-  -- ============================================================================
 
   describe("createMinefields", function()
     it("should lay BLUE sea mines for each configured minefield", function()
@@ -179,10 +174,6 @@ describe("MineClearing", function()
       })
     end)
   end)
-
-  -- ============================================================================
-  -- startMineClearing
-  -- ============================================================================
 
   describe("startMineClearing", function()
     it("should build lanes and give each sweeper its sweep course and mission area", function()
@@ -273,7 +264,7 @@ describe("MineClearing", function()
     end)
 
     it("should fail without changes when lane reference points are not set", function()
-      trackStub(stub(GameUtils, "findAreaLocations").returns({}))
+      trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").returns({}))
       local zoneState = {}
       local ships = {}
 
@@ -297,10 +288,6 @@ describe("MineClearing", function()
       assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=no_type082_in_zone"))
     end)
   end)
-
-  -- ============================================================================
-  -- updateMineClearing
-  -- ============================================================================
 
   describe("updateMineClearing", function()
     local FINAL = { latitude = 24.9, longitude = 121.1 }

@@ -6,7 +6,6 @@ local Logger = require("src.utils.logger")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
-local MineClearing = require("src.modules.landingOps.mineClearing")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AttackManager = require("src.modules.attackManager")
 local constants = require("src.core.constants")
@@ -27,10 +26,6 @@ describe("LandingOps", function()
   after_each(function()
     StubTracker.revertAll()
   end)
-
-  -- ============================================================================
-  -- Shared mock data builders
-  -- ============================================================================
 
   ---Create a ship unit with sensible defaults
   ---@param overrides? table
@@ -116,10 +111,6 @@ describe("LandingOps", function()
     return { red = { amphibOps = amphibOps, recon = {}, ground = {} } }
   end
 
-  -- ============================================================================
-  -- init
-  -- ============================================================================
-
   describe("init", function()
     -- Delegates destination pre-calculation to ShipMovement
     it("should initialize landing operations by calculating destinations", function()
@@ -132,10 +123,6 @@ describe("LandingOps", function()
       assert.stub(stubCalc).was.called_with(configOverrides.zones, configOverrides.formation, saveData.red.amphibOps.calculationResult)
     end)
   end)
-
-  -- ============================================================================
-  -- process
-  -- ============================================================================
 
   describe("process", function()
     it("should forward landing state, contacts, time and ships to coordinator", function()
@@ -167,10 +154,6 @@ describe("LandingOps", function()
       assert.stub(stubProcess).was_not.called()
     end)
   end)
-
-  -- ============================================================================
-  -- launchACV
-  -- ============================================================================
 
   describe("launchACV", function()
     local ACV_WAVE = { lossRatio = 0.3, holdSec = 1800 }
@@ -295,10 +278,6 @@ describe("LandingOps", function()
     end)
   end)
 
-  -- ============================================================================
-  -- offloadVehicles
-  -- ============================================================================
-
   describe("offloadVehicles", function()
     it("should create a bridge and stop the barge when no bridge exists", function()
       local ship = buildShip({ name = "Barge" })
@@ -374,10 +353,6 @@ describe("LandingOps", function()
       assert.is_true(ship.holdposition)
     end)
   end)
-
-  -- ============================================================================
-  -- attackAirlandingZone
-  -- ============================================================================
 
   describe("attackAirlandingZone", function()
     it("should attack filtered mobile ground contacts for a valid Type 052D SAG ship", function()

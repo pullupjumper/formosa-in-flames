@@ -54,10 +54,6 @@ describe("LaneGeometry", function()
     return LaneGeometry.projectPoint(frame, pos)
   end
 
-  -- ============================================================================
-  -- buildPoint / projectPoint
-  -- ============================================================================
-
   describe("buildPoint", function()
     it("should round-trip along and lateral meters through projectPoint", function()
       local along, lateral = project(LaneGeometry.buildPoint(frame, -3000, 250))
@@ -66,10 +62,6 @@ describe("LaneGeometry", function()
       assert.is_near(250, lateral, 0.01)
     end)
   end)
-
-  -- ============================================================================
-  -- buildMineCorridors / findMineCell
-  -- ============================================================================
 
   describe("mine cells", function()
     -- One corridor per water lane and per beach lane, cells 50 m long from end to end
@@ -112,10 +104,6 @@ describe("LaneGeometry", function()
     end)
   end)
 
-  -- ============================================================================
-  -- buildWaterLaneLaterals
-  -- ============================================================================
-
   describe("buildWaterLaneLaterals", function()
     it("should put lanes at the midpoints of the ship gaps", function()
       local laterals = LaneGeometry.buildWaterLaneLaterals({ 750, -750, 0 }, 2, buildRouteConfig())
@@ -145,10 +133,6 @@ describe("LaneGeometry", function()
       assert.is_nil(LaneGeometry.buildWaterLaneLaterals({ 0, 750 }, 2, buildRouteConfig()))
     end)
   end)
-
-  -- ============================================================================
-  -- buildLanes
-  -- ============================================================================
 
   describe("buildLanes", function()
     it("should build 4 water lanes and 16 beach lanes for 4 sweepers", function()
@@ -246,10 +230,6 @@ describe("LaneGeometry", function()
     end)
   end)
 
-  -- ============================================================================
-  -- calculateInlandDepthM
-  -- ============================================================================
-
   describe("calculateInlandDepthM", function()
     it("should return the deepest polygon vertex along the bearing", function()
       local polygon = {
@@ -261,10 +241,6 @@ describe("LaneGeometry", function()
       assert.is_near(320, LaneGeometry.calculateInlandDepthM(frame, polygon), 0.01)
     end)
   end)
-
-  -- ============================================================================
-  -- isSegmentIntersecting
-  -- ============================================================================
 
   describe("isSegmentIntersecting", function()
     ---@param x number
@@ -290,10 +266,6 @@ describe("LaneGeometry", function()
       assert.is_false(LaneGeometry.isSegmentIntersecting(p(0, 0), p(1, 1), p(2, 0), p(3, -5)))
     end)
   end)
-
-  -- ============================================================================
-  -- buildObstacleCells / isRouteClear
-  -- ============================================================================
 
   describe("buildObstacleCells", function()
     local polygon = {

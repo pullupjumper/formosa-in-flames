@@ -89,6 +89,17 @@ describe("AcvWave", function()
 
     assert.are.equal(1, AcvWave.getQuota(zoneState, CONFIG, 700).zbd05)
   end)
+
+  it("should resume exactly when holdSec has passed, not one second earlier", function()
+    local zoneState = {}
+    launch(zoneState, "zbd05", 4)
+    AcvWave.getQuota(zoneState, CONFIG, 100)
+    aliveSet[zoneState.acvGuids.zbd05[1]] = nil
+
+    assert.are.equal(0, AcvWave.getQuota(zoneState, CONFIG, 699).zbd05)
+    assert.are.equal(1, AcvWave.getQuota(zoneState, CONFIG, 700).zbd05)
+  end)
+
   describe("buildZoneWaveConfig", function()
     it("should take the cap from the zone and keep the shared tuning", function()
       local tuning = { lossRatio = 0.5, holdSec = 600 }

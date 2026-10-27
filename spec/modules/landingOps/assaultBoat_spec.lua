@@ -3,7 +3,6 @@
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local GameApi = require("src.utils.gameApi")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 local StubTracker = require("spec.support.stubTracker")
@@ -105,10 +104,6 @@ describe("AssaultBoat", function()
     return laneIdSet
   end
 
-  -- ============================================================================
-  -- pairBoats
-  -- ============================================================================
-
   describe("pairBoats", function()
     it("should pair one boat per beach lane using each carrier's first boat first", function()
       local unitMap, ships = buildFleet(4, 2)
@@ -160,10 +155,6 @@ describe("AssaultBoat", function()
       assert.is_not_nil(zoneState.boats["BOAT-3-1"])
     end)
   end)
-
-  -- ============================================================================
-  -- launchBoats
-  -- ============================================================================
 
   describe("launchBoats", function()
     it("should set course and speed before launching a boat whose carrier is in the ACV area", function()
@@ -225,10 +216,6 @@ describe("AssaultBoat", function()
     end)
   end)
 
-  -- ============================================================================
-  -- updateBoats / findLandedLaneIdSet
-  -- ============================================================================
-
   describe("updateBoats", function()
     it("should finish when every boat has arrived or been lost", function()
       stubUnits({ ["BOAT-1"] = { guid = "BOAT-1" } })
@@ -248,17 +235,34 @@ describe("AssaultBoat", function()
 
     it("should mark a destroyed boat lost during fast-forward without touching it", function()
       stubUnits({})
-      trackStub(stub(DebugFlow, "isFastForward").returns(true))
-      local teleport = trackStub(stub(DebugFlow, "teleport"))
+      local setUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "Tool_Range").returns(2))
+      local config = buildConfig()
+      config.debug = { enabled = true }
       local zoneState = {
         phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT,
         boats = { ["BOAT-1"] = { beachLaneId = "W1-B1", status = "launched", finalPoint = FINAL_POINT } },
       }
 
-      assert.is_true(AssaultBoat.updateBoats(buildConfig(), zoneState))
+      assert.is_true(AssaultBoat.updateBoats(config, zoneState))
       assert.are.equal("lost", zoneState.boats["BOAT-1"].status)
-      assert.stub(teleport).was.called(0)
+      assert.stub(setUnit).was.called(0)
+    end)
+
+    it("should teleport a live boat to its final point during fast-forward", function()
+      stubUnits({ ["BOAT-1"] = { guid = "BOAT-1" } })
+      local setUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
+      trackStub(stub(GameApi, "Tool_Range").returns(2))
+      local config = buildConfig()
+      config.debug = { enabled = true }
+      local zoneState = {
+        phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT,
+        boats = { ["BOAT-1"] = { beachLaneId = "W1-B1", status = "launched", finalPoint = FINAL_POINT } },
+      }
+
+      AssaultBoat.updateBoats(config, zoneState)
+
+      assert.stub(setUnit).was.called_with({ guid = "BOAT-1", latitude = 25.0, longitude = 121.0 })
     end)
 
     it("should not finish while a boat is still under way or pending", function()

@@ -16,20 +16,12 @@ describe("DebugFlow", function()
     StubTracker.revertAll()
   end)
 
-  -- ============================================================================
-  -- Shared builders
-  -- ============================================================================
-
   ---@param debug table|nil
   ---@return SBJ__AmphibOpsConfig
   local function buildAmphibOps(debug)
     local amphibOps = { debug = debug }
     return amphibOps
   end
-
-  -- ============================================================================
-  -- isFastForward
-  -- ============================================================================
 
   describe("isFastForward", function()
     it("should fast-forward the phases before the start stage", function()
@@ -78,10 +70,6 @@ describe("DebugFlow", function()
     end)
   end)
 
-  -- ============================================================================
-  -- isLandingTeleport
-  -- ============================================================================
-
   describe("isLandingTeleport", function()
     it("should be true when debug is enabled and landing teleport is on", function()
       local amphibOps = buildAmphibOps({ enabled = true, teleportLanding = true })
@@ -113,10 +101,6 @@ describe("DebugFlow", function()
       assert.is_false(DebugFlow.isLandingTeleport(amphibOps))
     end)
   end)
-
-  -- ============================================================================
-  -- teleport
-  -- ============================================================================
 
   describe("teleport", function()
     it("should move the unit to the given location", function()

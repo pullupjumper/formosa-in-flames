@@ -1,10 +1,8 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps AmphibiousLogistics Unit Tests
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
-local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
-local AssignMission = require("src.modules.assignMission")
 local constants = require("src.core.constants")
 local StubTracker = require("spec.support.stubTracker")
 
@@ -24,10 +22,6 @@ describe("AmphibiousLogistics", function()
   after_each(function()
     StubTracker.revertAll()
   end)
-
-  -- ============================================================================
-  -- Shared mock data builders
-  -- ============================================================================
 
   ---Create a cargo element (as stored in unit.cargo[1].cargo)
   ---@param overrides? table
@@ -222,10 +216,6 @@ describe("AmphibiousLogistics", function()
     }
   end
 
-  -- ============================================================================
-  -- removeCargo
-  -- ============================================================================
-
   describe("removeCargo", function()
     it("should delete matching cargo and return count", function()
       local fromUnit = buildUnit()
@@ -318,10 +308,6 @@ describe("AmphibiousLogistics", function()
       assert.are.equal(1, result)
     end)
   end)
-
-  -- ============================================================================
-  -- getUnitsInHoldingAreas
-  -- ============================================================================
 
   describe("getUnitsInHoldingAreas", function()
     local stubGetUnit
@@ -527,10 +513,6 @@ describe("AmphibiousLogistics", function()
     end)
   end)
 
-  -- ============================================================================
-  -- createCargoMissions
-  -- ============================================================================
-
   describe("createCargoMissions", function()
     local stubAddMission, stubSetMission, stubSetDoctrine
 
@@ -620,10 +602,6 @@ describe("AmphibiousLogistics", function()
     end)
   end)
 
-  -- ============================================================================
-  -- transferAndAssign
-  -- ============================================================================
-
   describe("transferAndAssign", function()
     before_each(function()
       stubUnitLookup()
@@ -679,7 +657,7 @@ describe("AmphibiousLogistics", function()
     end)
 
     it("should assign no mission to the helicopters", function()
-      local stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
+      local stubAssignMission = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission"))
       local ship = buildFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
 
       AmphibiousLogistics.transferAndAssign(buildOperationalZone(), { ship })
@@ -714,10 +692,6 @@ describe("AmphibiousLogistics", function()
       assert.is_true(result)
     end)
   end)
-
-  -- ============================================================================
-  -- transferAndAssignTransportAircraft
-  -- ============================================================================
 
   describe("transferAndAssignTransportAircraft", function()
     local stubAssignMission
@@ -762,7 +736,7 @@ describe("AmphibiousLogistics", function()
 
     before_each(function()
       stubUnitLookup()
-      stubAssignMission = trackStub(stub(AssignMission, "assignEmbarkedUnitsToMissions"))
+      stubAssignMission = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission").returns(true))
     end)
 
     it("should move matching cargo from the base onto a matching aircraft", function()
@@ -779,8 +753,8 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubDelete).was.called_with(base, "C-1")
       assert.stub(stubDelete).was.called_with(base, "C-2")
       assert.stub(stubCreate).was.called(2)
-      assert.stub(stubCreate).was.called_with(aircraft, 1, 1001)
-      assert.stub(stubAssignMission).was.called_with("BASE-001", "Aircraft", 6001, item.missions)
+      assert.are.same({ 1, 1001 }, { stubCreate.calls[1].vals[2], stubCreate.calls[1].vals[3] })
+      assert.stub(stubAssignMission).was.called_with("AC-001", "AirliftMission-1", false)
     end)
 
     it("should only transfer up to the requested quantity", function()
@@ -837,9 +811,9 @@ describe("AmphibiousLogistics", function()
       )
 
       assert.stub(stubCreate1).was.called(1)
-      assert.stub(stubCreate1).was.called_with(ac1, 1, 1001)
+      assert.are.same({ 1, 1001 }, { stubCreate1.calls[1].vals[2], stubCreate1.calls[1].vals[3] })
       assert.stub(stubCreate2).was.called(1)
-      assert.stub(stubCreate2).was.called_with(ac2, 1, 2002)
+      assert.are.same({ 1, 2002 }, { stubCreate2.calls[1].vals[2], stubCreate2.calls[1].vals[3] })
     end)
 
     it("should not transfer cargo when the base unit is not found", function()
@@ -851,7 +825,7 @@ describe("AmphibiousLogistics", function()
 
       assert.is_true(result)
       assert.stub(stubCreate).was_not.called()
-      assert.stub(stubAssignMission).was.called(1)
+      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should skip aircraft that do not match platform DBID", function()
@@ -888,14 +862,13 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubCreate).was.called(1)
     end)
 
-    -- Still assign missions when the base has no embarked aircraft list
     it("should skip the transfer when the base has no embarked aircraft", function()
-      buildAirBase({}, { embarkedUnits = { Boats = {} } })
+      buildAirBase({}, { embarkedUnits = { Aircraft = {}, Boats = {} } })
 
       local result = AmphibiousLogistics.transferAndAssignTransportAircraft(buildTransportAircraftItem())
 
       assert.is_true(result)
-      assert.stub(stubAssignMission).was.called(1)
+      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should not transfer when the base cargo list is nil", function()
@@ -924,10 +897,6 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubCreate).was.called(1)
     end)
   end)
-
-  -- ============================================================================
-  -- transferRemainingCargos
-  -- ============================================================================
 
   describe("transferRemainingCargos", function()
     before_each(function()

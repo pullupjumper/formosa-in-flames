@@ -70,10 +70,6 @@ describe("RoutePlanner", function()
     return params
   end
 
-  -- ============================================================================
-  -- selectWaterLane
-  -- ============================================================================
-
   describe("selectWaterLane", function()
     it("should choose the nearest water lane", function()
       local lanes = buildLanes(4)
@@ -102,10 +98,6 @@ describe("RoutePlanner", function()
       assert.are.equal("W3", waterLane.id)
     end)
   end)
-
-  -- ============================================================================
-  -- buildRoute
-  -- ============================================================================
 
   describe("buildRoute", function()
     -- Course runs entry, L_i, A_i, A_lane, S_lane, slot
@@ -273,10 +265,6 @@ describe("RoutePlanner", function()
     end)
   end)
 
-  -- ============================================================================
-  -- assignShoreSlot
-  -- ============================================================================
-
   describe("assignShoreSlot", function()
     ---@param slots table<integer, string|false>
     ---@param guid string
@@ -334,10 +322,6 @@ describe("RoutePlanner", function()
       assert.is_false(RoutePlanner.assignShoreSlot("NOPE", buildAssignParams(lanes, params)))
     end)
   end)
-
-  -- ============================================================================
-  -- buildBoatRoute
-  -- ============================================================================
 
   describe("buildBoatRoute", function()
     local boatPos = LaneGeometry.buildPoint(frame, -3.5 * 1852, -375)
