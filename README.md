@@ -29,6 +29,7 @@ bash bin/build.sh
 -n          skip npm build
 -l          skip luamin
 -i          skip scen injection (only produce slim/)
+-p          play build: config.isEditMode=false (default is edit mode)
 -x <glob>   exclude Lua files from the merge (repeatable)
 ```
 

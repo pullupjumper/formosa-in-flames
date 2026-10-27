@@ -23,10 +23,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_LOG_DIRS = [
-    Path("/mnt/c/Program Files (x86)/Steam/steamapps/common/Command - Modern Operations/Logs"),
-    Path(r"C:\Program Files (x86)\Steam\steamapps\common\Command - Modern Operations\Logs"),
-]
 SECTION_RE = re.compile(r"^@@GEN_BEGIN (\S+)\n(.*?)\n?^@@GEN_END \1$", re.S | re.M)
 BLOCK_HEADER_RE = re.compile(r"^config\..* = \{$")
 
@@ -52,13 +48,17 @@ def summary(label: str, value: str) -> None:
 
 
 def find_latest_log(log_dir: Path | None) -> Path:
-    dirs = [log_dir] if log_dir else DEFAULT_LOG_DIRS
-    for d in dirs:
-        if d.is_dir():
-            logs = list(d.glob("LuaHistory_*.txt"))
-            if logs:
-                return max(logs, key=lambda p: p.stat().st_mtime)
-    error("找不到 LuaHistory_*.txt，請用 --log-dir 指定資料夾")
+    if log_dir is None:
+        cmo_dir = os.environ.get("CMO_DIR")
+        if not cmo_dir:
+            error("未設定 CMO_DIR，請設定環境變數或用 --log-dir 指定資料夾")
+            sys.exit(1)
+        log_dir = Path(cmo_dir) / "Logs"
+    if log_dir.is_dir():
+        logs = list(log_dir.glob("LuaHistory_*.txt"))
+        if logs:
+            return max(logs, key=lambda p: p.stat().st_mtime)
+    error(f"在 {log_dir} 找不到 LuaHistory_*.txt，請用 --log-dir 指定資料夾")
     sys.exit(1)
 
 
