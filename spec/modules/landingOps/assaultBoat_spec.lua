@@ -188,9 +188,23 @@ describe("AssaultBoat", function()
       assert.are.equal(30, boat.manualSpeed)
       assert.are.equal(5, #boat.course)
       assert.are.equal("launched", zoneState.boats["BOAT-1"].status)
+      assert.are.same(zoneState.lanes.waterLanes[1].beachLanes[2].shorePoint, zoneState.boats["BOAT-1"].finalPoint)
+    end)
+
+    it("should hold a slot on the boat's beach lane after launching", function()
+      stubUnits({
+        ["LST-1"] = { guid = "LST-1", inArea = function() return true end },
+        ["BOAT-1"] = { guid = "BOAT-1", readytime_v = 0, Launch = function() end },
+      })
+      local zoneState = {
+        lanes = buildLanes(1),
+        boats = { ["BOAT-1"] = { shipGuid = "LST-1", beachLaneId = "W1-B2", status = "pending" } },
+      }
+
+      AssaultBoat.launchBoats(buildConfig(), zone, zoneState)
+
       local heldSlots = zoneState.laneSlots["W1-B2"]
       assert.are.equal("BOAT-1", heldSlots[#heldSlots])
-      assert.are.same(zoneState.lanes.waterLanes[1].beachLanes[2].shorePoint, zoneState.boats["BOAT-1"].finalPoint)
     end)
 
     it("should not launch while the carrier is outside the ACV area", function()

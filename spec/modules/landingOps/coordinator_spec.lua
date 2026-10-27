@@ -503,6 +503,30 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubStartAdminOffloading).was_not.called()
     end)
 
+    it("should count no landed vehicles when the zone has no unit statistics", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      stubCountUnitsInEachArea.returns({})
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, landingState.amphibOps.zoneStates.Taoyuan.phase)
+    end)
+
+    it("should ignore vehicles landed in another zone", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      stubCountUnitsInEachArea.returns({ Sishu = { ["ZBD-05"] = 50, ["ZTD-05"] = 50 } })
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.are.equal(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING, landingState.amphibOps.zoneStates.Taoyuan.phase)
+    end)
+
     it("should transfer remaining cargos when airlanding mission has reached the two-hour threshold", function()
       local config = buildConfig()
       local landingState = buildLandingState()

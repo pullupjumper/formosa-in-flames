@@ -288,11 +288,18 @@ describe("RoutePlanner", function()
       return nil
     end
 
+    ---@param lanes table
+    ---@param params table Output of buildParams
+    ---@return table
+    local function buildAssignParams(lanes, params)
+      return { lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }
+    end
+
     it("should hold the slot on S_lane so the next unit parks behind the boat", function()
       local lanes = buildLanes(1)
       clearAll(lanes)
       local params = buildParams(lanes)
-      local assignParams = { lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }
+      local assignParams = buildAssignParams(lanes, params)
       local beachLane = lanes.waterLanes[1].beachLanes[1]
 
       local isAssigned = RoutePlanner.assignShoreSlot(beachLane.id, assignParams)
@@ -309,8 +316,7 @@ describe("RoutePlanner", function()
       local params = buildParams(lanes)
       local beachLane = lanes.waterLanes[1].beachLanes[1]
 
-      RoutePlanner.assignShoreSlot(beachLane.id, {
-        lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" })
+      RoutePlanner.assignShoreSlot(beachLane.id, buildAssignParams(lanes, params))
 
       local slots = params.laneSlots[beachLane.id]
       local slot = findSlotOf(slots, "BOAT-1")
@@ -325,8 +331,7 @@ describe("RoutePlanner", function()
       local lanes = buildLanes(1)
       local params = buildParams(lanes)
 
-      assert.is_false(RoutePlanner.assignShoreSlot("NOPE", {
-        lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }))
+      assert.is_false(RoutePlanner.assignShoreSlot("NOPE", buildAssignParams(lanes, params)))
     end)
   end)
 
