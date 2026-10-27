@@ -26,7 +26,7 @@ end
 ---@return boolean # True if hovercraft and ACVs teleport to their parking slot
 function DebugFlow.isLandingTeleport(amphibOps)
   local debug = amphibOps.debug
-  return debug ~= nil and debug.enabled and debug.teleportLanding == true
+  return debug ~= nil and debug.enabled == true and debug.teleportLanding == true
 end
 
 ---Teleport a unit to a location

@@ -90,6 +90,16 @@ describe("MissileSystem StatusView", function()
       }, rows)
     end)
 
+    it("should report the default ammo counts of the resupply unit and its depot", function()
+      local groundCtx = makeGroundCtx(nil, makeResupplyUnitCtx({ weaponCountDefault = 8 }))
+      groundCtx.missileSystemTypes.srbm.ammunitions["AHA-1"].weaponCountDefault = 24
+
+      local row = buildRow(groundCtx, 1120)
+
+      assert.are.equal(8, row.missilesInTransloaderDefault)
+      assert.are.equal(24, row.missilesInAHADefault)
+    end)
+
     -- Positive: idle resupply units have no firing unit, so they produce no status
     it("should skip resupply units without a firing unit", function()
       local rows = StatusView.buildBatteryStatuses(makeGroundCtx(), missileSystemConfigMap, 1120)
