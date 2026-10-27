@@ -28,7 +28,8 @@
 | 模組 | 原始碼 | 職責 |
 |---|---|---|
 | [init（門面）](#門面-api) | `init.lua` | 對外入口，並組合 persistent state 與 config 後轉交內部模組 |
-| [coordinator](coordinator.md) | `coordinator.lua` | 逐區階段推進、貨物補運、火力支援暫停閘門 |
+| [coordinator](coordinator.md) | `coordinator.lua` | 逐區階段推進、貨物補運 |
+| [fireSupportGate](fireSupportGate.md) | `fireSupportGate.lua` | 火力支援暫停閘門 |
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 預算等待位置、艦隊與 SAG 移動 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物轉移、氣墊船貨運任務 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | LST 就位、ACV 釋放、機降開始時間 |
@@ -63,7 +64,7 @@ flowchart TB
 - **事件腳本**：`landingCheck.lua`（每 5 分鐘）呼叫 `process`；`launchACV.lua`、`offloadVehicles.lua`、`attackAirlandingZone.lua` 由單位進入區域觸發。
 - **階段模組**：shipMovement、amphibiousLogistics、mineClearing、assaultBoat、obstacleClearing、amphibiousAssault、acvWave、hovercraft、adminOffloading。
 - **通道模組**：[laneGeometry](laneGeometry.md) 與 [routePlanner](routePlanner.md)，被 mineClearing、assaultBoat、obstacleClearing、hovercraft 和門面共用；它們不碰遊戲 API。
-- **外部模組**：coordinator 用 `missileSystem` 讀 SRBM 庫存、用 `strikePlanner` 排 GJ-11 偵察；amphibiousLogistics 用 `assignMission`；門面用 `attackManager` 指揮 SAG 射擊。
+- **外部模組**：coordinator 把 `missileSystem` 的 SRBM 庫存查詢交給 fireSupportGate、用 `strikePlanner` 排 GJ-11 偵察；amphibiousLogistics 用 `assignMission`；門面用 `attackManager` 指揮 SAG 射擊。
 - 除錯開關 [debugFlow](debugFlow.md) 被多數階段模組讀取，圖上省略。
 
 ---

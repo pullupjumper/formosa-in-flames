@@ -111,6 +111,7 @@ function LandingOps.process(config, saveData)
     currentTime = GameApi.ScenEdit_CurrentTime(),
     filteredShips = filteredShips
   })
+
   local endTime = os.clock()
   Logger.log(constants.TAGS.SHIP_MOVEMENT, LogFormat.line("OK", {
     scope = "landingOpsProcess",
@@ -146,7 +147,11 @@ function LandingOps.launchACV(config, saveData, ship)
     num = amphibOps.acvLaunchBatchSize,
     bearing = zone.heading,
     distance = zone.landing.acv.distance,
-    quota = AcvWave.getQuota(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone), GameApi.ScenEdit_CurrentTime()),
+    quota = AcvWave.getQuota(
+      zoneState,
+      AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone),
+      GameApi.ScenEdit_CurrentTime()
+    ),
     routeACV = buildACVRouter(amphibOps, zone, zoneState),
   })
 

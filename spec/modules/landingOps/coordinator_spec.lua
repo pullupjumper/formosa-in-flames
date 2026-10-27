@@ -1,8 +1,7 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps Coordinator Unit Tests
 local Coordinator = require("src.modules.landingOps.coordinator")
-local Utils = require("src.utils.utils")
-local GameUtils = require("src.utils.gameUtils")
+local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
@@ -33,10 +32,6 @@ describe("LandingOps Coordinator", function()
   after_each(function()
     StubTracker.revertAll()
   end)
-
-  -- ============================================================================
-  -- Shared mock data builders
-  -- ============================================================================
 
   ---Create an operational zone descriptor
   ---@param overrides? table
@@ -195,18 +190,15 @@ describe("LandingOps Coordinator", function()
     return ships
   end
 
-  -- ============================================================================
-  -- process
-  -- ============================================================================
-
   describe("process", function()
+    -- Scenario clock readings: before and after the configured start time
+    local BEFORE_START, AFTER_START = 0, 4102444800
     local stubMoveToStagingArea
-    local stubIsAfterStartTime
+    local stubCurrentTime
     local stubGetUnitsInHoldingAreas
     local stubCreateCargoMissions
     local stubTransferAndAssign
     local stubTransferTransportAircraft
-    local stubCalculatePathDistanceAndTime
     local stubCountContactsInArea
     local stubRecordLandingStartTime, stubScheduleHeliWave, stubUpdateHeliWave
     local stubMoveToLaunchStations
@@ -243,13 +235,12 @@ describe("LandingOps Coordinator", function()
       stubUpdateHovercraft = trackStub(stub(Hovercraft, "updateHovercraft"))
       stubIsFirstWaveFull = trackStub(stub(AcvWave, "isFirstWaveFull").returns(true))
       stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToHoldingAreas").returns(false))
-      stubIsAfterStartTime = trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
+      stubCurrentTime = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(BEFORE_START))
       stubGetUnitsInHoldingAreas = trackStub(stub(AmphibiousLogistics, "getUnitsInHoldingAreas")
         .returns(buildHoldingResult({ units = {} })))
       stubCreateCargoMissions = trackStub(stub(AmphibiousLogistics, "createCargoMissions").returns(true))
       stubTransferAndAssign = trackStub(stub(AmphibiousLogistics, "transferAndAssign").returns(true))
       stubTransferTransportAircraft = trackStub(stub(AmphibiousLogistics, "transferAndAssignTransportAircraft"))
-      stubCalculatePathDistanceAndTime = trackStub(stub(GameUtils, "calculatePathDistanceAndTime").returns(0, 600))
       stubCountContactsInArea = trackStub(stub(AmphibiousAssault, "countContactsInArea").returns(99))
       stubRecordLandingStartTime = trackStub(stub(AmphibiousAssault, "recordLandingStartTime"))
       stubScheduleHeliWave = trackStub(stub(HeliWave, "schedule"))
@@ -267,7 +258,7 @@ describe("LandingOps Coordinator", function()
       landingState.amphibOps.calculationResult = { Taoyuan = { name = "Taoyuan", result = {} } }
 
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.MOVING
-      stubIsAfterStartTime.returns(true)
+      stubCurrentTime.returns(AFTER_START)
       stubMoveToStagingArea.returns(true)
 
       Coordinator.process(config, landingState,
@@ -543,10 +534,6 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubTransferRemainingCargos).was.called(1)
     end)
 
-    -- ============================================================================
-    -- process: fire support gate
-    -- ============================================================================
-
     -- Zone phases below stay put under the default stubs (not past start time, no arrivals,
     -- enemy contacts above threshold, no beachhead), so only the gate changes state.
     describe("fire support gate", function()
@@ -591,79 +578,6 @@ describe("LandingOps Coordinator", function()
           { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.is_true(landingState.amphibOps.fireSupportOnHold)
-      end)
-
-      it("should not set fireSupportOnHold when ammo at or above threshold", function()
-        local config = buildGateConfig()
-        local landingState = buildGateLandingState()
-        landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-        trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(50)))
-
-        Coordinator.process(config, landingState,
-          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
-
-        assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
-      end)
-
-      it("should clear fireSupportOnHold once all zones reach WAITING_ASSAULT", function()
-        local config = buildGateConfig()
-        config.red.amphibOps.zones = { buildZone({ name = "Taoyuan" }), buildZone({ name = "Tainan" }) }
-        local landingState = buildGateLandingState()
-        landingState.amphibOps.fireSupportOnHold = true
-        landingState.amphibOps.zoneStates = {
-          Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
-          Tainan  = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING }),
-        }
-
-        Coordinator.process(config, landingState,
-          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
-
-        assert.is_false(landingState.amphibOps.fireSupportOnHold)
-      end)
-
-      it("should keep fireSupportOnHold when one zone still in WAITING_ARRIVAL", function()
-        local config = buildGateConfig()
-        config.red.amphibOps.zones = { buildZone({ name = "Taoyuan" }), buildZone({ name = "Tainan" }) }
-        local landingState = buildGateLandingState()
-        landingState.amphibOps.fireSupportOnHold = true
-        landingState.amphibOps.zoneStates = {
-          Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT }),
-          Tainan  = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL }),
-        }
-        trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(40)))
-
-        Coordinator.process(config, landingState,
-          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
-
-        assert.is_true(landingState.amphibOps.fireSupportOnHold)
-      end)
-
-      -- Gate must not query SRBM ammo while already on hold (saves a game-state read)
-      it("should not call getAmmoInventory when already on hold", function()
-        local config = buildGateConfig()
-        local landingState = buildGateLandingState()
-        landingState.amphibOps.fireSupportOnHold = true
-        landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-        local invStub = trackStub(stub(MissileSystem, "getAmmoInventory"))
-
-        Coordinator.process(config, landingState,
-          { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
-
-        assert.stub(invStub).was_not.called()
-      end)
-
-      -- Defensive guard when SRBM context is absent (e.g., a landing state without ground forces)
-      it("should not error when ground.srbm context is missing", function()
-        local config = buildGateConfig()
-        local landingState = buildGateLandingState()
-        landingState.ground = nil
-        landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-
-        assert.has_no.Error(function()
-          Coordinator.process(config, landingState,
-            { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
-        end)
-        assert.is_not_true(landingState.amphibOps.fireSupportOnHold)
       end)
     end)
   end)

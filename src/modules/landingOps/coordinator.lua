@@ -9,6 +9,7 @@ local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local FireSupportGate = require("src.modules.landingOps.fireSupportGate")
 local HeliWave = require("src.modules.landingOps.heliWave")
 local Hovercraft = require("src.modules.landingOps.hovercraft")
 local MineClearing = require("src.modules.landingOps.mineClearing")
@@ -18,22 +19,6 @@ local MissileSystem = require("src.modules.missileSystem.init")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 
 local Coordinator = {}
-
--- ============================================================================
--- Constants
--- ============================================================================
-
----Phases in which the fleet has arrived at the staging waters (used by the fire support gate)
----@type table<string, true>
-local ARRIVED_PHASES = {
-  [constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT]          = true,
-  [constants.AMPHIBIOUS_PHASES.MINE_CLEARING]            = true,
-  [constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT]             = true,
-  [constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING]        = true,
-  [constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING]          = true,
-  [constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING] = true,
-  [constants.AMPHIBIOUS_PHASES.COMPLETED]                = true,
-}
 
 -- ============================================================================
 -- Helpers
@@ -250,63 +235,6 @@ local function processRemainingCargoTransfer(tickCtx)
   end
 end
 
----Check whether all configured operational zones have reached staging waters
----@param config SBJ__Config
----@param amphibOps SBJ__AmphibOpsContext
----@return boolean # True when every zone's phase is at WAITING_ASSAULT or beyond
-local function hasAllZonesArrived(config, amphibOps)
-  for _, zone in ipairs(config.red.amphibOps.zones) do
-    local zoneState = amphibOps.zoneStates[zone.name]
-    if not zoneState or not ARRIVED_PHASES[zoneState.phase] then
-      return false
-    end
-  end
-  return true
-end
-
----Evaluate the fire support gate from the SRBM ammo level and the fleet arrival status.
----The hold starts when ammo drops below the threshold while at least one zone has not arrived.
----The hold ends when every zone reaches WAITING_ASSAULT or later. The phase machine only moves forward,
----so the hold stays released.
----@param config SBJ__Config
----@param landingState SBJ__LandingOpsState
----@return SBJ__LogResult|nil # Set when the gate switched between hold and resume
-local function evaluateFireSupportGate(config, landingState)
-  local amphib = landingState.amphibOps
-  local arrived = hasAllZonesArrived(config, amphib)
-
-  if amphib.fireSupportOnHold and arrived then
-    amphib.fireSupportOnHold = false
-    return { tag = "RESUME", fields = { scope = "fireSupportGate", reason = "all_zones_at_staging_waters" } }
-  end
-
-  if amphib.fireSupportOnHold or arrived then
-    return nil
-  end
-
-  local report = landingState.ground and
-      MissileSystem.getAmmoInventory(landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.RED)
-  if not report then return nil end
-
-  if report.total.percentage < config.red.amphibOps.fireSupportHoldThreshold then
-    amphib.fireSupportOnHold = true
-    return {
-      tag = "HOLD",
-      fields = {
-        scope = "fireSupportGate",
-        reason = "srbm_low",
-        total = report.total.percentage,
-        threshold = config.red.amphibOps.fireSupportHoldThreshold,
-        firing = report.firing.percentage,
-        resupply = report.resupply.percentage,
-        depot = report.ammo.percentage
-      }
-    }
-  end
-
-  return nil
-end
-
 -- ============================================================================
 -- Public API
 -- ============================================================================
@@ -330,7 +258,7 @@ function Coordinator.process(config, landingState, params)
 
   processRemainingCargoTransfer(tickCtx)
 
-  local gateResult = evaluateFireSupportGate(config, landingState)
+  local gateResult = FireSupportGate.evaluate(config, landingState, MissileSystem.getAmmoInventory)
   if gateResult then
     Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line(gateResult.tag, gateResult.fields))
   end
