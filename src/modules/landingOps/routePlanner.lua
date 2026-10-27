@@ -46,6 +46,13 @@ local function sortByMeasure(waterLanes, loads, tieM, measure)
   return sorted
 end
 
+---Create the per-zone lane load tables when missing
+---@param zoneState SBJ__ZoneState
+function RoutePlanner.ensureLaneState(zoneState)
+  zoneState.queueCounters = zoneState.queueCounters or {}
+  zoneState.laneSlots = zoneState.laneSlots or {}
+end
+
 ---Sort water lanes by distance from the launch position. The lanes within the tie band of the
 ---nearest lane come first, least-loaded first
 ---@param launchPos CMO__Location

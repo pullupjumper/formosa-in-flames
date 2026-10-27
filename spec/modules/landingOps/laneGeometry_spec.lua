@@ -263,31 +263,31 @@ describe("LaneGeometry", function()
   end)
 
   -- ============================================================================
-  -- segmentsIntersect
+  -- doSegmentsIntersect
   -- ============================================================================
 
-  describe("segmentsIntersect", function()
+  describe("doSegmentsIntersect", function()
     ---@param x number
     ---@param y number
     local function p(x, y) return { longitude = x, latitude = y } end
 
     it("should detect crossing segments", function()
-      assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 2), p(0, 2), p(2, 0)))
+      assert.is_true(LaneGeometry.doSegmentsIntersect(p(0, 0), p(2, 2), p(0, 2), p(2, 0)))
     end)
 
     it("should count an endpoint touching the other segment", function()
-      assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(1, 1), p(1, 1), p(2, 0)))
-      assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 0), p(1, 0), p(1, 5)))
+      assert.is_true(LaneGeometry.doSegmentsIntersect(p(0, 0), p(1, 1), p(1, 1), p(2, 0)))
+      assert.is_true(LaneGeometry.doSegmentsIntersect(p(0, 0), p(2, 0), p(1, 0), p(1, 5)))
     end)
 
     it("should count collinear overlapping segments", function()
-      assert.is_true(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 0), p(1, 0), p(3, 0)))
+      assert.is_true(LaneGeometry.doSegmentsIntersect(p(0, 0), p(2, 0), p(1, 0), p(3, 0)))
     end)
 
     it("should not report parallel or separated segments", function()
-      assert.is_false(LaneGeometry.segmentsIntersect(p(0, 0), p(2, 0), p(0, 1), p(2, 1)))
-      assert.is_false(LaneGeometry.segmentsIntersect(p(0, 0), p(1, 0), p(2, 0), p(3, 0)))
-      assert.is_false(LaneGeometry.segmentsIntersect(p(0, 0), p(1, 1), p(2, 0), p(3, -5)))
+      assert.is_false(LaneGeometry.doSegmentsIntersect(p(0, 0), p(2, 0), p(0, 1), p(2, 1)))
+      assert.is_false(LaneGeometry.doSegmentsIntersect(p(0, 0), p(1, 0), p(2, 0), p(3, 0)))
+      assert.is_false(LaneGeometry.doSegmentsIntersect(p(0, 0), p(1, 1), p(2, 0), p(3, -5)))
     end)
   end)
 

@@ -208,7 +208,7 @@ describe("LandingOps", function()
       local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV")
         .returns({ count = 2, isEmpty = false, isPaused = false }))
 
-      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
+      local result = LandingOps.launchACV(buildConfig({ acvLaunchBatchSize = 5, tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
 
       assert.is_true(result)
       local params = stubLaunch.calls[1].vals[1]
@@ -349,7 +349,7 @@ describe("LandingOps", function()
           },
         },
       })
-      local configOverrides = { zones = { zone }, bargeRoroPairingRangeNm = 1 }
+      local configOverrides = { zones = { zone }, bargeRoroPairingRangeNm = 1, roroOffloadBatchSize = 20 }
       local stubHasBridge = trackStub(stub(AdminOffloading, "hasExtendedBridge").returns(true))
       local stubIsBridgeDestroyed = trackStub(stub(AdminOffloading, "isBridgeDestroyed").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(roro))

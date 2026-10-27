@@ -1594,6 +1594,8 @@ config.red.amphibOps.debug = {
   teleportLanding = true,                                     -- hovercraft and ACVs jump to their parking slot
 }
 config.red.amphibOps.periodSec = 5 * 60
+config.red.amphibOps.acvLaunchBatchSize = 5               -- 每次放行的兩棲車數量
+config.red.amphibOps.roroOffloadBatchSize = 20          -- RORO 每次最多卸下的車輛數
 config.red.amphibOps.remainingCargoTransferSec = 2 * 3600 -- 空/機降任務開始後，每隔多久補運一次尚未運完的貨物
 config.red.amphibOps.airlandingFireQty = 440              -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
 config.red.amphibOps.bargeRoroPairingRangeNm = 1          -- 駁船與 RORO 距離小於此值才算同一組

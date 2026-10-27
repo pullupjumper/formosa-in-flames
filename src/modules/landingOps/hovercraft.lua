@@ -83,8 +83,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   end
 
   zoneState.hovercraft = zoneState.hovercraft or {}
-  zoneState.queueCounters = zoneState.queueCounters or {}
-  zoneState.laneSlots = zoneState.laneSlots or {}
+  RoutePlanner.ensureLaneState(zoneState)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Launch hovercraft")
 
   for _, u in ipairs(ships) do

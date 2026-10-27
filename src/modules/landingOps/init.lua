@@ -26,8 +26,7 @@ local LandingOps = {}
 ---@param zoneState SBJ__ZoneState
 ---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]|nil
 local function buildACVRouter(amphibOps, zone, zoneState)
-  zoneState.queueCounters = zoneState.queueCounters or {}
-  zoneState.laneSlots = zoneState.laneSlots or {}
+  RoutePlanner.ensureLaneState(zoneState)
 
   return function(unit, acvKey)
     AcvWave.addACV(zoneState, acvKey, unit.guid)
@@ -144,7 +143,7 @@ function LandingOps.launchACV(config, saveData, ship)
 
   local result = AmphibiousAssault.launchACV({
     ship = ship,
-    num = 5,
+    num = amphibOps.acvLaunchBatchSize,
     bearing = zone.heading,
     distance = zone.landing.acv.distance,
     quota = AcvWave.getQuota(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone), GameApi.ScenEdit_CurrentTime()),
@@ -207,7 +206,7 @@ function LandingOps.offloadVehicles(config, saveData, ship)
         if zone then
           AdminOffloading.offloadVehicles({
             ship = roro,
-            num = 20,
+            num = config.red.amphibOps.roroOffloadBatchSize,
             bearing = zone.heading,
             distance = zone.landing.acv.distance,
             firstDistance = 1

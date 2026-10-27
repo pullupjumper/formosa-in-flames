@@ -1114,6 +1114,8 @@ function ScenEdit_DeleteMine(params) end
 ---cargo manifests, ship layouts, operational zones, and mission timing
 ---@class SBJ__AmphibOpsConfig: table
 ---@field periodSec number Check interval in seconds
+---@field acvLaunchBatchSize integer ACVs released per launch call
+---@field roroOffloadBatchSize integer Vehicles a RORO unloads per call
 ---@field remainingCargoTransferSec number Seconds between transfers of the remaining cargo while an airlanding mission runs
 ---@field airlandingFireQty number Total shots a SAG fires at the airlanding zone contacts, split among them
 ---@field bargeRoroPairingRangeNm number A barge and a RORO pair when they are closer than this (nm)
