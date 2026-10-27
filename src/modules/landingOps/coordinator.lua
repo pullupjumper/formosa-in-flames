@@ -43,7 +43,7 @@ local ARRIVED_PHASES = {
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
 ---@param zone SBJ__OperationalZoneDescriptor
-local function processZoneAirSetup(config, landingState, zone)
+local function startZoneAirSetup(config, landingState, zone)
   if zone.air.transportAircraft then
     AmphibiousLogistics.transferAndAssignTransportAircraft(zone.air.transportAircraft)
   end
@@ -84,7 +84,7 @@ local function stepWaitingArrival(tickCtx, zone, zoneState)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
     zoneState.amphibiousAssaultStartTime = tickCtx.currentTime
-    processZoneAirSetup(tickCtx.config, tickCtx.landingState, zone)
+    startZoneAirSetup(tickCtx.config, tickCtx.landingState, zone)
   end
 end
 
@@ -153,7 +153,10 @@ end
 local function stepAssaultLanding(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
   local counts = AmphibiousAssault.countUnitsInEachArea(amphibOps.zones)[zone.name]
-  local landedVehicles = counts and ((counts["ZBD-05"] or 0) + (counts["ZTD-05"] or 0)) or 0
+  local landedVehicles = 0
+  for _, acvType in ipairs(AmphibiousAssault.ACV_TYPES) do
+    landedVehicles = landedVehicles + (counts and counts[acvType.name] or 0)
+  end
   local hasBeachhead = landedVehicles >= zone.landing.beachheadVehicles
   if hasBeachhead then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING
@@ -164,7 +167,7 @@ end
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
----@return boolean
+---@return boolean # True if no ACV, hovercraft or boat is left on the deploy line
 local function isDeployLineReleased(tickCtx, zone, zoneState)
   return not AmphibiousAssault.hasUnreleasedACV(zone, tickCtx.filteredShips) and
       not Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, tickCtx.filteredShips) and
@@ -267,37 +270,41 @@ end
 ---so the hold stays released.
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
+---@return SBJ__LogResult|nil # Set when the gate switched between hold and resume
 local function evaluateFireSupportGate(config, landingState)
   local amphib = landingState.amphibOps
   local arrived = hasAllZonesArrived(config, amphib)
 
   if amphib.fireSupportOnHold and arrived then
     amphib.fireSupportOnHold = false
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT,
-      LogFormat.line("RESUME", { scope = "fireSupportGate", reason = "all_zones_at_staging_waters" }))
-    return
+    return { tag = "RESUME", fields = { scope = "fireSupportGate", reason = "all_zones_at_staging_waters" } }
   end
 
   if amphib.fireSupportOnHold or arrived then
-    return
+    return nil
   end
 
   local report = landingState.ground and
       MissileSystem.getAmmoInventory(landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.RED)
-  if not report then return end
+  if not report then return nil end
 
   if report.total.percentage < config.red.amphibOps.fireSupportHoldThreshold then
     amphib.fireSupportOnHold = true
-    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line("HOLD", {
-      scope = "fireSupportGate",
-      reason = "srbm_low",
-      total = report.total.percentage,
-      threshold = config.red.amphibOps.fireSupportHoldThreshold,
-      firing = report.firing.percentage,
-      resupply = report.resupply.percentage,
-      depot = report.ammo.percentage
-    }))
+    return {
+      tag = "HOLD",
+      fields = {
+        scope = "fireSupportGate",
+        reason = "srbm_low",
+        total = report.total.percentage,
+        threshold = config.red.amphibOps.fireSupportHoldThreshold,
+        firing = report.firing.percentage,
+        resupply = report.resupply.percentage,
+        depot = report.ammo.percentage
+      }
+    }
   end
+
+  return nil
 end
 
 -- ============================================================================
@@ -322,7 +329,11 @@ function Coordinator.process(config, landingState, params)
   end
 
   processRemainingCargoTransfer(tickCtx)
-  evaluateFireSupportGate(config, landingState)
+
+  local gateResult = evaluateFireSupportGate(config, landingState)
+  if gateResult then
+    Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line(gateResult.tag, gateResult.fields))
+  end
 end
 
 return Coordinator

@@ -565,7 +565,6 @@ function GameUtils.removeRPs(sideName, zone)
   return true
 end
 
----Check if point is within defined area using reference points
 ---Resolve reference point names to numeric locations, in the order CMO returns them
 ---@param sideName string
 ---@param area string[]|nil

@@ -40,7 +40,7 @@ local AMPHIBIOUS_SHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_082]    = true
 }
 
----@type {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[]}[]
+---@type SBJ__ShipTransferSpec[]
 local SHIP_TRANSFER_SPECS = {
   {
     dbids = { constants.PLATFORMS.TYPE_075, constants.PLATFORMS.TYPE_076 },
@@ -179,7 +179,7 @@ end
 
 ---Find matching transfer spec for a ship DBID
 ---@param shipDbid number
----@return {dbids: number[], manifestKey: string, transfers: {platform: string, configKey: string, loadoutIdx: integer}[]}|nil # Matching spec or nil
+---@return SBJ__ShipTransferSpec|nil # Matching spec or nil
 local function findTransferSpec(shipDbid)
   for _, spec in ipairs(SHIP_TRANSFER_SPECS) do
     for _, dbid in ipairs(spec.dbids) do

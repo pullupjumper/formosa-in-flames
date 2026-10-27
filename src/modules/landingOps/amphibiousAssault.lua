@@ -316,6 +316,8 @@ end
 -- Public API
 -- ============================================================================
 
+AmphibiousAssault.ACV_TYPES = ACV_TYPES
+
 ---Record when the air landing began. It starts the clock for the periodic remaining-cargo transfer
 ---@param zoneState SBJ__ZoneState
 function AmphibiousAssault.recordLandingStartTime(zoneState)

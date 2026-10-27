@@ -1,6 +1,7 @@
 local constants = {}
 
 constants.METERS_PER_NM = 1852
+constants.METERS_PER_DEGREE = 111320 -- flat-earth scale, meters per degree of latitude
 constants.SECONDS_PER_HOUR = 3600
 
 constants.AREAS = {

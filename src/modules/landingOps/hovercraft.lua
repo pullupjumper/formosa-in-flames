@@ -59,7 +59,7 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 ---@param ships CMO__SideUnit[]
----@return boolean
+---@return boolean # True if a ready hovercraft is still on its mothership
 function Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, ships)
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)

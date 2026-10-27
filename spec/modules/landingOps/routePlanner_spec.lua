@@ -274,21 +274,32 @@ describe("RoutePlanner", function()
   end)
 
   -- ============================================================================
-  -- buildBoatRoute
+  -- assignShoreSlot
   -- ============================================================================
 
-  describe("reserveShoreSlot", function()
+  describe("assignShoreSlot", function()
+    ---@param slots table<integer, string|false>
+    ---@param guid string
+    ---@return integer|nil
+    local function findSlotOf(slots, guid)
+      for index, holder in ipairs(slots) do
+        if holder == guid then return index end
+      end
+      return nil
+    end
+
     it("should hold the slot on S_lane so the next unit parks behind the boat", function()
       local lanes = buildLanes(1)
       clearAll(lanes)
       local params = buildParams(lanes)
-      local reserveParams = { lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }
+      local assignParams = { lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }
       local beachLane = lanes.waterLanes[1].beachLanes[1]
 
-      local slot = RoutePlanner.reserveShoreSlot(beachLane.id, reserveParams)
+      local isAssigned = RoutePlanner.assignShoreSlot(beachLane.id, assignParams)
 
+      local slot = findSlotOf(params.laneSlots[beachLane.id], "BOAT-1")
+      assert.is_true(isAssigned)
       assert.is_true(slot > 1)
-      assert.are.equal("BOAT-1", params.laneSlots[beachLane.id][slot])
       local plan = RoutePlanner.buildRoute(params)
       assert.are_not.equal(slot, plan.slot)
     end)
@@ -298,10 +309,11 @@ describe("RoutePlanner", function()
       local params = buildParams(lanes)
       local beachLane = lanes.waterLanes[1].beachLanes[1]
 
-      local slot = RoutePlanner.reserveShoreSlot(beachLane.id, {
+      RoutePlanner.assignShoreSlot(beachLane.id, {
         lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" })
 
       local slots = params.laneSlots[beachLane.id]
+      local slot = findSlotOf(slots, "BOAT-1")
       assert.is_true(slot > 1)
       for i = 1, slot do
         assert.is_not_nil(slots[i])
@@ -309,14 +321,18 @@ describe("RoutePlanner", function()
       assert.are.equal(slot, #slots)
     end)
 
-    it("should return nil for an unknown beach lane", function()
+    it("should return false for an unknown beach lane", function()
       local lanes = buildLanes(1)
       local params = buildParams(lanes)
 
-      assert.is_nil(RoutePlanner.reserveShoreSlot("NOPE", {
+      assert.is_false(RoutePlanner.assignShoreSlot("NOPE", {
         lanes = lanes, routeConfig = params.routeConfig, laneSlots = params.laneSlots, guid = "BOAT-1" }))
     end)
   end)
+
+  -- ============================================================================
+  -- buildBoatRoute
+  -- ============================================================================
 
   describe("buildBoatRoute", function()
     local boatPos = LaneGeometry.buildPoint(frame, -3.5 * 1852, -375)

@@ -196,7 +196,7 @@ describe("AmphibiousAssault", function()
 
   describe("moveToLaunchStations", function()
     local stubGetUnit, stubFindAreaLocations
-    local NM = 1852 / 111320 -- degrees of latitude per nautical mile (laneGeometry flat-earth scale)
+    local NM = constants.METERS_PER_NM / constants.METERS_PER_DEGREE -- degrees of latitude per nautical mile (laneGeometry flat-earth scale)
 
     -- Zone heading 0 (north) with the lane center at 25.0N: along = (latitude - 25.0) in meters toward the north
     local center = { latitude = 25.0, longitude = 121.0 }

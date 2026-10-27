@@ -6,12 +6,6 @@ local Utils = require("src.utils.utils")
 local LaneGeometry = {}
 
 -- ============================================================================
--- Constants
--- ============================================================================
-
-local METERS_PER_DEGREE = 111320
-
--- ============================================================================
 -- Coordinate Conversion
 -- ============================================================================
 
@@ -23,8 +17,8 @@ local METERS_PER_DEGREE = 111320
 local function convertToLocalXY(frame, pos)
   local originLat, originLon = Utils.toNumber(frame.origin.latitude), Utils.toNumber(frame.origin.longitude)
   local cosLat = math.cos(math.rad(originLat))
-  local x = (Utils.toNumber(pos.longitude) - originLon) * METERS_PER_DEGREE * cosLat
-  local y = (Utils.toNumber(pos.latitude) - originLat) * METERS_PER_DEGREE
+  local x = (Utils.toNumber(pos.longitude) - originLon) * constants.METERS_PER_DEGREE * cosLat
+  local y = (Utils.toNumber(pos.latitude) - originLat) * constants.METERS_PER_DEGREE
   return x, y
 end
 
@@ -37,8 +31,8 @@ local function convertToGeo(frame, x, y)
   local originLat, originLon = Utils.toNumber(frame.origin.latitude), Utils.toNumber(frame.origin.longitude)
   local cosLat = math.cos(math.rad(originLat))
   return {
-    latitude = originLat + y / METERS_PER_DEGREE,
-    longitude = originLon + x / (METERS_PER_DEGREE * cosLat),
+    latitude = originLat + y / constants.METERS_PER_DEGREE,
+    longitude = originLon + x / (constants.METERS_PER_DEGREE * cosLat),
   }
 end
 

@@ -206,7 +206,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
           boat:Launch(true)
           entry.status = STATUS.LAUNCHED
           entry.finalPoint = course[#course]
-          RoutePlanner.reserveShoreSlot(entry.beachLaneId, {
+          RoutePlanner.assignShoreSlot(entry.beachLaneId, {
             lanes = zoneState.lanes,
             routeConfig = amphibOps.tuning.route,
             laneSlots = zoneState.laneSlots,
@@ -255,7 +255,7 @@ end
 
 ---Check if any paired boat is still waiting on its carrier
 ---@param zoneState SBJ__ZoneState
----@return boolean
+---@return boolean # True if a paired boat has not launched yet
 function AssaultBoat.hasPendingBoats(zoneState)
   for _, entry in pairs(zoneState.boats or {}) do
     if entry.status == STATUS.PENDING then

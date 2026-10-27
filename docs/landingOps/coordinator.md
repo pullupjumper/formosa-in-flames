@@ -75,7 +75,7 @@ step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 ste
 
 ## 各區空中設定
 
-`processZoneAirSetup` 在每個 zone 離開 `WAITING_ARRIVAL` 時依該區 `zone.air` 設定觸發：
+`startZoneAirSetup` 在每個 zone 離開 `WAITING_ARRIVAL` 時依該區 `zone.air` 設定觸發：
 
 1. `zone.air.transportAircraft` 有值時，`AmphibiousLogistics.transferAndAssignTransportAircraft` 對陸基運輸機隊轉貨並指派任務
 2. `zone.air.reconTemplate` 有值時，經 [strikePlanner 門面](../strikePlanner/README.md) 的 `StrikePlanner.addReconEntry` 排入一架 GJ-11 偵察（轉發至 [`Recon.addEntry`](../strikePlanner/recon.md)）

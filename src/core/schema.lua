@@ -666,6 +666,31 @@ function ScenEdit_DeleteMine(params) end
 ---@field bridgeGUID? string Bridge unit GUID for barge connection
 ---@field roros string[] Array of RORO ship GUIDs transported by this barge
 
+---One cargo item extracted from a ship for offloading
+---@class SBJ__CargoItem: table
+---@field guid string Cargo unit GUID
+---@field dbid number Cargo platform DBID
+---@field name string Cargo unit name
+---@field type number CMO cargo type code
+
+---Barge to pair a RORO ship with, plus the course it sails
+---@class SBJ__BargeEntry: table
+---@field unit CMO__Unit Barge unit
+---@field zone SBJ__OperationalZoneDescriptor Zone the barge serves
+---@field dest CMO__Waypoint[] Course to the barge
+
+---One cargo transfer from a manifest onto a platform
+---@class SBJ__ShipTransferEntry: table
+---@field platform string Platform type of the receiving unit (constants.PLATFORM_TYPES)
+---@field configKey string Key of the receiving unit's config in the zone landing config
+---@field loadoutIdx integer Loadout slot of the manifest that supplies the cargo
+
+---Cargo transfers for the ship DBIDs that share one manifest
+---@class SBJ__ShipTransferSpec: table
+---@field dbids number[] Ship DBIDs the spec applies to
+---@field manifestKey string Key into the zone's transferManifest
+---@field transfers SBJ__ShipTransferEntry[]
+
 ---Ship position calculation result for amphibious operation planning
 ---@class SBJ__ShipCalculationState: table
 ---@field locations CMO__Location[] Calculated positions for ship formation
@@ -775,7 +800,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field routeConfig SBJ__RouteConfig
 ---@field queueCounters table<string, integer> Also used as water lane load
 
----@class SBJ__ReserveShoreSlotParams: table
+---@class SBJ__AssignShoreSlotParams: table
 ---@field lanes SBJ__LanePlanState
 ---@field routeConfig SBJ__RouteConfig
 ---@field laneSlots SBJ__LaneSlotsState

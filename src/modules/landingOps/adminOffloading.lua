@@ -127,7 +127,7 @@ end
 ---Pair a RORO ship with a barge for the logistics chain.
 ---Add the RORO to the roros list of the barge and set the RORO course.
 ---@param roroEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }
----@param bargeEntry { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }
+---@param bargeEntry SBJ__BargeEntry
 ---@param barges table<string, SBJ__BargeContext> Barge registry indexed by barge GUID
 ---@return SBJ__LogResult # Deferred log result describing the outcome
 local function pairROROWithBarge(roroEntry, bargeEntry, barges)
@@ -166,7 +166,7 @@ end
 ---Find cargo items on a ship, up to the given count
 ---@param ship CMO__Unit
 ---@param num number
----@return { guid: string, dbid: number, name: string, type: number }[] # Cargo items found
+---@return SBJ__CargoItem[] # Cargo items found
 local function findCargoItems(ship, num)
   local cargoItems = {}
   local count = 0
@@ -185,7 +185,7 @@ end
 
 ---Create one offloaded vehicle at the given location
 ---@param ship CMO__Unit
----@param item { guid: string, dbid: number, name: string, type: number }
+---@param item SBJ__CargoItem
 ---@param location CMO__Location
 ---@param index integer
 ---@return SBJ__LogResult # Deferred log result describing the outcome
@@ -217,7 +217,7 @@ end
 
 ---Create every extracted cargo item as a vehicle. Stop at the first failure.
 ---@param ship CMO__Unit
----@param cargoItems { guid: string, dbid: number, name: string, type: number }[]
+---@param cargoItems SBJ__CargoItem[]
 ---@param locations CMO__Location[]
 ---@return integer|nil count Vehicles offloaded, nil when a spawn failed
 ---@return SBJ__LogResult[] results Deferred log results in emission order
