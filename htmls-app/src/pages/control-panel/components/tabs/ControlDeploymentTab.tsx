@@ -46,6 +46,7 @@ export function ControlDeploymentTab({
     airbases,
     budget,
     deployedMissileSystems,
+    injectedDeployments,
     deployedJammers,
     setBudget: onBudgetChange,
     updateAirbase: onUpdateAirbase,
@@ -87,6 +88,7 @@ export function ControlDeploymentTab({
       jammers,
       deployedJammers,
       deployedMissileSystems,
+      injectedDeployments,
     });
     const doctrine = c2.buildEmconResult();
     console.log('Export data:', result, doctrine);

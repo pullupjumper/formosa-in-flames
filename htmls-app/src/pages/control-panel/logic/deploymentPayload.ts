@@ -113,6 +113,8 @@ export interface ToControlPanelResultParams {
   jammers: Jammer[];
   deployedJammers: Map<number, Coordinate>;
   deployedMissileSystems: Map<string, MissileDeployment>;
+  /** The scenario's own placements; a unit still holding its entry was not moved */
+  injectedDeployments: ReadonlyMap<string, MissileDeployment>;
 }
 
 export function toControlPanelResult({
@@ -121,6 +123,7 @@ export function toControlPanelResult({
   jammers,
   deployedJammers,
   deployedMissileSystems,
+  injectedDeployments,
 }: ToControlPanelResultParams): ControlPanelResult {
   return {
     budget: { initial: budget.total, used: budget.used, remaining: budget.current },
@@ -135,14 +138,16 @@ export function toControlPanelResult({
         radius: unit.radius,
       };
     }),
-    missileSystems: Array.from(deployedMissileSystems.entries()).map(([key, deployment]) => ({
-      key,
-      unitname: deployment.unitname,
-      missileSystemType: deployment.missileSystemType,
-      center: deployment.center,
-      openingAngle: deployment.openingAngle,
-      tacticalAreas: deployment.tacticalAreas,
-      paths: toExportPaths(deployment.paths),
-    })),
+    missileSystems: Array.from(deployedMissileSystems.entries())
+      .filter(([key, deployment]) => injectedDeployments.get(key) !== deployment)
+      .map(([key, deployment]) => ({
+        key,
+        unitname: deployment.unitname,
+        missileSystemType: deployment.missileSystemType,
+        center: deployment.center,
+        openingAngle: deployment.openingAngle,
+        tacticalAreas: deployment.tacticalAreas,
+        paths: toExportPaths(deployment.paths),
+      })),
   };
 }

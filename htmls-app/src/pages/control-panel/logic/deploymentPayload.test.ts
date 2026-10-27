@@ -70,6 +70,45 @@ describe('toExportPaths', () => {
 });
 
 describe('toControlPanelResult', () => {
+  const baseParams = {
+    budget: createBudgetState(1000),
+    airbases: [],
+    jammers: JAMMERS_DATA,
+    deployedJammers: new Map(),
+  };
+
+  it('leaves out scenario-placed units the player did not move', () => {
+    const injected = new Map([['k', fromOperationalArea(CATEGORY, UNIT_NAME, AREA)]]);
+
+    const result = toControlPanelResult({
+      ...baseParams,
+      deployedMissileSystems: new Map(injected),
+      injectedDeployments: injected,
+    });
+
+    expect(result.missileSystems).toEqual([]);
+  });
+
+  it('keeps a unit the player redeployed', () => {
+    const injected = new Map([['k', fromOperationalArea(CATEGORY, UNIT_NAME, AREA)]]);
+    const moved = generateDeploymentData({
+      unitname: UNIT_NAME,
+      missileSystemType: CATEGORY,
+      center: { latitude: 23.9, longitude: 120.75 },
+      angle: 90,
+      validateTaiwanBoundary: false,
+      rng: createSeededRandom(3),
+    });
+
+    const result = toControlPanelResult({
+      ...baseParams,
+      deployedMissileSystems: new Map([['k', moved!]]),
+      injectedDeployments: injected,
+    });
+
+    expect(result.missileSystems.map((system) => system.key)).toEqual(['k']);
+  });
+
   it('uses the Lua field names and the trimmed paths', () => {
     const rng = createSeededRandom(7);
     const generated = generateDeploymentData({
@@ -88,6 +127,7 @@ describe('toControlPanelResult', () => {
       jammers: JAMMERS_DATA,
       deployedJammers: new Map([[0, { latitude: 24, longitude: 121 }]]),
       deployedMissileSystems: new Map([['k', generated!]]),
+      injectedDeployments: new Map(),
     });
 
     expect(result.budget).toEqual({ initial: 1000, used: 0, remaining: 1000 });
@@ -118,6 +158,7 @@ describe('toControlPanelResult', () => {
       jammers: [],
       deployedJammers: new Map(),
       deployedMissileSystems: new Map([['k', generated]]),
+      injectedDeployments: new Map(),
     }).missileSystems[0];
 
     // Mirror what unitStatusUI.lua's transformData stores per area.

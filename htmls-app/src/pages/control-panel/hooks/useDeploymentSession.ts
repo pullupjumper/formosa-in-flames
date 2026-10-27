@@ -17,8 +17,9 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
   const [deployedJammers, setDeployedJammers] = useState<Map<number, Coordinate>>(new Map());
   // Units the scenario already placed start out deployed; the injected payload
   // is read once, so seeding state here replaces a setState-in-effect.
-  const [deployedMissileSystems, setDeployedMissileSystems] = useState(() =>
-    buildInjectedDeployments(payload.missileSystems)
+  const [injectedDeployments] = useState(() => buildInjectedDeployments(payload.missileSystems));
+  const [deployedMissileSystems, setDeployedMissileSystems] = useState(
+    () => new Map(injectedDeployments)
   );
 
   const updateAirbase = useCallback((index: number, updater: (base: Airbase) => Airbase) => {
@@ -60,6 +61,7 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
     deployJammer,
     undeployJammer,
     deployedMissileSystems,
+    injectedDeployments,
     deployMissileSystem,
     undeployMissileSystem,
   };
