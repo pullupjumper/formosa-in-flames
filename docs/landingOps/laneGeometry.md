@@ -62,7 +62,7 @@ laneGeometry 不呼叫任何遊戲 API，輸入輸出都是座標與 table，所
 
 航線通過判斷：
 
-- `doSegmentsIntersect`：兩線段相交，**含相切**
+- `isSegmentIntersecting`：兩線段相交，**含相切**
 - `isSegmentTouchingCell`：線段碰到方塊任一條邊
 - `isRouteClear(route, cells)`：航線的每一段只要碰到一個非 `cleared` 的方塊就不通過；`cells` 為 `nil` 視為通過
 
@@ -83,7 +83,7 @@ laneGeometry 不呼叫任何遊戲 API，輸入輸出都是座標與 table，所
 | `calculateInlandDepthM(frame, polygon)` | 多邊形朝岸最深的距離 |
 | `buildMineCorridors(lanes, cellSizeM)`、`findMineCell(frame, corridors, pos)` | 雷格 |
 | `buildObstacleCells(frame, polygon, cellSizeM)` | 障礙方塊 |
-| `doSegmentsIntersect`、`isSegmentTouchingCell`、`isRouteClear` | 碰撞判斷 |
+| `isSegmentIntersecting`、`isSegmentTouchingCell`、`isRouteClear` | 碰撞判斷 |
 
 ---
 

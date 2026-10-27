@@ -364,7 +364,7 @@ end
 ---@param q1 CMO__Location
 ---@param q2 CMO__Location
 ---@return boolean # True if the segments intersect, touching included
-function LaneGeometry.doSegmentsIntersect(p1, p2, q1, q2)
+function LaneGeometry.isSegmentIntersecting(p1, p2, q1, q2)
   local d1 = calculateOrientation(q1, q2, p1)
   local d2 = calculateOrientation(q1, q2, p2)
   local d3 = calculateOrientation(p1, p2, q1)
@@ -388,7 +388,7 @@ end
 function LaneGeometry.isSegmentTouchingCell(a, b, cell)
   local corners = cell.corners
   for i = 1, #corners do
-    if LaneGeometry.doSegmentsIntersect(a, b, corners[i], corners[i % #corners + 1]) then
+    if LaneGeometry.isSegmentIntersecting(a, b, corners[i], corners[i % #corners + 1]) then
       return true
     end
   end
