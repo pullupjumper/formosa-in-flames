@@ -35,6 +35,11 @@
   --color-selection-muted: #5c7080;
   --color-selection-line: #dce0e4;
 
+  /* Map overlay controls (coordinate search) */
+  --color-map-control-bg: rgba(240, 242, 244, 0.82);
+  --color-map-control-border: #ced4da;
+  --color-map-control-text: #394b59;
+
   --color-status-success: #0f9960;
   --color-status-danger: #db3737;
   --color-status-warning: #d9822b;

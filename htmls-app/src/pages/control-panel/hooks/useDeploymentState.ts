@@ -3,10 +3,11 @@ import type { Coordinate } from '@/types/geo';
 import type { Jammer } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
-import { calculateBearing, calculateCentroid, isPointInTaiwan } from '@/utils/geo';
+import { calculateBearing, calculateCentroid } from '@/utils/geo';
 import {
   generateDeploymentData,
   generateOffsetsForAngle,
+  isPointInTaiwan,
   relocateArea,
   resolveOpeningAngle,
   rotateDeployment,

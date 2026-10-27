@@ -145,42 +145,18 @@ function CoordinateSearch() {
   return (
     <>
       {/* Search input overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          left: 60,
-          zIndex: 1000,
-        }}
-      >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 4 }}>
+      <div className="absolute top-2.5 left-15 z-1000">
+        <form onSubmit={handleSubmit} className="flex gap-1">
           <input
             type="text"
             value={value}
             onChange={(event) => setValue(event.target.value)}
             placeholder="lat, lng"
-            style={{
-              width: 200,
-              padding: '4px 8px',
-              fontSize: 12,
-              background: 'rgba(240, 242, 244, 0.82)',
-              border: '1px solid #ced4da',
-              borderRadius: 2,
-              color: '#394b59',
-              outline: 'none',
-            }}
+            className="w-50 rounded-xs border border-map-control-border bg-map-control-bg px-2 py-1 text-xs text-map-control-text outline-none"
           />
           <button
             type="submit"
-            style={{
-              padding: '4px 8px',
-              fontSize: 12,
-              background: 'rgba(240, 242, 244, 0.82)',
-              border: '1px solid #ced4da',
-              borderRadius: 2,
-              color: '#394b59',
-              cursor: 'pointer',
-            }}
+            className="cursor-pointer rounded-xs border border-map-control-border bg-map-control-bg px-2 py-1 text-xs text-map-control-text"
           >
             Go
           </button>

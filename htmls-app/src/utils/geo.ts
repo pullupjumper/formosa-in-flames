@@ -1,6 +1,5 @@
 import type { LatLng, LatLngExpression } from 'leaflet';
 import type { Coordinate, CoordinateOffset } from '@/types/geo';
-import { CONFIG } from '@/constants/controlPanel';
 
 /**
  * Coordinate helpers that every layer shares. Pure functions over
@@ -137,22 +136,6 @@ export function translateCoordinate(base: Coordinate, offset: CoordinateOffset):
     latitude: base.latitude + offset.latitudeDelta,
     longitude: base.longitude + offset.longitudeDelta,
   };
-}
-
-// ============================================================================
-// TAIWAN BOUNDARY
-// ============================================================================
-const TAIWAN_POLYGON: Coordinate[] = CONFIG.TAIWAN_BOUNDARY.map(([latitude, longitude]) => ({
-  latitude,
-  longitude,
-}));
-
-export function isPointInTaiwan(point: Coordinate): boolean {
-  return isPointInPolygon(point, TAIWAN_POLYGON);
-}
-
-export function areAllPointsInTaiwan(points: Coordinate[]): boolean {
-  return areAllPointsInPolygon(points, TAIWAN_POLYGON);
 }
 
 // ============================================================================

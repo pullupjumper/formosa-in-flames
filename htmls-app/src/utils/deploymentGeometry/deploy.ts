@@ -1,11 +1,11 @@
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment, TacticalAreas } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
-import { areAllPointsInTaiwan } from '@/utils/geo';
 import { AREA_CONFIG, DEPLOYMENT_MAX_ATTEMPTS } from './config';
 import { generateLayout } from './layout';
 import { buildMovementPaths } from './paths';
 import { buildShelterPlan } from './shelter';
+import { areAllPointsInTaiwan } from './taiwanBoundary';
 
 /**
  * The two verbs that produce a whole deployment: `generate` from a map click

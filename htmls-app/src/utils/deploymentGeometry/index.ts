@@ -35,3 +35,5 @@ export {
 } from './preview';
 
 export { createEmptyMovementPaths } from './paths';
+
+export { isPointInTaiwan } from './taiwanBoundary';
