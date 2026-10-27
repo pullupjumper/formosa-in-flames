@@ -18,7 +18,7 @@
 
 - `config.red.amphibOps.zones[i].landing.beachheadVehicles`，型別 `SBJ__ZoneLanding`（`src/core/schema.lua`）。
 
-## 不在範圍內
+## 不做
 
 - `WAITING_ADMIN_OFFLOADING` 的絕對安全條件（另有 TODO）。
 - 其他車種（PLL-05、PLZ-96 等）不計入門檻。

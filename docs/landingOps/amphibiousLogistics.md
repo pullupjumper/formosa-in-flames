@@ -71,7 +71,7 @@
 
 | 路徑 | 用途 |
 |---|---|
-| `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、貨運任務清單、`transferManifest` |
+| `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、貨運任務名稱 `missionName`、`transferManifest` |
 | `config.red.amphibOps.zones[].air.transportHelicopter`、`attackHelicopter` | 直升機 DBID、任務、`transferManifest` |
 | `config.red.amphibOps.zones[].movement.holdingAreas` | `mothership`、`deployLine` |
 | `zone.air.transportAircraft` | 陸基運輸機清單 |
