@@ -230,7 +230,11 @@ function MissileSystem.redeploy(missileSystemConfigMap, groundCtx, sideName, lay
   local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, layouts)
 
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
-  Deployment.addMissileSystems(missileSystemConfigMap, sideName)
+  local rebuiltFiringUnits = {}
+  for _, layout in ipairs(layouts) do
+    rebuiltFiringUnits[layout.unitname] = true
+  end
+  Deployment.addMissileSystems(missileSystemConfigMap, sideName, rebuiltFiringUnits)
   Context.initMissileSystemContexts(missileSystemConfigMap, groundCtx)
 end
 

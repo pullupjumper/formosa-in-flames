@@ -101,6 +101,50 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(string.find(message, "firing=0/1", 1, true))
       assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
     end)
+
+    -- Positive: only the firing units named in the filter are removed and rebuilt, with their resupply units
+    it("should rebuild only the named firing units and leave the others untouched", function()
+      local function makeUnitPair(suffix)
+        return {
+          name = "FU-" .. suffix,
+          dbid = 1234,
+          resupplyUnit = "RU-" .. suffix,
+          weaponDBID = 5678,
+          operationalArea = { name = "OPAREA-" .. suffix, HA = { { course = { { latitude = 25.0, longitude = 121.0 } } } } }
+        }, {
+          name = "RU-" .. suffix,
+          unitCount = 1,
+          operationalArea = { name = "OPAREA-" .. suffix, RL = { { course = { { latitude = 25.1, longitude = 121.1 } } } } }
+        }
+      end
+      local firingA, resupplyA = makeUnitPair("A")
+      local firingB, resupplyB = makeUnitPair("B")
+      local missileSystemConfigMap = {
+        srbm = {
+          firingUnits = { ["FU-A"] = firingA, ["FU-B"] = firingB },
+          resupplyUnits = { ["RU-A"] = resupplyA, ["RU-B"] = resupplyB },
+          ammunitions = {}
+        }
+      }
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        return { guid = "old-" .. name, name = name }
+      end)
+      trackStub(GameUtils, "resolveUnitType").returns("Unit")
+      local deleteStub = trackStub(GameApi, "ScenEdit_DeleteUnit").returns(true)
+      local addedNames = {}
+      trackStub(GameApi, "ScenEdit_AddUnit").invokes(function(opts)
+        table.insert(addedNames, opts.unitname)
+        return { guid = "new-" .. opts.unitname, name = opts.unitname, mounts = {} }
+      end)
+
+      Deployment.addMissileSystems(missileSystemConfigMap, constants.SIDES.RED, { ["FU-A"] = true })
+
+      table.sort(addedNames)
+      assert.are.same({ "FU-A", "RU-A" }, addedNames)
+      assert.stub(deleteStub).was.called_with({ side = constants.SIDES.RED, guid = "old-FU-A" })
+      assert.stub(deleteStub).was_not.called_with({ side = constants.SIDES.RED, guid = "old-FU-B" })
+      assert.stub(deleteStub).was_not.called_with({ side = constants.SIDES.RED, guid = "old-RU-B" })
+    end)
   end)
 
   -- ============================================================================

@@ -1409,7 +1409,7 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, "Taiwan")
-      assert.stub(addStub).was.called_with(missileSystemConfigMap, "Taiwan")
+      assert.stub(addStub).was.called_with(missileSystemConfigMap, "Taiwan", { ["FU-1"] = true })
       assert.stub(contextStub).was.called_with(missileSystemConfigMap, groundCtx)
     end)
   end)

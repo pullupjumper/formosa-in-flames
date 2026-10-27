@@ -356,10 +356,41 @@ local function addAmmunition(missileSystemType, systemConfig, descriptor, sideNa
   return false, { { tag = "FAIL", fields = LogFormat.merge(context, { reason = "no_matching_resupply_unit" }) } }
 end
 
+---The firing units, resupply units and ammunitions to rebuild for one system
+---@param systemConfig SBJ__MissileSystemConfig
+---@param firingUnitNames table<string, boolean>|nil Selected firing unit names; nil selects everything
+---@return table<string, SBJ__FiringUnitDescriptor> firingUnits
+---@return table<string, SBJ__ResupplyUnitDescriptor> resupplyUnits
+---@return table<string, SBJ__AmmunitionUnitDescriptor> ammunitions
+local function selectUnitsToRebuild(systemConfig, firingUnitNames)
+  if not firingUnitNames then
+    return systemConfig.firingUnits, systemConfig.resupplyUnits, systemConfig.ammunitions
+  end
+
+  local firingUnits, resupplyUnits, ammunitions = {}, {}, {}
+
+  for key, descriptor in pairs(systemConfig.firingUnits) do
+    local resupply = systemConfig.resupplyUnits[descriptor.resupplyUnit]
+    if firingUnitNames[descriptor.name] then
+      firingUnits[key] = descriptor
+      if resupply then
+        resupplyUnits[resupply.name] = resupply
+        local ammo = systemConfig.ammunitions[resupply.ammunition]
+        if ammo then
+          ammunitions[ammo.name] = ammo
+        end
+      end
+    end
+  end
+
+  return firingUnits, resupplyUnits, ammunitions
+end
+
 ---Add missile system units to the game
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param sideName string
-function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
+---@param firingUnitNames? table<string, boolean> Rebuild only these firing units with their resupply units and ammunition; nil rebuilds everything
+function Deployment.addMissileSystems(missileSystemConfigMap, sideName, firingUnitNames)
   -- systemHasFailure is derived from the rows each helper produced, so it cannot
   -- drift from them. It only picks the tag of the per-system summary row; the
   -- report already routes the individual FAIL rows to the error sink.
@@ -367,8 +398,9 @@ function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
 
   for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
     local systemHasFailure = false
+    local firingUnits, resupplyUnits, ammunitions = selectUnitsToRebuild(systemConfig, firingUnitNames)
     local fuTotal, fuExpected = 0, 0
-    for _, descriptor in pairs(systemConfig.firingUnits) do
+    for _, descriptor in pairs(firingUnits) do
       local removeEntries = removeMissileSystem(missileSystemType, "firing", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
@@ -381,7 +413,7 @@ function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
     end
 
     local ruTotal, ruExpected = 0, 0
-    for _, descriptor in pairs(systemConfig.resupplyUnits) do
+    for _, descriptor in pairs(resupplyUnits) do
       local removeEntries = removeMissileSystem(missileSystemType, "resupply", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
@@ -394,7 +426,7 @@ function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
     end
 
     local ammoOk, ammoTotal = 0, 0
-    for _, descriptor in pairs(systemConfig.ammunitions) do
+    for _, descriptor in pairs(ammunitions) do
       local removeEntries = removeMissileSystem(missileSystemType, "ammo", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
