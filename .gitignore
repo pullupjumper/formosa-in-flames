@@ -3,3 +3,5 @@ slim/*
 .agents/*
 .claude/*
 .opencode/*
+__pycache__/
+*.pyc
