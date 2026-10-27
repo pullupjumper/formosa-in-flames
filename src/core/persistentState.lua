@@ -65,7 +65,7 @@ end
 ---Mark the side's deployment as submitted so the control panel refuses another one
 ---@param state SBJ__SaveData
 ---@param sideName string
-function PersistentState.lockDeployment(state, sideName)
+function PersistentState.setDeploymentLocked(state, sideName)
   state[GameUtils.getCachedSideConfig(sideName).field].isDeploymentLocked = true
 end
 

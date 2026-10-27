@@ -14,13 +14,13 @@ export const JAMMERS_DATA: Jammer[] = [
     zoneName: 'JAMMING ZONE/1',
     name: 'Comm and Info Coy, 584th Mech Bde',
     randomRadiusNm: 20,
-    radius: 11,
+    radiusNm: 11,
   },
   {
     zoneName: 'JAMMING ZONE/2',
     name: 'Comm and Info Coy, 269th Mech Bde',
     randomRadiusNm: 20,
-    radius: 11,
+    radiusNm: 11,
   },
 ];
 

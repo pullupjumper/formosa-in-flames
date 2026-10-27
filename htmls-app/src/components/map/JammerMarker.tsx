@@ -39,7 +39,7 @@ export const JammerMarker = memo(function JammerMarker({
     <>
       <RangeCircle
         center={position}
-        radiusNm={jammer.radius}
+        radiusNm={jammer.radiusNm}
         color={JAMMER_RANGE_COLOR}
         variant={isRelocating ? 'relocating' : 'range'}
       />
@@ -52,7 +52,7 @@ export const JammerMarker = memo(function JammerMarker({
         <Tooltip direction="top">
           <strong>{jammer.name}</strong>
           <br />
-          {jammer.zoneName} | {jammer.radius} NM
+          {jammer.zoneName} | {jammer.radiusNm} NM
         </Tooltip>
       </Marker>
     </>

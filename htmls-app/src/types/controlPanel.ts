@@ -39,7 +39,7 @@ export interface Jammer {
   zoneName: string;
   name: string;
   randomRadiusNm: number;
-  radius: number;
+  radiusNm: number;
   pos?: Coordinate;
 }
 
@@ -163,7 +163,7 @@ export interface JammerResult {
   name: string;
   pos: Coordinate;
   randomRadiusNm: number;
-  radius: number;
+  radiusNm: number;
 }
 
 export interface MissileSystemResult {

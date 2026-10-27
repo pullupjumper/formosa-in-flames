@@ -44,7 +44,7 @@ export function JammerSection({
             foldedDetails={
               <DetailsBox title="Details">
                 <TextRow label="Zone" value={jammer.zoneName} />
-                <TextRow label="Range" value={`${jammer.radius} NM`} />
+                <TextRow label="Range" value={`${jammer.radiusNm} NM`} />
               </DetailsBox>
             }
             deployedSummary={

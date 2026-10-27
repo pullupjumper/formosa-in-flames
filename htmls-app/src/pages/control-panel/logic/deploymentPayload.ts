@@ -135,7 +135,7 @@ export function toControlPanelResult({
         name: unit.name,
         pos: position,
         randomRadiusNm: unit.randomRadiusNm,
-        radius: unit.radius,
+        radiusNm: unit.radiusNm,
       };
     }),
     missileSystems: Array.from(deployedMissileSystems.entries())

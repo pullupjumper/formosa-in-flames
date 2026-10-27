@@ -1,4 +1,5 @@
--- Guard: landingOps functions take at most 4 parameters (docs/specs/refactor-landing-ops-param-count.md)
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+-- LandingOps parameter count guard (docs/specs/refactor-landing-ops-param-count.md)
 local MAX_PARAMS = 4
 local SOURCE_DIR = "src/modules/landingOps"
 

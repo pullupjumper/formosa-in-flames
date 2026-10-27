@@ -28,7 +28,7 @@ const ALL_TABS: PageTab<ControlPanelTabId>[] = [
 function ControlPanelPage() {
   const [payload] = useState(readControlPanelPayload);
   const view = resolveControlPanelView(payload.mode);
-  const tabs = view.showAddUnits ? ALL_TABS : ALL_TABS.filter((tab) => tab.id !== 'add-units');
+  const tabs = view.shouldShowAddUnits ? ALL_TABS : ALL_TABS.filter((tab) => tab.id !== 'add-units');
   const [activeTab, setActiveTab] = useState<ControlPanelTabId>('opord');
   const session = useDeploymentSession(payload);
   const { sideName } = payload;
@@ -63,7 +63,7 @@ function ControlPanelPage() {
           isDeploymentLocked={view.isDeploymentLocked}
         />
       )}
-      {view.showAddUnits && activeTab === 'add-units' && (
+      {view.shouldShowAddUnits && activeTab === 'add-units' && (
         <AddUnitsTab
           actions={actions}
           checked={checked}

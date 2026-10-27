@@ -480,7 +480,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
       applyC2Assignments(saveData, sideName, emconResult)
       updateFromControlPanelResult(config, saveData, sideName, controlPanelResult)
       if not isEditMode then
-        PersistentState.lockDeployment(saveData, sideName)
+        PersistentState.setDeploymentLocked(saveData, sideName)
       end
     end)
   end

@@ -1,4 +1,5 @@
--- Pins the cargo balance documented in docs/landingOps/hovercraftCapacity.md
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+-- AmphibOps cargo balance Unit Tests (pins the numbers in docs/landingOps/hovercraftCapacity.md)
 local config = require("src.core.config")
 local constants = require("src.core.constants")
 
@@ -47,15 +48,15 @@ describe("config.red.amphibOps cargo balance", function()
   end)
 
   it("should have 6 RORO in total and none in Penghu", function()
-    local roroByZone = {}
+    local roroCountMap = {}
     for _, zone in ipairs(amphibOps.zones) do
       local count = 0
       for _, group in ipairs(zone.fleet.groups) do
         count = count + (group.shipCounts.roro or 0)
       end
-      roroByZone[zone.name] = count
+      roroCountMap[zone.name] = count
     end
 
-    assert.are.same({ Taoyuan = 3, Sishu = 3, Penghu = 0 }, roroByZone)
+    assert.are.same({ Taoyuan = 3, Sishu = 3, Penghu = 0 }, roroCountMap)
   end)
 end)

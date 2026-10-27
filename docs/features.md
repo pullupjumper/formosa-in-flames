@@ -163,7 +163,7 @@
 - ✅ SAM Weapons Free / Hold 切換，同步調整間歇輻射組態（`WakeWhenDetectingThreat` / `UseEmissionInterval`）
 - ✅ 登陸區敵軍計算（僅共軍；遊玩模式不顯示）
 - ✅ 新增單位（Add Units）— 加飛機／C2／CSG／干擾機／登陸艦／SAG／潛艦／飛彈系統（僅編輯模式）
-- ✅ 編輯／遊玩模式 — `config.isEditMode = true` 無任何限制；`false`（`bash bin/build.sh -p`）隱藏 Landing Units 與 Add Units，且 Jammer／飛機／飛彈發射車部署只能提交一次，之後鎖定（`saveData.<side>.deploymentLocked`）
+- ✅ 編輯／遊玩模式 — `config.isEditMode = true` 無任何限制；`false`（`bash bin/build.sh -p`）隱藏 Landing Units 與 Add Units，且 Jammer／飛機／飛彈發射車部署只能提交一次，之後鎖定（`saveData.<side>.isDeploymentLocked`）
 
 ---
 

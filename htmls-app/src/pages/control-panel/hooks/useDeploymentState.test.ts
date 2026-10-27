@@ -46,8 +46,8 @@ function batteryOf(unitKey: string, name: string): Battery {
 const BATTERY = batteryOf(UNIT_KEY, UNIT_NAME);
 
 const JAMMERS = [
-  { zoneName: 'Z1', name: 'EW North', randomRadiusNm: 5, radius: 50 },
-  { zoneName: 'Z2', name: 'EW South', randomRadiusNm: 5, radius: 50 },
+  { zoneName: 'Z1', name: 'EW North', randomRadiusNm: 5, radiusNm: 50 },
+  { zoneName: 'Z2', name: 'EW South', randomRadiusNm: 5, radiusNm: 50 },
 ] as Jammer[];
 
 function makeDeployment(): MissileDeployment {

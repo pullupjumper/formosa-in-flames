@@ -105,7 +105,7 @@ export function DeploymentMap({
       />
 
       {placingJammerUnit && mousePosition && (
-        <JammerRelocatePreview radius={placingJammerUnit.radius} position={mousePosition} />
+        <JammerRelocatePreview radius={placingJammerUnit.radiusNm} position={mousePosition} />
       )}
       {relocatePreviewVertices && relocatingArea && (
         <AreaRelocatePreview vertices={relocatePreviewVertices} areaType={relocatingArea.type} />
