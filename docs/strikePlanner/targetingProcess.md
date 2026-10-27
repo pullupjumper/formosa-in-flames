@@ -54,7 +54,7 @@ Airfield 與 Port 類別需同時滿足「設施模式匹配」與「距離在�
 
 1. 合併地面目標與 C2 設施
 2. 對每個目標計算與 `saveData.red.sigint.transmissions` 中各無線電源的距離
-3. 僅保留距離 <= `maxRange` 且偵測次數 > `maxCount` 的目標
+3. 僅保留距離 <= `maxRangeNm` 且偵測次數 > `maxCount` 的目標
 
 ---
 
