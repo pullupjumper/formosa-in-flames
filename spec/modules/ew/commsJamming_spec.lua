@@ -45,7 +45,7 @@ describe("CommsJamming", function()
     local cfg = {
       mode = "omnidirectional",
       limit = 4,
-      range = 50,
+      rangeNm = 50,
       initialComms = -20,
       baseJammingPower = -120,
       distanceExponent = 1.04,

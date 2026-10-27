@@ -123,7 +123,7 @@ config.red.sigint.maxCount = 6
 config.red.sigint.maxRangeNm = 2.5
 -- Detection parameters
 config.red.sigint.detectionThreshold = 60
-config.red.sigint.maxDetectionRange = { 300, 340 }
+config.red.sigint.maxDetectionRangeNm = { 300, 340 }
 -- Detection formula constants
 config.red.sigint.formulaConstants = {
   decayRate = -1 / 450,
@@ -217,7 +217,7 @@ config.red.iads.c2Deployments = {
 
 config.red.commsJamming = {}
 config.red.commsJamming.limit = 4
-config.red.commsJamming.range = 50
+config.red.commsJamming.rangeNm = 50
 config.red.commsJamming.initialComms = -20
 config.red.commsJamming.baseJammingPower = -120
 config.red.commsJamming.distanceExponent = 1.04
@@ -259,7 +259,7 @@ config.red.commsJamming.aircraftDefaults = {
 
 config.red.gnssJamming = {}
 config.red.gnssJamming.randomRadiusNm = 20 -- random radius
-config.red.gnssJamming.radius = 14
+config.red.gnssJamming.radiusNm = 14
 config.red.gnssJamming.gnssGuidedWeapons = {
   { dbid = constants.WEAPONS.JDAM,       jammingResistance = 50 },
   { dbid = constants.WEAPONS.WAN_CHIEN,  jammingResistance = 50 },
@@ -273,14 +273,14 @@ config.red.gnssJamming.jammers = {
     name = "1st Bn, 1st ECM Bde",
     pos = { latitude = "N 25.28.17", longitude = "E 119.35.17" },
     randomRadiusNm = config.red.gnssJamming.randomRadiusNm,
-    radius = config.red.gnssJamming.radius
+    radiusNm = config.red.gnssJamming.radiusNm
   },
   ["2nd Bn, 1st ECM Bde"] = {
     zoneName = "JAMMING ZONE/2",
     name = "2nd Bn, 1st ECM Bde",
     pos = { latitude = "N 24.43.49", longitude = "E 118.29.41" },
     randomRadiusNm = config.red.gnssJamming.randomRadiusNm,
-    radius = config.red.gnssJamming.radius
+    radiusNm = config.red.gnssJamming.radiusNm
   },
 }
 
@@ -4828,7 +4828,7 @@ config.red.packageTemplates.AIR_STRIKE_AB_W_AAR_2 = config.red.packageTemplates.
 
 config.blue.gnssJamming = {}
 config.blue.gnssJamming.randomRadiusNm = 20 -- random radius
-config.blue.gnssJamming.radius = 11
+config.blue.gnssJamming.radiusNm = 11
 config.blue.gnssJamming.gnssGuidedWeapons = {
   { dbid = constants.WEAPONS.FD280,    jammingResistance = 50 },
   { dbid = constants.WEAPONS.CJ10A,    jammingResistance = 50 },
@@ -4842,14 +4842,14 @@ config.blue.gnssJamming.jammers = {
     name = "Comms & Info Coy, 584th Mech Bde",
     pos = nil,
     randomRadiusNm = config.blue.gnssJamming.randomRadiusNm,
-    radius = config.blue.gnssJamming.radius
+    radiusNm = config.blue.gnssJamming.radiusNm
   },
   ["Comms & Info Coy, 269th Mech Bde"] = {
     zoneName = "(Taiwan) Jamming Zone/2",
     name = "Comms & Info Coy, 269th Mech Bde",
     pos = nil,
     randomRadiusNm = config.blue.gnssJamming.randomRadiusNm,
-    radius = config.blue.gnssJamming.radius
+    radiusNm = config.blue.gnssJamming.radiusNm
   },
 }
 
@@ -6001,7 +6001,7 @@ config.ally.sigint.maxCount = config.red.sigint.maxCount
 config.ally.sigint.maxRangeNm = config.red.sigint.maxRangeNm
 -- Detection parameters (shared with China)
 config.ally.sigint.detectionThreshold = config.red.sigint.detectionThreshold
-config.ally.sigint.maxDetectionRange = config.red.sigint.maxDetectionRange
+config.ally.sigint.maxDetectionRangeNm = config.red.sigint.maxDetectionRangeNm
 -- Detection formula constants (shared with China)
 config.ally.sigint.formulaConstants = config.red.sigint.formulaConstants
 -- Default display configuration (shared with China)

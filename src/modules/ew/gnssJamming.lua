@@ -188,7 +188,7 @@ local function createJammingZone(unit, descriptor, point, sideName)
   local area = GameUtils.createArea(point, {
     side = sideName,
     shape = "circle",
-    distance = descriptor.radius
+    distance = descriptor.radiusNm
   })
 
   if not area or type(area) ~= "table" then

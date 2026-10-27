@@ -191,7 +191,7 @@ end
 ---@return number|nil # Effectiveness value (0-1) or nil if out of effective range
 local function calculateOmnidirectionalEffectiveness(commsJammingConfig, distance)
   local ratio = distance ^ commsJammingConfig.effectivenessFormula.base /
-      commsJammingConfig.range ^ commsJammingConfig.effectivenessFormula.range
+      commsJammingConfig.rangeNm ^ commsJammingConfig.effectivenessFormula.range
 
   if ratio >= 1 then
     return nil

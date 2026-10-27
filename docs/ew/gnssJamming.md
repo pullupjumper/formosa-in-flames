@@ -38,7 +38,7 @@ flowchart LR
 
 1. `GameUtils.tryAddUnit()` — 在指定座標（含隨機偏移 `randomRadiusNm`）建立 GPS_JAMMER 設施
 2. `ScenEdit_SetEMCON("OECM=Active")` — 啟動電子反制
-3. `GameUtils.createArea()` — 以設施為中心建立圓形區域（半徑 = `descriptor.radius`）
+3. `GameUtils.createArea()` — 以設施為中心建立圓形區域（半徑 = `descriptor.radiusNm`）
 4. `ScenEdit_AddZone()` — 建立 Standard Zone（type = -925）
 5. `GameUtils.setUnitEntersAreaEvent()` — 綁定事件觸發器（目標：敵方武器 `TargetType = 6`）
 

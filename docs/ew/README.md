@@ -206,7 +206,7 @@ flowchart BT
 | 設定路徑 | 用途 |
 |---|---|
 | `config.red.commsJamming.limit` | 每架干擾機最多同時干擾目標數 |
-| `config.red.commsJamming.range` | 干擾有效範圍 (nm) |
+| `config.red.commsJamming.rangeNm` | 干擾有效範圍 (nm) |
 | `config.red.commsJamming.mode` | 干擾模式（`omnidirectional` / `directional`） |
 | `config.red.commsJamming.baseJammingPower` | 干擾基礎功率 |
 | `config.red.commsJamming.effectivenessFormula` | 全向干擾效果公式參數 |
@@ -215,14 +215,14 @@ flowchart BT
 | `config.red.commsJamming.aircraftDefaults` | 飛機通訊預設值 |
 | `config.red.gnssJamming.jammers` | 中國側 GNSS 干擾機部署定義 |
 | `config.red.gnssJamming.gnssGuidedWeapons` | 可被干擾的 GNSS 導引武器清單 |
-| `config.red.gnssJamming.radius` | 中國側干擾有效半徑 (nm) |
+| `config.red.gnssJamming.radiusNm` | 中國側干擾有效半徑 (nm) |
 | `config.blue.gnssJamming.jammers` | 台灣側 GNSS 干擾機部署定義 |
 | `config.blue.gnssJamming.gnssGuidedWeapons` | 可被干擾的 GNSS 導引武器清單 |
-| `config.blue.gnssJamming.radius` | 台灣側干擾有效半徑 (nm) |
+| `config.blue.gnssJamming.radiusNm` | 台灣側干擾有效半徑 (nm) |
 | `config.red.sigint.maxCount` | SIGINT 偵測次數門檻（超過後 autodetectable） |
 | `config.red.sigint.maxRangeNm` | SIGINT 最大偵測距離（與 transmissions 比較） |
 | `config.red.sigint.detectionThreshold` | 保證偵測距離 (nm) |
-| `config.red.sigint.maxDetectionRange` | 最大偵測距離範圍 |
+| `config.red.sigint.maxDetectionRangeNm` | 最大偵測距離範圍 |
 | `config.red.sigint.formulaConstants` | 偵測機率與訊號偏差公式參數 |
 | `config.red.sigint.detectionSkipProbability` | 效能最佳化隨機跳過機率 |
 | `config.ally.sigint.*` | US 側 SIGINT 配置（引用 China 側參數） |

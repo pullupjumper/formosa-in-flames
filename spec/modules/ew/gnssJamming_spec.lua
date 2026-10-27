@@ -48,7 +48,7 @@ describe("GnssJamming", function()
       zoneName = "GNSS Zone Alpha",
       pos = { latitude = 25.0, longitude = 121.0 },
       randomRadiusNm = 5,
-      radius = 50,
+      radiusNm = 50,
     }
     if overrides then
       for k, v in pairs(overrides) do d[k] = v end

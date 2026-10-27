@@ -151,7 +151,7 @@ describe("Sigint", function()
   local function makeSigintConfig(overrides)
     local cfg = {
       detectionThreshold = 60,
-      maxDetectionRange = { 300, 340 },
+      maxDetectionRangeNm = { 300, 340 },
       detectionSkipProbability = -1,
       maxCount = 3,
       formulaConstants = {
@@ -477,14 +477,14 @@ describe("Sigint", function()
 
       -- Positive: exponential decay between threshold and max range
       it("should detect with decayed confidence for mid-range distance", function()
-        cfg.red.sigint.maxDetectionRange = { 500, 500 }
+        cfg.red.sigint.maxDetectionRangeNm = { 500, 500 }
 
         assert.are.equal(math.exp((-1 / 450) * (150 ^ 0.8)), detectC2At(150))
       end)
 
       -- Positive: farther targets get lower confidence
       it("should give a farther target lower confidence than a closer one", function()
-        cfg.red.sigint.maxDetectionRange = { 500, 500 }
+        cfg.red.sigint.maxDetectionRangeNm = { 500, 500 }
         stubUnits({
           makeUnit({ guid = "C2-NEAR", dbid = constants.PLATFORMS.C2 }),
           makeUnit({ guid = "C2-FAR", dbid = constants.PLATFORMS.C2 }),
@@ -510,7 +510,7 @@ describe("Sigint", function()
 
       -- Negative: no detection beyond max range
       it("should not detect when distance exceeds max detection range", function()
-        cfg.red.sigint.maxDetectionRange = { 100, 100 }
+        cfg.red.sigint.maxDetectionRangeNm = { 100, 100 }
 
         assert.is_nil(detectC2At(200))
       end)
@@ -527,7 +527,7 @@ describe("Sigint", function()
 
       -- Boundary: max range itself is out of reach
       it("should not detect when distance equals max detection range", function()
-        cfg.red.sigint.maxDetectionRange = { 200, 200 }
+        cfg.red.sigint.maxDetectionRangeNm = { 200, 200 }
 
         assert.is_nil(detectC2At(200))
       end)

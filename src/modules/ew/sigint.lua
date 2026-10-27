@@ -77,7 +77,7 @@ end
 local function calculateDetectionProbability(distance, config)
   config = config or {}
   local threshold = config.detectionThreshold or 60
-  local maxRange = config.maxDetectionRange or { 300, 340 }
+  local maxRange = config.maxDetectionRangeNm or { 300, 340 }
   local formulaConstants = config.formulaConstants or {}
   local decayRate = formulaConstants.decayRate or (-1 / 450)
   local power = formulaConstants.power or 0.8

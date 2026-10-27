@@ -185,7 +185,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field maxCount integer Maximum detection count before unit becomes autodetectable
 ---@field maxRangeNm number Maximum detection range (nautical miles)
 ---@field detectionThreshold number Distance threshold for guaranteed detection (nautical miles)
----@field maxDetectionRange number[] Range [min, max] for random maximum detection distance
+---@field maxDetectionRangeNm number[] Range [min, max] for random maximum detection distance
 ---@field formulaConstants SBJ__SIGINTFormulaConfig Detection formula constants
 ---@field defaultDisplay SBJ__SIGINTDisplayConfig Default display configuration
 ---@field minPolygonPoints integer Minimum polygon points for area validation
@@ -201,7 +201,7 @@ function ScenEdit_DeleteMine(params) end
 ---Communications jamming configuration
 ---@class SBJ__CommsJammingConfig: table
 ---@field limit number Jammer unit limit
----@field range number Jamming range (nautical miles)
+---@field rangeNm number Jamming range (nautical miles)
 ---@field initialComms number Initial communications level
 ---@field baseJammingPower number Base jamming power
 ---@field distanceExponent number Distance decay exponent
@@ -223,7 +223,7 @@ function ScenEdit_DeleteMine(params) end
 ---GNSS jamming configuration
 ---@class SBJ__GNSSJammingConfig: table
 ---@field randomRadiusNm number Random deployment radius (nautical miles)
----@field radius number Jamming effectiveness radius (nautical miles)
+---@field radiusNm number Jamming effectiveness radius (nautical miles)
 ---@field gnssGuidedWeapons SBJ__GNSSJammedWeapon[] GNSS-guided weapons to jam
 ---@field jammers table<string, SBJ__GNSSJammerDescriptor> GNSS jammer descriptors indexed by jammer name
 
@@ -1932,7 +1932,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field zoneName string Associated jamming zone name for area creation
 ---@field pos? CMO__Location Deployment coordinates
 ---@field randomRadiusNm number Position randomization radius (nautical miles)
----@field radius number GNSS jamming effectiveness radius (nautical miles)
+---@field radiusNm number GNSS jamming effectiveness radius (nautical miles)
 
 ---GNSS jammer context extending descriptor with runtime state
 ---@class SBJ__GNSSJammerContext: SBJ__GNSSJammerDescriptor
