@@ -228,6 +228,8 @@ describe("UnitStatusUI", function()
 
     describe("C2 node payload", function()
       local stringifySpy
+      ---@type luassert.spy
+      local doctrineStub
 
       ---@param guid string
       ---@param latitude number
@@ -292,7 +294,8 @@ describe("UnitStatusUI", function()
           ["RAD-1"] = buildUnit("RAD-1", 26.0),
         }
         trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return unitMap[guid] end))
-        trackStub(stub(GameApi, "ScenEdit_GetDoctrine").returns({ weapon_control_status_air = constants.WCS.HOLD }))
+        doctrineStub = trackStub(stub(GameApi, "ScenEdit_GetDoctrine"))
+        doctrineStub.returns({ weapon_control_status_air = constants.WCS.HOLD })
         trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").returns({
           { latitude = "24.5", longitude = "121.25" },
           { latitude = "24.75", longitude = "121.5" },
@@ -351,8 +354,7 @@ describe("UnitStatusUI", function()
       end)
 
       it("should mark a SAM weapons free when its doctrine is not hold", function()
-        GameApi.ScenEdit_GetDoctrine:revert()
-        trackStub(stub(GameApi, "ScenEdit_GetDoctrine").returns({ weapon_control_status_air = constants.WCS.TIGHT }))
+        doctrineStub.returns({ weapon_control_status_air = constants.WCS.TIGHT })
 
         UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
 
