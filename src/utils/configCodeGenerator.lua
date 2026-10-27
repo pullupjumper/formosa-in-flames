@@ -626,7 +626,7 @@ function ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
 end
 
 ---Marker tags matching `-- START: <tag>_AREAS_BLOCK` in constants.lua, keyed by side config field
-local SIDE_BLOCK_TAGS = { red = "CHINA", blue = "TAIWAN", ally = "ALLY" }
+local SIDE_BLOCK_TAGS = { red = "CHINA", blue = "TAIWAN" }
 
 ---Drop the `constants.X = {` first line and `}` last line, keeping only the table body
 ---@param code string Generated `constants.X = { ... }` block
@@ -650,6 +650,7 @@ end
 function ConfigCodeGenerator.dump(sideName, missileSystemConfigMap)
   local field = GameUtils.getCachedSideConfig(sideName).field
   local tag = SIDE_BLOCK_TAGS[field]
+  assert(tag, "ConfigCodeGenerator.dump: no constants.lua block for side " .. sideName)
   local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
   printSection(tag .. "_AREAS_BLOCK", stripTableWrapper(areasStr))
   printSection(tag .. "_OPERATIONAL_AREAS_BLOCK", stripTableWrapper(opAreasStr))

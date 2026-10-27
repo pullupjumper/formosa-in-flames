@@ -2,32 +2,22 @@
 -- LandingOps AcvWave Unit Tests
 local AcvWave = require("src.modules.landingOps.acvWave")
 local GameApi = require("src.utils.gameApi")
+local StubTracker = require("spec.support.stubTracker")
 
 describe("AcvWave", function()
-  ---@type luassert.spy[]
-  local activeStubs
   ---@type table<string, true>
   local aliveSet
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
-  end
+  local trackStub = StubTracker.track
 
   before_each(function()
     aliveSet = {}
-    activeStubs = {}
     trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
       return aliveSet[guid] and { guid = guid } or nil
     end))
   end)
 
   after_each(function()
-    for i = #activeStubs, 1, -1 do
-      activeStubs[i]:revert()
-    end
+    StubTracker.revertAll()
   end)
 
   local CONFIG = { capacity = { zbd05 = 4, ztd05 = 4 }, lossRatio = 0.5, holdSec = 600, hovercraftWaitSec = 1000 }

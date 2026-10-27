@@ -10,33 +10,22 @@ local MineClearing = require("src.modules.landingOps.mineClearing")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AttackManager = require("src.modules.attackManager")
 local constants = require("src.core.constants")
+local StubTracker = require("spec.support.stubTracker")
 
 describe("LandingOps", function()
-  ---@type luassert.spy[]
-  local activeStubs
   ---@type luassert.spy
   local logStub
   ---@type luassert.spy
   local errorStub
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
-  end
+  local trackStub = StubTracker.track
 
   before_each(function()
-    activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
-    for i = #activeStubs, 1, -1 do
-      activeStubs[i]:revert()
-    end
-    activeStubs = {}
+    StubTracker.revertAll()
   end)
 
   -- ============================================================================

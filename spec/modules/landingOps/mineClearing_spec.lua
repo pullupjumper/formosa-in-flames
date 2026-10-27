@@ -6,33 +6,22 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
+local StubTracker = require("spec.support.stubTracker")
 
 describe("MineClearing", function()
-  ---@type luassert.spy[]
-  local activeStubs
   ---@type luassert.spy
   local errorStub
   ---@type luassert.spy
   local logStub
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
-  end
+  local trackStub = StubTracker.track
 
   before_each(function()
-    activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
-    for i = #activeStubs, 1, -1 do
-      activeStubs[i]:revert()
-    end
-    activeStubs = {}
+    StubTracker.revertAll()
   end)
 
   local CENTER = { latitude = 25.0, longitude = 121.0 }

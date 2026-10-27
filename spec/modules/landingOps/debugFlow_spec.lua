@@ -3,28 +3,17 @@
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
+local StubTracker = require("spec.support.stubTracker")
 
 describe("DebugFlow", function()
-  ---@type luassert.spy[]
-  local activeStubs
 
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
-  end
+  local trackStub = StubTracker.track
 
   before_each(function()
-    activeStubs = {}
   end)
 
   after_each(function()
-    for _, s in ipairs(activeStubs) do
-      s:revert()
-    end
-    activeStubs = {}
+    StubTracker.revertAll()
   end)
 
   -- ============================================================================

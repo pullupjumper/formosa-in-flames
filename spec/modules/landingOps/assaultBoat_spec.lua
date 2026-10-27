@@ -6,28 +6,18 @@ local GameApi = require("src.utils.gameApi")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
+local StubTracker = require("spec.support.stubTracker")
+
 describe("AssaultBoat", function()
-  ---@type luassert.spy[]
-  local activeStubs
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
-  end
+  local trackStub = StubTracker.track
 
   before_each(function()
-    activeStubs = {}
     trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
-    for i = #activeStubs, 1, -1 do
-      activeStubs[i]:revert()
-    end
-    activeStubs = {}
+    StubTracker.revertAll()
   end)
 
   local ORIGIN = { latitude = 25.0, longitude = 121.0 }

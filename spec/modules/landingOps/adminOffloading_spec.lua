@@ -5,34 +5,23 @@ local Utils = require("src.utils.utils")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
+local StubTracker = require("spec.support.stubTracker")
 
 describe("AdminOffloading", function()
-  ---@type luassert.spy[]
-  local activeStubs
   ---@type luassert.spy
   local logStub
   ---@type luassert.spy
   local errorStub
-  ---Track and register test stub for automatic cleanup.
-  ---@param s any
-  ---@return luassert.spy
-  local function trackStub(s)
-    table.insert(activeStubs, s)
-    return s
-  end
+  local trackStub = StubTracker.track
 
   before_each(function()
-    activeStubs = {}
     logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
     errorStub = trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
-    for _, s in ipairs(activeStubs) do
-      s:revert()
-    end
-    activeStubs = {}
+    StubTracker.revertAll()
   end)
 
   -- ============================================================================

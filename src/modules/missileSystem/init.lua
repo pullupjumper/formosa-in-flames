@@ -177,6 +177,13 @@ function MissileSystem.process(groundCtx, missileSystemConfigMap, isAuto, sideNa
   report.emit({ mode = isAuto and "auto" or "manual" })
 end
 
+---@param config SBJ__Config
+---@param sideName string
+---@return table<string, SBJ__MissileSystemConfig>
+local function getMissileSystemTypes(config, sideName)
+  return config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
+end
+
 ---Run one reload/hide cycle for a side, with its policy taken from config
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
@@ -245,7 +252,7 @@ end
 ---@param entries SBJ__MissileSystemResult[]
 function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
   MissileSystem.redeploy(
-    config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName),
     sideName,
     ControlPanelLayout.buildLayouts(entries)
@@ -258,7 +265,7 @@ end
 ---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
 function MissileSystem.buildDeploymentSystems(config, sideName)
   return ControlPanelLayout.buildDeploymentSystems(
-    config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    getMissileSystemTypes(config, sideName),
     sideName
   )
 end
@@ -268,7 +275,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 function MissileSystem.deploySide(config, saveData, sideName)
-  local missileSystemConfigMap = config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
+  local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
 
   Deployment.addMissileSystems(missileSystemConfigMap, sideName)
   Context.initMissileSystemContexts(missileSystemConfigMap, PersistentState.ground(saveData, sideName))
@@ -282,7 +289,7 @@ end
 function MissileSystem.buildBatteryStatuses(config, saveData, sideName)
   return StatusView.buildBatteryStatuses(
     PersistentState.ground(saveData, sideName),
-    config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    getMissileSystemTypes(config, sideName),
     GameApi.ScenEdit_CurrentTime()
   )
 end
@@ -293,7 +300,7 @@ end
 ---@param sideName string
 function MissileSystem.ensureGroundState(config, saveData, sideName)
   Context.ensureGroundState(
-    config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+    getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName)
   )
 end
@@ -308,7 +315,7 @@ function MissileSystem.initSide(config, saveData, sideName)
     return
   end
 
-  Context.initMissileSystemContexts(config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes,
+  Context.initMissileSystemContexts(getMissileSystemTypes(config, sideName),
     groundCtx)
 end
 
