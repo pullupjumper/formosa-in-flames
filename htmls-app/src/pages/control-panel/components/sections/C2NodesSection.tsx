@@ -14,8 +14,8 @@ import { TreeRow } from '@pages/control-panel/components/shared/TreeRow';
 // ============================================================================
 interface C2NodesSectionProps {
   nodes: C2NodeView[];
-  samWeaponsFree: boolean;
-  onSamWeaponsFreeChange: (weaponsFree: boolean) => void;
+  isSamWeaponsFree: boolean;
+  onSamWeaponsFreeChange: (isWeaponsFree: boolean) => void;
   expandedUnitKey: string | null;
   selectedUnitKey: string | null;
   onUnitSelect: (battery: Battery) => void;
@@ -25,7 +25,7 @@ interface C2NodesSectionProps {
 
 export function C2NodesSection({
   nodes,
-  samWeaponsFree,
+  isSamWeaponsFree,
   onSamWeaponsFreeChange,
   expandedUnitKey,
   selectedUnitKey,
@@ -35,7 +35,7 @@ export function C2NodesSection({
 }: C2NodesSectionProps) {
   return (
     <div>
-      <SamDoctrineToggle weaponsFree={samWeaponsFree} onChange={onSamWeaponsFreeChange} />
+      <SamDoctrineToggle isWeaponsFree={isSamWeaponsFree} onChange={onSamWeaponsFreeChange} />
       {nodes.length === 0 && (
         <div className="text-xs italic text-text-secondary">No C2 node data available</div>
       )}
@@ -76,7 +76,7 @@ export function C2NodesSection({
 // ============================================================================
 interface ChildCardProps extends Omit<
   C2NodesSectionProps,
-  'nodes' | 'samWeaponsFree' | 'onSamWeaponsFreeChange'
+  'nodes' | 'isSamWeaponsFree' | 'onSamWeaponsFreeChange'
 > {
   child: C2Child;
 }

@@ -139,7 +139,7 @@ describe("UnitStatusUI", function()
       UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
 
       assert.stub(addAircraftStub).was.called(2)
-      assert.is_not_true(saveData.blue.deploymentLocked)
+      assert.is_not_true(saveData.blue.isDeploymentLocked)
     end)
 
     -- Positive: play mode accepts the first deployment then locks
@@ -149,12 +149,12 @@ describe("UnitStatusUI", function()
       UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
 
       assert.stub(addAircraftStub).was.called(1)
-      assert.is_true(saveData.blue.deploymentLocked)
+      assert.is_true(saveData.blue.isDeploymentLocked)
     end)
 
     -- Negative: a locked deployment ignores later submissions
     it("should ignore a play mode submission once locked", function()
-      saveData.blue.deploymentLocked = true
+      saveData.blue.isDeploymentLocked = true
       submit(AIRCRAFT_FORM)
 
       UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
@@ -168,7 +168,7 @@ describe("UnitStatusUI", function()
 
       UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
 
-      assert.is_not_true(saveData.red.deploymentLocked)
+      assert.is_not_true(saveData.red.isDeploymentLocked)
     end)
 
     -- Negative: add-units only exists in edit mode
@@ -223,7 +223,7 @@ describe("UnitStatusUI", function()
       UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
 
       assert.stub(addAircraftStub).was_not.called()
-      assert.is_not_true(saveData.blue.deploymentLocked)
+      assert.is_not_true(saveData.blue.isDeploymentLocked)
     end)
 
     describe("C2 node payload", function()

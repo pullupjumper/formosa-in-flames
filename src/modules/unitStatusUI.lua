@@ -439,7 +439,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
   local msg
 
   local isLoaded = PersistentState.read(function(saveData)
-    local isLocked = not isEditMode and PersistentState.deploymentLocked(saveData, sideName)
+    local isLocked = not isEditMode and PersistentState.isDeploymentLocked(saveData, sideName)
     local landingUnitsString = view.showsLandedUnits
         and gKH.json.stringify(LandingOps.countUnitsInEachArea(config))
         or "{}"
@@ -473,7 +473,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
   local emconResult = parseFormJson(form["emconData"])
   if controlPanelResult then
     PersistentState.update(function(saveData)
-      if not isEditMode and PersistentState.deploymentLocked(saveData, sideName) then
+      if not isEditMode and PersistentState.isDeploymentLocked(saveData, sideName) then
         return
       end
       -- Node assignments name units by their current GUIDs, so they go before a redeploy replaces them

@@ -26,7 +26,7 @@ interface ControlDeploymentTabProps {
   payload: ControlPanelPayload;
   /** What the player has deployed and spent so far; lives above the tabs */
   session: DeploymentSession;
-  showLandingUnits: boolean;
+  shouldShowLandingUnits: boolean;
   /** Deployment was already submitted once: jammers, batteries and aircraft are read-only */
   isDeploymentLocked: boolean;
 }
@@ -38,7 +38,7 @@ interface ControlDeploymentTabProps {
 export function ControlDeploymentTab({
   payload,
   session,
-  showLandingUnits,
+  shouldShowLandingUnits,
   isDeploymentLocked,
 }: ControlDeploymentTabProps) {
   const { jammers, sideName, signals, landingUnits } = payload;
@@ -123,8 +123,8 @@ export function ControlDeploymentTab({
         <Panel title="C2 Nodes" badge={`${c2.nodes.length}`}>
           <C2NodesSection
             nodes={c2.nodes}
-            samWeaponsFree={c2.isAllSamWeaponsFree}
-            onSamWeaponsFreeChange={c2.setSamWeaponsFreeChoice}
+            isSamWeaponsFree={c2.isAllSamWeaponsFree}
+            onIsSamWeaponsFreeChange={c2.setSamWeaponsFreeChoice}
             expandedUnitKey={deployment.expandedUnitKey}
             selectedUnitKey={deployment.selectedUnitKey}
             onUnitSelect={deployment.handleUnitSelect}
@@ -137,7 +137,7 @@ export function ControlDeploymentTab({
           <SignalSection signals={signals} />
         </Panel>
 
-        {showLandingUnits && (
+        {shouldShowLandingUnits && (
           <Panel title="Landing Units" badge={`${Object.keys(landingUnits).length}`}>
             <LandingUnitsSection landingUnits={landingUnits} />
           </Panel>

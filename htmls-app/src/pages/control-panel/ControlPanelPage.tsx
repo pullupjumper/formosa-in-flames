@@ -59,7 +59,7 @@ function ControlPanelPage() {
         <ControlDeploymentTab
           payload={payload}
           session={session}
-          showLandingUnits={view.showLandingUnits}
+          shouldShowLandingUnits={view.shouldShowLandingUnits}
           isDeploymentLocked={view.isDeploymentLocked}
         />
       )}

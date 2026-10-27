@@ -86,8 +86,8 @@ local function resolveVertices(sideName, area)
 end
 
 ---@param weaponDBID number | number[]
----@return number
-local function getWeaponRange(weaponDBID)
+---@return number|nil # Max land range in nautical miles; nil if the weapon has no land range
+local function findWeaponRange(weaponDBID)
   local id = weaponDBID
   local dbid
   if type(id) == "table" then
@@ -96,9 +96,7 @@ local function getWeaponRange(weaponDBID)
     dbid = id
   end
   local weaponInfo = GameApi.ScenEdit_QueryDB("weapon", dbid)
-  local weaponRange = tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges
-    .land.max) or 0
-  return weaponRange
+  return tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges.land.max)
 end
 
 ---Build the control panel's missile system rows, with zone names resolved to vertices
@@ -116,7 +114,7 @@ function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, sideN
     for _, descriptor in pairs(copy.firingUnits) do
       ---@cast descriptor SBJ__FiringUnitWithWeaponRangeDescriptor
       local operationalArea = descriptor.operationalArea
-      descriptor.weaponRange = getWeaponRange(descriptor.weaponDBID)
+      descriptor.weaponRange = findWeaponRange(descriptor.weaponDBID) or 0
 
       for _, attr in ipairs(SETUP_POSITION_TYPES) do
         local positions = operationalArea[attr]

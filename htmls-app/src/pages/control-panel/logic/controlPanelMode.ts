@@ -9,7 +9,7 @@ export interface ControlPanelMode {
 }
 
 export interface ControlPanelView {
-  showLandingUnits: boolean;
+  shouldShowLandingUnits: boolean;
   showAddUnits: boolean;
   /** Jammer, battery and aircraft deployment can no longer be changed */
   isDeploymentLocked: boolean;
@@ -20,7 +20,7 @@ export function resolveControlPanelView({
   isDeployLocked,
 }: ControlPanelMode): ControlPanelView {
   return {
-    showLandingUnits: isEditMode,
+    shouldShowLandingUnits: isEditMode,
     showAddUnits: isEditMode,
     isDeploymentLocked: !isEditMode && isDeployLocked,
   };

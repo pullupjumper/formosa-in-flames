@@ -420,7 +420,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field subSurface SBJ__SubsurfaceOperationsContext Subsurface operations context
 ---@field repairRunway SBJ__RunwayRepairmentContext Runway repair context
 ---@field dynamicOperations SBJ__DynamicOperationsContext Dynamic operations context
----@field deploymentLocked boolean Play-mode control panel deployment already submitted
+---@field isDeploymentLocked boolean Play-mode control panel deployment already submitted
 
 ---Blue side saved data structure
 ---@class SBJ__BlueSaveData: table
@@ -429,7 +429,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field iads SBJ__IADSContext Integrated Air Defense System context (includes ROCC and TAAOC)
 ---@field air SBJ__AircraftSliceContext Aircraft context
 ---@field gnssJamming SBJ__GNSSJammingContext GNSS jamming context
----@field deploymentLocked boolean Play-mode control panel deployment already submitted
+---@field isDeploymentLocked boolean Play-mode control panel deployment already submitted
 
 ---Ally side saved data structure
 ---@class SBJ__AllySaveData: table

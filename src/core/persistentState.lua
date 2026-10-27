@@ -58,15 +58,15 @@ end
 ---@param state SBJ__SaveData
 ---@param sideName string
 ---@return boolean
-function PersistentState.deploymentLocked(state, sideName)
-  return state[GameUtils.getCachedSideConfig(sideName).field].deploymentLocked == true
+function PersistentState.isDeploymentLocked(state, sideName)
+  return state[GameUtils.getCachedSideConfig(sideName).field].isDeploymentLocked == true
 end
 
 ---Mark the side's deployment as submitted so the control panel refuses another one
 ---@param state SBJ__SaveData
 ---@param sideName string
 function PersistentState.lockDeployment(state, sideName)
-  state[GameUtils.getCachedSideConfig(sideName).field].deploymentLocked = true
+  state[GameUtils.getCachedSideConfig(sideName).field].isDeploymentLocked = true
 end
 
 ---China fixed-target list built at init by the strike planner

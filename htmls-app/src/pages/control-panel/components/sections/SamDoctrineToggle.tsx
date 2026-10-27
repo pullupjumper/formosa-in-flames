@@ -4,22 +4,22 @@ import { CheckboxCard } from '@pages/control-panel/components/shared/CheckboxCar
 // SamDoctrineToggle — one checkbox for every SAM's weapons control status
 // ============================================================================
 interface SamDoctrineToggleProps {
-  weaponsFree: boolean;
-  onChange: (weaponsFree: boolean) => void;
+  isWeaponsFree: boolean;
+  onChange: (isWeaponsFree: boolean) => void;
 }
 
-export function SamDoctrineToggle({ weaponsFree, onChange }: SamDoctrineToggleProps) {
+export function SamDoctrineToggle({ isWeaponsFree, onChange }: SamDoctrineToggleProps) {
   return (
     <div className="mb-3">
       <CheckboxCard
         label="All SAMs weapons free"
-        checked={weaponsFree}
+        checked={isWeaponsFree}
         onChange={onChange}
         trailing={
           <span
-            className={`font-semibold ${weaponsFree ? 'text-status-danger' : 'text-status-warning'}`}
+            className={`font-semibold ${isWeaponsFree ? 'text-status-danger' : 'text-status-warning'}`}
           >
-            {weaponsFree ? 'Weapons Free' : 'Hold Fire'}
+            {isWeaponsFree ? 'Weapons Free' : 'Hold Fire'}
           </span>
         }
       />
