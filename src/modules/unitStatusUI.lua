@@ -54,11 +54,11 @@ local function createC2NodeDataString(saveData, sideName, types)
           for _, SAMCtx in pairs(c2Ctx.sam) do
             local unit = GameApi.ScenEdit_GetUnit(SAMCtx.guid)
 
+            -- A destroyed unit no longer exists in the game, so it is skipped instead of drawn
             if not unit then
               goto continue
             end
 
-            local isDestroyed = unit == nil
             local doctrine = GameApi.ScenEdit_GetDoctrine(SAMCtx.guid)
             rows[c2Ctx.guid].sam[SAMCtx.guid] = {
               type = type,
@@ -67,7 +67,7 @@ local function createC2NodeDataString(saveData, sideName, types)
               OODATargeting = tostring(SAMCtx.currOODA.targeting) .. "/" .. tostring(SAMCtx.OODA.targeting),
               isOutOfComms = SAMCtx.isOutOfComms,
               EMCONSetting = SAMCtx.EMCONSetting,
-              isDestroyed = isDestroyed,
+              isDestroyed = false,
               weaponFree = doctrine.weapon_control_status_air == constants.WCS.HOLD and false or true,
               pos = { latitude = unit.latitude, longitude = unit.longitude }
             }
@@ -82,11 +82,11 @@ local function createC2NodeDataString(saveData, sideName, types)
           for _, radarCtx in pairs(c2Ctx.radar) do
             local unit = GameApi.ScenEdit_GetUnit(radarCtx.guid)
 
+            -- A destroyed unit no longer exists in the game, so it is skipped instead of drawn
             if not unit then
               goto continue
             end
 
-            local isDestroyed = unit == nil
             rows[c2Ctx.guid].radar[radarCtx.guid] = {
               type = type,
               name = radarCtx.name,
@@ -94,7 +94,7 @@ local function createC2NodeDataString(saveData, sideName, types)
               OODATargeting = tostring(radarCtx.currOODA.targeting) .. "/" .. tostring(radarCtx.OODA.targeting),
               isOutOfComms = radarCtx.isOutOfComms,
               EMCONSetting = radarCtx.EMCONSetting,
-              isDestroyed = isDestroyed,
+              isDestroyed = false,
               pos = { latitude = unit.latitude, longitude = unit.longitude }
             }
 

@@ -189,7 +189,7 @@ end
 ---@param embarkedUnits SBJ__EmbarkedUnit[]|nil
 ---@param fleetName string
 ---@return SBJ__EmbarkedUnit[]|nil
-local function nameEmbarkedUnits(embarkedUnits, fleetName)
+local function buildNamedEmbarkedUnits(embarkedUnits, fleetName)
   if not embarkedUnits then return nil end
 
   local named = {}
@@ -232,7 +232,7 @@ local function createShipsByType(position, shipType, formationCtx)
     manualSpeed = shipSettings.shipSpeed,
   }
 
-  addUnitsByRP(params, unitDescriptor, nameEmbarkedUnits(shipConfig.embarkedUnits, fleet.names[1]))
+  addUnitsByRP(params, unitDescriptor, buildNamedEmbarkedUnits(shipConfig.embarkedUnits, fleet.names[1]))
 end
 
 ---Get SAG formation configuration
