@@ -165,6 +165,58 @@ describe("IntegratedAirDefenseSystem", function()
   end)
 
   -- ============================================================================
+  -- relinkRebuiltUnits
+  -- ============================================================================
+
+  describe("relinkRebuiltUnits", function()
+    local function makeIads()
+      return {
+        rocc = {
+          A = { guid = "A", name = "A", sam = { OLD = { guid = "OLD", name = "SAM-1", isOutOfComms = true } }, radar = {} },
+        },
+        taaoc = {},
+      }
+    end
+
+    -- Positive: a rebuilt unit keeps its node and context under the new GUID
+    it("should re-key a rebuilt unit's context to its new GUID", function()
+      local iads = makeIads()
+      local samCtx = iads.rocc.A.sam.OLD
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        if name == "SAM-1" then return makeUnit({ guid = "NEW", name = "SAM-1" }) end
+        return nil
+      end))
+
+      IntegratedAirDefenseSystem.relinkRebuiltUnits(iads, constants.SIDES.BLUE, { "SAM-1" })
+
+      assert.is_nil(iads.rocc.A.sam.OLD)
+      assert.are.equal(samCtx, iads.rocc.A.sam.NEW)
+      assert.are.equal("NEW", samCtx.guid)
+    end)
+
+    -- Positive: units that were not rebuilt are left alone
+    it("should leave contexts of other units untouched", function()
+      local iads = makeIads()
+      local lookup = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+
+      IntegratedAirDefenseSystem.relinkRebuiltUnits(iads, constants.SIDES.BLUE, { "SAM-2" })
+
+      assert.is_not_nil(iads.rocc.A.sam.OLD)
+      assert.stub(lookup).was_not.called()
+    end)
+
+    -- Negative: a unit that failed to come back drops its context instead of erroring every cycle
+    it("should drop the context when the rebuilt unit cannot be found", function()
+      local iads = makeIads()
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+
+      IntegratedAirDefenseSystem.relinkRebuiltUnits(iads, constants.SIDES.BLUE, { "SAM-1" })
+
+      assert.is_nil(iads.rocc.A.sam.OLD)
+    end)
+  end)
+
+  -- ============================================================================
   -- processC2Disruption
   -- ============================================================================
 

@@ -154,6 +154,44 @@ function IntegratedAirDefenseSystem.reassignSamUnits(iadsCtx, entries)
   end
 end
 
+---Follow rebuilt units to their new GUIDs inside the C2 contexts
+---A rebuilt unit keeps its name but not its GUID, so its context moves to the new GUID
+---with node and comms status intact. A unit that did not come back loses its context.
+---@param iadsCtx SBJ__IADSContext
+---@param sideName string
+---@param unitNames string[] Names of the units that were deleted and added again
+function IntegratedAirDefenseSystem.relinkRebuiltUnits(iadsCtx, sideName, unitNames)
+  local rebuilt = {}
+  for _, name in ipairs(unitNames) do
+    rebuilt[name] = true
+  end
+
+  for _, c2Group in pairs(iadsCtx) do
+    if type(c2Group) == "table" then
+      for _, c2Ctx in pairs(c2Group) do
+        for _, key in ipairs({ C2_KEYS.SAM, C2_KEYS.RADAR }) do
+          -- Collect first: adding keys while traversing the table is undefined
+          local stale = {}
+          for guid, unitCtx in pairs(c2Ctx[key] or {}) do
+            if rebuilt[unitCtx.name] then
+              stale[guid] = unitCtx
+            end
+          end
+
+          for guid, unitCtx in pairs(stale) do
+            local unit = GameApi.ScenEdit_GetUnit(unitCtx.name, sideName)
+            c2Ctx[key][guid] = nil
+            if unit then
+              unitCtx.guid = unit.guid
+              c2Ctx[key][unit.guid] = unitCtx
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
 ---Process command and control disruption when C2 node is destroyed
 ---@param saveData SBJ__SaveData
 ---@param c2 CMO__Unit

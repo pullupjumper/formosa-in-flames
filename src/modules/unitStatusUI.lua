@@ -248,6 +248,12 @@ local function updateFromControlPanelResult(config, saveData, sideName, result)
 
   if missileSystems and #missileSystems > 0 then
     MissileSystem.redeployFromControlPanel(config, saveData, sideName, missileSystems)
+
+    local rebuiltNames = {}
+    for _, system in ipairs(missileSystems) do
+      table.insert(rebuiltNames, system.unitname)
+    end
+    IntegratedAirDefenseSystem.relinkRebuiltUnits(PersistentState.iads(saveData, sideName), sideName, rebuiltNames)
   end
 end
 
@@ -470,8 +476,9 @@ function UnitStatusUI.createControlPanel(config, sideName)
       if not isEditMode and PersistentState.deploymentLocked(saveData, sideName) then
         return
       end
-      updateFromControlPanelResult(config, saveData, sideName, controlPanelResult)
+      -- Node assignments name units by their current GUIDs, so they go before a redeploy replaces them
       applyC2Assignments(saveData, sideName, emconResult)
+      updateFromControlPanelResult(config, saveData, sideName, controlPanelResult)
       if not isEditMode then
         PersistentState.lockDeployment(saveData, sideName)
       end
