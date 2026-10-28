@@ -71,4 +71,4 @@ return GameApi.ScenEdit_GetUnit(guid) ~= nil  -- 回傳「是否存在」
 
 ## 9. 測試檔（`spec/`）
 
-測試檔的寫法全部見 `build-test` skill。
+測試只驗行為（回傳值、錯誤、對外動作），不驗內部做法；寫法以 `spec/` 既有檔案為準。

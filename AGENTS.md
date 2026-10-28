@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents (Claude Code) when working with code in this repository.
 
 ## Project Overview
 
@@ -74,7 +74,7 @@ See `docs/` for detailed module architecture documentation.
 - `docs/naming.md`, `docs/coding-style.md`: writing rules. Single source; skills point here, never copy.
 - `docs/<module>.md`: how a module works. May be outdated.
 - `docs/features.md`: feature map (✅ ⚠️ ❌). Update only when a feature's status changes. May be outdated.
-- `docs/specs/<branch-name>.md`: one spec per change that alters behaviour (goal, behaviour to deliver, out of scope, acceptance); historical once merged. `/` in the branch name becomes `-`. Skip the spec for a pure rename, move, or field-shape change with identical behaviour; the commit message and passing tests are the record. Write one when behaviour, trigger timing, or a cross-module interface changes.
+- `docs/specs/<branch-name>.md`: one spec per change that alters behaviour; historical once merged. `/` in the branch name becomes `-`. Write one when behaviour, trigger timing, or a cross-module interface changes. Skip it for a pure rename, move, or field-shape change with identical behaviour; the commit message and passing tests are the record. Format and length: the `to-spec` skill.
 
 Only a spec counts as a spec. Module docs, `features.md`, and old plans do not.
 
@@ -104,4 +104,4 @@ Common event usage:
 
 `htmls-app/` holds the React panels shown in CMO's embedded browser. `bin/build.sh` builds them into `src/htmls/*.html`, which `unitStatusUI.lua` fills via `window.__INJECT_*__` placeholders.
 
-When working inside `htmls-app/`, read `htmls-app/CLAUDE-FRONTEND.md` first — it owns the tech stack, code style, naming conventions, data flow, and test guidance for the frontend.
+When working inside `htmls-app/`, read `docs/frontend.md` first — it owns the tech stack, code style, naming conventions, data flow, and test guidance for the frontend.

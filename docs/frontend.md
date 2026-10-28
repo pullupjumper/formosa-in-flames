@@ -1,6 +1,6 @@
-# CLAUDE-FRONTEND.md
+# Frontend (htmls-app)
 
-Guidance for working with the React UI layer of the Command: Modern Operations scenario. This is the single source of truth for frontend conventions; the root `CLAUDE.md` only points here.
+Guidance for working with the React UI layer of the Command: Modern Operations scenario. This is the single source of truth for frontend conventions; `AGENTS.md` only points here.
 
 ## htmls-app (React UI)
 
