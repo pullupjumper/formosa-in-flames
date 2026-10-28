@@ -96,7 +96,7 @@ flowchart TD
 | `zones[].landing.lstSettings.speed` | LST 速度 |
 | `zones[].landing.acv` | `area`（判斷船所屬區）、`distance`、`destination` |
 | `zones[].air.attackHelicopter.zone` | 登陸單位統計範圍 |
-| `zones[].air.landingZone`、`contactThreshold` | 威脅評估範圍與門檻 |
+| `zones[].air.transportHelicopter.zone`、`contactThreshold` | 威脅評估範圍與門檻 |
 
 ---
 

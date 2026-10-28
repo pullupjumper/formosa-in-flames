@@ -47,8 +47,8 @@ describe("LandingOps Coordinator", function()
         },
       },
       air = {
-        landingZone = { "RP-AIR-1", "RP-AIR-2" },
         contactThreshold = 2,
+        transportHelicopter = { zone = { "RP-AIR-1", "RP-AIR-2" } },
       },
       sags = { { groupName = "SAG Alpha" } },
       landing = { beachheadVehicles = 10, acv = { capacity = { zbd05 = 4, ztd05 = 4 } } },

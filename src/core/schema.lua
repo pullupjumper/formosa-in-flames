@@ -1023,7 +1023,6 @@ function ScenEdit_DeleteMine(params) end
 
 ---Air landing and air support of a zone
 ---@class SBJ__ZoneAir: table
----@field landingZone string[] Air landing zone reference area
 ---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
 ---@field transportAircraft? SBJ__TransportAircraftDescriptor Land-based transport aircraft airlifted when the zone leaves WAITING_ARRIVAL (nil = none)
 ---@field reconTemplate? string Key of config.red.recon.templates queued when the zone leaves WAITING_ARRIVAL (nil = none)

@@ -77,7 +77,7 @@ end
 ---@type SBJ__PhaseStep
 local function stepWaitingAssault(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
-  local contactCount = AmphibiousAssault.countContactsInArea(tickCtx.contacts, zone.air.landingZone)
+  local contactCount = AmphibiousAssault.countContactsInArea(tickCtx.contacts, zone.air.transportHelicopter.zone)
   local elapsed = tickCtx.currentTime - (zoneState.amphibiousAssaultStartTime or tickCtx.currentTime)
   local shouldLaunch = contactCount < zone.air.contactThreshold or
       elapsed >= amphibOps.periodSec or

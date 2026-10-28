@@ -1956,7 +1956,6 @@ config.red.amphibOps.zones = {
       },
     },
     air = {
-      landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
       contactThreshold = 3,
       reconTemplate = "GJ11_RECON",
       transportHelicopter = {
@@ -2121,7 +2120,6 @@ config.red.amphibOps.zones = {
       },
     },
     air = {
-      landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
       contactThreshold = 3,
       transportHelicopter = {
         dbid = constants.PLATFORMS.Z18,
@@ -2265,7 +2263,6 @@ config.red.amphibOps.zones = {
       },
     },
     air = {
-      landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
       contactThreshold = 3,
       transportAircraft = {
         name = "Zhangpu AAB",
