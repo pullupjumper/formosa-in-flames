@@ -98,15 +98,12 @@ flowchart TD
 
 ### 主要上游呼叫者
 
-- `src/modules/landingOps/amphibiousLogistics.lua`
-  - `processShipAssignments(...)`
-  - `transferTransportAircraftCargo(...)`
 - `src/modules/strikePlanner/airTaskingOrder.lua`
   - `assignPackageUnits(...)`
 
 ### 觸發脈絡
 
-- 兩棲運補路徑：由 landing ops 定時/事件流程觸發，完成 cargo transfer 後立即呼叫本模組分派。
+- 兩棲運補路徑：landing ops 已不再呼叫（運輸機只轉貨、不指派任務），目前沒有呼叫者。
 - 空中打擊路徑：由 strike planner 排程執行，在 package mission 建立後呼叫本模組填入 striker/escort 等機隊。
 
 ---

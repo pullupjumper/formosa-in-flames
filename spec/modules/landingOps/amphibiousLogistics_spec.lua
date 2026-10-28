@@ -501,7 +501,7 @@ describe("AmphibiousLogistics", function()
     end)
   end)
 
-  describe("transferAndAssign", function()
+  describe("transfer", function()
     before_each(function()
       stubUnitLookup()
     end)
@@ -511,7 +511,7 @@ describe("AmphibiousLogistics", function()
       local ship, creates = buildFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
       local zone = buildOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { ship })
+      local result = AmphibiousLogistics.transfer(zone, { ship })
 
       assert.is_true(result)
       assert.stub(creates.boat).was.called()
@@ -523,7 +523,7 @@ describe("AmphibiousLogistics", function()
       local ship, creates = buildFleetShip("SHIP-076", constants.PLATFORMS.TYPE_076)
       local zone = buildOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { ship })
+      local result = AmphibiousLogistics.transfer(zone, { ship })
 
       assert.is_true(result)
       assert.stub(creates.heloAlt).was.called()
@@ -534,7 +534,7 @@ describe("AmphibiousLogistics", function()
       local ship, creates = buildFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = buildOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { ship })
+      local result = AmphibiousLogistics.transfer(zone, { ship })
 
       assert.is_true(result)
       assert.stub(creates.boat).was.called()
@@ -548,7 +548,7 @@ describe("AmphibiousLogistics", function()
       local ship071, creates071 = buildFleetShip("SHIP-071", constants.PLATFORMS.TYPE_071)
       local zone = buildOperationalZone()
 
-      local result = AmphibiousLogistics.transferAndAssign(zone, { ship075, ship071 })
+      local result = AmphibiousLogistics.transfer(zone, { ship075, ship071 })
 
       assert.is_true(result)
       assert.stub(creates075.heloAlt).was.called()
@@ -559,7 +559,7 @@ describe("AmphibiousLogistics", function()
       local stubAssignMission = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission"))
       local ship = buildFleetShip("SHIP-075", constants.PLATFORMS.TYPE_075)
 
-      AmphibiousLogistics.transferAndAssign(buildOperationalZone(), { ship })
+      AmphibiousLogistics.transfer(buildOperationalZone(), { ship })
 
       assert.stub(stubAssignMission).was_not.called()
     end)
@@ -569,7 +569,7 @@ describe("AmphibiousLogistics", function()
       ship.inArea = function() return false end
       local zone = buildOperationalZone()
 
-      AmphibiousLogistics.transferAndAssign(zone, { ship })
+      AmphibiousLogistics.transfer(zone, { ship })
 
       assert.stub(creates.boat).was_not.called()
     end)
@@ -578,7 +578,7 @@ describe("AmphibiousLogistics", function()
       local ship, creates = buildFleetShip("SHIP-OTHER", constants.PLATFORMS.TYPE_072III)
       local zone = buildOperationalZone()
 
-      AmphibiousLogistics.transferAndAssign(zone, { ship })
+      AmphibiousLogistics.transfer(zone, { ship })
 
       assert.stub(creates.boat).was_not.called()
       assert.stub(creates.helo).was_not.called()
@@ -586,7 +586,7 @@ describe("AmphibiousLogistics", function()
 
     it("should return true with empty units list", function()
       local zone = buildOperationalZone()
-      local result = AmphibiousLogistics.transferAndAssign(zone, {})
+      local result = AmphibiousLogistics.transfer(zone, {})
 
       assert.is_true(result)
     end)

@@ -1,4 +1,4 @@
-# amphibiousLogistics — 兩棲後勤裝載與任務指派
+# amphibiousLogistics — 兩棲後勤裝載
 
 > 原始碼：`src/modules/landingOps/amphibiousLogistics.lua`
 
@@ -19,7 +19,7 @@
 
 ### 為什麼這裡不指派任務？
 
-氣墊船和直升機都不指派 CMO 任務。氣墊船由 [hovercraft](hovercraft.md) 走通道、到停車位卸貨；直升機由 [heliWave](heliWave.md) 手動放飛、給航線、卸貨。
+這個模組只轉貨，不指派任何任務，陸基運輸機也一樣。氣墊船由 [hovercraft](hovercraft.md) 走通道、到停車位卸貨；直升機由 [heliWave](heliWave.md) 手動放飛、給航線、卸貨；攻擊直升機到門檻後由 heliWave 指派進 CAS 任務。
 
 ---
 
@@ -57,9 +57,9 @@
 | 函式 | 說明 |
 |---|---|
 | `getUnitsInHoldingAreas(zone, filteredUnits)` | 到位偵測 |
-| `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨 |
+| `transfer(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨 |
 | `transferTransportAircraftCargo(transportAircraft)` | 單一陸基運輸機轉貨 |
-| `transferRemainingCargos(zone, units)` | 補運：重新轉貨，**不重新指派**任務 |
+| `transferRemainingCargos(zone, units)` | 補運：重新轉貨 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除貨物，回傳實際刪除數；ACV 釋放使用 |
 
 ---
@@ -69,7 +69,7 @@
 | 路徑 | 用途 |
 |---|---|
 | `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、`transferManifest` |
-| `config.red.amphibOps.zones[].air.transportHelicopter`、`attackHelicopter` | 直升機 DBID、任務、`transferManifest` |
+| `config.red.amphibOps.zones[].air.transportHelicopter`、`attackHelicopter` | 直升機 DBID、`transferManifest`；攻擊直升機另有 `zone`（CAS 區） |
 | `config.red.amphibOps.zones[].movement.holdingAreas` | `mothership`、`deployLine` |
 | `zone.air.transportAircraft` | 陸基運輸機清單 |
 
@@ -80,5 +80,4 @@
 - [shipMovement](shipMovement.md) — 前置：艦隊移動
 - [amphibiousAssault](amphibiousAssault.md) — `launchACV` 呼叫 `removeCargo`
 - [hovercraft](hovercraft.md) — 氣墊船走通道與卸貨
-- `assignMission` — `AssignMission.assignEmbarkedUnitsToMissions`，見 [assignMission](../assignMission.md)
 - [系統架構](README.md)

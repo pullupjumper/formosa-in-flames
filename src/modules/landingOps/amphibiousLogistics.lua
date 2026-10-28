@@ -40,7 +40,7 @@ local SHIP_TRANSFER_RULES = {
     dbids = { constants.PLATFORMS.TYPE_075, constants.PLATFORMS.TYPE_076 },
     manifestKey = "type075",
     transfers = {
-      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",  loadoutIdx = 1 },
+      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",          loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 2 },
     },
@@ -50,7 +50,7 @@ local SHIP_TRANSFER_RULES = {
     dbids = { constants.PLATFORMS.TYPE_071 },
     manifestKey = "type071",
     transfers = {
-      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",  loadoutIdx = 1 },
+      { platform = constants.PLATFORM_TYPES.BOATS,    configKey = "hovercraft",          loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
     },
   },
@@ -242,9 +242,8 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param unitsInHoldingAreas CMO__Unit[]
 ---@return boolean # True if all transfers completed
-function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
-  local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer and assign")
+function AmphibiousLogistics.transfer(zone, unitsInHoldingAreas)
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Transfer")
 
   for _, u in ipairs(unitsInHoldingAreas) do
     if u:inArea(zone.movement.holdingAreas.mothership) then

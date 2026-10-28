@@ -65,7 +65,7 @@ local function stepWaitingArrival(tickCtx, zone, zoneState)
     return
   end
 
-  local ok = AmphibiousLogistics.transferAndAssign(zone, result.units)
+  local ok = AmphibiousLogistics.transfer(zone, result.units)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
     zoneState.amphibiousAssaultStartTime = tickCtx.currentTime
