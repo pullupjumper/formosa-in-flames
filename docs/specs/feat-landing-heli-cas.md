@@ -37,6 +37,8 @@
 - `transportHelicopter.missions` 移除。它只用來決定波數，移除後波數不設上限，放到沒有載貨的運輸機為止，`isFinished` 一併移除。
 - `attackHelicopter.missions` 移除；CAS 區域欄位由 `air.casArea` 改為 `air.attackHelicopter.zone`（與其他平台的 `zone` 一致）。
 - `transportAircraft.missions` 移除，運輸機只轉貨不指派任務；`transferAndAssignTransportAircraft` 改名 `transferTransportAircraftCargo`。
+- 直升機航線的降落中心改讀 `air.transportHelicopter.zone`。原本讀 `air.landingZone`，Penghu 與中間那區填成桃園，直升機會飛錯地方。
+- `air.landingZone` 移除。突擊前的接觸目標統計改數各區自己的 `transportHelicopter.zone`，Penghu 與中間那區的觸發時機會因此改變，進 CMO 時要留意。
 - 擊毀 Z-10 或 Z-18 都會觸發移除攻擊直升機紀錄，不分地面或空中；舊的 Parked 加分分支拿掉。
 
 ## 驗收
