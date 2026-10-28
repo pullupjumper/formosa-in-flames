@@ -52,7 +52,7 @@ flowchart TD
 | `MINE_CLEARING` | `updateMineClearing` 回報 082 全部完成 | `AssaultBoat.pairBoats` + `AmphibiousAssault.moveToLaunchStations` + `HeliWave.schedule`（估第一波放飛時間） |
 | `BOAT_ASSAULT` | `updateBoats` 回報衝鋒舟全部到達或被摧毀 | `ObstacleClearing.startObstacleClearing` |
 | `OBSTACLE_CLEARING` | `updateObstacleClearing` 回報計時結束 | 有衝鋒舟的灘際通道標為 cleared |
-| `ASSAULT_LANDING` | `casArea` 內 ZBD-05 ≥ 1（暫代的灘頭條件，TODO） | — |
+| `ASSAULT_LANDING` | `air.attackHelicopter.zone` 內 ZBD-05 ≥ 1（暫代的灘頭條件，TODO） | — |
 | `WAITING_ADMIN_OFFLOADING` | 無條件放行（TODO：絕對安全） | `AdminOffloading.startAdminOffloading` |
 
 `HeliWave.update` 每區每 tick 執行（計畫建立後），不隨階段結束而停，見 [heliWave](heliWave.md)。
@@ -69,7 +69,7 @@ step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 ste
 
 ### 灘頭條件為什麼暫用 ZBD-05？
 
-`stepAssaultLanding` 用 `AmphibiousAssault.countUnitsInEachArea` 查 `air.attackHelicopter.casArea` 內有沒有 ZBD-05。這是占位邏輯，程式碼內標了 TODO；真正的條件（站穩灘頭、絕對安全）還沒設計，所以 `WAITING_ADMIN_OFFLOADING` 目前也不檢查任何條件。
+`stepAssaultLanding` 用 `AmphibiousAssault.countUnitsInEachArea` 查 `air.attackHelicopter.zone` 內有沒有 ZBD-05。這是占位邏輯，程式碼內標了 TODO；真正的條件（站穩灘頭、絕對安全）還沒設計，所以 `WAITING_ADMIN_OFFLOADING` 目前也不檢查任何條件。
 
 ---
 

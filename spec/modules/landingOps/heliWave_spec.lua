@@ -133,7 +133,7 @@ describe("HeliWave", function()
       air = {
         landingZone = { "RP-L" },
         transportHelicopter = { dbid = TRANSPORT_DBID },
-        attackHelicopter = { dbid = ATTACK_DBID, casArea = { "RP-CAS" } },
+        attackHelicopter = { dbid = ATTACK_DBID, zone = { "RP-CAS" } },
       },
     }
   end

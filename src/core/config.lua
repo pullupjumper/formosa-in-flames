@@ -1983,7 +1983,7 @@ config.red.amphibOps.zones = {
       },
       attackHelicopter = {
         dbid = constants.PLATFORMS.Z10,
-        casArea = constants.AREAS.CAS_E,
+        zone = constants.AREAS.CAS_E,
       },
     },
     landing = {
@@ -2147,7 +2147,7 @@ config.red.amphibOps.zones = {
       },
       attackHelicopter = {
         dbid = constants.PLATFORMS.Z10,
-        casArea = constants.AREAS.CAS_S,
+        zone = constants.AREAS.CAS_S,
       },
     },
     landing = {
@@ -2302,7 +2302,7 @@ config.red.amphibOps.zones = {
       },
       attackHelicopter = {
         dbid = constants.PLATFORMS.Z10,
-        casArea = constants.AREAS.CAS_PENGHU,
+        zone = constants.AREAS.CAS_PENGHU,
       },
     },
     landing = {

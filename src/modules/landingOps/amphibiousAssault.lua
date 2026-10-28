@@ -392,7 +392,7 @@ function AmphibiousAssault.countUnitsInEachArea(zones)
     for _, u in ipairs(unitsFromRed) do
       local unit = GameApi.ScenEdit_GetUnit(u.guid)
 
-      if unit and unit:inArea(zone.air.attackHelicopter.casArea) then
+      if unit and unit:inArea(zone.air.attackHelicopter.zone) then
         for _, unitType in ipairs(LANDED_UNIT_TYPES) do
           if unit.dbid == unitType.dbid then
             item[unitType.name] = item[unitType.name] + 1

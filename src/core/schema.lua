@@ -978,7 +978,7 @@ function ScenEdit_DeleteMine(params) end
 ---No cargo transfer capability
 ---@class SBJ__AttackHelicopterDescriptor: table
 ---@field dbid number Attack helicopter platform database ID
----@field casArea string[] CAS area reference points
+---@field zone string[] CAS area reference points
 
 ---Transport aircraft configuration for airlift operations
 ---Defines transport aircraft deployment from airbases for airborne assault missions

@@ -14,7 +14,7 @@ amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」�
 2. **LST 就位**：`moveToLaunchStations` 把展開線上的 LST 移到離岸 2～4 nm 的就位帶，SAG 移到兩棲載具集結區
 3. **ACV 釋放**：`launchACV` 從艦艙刪除貨物，在船側生成兩棲車並交給 `routeACV` 回呼排航線
 4. **威脅評估**：`countContactsInArea` 數空/機降區內的敵方可移動設施
-5. **登陸統計**：`countUnitsInEachArea` 數各區 `casArea` 內已登陸的紅方單位
+5. **登陸統計**：`countUnitsInEachArea` 數各區 `air.attackHelicopter.zone` 內已登陸的紅方單位
 
 通道與航線不在這裡處理，見 [laneGeometry](laneGeometry.md)、[routePlanner](routePlanner.md)。
 
@@ -95,7 +95,7 @@ flowchart TD
 | `config.red.amphibOps.tuning.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
 | `zones[].landing.lstSettings.speed` | LST 速度 |
 | `zones[].landing.acv` | `area`（判斷船所屬區）、`distance`、`destination` |
-| `zones[].air.attackHelicopter.casArea` | 登陸單位統計範圍 |
+| `zones[].air.attackHelicopter.zone` | 登陸單位統計範圍 |
 | `zones[].air.landingZone`、`contactThreshold` | 威脅評估範圍與門檻 |
 
 ---
