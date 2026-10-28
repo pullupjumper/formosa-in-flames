@@ -1,8 +1,8 @@
-# context.lua
+# groundStateStore.lua
 
-飛彈模組 runtime context 建立與補給資產戰損處理模組。
+飛彈模組 runtime state 建立與補給資產戰損處理模組。
 
-> Source: `src/modules/missileSystem/context.lua`
+> Source: `src/modules/missileSystem/groundStateStore.lua`
 
 責任摘要：把 config 描述複製成 `saveData.*.ground.*` 形式，並在補給資產被擊毀時更新庫存。
 
@@ -10,7 +10,7 @@
 
 ## 概觀
 
-`initMissileSystemContexts` 會深拷貝 `firingUnits/resupplyUnits/ammunitions`，避免直接共用配置表，並為 firing/resupply 初始化 `reloadStartTime = nil`。
+`initMissileSystemStates` 會深拷貝 `firingUnits/resupplyUnits/ammunitions`，避免直接共用配置表，並為 firing/resupply 初始化 `reloadStartTime = nil`。
 
 `processSupplyAssetDestruction` 會在分數腳本觸發時被呼叫：
 
@@ -38,7 +38,7 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `processSupplyAssetDestruction` | `unit, systemState` | `boolean` | 補給資產戰損後同步修正庫存 |
-| `initMissileSystemContexts` | `missileSystemConfigMap, groundState` | `nil` | 初始化 runtime context |
+| `initMissileSystemStates` | `missileSystemConfigMap, groundState` | `nil` | 初始化 runtime state |
 
 ---
 

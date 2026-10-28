@@ -19,7 +19,7 @@ local FireSupportPlan = {}
 ---@return boolean unitMissing Whether the unit no longer exists in game or has no runtime state
 local function deploySingleFiringUnit(plannerState, task, firingUnit)
   local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
-  local firingUnitState = MissileSystem.getFiringUnitContext(plannerState.ground, task.missileSystemType, firingUnit.name)
+  local firingUnitState = MissileSystem.getFiringUnitState(plannerState.ground, task.missileSystemType, firingUnit.name)
   if not actualUnit or not firingUnitState then
     return false, true
   end

@@ -86,7 +86,7 @@ flowchart TD
 | `firingBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
 | `firingLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
 
-`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.getFiringUnitContext()` 會以 nil key 讀取而回傳 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
+`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.getFiringUnitState()` 會以 nil key 讀取而回傳 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
 
 ### 為什麼目標以 FST 索引為 key
 

@@ -1,13 +1,13 @@
 local Utils = require("src.utils.utils")
 
-local Context = {}
+local GroundStateStore = {}
 
 ---Handle logic when resupply unit is destroyed
 ---@param unit CMO__Unit
 ---@param systemState SBJ__MissileSystemState
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
-function Context.processSupplyAssetDestruction(unit, systemState)
+function GroundStateStore.processSupplyAssetDestruction(unit, systemState)
   local ammoDepotState = systemState.ammunitions[unit.name]
 
   if ammoDepotState and unit.group == nil and ammoDepotState.weaponCountCurrent > 0 then
@@ -59,7 +59,7 @@ end
 ---Existing fields are kept, so pre-seeded extras (e.g. Taiwan ascm.test) survive
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
-function Context.ensureGroundState(missileSystemConfigMap, groundState)
+function GroundStateStore.ensureGroundState(missileSystemConfigMap, groundState)
   groundState.missileSystemTypes = groundState.missileSystemTypes or {}
   for system, _ in pairs(missileSystemConfigMap) do
     local systemState = groundState.missileSystemTypes[system] or {}
@@ -77,7 +77,7 @@ end
 ---Initialize missile system runtime states from configuration
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
-function Context.initMissileSystemContexts(missileSystemConfigMap, groundState)
+function GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
   for system, systemConfig in pairs(missileSystemConfigMap) do
     local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
     for _, descriptor in pairs(firingUnitMap) do
@@ -99,4 +99,4 @@ function Context.initMissileSystemContexts(missileSystemConfigMap, groundState)
   end
 end
 
-return Context
+return GroundStateStore

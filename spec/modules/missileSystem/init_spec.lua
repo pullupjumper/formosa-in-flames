@@ -10,7 +10,7 @@ local Concealment = require("src.modules.missileSystem.concealment")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Deployment = require("src.modules.missileSystem.deployment")
 local Triggers = require("src.modules.missileSystem.triggers")
-local Context = require("src.modules.missileSystem.context")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local StatusView = require("src.modules.missileSystem.statusView")
 local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
 local GameApi = require("src.utils.gameApi")
@@ -344,7 +344,7 @@ describe("MissileSystem", function()
     it("should init contexts from the side's ground config when the side is enabled", function()
       local config, saveData = makeSides()
       saveData.blue.ground.enabled = true
-      local contextStub = trackStub(Context, "initMissileSystemContexts")
+      local contextStub = trackStub(GroundStateStore, "initMissileSystemStates")
 
       MissileSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
@@ -354,7 +354,7 @@ describe("MissileSystem", function()
     -- Negative: a disabled side builds nothing
     it("should skip a side whose ground forces are disabled", function()
       local config, saveData = makeSides()
-      local contextStub = trackStub(Context, "initMissileSystemContexts")
+      local contextStub = trackStub(GroundStateStore, "initMissileSystemStates")
 
       MissileSystem.initSide(config, saveData, constants.SIDES.RED)
 
@@ -371,7 +371,7 @@ describe("MissileSystem", function()
     it("should add units and init contexts from the side's ground config", function()
       local config, saveData = makeSides()
       local addStub = trackStub(Deployment, "addMissileSystems")
-      local contextStub = trackStub(Context, "initMissileSystemContexts")
+      local contextStub = trackStub(GroundStateStore, "initMissileSystemStates")
 
       MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
 
@@ -388,7 +388,7 @@ describe("MissileSystem", function()
     -- Positive: the side's own config seeds the side's own slice
     it("should seed the side's slice from the side's ground config", function()
       local config, saveData = makeSides()
-      local seedStub = trackStub(Context, "ensureGroundState")
+      local seedStub = trackStub(GroundStateStore, "ensureGroundState")
 
       MissileSystem.ensureGroundState(config, saveData, constants.SIDES.BLUE)
 
@@ -661,10 +661,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- getFiringUnitContext
+  -- getFiringUnitState
   -- ============================================================================
 
-  describe("getFiringUnitContext", function()
+  describe("getFiringUnitState", function()
     local function makeGroundState()
       return { missileSystemTypes = { srbm = { firingUnits = { FU1 = { name = "FU1" } } } } }
     end
@@ -673,19 +673,19 @@ describe("MissileSystem", function()
     it("should resolve the context from an upper-case system name", function()
       local groundState = makeGroundState()
 
-      local firingUnitState = MissileSystem.getFiringUnitContext(groundState, "SRBM", "FU1")
+      local firingUnitState = MissileSystem.getFiringUnitState(groundState, "SRBM", "FU1")
 
       assert.are.equal(groundState.missileSystemTypes.srbm.firingUnits.FU1, firingUnitState)
     end)
 
     -- Negative: an unknown unit resolves to nothing
     it("should return nil for an unknown firing unit", function()
-      assert.is_nil(MissileSystem.getFiringUnitContext(makeGroundState(), "srbm", "Ghost"))
+      assert.is_nil(MissileSystem.getFiringUnitState(makeGroundState(), "srbm", "Ghost"))
     end)
 
     -- Negative: an unknown system resolves to nothing
     it("should return nil for an unknown system", function()
-      assert.is_nil(MissileSystem.getFiringUnitContext(makeGroundState(), "glcm", "FU1"))
+      assert.is_nil(MissileSystem.getFiringUnitState(makeGroundState(), "glcm", "FU1"))
     end)
   end)
 
@@ -1396,13 +1396,13 @@ describe("MissileSystem", function()
       local addStub = trackStub(Deployment, "addMissileSystems").invokes(function()
         table.insert(calls, "addMissileSystems")
       end)
-      local contextStub = trackStub(Context, "initMissileSystemContexts").invokes(function()
-        table.insert(calls, "initMissileSystemContexts")
+      local contextStub = trackStub(GroundStateStore, "initMissileSystemStates").invokes(function()
+        table.insert(calls, "initMissileSystemStates")
       end)
 
       MissileSystem.redeploy(missileSystemConfigMap, groundState, "Taiwan", layouts)
 
-      assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemContexts" }, calls)
+      assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemStates" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,

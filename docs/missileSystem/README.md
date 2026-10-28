@@ -196,6 +196,6 @@ flowchart TB
 - [concealment](concealment.md)
 - [cargoProxy](cargoProxy.md)
 - [deployment](deployment.md)
-- [context](context.md)
+- [groundStateStore](groundStateStore.md)
 - [triggers](triggers.md)
 - [shared](shared.md)

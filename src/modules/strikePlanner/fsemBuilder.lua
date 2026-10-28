@@ -184,7 +184,7 @@ local function filterAvailableFiringUnits(plannerState, taskTemplate, firingUnit
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
     -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil state and
     -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
-    local firingUnitState = MissileSystem.getFiringUnitContext(plannerState.ground, taskTemplate.missileSystemType, firingUnit.name)
+    local firingUnitState = MissileSystem.getFiringUnitState(plannerState.ground, taskTemplate.missileSystemType, firingUnit.name)
     local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
 
     if firingUnitState then

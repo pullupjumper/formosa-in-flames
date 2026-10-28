@@ -13,6 +13,7 @@
 
 - PascalCase，對應檔名：`local StrikePlanner = {}` ↔ `strikePlanner/init.lua`。
 - 不用 `local M = {}`。
+- 模組專門管某個存檔 `xxxState` 的建立與更新時，名字加 `Store` 後綴（`GroundStateStore`），避免跟同名的 `SBJ__GroundState` 型別和 `groundState` 變數混淆。
 - 公開函式掛在模組 table 上：`function Module.doSomething(...)`。
 - 私有函式用 `local function name(...)`，不加 `_` 前綴。
 

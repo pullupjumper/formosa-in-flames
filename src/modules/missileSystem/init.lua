@@ -11,7 +11,7 @@ local Concealment = require("src.modules.missileSystem.concealment")
 local Cycle = require("src.modules.missileSystem.cycle")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Deployment = require("src.modules.missileSystem.deployment")
-local Context = require("src.modules.missileSystem.context")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local StatusView = require("src.modules.missileSystem.statusView")
 local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
 
@@ -129,7 +129,7 @@ end
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnitName string
 ---@return SBJ__FiringUnitState|nil # Firing unit runtime state, or nil when missing
-function MissileSystem.getFiringUnitContext(groundState, missileSystemType, firingUnitName)
+function MissileSystem.getFiringUnitState(groundState, missileSystemType, firingUnitName)
   local systemState = groundState.missileSystemTypes[string.lower(missileSystemType)] --[[@as SBJ__MissileSystemState?]]
   return systemState and systemState.firingUnits and systemState.firingUnits[firingUnitName]
 end
@@ -149,7 +149,7 @@ function MissileSystem.startStow(groundState, missileSystemType, firingUnits, op
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
   for _, firingUnit in ipairs(firingUnits) do
-    local firingUnitState = MissileSystem.getFiringUnitContext(groundState, missileSystemType, firingUnit.name)
+    local firingUnitState = MissileSystem.getFiringUnitState(groundState, missileSystemType, firingUnit.name)
 
     if firingUnitState and not firingUnitState.stowStartTime and (not onlyDeployed or DEPLOYED_STATES[firingUnitState.state]) then
       firingUnitState.stowStartTime = currentTime
@@ -207,7 +207,7 @@ function MissileSystem.processSupplyAssetDestruction(saveData, unit)
   local groundState = PersistentState.ground(saveData, unit.side)
 
   for _, systemState in pairs(groundState.missileSystemTypes) do
-    local success, result = Context.processSupplyAssetDestruction(unit, systemState)
+    local success, result = GroundStateStore.processSupplyAssetDestruction(unit, systemState)
 
     -- A destroyed unit belongs to at most one system, so the first match ends the search.
     if success and result then
@@ -242,7 +242,7 @@ function MissileSystem.redeploy(missileSystemConfigMap, groundState, sideName, l
     rebuiltFiringUnits[layout.unitname] = true
   end
   Deployment.addMissileSystems(missileSystemConfigMap, sideName, rebuiltFiringUnits)
-  Context.initMissileSystemContexts(missileSystemConfigMap, groundState)
+  GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
 end
 
 ---Redeploy a side's batteries to the placements submitted by the control panel
@@ -278,7 +278,7 @@ function MissileSystem.deploySide(config, saveData, sideName)
   local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
 
   Deployment.addMissileSystems(missileSystemConfigMap, sideName)
-  Context.initMissileSystemContexts(missileSystemConfigMap, PersistentState.ground(saveData, sideName))
+  GroundStateStore.initMissileSystemStates(missileSystemConfigMap, PersistentState.ground(saveData, sideName))
 end
 
 ---Build a side's battery statuses for the control panel, one per battery (firing unit plus its paired resupply unit)
@@ -299,7 +299,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 function MissileSystem.ensureGroundState(config, saveData, sideName)
-  Context.ensureGroundState(
+  GroundStateStore.ensureGroundState(
     getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName)
   )
@@ -315,8 +315,7 @@ function MissileSystem.initSide(config, saveData, sideName)
     return
   end
 
-  Context.initMissileSystemContexts(getMissileSystemTypes(config, sideName),
-    groundState)
+  GroundStateStore.initMissileSystemStates(getMissileSystemTypes(config, sideName), groundState)
 end
 
 ---Iterate through enabled missile systems only
