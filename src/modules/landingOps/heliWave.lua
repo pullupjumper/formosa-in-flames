@@ -6,10 +6,11 @@ local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 
----Fly the zone's helicopters in waves. A wave is a group of transport helicopters with attack helicopter escorts.
+---Fly the zone's helicopters in waves. A wave is a group of transport helicopters plus attack helicopters topping up the zone's CAS force.
 ---It launches from the motherships, flies out along the left and right wings, and goes inland to its landing points.
----Transports unload and return. Escorts loiter until every transport of the wave is done.
----The next wave launches only after the wave in the air has finished or timed out.
+---Transports unload and return. An attack helicopter is assigned to the zone's CAS mission near its landing point,
+---and from then on the mission alone decides what it does.
+---The next wave launches only after the transports of the wave in the air have finished or timed out.
 local HeliWave = {}
 
 -- ============================================================================
@@ -39,7 +40,7 @@ local WING_SIGN = {
 local PHASE = {
   ENROUTE   = "enroute",
   UNLOADING = "unloading",
-  LOITERING = "loitering",
+  CAS       = "cas",
   RETURNING = "returning",
 }
 
@@ -98,6 +99,13 @@ local function findCandidates(zone, motherships)
   end
 
   return transports, attackers
+end
+
+---Get the name of the zone's CAS mission
+---@param zone SBJ__OperationalZoneDescriptor
+---@return string
+local function getCasMissionName(zone)
+  return "CAS/HELI/" .. zone.name
 end
 
 ---Select count items at random
@@ -272,20 +280,6 @@ local function launchGroup(helis, role, unitMap, flightCtx)
   end
 end
 
----Count the units of a wave by role
----@param unitMap table<string, SBJ__HeliState>
----@param role SBJ__HeliRoleType
----@return integer
-local function countRole(unitMap, role)
-  local count = 0
-  for _, entry in pairs(unitMap) do
-    if entry.role == role then
-      count = count + 1
-    end
-  end
-  return count
-end
-
 ---Launch the next wave when loaded transports are aboard
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -304,8 +298,10 @@ local function launchWave(tickCtx, zone, state, flightCtx)
   end
 
   local unitMap = {}
+  local attackerNeed = math.max(0, flightCtx.heliConfig.escortSize - Utils.getCount(state.attackers))
+  local launchedBefore = Utils.getCount(state.attackers)
   launchGroup(selectRandom(transports, flightCtx.heliConfig.waveSize), ROLE.TRANSPORT, unitMap, flightCtx)
-  launchGroup(selectRandom(attackers, flightCtx.heliConfig.escortSize), ROLE.ATTACK, unitMap, flightCtx)
+  launchGroup(selectRandom(attackers, attackerNeed), ROLE.ATTACK, state.attackers, flightCtx)
 
   state.units = unitMap
   state.waveIndex = state.waveIndex + 1
@@ -317,8 +313,8 @@ local function launchWave(tickCtx, zone, state, flightCtx)
     fields = {
       zone = zone.name,
       wave = state.waveIndex,
-      transports = countRole(unitMap, ROLE.TRANSPORT),
-      attackers = countRole(unitMap, ROLE.ATTACK),
+      transports = Utils.getCount(unitMap),
+      attackers = Utils.getCount(state.attackers) - launchedBefore,
     },
   }
 end
@@ -335,10 +331,10 @@ local function moveHome(heli, entry)
   entry.phase = PHASE.RETURNING
 end
 
----Find the helicopters of the wave that are alive and not yet on their way home
+---Find the transports of the wave that are alive and not yet on their way home
 ---@param unitMap table<string, SBJ__HeliState>
----@return table<string, CMO__Unit> # Alive helicopters indexed by GUID
-local function findFlyingHelis(unitMap)
+---@return table<string, CMO__Unit> # Alive transports indexed by GUID
+local function findFlyingTransports(unitMap)
   local helis = {}
   for guid, entry in pairs(unitMap) do
     local heli = entry.phase ~= PHASE.RETURNING and GameApi.ScenEdit_GetUnit(guid)
@@ -356,23 +352,11 @@ local function getHeliConfig(tickCtx)
   return tickCtx.config.red.amphibOps.tuning.heliWave
 end
 
----Check if every transport of the wave is done: back on its way home or destroyed
+---Check if the wave is over: every transport is on its way home or destroyed
 ---@param unitMap table<string, SBJ__HeliState>
----@return boolean # True if no transport is still in the air
-local function isTransportsDone(unitMap)
-  for guid in pairs(findFlyingHelis(unitMap)) do
-    if unitMap[guid].role == ROLE.TRANSPORT then
-      return false
-    end
-  end
-  return true
-end
-
----Check if the wave is over: every helicopter is on its way home or destroyed
----@param unitMap table<string, SBJ__HeliState>
----@return boolean # True if no helicopter of the wave is still in the air
+---@return boolean # True if no transport of the wave is still in the air
 local function isWaveDone(unitMap)
-  return next(findFlyingHelis(unitMap)) == nil
+  return next(findFlyingTransports(unitMap)) == nil
 end
 
 ---Check if a helicopter is close enough to its landing point
@@ -400,42 +384,48 @@ local function updateTransport(heli, entry, arrivalNm)
   end
 end
 
----Update one attack helicopter on its way to the loiter point
+---Update one attack helicopter on its way. Near its landing point it joins the CAS mission, which takes over
 ---@param heli CMO__Unit
 ---@param entry SBJ__HeliState
----@param arrivalNm number
-local function updateAttacker(heli, entry, arrivalNm)
-  if entry.phase == PHASE.ENROUTE and hasArrived(heli, entry, arrivalNm) then
-    entry.phase = PHASE.LOITERING
+---@param casAssignNm number
+---@param missionName string
+local function updateAttacker(heli, entry, casAssignNm, missionName)
+  if entry.phase == PHASE.ENROUTE and hasArrived(heli, entry, casAssignNm) then
+    GameApi.ScenEdit_AssignUnitToMission(heli.guid, missionName)
+    entry.phase = PHASE.CAS
   end
 end
 
----Move home every helicopter of the wave still in the air, or only the escorts
+---Move home every transport of the wave still in the air
 ---@param unitMap table<string, SBJ__HeliState>
----@param role? SBJ__HeliRoleType Only move helicopters of this role; nil moves them all
-local function moveHomeWave(unitMap, role)
-  for guid, heli in pairs(findFlyingHelis(unitMap)) do
-    if not role or unitMap[guid].role == role then
-      moveHome(heli, unitMap[guid])
-    end
+local function moveHomeTransports(unitMap)
+  for guid, heli in pairs(findFlyingTransports(unitMap)) do
+    moveHome(heli, unitMap[guid])
   end
 end
 
----Update every helicopter of the wave. Escorts go home once the transports are done
+---Update every transport of the wave
 ---@param unitMap table<string, SBJ__HeliState>
 ---@param arrivalNm number
-local function updateUnits(unitMap, arrivalNm)
+local function updateTransports(unitMap, arrivalNm)
   for guid, entry in pairs(unitMap) do
     local heli = GameApi.ScenEdit_GetUnit(guid)
-    if heli and entry.role == ROLE.TRANSPORT then
+    if heli then
       updateTransport(heli, entry, arrivalNm)
-    elseif heli then
-      updateAttacker(heli, entry, arrivalNm)
     end
   end
+end
 
-  if isTransportsDone(unitMap) then
-    moveHomeWave(unitMap, ROLE.ATTACK)
+---Update every attack helicopter that has not yet joined the CAS mission
+---@param attackerMap table<string, SBJ__HeliState>
+---@param casAssignNm number
+---@param missionName string
+local function updateAttackers(attackerMap, casAssignNm, missionName)
+  for guid, entry in pairs(attackerMap) do
+    local heli = entry.phase == PHASE.ENROUTE and GameApi.ScenEdit_GetUnit(guid)
+    if heli then
+      updateAttacker(heli, entry, casAssignNm, missionName)
+    end
   end
 end
 
@@ -443,8 +433,8 @@ end
 -- Public API
 -- ============================================================================
 
----Schedule the first wave when the boat assault begins. It launches early enough to reach the landing
----points when the boats reach the shore.
+---Schedule the first wave when the boat assault begins, and create the zone's CAS mission.
+---The wave launches early enough to reach the landing points when the boats reach the shore.
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
@@ -459,8 +449,12 @@ function HeliWave.schedule(tickCtx, zone, zoneState)
     waveIndex = 0,
     launchAt = math.max(currentTime, boatArrivalAt - flightSec),
     units = {},
+    attackers = {},
     isFinished = false,
   }
+
+  GameApi.ScenEdit_AddMission(constants.SIDES.RED, getCasMissionName(zone), "patrol",
+    { type = "land", zone = zone.air.casArea })
 
   Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line("OK", {
     scope = "heliWave",
@@ -480,17 +474,22 @@ end
 ---@return boolean # False if the wave could not launch because the lanes or the landing zone are missing
 function HeliWave.update(tickCtx, zone, zoneState)
   local state = zoneState.heliWave
-  if not state or state.isFinished then
+  if not state then
     return true
   end
 
   local heliConfig = getHeliConfig(tickCtx)
-  updateUnits(state.units, heliConfig.arrivalNm)
+  updateAttackers(state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
+  if state.isFinished then
+    return true
+  end
+
+  updateTransports(state.units, heliConfig.arrivalNm)
 
   -- A transport stuck unloading is moved home too, so it cannot block the next wave
   if state.waveLaunchedAt and tickCtx.currentTime - state.waveLaunchedAt >= heliConfig.waveTimeoutSec and
       not isWaveDone(state.units) then
-    moveHomeWave(state.units)
+    moveHomeTransports(state.units)
     Logger.warn(LogFormat.line("WARN",
       { scope = "heliWave", zone = zone.name, wave = state.waveIndex, reason = "wave_timeout" }))
   end
@@ -518,6 +517,20 @@ function HeliWave.update(tickCtx, zone, zoneState)
   report.addAll({ launchWave(tickCtx, zone, state, flightCtx) })
   report.emit()
 
+  return true
+end
+
+---Forget a destroyed attack helicopter so the next wave replaces it
+---@param zoneState SBJ__ZoneState
+---@param guid string
+---@return boolean # True if the attack helicopter was recorded and is now removed
+function HeliWave.removeAttacker(zoneState, guid)
+  local attackerMap = zoneState.heliWave and zoneState.heliWave.attackers
+  if not (attackerMap and attackerMap[guid]) then
+    return false
+  end
+
+  attackerMap[guid] = nil
   return true
 end
 

@@ -10,6 +10,7 @@ local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local HeliWave = require("src.modules.landingOps.heliWave")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 
@@ -274,6 +275,19 @@ function LandingOps.attackAirlandingZone(config, ship)
   })
 
   return true
+end
+
+---Forget a destroyed attack helicopter in every zone, so the next wave replaces it
+---@param saveData SBJ__SaveData
+---@param guid string
+---@return boolean # True if a zone recorded the helicopter and it is now removed
+function LandingOps.removeDestroyedAttackHelicopter(saveData, guid)
+  for _, zoneState in pairs(PersistentState.landingOps(saveData).amphibOps.zoneStates) do
+    if HeliWave.removeAttacker(zoneState, guid) then
+      return true
+    end
+  end
+  return false
 end
 
 ---Count landed China units by type in each operational zone's CAS area

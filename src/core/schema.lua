@@ -842,7 +842,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field waveIndex integer Waves launched so far (0 = none yet)
 ---@field launchAt number Time the first wave launches (boat arrival minus flight time)
 ---@field waveLaunchedAt? number Time the current wave launched; drives the timeout
----@field units table<string, SBJ__HeliState> Helicopters of the current wave indexed by GUID
+---@field units table<string, SBJ__HeliState> Transport helicopters of the current wave indexed by GUID
+---@field attackers table<string, SBJ__HeliState> Attack helicopters of the zone indexed by GUID; kept across waves, removed when destroyed
 ---@field isFinished boolean All waves launched and the last one is done
 ---@field isWaitingLogged? boolean Latched after logging that no loaded helicopter is available
 
@@ -857,7 +858,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field role SBJ__HeliRoleType
 ---@field wing SBJ__HeliWingType
 ---@field phase SBJ__HeliPhaseType
----@field landingPoint CMO__Location Where this helicopter lands (transport) or loiters (attack)
+---@field landingPoint CMO__Location Where this helicopter lands (transport) or joins the CAS mission nearby (attack)
 
 ---Amphibious operations state: all amphibious operations
 ---@class SBJ__AmphibOpsState: table
@@ -1172,9 +1173,10 @@ function ScenEdit_DeleteMine(params) end
 
 ---@class SBJ__HeliWaveConfig: table
 ---@field waveSize integer Transport helicopters per wave
----@field escortSize integer Attack helicopters per wave
+---@field escortSize integer Attack helicopters kept per zone, assigned or on the way
 ---@field waveTimeoutSec number A wave still in the air after this long counts as finished
 ---@field arrivalNm number Distance to the landing point that counts as arrived
+---@field casAssignNm number Distance to the landing point where an attack helicopter joins the CAS mission
 ---@field cruiseSpeedKt number Cruise speed used to work back the launch time from the boat arrival
 ---@field cruiseAltitudeM number Altitude the helicopters fly at after launch
 ---@field wingOffsetM number Lateral distance of each wing from the lane center line

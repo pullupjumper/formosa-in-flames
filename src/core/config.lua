@@ -1856,9 +1856,10 @@ config.red.amphibOps.tuning = {
   },
   heliWave = {
     waveSize = 8,             -- 每波運輸直升機架數（左右翼各半）
-    escortSize = 4,           -- 每波攻擊直升機架數（左右翼各半）
+    escortSize = 4,           -- 每區攻擊直升機總數（已進 CAS 的加飛往中的），下一波補到此數
     waveTimeoutSec = 30 * 60, -- 一波放飛後超過此秒數，還在空中的視為結束
     arrivalNm = 0.5,          -- 離降落點多近算到達
+    casAssignNm = 3,          -- 攻擊直升機離降落點多近就指派進 CAS 任務
     cruiseSpeedKt = 130,      -- 倒推放飛時間用的巡航速度（Z-18）
     cruiseAltitudeM = 304,    -- 放飛後的巡航高度（公尺）
     wingOffsetM = 8000,       -- 左右翼離通道中心線的橫向距離

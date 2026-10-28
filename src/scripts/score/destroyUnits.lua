@@ -1,6 +1,7 @@
 local PersistentState = require("src.core.persistentState")
 local config = require("src.core.config")
 local GameApi = require("src.utils.gameApi")
+local LandingOps = require("src.modules.landingOps.init")
 local MissileSystem = require("src.modules.missileSystem.init")
 local GnssJamming = require("src.modules.ew.gnssJamming")
 local CommsJamming = require("src.modules.ew.commsJamming")
@@ -13,6 +14,8 @@ PersistentState.update(function(saveData)
     local score = GameApi.ScenEdit_GetScore(constants.SIDES.BLUE)
 
     if unit.type == constants.UNIT_TYPES.AIRCRAFT then
+      LandingOps.removeDestroyedAttackHelicopter(saveData, unit.guid)
+
       if unit.condition == "Parked" and unit.dbid == constants.PLATFORMS.Z10 then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.BLUE,

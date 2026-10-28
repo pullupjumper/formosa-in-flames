@@ -27,7 +27,7 @@ describe("HeliWave", function()
   local ranges
   -- Scenario clock readings: before and after every wave launch time
   local BEFORE_LAUNCH, AFTER_LAUNCH = 0, 4102444800
-  local stubUnload, stubCurrentTime
+  local stubUnload, stubCurrentTime, stubAddMission, stubAssign
 
   ---Register a fake unit that the GetUnit stub can return
   ---@param guid string
@@ -106,7 +106,7 @@ describe("HeliWave", function()
         route = { launchStationFarNm = 4, shoreStandoffM = 100 },
         assaultBoat = { speed = 30 },
         heliWave = {
-          waveSize = 8, escortSize = 4, waveTimeoutSec = 1800, arrivalNm = 0.5, cruiseSpeedKt = 130, cruiseAltitudeM = 304,
+          waveSize = 8, escortSize = 4, waveTimeoutSec = 1800, arrivalNm = 0.5, casAssignNm = 3, cruiseSpeedKt = 130, cruiseAltitudeM = 304,
           wingOffsetM = 8000, inlandEntryM = 3000, landingSpreadM = 500,
         },
       },
@@ -129,6 +129,7 @@ describe("HeliWave", function()
       movement = { holdingAreas = { mothership = { "RP-M" } } },
       air = {
         landingZone = { "RP-L" },
+        casArea = { "RP-CAS" },
         transportHelicopter = { dbid = TRANSPORT_DBID, missions = missions },
         attackHelicopter = { dbid = ATTACK_DBID },
       },
@@ -196,6 +197,8 @@ describe("HeliWave", function()
     trackStub(stub(GameApi, "ScenEdit_GetUnit", function(guid) return units[guid] end))
     trackStub(stub(GameApi, "Tool_Range", function(guid) return ranges[guid] or FAR end))
     stubUnload = trackStub(stub(GameApi, "ScenEdit_UnloadCargo"))
+    stubAddMission = trackStub(stub(GameApi, "ScenEdit_AddMission", function() return {} end))
+    stubAssign = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission").returns(true))
     stubCurrentTime = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(AFTER_LAUNCH))
     trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").returns({
       LaneGeometry.buildPoint(FRAME, 5000, -200),
@@ -224,6 +227,16 @@ describe("HeliWave", function()
       local launchAt = zoneState.heliWave.launchAt
       assert.is_true(launchAt > 1000)
       assert.is_true(launchAt < 5588)
+    end)
+
+    it("should create one CAS mission over the zone's CAS area", function()
+      addFleet(8, 4)
+
+      HeliWave.schedule(buildCtx(1000), buildZone(), buildZoneState())
+
+      assert.stub(stubAddMission).was.called(1)
+      assert.stub(stubAddMission).was.called_with(
+        constants.SIDES.RED, "CAS/HELI/Taoyuan", "patrol", { type = "land", zone = { "RP-CAS" } })
     end)
 
     it("should launch right away when no boat is paired", function()
@@ -351,32 +364,57 @@ describe("HeliWave", function()
       assert.spy(units.T1.RTB).was.called_with(match.is_table(), true)
     end)
 
-    it("should hold escorts over the landing point until every transport is done", function()
-      addFleet(2, 2)
+    it("should assign an attack helicopter to the CAS mission within the threshold, and not before", function()
+      addFleet(1, 2)
       local zoneState = buildLaunchedZoneState()
-      ranges.A1, ranges.A2, ranges.T1, ranges.T2 = ARRIVED, ARRIVED, ARRIVED, ARRIVED
+      ranges.A1 = 3.5
+
+      HeliWave.update(buildCtx(1010), buildZone(), zoneState)
+      assert.stub(stubAssign).was_not.called()
+
+      ranges.A1 = 2.5
+      HeliWave.update(buildCtx(1020), buildZone(), zoneState)
+      assert.stub(stubAssign).was.called(1)
+      assert.stub(stubAssign).was.called_with("A1", "CAS/HELI/Taoyuan")
+      HeliWave.update(buildCtx(1030), buildZone(), zoneState)
+      assert.stub(stubAssign).was.called(1)
+    end)
+
+    it("should never send an assigned attack helicopter home, even after the transports are done", function()
+      addFleet(1, 1)
+      local zoneState = buildLaunchedZoneState()
+      ranges.A1, ranges.T1 = 2, ARRIVED
       HeliWave.update(buildCtx(1010), buildZone(), zoneState)
 
       units.T1.condition = constants.UNIT_CONDITIONS.UNDERWAY
       HeliWave.update(buildCtx(1020), buildZone(), zoneState)
+
       assert.spy(units.T1.RTB).was.called(1)
       assert.spy(units.A1.RTB).was_not.called()
-      assert.spy(units.A2.RTB).was_not.called()
+    end)
 
-      units.T2.condition = constants.UNIT_CONDITIONS.UNDERWAY
-      HeliWave.update(buildCtx(1030), buildZone(), zoneState)
-      assert.spy(units.A1.RTB).was.called(1)
-      assert.spy(units.A2.RTB).was.called(1)
+    it("should still assign an attack helicopter after the transports are done", function()
+      addFleet(1, 1)
+      local zoneState = buildLaunchedZoneState()
+      destroyAll({ "T1" })
+      HeliWave.update(buildCtx(1010), buildZone(), zoneState)
+      ranges.A1 = 2
+
+      HeliWave.update(buildCtx(1020), buildZone(), zoneState)
+
+      assert.spy(units.A1.RTB).was_not.called()
+      assert.stub(stubAssign).was.called_with("A1", "CAS/HELI/Taoyuan")
     end)
 
     it("should treat a destroyed transport as done", function()
       addFleet(1, 1)
       local zoneState = buildLaunchedZoneState()
+      addFleet(1, 0, "R")
       destroyAll({ "T1" })
 
       HeliWave.update(buildCtx(1010), buildZone(), zoneState)
 
-      assert.spy(units.A1.RTB).was.called(1)
+      assert.spy(units.RT1.Launch).was.called(1)
     end)
   end)
 
@@ -406,7 +444,7 @@ describe("HeliWave", function()
     it("should recall the wave and launch the next one after the timeout", function()
       addFleet(2, 2)
       local zoneState = buildLaunchedZoneState()
-      local firstWave = { units.T1, units.T2, units.A1, units.A2 }
+      local firstWave = { units.T1, units.T2 }
       addFleet(1, 0, "R")
 
       HeliWave.update(buildCtx(1000 + 1799), buildZone(), zoneState)
@@ -417,6 +455,47 @@ describe("HeliWave", function()
         assert.spy(heli.RTB).was.called(1)
       end
       assert.spy(units.RT1.Launch).was.called(1)
+    end)
+
+    it("should not let an unassigned attack helicopter hold back the next wave", function()
+      addFleet(2, 1)
+      local zoneState = buildLaunchedZoneState()
+      addFleet(1, 0, "R")
+      destroyAll({ "T1", "T2" })
+
+      HeliWave.update(buildCtx(1500), buildZone(), zoneState)
+
+      assert.spy(units.RT1.Launch).was.called(1)
+    end)
+
+    it("should top the attack helicopters up to four across waves, and stop at four", function()
+      addFleet(2, 3)
+      local zoneState = buildLaunchedZoneState()
+      assert.same({ ["attack/left"] = 2, ["attack/right"] = 1, ["transport/left"] = 1, ["transport/right"] = 1 }, countLaunched())
+      destroyAll({ "T1", "T2", "A1" })
+      HeliWave.removeAttacker(zoneState, "A1")
+      addFleet(2, 5, "R")
+
+      HeliWave.update(buildCtx(1500), buildZone(), zoneState)
+
+      -- 2 attackers still alive, so only 2 more are launched
+      local launched = 0
+      for guid, unit in pairs(units) do
+        if guid:sub(1, 2) == "RA" and unit.course then launched = launched + 1 end
+      end
+      assert.are.equal(2, launched)
+    end)
+
+    it("should launch no attack helicopter when four are already counted", function()
+      addFleet(2, 4)
+      local zoneState = buildLaunchedZoneState()
+      destroyAll({ "T1", "T2" })
+      addFleet(2, 4, "R")
+
+      HeliWave.update(buildCtx(1500), buildZone(), zoneState)
+
+      assert.spy(units.RT1.Launch).was.called(1)
+      assert.spy(units.RA1.Launch).was_not.called()
     end)
 
     it("should launch nothing more after the last wave is done", function()
@@ -432,6 +511,23 @@ describe("HeliWave", function()
       HeliWave.update(buildCtx(2500), buildZone(), zoneState)
 
       assert.spy(units.ST1.Launch).was_not.called()
+    end)
+  end)
+
+  describe("removeAttacker", function()
+    it("should drop the attack helicopter record so it no longer counts", function()
+      addFleet(2, 2)
+      local zoneState = buildLaunchedZoneState()
+      assert.is_not_nil(zoneState.heliWave.attackers.A1)
+
+      HeliWave.removeAttacker(zoneState, "A1")
+
+      assert.is_nil(zoneState.heliWave.attackers.A1)
+      assert.is_not_nil(zoneState.heliWave.attackers.A2)
+    end)
+
+    it("should do nothing for a zone without a wave plan", function()
+      assert.has_no.errors(function() HeliWave.removeAttacker(buildZoneState(), "A1") end)
     end)
   end)
 end)
