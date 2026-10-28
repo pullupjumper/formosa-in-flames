@@ -457,7 +457,7 @@ function HeliWave.schedule(tickCtx, zone, zoneState)
     constants.SIDES.RED,
     getCasMissionName(zone),
     "patrol",
-    { type = "land", zone = zone.air.casArea }
+    { type = "land", zone = zone.air.attackHelicopter.casArea }
   )
 
   Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line("OK", {

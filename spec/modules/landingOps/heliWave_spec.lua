@@ -132,9 +132,8 @@ describe("HeliWave", function()
       movement = { holdingAreas = { mothership = { "RP-M" } } },
       air = {
         landingZone = { "RP-L" },
-        casArea = { "RP-CAS" },
         transportHelicopter = { dbid = TRANSPORT_DBID },
-        attackHelicopter = { dbid = ATTACK_DBID },
+        attackHelicopter = { dbid = ATTACK_DBID, casArea = { "RP-CAS" } },
       },
     }
   end

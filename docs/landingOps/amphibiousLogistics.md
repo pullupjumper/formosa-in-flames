@@ -58,7 +58,7 @@
 |---|---|
 | `getUnitsInHoldingAreas(zone, filteredUnits)` | 到位偵測 |
 | `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨 |
-| `transferAndAssignTransportAircraft(transportAircraft)` | 單一陸基運輸機轉貨並指派 |
+| `transferTransportAircraftCargo(transportAircraft)` | 單一陸基運輸機轉貨 |
 | `transferRemainingCargos(zone, units)` | 補運：重新轉貨，**不重新指派**任務 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除貨物，回傳實際刪除數；ACV 釋放使用 |
 

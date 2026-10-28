@@ -1958,7 +1958,6 @@ config.red.amphibOps.zones = {
     air = {
       landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
       contactThreshold = 3,
-      casArea = constants.AREAS.CAS_E,
       reconTemplate = "GJ11_RECON",
       transportHelicopter = {
         dbid = constants.PLATFORMS.Z18,
@@ -1984,13 +1983,7 @@ config.red.amphibOps.zones = {
       },
       attackHelicopter = {
         dbid = constants.PLATFORMS.Z10,
-        missions = {
-          {
-            name = "CAS/E",
-            loadoutId = constants.LOADOUTS.Z10_ATTACK,
-            unitCount = 13,
-          },
-        }
+        casArea = constants.AREAS.CAS_E,
       },
     },
     landing = {
@@ -2130,7 +2123,6 @@ config.red.amphibOps.zones = {
     air = {
       landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
       contactThreshold = 3,
-      casArea = constants.AREAS.CAS_S,
       transportHelicopter = {
         dbid = constants.PLATFORMS.Z18,
         zone = constants.AREAS.AIRLANDING_CHANGLONG,
@@ -2155,13 +2147,7 @@ config.red.amphibOps.zones = {
       },
       attackHelicopter = {
         dbid = constants.PLATFORMS.Z10,
-        missions = {
-          {
-            name = "CAS/S",
-            loadoutId = constants.LOADOUTS.Z10_ATTACK,
-            unitCount = 13,
-          },
-        }
+        casArea = constants.AREAS.CAS_S,
       },
     },
     landing = {
@@ -2281,19 +2267,10 @@ config.red.amphibOps.zones = {
     air = {
       landingZone = constants.AREAS.AIRLANDING_TAOYUAN,
       contactThreshold = 3,
-      casArea = constants.AREAS.CAS_PENGHU,
       transportAircraft = {
         name = "Zhangpu AAB",
         guid = constants.BASES.ZHANGPU_AAB,
         dbid = constants.PLATFORMS.IL76,
-        missions = {
-          {
-            name = "AIRLANDING/PENGHU/2/2",
-            loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
-            unitCount = 3,
-            startTime = 0
-          },
-        },
         cargoItemsForTransfer = {
           {
             loadoutId = constants.LOADOUTS.IL76_TRANSPORT,
@@ -2325,13 +2302,7 @@ config.red.amphibOps.zones = {
       },
       attackHelicopter = {
         dbid = constants.PLATFORMS.Z10,
-        missions = {
-          {
-            name = "CAS/PENGHU",
-            loadoutId = constants.LOADOUTS.Z10_ATTACK,
-            unitCount = 13,
-          },
-        }
+        casArea = constants.AREAS.CAS_PENGHU,
       },
     },
     landing = {

@@ -30,7 +30,7 @@ local Coordinator = {}
 ---@param zone SBJ__OperationalZoneDescriptor
 local function startZoneAirSetup(config, landingState, zone)
   if zone.air.transportAircraft then
-    AmphibiousLogistics.transferAndAssignTransportAircraft(zone.air.transportAircraft)
+    AmphibiousLogistics.transferTransportAircraftCargo(zone.air.transportAircraft)
   end
   if zone.air.reconTemplate then
     StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates[zone.air.reconTemplate])

@@ -95,7 +95,7 @@ flowchart TD
 | `config.red.amphibOps.tuning.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
 | `zones[].landing.lstSettings.speed` | LST 速度 |
 | `zones[].landing.acv` | `area`（判斷船所屬區）、`distance`、`destination` |
-| `zones[].air.casArea` | 登陸單位統計範圍 |
+| `zones[].air.attackHelicopter.casArea` | 登陸單位統計範圍 |
 | `zones[].air.landingZone`、`contactThreshold` | 威脅評估範圍與門檻 |
 
 ---

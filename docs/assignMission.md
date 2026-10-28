@@ -100,7 +100,7 @@ flowchart TD
 
 - `src/modules/landingOps/amphibiousLogistics.lua`
   - `processShipAssignments(...)`
-  - `transferAndAssignTransportAircraft(...)`
+  - `transferTransportAircraftCargo(...)`
 - `src/modules/strikePlanner/airTaskingOrder.lua`
   - `assignPackageUnits(...)`
 

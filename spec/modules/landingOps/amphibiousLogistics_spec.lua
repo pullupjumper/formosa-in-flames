@@ -125,9 +125,6 @@ describe("AmphibiousLogistics", function()
         },
         attackHelicopter = {
           dbid = 5001,
-          missions = {
-            { name = "AttackHeloMission-1", loadoutId = 30, unitCount = 1, startTime = 0 },
-          },
         },
       },
     }
@@ -151,9 +148,6 @@ describe("AmphibiousLogistics", function()
       name = "AirBase-1",
       guid = "BASE-001",
       dbid = 6001,
-      missions = {
-        { name = "AirliftMission-1", loadoutId = 40, unitCount = 1, startTime = 0 },
-      },
       cargoItemsForTransfer = {
         [1] = { loadoutId = 40, cargoItems = { [1] = { buildCargoItem() } } },
       },
@@ -598,9 +592,7 @@ describe("AmphibiousLogistics", function()
     end)
   end)
 
-  describe("transferAndAssignTransportAircraft", function()
-    local stubAssignMission
-
+  describe("transferTransportAircraftCargo", function()
     ---Create an embarked transport aircraft matching buildTransportAircraftItem's dbid and loadout
     ---@param overrides? table
     ---@return table
@@ -641,7 +633,6 @@ describe("AmphibiousLogistics", function()
 
     before_each(function()
       stubUnitLookup()
-      stubAssignMission = trackStub(stub(GameApi, "ScenEdit_AssignUnitToMission").returns(true))
     end)
 
     it("should move matching cargo from the base onto a matching aircraft", function()
@@ -651,7 +642,7 @@ describe("AmphibiousLogistics", function()
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
       local item = buildTransportAircraftItem()
 
-      local result = AmphibiousLogistics.transferAndAssignTransportAircraft(item)
+      local result = AmphibiousLogistics.transferTransportAircraftCargo(item)
 
       assert.is_true(result)
       assert.stub(stubDelete).was.called(2)
@@ -659,7 +650,6 @@ describe("AmphibiousLogistics", function()
       assert.stub(stubDelete).was.called_with(base, "C-2")
       assert.stub(stubCreate).was.called(2)
       assert.are.same({ 1, 1001 }, { stubCreate.calls[1].vals[2], stubCreate.calls[1].vals[3] })
-      assert.stub(stubAssignMission).was.called_with("AC-001", "AirliftMission-1", false)
     end)
 
     it("should only transfer up to the requested quantity", function()
@@ -668,7 +658,7 @@ describe("AmphibiousLogistics", function()
       local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(
+      AmphibiousLogistics.transferTransportAircraftCargo(
         buildItemWithCargo({ [1] = { buildCargoItem({ num = 1 }) } })
       )
 
@@ -692,7 +682,7 @@ describe("AmphibiousLogistics", function()
       local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(
+      AmphibiousLogistics.transferTransportAircraftCargo(
         buildItemWithCargo({ [1] = { buildCargoItem({ num = 1 }) } })
       )
 
@@ -708,7 +698,7 @@ describe("AmphibiousLogistics", function()
       local stubCreate1 = trackStub(stub(ac1, "createUnitCargo"))
       local stubCreate2 = trackStub(stub(ac2, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(
+      AmphibiousLogistics.transferTransportAircraftCargo(
         buildItemWithCargo({
           [1] = { buildCargoItem({ dbid = 1001, num = 1 }) },
           [2] = { buildCargoItem({ dbid = 2002, num = 1 }) },
@@ -726,11 +716,10 @@ describe("AmphibiousLogistics", function()
       registerUnits({ aircraft })
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      local result = AmphibiousLogistics.transferAndAssignTransportAircraft(buildTransportAircraftItem())
+      local result = AmphibiousLogistics.transferTransportAircraftCargo(buildTransportAircraftItem())
 
       assert.is_true(result)
       assert.stub(stubCreate).was_not.called()
-      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should skip aircraft that do not match platform DBID", function()
@@ -738,7 +727,7 @@ describe("AmphibiousLogistics", function()
       buildAirBase({ aircraft })
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(buildTransportAircraftItem())
+      AmphibiousLogistics.transferTransportAircraftCargo(buildTransportAircraftItem())
 
       assert.stub(stubCreate).was_not.called()
     end)
@@ -748,7 +737,7 @@ describe("AmphibiousLogistics", function()
       buildAirBase({ aircraft })
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(buildTransportAircraftItem())
+      AmphibiousLogistics.transferTransportAircraftCargo(buildTransportAircraftItem())
 
       assert.stub(stubCreate).was_not.called()
     end)
@@ -759,7 +748,7 @@ describe("AmphibiousLogistics", function()
       unitMap["BASE-001"].embarkedUnits.Aircraft = { "GHOST-001", "AC-002" }
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(
+      AmphibiousLogistics.transferTransportAircraftCargo(
         buildItemWithCargo({ [1] = { buildCargoItem({ num = 1 }) } })
       )
 
@@ -770,10 +759,9 @@ describe("AmphibiousLogistics", function()
     it("should skip the transfer when the base has no embarked aircraft", function()
       buildAirBase({}, { embarkedUnits = { Aircraft = {}, Boats = {} } })
 
-      local result = AmphibiousLogistics.transferAndAssignTransportAircraft(buildTransportAircraftItem())
+      local result = AmphibiousLogistics.transferTransportAircraftCargo(buildTransportAircraftItem())
 
       assert.is_true(result)
-      assert.stub(stubAssignMission).was_not.called()
     end)
 
     it("should not transfer when the base cargo list is nil", function()
@@ -781,7 +769,7 @@ describe("AmphibiousLogistics", function()
       buildAirBase({ aircraft }, { cargo = { [1] = { cargo = nil } } })
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(buildTransportAircraftItem())
+      AmphibiousLogistics.transferTransportAircraftCargo(buildTransportAircraftItem())
 
       assert.stub(stubCreate).was_not.called()
     end)
@@ -794,7 +782,7 @@ describe("AmphibiousLogistics", function()
       local stubDelete = trackStub(stub(base, "deleteUnitCargo"))
       local stubCreate = trackStub(stub(aircraft, "createUnitCargo"))
 
-      AmphibiousLogistics.transferAndAssignTransportAircraft(
+      AmphibiousLogistics.transferTransportAircraftCargo(
         buildItemWithCargo({ [1] = { buildCargoItem({ num = 5 }) } })
       )
 

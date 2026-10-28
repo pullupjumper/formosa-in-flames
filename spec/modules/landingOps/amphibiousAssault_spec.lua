@@ -52,7 +52,6 @@ describe("AmphibiousAssault", function()
         },
       },
       air = {
-        attackHelicopter = { missions = { buildMission({ name = "AtkHeloMission1" }) } },
       },
       landing = {
         laneCenter = { "RP-CENTER" },
@@ -415,7 +414,7 @@ describe("AmphibiousAssault", function()
 
   describe("countUnitsInEachArea", function()
     local config = {
-      red = { amphibOps = { zones = { buildZone({ name = "A", air = { casArea = "CAS-A" } }), buildZone({ name = "B", air = { casArea = "CAS-B" } }) } } }
+      red = { amphibOps = { zones = { buildZone({ name = "A", air = { attackHelicopter = { casArea = "CAS-A" } } }), buildZone({ name = "B", air = { attackHelicopter = { casArea = "CAS-B" } } }) } } }
     }
 
     ---Stub China's units; each unit is a buildUnit override table

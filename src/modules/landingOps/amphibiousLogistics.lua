@@ -1,7 +1,6 @@
 local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
-local AssignMission = require("src.modules.assignMission")
 
 local AmphibiousLogistics = {}
 
@@ -259,12 +258,12 @@ function AmphibiousLogistics.transferAndAssign(zone, unitsInHoldingAreas)
   return true
 end
 
----Transfer cargo and assign missions for a zone's land-based transport aircraft
+---Transfer cargo onto a zone's land-based transport aircraft
 ---@param transportAircraft SBJ__TransportAircraftDescriptor
 ---@return boolean # True if all transfers completed
-function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraft)
+function AmphibiousLogistics.transferTransportAircraftCargo(transportAircraft)
   local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer and assign")
+    constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer cargo")
 
   transferCargo(
     transportAircraft.guid,
@@ -274,12 +273,6 @@ function AmphibiousLogistics.transferAndAssignTransportAircraft(transportAircraf
       loadoutDBID = transportAircraft.cargoItemsForTransfer[1].loadoutId
     },
     transportAircraft.cargoItemsForTransfer[1].cargoItems
-  )
-  AssignMission.assignEmbarkedUnitsToMissions(
-    transportAircraft.guid,
-    constants.PLATFORM_TYPES.AIRCRAFT,
-    transportAircraft.dbid,
-    transportAircraft.missions
   )
   report.add("OK", { aircraft = transportAircraft.name or transportAircraft.guid, dbid = transportAircraft.dbid })
 

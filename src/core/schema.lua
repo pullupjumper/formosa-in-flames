@@ -978,7 +978,7 @@ function ScenEdit_DeleteMine(params) end
 ---No cargo transfer capability
 ---@class SBJ__AttackHelicopterDescriptor: table
 ---@field dbid number Attack helicopter platform database ID
----@field missions SBJ__LandingMissionDescriptor[] CAS mission descriptors
+---@field casArea string[] CAS area reference points
 
 ---Transport aircraft configuration for airlift operations
 ---Defines transport aircraft deployment from airbases for airborne assault missions
@@ -986,7 +986,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field name string Airbase name where transport aircraft are stationed
 ---@field guid string Airbase GUID reference
 ---@field dbid number Transport aircraft platform database ID
----@field missions SBJ__LandingMissionDescriptor[] Air landing mission descriptors
 ---@field cargoItemsForTransfer SBJ__LoadoutCargoManifest[] Cargo manifest for airlift operations
 
 ---Landing Ship Tank movement configuration
@@ -1026,7 +1025,6 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__ZoneAir: table
 ---@field landingZone string[] Air landing zone reference area
 ---@field contactThreshold integer Contact threshold for amphibious assault in air landing zone
----@field casArea string[] CAS area reference points
 ---@field transportAircraft? SBJ__TransportAircraftDescriptor Land-based transport aircraft airlifted when the zone leaves WAITING_ARRIVAL (nil = none)
 ---@field reconTemplate? string Key of config.red.recon.templates queued when the zone leaves WAITING_ARRIVAL (nil = none)
 ---@field transportHelicopter SBJ__TransportHelicopterDescriptor Transport helicopter configuration
