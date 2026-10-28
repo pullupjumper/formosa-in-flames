@@ -17,7 +17,7 @@ describe("HeliWave", function()
     return s
   end
 
-  local TRANSPORT_DBID, ATTACK_DBID = 1001, 1002
+  local TRANSPORT_DBID, ATTACK_DBID, AIRLIFT_DBID = 1001, 1002, 1003
   local FRAME = { origin = { latitude = 25.0, longitude = 121.0 }, bearing = 150 }
   local ARRIVED, FAR = 0.1, 50
 
@@ -116,6 +116,13 @@ describe("HeliWave", function()
           wingOffsetM = 8000,
           inlandEntryM = 3000,
           landingSpreadM = 500,
+          airlift = {
+            size = 3,
+            delaySec = 600,
+            cruiseSpeedKt = 400,
+            cruiseAltitudeM = 3000,
+            arrivalNm = 1,
+          },
         },
       },
     }
@@ -150,6 +157,37 @@ describe("HeliWave", function()
     return zoneState
   end
 
+  ---A zone with a land-based transport aircraft group on top of the helicopters
+  ---@return SBJ__OperationalZoneDescriptor
+  local function buildAirliftZone()
+    local zone = buildZone()
+    zone.air.transportAircraft = { name = "AFB", guid = "AFB", dbid = AIRLIFT_DBID, cargoItemsForTransfer = {} }
+    return zone
+  end
+
+  -- 100 km seaward of the lane origin
+  local AIRFIELD_POS = LaneGeometry.buildPoint(FRAME, -100000, 0)
+
+  ---Add the airfield with loaded transport aircraft aboard. A later call replaces the aircraft aboard
+  ---@param count integer
+  ---@param prefix? string Prefix of the GUIDs, to tell batches apart
+  ---@return string[] guids
+  local function addAirfield(count, prefix)
+    prefix = prefix or ""
+    local guids = {}
+    for i = 1, count do
+      local guid = prefix .. "L" .. i
+      addUnit(guid, { dbid = AIRLIFT_DBID, cargo = { { cargo = { { dbid = 1 } } } } })
+      table.insert(guids, guid)
+    end
+    addUnit("AFB", {
+      latitude = AIRFIELD_POS.latitude,
+      longitude = AIRFIELD_POS.longitude,
+      embarkedUnits = { [constants.PLATFORM_TYPES.AIRCRAFT] = guids },
+    })
+    return guids
+  end
+
   local SHIPS = { { guid = "SHIP-1" } }
 
   ---@param currentTime number
@@ -179,6 +217,15 @@ describe("HeliWave", function()
     local zoneState = buildZoneState()
     HeliWave.schedule(buildCtx(1000), buildZone(), zoneState)
     HeliWave.update(buildCtx(1000), buildZone(), zoneState)
+    return zoneState
+  end
+
+  ---Schedule an airlift zone and run one tick that launches the first batch
+  ---@return SBJ__ZoneState
+  local function buildLaunchedAirliftZoneState()
+    local zoneState = buildZoneState()
+    HeliWave.schedule(buildCtx(1000), buildAirliftZone(), zoneState)
+    HeliWave.update(buildCtx(1000), buildAirliftZone(), zoneState)
     return zoneState
   end
 
@@ -518,6 +565,226 @@ describe("HeliWave", function()
 
     it("should do nothing for a zone without a wave plan", function()
       assert.has_no.Error(function() HeliWave.removeAttacker(buildZoneState(), "A1") end)
+    end)
+  end)
+
+  describe("airlift", function()
+    ---Lateral side of a course: negative = left wing
+    local function lateralOf(unit)
+      local _, lateral = LaneGeometry.projectPoint(FRAME, unit.course[1])
+      return lateral
+    end
+
+    describe("schedule", function()
+      it("should plan the batch to arrive delaySec after the boats, minus its own flight time", function()
+        addFleet(8, 4)
+        addAirfield(3)
+        local zoneState = buildZoneState()
+
+        HeliWave.schedule(buildCtx(1000), buildAirliftZone(), zoneState)
+
+        -- By hand, no boat paired: the boats run in 3.95 nm at 30 kt (474 s), so T = 1474. Left wing: 103310 m to the turn point (3000 m inland, 8000 m left),
+        -- then 7906 m to the landing point (5500 m, 500 m left) = 111216 m = 60.05 nm = 540 s at 400 kt.
+        -- Launch = 1474 + 600 - 540 = 1534.
+        assert.is_near(1534, zoneState.heliWave.airlift.launchAt, 3)
+        assert.are.equal(0, zoneState.heliWave.airlift.waveIndex)
+      end)
+
+      it("should launch at once when the flight is longer than the delay", function()
+        addAirfield(3)
+        local zoneState = buildZoneState()
+        local ctx = buildCtx(1000)
+        ctx.config.red.amphibOps.tuning.heliWave.airlift.delaySec = 0
+
+        HeliWave.schedule(ctx, buildAirliftZone(), zoneState)
+
+        assert.are.equal(1000, zoneState.heliWave.airlift.launchAt)
+      end)
+
+      it("should not plan an airlift when the zone has no transport aircraft", function()
+        addAirfield(3)
+        local zoneState = buildZoneState()
+
+        HeliWave.schedule(buildCtx(1000), buildZone(), zoneState)
+
+        assert.is_nil(zoneState.heliWave.airlift)
+      end)
+    end)
+
+    describe("launch", function()
+      it("should wait for its launch time", function()
+        local aircraft = addAirfield(3)
+        local zoneState = buildZoneState()
+        HeliWave.schedule(buildCtx(1000), buildAirliftZone(), zoneState)
+        stubCurrentTime.returns(BEFORE_LAUNCH)
+
+        HeliWave.update(buildCtx(1000), buildAirliftZone(), zoneState)
+        assert.spy(units[aircraft[1]].Launch).was_not.called()
+
+        stubCurrentTime.returns(AFTER_LAUNCH)
+        HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
+        assert.spy(units[aircraft[1]].Launch).was.called(1)
+      end)
+
+      it("should launch at most size ready, loaded aircraft, split across both wings", function()
+        addAirfield(6)
+        units.L1.readytime_v = 600
+        units.L2.cargo = { { cargo = {} } }
+
+        buildLaunchedAirliftZoneState()
+
+        local flown = {}
+        for guid, unit in pairs(units) do
+          if unit.dbid == AIRLIFT_DBID and unit.course then
+            table.insert(flown, guid)
+          end
+        end
+        assert.are.equal(3, #flown)
+        assert.is_nil(units.L1.course)
+        assert.is_nil(units.L2.course)
+        local lefts = 0
+        for _, guid in ipairs(flown) do
+          lefts = lefts + (lateralOf(units[guid]) < 0 and 1 or 0)
+        end
+        assert.is_true(lefts == 1 or lefts == 2)
+      end)
+
+      it("should send each aircraft on the two inland points, without a sideways leg", function()
+        addAirfield(2)
+
+        buildLaunchedAirliftZoneState()
+
+        local course = units.L1.course
+        assert.are.equal(2, #course)
+        local turnAlong, turnLateral = LaneGeometry.projectPoint(FRAME, course[1])
+        local landAlong = LaneGeometry.projectPoint(FRAME, course[2])
+        assert.is_near(3000, turnAlong, 5)
+        assert.is_near(8000, math.abs(turnLateral), 5)
+        assert.is_near(5500, landAlong, 5)
+        assert.are.equal(3000, course[1].desiredAltitude)
+        assert.spy(units.L1.Launch).was.called_with(match.is_table(), true)
+        assert.are.equal(constants.THROTTLES.MILITARY, units.L1.throttle)
+      end)
+
+      it("should skip aircraft of another type", function()
+        addAirfield(1)
+        addUnit("OTHER", { dbid = 9999, cargo = { { cargo = { { dbid = 1 } } } } })
+        table.insert(units.AFB.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT], "OTHER")
+
+        buildLaunchedAirliftZoneState()
+
+        assert.is_nil(units.OTHER.course)
+      end)
+
+      it("should wait for the next tick when no aircraft is loaded", function()
+        local aircraft = addAirfield(1)
+        units[aircraft[1]].cargo = { { cargo = {} } }
+        local zoneState = buildLaunchedAirliftZoneState()
+        assert.are.equal(0, zoneState.heliWave.airlift.waveIndex)
+
+        units[aircraft[1]].cargo = { { cargo = { { dbid = 1 } } } }
+        HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
+
+        assert.are.equal(1, zoneState.heliWave.airlift.waveIndex)
+        assert.spy(units[aircraft[1]].Launch).was.called(1)
+      end)
+
+      it("should not be held back by the helicopters, nor hold them back", function()
+        local firstHelis = addFleet(2, 0)
+        addAirfield(1)
+        local zoneState = buildLaunchedAirliftZoneState()
+        assert.spy(units.T1.Launch).was.called(1)
+        assert.spy(units.L1.Launch).was.called(1)
+
+        -- The helicopters finish while the airlift is still out: the next helicopter wave goes
+        addFleet(1, 0, "R")
+        destroyAll(firstHelis)
+        HeliWave.update(buildCtx(1500), buildAirliftZone(), zoneState)
+        assert.spy(units.RT1.Launch).was.called(1)
+
+        -- The airlift finishes while the next helicopters are still out: the next batch goes
+        addAirfield(1, "N")
+        destroyAll({ "L1" })
+        HeliWave.update(buildCtx(1600), buildAirliftZone(), zoneState)
+        assert.spy(units.NL1.Launch).was.called(1)
+        assert.spy(units.RT1.RTB).was_not.called()
+      end)
+    end)
+
+    describe("progress", function()
+      it("should unload on arrival, and go home only once unloaded", function()
+        addAirfield(2)
+        local zoneState = buildLaunchedAirliftZoneState()
+        ranges.L1 = ARRIVED
+
+        HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
+        assert.stub(stubUnload).was.called(1)
+        assert.stub(stubUnload).was.called_with("L1")
+
+        units.L1.condition = constants.UNIT_CONDITIONS.TRANSFERRING_CARGO
+        HeliWave.update(buildCtx(1020), buildAirliftZone(), zoneState)
+        assert.spy(units.L1.RTB).was_not.called()
+
+        units.L1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+        HeliWave.update(buildCtx(1030), buildAirliftZone(), zoneState)
+        assert.spy(units.L1.RTB).was.called(1)
+        assert.spy(units.L2.RTB).was_not.called()
+      end)
+
+      it("should use the airlift arrival distance, not the helicopter one", function()
+        addAirfield(1)
+        local zoneState = buildLaunchedAirliftZoneState()
+        ranges.L1 = 0.8
+
+        HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
+
+        assert.stub(stubUnload).was.called_with("L1")
+      end)
+    end)
+
+    describe("next batch", function()
+      it("should hold the next batch while an aircraft is still out", function()
+        addAirfield(2)
+        local zoneState = buildLaunchedAirliftZoneState()
+        addAirfield(1, "N")
+        destroyAll({ "L1" })
+
+        HeliWave.update(buildCtx(1500), buildAirliftZone(), zoneState)
+
+        assert.spy(units.NL1.Launch).was_not.called()
+      end)
+
+      it("should launch the next batch once every aircraft is destroyed or homebound", function()
+        addAirfield(2)
+        local zoneState = buildLaunchedAirliftZoneState()
+        ranges.L1 = ARRIVED
+        HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
+        units.L1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+        HeliWave.update(buildCtx(1020), buildAirliftZone(), zoneState)
+        addAirfield(1, "N")
+        destroyAll({ "L2" })
+
+        HeliWave.update(buildCtx(1030), buildAirliftZone(), zoneState)
+
+        assert.spy(units.NL1.Launch).was.called(1)
+        assert.are.equal(2, zoneState.heliWave.airlift.waveIndex)
+      end)
+
+      it("should recall the batch and launch the next one after the timeout", function()
+        addAirfield(2)
+        local zoneState = buildLaunchedAirliftZoneState()
+        local first = { units.L1, units.L2 }
+        addAirfield(1, "N")
+
+        HeliWave.update(buildCtx(1000 + 1799), buildAirliftZone(), zoneState)
+        assert.spy(first[1].RTB).was_not.called()
+
+        HeliWave.update(buildCtx(1000 + 1800), buildAirliftZone(), zoneState)
+        for _, aircraft in ipairs(first) do
+          assert.spy(aircraft.RTB).was.called(1)
+        end
+        assert.spy(units.NL1.Launch).was.called(1)
+      end)
     end)
   end)
 end)

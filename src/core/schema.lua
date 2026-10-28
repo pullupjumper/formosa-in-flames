@@ -845,6 +845,15 @@ function ScenEdit_DeleteMine(params) end
 ---@field units table<string, SBJ__HeliState> Transport helicopters of the current wave indexed by GUID
 ---@field attackers table<string, SBJ__HeliState> Attack helicopters of the zone indexed by GUID; kept across waves, removed when destroyed
 ---@field isWaitingLogged? boolean Latched after logging that no loaded helicopter is available
+---@field airlift? SBJ__AirliftState Transport aircraft batches of the zone (nil = zone has no transport aircraft)
+
+---Airlift batch progress of one zone. Hold only the batch in the air; a new batch replaces it
+---@class SBJ__AirliftState: table
+---@field waveIndex integer Batches launched so far (0 = none yet)
+---@field launchAt number Time the first batch launches (boat arrival plus delay minus flight time)
+---@field waveLaunchedAt? number Time the current batch launched; drives the timeout
+---@field units table<string, SBJ__HeliState> Transport aircraft of the current batch indexed by GUID
+---@field isWaitingLogged? boolean Latched after logging that no loaded aircraft is available
 
 ---Geometry shared by every course of one helicopter wave
 ---@class SBJ__HeliFlightContext: table
@@ -1177,6 +1186,14 @@ function ScenEdit_DeleteMine(params) end
 ---@field wingOffsetM number Lateral distance of each wing from the lane center line
 ---@field inlandEntryM number Distance inland where a wing turns toward its landing point
 ---@field landingSpreadM number Lateral offset of each wing's landing point from the landing zone center
+---@field airlift SBJ__AirliftConfig Fixed-wing transport batches
+
+---@class SBJ__AirliftConfig: table
+---@field size integer Transport aircraft per batch
+---@field delaySec number Seconds later than the boats a batch reaches the landing points
+---@field cruiseSpeedKt number Cruise speed used to work back the launch time
+---@field cruiseAltitudeM number Altitude the aircraft fly at after launch
+---@field arrivalNm number Distance to the landing point that counts as arrived
 
 ---@class SBJ__ObstacleConfig: table
 ---@field cellSizeM number Obstacle cell edge length

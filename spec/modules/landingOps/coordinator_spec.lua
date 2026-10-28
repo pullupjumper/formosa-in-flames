@@ -531,6 +531,37 @@ describe("LandingOps Coordinator", function()
       assert.stub(stubTransferRemainingCargos).was.called(1)
     end)
 
+    it("should refill the transport aircraft along with the remaining cargos", function()
+      local config = buildConfig()
+      local transportAircraft = { guid = "TA-001", name = "Transport 1" }
+      config.red.amphibOps.zones[1].air.transportAircraft = transportAircraft
+      local landingState = buildLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({
+        phase = constants.AMPHIBIOUS_PHASES.COMPLETED,
+        airlandingMissionStartTime = 100,
+      })
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 7300, filteredShips = buildFilteredShips() })
+
+      assert.stub(stubTransferTransportAircraft).was.called_with(transportAircraft)
+    end)
+
+    it("should not refill the transport aircraft before the transfer interval has passed", function()
+      local config = buildConfig()
+      config.red.amphibOps.zones[1].air.transportAircraft = { guid = "TA-001" }
+      local landingState = buildLandingState()
+      landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({
+        phase = constants.AMPHIBIOUS_PHASES.COMPLETED,
+        airlandingMissionStartTime = 100,
+      })
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 200, filteredShips = buildFilteredShips() })
+
+      assert.stub(stubTransferTransportAircraft).was_not.called()
+    end)
+
     -- Zone phases below stay put under the default stubs (not past start time, no arrivals,
     -- enemy contacts above threshold, no beachhead), so only the gate changes state.
     describe("fire support gate", function()

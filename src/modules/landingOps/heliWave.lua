@@ -11,6 +11,8 @@ local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 ---Transports unload and return. An attack helicopter is assigned to the zone's CAS mission near its landing point,
 ---and from then on the mission alone decides what it does.
 ---The next wave launches only after the transports of the wave in the air have finished or timed out.
+---Fixed-wing transports (airlift) fly the same inland course from their airfield, in batches that reach the landing points
+---a fixed delay after the wave. Their batches are tracked apart from the helicopter waves.
 local HeliWave = {}
 
 -- ============================================================================
@@ -21,6 +23,7 @@ local HeliWave = {}
 local ROLE = {
   TRANSPORT = "transport",
   ATTACK    = "attack",
+  AIRLIFT   = "airlift",
 }
 
 ---@enum SBJ__HeliWingType
@@ -101,6 +104,24 @@ local function findCandidates(zone, motherships)
   return transports, attackers
 end
 
+---Find the ready, loaded transport aircraft aboard the zone's airfield
+---@param transportAircraft SBJ__TransportAircraftDescriptor
+---@return CMO__Unit[]
+local function findAirliftCandidates(transportAircraft)
+  local airfield = GameApi.ScenEdit_GetUnit(transportAircraft.guid)
+  local embarked = airfield and airfield.embarkedUnits and airfield.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT] or {}
+  local candidates = {}
+
+  for _, guid in ipairs(embarked) do
+    local aircraft = GameApi.ScenEdit_GetUnit(guid)
+    if aircraft and aircraft.dbid == transportAircraft.dbid and aircraft.readytime_v == 0 and hasCargo(aircraft) then
+      table.insert(candidates, aircraft)
+    end
+  end
+
+  return candidates
+end
+
 ---Get the name of the zone's CAS mission
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return string
@@ -147,22 +168,36 @@ local function findLandingCenter(zone)
   return { latitude = latSum / #points, longitude = lonSum / #points }
 end
 
----Build the course of one wing: sideways to the wing, along it past the shore, then to the wing's landing point
+---Build the inland part of a wing course: along the wing past the shore, then to the wing's landing point
+---@param flightCtx SBJ__HeliFlightContext
+---@param wing SBJ__HeliWingType
+---@return CMO__Waypoint[] course
+local function buildInlandCourse(flightCtx, wing)
+  local frame, center, heliConfig = flightCtx.frame, flightCtx.center, flightCtx.heliConfig
+  local sign = WING_SIGN[wing]
+  local centerAlong, centerLateral = LaneGeometry.projectPoint(frame, center)
+  local wingLateral = sign * heliConfig.wingOffsetM
+
+  return {
+    LaneGeometry.buildPoint(frame, heliConfig.inlandEntryM, wingLateral),
+    LaneGeometry.buildPoint(frame, centerAlong, centerLateral + sign * heliConfig.landingSpreadM),
+  }
+end
+
+---Build the course of one wing: sideways to the wing, then the inland part
 ---@param flightCtx SBJ__HeliFlightContext
 ---@param startPos CMO__Location
 ---@param wing SBJ__HeliWingType
 ---@return CMO__Waypoint[] course
 local function buildWingCourse(flightCtx, startPos, wing)
-  local frame, center, heliConfig = flightCtx.frame, flightCtx.center, flightCtx.heliConfig
-  local sign = WING_SIGN[wing]
-  local startAlong = LaneGeometry.projectPoint(frame, startPos)
-  local centerAlong, centerLateral = LaneGeometry.projectPoint(frame, center)
-  local wingLateral = sign * heliConfig.wingOffsetM
+  local startAlong = LaneGeometry.projectPoint(flightCtx.frame, startPos)
+  local inland = buildInlandCourse(flightCtx, wing)
+  local wingLateral = WING_SIGN[wing] * flightCtx.heliConfig.wingOffsetM
 
   return {
-    LaneGeometry.buildPoint(frame, startAlong, wingLateral),
-    LaneGeometry.buildPoint(frame, heliConfig.inlandEntryM, wingLateral),
-    LaneGeometry.buildPoint(frame, centerAlong, centerLateral + sign * heliConfig.landingSpreadM),
+    LaneGeometry.buildPoint(flightCtx.frame, startAlong, wingLateral),
+    inland[1],
+    inland[2],
   }
 end
 
@@ -247,19 +282,35 @@ local function calculateFlightSec(flightCtx, motherships)
   return longestM / constants.METERS_PER_NM / flightCtx.heliConfig.cruiseSpeedKt * constants.SECONDS_PER_HOUR
 end
 
+---Calculate the flight time of an airlift batch from the airfield along the longer wing
+---@param flightCtx SBJ__HeliFlightContext|nil
+---@param airfield CMO__Unit|nil
+---@return number # Seconds. 0 when the route cannot be built
+local function calculateAirliftFlightSec(flightCtx, airfield)
+  if not (flightCtx and airfield) then
+    return 0
+  end
+
+  local startPos = { latitude = airfield.latitude, longitude = airfield.longitude }
+  local longestM = 0
+  for _, wing in pairs(WING) do
+    longestM = math.max(longestM, calculateCourseLengthM(startPos, buildInlandCourse(flightCtx, wing)))
+  end
+
+  return longestM / constants.METERS_PER_NM / flightCtx.heliConfig.airlift.cruiseSpeedKt * constants.SECONDS_PER_HOUR
+end
+
 -- ============================================================================
 -- Wave Launch
 -- ============================================================================
 
----Launch one helicopter along its wing course
+---Launch one aircraft along a course
 ---@param heli CMO__Unit
 ---@param role SBJ__HeliRoleType
 ---@param wing SBJ__HeliWingType
----@param flightCtx SBJ__HeliFlightContext
+---@param course CMO__Waypoint[]
 ---@return SBJ__HeliState
-local function launchHeli(heli, role, wing, flightCtx)
-  local course = buildWingCourse(flightCtx, { latitude = heli.latitude, longitude = heli.longitude }, wing)
-  course[1].desiredAltitude = flightCtx.heliConfig.cruiseAltitudeM
+local function launchHeli(heli, role, wing, course)
   heli:Launch(true)
   heli.course = course
   heli.throttle = constants.THROTTLES.MILITARY
@@ -268,15 +319,15 @@ local function launchHeli(heli, role, wing, flightCtx)
   return { role = role, wing = wing, phase = PHASE.ENROUTE, landingPoint = course[#course] }
 end
 
----Launch a group of helicopters, alternating left and right wing
+---Launch a group of aircraft, alternating left and right wing
 ---@param helis CMO__Unit[]
 ---@param role SBJ__HeliRoleType
 ---@param unitMap table<string, SBJ__HeliState> Wave units, filled in
----@param flightCtx SBJ__HeliFlightContext
-local function launchGroup(helis, role, unitMap, flightCtx)
+---@param courseOf fun(heli: CMO__Unit, wing: SBJ__HeliWingType): CMO__Waypoint[]
+local function launchGroup(helis, role, unitMap, courseOf)
   for i, heli in ipairs(helis) do
     local wing = i % 2 == 1 and WING.LEFT or WING.RIGHT
-    unitMap[heli.guid] = launchHeli(heli, role, wing, flightCtx)
+    unitMap[heli.guid] = launchHeli(heli, role, wing, courseOf(heli, wing))
   end
 end
 
@@ -300,8 +351,14 @@ local function launchWave(tickCtx, zone, state, flightCtx)
   local unitMap = {}
   local attackerNeed = math.max(0, flightCtx.heliConfig.escortSize - Utils.getCount(state.attackers))
   local launchedBefore = Utils.getCount(state.attackers)
-  launchGroup(selectRandom(transports, flightCtx.heliConfig.waveSize), ROLE.TRANSPORT, unitMap, flightCtx)
-  launchGroup(selectRandom(attackers, attackerNeed), ROLE.ATTACK, state.attackers, flightCtx)
+  local heliConfig = flightCtx.heliConfig
+  local function courseOf(heli, wing)
+    local course = buildWingCourse(flightCtx, { latitude = heli.latitude, longitude = heli.longitude }, wing)
+    course[1].desiredAltitude = heliConfig.cruiseAltitudeM
+    return course
+  end
+  launchGroup(selectRandom(transports, heliConfig.waveSize), ROLE.TRANSPORT, unitMap, courseOf)
+  launchGroup(selectRandom(attackers, attackerNeed), ROLE.ATTACK, state.attackers, courseOf)
 
   state.units = unitMap
   state.waveIndex = state.waveIndex + 1
@@ -317,6 +374,40 @@ local function launchWave(tickCtx, zone, state, flightCtx)
       attackers = Utils.getCount(state.attackers) - launchedBefore,
     },
   }
+end
+
+---Launch the next airlift batch when loaded transport aircraft are on the airfield
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param airlift SBJ__AirliftState
+---@param flightCtx SBJ__HeliFlightContext
+---@return SBJ__LogResult|nil # nil when there is nothing new to report
+local function launchAirliftBatch(tickCtx, zone, airlift, flightCtx)
+  local candidates = findAirliftCandidates(zone.air.transportAircraft)
+  if #candidates == 0 then
+    if airlift.isWaitingLogged then
+      return nil
+    end
+
+    airlift.isWaitingLogged = true
+    return { tag = "HOLD", fields = { zone = zone.name, reason = "no_loaded_airlifter" } }
+  end
+
+  local airliftConfig = flightCtx.heliConfig.airlift
+  local unitMap = {}
+  local function courseOf(heli, wing)
+    local course = buildInlandCourse(flightCtx, wing)
+    course[1].desiredAltitude = airliftConfig.cruiseAltitudeM
+    return course
+  end
+  launchGroup(selectRandom(candidates, airliftConfig.size), ROLE.AIRLIFT, unitMap, courseOf)
+
+  airlift.units = unitMap
+  airlift.waveIndex = airlift.waveIndex + 1
+  airlift.waveLaunchedAt = tickCtx.currentTime
+  airlift.isWaitingLogged = false
+
+  return { tag = "OK", fields = { zone = zone.name, batch = airlift.waveIndex, aircraft = Utils.getCount(unitMap) } }
 end
 
 -- ============================================================================
@@ -430,6 +521,30 @@ local function updateAttackers(attackerMap, casAssignNm, missionName)
   end
 end
 
+---Recall the transports of a fleet (helicopter wave or airlift batch) that stayed out past the timeout
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param fleet SBJ__HeliWaveState|SBJ__AirliftState
+---@param fleetName string Which fleet, for the log
+---@return SBJ__LogResult|nil # nil when nothing timed out
+local function recallOnTimeout(tickCtx, zone, fleet, fleetName)
+  -- A transport stuck unloading is moved home too, so it cannot block the next wave
+  if not (fleet.waveLaunchedAt and tickCtx.currentTime - fleet.waveLaunchedAt >= getHeliConfig(tickCtx).waveTimeoutSec and
+        not isWaveDone(fleet.units)) then
+    return nil
+  end
+
+  moveHomeTransports(fleet.units)
+  return { tag = "WARN", fields = { zone = zone.name, fleet = fleetName, wave = fleet.waveIndex, reason = "wave_timeout" } }
+end
+
+---Check if a fleet is done and its next launch time has come
+---@param fleet SBJ__HeliWaveState|SBJ__AirliftState
+---@return boolean
+local function isFleetDue(fleet)
+  return isWaveDone(fleet.units) and (fleet.waveIndex > 0 or GameUtils.isAfterStartTime(fleet.launchAt))
+end
+
 -- ============================================================================
 -- Public API
 -- ============================================================================
@@ -452,6 +567,17 @@ function HeliWave.schedule(tickCtx, zone, zoneState)
     units = {},
     attackers = {},
   }
+
+  if zone.air.transportAircraft then
+    local airliftConfig = getHeliConfig(tickCtx).airlift
+    local airfield = GameApi.ScenEdit_GetUnit(zone.air.transportAircraft.guid)
+    local airliftFlightSec = calculateAirliftFlightSec(flightCtx, airfield)
+    zoneState.heliWave.airlift = {
+      waveIndex = 0,
+      launchAt = math.max(currentTime, boatArrivalAt + airliftConfig.delaySec - airliftFlightSec),
+      units = {},
+    }
+  end
 
   GameApi.ScenEdit_AddMission(
     constants.SIDES.RED,
@@ -484,21 +610,20 @@ function HeliWave.update(tickCtx, zone, zoneState)
 
   local heliConfig = getHeliConfig(tickCtx)
   updateAttackers(state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
+
+  local airlift = state.airlift
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "heliWave", "launchWave")
   updateTransports(state.units, heliConfig.arrivalNm)
-
-  -- A transport stuck unloading is moved home too, so it cannot block the next wave
-  if state.waveLaunchedAt and tickCtx.currentTime - state.waveLaunchedAt >= heliConfig.waveTimeoutSec and
-      not isWaveDone(state.units) then
-    moveHomeTransports(state.units)
-    Logger.warn(LogFormat.line("WARN",
-      { scope = "heliWave", zone = zone.name, wave = state.waveIndex, reason = "wave_timeout" }))
+  report.addAll({ recallOnTimeout(tickCtx, zone, state, "heli") })
+  local isHeliReady = isFleetDue(state)
+  local isAirliftReady = false
+  if airlift then
+    updateTransports(airlift.units, heliConfig.airlift.arrivalNm)
+    report.addAll({ recallOnTimeout(tickCtx, zone, airlift, "airlift") })
+    isAirliftReady = isFleetDue(airlift)
   end
-
-  if not isWaveDone(state.units) then
-    return true
-  end
-
-  if state.waveIndex == 0 and not GameUtils.isAfterStartTime(state.launchAt) then
+  if not (isHeliReady or isAirliftReady) then
+    report.emit()
     return true
   end
 
@@ -508,8 +633,12 @@ function HeliWave.update(tickCtx, zone, zoneState)
     return false
   end
 
-  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "heliWave", "launchWave")
-  report.addAll({ launchWave(tickCtx, zone, state, flightCtx) })
+  if isHeliReady then
+    report.addAll({ launchWave(tickCtx, zone, state, flightCtx) })
+  end
+  if airlift and isAirliftReady then
+    report.addAll({ launchAirliftBatch(tickCtx, zone, airlift, flightCtx) })
+  end
   report.emit()
 
   return true

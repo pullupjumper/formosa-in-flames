@@ -228,6 +228,9 @@ local function processRemainingCargoTransfer(tickCtx)
       if elapsed >= config.red.amphibOps.remainingCargoTransferSec then
         local ok = AmphibiousLogistics.transferRemainingCargos(zone, filteredShips)
         if ok then
+          if zone.air.transportAircraft then
+            AmphibiousLogistics.transferTransportAircraftCargo(zone.air.transportAircraft)
+          end
           zoneState.airlandingMissionStartTime = currentTime
         end
       end

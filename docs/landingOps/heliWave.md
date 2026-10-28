@@ -14,6 +14,8 @@
 
 攻擊直升機同樣先走自己的航線，距降落點 `casAssignNm` 時指派進 CAS 任務。指派後腳本不再管它：不下 `RTB`，也不拿掉任務。
 
+固定翼運輸機（目前只有 Penghu 的 IL-76，`air.transportAircraft`）走同一套邏輯，稱為 airlift：從機場手動放飛，走左右翼的內陸段（沒有橫移點），到降落點卸貨、返航。airlift 的批次狀態另存在 `heliWave.airlift`，與直升機機波互不影響。區沒有 `transportAircraft` 就不排。
+
 ---
 
 ## 流程
@@ -32,6 +34,14 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 - 沒有配對衝鋒舟時，`T = 現在`，立刻放。
 
 `GameUtils.isAfterStartTime(launchAt)` 判斷是否到了。第二波起不看時間，只看上一波是否結束。
+
+### Airlift 放飛時間
+
+- 抵達降落點的時間 = `T + airlift.delaySec`，比直升機第一波晚。
+- 放飛時間 = 抵達時間 − 飛行時間；已過期就立刻放。飛行時間 = 機場到內陸段第 1 點的直線距離加內陸段長度，取左右翼較長者，÷ `airlift.cruiseSpeedKt`。
+- 這是第一批。第二批起不看時間：上一批每一架都 `returning` 或已被擊殺就放；逾時（`waveTimeoutSec`）也放。
+- 候選：機場 `embarkedUnits` 裡 DBID 相符、`readytime_v == 0`、機上有 cargo 的飛機，隨機挑最多 `airlift.size` 架。沒有候選就記一次 HOLD log，下個 tick 再試。
+- 補貨：`processRemainingCargoTransfer` 觸發時，除了 `transferRemainingCargos`，也對 `zone.air.transportAircraft` 呼叫 `transferTransportAircraftCargo`，補到已回機場的運輸機上。
 
 ### CAS 任務
 
@@ -69,6 +79,8 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 
 ## 狀態
 
+`zoneState.heliWave.airlift`（`SBJ__AirliftState`）：只存當前這一批，結構同 `units` / `waveIndex` / `launchAt`。
+
 `zoneState.heliWave`（`SBJ__HeliWaveState`）：`units` 只存當前這一波的運輸機，下一波放飛時整個換掉；`attackers` 存本區的攻擊直升機，跨波保留。`attackers` 的筆數就是已算進 `escortSize` 的架數，不去查 CMO 任務。攻擊直升機被擊毀時，`destroyUnits.lua` 呼叫 `LandingOps.removeDestroyedAttackHelicopter` 依 GUID 移除。欄位見 `schema.lua`。
 
 ---
@@ -85,7 +97,14 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 | `arrivalNm` | 運輸直升機到降落點的判定距離 |
 | `casAssignNm` | 攻擊直升機離降落點多近就指派進 CAS 任務 |
 | `cruiseSpeedKt` | 倒推放飛時間用的巡航速度 |
-| `wingOffsetM`、`inlandEntryM`、`landingSpreadM` | 翼航線幾何 |
+| `wingOffsetM`、`inlandEntryM`、`landingSpreadM` | 翼航線幾何（airlift 共用） |
+| `airlift.size` | 每批運輸機架數 |
+| `airlift.delaySec` | 比衝鋒舟到岸晚多久到降落點 |
+| `airlift.cruiseSpeedKt` | 倒推放飛時間用的巡航速度 |
+| `airlift.cruiseAltitudeM` | 放飛後的巡航高度 |
+| `airlift.arrivalNm` | 到降落點的判定距離 |
+
+airlift 數值暫定，待遊戲內驗證（大型機轉彎半徑大，若轉不過去再設 airlift 專屬偏移）。
 
 ---
 

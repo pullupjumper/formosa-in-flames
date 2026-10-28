@@ -1865,6 +1865,13 @@ config.red.amphibOps.tuning = {
     wingOffsetM = 8000,       -- 左右翼離通道中心線的橫向距離
     inlandEntryM = 3000,      -- 進內陸多深後轉向降落點
     landingSpreadM = 500,     -- 左右翼降落點離降落區中心的橫向偏移
+    airlift = {               -- 固定翼運輸機（IL-76），數值暫定，待遊戲內驗證
+      size = 3,               -- 每批架數
+      delaySec = 5 * 60,      -- 比衝鋒舟到岸晚多久到降落點
+      cruiseSpeedKt = 400,    -- 倒推放飛時間用的巡航速度
+      cruiseAltitudeM = 1500, -- 放飛後的巡航高度（公尺）
+      arrivalNm = 3,          -- 離降落點多近算到達
+    },
   },
   acvWave = {
     lossRatio = 0.3,            -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
