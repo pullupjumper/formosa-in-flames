@@ -48,21 +48,21 @@ local function buildNextOperation(operation, config)
     return Utils.deepCopy(operation), NEXT_OPERATION_STATUS.PARSE_ERROR
   end
 
-  local typeTraits = OperationType.resolve(operation.type)
-  if not typeTraits then
+  local typeProfile = OperationType.resolve(operation.type)
+  if not typeProfile then
     return Utils.deepCopy(operation), NEXT_OPERATION_STATUS.UNKNOWN_TYPE
   end
 
   local nextName = baseName .. (tonumber(currentWaveNumber) + 1)
 
   ---@type SBJ__PackageTemplate[]|SBJ__FireSupportTaskTemplate[]|nil
-  local resolvedTemplate = config.red[typeTraits.templateSource][buildTemplateKey(nextName)]
+  local resolvedTemplate = config.red[typeProfile.templateSource][buildTemplateKey(nextName)]
   local resolvedName = nextName
   local status = NEXT_OPERATION_STATUS.FOUND_NEXT
 
   if not resolvedTemplate then
     ---@type SBJ__PackageTemplate[]|SBJ__FireSupportTaskTemplate[]
-    resolvedTemplate = operation.template[typeTraits.templateField]
+    resolvedTemplate = operation.template[typeProfile.templateField]
     resolvedName = templateName
     status = NEXT_OPERATION_STATUS.REUSED_CURRENT
   end
@@ -73,8 +73,8 @@ local function buildNextOperation(operation, config)
     template = {
       name = resolvedName,
       isFirstWave = false,
-      strikeInterval = operation.template.strikeInterval or typeTraits.resolveDefaultInterval(config),
-      [typeTraits.templateField] = resolvedTemplate
+      strikeInterval = operation.template.strikeInterval or typeProfile.resolveDefaultInterval(config),
+      [typeProfile.templateField] = resolvedTemplate
     }
   }
   ---@cast nextOperation SBJ__Operation
@@ -93,8 +93,8 @@ end
 ---@return SBJ__Operation|nil operation Built operation, or nil when it cannot be resolved
 ---@return SBJ__LogResult result Deferred log result describing the outcome
 local function buildFirstWaveOperation(strikeMapping, processingCtx)
-  local typeTraits = OperationType.resolve(strikeMapping.type)
-  if not typeTraits then
+  local typeProfile = OperationType.resolve(strikeMapping.type)
+  if not typeProfile then
     return nil, {
       tag = "ERROR",
       fields = {
@@ -106,7 +106,7 @@ local function buildFirstWaveOperation(strikeMapping, processingCtx)
   end
 
   local config = processingCtx.config
-  local template = config.red[typeTraits.templateSource][buildTemplateKey(strikeMapping.name)]
+  local template = config.red[typeProfile.templateSource][buildTemplateKey(strikeMapping.name)]
   if not template then
     return nil, {
       tag = "ERROR",
@@ -124,8 +124,8 @@ local function buildFirstWaveOperation(strikeMapping, processingCtx)
     template = {
       name = strikeMapping.name,
       isFirstWave = true,
-      strikeInterval = typeTraits.resolveDefaultInterval(config),
-      [typeTraits.templateField] = template
+      strikeInterval = typeProfile.resolveDefaultInterval(config),
+      [typeProfile.templateField] = template
     }
   }
   ---@cast newOperation SBJ__Operation

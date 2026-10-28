@@ -18,17 +18,17 @@ local SAME_POINT_M = 1 -- lane points closer than this to the entry are the entr
 ---Sort water lanes by a distance measure. The lanes within the tie band of the nearest lane come first,
 ---least-loaded first
 ---@param waterLanes SBJ__WaterLaneEntry[]
----@param loads table<string, integer> Units already routed per water lane id
+---@param loadMap table<string, integer> Units already routed per water lane id
 ---@param tieM number
 ---@param measure fun(waterLane: SBJ__WaterLaneEntry): number
 ---@return SBJ__WaterLaneEntry[]
-local function sortByMeasure(waterLanes, loads, tieM, measure)
+local function sortByMeasure(waterLanes, loadMap, tieM, measure)
   local entries = {}
   local nearest = math.huge
   for _, waterLane in ipairs(waterLanes) do
     local distance = measure(waterLane)
     nearest = math.min(nearest, distance)
-    table.insert(entries, { waterLane = waterLane, distance = distance, load = loads[waterLane.id] or 0 })
+    table.insert(entries, { waterLane = waterLane, distance = distance, load = loadMap[waterLane.id] or 0 })
   end
 
   local tieLimit = nearest + tieM
@@ -57,11 +57,11 @@ end
 ---nearest lane come first, least-loaded first
 ---@param launchPos CMO__Location
 ---@param waterLanes SBJ__WaterLaneEntry[]
----@param loads table<string, integer> Units already routed per water lane id
+---@param loadMap table<string, integer> Units already routed per water lane id
 ---@param laneTieNm number
 ---@return SBJ__WaterLaneEntry[]
-function RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)
-  return sortByMeasure(waterLanes, loads, laneTieNm * constants.METERS_PER_NM, function(waterLane)
+function RoutePlanner.sortWaterLanes(launchPos, waterLanes, loadMap, laneTieNm)
+  return sortByMeasure(waterLanes, loadMap, laneTieNm * constants.METERS_PER_NM, function(waterLane)
     return LaneGeometry.calculateDistanceM(launchPos, waterLane.launchPoint)
   end)
 end
@@ -83,11 +83,11 @@ end
 ---Select the water lane for a launch position
 ---@param launchPos CMO__Location
 ---@param waterLanes SBJ__WaterLaneEntry[]
----@param loads table<string, integer>
+---@param loadMap table<string, integer>
 ---@param laneTieNm number
 ---@return SBJ__WaterLaneEntry|nil
-function RoutePlanner.selectWaterLane(launchPos, waterLanes, loads, laneTieNm)
-  return RoutePlanner.sortWaterLanes(launchPos, waterLanes, loads, laneTieNm)[1]
+function RoutePlanner.selectWaterLane(launchPos, waterLanes, loadMap, laneTieNm)
+  return RoutePlanner.sortWaterLanes(launchPos, waterLanes, loadMap, laneTieNm)[1]
 end
 
 ---Find a beach lane by id
@@ -193,13 +193,13 @@ end
 ---Find the first free parking slot in a beach lane.
 ---A slot is free when it is empty, held by this unit, or held by a unit that no longer exists.
 ---@param beachLane SBJ__BeachLaneEntry
----@param slots table<integer, string|false>|nil
+---@param slotMap table<integer, string|false>|nil
 ---@param params SBJ__BuildRouteParams
 ---@return integer|nil
-function RoutePlanner.findFreeSlot(beachLane, slots, params)
-  slots = slots or {}
+function RoutePlanner.findFreeSlot(beachLane, slotMap, params)
+  slotMap = slotMap or {}
   for slot = 1, countSlots(beachLane, params.routeConfig) do
-    local holder = slots[slot]
+    local holder = slotMap[slot]
     if not holder or holder == params.guid or not params.isAlive(holder) then
       return slot
     end
@@ -222,13 +222,13 @@ function RoutePlanner.assignShoreSlot(beachLaneId, params)
   local slot = math.min(
     math.floor(shoreToEndM / params.routeConfig.queueSpacingM + 0.5) + 1,
     countSlots(beachLane, params.routeConfig))
-  local slots = params.laneSlots[beachLaneId] or {}
+  local slotMap = params.laneSlots[beachLaneId] or {}
   -- Fill the gap below with false. A sparse table saves as a JSON object, and its integer keys load back as strings
-  for i = #slots + 1, slot - 1 do
-    slots[i] = false
+  for i = #slotMap + 1, slot - 1 do
+    slotMap[i] = false
   end
-  slots[slot] = params.guid
-  params.laneSlots[beachLaneId] = slots
+  slotMap[slot] = params.guid
+  params.laneSlots[beachLaneId] = slotMap
   return true
 end
 
@@ -298,8 +298,8 @@ local function buildInWaterLane(waterLane, params, opts)
   end
 
   for _, beachLane in ipairs(buildRotatedClearedBeachLanes(waterLane, k)) do
-    local slots = params.laneSlots[beachLane.id] or {}
-    local slot = RoutePlanner.findFreeSlot(beachLane, slots, params)
+    local slotMap = params.laneSlots[beachLane.id] or {}
+    local slot = RoutePlanner.findFreeSlot(beachLane, slotMap, params)
 
     if slot then
       local slotPoint, backoffM = buildSlotPoint(beachLane, slot, params.routeConfig)
@@ -309,8 +309,8 @@ local function buildInWaterLane(waterLane, params, opts)
       end
 
       if LaneGeometry.isRouteClear(course, params.cells) then
-        slots[slot] = params.guid
-        params.laneSlots[beachLane.id] = slots
+        slotMap[slot] = params.guid
+        params.laneSlots[beachLane.id] = slotMap
         return { course = course, waterLaneId = waterLane.id, beachLaneId = beachLane.id, slot = slot }
       end
     end

@@ -10,7 +10,7 @@
 
 艦隊到達等待區後，系統依艦型把貨物（車輛、步兵、裝備）從母艦轉到搭載的直升機與氣墊船，同時建立 Cargo 任務。
 
-分派是**資料驅動**的：`SHIP_TRANSFER_SPECS` 以艦型 DBID 描述「轉哪些貨到哪些載具」，不為每型艦寫硬編碼。新增艦型只要加一筆 spec，貨物清單本身在各區 `config` 的 `transferManifest`。
+分派是**資料驅動**的：`SHIP_TRANSFER_RULES` 以艦型 DBID 描述「轉哪些貨到哪些載具」，不為每型艦寫硬編碼。新增艦型只要加一筆 spec，貨物清單本身在各區 `config` 的 `transferManifest`。
 
 | 艦型 | manifestKey | 轉貨目標 |
 |---|---|---|

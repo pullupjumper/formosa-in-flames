@@ -89,7 +89,7 @@ flowchart TD
     CYCLE["processJammingCycle()"]
     SORT["依距離排序目標"]
     LIMIT["限制處理數 ≤ config.limit"]
-    STRATEGY["jammingStrategies[mode]<br>策略模式選擇干擾函數"]
+    STRATEGY["JAMMING_STRATEGIES[mode]<br>策略模式選擇干擾函數"]
     STATE["updateJammingState()<br>狀態機轉換"]
     AIRCRAFT["processAircraftComms()"]
     LEVEL["getCommsLevel()<br>計算飛機通訊等級"]

@@ -486,7 +486,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Ship formation specification - defines a single ship's configuration within a formation
 ---Used to specify ship positioning, armament, and embarked units in naval groups
----@class SBJ__ShipFormationDescriptor: table
+---@class SBJ__ShipFormationEntry: table
 ---@field dbid number Ship platform database ID
 ---@field unitname string Ship unit name
 ---@field distance number Distance from formation center (nautical miles)
@@ -496,12 +496,12 @@ function ScenEdit_DeleteMine(params) end
 
 ---Formation configuration for internal ship creation
 ---Used internally by createShipFormation() to configure ship group formations
----@class SBJ__SAGFormationConfig: table
+---@class SBJ__SAGFormationParams: table
 ---@field centerPoint CMO__Location Formation center point coordinates
 ---@field heading number Formation heading angle
 ---@field groupName string Ship group name
 ---@field sideName string Side name (e.g., 'China', 'Taiwan')
----@field shipTypes SBJ__ShipFormationDescriptor[] Array of ship configurations to create
+---@field shipTypes SBJ__ShipFormationEntry[] Array of ship configurations to create
 
 ---@alias SBJ__AmphibiousShipType
 ---| '"type075"'
@@ -686,7 +686,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field loadoutIdx integer Loadout slot of the manifest that supplies the cargo
 
 ---Cargo transfers for the ship DBIDs that share one manifest
----@class SBJ__ShipTransferSpec: table
+---@class SBJ__ShipTransferRule: table
 ---@field dbids number[] Ship DBIDs the spec applies to
 ---@field manifestKey string Key into the zone's transferManifest
 ---@field transfers SBJ__ShipTransferEntry[]
@@ -1019,10 +1019,10 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__ZoneMovement: table
 ---@field baseGUID string Home base GUID for embarked units
 ---@field arrivalThreshold integer Minimum unit count to consider fleet arrived
----@field holdingAreas SBJ__ZoneHoldingAreas Where the fleet waits before the assault
+---@field holdingAreas SBJ__ZoneHoldingLayout Where the fleet waits before the assault
 
 ---Waiting areas of a zone's fleet (docs/landingOps/assaultTimeline.md)
----@class SBJ__ZoneHoldingAreas: table
+---@class SBJ__ZoneHoldingLayout: table
 ---@field mothership string[] Mothership area (登陸母艦乘載區): Type 075/076/071 reference points
 ---@field deployLine string[] Deploy line (登陸艦艇展開線): other landing ships' reference points
 
@@ -1567,7 +1567,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field asmPattern string Lua pattern for anti-ship missile system matching
 
 ---C2 pattern configuration for target matching
----@class SBJ__C2Patterns: table
+---@class SBJ__C2PatternConfig: table
 ---@field hengshanPattern string Lua pattern for Hengshan command center matching
 
 ---Target category patterns configuration
@@ -1577,7 +1577,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field radar SBJ__RadarPatternConfig Radar facility patterns
 ---@field sam SBJ__SAMPatternConfig SAM system patterns
 ---@field asm SBJ__ASMPatternConfig ASM system patterns
----@field c2 SBJ__C2Patterns Command and control patterns
+---@field c2 SBJ__C2PatternConfig Command and control patterns
 
 ---Target scanning configuration for contact categorization
 ---@class SBJ__TargetScanningConfig: table
@@ -1792,7 +1792,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Per-type facts that let the scheduler and DynamicPlan stay generic over air and ground
 ---Owned by OperationType; every air/ground dispatch reads one of these instead of branching on the type string.
----@class SBJ__OperationTypeDescriptor: table
+---@class SBJ__OperationTypeProfile: table
 ---@field templateSource string Key under config.red holding the templates ("packageTemplates" or "fireSupportTaskTemplates")
 ---@field templateField string Array field inside an operation template ("packages" or "fireSupportTasks")
 ---@field registryKey string Key under generatedOperations that tracks names of this type
@@ -2108,7 +2108,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Tactical area generation result
 ---Contains all generated vertices for U-shape, internal zones, and fire points
----@class SBJ__TacticalAreas: table
+---@class SBJ__TacticalAreaLayout: table
 ---@field uShapeVertices CMO__Location[] Array of 8 vertices forming U-shape polygon
 ---@field ammoArea? CMO__Location[] Ammo holding area vertices (4 points) if internal squares configured
 ---@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
@@ -2127,7 +2127,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Movement paths configuration for tactical area
 ---Maps path types to their waypoint arrays
----@class SBJ__MovementPaths: table
+---@class SBJ__MovementPathSet: table
 ---@field FP table<integer, SBJ__MovementPath> Fire Point paths: hide area -> each fire point
 ---@field HA SBJ__MovementPath Hide Area path: reload point -> hide area
 ---@field RL table<integer, SBJ__MovementPath> Reload paths: each fire point -> reload point
@@ -2141,8 +2141,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field center CMO__Location Center of the drawn layout
 ---@field openingAngle number U-shape opening angle in degrees
----@field tacticalAreas SBJ__TacticalAreas Drawn zones
----@field paths SBJ__MovementPaths Drawn movement paths
+---@field tacticalAreas SBJ__TacticalAreaLayout Drawn zones
+---@field paths SBJ__MovementPathSet Drawn movement paths
 
 ---Point budget the player spent in the control panel
 ---@class SBJ__BudgetResult: table

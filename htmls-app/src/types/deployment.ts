@@ -36,7 +36,7 @@ export interface TacticalAreas {
   shelterPoints?: Coordinate[];
 }
 
-/** Keys mirror the Lua `SBJ__MovementPaths` shape and are exported verbatim. */
+/** Keys mirror the Lua `SBJ__MovementPathSet` shape and are exported verbatim. */
 export interface MovementPaths {
   FP: MovementPath[];
   HA: MovementPath;

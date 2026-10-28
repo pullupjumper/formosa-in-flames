@@ -48,7 +48,7 @@ local COMMS_RESULT_TAGS = {
 local omnidirectionalJammingWithDistance
 local directionalJammingWithDistance
 
-local jammingStrategies = {
+local JAMMING_STRATEGIES = {
   [COMMS_JAMMING_MODE.OMNIDIRECTIONAL] = function(config, entry, jammer)
     return omnidirectionalJammingWithDistance(config, entry, jammer)
   end,
@@ -391,7 +391,7 @@ local function processJammingCycle(commsJammingConfig, jammers, unitStateMap)
   local totalJammedUnits = 0
   local totalAttempts = 0
   local reportLines = {}
-  local jammingFn = jammingStrategies[commsJammingConfig.mode]
+  local jammingFn = JAMMING_STRATEGIES[commsJammingConfig.mode]
 
   for _, jammer in ipairs(jammers) do
     local unitsWithDistance = {}

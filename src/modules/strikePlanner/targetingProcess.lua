@@ -381,17 +381,17 @@ end
 ---Filter targets that are within range of SIGINT-detected radio sources
 ---Cross-references contacts with SIGINT transmissions
 ---@param config SBJ__Config
----@param transmissions table<string, SBJ__RadioTransmissionState>
+---@param transmissionMap table<string, SBJ__RadioTransmissionState>
 ---@param contacts string[]
 ---@return string[] # Array of contact GUIDs near radio sources
-local function filterTargetsWithinRangeOfRadioSource(config, transmissions, contacts)
+local function filterTargetsWithinRangeOfRadioSource(config, transmissionMap, contacts)
   local targets = {}
 
   for _, guid in ipairs(contacts) do
     local contact = GameApi.ScenEdit_GetContact(constants.SIDES.RED, guid)
 
     if contact then
-      for _, tm in pairs(transmissions) do
+      for _, tm in pairs(transmissionMap) do
         local distance = GameApi.Tool_Range({ latitude = tm.latitude, longitude = tm.longitude }, guid)
 
         if distance and isWithinRange(config, distance, tm) then
@@ -410,20 +410,20 @@ end
 ---@return string[] # Array of target GUIDs near radio sources
 local function findRadioDirection(params)
   local contacts = params.contacts
-  local transmissions = params.transmissions
+  local transmissionMap = params.transmissions
   local task = params.task
   local config = params.config
   local targets = {}
   local mobileTargets = findGroundTargets({ contacts = contacts, task = task })
   local c2Targets = findC2({ contacts = contacts, task = task })
 
-  if not config or not transmissions then
+  if not config or not transmissionMap then
     return {}
   end
 
   Utils.addAll(targets, mobileTargets)
   Utils.addAll(targets, c2Targets)
-  local radioSource = filterTargetsWithinRangeOfRadioSource(config, transmissions, targets)
+  local radioSource = filterTargetsWithinRangeOfRadioSource(config, transmissionMap, targets)
   return radioSource
 end
 

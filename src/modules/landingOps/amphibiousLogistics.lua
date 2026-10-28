@@ -40,8 +40,8 @@ local AMPHIBIOUS_SHIP_DBIDS = {
   [constants.PLATFORMS.TYPE_082]    = true
 }
 
----@type SBJ__ShipTransferSpec[]
-local SHIP_TRANSFER_SPECS = {
+---@type SBJ__ShipTransferRule[]
+local SHIP_TRANSFER_RULES = {
   {
     dbids = { constants.PLATFORMS.TYPE_075, constants.PLATFORMS.TYPE_076 },
     manifestKey = "type075",
@@ -177,29 +177,29 @@ end
 -- Ship Type Dispatch
 -- ============================================================================
 
----Find matching transfer spec for a ship DBID
+---Find matching transfer rule for a ship DBID
 ---@param shipDbid number
----@return SBJ__ShipTransferSpec|nil # Matching spec or nil
-local function findTransferSpec(shipDbid)
-  for _, spec in ipairs(SHIP_TRANSFER_SPECS) do
-    for _, dbid in ipairs(spec.dbids) do
-      if shipDbid == dbid then return spec end
+---@return SBJ__ShipTransferRule|nil # Matching rule or nil
+local function findTransferRule(shipDbid)
+  for _, rule in ipairs(SHIP_TRANSFER_RULES) do
+    for _, dbid in ipairs(rule.dbids) do
+      if shipDbid == dbid then return rule end
     end
   end
   return nil
 end
 
----Process the cargo transfers of a single ship with its matching spec
+---Process the cargo transfers of a single ship with its matching rule
 ---@param shipGuid string
 ---@param shipDbid number
 ---@param zone SBJ__OperationalZoneDescriptor
 local function processShipTransfers(shipGuid, shipDbid, zone)
-  local spec = findTransferSpec(shipDbid)
-  if not spec then return end
+  local rule = findTransferRule(shipDbid)
+  if not rule then return end
 
-  for _, transfer in ipairs(spec.transfers) do
+  for _, transfer in ipairs(rule.transfers) do
     local cfg = getPlatformDescriptor(zone, transfer.configKey)
-    local manifest = cfg.transferManifest[spec.manifestKey][transfer.loadoutIdx]
+    local manifest = cfg.transferManifest[rule.manifestKey][transfer.loadoutIdx]
     transferCargo(
       shipGuid,
       { platformType = transfer.platform, platformDBID = cfg.dbid, loadoutDBID = manifest.loadoutId },

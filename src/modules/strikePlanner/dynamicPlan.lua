@@ -10,15 +10,15 @@ local DynamicPlan = {}
 -- Internal Helpers
 -- ============================================================================
 
----Resolve the descriptor for an operation type, failing loudly on a type this pipeline cannot serve
+---Resolve the profile for an operation type, failing loudly on a type this pipeline cannot serve
 ---@param operationType string Operation type ("air" or "ground")
----@return SBJ__OperationTypeDescriptor # Descriptor for the type
-local function resolveDescriptor(operationType)
-  local descriptor = OperationType.resolve(operationType)
-  if not descriptor then
+---@return SBJ__OperationTypeProfile # Profile for the type
+local function resolveProfile(operationType)
+  local profile = OperationType.resolve(operationType)
+  if not profile then
     error("DynamicPlan: unknown operation type " .. tostring(operationType))
   end
-  return descriptor
+  return profile
 end
 
 ---Ensure generatedOperations table exists; saves from before it was seeded lack it
@@ -73,12 +73,12 @@ end
 ---@return integer qualifiedCount Number of entries with enough targets
 function DynamicPlan.evaluateTargets(config, plannerState, params)
   local template = params.template
-  local descriptor = resolveDescriptor(params.operationType)
+  local profile = resolveProfile(params.operationType)
   local targetsByIndex = {}
   local qualifiedCount = 0
   local trackingRequests = {}
 
-  for index, entryTemplate in ipairs(template[descriptor.templateField]) do
+  for index, entryTemplate in ipairs(template[profile.templateField]) do
     ---@cast entryTemplate SBJ__FireSupportTaskTemplate|SBJ__PackageTemplate
     local targets, requests = TargetingProcess.processTargets(
       config,
@@ -110,11 +110,11 @@ end
 ---@param params SBJ__InsertPlanParams
 ---@return string # The generated plan name
 function DynamicPlan.add(plannerState, params)
-  local descriptor = resolveDescriptor(params.operationType)
+  local profile = resolveProfile(params.operationType)
   ensureGeneratedOperations(plannerState)
 
-  local registrySet = plannerState.dynamicOperations.generatedOperations[descriptor.registryKey]
-  local plan = descriptor.resolvePlan(plannerState)
+  local registrySet = plannerState.dynamicOperations.generatedOperations[profile.registryKey]
+  local plan = profile.resolvePlan(plannerState)
   local planName = buildUniqueOperationName(params.templateName, params.reconType, registrySet, plan)
 
   plan[planName] = params.buildPlan(planName)

@@ -238,7 +238,7 @@ end
 ---Get SAG formation configuration
 ---@param sagDescriptor SBJ__SAGDescriptor
 ---@param sideName string
----@return SBJ__ShipFormationDescriptor[] # Ship formation specification list
+---@return SBJ__ShipFormationEntry[] # Ship formation specification list
 local function getSAGShipConfiguration(sagDescriptor, sideName)
   if sideName == constants.SIDES.RED then
     return {
@@ -300,7 +300,7 @@ end
 
 ---Get CSG formation configuration
 ---@param csgDescriptor SBJ__CSGDescriptor
----@return SBJ__ShipFormationDescriptor[] # CSG ship formation specification list
+---@return SBJ__ShipFormationEntry[] # CSG ship formation specification list
 local function getCSGShipConfiguration(csgDescriptor)
   return {
     {
@@ -350,19 +350,19 @@ local function getCSGShipConfiguration(csgDescriptor)
 end
 
 ---Create formation ships
----@param formationConfig SBJ__SAGFormationConfig
+---@param params SBJ__SAGFormationParams
 ---@return boolean # Whether successful
-local function createShipFormation(formationConfig)
+local function createShipFormation(params)
   -- Clean up existing group
-  removeExistingGroup(formationConfig.groupName, formationConfig.sideName)
+  removeExistingGroup(params.groupName, params.sideName)
 
   local createdUnits = {}
   local leader = nil
 
-  for _, shipConfig in ipairs(formationConfig.shipTypes) do
+  for _, shipConfig in ipairs(params.shipTypes) do
     local position = calculateFormationPosition(
-      formationConfig.centerPoint,
-      formationConfig.heading,
+      params.centerPoint,
+      params.heading,
       shipConfig.distance,
       shipConfig.angle
     )
@@ -375,11 +375,11 @@ local function createShipFormation(formationConfig)
     local unitDescriptor = {
       latitude = position.latitude,
       longitude = position.longitude,
-      heading = formationConfig.heading,
-      side = formationConfig.sideName,
+      heading = params.heading,
+      side = params.sideName,
       type = constants.UNIT_TYPES.SHIP,
       dbid = shipConfig.dbid,
-      group = formationConfig.groupName,
+      group = params.groupName,
       unitname = shipConfig.unitname,
     }
 
@@ -412,7 +412,7 @@ local function createShipFormation(formationConfig)
   end
 
   Logger.log(constants.TAGS.UNIT_GENERATOR, string.format("Successfully created formation %s with %d ships",
-    formationConfig.groupName, #createdUnits))
+    params.groupName, #createdUnits))
 
   if leader then
     leader.group.lead = leader.guid
@@ -428,7 +428,7 @@ end
 ---@return boolean # Whether successful
 function UnitGenerator.createSAGs(sideName, sagDescriptors)
   for _, sagDescriptor in pairs(sagDescriptors) do
-    local formationConfig = {
+    local formationParams = {
       centerPoint = sagDescriptor.from.pos,
       heading = sagDescriptor.from.heading,
       groupName = sagDescriptor.groupName,
@@ -436,7 +436,7 @@ function UnitGenerator.createSAGs(sideName, sagDescriptors)
       shipTypes = getSAGShipConfiguration(sagDescriptor, sideName)
     }
 
-    local success = createShipFormation(formationConfig)
+    local success = createShipFormation(formationParams)
     if not success then
       Logger.error(string.format("Failed to create SAG %s", sagDescriptor.groupName))
       return false
@@ -464,7 +464,7 @@ end
 ---@param csgDescriptor SBJ__CSGDescriptor
 ---@return boolean # Whether successful
 function UnitGenerator.createCSG(csgDescriptor)
-  local formationConfig = {
+  local formationParams = {
     centerPoint = csgDescriptor.from.pos,
     heading = csgDescriptor.from.heading,
     groupName = csgDescriptor.groupName,
@@ -472,7 +472,7 @@ function UnitGenerator.createCSG(csgDescriptor)
     shipTypes = getCSGShipConfiguration(csgDescriptor)
   }
 
-  local success = createShipFormation(formationConfig)
+  local success = createShipFormation(formationParams)
   if not success then
     Logger.error("Failed to create CSG")
     return false

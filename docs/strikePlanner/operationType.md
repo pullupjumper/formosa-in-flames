@@ -8,7 +8,7 @@
 
 ## Descriptor 欄位
 
-`OperationType.resolve(operationType)` 回傳 `SBJ__OperationTypeDescriptor`，未知型別回 `nil`。
+`OperationType.resolve(operationType)` 回傳 `SBJ__OperationTypeProfile`，未知型別回 `nil`。
 
 | 欄位 | air | ground | 誰在讀 |
 |---|---|---|---|
@@ -28,7 +28,7 @@ ground 的預設間隔固定為 `0`，因為地面 FSEM 採 TOT 導向，與空�
 
 | 函數 | 參數 | 回傳 |
 |---|---|---|
-| `resolve(operationType)` | `string` | `SBJ__OperationTypeDescriptor\|nil` |
+| `resolve(operationType)` | `string` | `SBJ__OperationTypeProfile\|nil` |
 
 ---
 

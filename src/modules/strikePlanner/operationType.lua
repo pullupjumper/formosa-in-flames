@@ -2,8 +2,8 @@ local OperationType = {}
 
 ---Per-type facts that let the scheduler and the insert pipeline stay generic over air and ground
 ---Air waves stagger by the configured interval, ground FSEMs are TOT-oriented.
----@type table<SBJ__OperationType, SBJ__OperationTypeDescriptor>
-local DESCRIPTORS = {
+---@type table<SBJ__OperationType, SBJ__OperationTypeProfile>
+local PROFILES = {
   air = {
     templateSource = "packageTemplates",
     templateField = "packages",
@@ -22,9 +22,9 @@ local DESCRIPTORS = {
 
 ---Resolve the descriptor for an operation type
 ---@param operationType string Operation type to look up ("air" or "ground")
----@return SBJ__OperationTypeDescriptor|nil # Descriptor, or nil for an unknown type
+---@return SBJ__OperationTypeProfile|nil # Profile, or nil for an unknown type
 function OperationType.resolve(operationType)
-  return DESCRIPTORS[operationType]
+  return PROFILES[operationType]
 end
 
 return OperationType

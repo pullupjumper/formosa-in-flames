@@ -263,22 +263,22 @@ end
 ---Launch a group of helicopters, alternating left and right wing
 ---@param helis CMO__Unit[]
 ---@param role SBJ__HeliRoleType
----@param units table<string, SBJ__HeliState> Wave units, filled in
+---@param unitMap table<string, SBJ__HeliState> Wave units, filled in
 ---@param flightCtx SBJ__HeliFlightContext
-local function launchGroup(helis, role, units, flightCtx)
+local function launchGroup(helis, role, unitMap, flightCtx)
   for i, heli in ipairs(helis) do
     local wing = i % 2 == 1 and WING.LEFT or WING.RIGHT
-    units[heli.guid] = launchHeli(heli, role, wing, flightCtx)
+    unitMap[heli.guid] = launchHeli(heli, role, wing, flightCtx)
   end
 end
 
 ---Count the units of a wave by role
----@param units table<string, SBJ__HeliState>
+---@param unitMap table<string, SBJ__HeliState>
 ---@param role SBJ__HeliRoleType
 ---@return integer
-local function countRole(units, role)
+local function countRole(unitMap, role)
   local count = 0
-  for _, entry in pairs(units) do
+  for _, entry in pairs(unitMap) do
     if entry.role == role then
       count = count + 1
     end
@@ -303,11 +303,11 @@ local function launchWave(tickCtx, zone, state, flightCtx)
     return { tag = "HOLD", fields = { zone = zone.name, reason = "no_loaded_transport" } }
   end
 
-  local units = {}
-  launchGroup(selectRandom(transports, flightCtx.heliConfig.waveSize), ROLE.TRANSPORT, units, flightCtx)
-  launchGroup(selectRandom(attackers, flightCtx.heliConfig.escortSize), ROLE.ATTACK, units, flightCtx)
+  local unitMap = {}
+  launchGroup(selectRandom(transports, flightCtx.heliConfig.waveSize), ROLE.TRANSPORT, unitMap, flightCtx)
+  launchGroup(selectRandom(attackers, flightCtx.heliConfig.escortSize), ROLE.ATTACK, unitMap, flightCtx)
 
-  state.units = units
+  state.units = unitMap
   state.waveIndex = state.waveIndex + 1
   state.waveLaunchedAt = tickCtx.currentTime
   state.isWaitingLogged = false
@@ -317,8 +317,8 @@ local function launchWave(tickCtx, zone, state, flightCtx)
     fields = {
       zone = zone.name,
       wave = state.waveIndex,
-      transports = countRole(units, ROLE.TRANSPORT),
-      attackers = countRole(units, ROLE.ATTACK),
+      transports = countRole(unitMap, ROLE.TRANSPORT),
+      attackers = countRole(unitMap, ROLE.ATTACK),
     },
   }
 end
@@ -336,11 +336,11 @@ local function moveHome(heli, entry)
 end
 
 ---Find the helicopters of the wave that are alive and not yet on their way home
----@param units table<string, SBJ__HeliState>
+---@param unitMap table<string, SBJ__HeliState>
 ---@return table<string, CMO__Unit> # Alive helicopters indexed by GUID
-local function findFlyingHelis(units)
+local function findFlyingHelis(unitMap)
   local helis = {}
-  for guid, entry in pairs(units) do
+  for guid, entry in pairs(unitMap) do
     local heli = entry.phase ~= PHASE.RETURNING and GameApi.ScenEdit_GetUnit(guid)
     if heli then
       helis[guid] = heli
@@ -357,11 +357,11 @@ local function getHeliConfig(tickCtx)
 end
 
 ---Check if every transport of the wave is done: back on its way home or destroyed
----@param units table<string, SBJ__HeliState>
+---@param unitMap table<string, SBJ__HeliState>
 ---@return boolean # True if no transport is still in the air
-local function isTransportsDone(units)
-  for guid in pairs(findFlyingHelis(units)) do
-    if units[guid].role == ROLE.TRANSPORT then
+local function isTransportsDone(unitMap)
+  for guid in pairs(findFlyingHelis(unitMap)) do
+    if unitMap[guid].role == ROLE.TRANSPORT then
       return false
     end
   end
@@ -369,10 +369,10 @@ local function isTransportsDone(units)
 end
 
 ---Check if the wave is over: every helicopter is on its way home or destroyed
----@param units table<string, SBJ__HeliState>
+---@param unitMap table<string, SBJ__HeliState>
 ---@return boolean # True if no helicopter of the wave is still in the air
-local function isWaveDone(units)
-  return next(findFlyingHelis(units)) == nil
+local function isWaveDone(unitMap)
+  return next(findFlyingHelis(unitMap)) == nil
 end
 
 ---Check if a helicopter is close enough to its landing point
@@ -411,21 +411,21 @@ local function updateAttacker(heli, entry, arrivalNm)
 end
 
 ---Move home every helicopter of the wave still in the air, or only the escorts
----@param units table<string, SBJ__HeliState>
+---@param unitMap table<string, SBJ__HeliState>
 ---@param role? SBJ__HeliRoleType Only move helicopters of this role; nil moves them all
-local function moveHomeWave(units, role)
-  for guid, heli in pairs(findFlyingHelis(units)) do
-    if not role or units[guid].role == role then
-      moveHome(heli, units[guid])
+local function moveHomeWave(unitMap, role)
+  for guid, heli in pairs(findFlyingHelis(unitMap)) do
+    if not role or unitMap[guid].role == role then
+      moveHome(heli, unitMap[guid])
     end
   end
 end
 
 ---Update every helicopter of the wave. Escorts go home once the transports are done
----@param units table<string, SBJ__HeliState>
+---@param unitMap table<string, SBJ__HeliState>
 ---@param arrivalNm number
-local function updateUnits(units, arrivalNm)
-  for guid, entry in pairs(units) do
+local function updateUnits(unitMap, arrivalNm)
+  for guid, entry in pairs(unitMap) do
     local heli = GameApi.ScenEdit_GetUnit(guid)
     if heli and entry.role == ROLE.TRANSPORT then
       updateTransport(heli, entry, arrivalNm)
@@ -434,8 +434,8 @@ local function updateUnits(units, arrivalNm)
     end
   end
 
-  if isTransportsDone(units) then
-    moveHomeWave(units, ROLE.ATTACK)
+  if isTransportsDone(unitMap) then
+    moveHomeWave(unitMap, ROLE.ATTACK)
   end
 end
 

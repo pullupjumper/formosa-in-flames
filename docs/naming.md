@@ -144,8 +144,10 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `Result` | 函式回傳結果 | `SBJ__LogResult`、`SBJ__AirbaseAttritionResult` |
 | `Entry` | 清單或結果裡的一筆 | `SBJ__RunwayEntry`、`SBJ__AmmoSubtotalEntry` |
 | `Type` | 字串列舉的 `---@alias` | `SBJ__OperationType` |
+| `Key` | 當 table 索引用的字串列舉 | `SBJ__SideKey`、`SBJ__RoleKey` |
 
-- 領域名詞不加後綴：`SBJ__Unit`、`SBJ__Task`、`SBJ__Wave`、`SBJ__Package`、`SBJ__Operation`、`SBJ__Waypoint`、`SBJ__Rule`、`SBJ__Mapping`、`SBJ__Timing`、`SBJ__Manifest`、`SBJ__Path` 這類。
+- 領域名詞不加後綴：`SBJ__Unit`、`SBJ__Task`、`SBJ__Wave`、`SBJ__Package`、`SBJ__Operation`、`SBJ__Waypoint`、`SBJ__Rule`、`SBJ__Mapping`、`SBJ__Timing`、`SBJ__Manifest`、`SBJ__Path`。
+- 型別名一律單數，不用複數：用 `Layout`、`Set` 這類單數集合名詞，不寫 `Areas`、`Paths`。
 - `SBJ__LogReport` 有 `add`、`emit` 方法，是物件不是 Result，保留。
 - `SBJ__SaveData` 及各陣營 `*SaveData` 是存檔根物件，不改 `State`。
 
