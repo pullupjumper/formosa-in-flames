@@ -99,8 +99,6 @@ describe("AmphibiousLogistics", function()
         hovercraft = {
           dbid = 3001,
           zone = { "RP-BOAT-1" },
-          settings = { throttle = "Full" },
-          missionName = "BoatMission-1",
           transferManifest = {
             type075 = {
               [1] = { loadoutId = 10, cargoItems = { [1] = { buildCargoItem() } } },
@@ -115,7 +113,6 @@ describe("AmphibiousLogistics", function()
         transportHelicopter = {
           dbid = 4001,
           zone = { "RP-HELO-1" },
-          settings = { throttle = "Full" },
           missions = {
             { name = "HeloMission-1", loadoutId = 20, unitCount = 2, startTime = 0 },
           },
@@ -510,95 +507,6 @@ describe("AmphibiousLogistics", function()
 
       assert.is_false(result.isUnitMoving)
       assert.are.equal(0, #result.units)
-    end)
-  end)
-
-  describe("createCargoMissions", function()
-    local stubAddMission, stubSetMission, stubSetDoctrine
-
-    before_each(function()
-      stubAddMission = trackStub(stub(GameApi, "ScenEdit_AddMission").returns({}))
-      stubSetMission = trackStub(stub(GameApi, "ScenEdit_SetMission").returns({}))
-      stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine").returns({}))
-    end)
-
-    it("should create the hovercraft cargo mission", function()
-      local zone = buildOperationalZone()
-      local result = AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.is_true(result)
-      assert.stub(stubAddMission).was.called(1)
-      assert.stub(stubSetMission).was.called(1)
-      assert.stub(stubSetDoctrine).was.called(1)
-      assert.stub(logStub).was.called(1)
-    end)
-
-    it("should pass correct side and mission type to AddMission", function()
-      local zone = buildOperationalZone()
-      AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.stub(stubAddMission).was.called_with(
-        "China", "BoatMission-1", "Cargo",
-        { zone = zone.landing.hovercraft.zone }
-      )
-      assert.stub(stubAddMission).was_not.called_with(
-        "China", "HeloMission-1", "Cargo",
-        { zone = zone.air.transportHelicopter.zone }
-      )
-    end)
-
-    it("should disable automatic evasion in mission doctrine", function()
-      local zone = buildOperationalZone()
-      AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.stub(stubSetDoctrine).was.called_with(
-        { side = "China", mission = "BoatMission-1" },
-        { automatic_evasion = false }
-      )
-    end)
-
-    it("should create only the hovercraft mission, since helicopters take no cargo mission", function()
-      local zone = buildOperationalZone()
-
-      local result = AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.is_true(result)
-      assert.stub(stubAddMission).was.called(1)
-      assert.stub(stubAddMission).was.called_with(
-        "China", "BoatMission-1", "Cargo", { zone = { "RP-BOAT-1" } })
-    end)
-
-    it("should return false when AddMission fails for boat mission", function()
-      stubAddMission.returns(nil)
-
-      local zone = buildOperationalZone()
-      local result = AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.is_false(result)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=add_mission_failed"))
-    end)
-
-    it("should return false when SetMission fails", function()
-      stubSetMission.returns(nil)
-
-      local zone = buildOperationalZone()
-      local result = AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.is_false(result)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=set_mission_failed"))
-    end)
-
-    it("should return false when SetDoctrine fails", function()
-      stubSetDoctrine.returns(nil)
-
-      local zone = buildOperationalZone()
-      local result = AmphibiousLogistics.createCargoMissions(zone)
-
-      assert.is_false(result)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=set_doctrine_failed"))
     end)
   end)
 

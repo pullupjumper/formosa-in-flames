@@ -13,7 +13,7 @@
 | 作戰階段 | 對應模組 | 說明 |
 |---|---|---|
 | 集結 | [shipMovement](shipMovement.md) | 各型登陸艦從集結區航向等待區 |
-| 裝載 | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移、建立氣墊船貨運任務 |
+| 裝載 | [amphibiousLogistics](amphibiousLogistics.md) | 貨物轉移 |
 | 反水雷 | [mineClearing](mineClearing.md) | 算通道、派 Type 082 掃雷 |
 | 空降 | [heliWave](heliWave.md) | 運輸直升機機波與攻擊直升機護航 |
 | 突擊 | [assaultBoat](assaultBoat.md)、[obstacleClearing](obstacleClearing.md)、[amphibiousAssault](amphibiousAssault.md)、[acvWave](acvWave.md)、[hovercraft](hovercraft.md) | 衝鋒舟破障，之後兩棲車分波、氣墊船走通道 |
@@ -31,7 +31,7 @@
 | [coordinator](coordinator.md) | `coordinator.lua` | 逐區階段推進、貨物補運 |
 | [fireSupportGate](fireSupportGate.md) | `fireSupportGate.lua` | 火力支援暫停閘門 |
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 預算等待位置、艦隊與 SAG 移動 |
-| [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物轉移、氣墊船貨運任務 |
+| [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物轉移 |
 | [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | LST 就位、ACV 釋放、機降開始時間 |
 | [heliWave](heliWave.md) | `heliWave.lua` | 直升機機波：放飛、左右翼航線、卸貨、返航 |
 | [adminOffloading](adminOffloading.md) | `adminOffloading.lua` | 駁船-RORO 後勤鏈、下卸車輛 |

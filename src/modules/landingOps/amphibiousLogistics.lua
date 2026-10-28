@@ -9,11 +9,6 @@ local AmphibiousLogistics = {}
 -- Constants
 -- ============================================================================
 
-local MISSION_TYPE = {
-  CARGO = "Cargo",
-}
-
-
 ---Zone group holding each mission platform descriptor
 ---@type table<string, "landing"|"air">
 local PLATFORM_GROUPS = { hovercraft = "landing", transportHelicopter = "air", attackHelicopter = "air" }
@@ -50,8 +45,7 @@ local SHIP_TRANSFER_RULES = {
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 1 },
       { platform = constants.PLATFORM_TYPES.AIRCRAFT, configKey = "transportHelicopter", loadoutIdx = 2 },
     },
-    -- Load the hovercraft (BOATS) here. They get their mission only after they route through the lanes (hovercraft.lua).
-    -- Helicopters take no mission: heliWave.lua launches and routes them by hand
+    -- Hovercraft (BOATS) are routed through the lanes by hovercraft.lua; helicopters by heliWave.lua. Neither takes a mission
   },
   {
     dbids = { constants.PLATFORMS.TYPE_071 },
@@ -209,46 +203,6 @@ local function processShipTransfers(shipGuid, shipDbid, zone)
 end
 
 -- ============================================================================
--- Cargo Mission Creation
--- ============================================================================
-
----Create a cargo transport mission with the configured doctrine
----@param platformType string Platform config key (e.g., "hovercraft", "transportHelicopter")
----@param zone SBJ__OperationalZoneDescriptor
----@param missionName string
----@return boolean success True if mission was successfully created and configured
----@return SBJ__LogResult result Deferred log result describing the outcome
-local function createSingleCargoMission(platformType, zone, missionName)
-  local descriptor = getPlatformDescriptor(zone, platformType)
-  local reason
-
-  if not GameApi.ScenEdit_AddMission(
-        constants.SIDES.RED, missionName, MISSION_TYPE.CARGO, { zone = descriptor.zone }) then
-    reason = "add_mission_failed"
-  elseif not GameApi.ScenEdit_SetMission(constants.SIDES.RED, missionName, descriptor.settings) then
-    reason = "set_mission_failed"
-  elseif not GameApi.ScenEdit_SetDoctrine(
-        { side = constants.SIDES.RED, mission = missionName }, { automatic_evasion = false }) then
-    reason = "set_doctrine_failed"
-  end
-
-  if reason then
-    return false, { tag = "FAIL", fields = { platform = platformType, mission = missionName, reason = reason } }
-  end
-
-  return true, { tag = "OK", fields = { platform = platformType, mission = missionName } }
-end
-
----Create the cargo mission of a zone's hovercraft. Helicopters take no cargo mission
----@param zone SBJ__OperationalZoneDescriptor
----@return boolean success True when the mission was created
----@return SBJ__LogResult[] results Deferred log results in emission order
-local function createZoneCargoMissions(zone)
-  local created, result = createSingleCargoMission("hovercraft", zone, zone.landing.hovercraft.missionName)
-  return created, { result }
-end
-
--- ============================================================================
 -- Public API
 -- ============================================================================
 
@@ -283,21 +237,6 @@ function AmphibiousLogistics.getUnitsInHoldingAreas(zone, filteredUnits)
   end
 
   return { units = unitsInHoldingAreas, isUnitMoving = isUnitMoving }
-end
-
----Create the cargo transport mission for an operational zone.
----Set up the landing craft ferry mission with the configured doctrine.
----@param zone SBJ__OperationalZoneDescriptor
----@return boolean # True if all cargo missions were created
-function AmphibiousLogistics.createCargoMissions(zone)
-  local success, results = createZoneCargoMissions(zone)
-
-  local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_LOGISTICS, "zone=" .. zone.name, "Create cargo missions")
-  report.addAll(results)
-  report.emit()
-
-  return success
 end
 
 ---Transfer cargo to the embarked units of Type 075/076 LHDs and Type 071 LPDs.

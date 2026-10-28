@@ -2,13 +2,13 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousLogistics.lua`
 
-**職責**：偵測艦隊是否到位、建立氣墊船貨運任務、把貨物轉進搭載的載具
+**職責**：偵測艦隊是否到位、把貨物轉進搭載的載具
 
 ---
 
 ## 概述
 
-艦隊到達等待區後，系統依艦型把貨物（車輛、步兵、裝備）從母艦轉到搭載的直升機與氣墊船，同時建立 Cargo 任務。
+艦隊到達等待區後，系統依艦型把貨物（車輛、步兵、裝備）從母艦轉到搭載的直升機與氣墊船。
 
 分派是**資料驅動**的：`SHIP_TRANSFER_RULES` 以艦型 DBID 描述「轉哪些貨到哪些載具」，不為每型艦寫硬編碼。新增艦型只要加一筆 spec，貨物清單本身在各區 `config` 的 `transferManifest`。
 
@@ -19,7 +19,7 @@
 
 ### 為什麼這裡不指派任務？
 
-氣墊船要先走掃出來的通道到停車位，才能開始運貨，通道走完後由 [hovercraft](hovercraft.md) 設定其任務。直升機也不指派任務：[heliWave](heliWave.md) 手動放飛、給航線、卸貨，若被指派 CMO 任務會互相干擾。所以貨運任務在這裡只為氣墊船建立，`zone.air.transportHelicopter.missions` 只當波次表使用。
+氣墊船和直升機都不指派 CMO 任務。氣墊船由 [hovercraft](hovercraft.md) 走通道、到停車位卸貨；直升機由 [heliWave](heliWave.md) 手動放飛、給航線、卸貨。`zone.air.transportHelicopter.missions` 只當波次表使用。
 
 ---
 
@@ -57,13 +57,10 @@
 | 函式 | 說明 |
 |---|---|
 | `getUnitsInHoldingAreas(zone, filteredUnits)` | 到位偵測 |
-| `createCargoMissions(zone)` | 建立貨運任務，遇到第一個失敗即停止 |
 | `transferAndAssign(zone, unitsInHoldingAreas)` | 只處理在 `mothership` 內的艦：轉貨 |
 | `transferAndAssignTransportAircraft(transportAircraft)` | 單一陸基運輸機轉貨並指派 |
 | `transferRemainingCargos(zone, units)` | 補運：重新轉貨，**不重新指派**任務 |
 | `removeCargo(fromUnit, cargoItem)` | 從單位刪除貨物，回傳實際刪除數；ACV 釋放使用 |
-
-`createCargoMissions` 的失敗帶 `reason`：`add_mission_failed`、`set_mission_failed`、`set_doctrine_failed`；已建立的任務留在 info log，失敗行走 error sink。
 
 ---
 
@@ -71,7 +68,7 @@
 
 | 路徑 | 用途 |
 |---|---|
-| `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、貨運任務名稱 `missionName`、`transferManifest` |
+| `config.red.amphibOps.zones[].landing.hovercraft` | 氣墊船 DBID、`transferManifest` |
 | `config.red.amphibOps.zones[].air.transportHelicopter`、`attackHelicopter` | 直升機 DBID、任務、`transferManifest` |
 | `config.red.amphibOps.zones[].movement.holdingAreas` | `mothership`、`deployLine` |
 | `zone.air.transportAircraft` | 陸基運輸機清單 |
@@ -82,6 +79,6 @@
 
 - [shipMovement](shipMovement.md) — 前置：艦隊移動
 - [amphibiousAssault](amphibiousAssault.md) — `launchACV` 呼叫 `removeCargo`
-- [hovercraft](hovercraft.md) — 接手氣墊船的任務
+- [hovercraft](hovercraft.md) — 氣墊船走通道與卸貨
 - `assignMission` — `AssignMission.assignEmbarkedUnitsToMissions`，見 [assignMission](../assignMission.md)
 - [系統架構](README.md)

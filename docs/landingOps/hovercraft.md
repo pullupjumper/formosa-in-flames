@@ -2,13 +2,13 @@
 
 > 原始碼：`src/modules/landingOps/hovercraft.lua`
 
-**職責**：把母艦上已裝貨的 Type 726A 氣墊船送進 cleared 通道，到停車位後指定貨運任務
+**職責**：把母艦上已裝貨的 Type 726A 氣墊船送進 cleared 通道，到停車位後卸貨
 
 ---
 
 ## 概述
 
-氣墊船從 075、076、071（`MOTHERSHIP_DBIDS`，須在 `holdingAreas.mothership` 內）放出，載重裝備到灘頭。它**只走一次通道**，到了停車位就交給貨運任務。
+氣墊船從 075、076、071（`MOTHERSHIP_DBIDS`，須在 `holdingAreas.mothership` 內）放出，載重裝備到灘頭。它**只走一次通道**，到了停車位就卸貨。
 
 ```mermaid
 flowchart TD
@@ -31,13 +31,9 @@ flowchart TD
 
 沒有 `zoneState.lanes` 時整個函式直接返回。
 
-### 貨運任務怎麼分配？
+### 為什麼不指派任務？
 
-每區只有一個氣墊船任務，放出時直接記入 `zone.landing.hovercraft.missionName`，到達停車位後才設到單位上。
-
-### 為什麼等待區不指派氣墊船任務？
-
-氣墊船必須先走 cleared 通道到停車位，才能開始運貨。所以 [amphibiousLogistics](amphibiousLogistics.md) 只替氣墊船裝貨，通道走完才在這裡設任務。
+氣墊船必須先走 cleared 通道到停車位，才能卸貨。[amphibiousLogistics](amphibiousLogistics.md) 只替氣墊船裝貨，航線與卸貨都在這裡手動處理。
 
 ---
 
@@ -60,7 +56,7 @@ flowchart TD
 | 函式 | 說明 |
 |---|---|
 | `launchHovercraft(amphibOps, zone, zoneState, ships)` | 放出可放的氣墊船 |
-| `updateHovercraft(amphibOps, zoneState)` | 追蹤到達並設任務 |
+| `updateHovercraft(amphibOps, zoneState)` | 追蹤到達、卸貨、返航 |
 
 ---
 

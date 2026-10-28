@@ -47,7 +47,7 @@ flowchart TD
 | 階段 | 離開條件 | 離開時的動作 |
 |---|---|---|
 | `MOVING` | 到達 `triggers.amphibiousOps.startTime` | `ShipMovement.moveToHoldingAreas` 發出全部命令 |
-| `WAITING_ARRIVAL` | 等待區艦數 > `arrivalThreshold` 且沒有艦在動 | 建氣墊船貨運任務、轉移貨物；Taoyuan 另有特例 |
+| `WAITING_ARRIVAL` | 等待區艦數 > `arrivalThreshold` 且沒有艦在動 | 轉移貨物；Taoyuan 另有特例 |
 | `WAITING_ASSAULT` | 接觸數 < `contactThreshold`，或等待達 `periodSec` | `MineClearing.startMineClearing` + 記錄機降開始時間 |
 | `MINE_CLEARING` | `updateMineClearing` 回報 082 全部完成 | `AssaultBoat.pairBoats` + `AmphibiousAssault.moveToLaunchStations` + `HeliWave.schedule`（估第一波放飛時間） |
 | `BOAT_ASSAULT` | `updateBoats` 回報衝鋒舟全部到達或被摧毀 | `ObstacleClearing.startObstacleClearing` |

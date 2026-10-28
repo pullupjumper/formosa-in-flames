@@ -196,7 +196,6 @@ describe("LandingOps Coordinator", function()
     local stubMoveToStagingArea
     local stubCurrentTime
     local stubGetUnitsInHoldingAreas
-    local stubCreateCargoMissions
     local stubTransferAndAssign
     local stubTransferTransportAircraft
     local stubCountContactsInArea
@@ -238,7 +237,6 @@ describe("LandingOps Coordinator", function()
       stubCurrentTime = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(BEFORE_START))
       stubGetUnitsInHoldingAreas = trackStub(stub(AmphibiousLogistics, "getUnitsInHoldingAreas")
         .returns(buildHoldingResult({ units = {} })))
-      stubCreateCargoMissions = trackStub(stub(AmphibiousLogistics, "createCargoMissions").returns(true))
       stubTransferAndAssign = trackStub(stub(AmphibiousLogistics, "transferAndAssign").returns(true))
       stubTransferTransportAircraft = trackStub(stub(AmphibiousLogistics, "transferAndAssignTransportAircraft"))
       stubCountContactsInArea = trackStub(stub(AmphibiousAssault, "countContactsInArea").returns(99))
@@ -282,7 +280,6 @@ describe("LandingOps Coordinator", function()
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.are.equal(1000, landingState.amphibOps.zoneStates.Taoyuan.amphibiousAssaultStartTime)
-      assert.stub(stubCreateCargoMissions).was.called(1)
       assert.stub(stubTransferAndAssign).was.called(1)
       assert.stub(stubAddReconEntry).was.called_with(landingState.recon, config.red.recon.templates.GJ11_RECON)
     end)

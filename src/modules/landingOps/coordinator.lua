@@ -56,7 +56,7 @@ local function stepMoving(tickCtx, zone, zoneState)
   end
 end
 
----WAITING_ARRIVAL: when all ships settled in the holding areas, create the cargo missions and load
+---WAITING_ARRIVAL: when all ships settled in the holding areas, load the cargo
 ---@type SBJ__PhaseStep
 local function stepWaitingArrival(tickCtx, zone, zoneState)
   local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, tickCtx.filteredShips)
@@ -65,7 +65,7 @@ local function stepWaitingArrival(tickCtx, zone, zoneState)
     return
   end
 
-  local ok = AmphibiousLogistics.createCargoMissions(zone) and AmphibiousLogistics.transferAndAssign(zone, result.units)
+  local ok = AmphibiousLogistics.transferAndAssign(zone, result.units)
   if ok then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
     zoneState.amphibiousAssaultStartTime = tickCtx.currentTime

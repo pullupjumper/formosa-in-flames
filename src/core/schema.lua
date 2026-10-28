@@ -834,7 +834,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field finalPoint? CMO__Location S_lane, set at launch
 
 ---@class SBJ__HovercraftState: table
----@field missionName string Cargo mission to assign after arrival
 ---@field finalPoint CMO__Location Parking slot
 ---@field phase SBJ__HovercraftPhaseType
 
@@ -966,12 +965,10 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__CargoLandingPlatformDescriptor: table
 ---@field dbid number Platform database ID
 ---@field zone string[] Landing zone reference points
----@field settings CMO__Mission Mission behavior settings (throttle, altitude, active status)
 ---@field transferManifest SBJ__ShipTypeCargoManifest Cargo transfer manifest by ship type
 
 ---Landing craft mission configuration for boat-based amphibious landings
 ---@class SBJ__HovercraftMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
----@field missionName string Cargo mission the hovercraft are assigned to
 ---@field speed number
 
 ---Transport helicopter mission configuration for air assault operations

@@ -48,7 +48,7 @@ describe("Hovercraft", function()
     name = "Taoyuan",
     movement = { holdingAreas = { mothership = { "RP-ANC" } } },
     landing = {
-      hovercraft = { speed = 40, missionName = "LANDING/TAO/1/1" },
+      hovercraft = { speed = 40 },
     },
   }
 
@@ -123,7 +123,6 @@ describe("Hovercraft", function()
       assert.are.same({ "course", "launch" }, calls)
       assert.are.same(zoneState.lanes.waterLanes[1].deployPoint, craft.course[1])
       local entry = zoneState.hovercraft["LCAC-1"]
-      assert.are.equal("LANDING/TAO/1/1", entry.missionName)
       assert.are.same(craft.course[#craft.course], entry.finalPoint)
       assert.are.equal("enroute", entry.phase)
     end)
@@ -157,7 +156,7 @@ describe("Hovercraft", function()
       local calls = {}
       stubFleet(buildCraft(calls))
       local zoneState = buildZoneState(true)
-      zoneState.hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, phase = "returning" } }
+      zoneState.hovercraft = { ["LCAC-1"] = { finalPoint = FINAL_POINT, phase = "returning" } }
 
       local ships = { { guid = "LHD-1" } }
 
@@ -177,7 +176,7 @@ describe("Hovercraft", function()
     ---@param phase string
     ---@return SBJ__ZoneState
     local function buildState(phase)
-      return { hovercraft = { ["LCAC-1"] = { missionName = "X", finalPoint = FINAL_POINT, phase = phase } } }
+      return { hovercraft = { ["LCAC-1"] = { finalPoint = FINAL_POINT, phase = phase } } }
     end
 
     it("should unload a hovercraft that reaches its parking slot", function()

@@ -1984,14 +1984,6 @@ config.red.amphibOps.zones = {
           },
         },
         zone = constants.AREAS.AIRLANDING_TAOYUAN,
-        settings = {
-          Subtype = "delivery",
-          TransitThrottleAircraft = "Military",
-          TransitAltitudeAircraft = 304,
-          StationThrottleAircraft = "Afterburner",
-          StationAltitudeAircraft = 304,
-          isactive = false
-        },
         transferManifest = {
           type075 = {
             {
@@ -2025,14 +2017,7 @@ config.red.amphibOps.zones = {
     landing = {
       hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
-        missionName = "LANDING/TAO/1/1",
         zone = constants.AREAS.LANDING_TAOYUAN,
-        settings = {
-          Subtype = "delivery",
-          TransitThrottleShip = "Full",
-          StationThrottleShip = "Full",
-          isactive = false
-        },
         transferManifest = {
           type075 = {
             {
@@ -2192,14 +2177,6 @@ config.red.amphibOps.zones = {
           },
         },
         zone = constants.AREAS.AIRLANDING_CHANGLONG,
-        settings = {
-          Subtype = "delivery",
-          TransitThrottleAircraft = "Military",
-          TransitAltitudeAircraft = 304,
-          StationThrottleAircraft = "Afterburner",
-          StationAltitudeAircraft = 304,
-          isactive = false
-        },
         transferManifest = {
           type075 = {
             {
@@ -2233,14 +2210,7 @@ config.red.amphibOps.zones = {
     landing = {
       hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
-        missionName = "LANDING/SISHU/1/1",
         zone = constants.AREAS.LANDING_SISHU,
-        settings = {
-          Subtype = "delivery",
-          TransitThrottleShip = "Full",
-          StationThrottleShip = "Full",
-          isactive = false
-        },
         transferManifest = {
           type075 = {
             {
@@ -2399,14 +2369,6 @@ config.red.amphibOps.zones = {
           },
         },
         zone = constants.AREAS.AIRLANDING_PENGHU,
-        settings = {
-          Subtype = "delivery",
-          TransitThrottleAircraft = "Military",
-          TransitAltitudeAircraft = 304,
-          StationThrottleAircraft = "Afterburner",
-          StationAltitudeAircraft = 304,
-          isactive = false
-        },
         transferManifest = {
           type075 = {
             {
@@ -2440,14 +2402,7 @@ config.red.amphibOps.zones = {
     landing = {
       hovercraft = {
         dbid = constants.PLATFORMS.TYPE_726A,
-        missionName = "LANDING/PENGHU/1/1",
         zone = constants.AREAS.LANDING_PENGHU,
-        settings = {
-          Subtype = "delivery",
-          TransitThrottleShip = "Full",
-          StationThrottleShip = "Full",
-          isactive = false
-        },
         transferManifest = {
           type075 = {
             {

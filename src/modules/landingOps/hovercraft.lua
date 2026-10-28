@@ -6,7 +6,7 @@ local DebugFlow = require("src.modules.landingOps.debugFlow")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 
 ---Route loaded Type 726A hovercraft from the LHD and LPDs through cleared lanes to a parking slot.
----Route each hovercraft once. After it arrives, the cargo mission takes over.
+---Route each hovercraft once. After it arrives, it unloads at its parking slot.
 local Hovercraft = {}
 
 -- ============================================================================
@@ -107,7 +107,6 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           craft.manualSpeed = zone.landing.hovercraft.speed
           craft:Launch(true)
           zoneState.hovercraft[craft.guid] = {
-            missionName = zone.landing.hovercraft.missionName,
             finalPoint = plan.course[#plan.course],
             phase = PHASE.ENROUTE,
           }
