@@ -134,7 +134,7 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return CMO__Location|nil # nil when the zone points cannot be resolved
 local function findLandingCenter(zone)
-  local points = GameUtils.findAreaLocations(constants.SIDES.RED, zone.air.landingZone)
+  local points = GameUtils.findAreaLocations(constants.SIDES.RED, zone.air.transportHelicopter.zone)
   if #points == 0 then
     return nil
   end

@@ -131,8 +131,7 @@ describe("HeliWave", function()
       name = "Taoyuan",
       movement = { holdingAreas = { mothership = { "RP-M" } } },
       air = {
-        landingZone = { "RP-L" },
-        transportHelicopter = { dbid = TRANSPORT_DBID },
+        transportHelicopter = { dbid = TRANSPORT_DBID, zone = { "RP-L" } },
         attackHelicopter = { dbid = ATTACK_DBID, zone = { "RP-CAS" } },
       },
     }
