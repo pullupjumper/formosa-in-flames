@@ -52,7 +52,6 @@ describe("AmphibiousAssault", function()
         },
       },
       air = {
-        transportHelicopter = { missions = { buildMission({ name = "HeloMission1" }) } },
         attackHelicopter = { missions = { buildMission({ name = "AtkHeloMission1" }) } },
       },
       landing = {

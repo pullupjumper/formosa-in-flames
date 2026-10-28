@@ -1962,28 +1962,6 @@ config.red.amphibOps.zones = {
       reconTemplate = "GJ11_RECON",
       transportHelicopter = {
         dbid = constants.PLATFORMS.Z18,
-        missions = {
-          {
-            name = "AIRLANDING/TAO/1/1",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/TAO/1/2",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/TAO/2/1",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/TAO/2/2",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            unitCount = 3,
-          },
-        },
         zone = constants.AREAS.AIRLANDING_TAOYUAN,
         transferManifest = {
           type075 = {
@@ -2155,28 +2133,6 @@ config.red.amphibOps.zones = {
       casArea = constants.AREAS.CAS_S,
       transportHelicopter = {
         dbid = constants.PLATFORMS.Z18,
-        missions = {
-          {
-            name = "AIRLANDING/CHANGLONG/1/1",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/CHANGLONG/1/2",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/CHANGLONG/2/1",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/CHANGLONG/2/2",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            unitCount = 3,
-          },
-        },
         zone = constants.AREAS.AIRLANDING_CHANGLONG,
         transferManifest = {
           type075 = {
@@ -2347,28 +2303,6 @@ config.red.amphibOps.zones = {
       },
       transportHelicopter = {
         dbid = constants.PLATFORMS.Z18,
-        missions = {
-          {
-            name = "AIRLANDING/PENGHU/1/1",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/PENGHU/1/2",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_1,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/PENGHU/2/1",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            unitCount = 3,
-          },
-          {
-            name = "AIRLANDING/PENGHU/2/2",
-            loadoutId = constants.LOADOUTS.Z18_TRANSPORT_2,
-            unitCount = 3,
-          },
-        },
         zone = constants.AREAS.AIRLANDING_PENGHU,
         transferManifest = {
           type075 = {

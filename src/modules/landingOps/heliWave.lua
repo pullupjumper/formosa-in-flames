@@ -105,7 +105,7 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return string
 local function getCasMissionName(zone)
-  return "CAS/HELI/" .. zone.name
+  return "CAS/HELI/" .. string.upper(zone.name)
 end
 
 ---Select count items at random
@@ -391,6 +391,7 @@ end
 ---@param missionName string
 local function updateAttacker(heli, entry, casAssignNm, missionName)
   if entry.phase == PHASE.ENROUTE and hasArrived(heli, entry, casAssignNm) then
+    heli.course = nil
     GameApi.ScenEdit_AssignUnitToMission(heli.guid, missionName)
     entry.phase = PHASE.CAS
   end
@@ -450,11 +451,14 @@ function HeliWave.schedule(tickCtx, zone, zoneState)
     launchAt = math.max(currentTime, boatArrivalAt - flightSec),
     units = {},
     attackers = {},
-    isFinished = false,
   }
 
-  GameApi.ScenEdit_AddMission(constants.SIDES.RED, getCasMissionName(zone), "patrol",
-    { type = "land", zone = zone.air.casArea })
+  GameApi.ScenEdit_AddMission(
+    constants.SIDES.RED,
+    getCasMissionName(zone),
+    "patrol",
+    { type = "land", zone = zone.air.casArea }
+  )
 
   Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line("OK", {
     scope = "heliWave",
@@ -480,10 +484,6 @@ function HeliWave.update(tickCtx, zone, zoneState)
 
   local heliConfig = getHeliConfig(tickCtx)
   updateAttackers(state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
-  if state.isFinished then
-    return true
-  end
-
   updateTransports(state.units, heliConfig.arrivalNm)
 
   -- A transport stuck unloading is moved home too, so it cannot block the next wave
@@ -495,11 +495,6 @@ function HeliWave.update(tickCtx, zone, zoneState)
   end
 
   if not isWaveDone(state.units) then
-    return true
-  end
-
-  if state.waveIndex >= #zone.air.transportHelicopter.missions then
-    state.isFinished = true
     return true
   end
 

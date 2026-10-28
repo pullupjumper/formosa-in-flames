@@ -10,7 +10,7 @@
 
 一波 = 最多 `waveSize`（8）架運輸直升機 + `escortSize`（4）架攻擊直升機。每區各自一組波次，所有區的大小相同。
 
-直升機**不指派 CMO 任務**：`Launch` 之後直接設 `course`，到點呼叫 `ScenEdit_UnloadCargo`。`zone.air.transportHelicopter.missions` 只當波次表使用，筆數 = 波數。
+直升機**不指派 CMO 任務**：`Launch` 之後直接設 `course`，到點呼叫 `ScenEdit_UnloadCargo`。波數不設上限，直到沒有載貨的運輸機為止。
 
 ---
 

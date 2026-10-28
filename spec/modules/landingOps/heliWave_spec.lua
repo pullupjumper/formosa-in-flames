@@ -106,8 +106,16 @@ describe("HeliWave", function()
         route = { launchStationFarNm = 4, shoreStandoffM = 100 },
         assaultBoat = { speed = 30 },
         heliWave = {
-          waveSize = 8, escortSize = 4, waveTimeoutSec = 1800, arrivalNm = 0.5, casAssignNm = 3, cruiseSpeedKt = 130, cruiseAltitudeM = 304,
-          wingOffsetM = 8000, inlandEntryM = 3000, landingSpreadM = 500,
+          waveSize = 8,
+          escortSize = 4,
+          waveTimeoutSec = 1800,
+          arrivalNm = 0.5,
+          casAssignNm = 3,
+          cruiseSpeedKt = 130,
+          cruiseAltitudeM = 304,
+          wingOffsetM = 8000,
+          inlandEntryM = 3000,
+          landingSpreadM = 500,
         },
       },
     }
@@ -117,20 +125,15 @@ describe("HeliWave", function()
     return amphibOps
   end
 
-  ---@param waveCount? integer
   ---@return SBJ__OperationalZoneDescriptor
-  local function buildZone(waveCount)
-    local missions = {}
-    for i = 1, waveCount or 2 do
-      missions[i] = { name = "M" .. i }
-    end
+  local function buildZone()
     return {
       name = "Taoyuan",
       movement = { holdingAreas = { mothership = { "RP-M" } } },
       air = {
         landingZone = { "RP-L" },
         casArea = { "RP-CAS" },
-        transportHelicopter = { dbid = TRANSPORT_DBID, missions = missions },
+        transportHelicopter = { dbid = TRANSPORT_DBID },
         attackHelicopter = { dbid = ATTACK_DBID },
       },
     }
@@ -164,7 +167,8 @@ describe("HeliWave", function()
     for _, unit in pairs(units) do
       if unit.course then
         local _, lateral = LaneGeometry.projectPoint(FRAME, unit.course[1])
-        local key = (unit.dbid == TRANSPORT_DBID and "transport" or "attack") .. "/" .. (lateral < 0 and "left" or "right")
+        local key = (unit.dbid == TRANSPORT_DBID and "transport" or "attack") ..
+            "/" .. (lateral < 0 and "left" or "right")
         counts[key] = (counts[key] or 0) + 1
       end
     end
@@ -236,7 +240,7 @@ describe("HeliWave", function()
 
       assert.stub(stubAddMission).was.called(1)
       assert.stub(stubAddMission).was.called_with(
-        constants.SIDES.RED, "CAS/HELI/Taoyuan", "patrol", { type = "land", zone = { "RP-CAS" } })
+        constants.SIDES.RED, "CAS/HELI/TAOYUAN", "patrol", { type = "land", zone = { "RP-CAS" } })
     end)
 
     it("should launch right away when no boat is paired", function()
@@ -280,8 +284,10 @@ describe("HeliWave", function()
       buildLaunchedZoneState()
 
       assert.same({
-        ["transport/left"] = 4, ["transport/right"] = 4,
-        ["attack/left"] = 2, ["attack/right"] = 2,
+        ["transport/left"] = 4,
+        ["transport/right"] = 4,
+        ["attack/left"] = 2,
+        ["attack/right"] = 2,
       }, countLaunched())
     end)
 
@@ -375,7 +381,7 @@ describe("HeliWave", function()
       ranges.A1 = 2.5
       HeliWave.update(buildCtx(1020), buildZone(), zoneState)
       assert.stub(stubAssign).was.called(1)
-      assert.stub(stubAssign).was.called_with("A1", "CAS/HELI/Taoyuan")
+      assert.stub(stubAssign).was.called_with("A1", "CAS/HELI/TAOYUAN")
       HeliWave.update(buildCtx(1030), buildZone(), zoneState)
       assert.stub(stubAssign).was.called(1)
     end)
@@ -403,7 +409,7 @@ describe("HeliWave", function()
       HeliWave.update(buildCtx(1020), buildZone(), zoneState)
 
       assert.spy(units.A1.RTB).was_not.called()
-      assert.stub(stubAssign).was.called_with("A1", "CAS/HELI/Taoyuan")
+      assert.stub(stubAssign).was.called_with("A1", "CAS/HELI/TAOYUAN")
     end)
 
     it("should treat a destroyed transport as done", function()
@@ -471,7 +477,8 @@ describe("HeliWave", function()
     it("should top the attack helicopters up to four across waves, and stop at four", function()
       addFleet(2, 3)
       local zoneState = buildLaunchedZoneState()
-      assert.same({ ["attack/left"] = 2, ["attack/right"] = 1, ["transport/left"] = 1, ["transport/right"] = 1 }, countLaunched())
+      assert.same({ ["attack/left"] = 2, ["attack/right"] = 1, ["transport/left"] = 1, ["transport/right"] = 1 },
+        countLaunched())
       destroyAll({ "T1", "T2", "A1" })
       HeliWave.removeAttacker(zoneState, "A1")
       addFleet(2, 5, "R")
@@ -497,21 +504,6 @@ describe("HeliWave", function()
       assert.spy(units.RT1.Launch).was.called(1)
       assert.spy(units.RA1.Launch).was_not.called()
     end)
-
-    it("should launch nothing more after the last wave is done", function()
-      local firstWave = addFleet(2, 0)
-      local zoneState = buildLaunchedZoneState()
-      local secondWave = addFleet(2, 0, "R")
-      destroyAll(firstWave)
-      HeliWave.update(buildCtx(1500), buildZone(), zoneState)
-      addFleet(2, 0, "S")
-      destroyAll(secondWave)
-
-      HeliWave.update(buildCtx(2000), buildZone(), zoneState)
-      HeliWave.update(buildCtx(2500), buildZone(), zoneState)
-
-      assert.spy(units.ST1.Launch).was_not.called()
-    end)
   end)
 
   describe("removeAttacker", function()
@@ -527,7 +519,7 @@ describe("HeliWave", function()
     end)
 
     it("should do nothing for a zone without a wave plan", function()
-      assert.has_no.errors(function() HeliWave.removeAttacker(buildZoneState(), "A1") end)
+      assert.has_no.Error(function() HeliWave.removeAttacker(buildZoneState(), "A1") end)
     end)
   end)
 end)

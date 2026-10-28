@@ -844,7 +844,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field waveLaunchedAt? number Time the current wave launched; drives the timeout
 ---@field units table<string, SBJ__HeliState> Transport helicopters of the current wave indexed by GUID
 ---@field attackers table<string, SBJ__HeliState> Attack helicopters of the zone indexed by GUID; kept across waves, removed when destroyed
----@field isFinished boolean All waves launched and the last one is done
 ---@field isWaitingLogged? boolean Latched after logging that no loaded helicopter is available
 
 ---Geometry shared by every course of one helicopter wave
@@ -972,9 +971,8 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__HovercraftMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
 ---@field speed number
 
----Transport helicopter mission configuration for air assault operations
+---Transport helicopter configuration for air assault operations
 ---@class SBJ__TransportHelicopterDescriptor: SBJ__CargoLandingPlatformDescriptor
----@field missions SBJ__LandingMissionDescriptor[] Landing mission descriptors
 
 ---Attack helicopter mission configuration for close air support
 ---No cargo transfer capability

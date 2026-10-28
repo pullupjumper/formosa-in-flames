@@ -113,9 +113,6 @@ describe("AmphibiousLogistics", function()
         transportHelicopter = {
           dbid = 4001,
           zone = { "RP-HELO-1" },
-          missions = {
-            { name = "HeloMission-1", loadoutId = 20, unitCount = 2, startTime = 0 },
-          },
           transferManifest = {
             type075 = {
               [1] = { loadoutId = 20, cargoItems = { [1] = { buildCargoItem() } } },

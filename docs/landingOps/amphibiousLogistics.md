@@ -19,7 +19,7 @@
 
 ### 為什麼這裡不指派任務？
 
-氣墊船和直升機都不指派 CMO 任務。氣墊船由 [hovercraft](hovercraft.md) 走通道、到停車位卸貨；直升機由 [heliWave](heliWave.md) 手動放飛、給航線、卸貨。`zone.air.transportHelicopter.missions` 只當波次表使用。
+氣墊船和直升機都不指派 CMO 任務。氣墊船由 [hovercraft](hovercraft.md) 走通道、到停車位卸貨；直升機由 [heliWave](heliWave.md) 手動放飛、給航線、卸貨。
 
 ---
 
