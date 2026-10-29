@@ -658,4 +658,24 @@ function HeliWave.removeAttacker(zoneState, guid)
   return true
 end
 
+---Forget a destroyed transport helicopter or transport aircraft, so it is no longer polled.
+---The wave still ends the same way: a removed transport counts as destroyed.
+---@param zoneState SBJ__ZoneState
+---@param guid string
+---@return boolean # True if the transport was recorded and is now removed
+function HeliWave.removeTransport(zoneState, guid)
+  local heliWave = zoneState.heliWave
+  if not heliWave then
+    return false
+  end
+
+  for _, unitMap in ipairs({ heliWave.units, heliWave.airlift and heliWave.airlift.units or {} }) do
+    if unitMap[guid] then
+      unitMap[guid] = nil
+      return true
+    end
+  end
+  return false
+end
+
 return HeliWave

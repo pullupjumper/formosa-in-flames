@@ -83,6 +83,8 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 
 `zoneState.heliWave`（`SBJ__HeliWaveState`）：`units` 只存當前這一波的運輸機，下一波放飛時整個換掉；`attackers` 存本區的攻擊直升機，跨波保留。`attackers` 的筆數就是已算進 `escortSize` 的架數，不去查 CMO 任務。攻擊直升機被擊毀時，`destroyUnits.lua` 呼叫 `LandingOps.removeDestroyedAttackHelicopter` 依 GUID 移除。欄位見 `schema.lua`。
 
+運輸直升機（Z-18）和運輸機（IL-76）被擊毀時，`destroyUnits.lua` 呼叫 `LandingOps.removeDestroyedTransport`，依 GUID 從 `units` 與 `airlift.units` 移除，之後輪詢不再查它（避免 `Unit not found` ERROR）。移除等同已被擊殺，一波（批）結束的判斷不變；下一波架數只看候選，不看 `units`。輪詢仍把 `GetUnit` 回 `nil` 視為被擊殺，當事件沒趕上時的後備。
+
 ---
 
 ## 設定
@@ -115,6 +117,7 @@ airlift 數值暫定，待遊戲內驗證（大型機轉彎半徑大，若轉不
 | `schedule(tickCtx, zone, zoneState)` | `BOAT_ASSAULT` 開始時建立 CAS 任務與 `zoneState.heliWave`，算 `launchAt` |
 | `update(tickCtx, zone, zoneState)` | 每 tick 推進；計畫尚未建立時什麼都不做 |
 | `removeAttacker(zoneState, guid)` | 移除被擊毀的攻擊直升機紀錄，回傳是否有移除 |
+| `removeTransport(zoneState, guid)` | 移除被擊毀的運輸直升機（`units`）或運輸機（`airlift.units`）紀錄，回傳是否有移除 |
 
 ---
 

@@ -161,28 +161,28 @@ describe("HeliWave", function()
   ---@return SBJ__OperationalZoneDescriptor
   local function buildAirliftZone()
     local zone = buildZone()
-    zone.air.transportAircraft = { name = "AFB", guid = "AFB", dbid = AIRLIFT_DBID, cargoItemsForTransfer = {} }
+    zone.air.transportAircraft = { name = "TBASE", guid = "TBASE", dbid = AIRLIFT_DBID, cargoItemsForTransfer = {} }
     return zone
   end
 
   -- 100 km seaward of the lane origin
-  local AIRFIELD_POS = LaneGeometry.buildPoint(FRAME, -100000, 0)
+  local TRANSPORT_BASE_POS = LaneGeometry.buildPoint(FRAME, -100000, 0)
 
-  ---Add the airfield with loaded transport aircraft aboard. A later call replaces the aircraft aboard
+  ---Add the transport aircraft base (their home airfield) with loaded aircraft aboard. A later call replaces the aircraft aboard
   ---@param count integer
   ---@param prefix? string Prefix of the GUIDs, to tell batches apart
   ---@return string[] guids
-  local function addAirfield(count, prefix)
+  local function addTransportBase(count, prefix)
     prefix = prefix or ""
     local guids = {}
     for i = 1, count do
-      local guid = prefix .. "L" .. i
+      local guid = prefix .. "AIRLIFT" .. i
       addUnit(guid, { dbid = AIRLIFT_DBID, cargo = { { cargo = { { dbid = 1 } } } } })
       table.insert(guids, guid)
     end
-    addUnit("AFB", {
-      latitude = AIRFIELD_POS.latitude,
-      longitude = AIRFIELD_POS.longitude,
+    addUnit("TBASE", {
+      latitude = TRANSPORT_BASE_POS.latitude,
+      longitude = TRANSPORT_BASE_POS.longitude,
       embarkedUnits = { [constants.PLATFORM_TYPES.AIRCRAFT] = guids },
     })
     return guids
@@ -410,6 +410,7 @@ describe("HeliWave", function()
       assert.spy(units.T1.RTB).was_not.called()
 
       units.T1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+      units.T1.cargo = nil
       HeliWave.update(buildCtx(1030), buildZone(), zoneState)
       assert.spy(units.T1.RTB).was.called(1)
       assert.spy(units.T1.RTB).was.called_with(match.is_table(), true)
@@ -438,6 +439,7 @@ describe("HeliWave", function()
       HeliWave.update(buildCtx(1010), buildZone(), zoneState)
 
       units.T1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+      units.T1.cargo = nil
       HeliWave.update(buildCtx(1020), buildZone(), zoneState)
 
       assert.spy(units.T1.RTB).was.called(1)
@@ -568,6 +570,53 @@ describe("HeliWave", function()
     end)
   end)
 
+  describe("removeTransport", function()
+    it("should end the wave like a kill and stop querying the removed helicopter", function()
+      addFleet(2, 0)
+      local zoneState = buildLaunchedZoneState()
+      destroyAll({ "T1", "T2" })
+      addFleet(1, 0, "R")
+
+      assert.is_true(HeliWave.removeTransport(zoneState, "T1"))
+      assert.is_true(HeliWave.removeTransport(zoneState, "T2"))
+      assert.is_nil(zoneState.heliWave.units.T1)
+      GameApi.ScenEdit_GetUnit:clear()
+      HeliWave.update(buildCtx(1500), buildZone(), zoneState)
+
+      assert.spy(units.RT1.Launch).was.called(1)
+      assert.spy(GameApi.ScenEdit_GetUnit).was_not.called_with("T1")
+    end)
+
+    it("should remove a transport aircraft and leave the helicopters alone", function()
+      addFleet(2, 0)
+      addTransportBase(2)
+      local zoneState = buildLaunchedAirliftZoneState()
+      destroyAll({ "AIRLIFT1" })
+
+      assert.is_true(HeliWave.removeTransport(zoneState, "AIRLIFT1"))
+
+      assert.is_nil(zoneState.heliWave.airlift.units.AIRLIFT1)
+      assert.is_not_nil(zoneState.heliWave.airlift.units.AIRLIFT2)
+      assert.is_not_nil(zoneState.heliWave.units.T1)
+    end)
+
+    it("should return false for a GUID with no record", function()
+      addFleet(2, 0)
+      local zoneState = buildLaunchedZoneState()
+
+      assert.is_false(HeliWave.removeTransport(zoneState, "NOPE"))
+      assert.is_false(HeliWave.removeTransport(buildZoneState(), "NOPE"))
+    end)
+
+    it("should not touch the attack helicopters", function()
+      addFleet(2, 2)
+      local zoneState = buildLaunchedZoneState()
+
+      assert.is_false(HeliWave.removeTransport(zoneState, "A1"))
+      assert.is_not_nil(zoneState.heliWave.attackers.A1)
+    end)
+  end)
+
   describe("airlift", function()
     ---Lateral side of a course: negative = left wing
     local function lateralOf(unit)
@@ -578,7 +627,7 @@ describe("HeliWave", function()
     describe("schedule", function()
       it("should plan the batch to arrive delaySec after the boats, minus its own flight time", function()
         addFleet(8, 4)
-        addAirfield(3)
+        addTransportBase(3)
         local zoneState = buildZoneState()
 
         HeliWave.schedule(buildCtx(1000), buildAirliftZone(), zoneState)
@@ -591,7 +640,7 @@ describe("HeliWave", function()
       end)
 
       it("should launch at once when the flight is longer than the delay", function()
-        addAirfield(3)
+        addTransportBase(3)
         local zoneState = buildZoneState()
         local ctx = buildCtx(1000)
         ctx.config.red.amphibOps.tuning.heliWave.airlift.delaySec = 0
@@ -602,7 +651,7 @@ describe("HeliWave", function()
       end)
 
       it("should not plan an airlift when the zone has no transport aircraft", function()
-        addAirfield(3)
+        addTransportBase(3)
         local zoneState = buildZoneState()
 
         HeliWave.schedule(buildCtx(1000), buildZone(), zoneState)
@@ -613,7 +662,7 @@ describe("HeliWave", function()
 
     describe("launch", function()
       it("should wait for its launch time", function()
-        local aircraft = addAirfield(3)
+        local aircraft = addTransportBase(3)
         local zoneState = buildZoneState()
         HeliWave.schedule(buildCtx(1000), buildAirliftZone(), zoneState)
         stubCurrentTime.returns(BEFORE_LAUNCH)
@@ -627,9 +676,9 @@ describe("HeliWave", function()
       end)
 
       it("should launch at most size ready, loaded aircraft, split across both wings", function()
-        addAirfield(6)
-        units.L1.readytime_v = 600
-        units.L2.cargo = { { cargo = {} } }
+        addTransportBase(6)
+        units.AIRLIFT1.readytime_v = 600
+        units.AIRLIFT2.cargo = { { cargo = {} } }
 
         buildLaunchedAirliftZoneState()
 
@@ -640,8 +689,8 @@ describe("HeliWave", function()
           end
         end
         assert.are.equal(3, #flown)
-        assert.is_nil(units.L1.course)
-        assert.is_nil(units.L2.course)
+        assert.is_nil(units.AIRLIFT1.course)
+        assert.is_nil(units.AIRLIFT2.course)
         local lefts = 0
         for _, guid in ipairs(flown) do
           lefts = lefts + (lateralOf(units[guid]) < 0 and 1 or 0)
@@ -650,11 +699,11 @@ describe("HeliWave", function()
       end)
 
       it("should send each aircraft on the two inland points, without a sideways leg", function()
-        addAirfield(2)
+        addTransportBase(2)
 
         buildLaunchedAirliftZoneState()
 
-        local course = units.L1.course
+        local course = units.AIRLIFT1.course
         assert.are.equal(2, #course)
         local turnAlong, turnLateral = LaneGeometry.projectPoint(FRAME, course[1])
         local landAlong = LaneGeometry.projectPoint(FRAME, course[2])
@@ -662,14 +711,14 @@ describe("HeliWave", function()
         assert.is_near(8000, math.abs(turnLateral), 5)
         assert.is_near(5500, landAlong, 5)
         assert.are.equal(3000, course[1].desiredAltitude)
-        assert.spy(units.L1.Launch).was.called_with(match.is_table(), true)
-        assert.are.equal(constants.THROTTLES.MILITARY, units.L1.throttle)
+        assert.spy(units.AIRLIFT1.Launch).was.called_with(match.is_table(), true)
+        assert.are.equal(constants.THROTTLES.MILITARY, units.AIRLIFT1.throttle)
       end)
 
       it("should skip aircraft of another type", function()
-        addAirfield(1)
+        addTransportBase(1)
         addUnit("OTHER", { dbid = 9999, cargo = { { cargo = { { dbid = 1 } } } } })
-        table.insert(units.AFB.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT], "OTHER")
+        table.insert(units.TBASE.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT], "OTHER")
 
         buildLaunchedAirliftZoneState()
 
@@ -677,7 +726,7 @@ describe("HeliWave", function()
       end)
 
       it("should wait for the next tick when no aircraft is loaded", function()
-        local aircraft = addAirfield(1)
+        local aircraft = addTransportBase(1)
         units[aircraft[1]].cargo = { { cargo = {} } }
         local zoneState = buildLaunchedAirliftZoneState()
         assert.are.equal(0, zoneState.heliWave.airlift.waveIndex)
@@ -691,10 +740,10 @@ describe("HeliWave", function()
 
       it("should not be held back by the helicopters, nor hold them back", function()
         local firstHelis = addFleet(2, 0)
-        addAirfield(1)
+        addTransportBase(1)
         local zoneState = buildLaunchedAirliftZoneState()
         assert.spy(units.T1.Launch).was.called(1)
-        assert.spy(units.L1.Launch).was.called(1)
+        assert.spy(units.AIRLIFT1.Launch).was.called(1)
 
         -- The helicopters finish while the airlift is still out: the next helicopter wave goes
         addFleet(1, 0, "R")
@@ -703,78 +752,80 @@ describe("HeliWave", function()
         assert.spy(units.RT1.Launch).was.called(1)
 
         -- The airlift finishes while the next helicopters are still out: the next batch goes
-        addAirfield(1, "N")
-        destroyAll({ "L1" })
+        addTransportBase(1, "B2")
+        destroyAll({ "AIRLIFT1" })
         HeliWave.update(buildCtx(1600), buildAirliftZone(), zoneState)
-        assert.spy(units.NL1.Launch).was.called(1)
+        assert.spy(units.B2AIRLIFT1.Launch).was.called(1)
         assert.spy(units.RT1.RTB).was_not.called()
       end)
     end)
 
     describe("progress", function()
       it("should unload on arrival, and go home only once unloaded", function()
-        addAirfield(2)
+        addTransportBase(2)
         local zoneState = buildLaunchedAirliftZoneState()
-        ranges.L1 = ARRIVED
+        ranges.AIRLIFT1 = ARRIVED
 
         HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
         assert.stub(stubUnload).was.called(1)
-        assert.stub(stubUnload).was.called_with("L1")
+        assert.stub(stubUnload).was.called_with("AIRLIFT1")
 
-        units.L1.condition = constants.UNIT_CONDITIONS.TRANSFERRING_CARGO
+        units.AIRLIFT1.condition = constants.UNIT_CONDITIONS.TRANSFERRING_CARGO
         HeliWave.update(buildCtx(1020), buildAirliftZone(), zoneState)
-        assert.spy(units.L1.RTB).was_not.called()
+        assert.spy(units.AIRLIFT1.RTB).was_not.called()
 
-        units.L1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+        units.AIRLIFT1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+        units.AIRLIFT1.cargo = nil
         HeliWave.update(buildCtx(1030), buildAirliftZone(), zoneState)
-        assert.spy(units.L1.RTB).was.called(1)
-        assert.spy(units.L2.RTB).was_not.called()
+        assert.spy(units.AIRLIFT1.RTB).was.called(1)
+        assert.spy(units.AIRLIFT2.RTB).was_not.called()
       end)
 
       it("should use the airlift arrival distance, not the helicopter one", function()
-        addAirfield(1)
+        addTransportBase(1)
         local zoneState = buildLaunchedAirliftZoneState()
-        ranges.L1 = 0.8
+        ranges.AIRLIFT1 = 0.8
 
         HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
 
-        assert.stub(stubUnload).was.called_with("L1")
+        assert.stub(stubUnload).was.called_with("AIRLIFT1")
       end)
     end)
 
     describe("next batch", function()
       it("should hold the next batch while an aircraft is still out", function()
-        addAirfield(2)
+        addTransportBase(2)
         local zoneState = buildLaunchedAirliftZoneState()
-        addAirfield(1, "N")
-        destroyAll({ "L1" })
+        addTransportBase(1, "B2")
+        destroyAll({ "AIRLIFT1" })
 
         HeliWave.update(buildCtx(1500), buildAirliftZone(), zoneState)
 
-        assert.spy(units.NL1.Launch).was_not.called()
+        assert.spy(units.B2AIRLIFT1.Launch).was_not.called()
       end)
 
       it("should launch the next batch once every aircraft is destroyed or homebound", function()
-        addAirfield(2)
+        addTransportBase(2)
         local zoneState = buildLaunchedAirliftZoneState()
-        ranges.L1 = ARRIVED
+        ranges.AIRLIFT1 = ARRIVED
         HeliWave.update(buildCtx(1010), buildAirliftZone(), zoneState)
-        units.L1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+        units.AIRLIFT1.condition = constants.UNIT_CONDITIONS.UNDERWAY
+        units.AIRLIFT1.cargo = nil
         HeliWave.update(buildCtx(1020), buildAirliftZone(), zoneState)
-        addAirfield(1, "N")
-        destroyAll({ "L2" })
+        addTransportBase(1, "B2")
+        destroyAll({ "AIRLIFT2" })
 
         HeliWave.update(buildCtx(1030), buildAirliftZone(), zoneState)
 
-        assert.spy(units.NL1.Launch).was.called(1)
+        assert.spy(units.B2AIRLIFT1.Launch).was.called(1)
         assert.are.equal(2, zoneState.heliWave.airlift.waveIndex)
       end)
 
       it("should recall the batch and launch the next one after the timeout", function()
-        addAirfield(2)
+        addTransportBase(2)
         local zoneState = buildLaunchedAirliftZoneState()
-        local first = { units.L1, units.L2 }
-        addAirfield(1, "N")
+        local first = { units.AIRLIFT1, units.AIRLIFT2 }
+        addTransportBase(1, "B2")
 
         HeliWave.update(buildCtx(1000 + 1799), buildAirliftZone(), zoneState)
         assert.spy(first[1].RTB).was_not.called()
@@ -783,7 +834,7 @@ describe("HeliWave", function()
         for _, aircraft in ipairs(first) do
           assert.spy(aircraft.RTB).was.called(1)
         end
-        assert.spy(units.NL1.Launch).was.called(1)
+        assert.spy(units.B2AIRLIFT1.Launch).was.called(1)
       end)
     end)
   end)

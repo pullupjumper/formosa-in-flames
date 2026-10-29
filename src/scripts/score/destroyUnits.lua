@@ -16,6 +16,11 @@ PersistentState.update(function(saveData)
     if unit.type == constants.UNIT_TYPES.AIRCRAFT then
       if unit.dbid == constants.PLATFORMS.Z10 or unit.dbid == constants.PLATFORMS.Z18 then
         LandingOps.removeDestroyedAttackHelicopter(saveData, unit.guid)
+        if unit.dbid == constants.PLATFORMS.Z18 then
+          LandingOps.removeDestroyedTransport(saveData, unit.guid)
+        end
+      elseif unit.dbid == constants.PLATFORMS.IL76 then
+        LandingOps.removeDestroyedTransport(saveData, unit.guid)
       elseif unit.dbid == constants.PLATFORMS.Y9DZ then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.BLUE,

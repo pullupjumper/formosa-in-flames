@@ -290,6 +290,19 @@ function LandingOps.removeDestroyedAttackHelicopter(saveData, guid)
   return false
 end
 
+---Forget a destroyed transport helicopter or transport aircraft in every zone, so it is no longer polled
+---@param saveData SBJ__SaveData
+---@param guid string
+---@return boolean # True if a zone recorded the transport and it is now removed
+function LandingOps.removeDestroyedTransport(saveData, guid)
+  for _, zoneState in pairs(PersistentState.landingOps(saveData).amphibOps.zoneStates) do
+    if HeliWave.removeTransport(zoneState, guid) then
+      return true
+    end
+  end
+  return false
+end
+
 ---Count landed China units by type in each operational zone's CAS area
 ---@param config SBJ__Config
 ---@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
