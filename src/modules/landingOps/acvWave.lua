@@ -37,7 +37,7 @@ local function calculateTypeQuota(zoneState, key, config, currentTime)
     zoneState.acvPausedAt[key] = nil
   end
 
-  local quota = math.max(capacity - alive, 0)
+  local quota = math.max(math.floor(capacity - alive), 0)
   if quota == 0 then
     zoneState.acvPausedAt[key] = currentTime
   end

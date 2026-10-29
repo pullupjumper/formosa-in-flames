@@ -295,6 +295,17 @@ describe("AmphibiousLogistics", function()
 
       assert.are.equal(1, result)
     end)
+
+    it("should stop at the requested count when it is not a whole number", function()
+      local fromUnit = buildUnit()
+      local cargoItem = buildCargoItem({ num = 1.5 })
+
+      trackStub(stub(fromUnit, "deleteUnitCargo").returns(true))
+
+      local result = AmphibiousLogistics.removeCargo(fromUnit, cargoItem)
+
+      assert.are.equal(1, result)
+    end)
   end)
 
   describe("getUnitsInHoldingAreas", function()

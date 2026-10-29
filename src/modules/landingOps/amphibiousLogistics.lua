@@ -68,9 +68,9 @@ local SHIP_TRANSFER_RULES = {
 local function findMatchingCargos(cargos, dbid, maxCount)
   local guids = {}
   for _, element in ipairs(cargos) do
+    if #guids + 1 > maxCount then break end
     if element.dbid == dbid then
       table.insert(guids, element.guid)
-      if #guids == maxCount then break end
     end
   end
   return guids

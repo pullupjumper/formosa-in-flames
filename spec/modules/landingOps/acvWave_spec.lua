@@ -39,6 +39,14 @@ describe("AcvWave", function()
     assert.are.same({ zbd05 = 4, ztd05 = 4 }, AcvWave.getQuota(zoneState, CONFIG, 0))
   end)
 
+  it("should round a fractional capacity down to a whole quota", function()
+    local zoneState = {}
+    local config = { capacity = { zbd05 = 112 / 3 }, lossRatio = 0.5, holdSec = 600, hovercraftWaitSec = 1000 }
+    launch(zoneState, "zbd05", 3)
+
+    assert.are.same({ zbd05 = 34 }, AcvWave.getQuota(zoneState, config, 0))
+  end)
+
   it("should reduce the quota by ACVs already launched this tick", function()
     local zoneState = {}
     launch(zoneState, "zbd05", 3)
