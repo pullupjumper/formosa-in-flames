@@ -87,5 +87,5 @@ zoneState.laneSlots = {
 ## 相關模組
 
 - [laneGeometry](laneGeometry.md) — 通道結構與碰撞判斷
-- [assaultBoat](assaultBoat.md)、[hovercraft](hovercraft.md) — 直接呼叫；兩棲車經門面 `launchACV` 的 `routeACV` 回呼間接呼叫（見 [README](README.md#為什麼-launchacv-要在門面組裝)）
+- [assaultBoat](assaultBoat.md)、[hovercraft](hovercraft.md)、[acvWave](acvWave.md) — 直接呼叫
 - [系統架構](README.md)

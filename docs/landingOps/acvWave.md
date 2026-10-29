@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/acvWave.lua`
 
-**職責**：限制每區同時存活的兩棲車數量，並以波次釋放；同時決定氣墊船何時可以出發
+**職責**：兩棲車（ZBD-05、ZTD-05）的所有細節：車種、貨艙、生成、航線；限制每區同時存活數並以波次釋放；決定氣墊船何時可以出發
 
 ---
 
@@ -30,6 +30,38 @@
 
 ---
 
+## 放出兩棲車
+
+[amphibiousAssault](amphibiousAssault.md) 的 `launchACV` 決定哪艘船可以放，再呼叫 `release(amphibOps, zone, zoneState, ship)`。一次最多放 `acvLaunchBatchSize` 輛，額度由 `getQuota` 算出，不離開本模組。
+
+### 生成
+
+```mermaid
+flowchart TD
+    START["release"]
+    EMPTY["isEmpty"]
+    PAUSED["isPaused"]
+    SPAWN["刪貨、生成、排航線"]
+
+    START -->|艙內無 ZBD/ZTD| EMPTY
+    START -->|有貨但額度為 0| PAUSED
+    START --> SPAWN
+```
+
+回傳 `SBJ__LaunchACVResult`（`count`、`isEmpty`、`isPaused`）；船不存在或已被摧毀時回 `nil`。
+
+- `isEmpty`：由 [amphibiousAssault](amphibiousAssault.md) 讓船掛回基地並 RTB
+- `isPaused`：船留在泛水出發線，等 [acvWave](acvWave.md) 補下一波
+- 一般情況：`removeCargoByPriority` 依 `ACV_TYPES` 的順序（ZBD-05、ZTD-05）分配，每型最多取自己剩餘額度，再逐輛 `createSingleACV`，遇到第一個失敗即停
+
+單輛生成後設 `throttle = "Full"` 與關閉自動迴避，航線見下節。
+
+### 航線
+
+ACV 的航線要走已掃出的通道：`buildACVRouter` 對每輛新生成的車呼叫 `RoutePlanner.reserveCourse`，同時用 `addACV` 登記，所以同一 tick 內後處理的船自然拿到較少額度。沒有可用通道時退回 `zone.landing.acv.destination` 並記 WARN。
+
+---
+
 ## 氣墊船放行
 
 `isFirstWaveFull` 回傳 `true` 的條件（滿足一次即鎖定，之後恆為 `true`）：
@@ -49,6 +81,9 @@
 
 | 函式 | 說明 |
 |---|---|
+| `release(amphibOps, zone, zoneState, ship)` | 在額度內從船上放一批兩棲車並排航線 |
+| `hasCargo(ship)` | 船上是否還有 ZBD/ZTD |
+| `ACV_TYPES` | 車種清單（名稱、DBID、額度 key） |
 | `getQuota(zoneState, config, currentTime)` | 各車種剩餘額度（key 為 `zbd05`、`ztd05`） |
 | `isFirstWaveFull(zoneState, config, currentTime)` | 氣墊船是否可放行 |
 | `buildZoneWaveConfig(tuning, zone)` | 共用參數加上該區的 `capacity` |
@@ -72,7 +107,9 @@
 
 ## 相關模組
 
-- [amphibiousAssault](amphibiousAssault.md) — 以額度決定 `isEmpty`／`isPaused`
+- [amphibiousAssault](amphibiousAssault.md) — 決定哪艘船放，處理 `isEmpty`／`isPaused`
+- [amphibiousLogistics](amphibiousLogistics.md) — `removeCargo`
+- [routePlanner](routePlanner.md) — `reserveCourse`
 - [hovercraft](hovercraft.md) — 受 `isFirstWaveFull` 限制
 - [assaultTimeline](assaultTimeline.md) — 各區預計波次
 - [系統架構](README.md)

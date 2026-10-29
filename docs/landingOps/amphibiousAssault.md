@@ -2,7 +2,7 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousAssault.lua`
 
-**職責**：LST 與 SAG 就位、ACV 釋放、記錄機降開始時間、空/機降區威脅與登陸單位統計
+**職責**：LST 與 SAG 就位、決定哪艘船放 ACV、記錄機降開始時間、空/機降區威脅與登陸單位統計
 
 ---
 
@@ -12,7 +12,7 @@ amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」�
 
 1. **記錄機降開始時間**：`recordLandingStartTime` 在 `WAITING_ASSAULT` 離開時，把現在時間存進 `airlandingMissionStartTime`，作為貨物補運的計時起點
 2. **LST 就位**：`moveToLaunchStations` 把展開線上的 LST 移到離岸 2～4 nm 的就位帶，SAG 移到兩棲載具集結區
-3. **ACV 釋放**：`launchACV` 從艦艙刪除貨物，在船側生成兩棲車並交給 `routeACV` 回呼排航線
+3. **ACV 釋放**：`launchACV` 決定哪艘船可以放，放出交給 [acvWave](acvWave.md)；空船回港
 4. **威脅評估**：`countContactsInArea` 數空/機降區內的敵方可移動設施
 5. **登陸統計**：`countUnitsInEachArea` 數各區 `air.attackHelicopter.zone` 內已登陸的紅方單位
 
@@ -49,25 +49,13 @@ Type 082 在反水雷階段已經 RTB，RORO 與駁船要留在展開線等 [adm
 
 ## ACV 釋放
 
-```mermaid
-flowchart TD
-    START["launchACV"]
-    EMPTY["isEmpty"]
-    PAUSED["isPaused"]
-    SPAWN["刪貨、生成、排航線"]
+事件腳本 `launchACV.lua` 經門面呼叫 `launchACV(amphibOps, zoneStates, ship)`。放 ACV 是衝擊上陸的一步，所以「這艘船該不該放」在這裡決定；車種、貨艙、額度、生成與航線都交給 [acvWave](acvWave.md) 的 `release`。
 
-    START -->|艙內無 ZBD/ZTD| EMPTY
-    START -->|有貨但額度為 0| PAUSED
-    START --> SPAWN
-```
+- 只處理渡輪或 LST（071／072／073 或名稱為 Ferry，`isFerryOrLST`），且船所在作戰區（以 `landing.acv.area` 判斷，`getShipZone`）已到 `ASSAULT_LANDING` 之後
+- `release` 回 `isEmpty`（艙內沒有 ZBD/ZTD，如 071）：船掛回基地並 RTB
+- `release` 回 `isPaused`（額度為 0）：船留在泛水出發線等下一波，不 RTB
 
-回傳 `SBJ__LaunchACVResult`（`count`、`isEmpty`、`isPaused`）；船不存在或已被摧毀時回 `nil`。
-
-- `isEmpty`：由門面讓船掛回基地並 RTB
-- `isPaused`：船留在泛水出發線，等 [acvWave](acvWave.md) 補下一波
-- 一般情況：`removeCargoByPriority` 依 `ACV_TYPES` 的順序（ZBD-05、ZTD-05）分配，每型最多取自己剩餘額度，再逐輛 `createSingleACV`，遇到第一個失敗即停
-
-單輛生成後設 `throttle = "Full"` 與關閉自動迴避，航線由 `routeACV` 回呼決定。
+`hasUnreleasedACV` 同樣分工：哪些船算數（展開線上的渡輪或 LST）在這裡判斷，船上還有沒有 ACV 問 `AcvWave.hasCargo`。
 
 ---
 
@@ -78,9 +66,8 @@ flowchart TD
 | `recordLandingStartTime(zoneState)` | 記錄 `airlandingMissionStartTime` |
 | `moveToLaunchStations(amphibOps, zone, units)` | LST 與 SAG 就位；任一失敗回 `false` |
 | `findDeployLineLSTLaterals(zone, frame, units)` | 展開線 LST 的橫向位置，供 [mineClearing](mineClearing.md) 排通道 |
-| `launchACV(params)` | 釋放兩棲車，`params` 為 `SBJ__ACVDeploymentParams` |
-| `isFerryOrLST(ship)` | 071／072／073 或名稱為 Ferry |
-| `getShipZone(zones, ship)` | 以 `landing.acv.area` 判斷船所屬作戰區 |
+| `launchACV(amphibOps, zoneStates, ship)` | 船觸發時放一批 ACV；空船回港 |
+| `hasUnreleasedACV(zone, ships)` | 展開線上是否還有船載著 ACV |
 | `countContactsInArea(contacts, area)` | 只數 `FACILITY_MOBILE` |
 | `countUnitsInEachArea(zones)` | 單位類別清單在程式碼的 `LANDED_UNIT_TYPES` |
 
@@ -94,7 +81,8 @@ flowchart TD
 |---|---|
 | `config.red.amphibOps.tuning.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
 | `zones[].landing.lstSettings.speed` | LST 速度 |
-| `zones[].landing.acv` | `area`（判斷船所屬區）、`distance`、`destination` |
+| `zones[].landing.acv.area` | 判斷船所屬區 |
+| `zones[].movement.baseGUID` | 空船掛回的基地 |
 | `zones[].air.attackHelicopter.zone` | 登陸單位統計範圍 |
 | `zones[].air.transportHelicopter.zone`、`contactThreshold` | 威脅評估範圍與門檻 |
 
@@ -102,8 +90,7 @@ flowchart TD
 
 ## 相關模組
 
-- [amphibiousLogistics](amphibiousLogistics.md) — `removeCargo`
-- [acvWave](acvWave.md) — 額度與分波
+- [acvWave](acvWave.md) — 放出 ACV、額度與分波
 - [shipMovement](shipMovement.md) — `teleportSagToFormation`
 - [adminOffloading](adminOffloading.md) — 後續階段
 - [系統架構](README.md)

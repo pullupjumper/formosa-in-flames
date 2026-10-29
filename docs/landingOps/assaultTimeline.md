@@ -247,7 +247,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 ### 實作
 
 - `ASSAULT_LANDING` 之前，`LandingOps.launchACV` 不動作。
-- `AmphibiousAssault.launchACV` 回傳 `{ count, isEmpty, isPaused }`：額度 0 → `isPaused`，船不 RTB；艙內沒 ZBD/ZTD → `isEmpty`，照舊掛回基地 RTB。
+- `AcvWave.release` 回傳 `{ count, isEmpty, isPaused }`：額度 0 → `isPaused`，船不 RTB；艙內沒 ZBD/ZTD → `isEmpty`，照舊掛回基地 RTB。
 - 071 沒有 ZBD/ZTD，第一次觸發就 RTB（掃雷艦不算 `isFerryOrLST`）。
 - `removeCargoByPriority` 依各車種額度分配（`min(5, 該車種額度)`）。
 - 每輛車放出後立刻記 GUID，同 tick 後面的船自然拿到較少額度。

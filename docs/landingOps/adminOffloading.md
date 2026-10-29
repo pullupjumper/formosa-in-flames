@@ -13,7 +13,7 @@
 模組由兩個入口驅動：
 
 - [coordinator](coordinator.md) 在 `WAITING_ADMIN_OFFLOADING` 呼叫 `startAdminOffloading`，派出駁船與 RORO
-- 事件腳本 `offloadVehicles.lua`（單位進入 ACV 區域）經門面 `LandingOps.offloadVehicles` 執行架橋與下卸；浮橋的建立與下卸的流程編排寫在**門面**，本模組只提供查詢與 `offloadVehicles` 動作
+- 事件腳本 `offloadVehicles.lua`（單位進入 ACV 區域）經門面 `LandingOps.offloadVehicles` 呼叫 `handleShipArrival`：駁船停下、架一次浮橋，浮橋還在時替配對的 RORO 下卸；RORO 原地停下。`barges` 只有本模組會寫
 
 駁船與 RORO 的對應存在 `amphibOps.barges`（`SBJ__BargeState`，見 `schema.lua`）：駁船 GUID、`bridgeGUID`、配對的 RORO GUID 清單。
 
@@ -64,12 +64,13 @@ flowchart TD
 | 函式 | 說明 |
 |---|---|
 | `startAdminOffloading(zone, barges, filteredUnits)` | 單一作戰區的駁船出發與 RORO 配對 |
+| `handleShipArrival(amphibOps, barges, ship)` | 駁船或 RORO 到達下卸點；沒登記的駁船回 `false` |
 | `offloadVehicles(params)` | 下卸車輛到灘頭 |
 | `hasExtendedBridge(barges, ship)` | 駁船是否已有 `bridgeGUID` |
 | `isBridgeDestroyed(barges, ship)` | 沒有 `bridgeGUID`，或浮橋單位已不存在，都回 `true` |
 | `getBargeROROZone(zones, barge, roro, pairingRangeNm)` | 配對的 RORO 能否下卸，回傳所屬作戰區或 `nil` |
 
-注意 `isBridgeDestroyed` 對「從未架橋」也回 `true`，呼叫端要先用 `hasExtendedBridge` 區分。`hasExtendedBridge` 假設 `barges[ship.guid]` 存在，對沒登記的駁船會報錯。
+注意 `isBridgeDestroyed` 對「從未架橋」也回 `true`，呼叫端要先用 `hasExtendedBridge` 區分。兩者對沒登記的駁船都不會報錯。
 
 ---
 

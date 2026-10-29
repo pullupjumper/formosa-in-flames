@@ -40,10 +40,11 @@
 | [mineClearing](mineClearing.md) | `mineClearing.lua` | 佈雷（除錯用）、Type 082 掃雷 |
 | [assaultBoat](assaultBoat.md) | `assaultBoat.lua` | 衝鋒舟配對、放出、到達追蹤 |
 | [obstacleClearing](obstacleClearing.md) | `obstacleClearing.lua` | 岸上障礙方塊與破障計時 |
-| [acvWave](acvWave.md) | `acvWave.lua` | 兩棲車存活上限與分波 |
+| [acvWave](acvWave.md) | `acvWave.lua` | 兩棲車生成、航線、存活上限與分波 |
 | [hovercraft](hovercraft.md) | `hovercraft.lua` | 氣墊船走通道、到點標記 |
 | [cargoRun](cargoRun.md) | `cargoRun.lua` | 載運階段：找有貨的載具、到點卸貨、返航 |
 | [trackedUnits](trackedUnits.md) | `trackedUnits.lua` | 被擊殺的單位從所有登記表刪掉 |
+| sagFireSupport | `sagFireSupport.lua` | 052D 所屬 SAG 壓制空/機降區 |
 | [debugFlow](debugFlow.md) | `debugFlow.lua` | 實測用的快轉與瞬移開關 |
 
 ---
@@ -64,9 +65,9 @@ flowchart TB
 ```
 
 - **事件腳本**：`landingCheck.lua`（每 5 分鐘）呼叫 `process`；`launchACV.lua`、`offloadVehicles.lua`、`attackAirlandingZone.lua` 由單位進入區域觸發。
-- **階段模組**：shipMovement、amphibiousLogistics、mineClearing、assaultBoat、obstacleClearing、amphibiousAssault、acvWave、hovercraft、adminOffloading。
-- **通道模組**：[laneGeometry](laneGeometry.md) 與 [routePlanner](routePlanner.md)，被 mineClearing、assaultBoat、obstacleClearing、hovercraft 和門面共用；它們不碰遊戲 API。
-- **外部模組**：coordinator 把 `missileSystem` 的 SRBM 庫存查詢交給 fireSupportGate、用 `strikePlanner` 排 GJ-11 偵察；門面用 `attackManager` 指揮 SAG 射擊。
+- **階段模組**：shipMovement、amphibiousLogistics、mineClearing、assaultBoat、obstacleClearing、amphibiousAssault、acvWave、hovercraft、adminOffloading、sagFireSupport。
+- **通道模組**：[laneGeometry](laneGeometry.md) 與 [routePlanner](routePlanner.md)，被 mineClearing、assaultBoat、obstacleClearing、hovercraft 和 acvWave 共用；它們不碰遊戲 API。
+- **外部模組**：coordinator 把 `missileSystem` 的 SRBM 庫存查詢交給 fireSupportGate、用 `strikePlanner` 排 GJ-11 偵察；sagFireSupport 用 `attackManager` 指揮 SAG 射擊。
 - 除錯開關 [debugFlow](debugFlow.md) 被多數階段模組讀取，圖上省略。
 
 ---
@@ -77,18 +78,12 @@ flowchart TB
 |---|---|---|
 | `init(config, saveData)` | 開局預算各區艦隊等待位置，結果寫入 `calculationResult` | `src/core/init.lua` |
 | `process(config, saveData)` | 取得接觸與艦船清單後轉交 `Coordinator.process`，並記錄耗時 | `landingCheck.lua` |
-| `launchACV(config, saveData, ship)` | 在 `ASSAULT_LANDING` 起釋放 ACV，見下節 | `launchACV.lua` |
-| `offloadVehicles(config, saveData, ship)` | 駁船架橋、RORO 下卸 | `offloadVehicles.lua` |
-| `attackAirlandingZone(config, ship)` | 052D 所屬 SAG 壓制空/機降區的可移動設施 | `attackAirlandingZone.lua` |
+| `launchACV(config, saveData, ship)` | 轉交 [amphibiousAssault](amphibiousAssault.md) 的 `launchACV`，在 `ASSAULT_LANDING` 起釋放 ACV | `launchACV.lua` |
+| `offloadVehicles(config, saveData, ship)` | 轉交 [adminOffloading](adminOffloading.md) 的 `handleShipArrival`：駁船架橋、RORO 下卸 | `offloadVehicles.lua` |
+| `attackAirlandingZone(config, ship)` | 轉交 sagFireSupport：052D 所屬 SAG 壓制空/機降區的可移動設施 | `attackAirlandingZone.lua` |
 | `countUnitsInEachArea(config)` | 各區已登陸單位統計 | `unitStatusUI.lua` |
 
-門面函式都收 `config`、`saveData` 並自行解析 persistent state（`PersistentState.landingOps(saveData)`），所以呼叫端不用知道內部切片。
-
-### 為什麼 launchACV 要在門面組裝？
-
-ACV 的航線要走已掃出的通道，需要 `zoneState`、`obstacle`、`laneSlots` 與 `AcvWave` 額度，這些都是套件內部狀態。門面的 `buildACVRouter` 把它們收成一個 `routeACV` 回呼交給 [amphibiousAssault](amphibiousAssault.md)，後者不必知道通道。回呼同時把每輛車記進 `AcvWave`，所以同一 tick 內後處理的船自然拿到較少額度。
-
-沒有可用通道時退回 `zone.landing.acv.destination` 並記 WARN。艙內沒有 ZBD/ZTD 的船（如 071）第一次觸發就掛回基地並 RTB；額度為 0 的船留在泛水出發線等下一波，不 RTB。
+門面函式都收 `config`、`saveData` 並自行解析 persistent state（`PersistentState.landingOps(saveData)`），所以呼叫端不用知道內部切片。門面只做這件事，流程都在內部模組。
 
 ---
 
