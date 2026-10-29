@@ -363,4 +363,74 @@ function AdminOffloading.offloadVehicles(params)
   return count
 end
 
+---Stop a ship in place at its offload position
+---@param ship CMO__Unit
+local function holdInPlace(ship)
+  ship.course = nil
+  ship.manualSpeed = 0
+  ship.holdposition = true
+end
+
+---Offload the cargo of every RORO paired with a barge onto the beach
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param barge CMO__Unit
+---@param bargeState SBJ__BargeState
+local function offloadPairedROROs(amphibOps, barge, bargeState)
+  for _, guid in ipairs(bargeState.roros) do
+    local roro = GameApi.ScenEdit_GetUnit(guid)
+
+    if roro then
+      local zone = AdminOffloading.getBargeROROZone(amphibOps.zones, barge, roro, amphibOps.bargeRoroPairingRangeNm)
+
+      if zone then
+        AdminOffloading.offloadVehicles({
+          ship = roro,
+          num = amphibOps.roroOffloadBatchSize,
+          bearing = zone.heading,
+          distance = zone.landing.acv.distance,
+          firstDistance = 1
+        })
+      end
+    end
+  end
+end
+
+---Handle a barge or RORO reaching its offload position.
+---A barge stops and extends a bridge once, then offloads its paired ROROs while the bridge stands.
+---A RORO stops in place.
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
+---@param ship CMO__Unit
+---@return boolean # True if the offload workflow was handled
+function AdminOffloading.handleShipArrival(amphibOps, bargeMap, ship)
+  if ship.name == SHIP_NAMES.BARGE and not AdminOffloading.hasExtendedBridge(bargeMap, ship) then
+    holdInPlace(ship)
+
+    local bridge = GameApi.ScenEdit_AddUnit({
+      side = constants.SIDES.RED,
+      type = constants.UNIT_TYPES.FACILITY,
+      latitude = ship.latitude,
+      longitude = ship.longitude,
+      dbid = constants.PLATFORMS.BRIDGE,
+      unitname = "bridge",
+    })
+
+    if not bridge then
+      return false
+    end
+
+    bargeMap[ship.guid].bridgeGUID = bridge.guid
+  end
+
+  if ship.name == SHIP_NAMES.BARGE and not AdminOffloading.isBridgeDestroyed(bargeMap, ship) then
+    offloadPairedROROs(amphibOps, ship, bargeMap[ship.guid])
+  end
+
+  if ship.name == SHIP_NAMES.RORO then
+    holdInPlace(ship)
+  end
+
+  return true
+end
+
 return AdminOffloading

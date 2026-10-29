@@ -1047,4 +1047,83 @@ describe("AdminOffloading", function()
       assert.is_nil(result)
     end)
   end)
+  describe("handleShipArrival", function()
+    it("should stop the barge and extend a bridge when no bridge exists", function()
+      local barge = buildUnit({ guid = "BARGE-001", name = "Barge", course = { { latitude = 25.1, longitude = 121.1 } } })
+      local barges = { [barge.guid] = { guid = barge.guid, roros = {} } }
+      local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "BRIDGE-001" }))
+
+      local result = AdminOffloading.handleShipArrival(buildAmphibOpsConfig(), barges, barge)
+
+      assert.is_true(result)
+      assert.is_nil(barge.course)
+      assert.are.equal(0, barge.manualSpeed)
+      assert.is_true(barge.holdposition)
+      assert.are.equal("BRIDGE-001", barges[barge.guid].bridgeGUID)
+      assert.stub(stubAddUnit).was.called(1)
+    end)
+
+    it("should return false when the bridge cannot be created", function()
+      local barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
+      local barges = { [barge.guid] = { guid = barge.guid, roros = {} } }
+      trackStub(stub(GameApi, "ScenEdit_AddUnit").returns(nil))
+
+      local result = AdminOffloading.handleShipArrival(buildAmphibOpsConfig(), barges, barge)
+
+      assert.is_false(result)
+      assert.is_nil(barges[barge.guid].bridgeGUID)
+    end)
+
+    it("should offload vehicles for paired RORO units when the barge bridge is active", function()
+      local barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
+      local roro = buildUnit({ guid = "RORO-001", name = "RORO" })
+      local zone = buildZone()
+      local barges = { [barge.guid] = { guid = barge.guid, bridgeGUID = "BRIDGE-001", roros = { roro.guid } } }
+      local config = buildAmphibOpsConfig({ zones = { zone }, roroOffloadBatchSize = 20 })
+      local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+        if guid == "BRIDGE-001" then return { guid = guid } end
+        if guid == roro.guid then return roro end
+      end))
+      local stubGetZone = trackStub(stub(AdminOffloading, "getBargeROROZone").returns(zone))
+      local stubOffload = trackStub(stub(AdminOffloading, "offloadVehicles").returns(20))
+
+      local result = AdminOffloading.handleShipArrival(config, barges, barge)
+
+      assert.is_true(result)
+      assert.stub(stubAddUnit).was_not.called()
+      assert.stub(stubGetZone).was.called_with({ zone }, barge, roro, 1)
+      assert.stub(stubOffload).was.called_with({
+        ship = roro,
+        num = 20,
+        bearing = zone.heading,
+        distance = zone.landing.acv.distance,
+        firstDistance = 1
+      })
+    end)
+
+    it("should not offload when the barge bridge is destroyed", function()
+      local barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
+      local barges = { [barge.guid] = { guid = barge.guid, bridgeGUID = "BRIDGE-001", roros = { "RORO-001" } } }
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      local stubOffload = trackStub(stub(AdminOffloading, "offloadVehicles"))
+
+      local result = AdminOffloading.handleShipArrival(buildAmphibOpsConfig(), barges, barge)
+
+      assert.is_true(result)
+      assert.stub(stubOffload).was_not.called()
+    end)
+
+    it("should stop a RORO ship in place", function()
+      local roro = buildUnit({ name = "RORO", course = { { latitude = 25.1, longitude = 121.1 } }, manualSpeed = 12 })
+
+      local result = AdminOffloading.handleShipArrival(buildAmphibOpsConfig(), {}, roro)
+
+      assert.is_true(result)
+      assert.is_nil(roro.course)
+      assert.are.equal(0, roro.manualSpeed)
+      assert.is_true(roro.holdposition)
+    end)
+  end)
 end)

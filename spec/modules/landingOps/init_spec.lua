@@ -279,78 +279,16 @@ describe("LandingOps", function()
   end)
 
   describe("offloadVehicles", function()
-    it("should create a bridge and stop the barge when no bridge exists", function()
+    it("should forward the amphibious config, barge registry and ship to AdminOffloading", function()
       local ship = buildShip({ name = "Barge" })
-      local saveData = buildSaveData({
-        barges = {
-          [ship.guid] = {
-            roros = {},
-          },
-        },
-      })
-      local configOverrides = {}
-      local stubHasBridge = trackStub(stub(AdminOffloading, "hasExtendedBridge").returns(false))
-      local stubIsBridgeDestroyed = trackStub(stub(AdminOffloading, "isBridgeDestroyed").returns(true))
-      local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
-
-      local result = LandingOps.offloadVehicles(buildConfig(configOverrides), saveData, ship)
-
-      assert.is_true(result)
-      assert.is_nil(ship.course)
-      assert.are.equal(0, ship.manualSpeed)
-      assert.is_true(ship.holdposition)
-      assert.are.equal("BRIDGE-001", saveData.red.amphibOps.barges[ship.guid].bridgeGUID)
-      assert.stub(stubHasBridge).was.called(1)
-      assert.stub(stubIsBridgeDestroyed).was.called(1)
-      assert.stub(stubAddUnit).was.called(1)
-    end)
-
-    it("should offload vehicles for paired RORO units when the barge bridge is active", function()
-      local ship = buildShip({ name = "Barge", guid = "BARGE-001" })
-      local roro = buildShip({ name = "RORO", guid = "RORO-001" })
-      local zone = buildZone()
-      local saveData = buildSaveData({
-        barges = {
-          [ship.guid] = {
-            bridgeGUID = "BRIDGE-001",
-            roros = { roro.guid },
-          },
-        },
-      })
-      local configOverrides = { zones = { zone }, bargeRoroPairingRangeNm = 1, roroOffloadBatchSize = 20 }
-      local stubHasBridge = trackStub(stub(AdminOffloading, "hasExtendedBridge").returns(true))
-      local stubIsBridgeDestroyed = trackStub(stub(AdminOffloading, "isBridgeDestroyed").returns(false))
-      local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(roro))
-      local stubGetZone = trackStub(stub(AdminOffloading, "getBargeROROZone").returns(zone))
-      local stubOffload = trackStub(stub(AdminOffloading, "offloadVehicles").returns(20))
-
-      local result = LandingOps.offloadVehicles(buildConfig(configOverrides), saveData, ship)
-
-      assert.is_true(result)
-      assert.stub(stubHasBridge).was.called_with(saveData.red.amphibOps.barges, ship)
-      assert.stub(stubIsBridgeDestroyed).was.called_with(saveData.red.amphibOps.barges, ship)
-      assert.stub(stubGetUnit).was.called_with(roro.guid)
-      assert.stub(stubGetZone).was.called_with({ zone }, ship, roro, 1)
-      assert.stub(stubOffload).was.called_with({
-        ship = roro,
-        num = 20,
-        bearing = zone.heading,
-        distance = zone.landing.acv.distance,
-        firstDistance = 1
-      })
-    end)
-
-    -- Stops a RORO ship in place without extra offload work
-    it("should stop a RORO ship in place", function()
-      local ship = buildShip({ name = "RORO" })
+      local amphibOpsConfig = { zones = {} }
       local saveData = buildSaveData({ barges = {} })
+      local stubHandle = trackStub(stub(AdminOffloading, "handleShipArrival").returns(true))
 
-      local result = LandingOps.offloadVehicles(buildConfig({}), saveData, ship)
+      local result = LandingOps.offloadVehicles(buildConfig(amphibOpsConfig), saveData, ship)
 
       assert.is_true(result)
-      assert.is_nil(ship.course)
-      assert.are.equal(0, ship.manualSpeed)
-      assert.is_true(ship.holdposition)
+      assert.stub(stubHandle).was.called_with(amphibOpsConfig, saveData.red.amphibOps.barges, ship)
     end)
   end)
 

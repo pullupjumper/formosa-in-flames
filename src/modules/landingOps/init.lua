@@ -170,57 +170,8 @@ end
 ---@param ship CMO__Unit
 ---@return boolean # True if the offload workflow was handled
 function LandingOps.offloadVehicles(config, saveData, ship)
-  local barges = PersistentState.landingOps(saveData).amphibOps.barges
-
-  if ship.name == "Barge" and not AdminOffloading.hasExtendedBridge(barges, ship) then
-    ship.course = nil
-    ship.manualSpeed = 0
-    ship.holdposition = true
-
-    local bridge = GameApi.ScenEdit_AddUnit({
-      side = constants.SIDES.RED,
-      type = constants.UNIT_TYPES.FACILITY,
-      latitude = ship.latitude,
-      longitude = ship.longitude,
-      dbid = constants.PLATFORMS.BRIDGE,
-      unitname = "bridge",
-    })
-
-    if not bridge then
-      return false
-    end
-
-    barges[ship.guid].bridgeGUID = bridge.guid
-  end
-
-  if ship.name == "Barge" and not AdminOffloading.isBridgeDestroyed(barges, ship) then
-    for _, guid in ipairs(barges[ship.guid].roros) do
-      local roro = GameApi.ScenEdit_GetUnit(guid)
-
-      if roro then
-        local zone = AdminOffloading.getBargeROROZone(
-          config.red.amphibOps.zones, ship, roro, config.red.amphibOps.bargeRoroPairingRangeNm)
-
-        if zone then
-          AdminOffloading.offloadVehicles({
-            ship = roro,
-            num = config.red.amphibOps.roroOffloadBatchSize,
-            bearing = zone.heading,
-            distance = zone.landing.acv.distance,
-            firstDistance = 1
-          })
-        end
-      end
-    end
-  end
-
-  if ship.name == "RORO" then
-    ship.course = nil
-    ship.manualSpeed = 0
-    ship.holdposition = true
-  end
-
-  return true
+  return AdminOffloading.handleShipArrival(
+    config.red.amphibOps, PersistentState.landingOps(saveData).amphibOps.barges, ship)
 end
 
 ---Attack airlanding zone contacts with SAG surface fire support
