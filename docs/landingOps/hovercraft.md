@@ -47,6 +47,8 @@ flowchart TD
 | `unloading` | `GameUtils.isCargoUnloaded`（`condition` 是 `"Underway"` 且 `cargo` 已空）成立時 `RTB(true)` | `returning` |
 | `returning` | 不再處理 | — |
 
+查不到的氣墊船（已被擊殺）由 [trackedUnits](trackedUnits.md) 整筆刪掉，之後不再查；擊殺事件也會刪。
+
 流程與直升機一致，見 [heliWave](heliWave.md)。卸貨後直接返航，所以不再設 `unit.mission`；`missionName` 欄位目前沒有用到。舊存檔沒有 `phase` 的氣墊船不會被推進。
 
 ---

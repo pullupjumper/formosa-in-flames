@@ -810,7 +810,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field guid string Unit taking the slot
 ---@field laneSlots SBJ__LaneSlotsState Slot holders per beach lane id (shared by every unit kind)
 ---@field cells SBJ__ObstacleCellEntry[]|nil
----@field isAlive fun(guid: string): boolean
+---@field removeMissing fun(guid: string): boolean Remove a slot holder that no longer exists; true if it was removed
 
 ---@class SBJ__BuildRouteOpts: table
 ---@field isFromDeployLine? boolean Prepend the water lane's deployment line point (units launched far offshore)
@@ -830,7 +830,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__AssaultBoatState: table
 ---@field shipGuid string Carrying LST
 ---@field beachLaneId string Paired beach lane
----@field status string "pending" | "launched" | "arrived" | "lost"
+---@field status string "pending" | "launched" | "arrived"
 ---@field finalPoint? CMO__Location S_lane, set at launch
 
 ---@class SBJ__HovercraftState: table

@@ -9,21 +9,12 @@ local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSyst
 local constants = require("src.core.constants")
 local unit = GameApi.ScenEdit_UnitX()
 
-local HELI_WAVE_AIRCRAFT = {
-  [constants.PLATFORMS.Z10] = true,
-  [constants.PLATFORMS.Z18] = true,
-  [constants.PLATFORMS.IL76] = true,
-}
-
 PersistentState.update(function(saveData)
   if unit then
     local score = GameApi.ScenEdit_GetScore(constants.SIDES.BLUE)
+    LandingOps.removeDestroyedUnit(saveData, unit.guid)
 
     if unit.type == constants.UNIT_TYPES.AIRCRAFT then
-      if HELI_WAVE_AIRCRAFT[unit.dbid] then
-        LandingOps.removeDestroyedHeliWaveUnit(saveData, unit.guid)
-      end
-
       if unit.dbid == constants.PLATFORMS.Y9DZ then
         GameApi.ScenEdit_SetScore(
           constants.SIDES.BLUE,

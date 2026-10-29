@@ -4,6 +4,7 @@ local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
 ---Route loaded Type 726A hovercraft from the LHD and LPDs through cleared lanes to a parking slot.
 ---Route each hovercraft once. After it arrives, it unloads at its parking slot.
@@ -99,7 +100,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           queueCounters = zoneState.queueCounters,
           laneSlots = zoneState.laneSlots,
           cells = zoneState.obstacle and zoneState.obstacle.cells,
-          isAlive = GameUtils.hasUnit,
+          removeMissing = function(guid) return TrackedUnits.removeMissing(zoneState, guid) end,
         }, { isFromDeployLine = true })
 
         if plan then
@@ -150,7 +151,7 @@ end
 ---@param zoneState SBJ__ZoneState
 function Hovercraft.updateHovercraft(amphibOps, zoneState)
   for guid, entry in pairs(zoneState.hovercraft or {}) do
-    local craft = GameApi.ScenEdit_GetUnit(guid)
+    local craft = TrackedUnits.findUnit(zoneState, guid)
 
     if craft then
       updateHovercraftPhase(amphibOps, craft, entry)

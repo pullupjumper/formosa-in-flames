@@ -38,7 +38,6 @@ describe("ObstacleClearing", function()
     local boats = {
       ["BOAT-ALIVE"] = { beachLaneId = "W1-B1", status = "arrived" },
       ["BOAT-DEAD"] = { beachLaneId = "W1-B2", status = "arrived" },
-      ["BOAT-LOST"] = { beachLaneId = "W1-B3", status = "lost" },
     }
     local zoneState = { lanes = LaneGeometry.buildLanes(params), boats = boats }
     return zoneState

@@ -10,7 +10,7 @@
 
 不加控制時，渡輪一次載 56+56 輛，桃園第 2 次釋放就超過一個旅（224 輛），之後仍持續放出。acvWave 規定**每區每車種**（ZBD-05、ZTD-05 各自計算）同時存活數不超過該區的 `capacity`（旅級 112，Penghu 營級 28）。
 
-額度以已放出的車輛 GUID 計算：存活數 = 仍存在的 GUID 數（航行途中也算）。被摧毀的車 `ScenEdit_GetUnit` 回 `nil`，會在下次計算時剔除。GUID 存在 `zoneState.acvGuids`，暫停時間存在 `zoneState.acvPausedAt`（型別見 `schema.lua` 的 `SBJ__ZoneState`）。
+額度以已放出的車輛 GUID 計算：存活數 = 仍存在的 GUID 數（航行途中也算）。被擊殺的車由 [trackedUnits](trackedUnits.md) 刪掉（擊殺事件，或計算時第一次查不到）。GUID 存在 `zoneState.acvGuids`，暫停時間存在 `zoneState.acvPausedAt`（型別見 `schema.lua` 的 `SBJ__ZoneState`）。
 
 ---
 

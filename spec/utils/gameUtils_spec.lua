@@ -24,24 +24,6 @@ describe("GameUtils", function()
     end
   end)
 
-  -- ============================================================================
-  -- hasUnit
-  -- ============================================================================
-
-  describe("hasUnit", function()
-    it("should return true when the GUID resolves to a unit", function()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U-1" }))
-
-      assert.is_true(GameUtils.hasUnit("U-1"))
-    end)
-
-    it("should return false when the GUID does not resolve", function()
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-
-      assert.is_false(GameUtils.hasUnit("U-GONE"))
-    end)
-  end)
-
   describe("isCargoUnloaded", function()
     local constants = require("src.core.constants")
 

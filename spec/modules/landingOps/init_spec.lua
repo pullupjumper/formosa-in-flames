@@ -433,13 +433,13 @@ describe("LandingOps", function()
     end)
   end)
 
-  describe("removeDestroyedHeliWaveUnit", function()
+  describe("removeDestroyedUnit", function()
     it("should remove the unit from the zone that recorded it", function()
       local zoneStateA = { heliWave = { units = {}, attackers = {} } }
       local zoneStateB = { heliWave = { units = { T1 = {} }, attackers = {} } }
       local saveData = buildSaveData({ zoneStates = { A = zoneStateA, B = zoneStateB } })
 
-      assert.is_true(LandingOps.removeDestroyedHeliWaveUnit(saveData, "T1"))
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "T1"))
 
       assert.is_nil(zoneStateB.heliWave.units.T1)
     end)
@@ -447,7 +447,66 @@ describe("LandingOps", function()
     it("should return false when no zone recorded the unit", function()
       local saveData = buildSaveData({ zoneStates = { A = { heliWave = { units = {}, attackers = {} } } } })
 
-      assert.is_false(LandingOps.removeDestroyedHeliWaveUnit(saveData, "NOPE"))
+      assert.is_false(LandingOps.removeDestroyedUnit(saveData, "NOPE"))
+    end)
+
+    it("should remove a destroyed ACV so it no longer counts against the wave quota", function()
+      local zoneState = { acvGuids = { zbd05 = { "ACV-1", "ACV-2" } } }
+      local saveData = buildSaveData({ zoneStates = { A = zoneState } })
+
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "ACV-1"))
+
+      assert.are.same({ "ACV-2" }, zoneState.acvGuids.zbd05)
+    end)
+
+    it("should remove a destroyed assault boat", function()
+      local zoneState = { boats = { ["BOAT-1"] = { status = "launched" }, ["BOAT-2"] = { status = "launched" } } }
+      local saveData = buildSaveData({ zoneStates = { A = zoneState } })
+
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "BOAT-1"))
+
+      assert.is_nil(zoneState.boats["BOAT-1"])
+      assert.is_not_nil(zoneState.boats["BOAT-2"])
+    end)
+
+    it("should remove a destroyed hovercraft", function()
+      local zoneState = { hovercraft = { ["LCAC-1"] = { phase = "enroute" } } }
+      local saveData = buildSaveData({ zoneStates = { A = zoneState } })
+
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "LCAC-1"))
+
+      assert.is_nil(zoneState.hovercraft["LCAC-1"])
+    end)
+
+    it("should remove a destroyed minesweeper", function()
+      local zoneState = { minesweepers = { ["MCM-1"] = { isDone = false } } }
+      local saveData = buildSaveData({ zoneStates = { A = zoneState } })
+
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "MCM-1"))
+
+      assert.is_nil(zoneState.minesweepers["MCM-1"])
+    end)
+
+    it("should free the parking slot of a destroyed unit at once and keep the slots a dense array", function()
+      local zoneState = { laneSlots = { ["W1-B1"] = { "ACV-1", "ACV-2" } } }
+      local saveData = buildSaveData({ zoneStates = { A = zoneState } })
+
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "ACV-1"))
+
+      assert.are.same({ false, "ACV-2" }, zoneState.laneSlots["W1-B1"])
+    end)
+
+    it("should remove a unit from every record that holds it", function()
+      local zoneState = {
+        boats = { ["BOAT-1"] = { status = "arrived" } },
+        laneSlots = { ["W1-B1"] = { false, "BOAT-1" } },
+      }
+      local saveData = buildSaveData({ zoneStates = { A = zoneState } })
+
+      assert.is_true(LandingOps.removeDestroyedUnit(saveData, "BOAT-1"))
+
+      assert.is_nil(zoneState.boats["BOAT-1"])
+      assert.are.same({ false, false }, zoneState.laneSlots["W1-B1"])
     end)
   end)
 end)

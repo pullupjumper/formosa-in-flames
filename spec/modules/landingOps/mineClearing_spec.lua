@@ -315,11 +315,12 @@ describe("MineClearing", function()
       assert.is_false(rtbCalled)
     end)
 
-    it("should count a destroyed sweeper as done", function()
+    it("should remove a sweeper that is no longer found and report done", function()
       stubUnits({})
       local zoneState = { minesweepers = { ["529-1"] = { finalPoint = FINAL, isDone = false } } }
 
       assert.is_true(MineClearing.updateMineClearing(buildConfig(), zoneState))
+      assert.is_nil(zoneState.minesweepers["529-1"])
     end)
   end)
 end)

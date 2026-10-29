@@ -100,6 +100,15 @@ describe("AcvWave", function()
     assert.are.equal(1, AcvWave.getQuota(zoneState, CONFIG, 700).zbd05)
   end)
 
+  it("should free the parking slot of an ACV that is no longer found", function()
+    local zoneState = { laneSlots = { ["W1-B1"] = { "ACV-DEAD" } } }
+    AcvWave.addACV(zoneState, "zbd05", "ACV-DEAD")
+
+    AcvWave.getQuota(zoneState, CONFIG, 0)
+
+    assert.are.same({ false }, zoneState.laneSlots["W1-B1"])
+  end)
+
   describe("buildZoneWaveConfig", function()
     it("should take the cap from the zone and keep the shared tuning", function()
       local tuning = { lossRatio = 0.5, holdSec = 600 }

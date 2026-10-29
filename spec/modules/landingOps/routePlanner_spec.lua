@@ -62,7 +62,7 @@ describe("RoutePlanner", function()
       queueCounters = {},
       laneSlots = {},
       cells = {},
-      isAlive = function() return true end,
+      removeMissing = function() return false end,
     }
     if overrides then
       for k, v in pairs(overrides) do params[k] = v end
@@ -156,7 +156,7 @@ describe("RoutePlanner", function()
       clearAll(lanes)
       local beachLane = lanes.waterLanes[1].beachLanes[1]
       local params = buildParams(lanes, {
-        isAlive = function(guid) return guid ~= "DEAD-1" end,
+        removeMissing = function(guid) return guid == "DEAD-1" end,
       })
       params.laneSlots[beachLane.id] = { "DEAD-1" }
       params.queueCounters.W1 = 4

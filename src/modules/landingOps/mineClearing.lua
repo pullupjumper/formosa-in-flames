@@ -5,6 +5,7 @@ local LogFormat = require("src.utils.logFormat")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
 local MineClearing = {}
 
@@ -210,7 +211,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
   return true
 end
 
----Update mine clearing: send the sweepers that reached the end of their serpentine home. Destroyed sweepers count as done
+---Update mine clearing: send the sweepers that reached the end of their serpentine home. A sweeper that is no longer found does not hold the zone back
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when every sweeper is done
@@ -220,19 +221,17 @@ function MineClearing.updateMineClearing(amphibOps, zoneState)
 
   for guid, entry in pairs(zoneState.minesweepers or {}) do
     if not entry.isDone then
-      local sweeper = GameApi.ScenEdit_GetUnit(guid)
+      local sweeper = TrackedUnits.findUnit(zoneState, guid)
       local range = sweeper and GameApi.Tool_Range(guid, entry.finalPoint)
 
-      if not sweeper then
-        entry.isDone = true
-      elseif range and range < arrivalNm then
+      if sweeper and range and range < arrivalNm then
         sweeper:RTB(true)
         entry.isDone = true
 
         if DebugFlow.isFastForward(amphibOps, zoneState.phase) then
           DebugFlow.teleport(sweeper.guid, { latitude = sweeper.base.latitude, longitude = sweeper.base.longitude })
         end
-      else
+      elseif sweeper then
         isAllDone = false
       end
     end

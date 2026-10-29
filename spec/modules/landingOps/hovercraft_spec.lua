@@ -1,4 +1,4 @@
----@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field, missing-fields
 -- LandingOps Hovercraft Unit Tests
 local Hovercraft = require("src.modules.landingOps.hovercraft")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
@@ -127,6 +127,21 @@ describe("Hovercraft", function()
       assert.are.equal("enroute", entry.phase)
     end)
 
+    it("should remove a dead slot holder from every record when it takes over the slot", function()
+      local calls = {}
+      stubFleet(buildCraft(calls))
+      local zoneState = buildZoneState(true)
+      zoneState.acvGuids = { zbd05 = { "ACV-DEAD" } }
+      zoneState.laneSlots = {}
+      for _, beachLane in ipairs(zoneState.lanes.waterLanes[1].beachLanes) do
+        zoneState.laneSlots[beachLane.id] = { "ACV-DEAD" }
+      end
+
+      Hovercraft.launchHovercraft(CONFIG, zone, zoneState, { { guid = "LHD-1" } })
+
+      assert.are.same({}, zoneState.acvGuids.zbd05)
+    end)
+
     it("should not launch when no beach lane is cleared", function()
       local calls = {}
       stubFleet(buildCraft(calls))
@@ -235,6 +250,26 @@ describe("Hovercraft", function()
 
       assert.stub(stubUnload).was_not.called()
       assert.spy(craft.RTB).was_not.called()
+    end)
+
+    it("should stop looking up a hovercraft that is no longer found", function()
+      local getUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      local zoneState = buildState("enroute")
+
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+
+      assert.stub(getUnit).was.called(1)
+    end)
+
+    it("should free the parking slot of a hovercraft that is no longer found", function()
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      local zoneState = buildState("enroute")
+      zoneState.laneSlots = { ["W1-B1"] = { "LCAC-1" } }
+
+      Hovercraft.updateHovercraft(CONFIG, zoneState)
+
+      assert.are.same({ false }, zoneState.laneSlots["W1-B1"])
     end)
   end)
 

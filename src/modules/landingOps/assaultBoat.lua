@@ -4,6 +4,7 @@ local LogFormat = require("src.utils.logFormat")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 local AssaultBoat = {}
 
 -- ============================================================================
@@ -14,7 +15,6 @@ local STATUS = {
   PENDING  = "pending",
   LAUNCHED = "launched",
   ARRIVED  = "arrived",
-  LOST     = "lost",
 }
 
 ---@type table<number, true>
@@ -189,7 +189,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
   for boatGuid, entry in pairs(zoneState.boats or {}) do
     if entry.status == STATUS.PENDING then
       local ship = GameApi.ScenEdit_GetUnit(entry.shipGuid)
-      local boat = GameApi.ScenEdit_GetUnit(boatGuid)
+      local boat = TrackedUnits.findUnit(zoneState, boatGuid)
 
       if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.landing.acv.area) then
         local course = RoutePlanner.buildBoatRoute(entry.beachLaneId, {
@@ -220,7 +220,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
   report.emit()
 end
 
----Update boats until each one reaches S_lane or is lost
+---Update boats until each one reaches S_lane. A boat that is no longer found no longer holds the zone back
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when no boat is still pending or under way
@@ -230,7 +230,7 @@ function AssaultBoat.updateBoats(amphibOps, zoneState)
 
   for guid, entry in pairs(zoneState.boats or {}) do
     if entry.status == STATUS.PENDING or entry.status == STATUS.LAUNCHED then
-      local boat = GameApi.ScenEdit_GetUnit(guid)
+      local boat = TrackedUnits.findUnit(zoneState, guid)
 
       if boat and DebugFlow.isFastForward(amphibOps, zoneState.phase) then
         boat.course = nil
@@ -239,11 +239,9 @@ function AssaultBoat.updateBoats(amphibOps, zoneState)
 
       local range = boat and entry.finalPoint and GameApi.Tool_Range(guid, entry.finalPoint)
 
-      if not boat then
-        entry.status = STATUS.LOST
-      elseif range and range < arrivalNm then
+      if range and range < arrivalNm then
         entry.status = STATUS.ARRIVED
-      else
+      elseif boat then
         isAllDone = false
       end
     end
@@ -271,7 +269,7 @@ end
 function AssaultBoat.findLandedLaneIdSet(zoneState)
   local laneIdSet = {}
   for boatGuid, entry in pairs(zoneState.boats or {}) do
-    if entry.status == STATUS.ARRIVED and GameApi.ScenEdit_GetUnit(boatGuid) then
+    if entry.status == STATUS.ARRIVED and TrackedUnits.findUnit(zoneState, boatGuid) then
       laneIdSet[entry.beachLaneId] = true
     end
   end

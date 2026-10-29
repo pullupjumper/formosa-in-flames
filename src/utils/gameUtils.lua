@@ -213,12 +213,6 @@ function GameUtils.createArea(position, params)
   return (rpTable)
 end
 
----Check if a unit GUID still resolves
----@param guid string
----@return boolean
-function GameUtils.hasUnit(guid)
-  return GameApi.ScenEdit_GetUnit(guid) ~= nil
-end
 
 ---Check if a unit has finished unloading its cargo: it is under way again
 ---@param unit CMO__Unit

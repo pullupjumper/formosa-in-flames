@@ -19,7 +19,7 @@ flowchart TD
 - `launchBoats`：`BOAT_ASSAULT` 每 tick 呼叫
 - `updateBoats`：每 tick 呼叫，全部完成才換階段
 
-每艘衝鋒舟的狀態記在 `zoneState.boats[guid]`（`SBJ__AssaultBoatState`）：`pending` → `launched` → `arrived`，被摧毀為 `lost`。
+每艘衝鋒舟的狀態記在 `zoneState.boats[guid]`（`SBJ__AssaultBoatState`）：`pending` → `launched` → `arrived`。被擊殺的舟整筆刪掉（擊殺事件或輪詢查不到），不留狀態，見 [trackedUnits](trackedUnits.md)。
 
 ---
 
@@ -46,9 +46,9 @@ flowchart TD
 2. `boat.course = 航線`，`manualSpeed = tuning.assaultBoat.speed`，再 `boat:Launch(true)` — **先 course 再 Launch**
 3. 狀態改 `launched`，記 `finalPoint`（S_lane）
 
-`updateBoats` 判斷：單位不存在 → `lost`；離 `finalPoint` 小於 `arrivalNm` → `arrived`。沒有任何舟處於 `pending` 或 `launched` 時回 `true`。
+`launchBoats` 和 `updateBoats` 查不到舟就整筆刪掉。`updateBoats` 判斷：離 `finalPoint` 小於 `arrivalNm` → `arrived`。沒有任何舟處於 `pending` 或 `launched` 時回 `true`。
 
-`findLandedLaneIdSet` 回傳「舟已到達且仍存活」的灘際通道，[obstacleClearing](obstacleClearing.md) 只對這些通道破障。
+`findLandedLaneIdSet` 回傳「舟已到達且仍存活」的灘際通道（查不到的舟同樣刪掉），[obstacleClearing](obstacleClearing.md) 只對這些通道破障。
 
 ---
 

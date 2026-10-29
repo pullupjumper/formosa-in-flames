@@ -1,17 +1,17 @@
-local GameApi = require("src.utils.gameApi")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
 ---Limit each zone's living ACVs to the brigade size per type. Release the ACVs in waves.
 ---Record launched GUIDs at once, so ships that trigger in the same tick share the quota.
 local AcvWave = {}
 
----Remove destroyed ACV GUIDs and return the number of ACVs that remain
+---Remove the ACVs that are no longer found and return the number of ACVs that remain.
+---TrackedUnits removes each one from guids and from every other record of the zone
+---@param zoneState SBJ__ZoneState
 ---@param guids string[]
 ---@return integer
-local function removeDestroyed(guids)
+local function removeMissingACVs(zoneState, guids)
   for i = #guids, 1, -1 do
-    if not GameApi.ScenEdit_GetUnit(guids[i]) then
-      table.remove(guids, i)
-    end
+    TrackedUnits.removeMissing(zoneState, guids[i])
   end
   return #guids
 end
@@ -25,7 +25,7 @@ end
 local function calculateTypeQuota(zoneState, key, config, currentTime)
   local capacity = config.capacity[key] or 0
   zoneState.acvGuids[key] = zoneState.acvGuids[key] or {}
-  local alive = removeDestroyed(zoneState.acvGuids[key])
+  local alive = removeMissingACVs(zoneState, zoneState.acvGuids[key])
   local pausedAt = zoneState.acvPausedAt[key]
 
   if pausedAt then
@@ -94,7 +94,7 @@ function AcvWave.isFirstWaveFull(zoneState, config, currentTime)
   zoneState.acvGuids = zoneState.acvGuids or {}
   for key, capacity in pairs(config.capacity) do
     local guids = zoneState.acvGuids[key] or {}
-    if removeDestroyed(guids) < capacity then
+    if removeMissingACVs(zoneState, guids) < capacity then
       return false
     end
   end

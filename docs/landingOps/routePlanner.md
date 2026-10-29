@@ -27,11 +27,11 @@
    - 兩棲車與衝鋒舟（`sortWaterLanesByLateral`）用**橫向**距離；差在 `laneTieM` 內才平手
 2. **排隊入口點**：每條水際通道一個計數器 `k`（`zoneState.queueCounters`），每呼叫一次加 1。入口往外海退 `(k mod queueDepth) × columnSpacingM`，讓同時放出的單位不疊在同一點。
 3. **選灘際通道**：只選 `cleared` 的，從 `k` 開始輪流。衝鋒舟例外，直接用配對的那條。
-4. **停車位**：灘際通道從 E_lane 往 A_lane 每 `queueSpacingM` 一格，拿第一個空格。空格的定義：沒人、是自己，或佔位單位已被摧毀（`isAlive` 回 `false`）。格子滿換下一條灘際通道，再滿換下一條水際通道。
+4. **停車位**：灘際通道從 E_lane 往 A_lane 每 `queueSpacingM` 一格，拿第一個空格。空格的定義：沒人、是自己，或佔位單位已被擊殺。擊殺事件當下就由 [trackedUnits](trackedUnits.md) 把該格寫成 `false`；事件沒趕上時，排路線時 `removeMissing` 回 `true` 也當空格（呼叫端傳 `TrackedUnits.removeMissing`，查不到的佔位者會從所有登記表刪掉）。格子滿換下一條灘際通道，再滿換下一條水際通道。
 5. **航線**：`[入口點, (L_i), (A_i), A_lane, (S_lane), 停車位]`；括號內的點在特定條件下省略。氣墊船最前面多加展開線點。
 6. **安全檢查**：航線碰到任何非 `cleared` 的方塊就換下一條，全部失敗回 `nil`。
 
-兩棲車、氣墊船與衝鋒舟共用一張停車位表（`zoneState.laneSlots`），同一格只會被一個單位預約。衝鋒舟登陸後停在 S_lane，`assignShoreSlot` 在它出發時就預約該處最近的一格，後到的單位排在它後面；船被摧毀後該格視為空。
+兩棲車、氣墊船與衝鋒舟共用一張停車位表（`zoneState.laneSlots`），同一格只會被一個單位預約。衝鋒舟登陸後停在 S_lane，`assignShoreSlot` 在它出發時就預約該處最近的一格，後到的單位排在它後面；船被擊殺後該格立刻空出。
 
 ### 停車位表的資料格式
 
@@ -46,7 +46,7 @@ zoneState.laneSlots = {
 
 - key 是灘際通道 id（`W1-B2` 是第 1 條水際通道的第 2 條灘際通道）。
 - 格號：第 1 格在 E_lane，每往後一格退 `queueSpacingM` 往 A_lane 靠。
-- 空格：值是 `nil`、`false`、自己的 GUID，或那個單位已不存在（`isAlive` 回 `false`）。
+- 空格：值是 `nil`、`false`、自己的 GUID，或那個單位已不存在（`removeMissing` 回 `true`，同時從所有登記表刪掉）。
 - 誰寫入：`buildRoute` 拿第一個空格；`assignShoreSlot` 替衝鋒舟預約 S_lane 最近的一格。
 
 **表必須是連續陣列，不能有洞。** 存檔是 JSON：連續陣列存成 `[...]`，讀回來 index 還是數字；有洞的表存成 `{"8": ...}`，key 讀回來變字串，`slots[8]` 就查不到，每格都被當成空的，所有單位會疊在第 1 格。所以 `assignShoreSlot` 預約中間的格子時，會把前面的洞填 `false`。

@@ -1,7 +1,6 @@
 local constants = require("src.core.constants")
 local PersistentState = require("src.core.persistentState")
 local GameApi = require("src.utils.gameApi")
-local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
 local AttackManager = require("src.modules.attackManager")
@@ -10,9 +9,9 @@ local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
-local HeliWave = require("src.modules.landingOps.heliWave")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
 local LandingOps = {}
 
@@ -40,7 +39,7 @@ local function buildACVRouter(amphibOps, zone, zoneState)
       queueCounters = zoneState.queueCounters,
       laneSlots = zoneState.laneSlots,
       cells = zoneState.obstacle and zoneState.obstacle.cells,
-      isAlive = GameUtils.hasUnit,
+      removeMissing = function(guid) return TrackedUnits.removeMissing(zoneState, guid) end,
     })
 
     if not plan then
@@ -277,17 +276,16 @@ function LandingOps.attackAirlandingZone(config, ship)
   return true
 end
 
----Forget a destroyed attack helicopter, transport helicopter or transport aircraft in every zone
+---Remove a destroyed unit from the landing records of every zone. Units that landingOps does not record are ignored
 ---@param saveData SBJ__SaveData
 ---@param guid string
----@return boolean # True if a zone recorded the unit and it is now removed
-function LandingOps.removeDestroyedHeliWaveUnit(saveData, guid)
+---@return boolean # True if a record held the unit and it is now removed
+function LandingOps.removeDestroyedUnit(saveData, guid)
+  local isRemoved = false
   for _, zoneState in pairs(PersistentState.landingOps(saveData).amphibOps.zoneStates) do
-    if HeliWave.removeDestroyed(zoneState, guid) then
-      return true
-    end
+    isRemoved = TrackedUnits.remove(zoneState, guid) or isRemoved
   end
-  return false
+  return isRemoved
 end
 
 ---Count landed China units by type in each operational zone's CAS area

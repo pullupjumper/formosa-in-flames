@@ -18,7 +18,7 @@
 
 一艘 082 對應一條水際通道，通道數 = 082 數量，所以 `config` 裡各區 `fleet` 的 `type082` 數量要等於營數。
 
-`updateMineClearing` 每 tick 檢查：走到最後航點（距離小於 `tuning.route.arrivalNm`）就 `RTB(true)`，被摧毀也算完成。全部完成才回 `true`，coordinator 才進入下一階段。
+`updateMineClearing` 每 tick 檢查：走到最後航點（距離小於 `tuning.route.arrivalNm`）就 `RTB(true)`；查不到（被擊殺）就整筆刪掉，不再擋完成。全部完成才回 `true`，coordinator 才進入下一階段。
 
 ---
 

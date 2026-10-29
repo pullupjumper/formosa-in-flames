@@ -5,6 +5,7 @@ local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
 ---Fly the zone's helicopters in waves. A wave is a group of transport helicopters plus attack helicopters topping up the zone's CAS force.
 ---It launches from the motherships, flies out along the left and right wings, and goes inland to its landing points.
@@ -46,7 +47,6 @@ local PHASE = {
   CAS       = "cas",
   RETURNING = "returning",
 }
-
 
 -- ============================================================================
 -- Candidates
@@ -497,11 +497,12 @@ local function moveHomeTransports(unitMap)
 end
 
 ---Update every transport of the wave
+---@param zoneState SBJ__ZoneState
 ---@param unitMap table<string, SBJ__HeliState>
 ---@param arrivalNm number
-local function updateTransports(unitMap, arrivalNm)
+local function updateTransports(zoneState, unitMap, arrivalNm)
   for guid, entry in pairs(unitMap) do
-    local heli = GameApi.ScenEdit_GetUnit(guid)
+    local heli = TrackedUnits.findUnit(zoneState, guid)
     if heli then
       updateTransport(heli, entry, arrivalNm)
     end
@@ -509,12 +510,13 @@ local function updateTransports(unitMap, arrivalNm)
 end
 
 ---Update every attack helicopter that has not yet joined the CAS mission
+---@param zoneState SBJ__ZoneState
 ---@param attackerMap table<string, SBJ__HeliState>
 ---@param casAssignNm number
 ---@param missionName string
-local function updateAttackers(attackerMap, casAssignNm, missionName)
+local function updateAttackers(zoneState, attackerMap, casAssignNm, missionName)
   for guid, entry in pairs(attackerMap) do
-    local heli = entry.phase == PHASE.ENROUTE and GameApi.ScenEdit_GetUnit(guid)
+    local heli = entry.phase == PHASE.ENROUTE and TrackedUnits.findUnit(zoneState, guid)
     if heli then
       updateAttacker(heli, entry, casAssignNm, missionName)
     end
@@ -609,16 +611,16 @@ function HeliWave.update(tickCtx, zone, zoneState)
   end
 
   local heliConfig = getHeliConfig(tickCtx)
-  updateAttackers(state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
+  updateAttackers(zoneState, state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
 
   local airlift = state.airlift
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "heliWave", "launchWave")
-  updateTransports(state.units, heliConfig.arrivalNm)
+  updateTransports(zoneState, state.units, heliConfig.arrivalNm)
   report.addAll({ recallOnTimeout(tickCtx, zone, state, "heli") })
   local isHeliReady = isFleetDue(state)
   local isAirliftReady = false
   if airlift then
-    updateTransports(airlift.units, heliConfig.airlift.arrivalNm)
+    updateTransports(zoneState, airlift.units, heliConfig.airlift.arrivalNm)
     report.addAll({ recallOnTimeout(tickCtx, zone, airlift, "airlift") })
     isAirliftReady = isFleetDue(airlift)
   end
@@ -642,28 +644,6 @@ function HeliWave.update(tickCtx, zone, zoneState)
   report.emit()
 
   return true
-end
-
----Forget a destroyed attack helicopter, transport helicopter or transport aircraft.
----An attack helicopter stops counting toward escortSize. A removed transport is no longer polled,
----and still counts as destroyed when the wave ends.
----@param zoneState SBJ__ZoneState
----@param guid string
----@return boolean # True if the unit was recorded and is now removed
-function HeliWave.removeDestroyed(zoneState, guid)
-  local heliWave = zoneState.heliWave
-  if not heliWave then
-    return false
-  end
-
-  local airlift = heliWave.airlift
-  for _, unitMap in ipairs({ heliWave.attackers, heliWave.units, airlift and airlift.units or {} }) do
-    if unitMap[guid] then
-      unitMap[guid] = nil
-      return true
-    end
-  end
-  return false
 end
 
 return HeliWave

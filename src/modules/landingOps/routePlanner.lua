@@ -200,7 +200,7 @@ function RoutePlanner.findFreeSlot(beachLane, slotMap, params)
   slotMap = slotMap or {}
   for slot = 1, countSlots(beachLane, params.routeConfig) do
     local holder = slotMap[slot]
-    if not holder or holder == params.guid or not params.isAlive(holder) then
+    if not holder or holder == params.guid or params.removeMissing(holder) then
       return slot
     end
   end

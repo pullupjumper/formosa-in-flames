@@ -214,10 +214,22 @@ describe("AssaultBoat", function()
       assert.is_false(launched)
       assert.are.equal("pending", zoneState.boats["BOAT-1"].status)
     end)
+
+    it("should remove a pending boat that is no longer found", function()
+      stubUnits({ ["LST-1"] = { guid = "LST-1", inArea = function() return true end } })
+      local zoneState = {
+        lanes = buildLanes(1),
+        boats = { ["BOAT-1"] = { shipGuid = "LST-1", beachLaneId = "W1-B2", status = "pending" } },
+      }
+
+      AssaultBoat.launchBoats(buildConfig(), zone, zoneState)
+
+      assert.is_nil(zoneState.boats["BOAT-1"])
+    end)
   end)
 
   describe("updateBoats", function()
-    it("should finish when every boat has arrived or been lost", function()
+    it("should finish when every boat has arrived or is no longer found", function()
       stubUnits({ ["BOAT-1"] = { guid = "BOAT-1" } })
       trackStub(stub(GameApi, "Tool_Range").returns(0.05))
       local zoneState = {
@@ -229,11 +241,11 @@ describe("AssaultBoat", function()
 
       assert.is_true(AssaultBoat.updateBoats(buildConfig(), zoneState))
       assert.are.equal("arrived", zoneState.boats["BOAT-1"].status)
-      assert.are.equal("lost", zoneState.boats["BOAT-2"].status)
+      assert.is_nil(zoneState.boats["BOAT-2"])
       assert.are.same({ ["W1-B1"] = true }, AssaultBoat.findLandedLaneIdSet(zoneState))
     end)
 
-    it("should mark a destroyed boat lost during fast-forward without touching it", function()
+    it("should remove a boat that is no longer found during fast-forward without touching it", function()
       stubUnits({})
       local setUnit = trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       trackStub(stub(GameApi, "Tool_Range").returns(2))
@@ -245,8 +257,20 @@ describe("AssaultBoat", function()
       }
 
       assert.is_true(AssaultBoat.updateBoats(config, zoneState))
-      assert.are.equal("lost", zoneState.boats["BOAT-1"].status)
+      assert.is_nil(zoneState.boats["BOAT-1"])
       assert.stub(setUnit).was.called(0)
+    end)
+
+    it("should free the parking slot of a launched boat that is no longer found", function()
+      stubUnits({})
+      local zoneState = {
+        boats = { ["BOAT-1"] = { beachLaneId = "W1-B1", status = "launched", finalPoint = FINAL_POINT } },
+        laneSlots = { ["W1-B1"] = { "BOAT-1" } },
+      }
+
+      AssaultBoat.updateBoats(buildConfig(), zoneState)
+
+      assert.are.same({ false }, zoneState.laneSlots["W1-B1"])
     end)
 
     it("should teleport a live boat to its final point during fast-forward", function()
@@ -299,6 +323,30 @@ describe("AssaultBoat", function()
       local zoneState = {}
 
       assert.is_false(AssaultBoat.hasPendingBoats(zoneState))
+    end)
+  end)
+
+  describe("findLandedLaneIdSet", function()
+    it("should stop looking up a landed boat that is no longer found", function()
+      local getUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      local zoneState = { boats = { ["BOAT-1"] = { beachLaneId = "W1-B1", status = "arrived" } } }
+
+      assert.are.same({}, AssaultBoat.findLandedLaneIdSet(zoneState))
+      assert.are.same({}, AssaultBoat.findLandedLaneIdSet(zoneState))
+
+      assert.stub(getUnit).was.called(1)
+    end)
+
+    it("should free the parking slot of a landed boat that is no longer found", function()
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
+      local zoneState = {
+        boats = { ["BOAT-1"] = { beachLaneId = "W1-B1", status = "arrived" } },
+        laneSlots = { ["W1-B1"] = { false, "BOAT-1" } },
+      }
+
+      AssaultBoat.findLandedLaneIdSet(zoneState)
+
+      assert.are.same({ false, false }, zoneState.laneSlots["W1-B1"])
     end)
   end)
 end)

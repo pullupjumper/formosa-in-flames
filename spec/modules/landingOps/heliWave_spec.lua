@@ -1,6 +1,7 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps HeliWave Unit Tests
 local HeliWave = require("src.modules.landingOps.heliWave")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
@@ -469,6 +470,25 @@ describe("HeliWave", function()
 
       assert.spy(units.RT1.Launch).was.called(1)
     end)
+
+    it("should look up a transport or attack helicopter that is no longer found only once", function()
+      addFleet(2, 1)
+      local zoneState = buildLaunchedZoneState()
+      destroyAll({ "T1", "A1" })
+      stubGetUnit:clear()
+
+      HeliWave.update(buildCtx(1010), buildZone(), zoneState)
+      HeliWave.update(buildCtx(1020), buildZone(), zoneState)
+
+      assert.stub(stubGetUnit).was.called_with("T1")
+      assert.stub(stubGetUnit).was.called_with("A1")
+      local lookups = { T1 = 0, A1 = 0 }
+      for _, call in ipairs(stubGetUnit.calls) do
+        local guid = call.vals[1]
+        if lookups[guid] then lookups[guid] = lookups[guid] + 1 end
+      end
+      assert.are.same({ T1 = 1, A1 = 1 }, lookups)
+    end)
   end)
 
   describe("update next wave", function()
@@ -527,7 +547,7 @@ describe("HeliWave", function()
       assert.same({ ["attack/left"] = 2, ["attack/right"] = 1, ["transport/left"] = 1, ["transport/right"] = 1 },
         countLaunched())
       destroyAll({ "T1", "T2", "A1" })
-      HeliWave.removeDestroyed(zoneState, "A1")
+      TrackedUnits.remove(zoneState, "A1")
       addFleet(2, 5, "R")
 
       HeliWave.update(buildCtx(1500), buildZone(), zoneState)
@@ -553,13 +573,13 @@ describe("HeliWave", function()
     end)
   end)
 
-  describe("removeDestroyed", function()
+  describe("after TrackedUnits.remove", function()
     it("should drop the attack helicopter record so it no longer counts", function()
       addFleet(2, 2)
       local zoneState = buildLaunchedZoneState()
       assert.is_not_nil(zoneState.heliWave.attackers.A1)
 
-      assert.is_true(HeliWave.removeDestroyed(zoneState, "A1"))
+      assert.is_true(TrackedUnits.remove(zoneState, "A1"))
 
       assert.is_nil(zoneState.heliWave.attackers.A1)
       assert.is_not_nil(zoneState.heliWave.attackers.A2)
@@ -572,8 +592,8 @@ describe("HeliWave", function()
       destroyAll({ "T1", "T2" })
       addFleet(1, 0, "R")
 
-      assert.is_true(HeliWave.removeDestroyed(zoneState, "T1"))
-      assert.is_true(HeliWave.removeDestroyed(zoneState, "T2"))
+      assert.is_true(TrackedUnits.remove(zoneState, "T1"))
+      assert.is_true(TrackedUnits.remove(zoneState, "T2"))
       assert.is_nil(zoneState.heliWave.units.T1)
       ---@diagnostic disable-next-line: undefined-field
       stubGetUnit:clear()
@@ -590,7 +610,7 @@ describe("HeliWave", function()
       destroyAll({ "AIRLIFT1" })
       addTransportBase(1, "B2")
 
-      assert.is_true(HeliWave.removeDestroyed(zoneState, "AIRLIFT1"))
+      assert.is_true(TrackedUnits.remove(zoneState, "AIRLIFT1"))
       assert.is_nil(zoneState.heliWave.airlift.units.AIRLIFT1)
       assert.is_not_nil(zoneState.heliWave.units.T1)
       ---@diagnostic disable-next-line: undefined-field
@@ -605,8 +625,8 @@ describe("HeliWave", function()
       addFleet(2, 0)
       local zoneState = buildLaunchedZoneState()
 
-      assert.is_false(HeliWave.removeDestroyed(zoneState, "NOPE"))
-      assert.is_false(HeliWave.removeDestroyed(buildZoneState(), "A1"))
+      assert.is_false(TrackedUnits.remove(zoneState, "NOPE"))
+      assert.is_false(TrackedUnits.remove(buildZoneState(), "A1"))
     end)
   end)
 

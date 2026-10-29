@@ -42,6 +42,7 @@
 | [obstacleClearing](obstacleClearing.md) | `obstacleClearing.lua` | 岸上障礙方塊與破障計時 |
 | [acvWave](acvWave.md) | `acvWave.lua` | 兩棲車存活上限與分波 |
 | [hovercraft](hovercraft.md) | `hovercraft.lua` | 氣墊船走通道、到點標記 |
+| [trackedUnits](trackedUnits.md) | `trackedUnits.lua` | 被擊殺的單位從所有登記表刪掉 |
 | [debugFlow](debugFlow.md) | `debugFlow.lua` | 實測用的快轉與瞬移開關 |
 
 ---
