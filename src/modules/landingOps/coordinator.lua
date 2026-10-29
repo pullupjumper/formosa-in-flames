@@ -92,7 +92,8 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
   end
 
   if MineClearing.startMineClearing(amphibOps, zone, zoneState, tickCtx.filteredShips) then
-    AmphibiousAssault.recordLandingStartTime(zoneState)
+    -- The air landing starts now. It is the clock for the periodic remaining-cargo transfer
+    zoneState.airlandingMissionStartTime = tickCtx.currentTime
     zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
   end
 end

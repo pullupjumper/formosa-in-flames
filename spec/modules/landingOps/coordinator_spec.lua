@@ -12,7 +12,6 @@ local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
 local HeliWave = require("src.modules.landingOps.heliWave")
 local Hovercraft = require("src.modules.landingOps.hovercraft")
-local AcvWave = require("src.modules.landingOps.acvWave")
 local MissileSystem = require("src.modules.missileSystem.init")
 local StrikePlanner = require("src.modules.strikePlanner.init")
 local constants = require("src.core.constants")
@@ -82,6 +81,15 @@ describe("LandingOps Coordinator", function()
     return zoneState
   end
 
+  ---Fill the zone's first ACV wave up to the capacity set by buildZone
+  ---@param zoneState table
+  local function fillFirstAcvWave(zoneState)
+    zoneState.acvGuids = {
+      zbd05 = { "ZBD-1", "ZBD-2", "ZBD-3", "ZBD-4" },
+      ztd05 = { "ZTD-1", "ZTD-2", "ZTD-3", "ZTD-4" },
+    }
+  end
+
   ---Create a global config structure
   ---@param overrides? table
   ---@return table
@@ -92,7 +100,7 @@ describe("LandingOps Coordinator", function()
           zones = { buildZone() },
           periodSec = 3600,
           remainingCargoTransferSec = 7200,
-          tuning = { acvWave = {} },
+          tuning = { acvWave = { lossRatio = 0.3, holdSec = 300, hovercraftWaitSec = 300 } },
         },
         triggers = {
           amphibiousOps = { startTime = "2026-04-03 00:00:00" },
@@ -199,7 +207,7 @@ describe("LandingOps Coordinator", function()
     local stubTransfer
     local stubTransferTransportAircraft
     local stubCountContactsInArea
-    local stubRecordLandingStartTime, stubScheduleHeliWave, stubUpdateHeliWave
+    local stubScheduleHeliWave, stubUpdateHeliWave
     local stubMoveToLaunchStations
     local stubCountUnitsInEachArea
     local stubStartAdminOffloading
@@ -213,7 +221,7 @@ describe("LandingOps Coordinator", function()
     local stubStartObstacleClearing
     local stubUpdateObstacleClearing
     local stubLaunchHovercraft
-    local stubIsFirstWaveFull
+    local stubGetUnit
     local stubUpdateHovercraft
     local stubHasUnreleasedACV
     local stubHasUnlaunchedHovercraft
@@ -232,7 +240,7 @@ describe("LandingOps Coordinator", function()
       stubUpdateObstacleClearing = trackStub(stub(ObstacleClearing, "updateObstacleClearing").returns(false))
       stubLaunchHovercraft = trackStub(stub(Hovercraft, "launchHovercraft"))
       stubUpdateHovercraft = trackStub(stub(Hovercraft, "updateHovercraft"))
-      stubIsFirstWaveFull = trackStub(stub(AcvWave, "isFirstWaveFull").returns(true))
+      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "ACV" }))
       stubMoveToStagingArea = trackStub(stub(ShipMovement, "moveToHoldingAreas").returns(false))
       stubCurrentTime = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(BEFORE_START))
       stubGetUnitsInHoldingAreas = trackStub(stub(AmphibiousLogistics, "getUnitsInHoldingAreas")
@@ -240,7 +248,6 @@ describe("LandingOps Coordinator", function()
       stubTransfer = trackStub(stub(AmphibiousLogistics, "transfer").returns(true))
       stubTransferTransportAircraft = trackStub(stub(AmphibiousLogistics, "transferTransportAircraftCargo"))
       stubCountContactsInArea = trackStub(stub(AmphibiousAssault, "countContactsInArea").returns(99))
-      stubRecordLandingStartTime = trackStub(stub(AmphibiousAssault, "recordLandingStartTime"))
       stubScheduleHeliWave = trackStub(stub(HeliWave, "schedule"))
       stubUpdateHeliWave = trackStub(stub(HeliWave, "update"))
       stubMoveToLaunchStations = trackStub(stub(AmphibiousAssault, "moveToLaunchStations").returns(true))
@@ -330,7 +337,7 @@ describe("LandingOps Coordinator", function()
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.MINE_CLEARING, landingState.amphibOps.zoneStates.Taoyuan.phase)
       assert.stub(stubStartMineClearing).was.called(1)
-      assert.stub(stubRecordLandingStartTime).was.called(1)
+      assert.are.equal(1000, landingState.amphibOps.zoneStates.Taoyuan.airlandingMissionStartTime)
       assert.stub(stubMoveToLaunchStations).was_not.called()
     end)
 
@@ -349,7 +356,7 @@ describe("LandingOps Coordinator", function()
         { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.are.equal(constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT, landingState.amphibOps.zoneStates.Taoyuan.phase)
-      assert.stub(stubRecordLandingStartTime).was_not.called()
+      assert.is_nil(landingState.amphibOps.zoneStates.Taoyuan.airlandingMissionStartTime)
     end)
 
     it("should keep MINE_CLEARING and LSTs anchored while sweepers are working", function()
@@ -369,6 +376,7 @@ describe("LandingOps Coordinator", function()
       local landingState = buildLandingState()
       local zoneState = landingState.amphibOps.zoneStates.Taoyuan
       zoneState.phase = constants.AMPHIBIOUS_PHASES.MINE_CLEARING
+      fillFirstAcvWave(zoneState)
       stubUpdateMineClearing.returns(true)
       stubUpdateBoats.returns(true)
       stubUpdateObstacleClearing.returns(true)
@@ -400,13 +408,52 @@ describe("LandingOps Coordinator", function()
       local config = buildConfig()
       local landingState = buildLandingState()
       landingState.amphibOps.zoneStates.Taoyuan.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
-      stubIsFirstWaveFull.returns(false)
 
       Coordinator.process(config, landingState,
         { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
       assert.stub(stubLaunchHovercraft).was_not.called()
       assert.stub(stubUpdateHovercraft).was.called(1)
+    end)
+
+    it("should launch hovercraft once the first ACV wave is full", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+      local zoneState = landingState.amphibOps.zoneStates.Taoyuan
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      fillFirstAcvWave(zoneState)
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.stub(stubLaunchHovercraft).was.called(1)
+    end)
+
+    it("should hold hovercraft when a first-wave ACV is lost", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+      local zoneState = landingState.amphibOps.zoneStates.Taoyuan
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      fillFirstAcvWave(zoneState)
+      stubGetUnit.on_call_with("ZBD-1").returns(nil)
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.stub(stubLaunchHovercraft).was_not.called()
+    end)
+
+    it("should launch hovercraft when the first ACV wave times out before it is full", function()
+      local config = buildConfig()
+      local landingState = buildLandingState()
+      local zoneState = landingState.amphibOps.zoneStates.Taoyuan
+      zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
+      zoneState.acvWaitStartedAt = 1000 - config.red.amphibOps.tuning.acvWave.hovercraftWaitSec
+
+      Coordinator.process(config, landingState,
+        { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
+
+      assert.stub(stubLaunchHovercraft).was.called(1)
     end)
 
     it("should keep BOAT_ASSAULT while boats are under way", function()

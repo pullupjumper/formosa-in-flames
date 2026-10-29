@@ -229,12 +229,6 @@ end
 -- Public API
 -- ============================================================================
 
----Record when the air landing began. It starts the clock for the periodic remaining-cargo transfer
----@param zoneState SBJ__ZoneState
-function AmphibiousAssault.recordLandingStartTime(zoneState)
-  zoneState.airlandingMissionStartTime = GameApi.ScenEdit_CurrentTime()
-end
-
 ---Find the lateral positions of the LSTs anchored on the deploy line
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param frame SBJ__LaneFrame

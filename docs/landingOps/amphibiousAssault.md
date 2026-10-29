@@ -2,27 +2,20 @@
 
 > 原始碼：`src/modules/landingOps/amphibiousAssault.lua`
 
-**職責**：LST 與 SAG 就位、決定哪艘船放 ACV、記錄機降開始時間、空/機降區威脅與登陸單位統計
+**職責**：LST 與 SAG 就位、決定哪艘船放 ACV、空/機降區威脅與登陸單位統計
 
 ---
 
 ## 概述
 
-amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」做，時機由 [coordinator](coordinator.md) 與事件腳本決定。它處理五件事：
+amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」做，時機由 [coordinator](coordinator.md) 與事件腳本決定。它處理四件事：
 
-1. **記錄機降開始時間**：`recordLandingStartTime` 在 `WAITING_ASSAULT` 離開時，把現在時間存進 `airlandingMissionStartTime`，作為貨物補運的計時起點
-2. **LST 就位**：`moveToLaunchStations` 把展開線上的 LST 移到離岸 2～4 nm 的就位帶，SAG 移到兩棲載具集結區
-3. **ACV 釋放**：`launchACV` 決定哪艘船可以放，放出交給 [acvWave](acvWave.md)；空船回港
-4. **威脅評估**：`countContactsInArea` 數空/機降區內的敵方可移動設施
-5. **登陸統計**：`countUnitsInEachArea` 數各區 `air.attackHelicopter.zone` 內已登陸的紅方單位
+1. **LST 就位**：`moveToLaunchStations` 把展開線上的 LST 移到離岸 2～4 nm 的就位帶，SAG 移到兩棲載具集結區
+2. **ACV 釋放**：`launchACV` 決定哪艘船可以放，放出交給 [acvWave](acvWave.md)；空船回港
+3. **威脅評估**：`countContactsInArea` 數空/機降區內的敵方可移動設施
+4. **登陸統計**：`countUnitsInEachArea` 數各區 `air.attackHelicopter.zone` 內已登陸的紅方單位
 
 通道與航線不在這裡處理，見 [laneGeometry](laneGeometry.md)、[routePlanner](routePlanner.md)。
-
----
-
-## 記錄機降開始時間
-
-直升機不再靠 CMO 任務的開始時間起飛（改由 [heliWave](heliWave.md) 手動放飛），所以這裡只剩記錄 `airlandingMissionStartTime`。它是貨物補運（`processRemainingCargoTransfer`）的計時起點。
 
 ---
 
@@ -63,7 +56,6 @@ Type 082 在反水雷階段已經 RTB，RORO 與駁船要留在展開線等 [adm
 
 | 函式 | 說明 |
 |---|---|
-| `recordLandingStartTime(zoneState)` | 記錄 `airlandingMissionStartTime` |
 | `moveToLaunchStations(amphibOps, zone, units)` | LST 與 SAG 就位；任一失敗回 `false` |
 | `findDeployLineLSTLaterals(zone, frame, units)` | 展開線 LST 的橫向位置，供 [mineClearing](mineClearing.md) 排通道 |
 | `launchACV(amphibOps, zoneStates, ship)` | 船觸發時放一批 ACV；空船回港 |

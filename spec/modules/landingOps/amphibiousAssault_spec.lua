@@ -142,17 +142,6 @@ describe("AmphibiousAssault", function()
     return contact
   end
 
-  describe("recordLandingStartTime", function()
-    it("should store the current time as airlandingMissionStartTime", function()
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(5000))
-      local zoneState = { phase = "assault" }
-
-      AmphibiousAssault.recordLandingStartTime(zoneState)
-
-      assert.are.equal(5000, zoneState.airlandingMissionStartTime)
-    end)
-  end)
-
   describe("moveToLaunchStations", function()
     local stubGetUnit, stubGetReferencePoints
     local NM = constants.METERS_PER_NM / constants.METERS_PER_DEGREE -- degrees of latitude per nautical mile (laneGeometry flat-earth scale)

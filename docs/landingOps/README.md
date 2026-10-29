@@ -32,7 +32,7 @@
 | [fireSupportGate](fireSupportGate.md) | `fireSupportGate.lua` | 火力支援暫停閘門 |
 | [shipMovement](shipMovement.md) | `shipMovement.lua` | 預算等待位置、艦隊與 SAG 移動 |
 | [amphibiousLogistics](amphibiousLogistics.md) | `amphibiousLogistics.lua` | 貨物轉移 |
-| [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | LST 就位、ACV 釋放、機降開始時間 |
+| [amphibiousAssault](amphibiousAssault.md) | `amphibiousAssault.lua` | LST 就位、ACV 釋放 |
 | [heliWave](heliWave.md) | `heliWave.lua` | 直升機機波：放飛、左右翼航線、卸貨、返航 |
 | [adminOffloading](adminOffloading.md) | `adminOffloading.lua` | 駁船-RORO 後勤鏈、下卸車輛 |
 | [laneGeometry](laneGeometry.md) | `laneGeometry.lua` | 通道幾何（純函式） |

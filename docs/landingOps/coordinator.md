@@ -86,7 +86,7 @@ step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 ste
 
 ## 貨物補運
 
-`processRemainingCargoTransfer` 對 `airlandingMissionStartTime` 已設定的 zone，距上次裝載達 `remainingCargoTransferSec` 就呼叫 `AmphibiousLogistics.transferRemainingCargos`，成功才重設計時器。失敗時下個 tick 會再試。
+`airlandingMissionStartTime` 由 coordinator 在離開 `WAITING_ASSAULT` 時寫入（本 tick 的 `currentTime`）。`processRemainingCargoTransfer` 對它已設定的 zone，距上次裝載達 `remainingCargoTransferSec` 就呼叫 `AmphibiousLogistics.transferRemainingCargos`，成功才重設計時器。失敗時下個 tick 會再試。
 
 ---
 
