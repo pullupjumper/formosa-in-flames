@@ -27,7 +27,7 @@ describe("HeliWave", function()
   local ranges
   -- Scenario clock readings: before and after every wave launch time
   local BEFORE_LAUNCH, AFTER_LAUNCH = 0, 4102444800
-  local stubUnload, stubCurrentTime, stubAddMission, stubAssign
+  local stubGetUnit, stubUnload, stubCurrentTime, stubAddMission, stubAssign
 
   ---Register a fake unit that the GetUnit stub can return
   ---@param guid string
@@ -243,7 +243,7 @@ describe("HeliWave", function()
     trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
     trackStub(stub(Logger, "error"))
-    trackStub(stub(GameApi, "ScenEdit_GetUnit", function(guid) return units[guid] end))
+    stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit", function(guid) return units[guid] end))
     trackStub(stub(GameApi, "Tool_Range", function(guid) return ranges[guid] or FAR end))
     stubUnload = trackStub(stub(GameApi, "ScenEdit_UnloadCargo"))
     stubAddMission = trackStub(stub(GameApi, "ScenEdit_AddMission", function() return {} end))
@@ -575,11 +575,12 @@ describe("HeliWave", function()
       assert.is_true(HeliWave.removeDestroyed(zoneState, "T1"))
       assert.is_true(HeliWave.removeDestroyed(zoneState, "T2"))
       assert.is_nil(zoneState.heliWave.units.T1)
-      GameApi.ScenEdit_GetUnit:clear()
+      ---@diagnostic disable-next-line: undefined-field
+      stubGetUnit:clear()
       HeliWave.update(buildCtx(1500), buildZone(), zoneState)
 
       assert.spy(units.RT1.Launch).was.called(1)
-      assert.spy(GameApi.ScenEdit_GetUnit).was_not.called_with("T1")
+      assert.spy(stubGetUnit).was_not.called_with("T1")
     end)
 
     it("should end the batch like a kill and stop querying a removed transport aircraft", function()
@@ -592,11 +593,12 @@ describe("HeliWave", function()
       assert.is_true(HeliWave.removeDestroyed(zoneState, "AIRLIFT1"))
       assert.is_nil(zoneState.heliWave.airlift.units.AIRLIFT1)
       assert.is_not_nil(zoneState.heliWave.units.T1)
-      GameApi.ScenEdit_GetUnit:clear()
+      ---@diagnostic disable-next-line: undefined-field
+      stubGetUnit:clear()
       HeliWave.update(buildCtx(1500), buildAirliftZone(), zoneState)
 
       assert.spy(units.B2AIRLIFT1.Launch).was.called(1)
-      assert.spy(GameApi.ScenEdit_GetUnit).was_not.called_with("AIRLIFT1")
+      assert.spy(stubGetUnit).was_not.called_with("AIRLIFT1")
     end)
 
     it("should return false for a GUID with no record, or a zone without a wave plan", function()
