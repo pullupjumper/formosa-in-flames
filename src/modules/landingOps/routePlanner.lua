@@ -1,8 +1,9 @@
 local constants = require("src.core.constants")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
 ---Build courses through the swept lanes for assault boats, ACVs and hovercraft.
----This module is pure apart from the state tables it receives (queue counters and parking slots).
+---The reserve* functions own the zone's lane load (queue counters and parking slots); the rest is pure.
 local RoutePlanner = {}
 
 -- ============================================================================
@@ -44,13 +45,6 @@ local function sortByMeasure(waterLanes, loadMap, tieM, measure)
     table.insert(sorted, entry.waterLane)
   end
   return sorted
-end
-
----Create the per-zone lane load tables when missing
----@param zoneState SBJ__ZoneState
-function RoutePlanner.ensureLaneState(zoneState)
-  zoneState.queueCounters = zoneState.queueCounters or {}
-  zoneState.laneSlots = zoneState.laneSlots or {}
 end
 
 ---Sort water lanes by distance from the launch position. The lanes within the tie band of the
@@ -365,6 +359,70 @@ function RoutePlanner.buildBoatRoute(beachLaneId, params)
   local course = buildSideApproach(waterLane, k, params)
   table.insert(course, beachLane.assaultPoint)
   table.insert(course, beachLane.shorePoint)
+  return course
+end
+
+-- ============================================================================
+-- Zone Reservations
+-- ============================================================================
+
+---Create the per-zone lane load tables when missing
+---@param zoneState SBJ__ZoneState
+local function ensureLaneState(zoneState)
+  zoneState.queueCounters = zoneState.queueCounters or {}
+  zoneState.laneSlots = zoneState.laneSlots or {}
+end
+
+---Build a course through the zone's cleared lanes to a parking slot and reserve that slot for the unit.
+---A slot held by a unit that no longer exists is freed and reused.
+---@param zoneState SBJ__ZoneState
+---@param request SBJ__CourseRequest
+---@param opts? SBJ__BuildRouteOpts
+---@return SBJ__RoutePlanResult|nil # nil when the zone has no lanes yet or no cleared lane has a free slot
+function RoutePlanner.reserveCourse(zoneState, request, opts)
+  if not zoneState.lanes then
+    return nil
+  end
+
+  ensureLaneState(zoneState)
+  return RoutePlanner.buildRoute({
+    lanes = zoneState.lanes,
+    launchPos = request.launchPos,
+    guid = request.guid,
+    routeConfig = request.routeConfig,
+    queueCounters = zoneState.queueCounters,
+    laneSlots = zoneState.laneSlots,
+    cells = zoneState.obstacle and zoneState.obstacle.cells,
+    removeMissing = function(guid) return TrackedUnits.removeMissing(zoneState, guid) end,
+  }, opts)
+end
+
+---Build an assault boat's course to its paired beach lane and reserve the parking slot on S_lane,
+---where the boat stays after it lands
+---@param zoneState SBJ__ZoneState
+---@param beachLaneId string
+---@param request SBJ__CourseRequest launchPos is where the boat is released
+---@return CMO__Location[]|nil # nil when the zone has no lanes yet or the beach lane id is unknown
+function RoutePlanner.reserveBoatCourse(zoneState, beachLaneId, request)
+  if not zoneState.lanes then
+    return nil
+  end
+
+  ensureLaneState(zoneState)
+  local course = RoutePlanner.buildBoatRoute(beachLaneId, {
+    lanes = zoneState.lanes,
+    launchPos = request.launchPos,
+    routeConfig = request.routeConfig,
+    queueCounters = zoneState.queueCounters,
+  })
+  if course then
+    RoutePlanner.assignShoreSlot(beachLaneId, {
+      lanes = zoneState.lanes,
+      routeConfig = request.routeConfig,
+      laneSlots = zoneState.laneSlots,
+      guid = request.guid,
+    })
+  end
   return course
 end
 

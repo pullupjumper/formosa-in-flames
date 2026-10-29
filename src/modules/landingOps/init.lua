@@ -26,20 +26,13 @@ local LandingOps = {}
 ---@param zoneState SBJ__ZoneState
 ---@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]|nil
 local function buildACVRouter(amphibOps, zone, zoneState)
-  RoutePlanner.ensureLaneState(zoneState)
-
   return function(unit, acvKey)
     AcvWave.addACV(zoneState, acvKey, unit.guid)
 
-    local plan = zoneState.lanes and RoutePlanner.buildRoute({
-      lanes = zoneState.lanes,
-      launchPos = { latitude = unit.latitude, longitude = unit.longitude },
+    local plan = RoutePlanner.reserveCourse(zoneState, {
       guid = unit.guid,
+      launchPos = { latitude = unit.latitude, longitude = unit.longitude },
       routeConfig = amphibOps.tuning.route,
-      queueCounters = zoneState.queueCounters,
-      laneSlots = zoneState.laneSlots,
-      cells = zoneState.obstacle and zoneState.obstacle.cells,
-      removeMissing = function(guid) return TrackedUnits.removeMissing(zoneState, guid) end,
     })
 
     if not plan then

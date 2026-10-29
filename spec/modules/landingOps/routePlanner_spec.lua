@@ -1,7 +1,8 @@
----@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field, missing-fields
 -- LandingOps RoutePlanner Unit Tests
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
+local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 
 describe("RoutePlanner", function()
@@ -360,6 +361,76 @@ describe("RoutePlanner", function()
       assert.is_nil(RoutePlanner.buildBoatRoute("W9-B9", {
         lanes = buildLanes(1), launchPos = boatPos, queueCounters = {}, routeConfig = buildRouteConfig(),
       }))
+    end)
+  end)
+
+  describe("reserveCourse", function()
+    local getUnit
+
+    after_each(function()
+      if getUnit then getUnit:revert() end
+      getUnit = nil
+    end)
+
+    ---@param guid string
+    ---@return SBJ__CourseRequest
+    local function buildRequest(guid)
+      return { guid = guid, launchPos = LaneGeometry.buildPoint(frame, -4 * 1852, -1125), routeConfig = buildRouteConfig() }
+    end
+
+    it("should return nil before the zone has lanes", function()
+      assert.is_nil(RoutePlanner.reserveCourse({}, buildRequest("ACV-1")))
+    end)
+
+    it("should reserve the slot in the zone's lane state", function()
+      local zoneState = { lanes = buildLanes(1) }
+      clearAll(zoneState.lanes)
+
+      local plan = RoutePlanner.reserveCourse(zoneState, buildRequest("ACV-1"))
+
+      assert.are.equal("ACV-1", zoneState.laneSlots[plan.beachLaneId][plan.slot])
+      assert.are.equal(1, zoneState.queueCounters.W1)
+    end)
+
+    it("should take over a slot whose holder no longer exists", function()
+      local zoneState = { lanes = buildLanes(1), laneSlots = {} }
+      clearAll(zoneState.lanes)
+      for _, beachLane in ipairs(zoneState.lanes.waterLanes[1].beachLanes) do
+        zoneState.laneSlots[beachLane.id] = { "ACV-DEAD" }
+      end
+      getUnit = stub(GameApi, "ScenEdit_GetUnit").returns(nil)
+
+      local plan = RoutePlanner.reserveCourse(zoneState, buildRequest("ACV-1"))
+
+      assert.are.equal(1, plan.slot)
+      assert.are.equal("ACV-1", zoneState.laneSlots[plan.beachLaneId][1])
+    end)
+  end)
+
+  describe("reserveBoatCourse", function()
+    local request = {
+      guid = "BOAT-1", launchPos = LaneGeometry.buildPoint(frame, -3.5 * 1852, -375), routeConfig = buildRouteConfig(),
+    }
+
+    it("should return the course and hold the slot on S_lane", function()
+      local zoneState = { lanes = buildLanes(4) }
+
+      local course = RoutePlanner.reserveBoatCourse(zoneState, "W2-B3", request)
+
+      local _, beachLane = RoutePlanner.findBeachLane(zoneState.lanes, "W2-B3")
+      assert.are.same(beachLane.shorePoint, course[#course])
+      assert.are.equal("BOAT-1", zoneState.laneSlots["W2-B3"][#zoneState.laneSlots["W2-B3"]])
+    end)
+
+    it("should return nil and hold no slot for an unknown beach lane", function()
+      local zoneState = { lanes = buildLanes(1) }
+
+      assert.is_nil(RoutePlanner.reserveBoatCourse(zoneState, "W9-B9", request))
+      assert.are.same({}, zoneState.laneSlots)
+    end)
+
+    it("should return nil before the zone has lanes", function()
+      assert.is_nil(RoutePlanner.reserveBoatCourse({}, "W1-B1", request))
     end)
   end)
 end)

@@ -54,7 +54,6 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   end
 
   zoneState.hovercraft = zoneState.hovercraft or {}
-  RoutePlanner.ensureLaneState(zoneState)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Launch hovercraft")
 
   for _, u in ipairs(ships) do
@@ -62,15 +61,10 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
 
     if ship and constants.MOTHERSHIP_DBID_SET[ship.dbid] and ship:inArea(zone.movement.holdingAreas.mothership) then
       for _, craft in ipairs(findReadyHovercraft(ship, zoneState.hovercraft)) do
-        local plan = RoutePlanner.buildRoute({
-          lanes = zoneState.lanes,
-          launchPos = { latitude = ship.latitude, longitude = ship.longitude },
+        local plan = RoutePlanner.reserveCourse(zoneState, {
           guid = craft.guid,
+          launchPos = { latitude = ship.latitude, longitude = ship.longitude },
           routeConfig = amphibOps.tuning.route,
-          queueCounters = zoneState.queueCounters,
-          laneSlots = zoneState.laneSlots,
-          cells = zoneState.obstacle and zoneState.obstacle.cells,
-          removeMissing = function(guid) return TrackedUnits.removeMissing(zoneState, guid) end,
         }, { isFromDeployLine = true })
 
         if plan then

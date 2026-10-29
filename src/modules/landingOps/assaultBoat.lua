@@ -183,7 +183,6 @@ end
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
 function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
-  RoutePlanner.ensureLaneState(zoneState)
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Launch assault boats")
 
   for boatGuid, entry in pairs(zoneState.boats or {}) do
@@ -192,11 +191,10 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
       local boat = TrackedUnits.findUnit(zoneState, boatGuid)
 
       if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.landing.acv.area) then
-        local course = RoutePlanner.buildBoatRoute(entry.beachLaneId, {
-          lanes = zoneState.lanes,
+        local course = RoutePlanner.reserveBoatCourse(zoneState, entry.beachLaneId, {
+          guid = boatGuid,
           launchPos = { latitude = ship.latitude, longitude = ship.longitude },
           routeConfig = amphibOps.tuning.route,
-          queueCounters = zoneState.queueCounters,
         })
 
         if course then
@@ -205,12 +203,6 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
           boat:Launch(true)
           entry.status = STATUS.LAUNCHED
           entry.finalPoint = course[#course]
-          RoutePlanner.assignShoreSlot(entry.beachLaneId, {
-            lanes = zoneState.lanes,
-            routeConfig = amphibOps.tuning.route,
-            laneSlots = zoneState.laneSlots,
-            guid = boatGuid,
-          })
           report.add("OK", { boat = boatGuid, beachLane = entry.beachLaneId })
         end
       end

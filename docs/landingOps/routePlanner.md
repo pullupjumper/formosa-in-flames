@@ -12,11 +12,11 @@
 
 | 載具 | 入口 | 函式 |
 |---|---|---|
-| 氣墊船 | 母艦區，離通道很遠 | `buildRoute(params, { isFromDeployLine = true })` |
-| 兩棲車 | 展開線艦艇的側邊 | `buildRoute(params)` |
-| 衝鋒舟 | LST 側邊，走配對好的灘際通道 | `buildBoatRoute(beachLaneId, params)` |
+| 氣墊船 | 母艦區，離通道很遠 | `reserveCourse(zoneState, request, { isFromDeployLine = true })` |
+| 兩棲車 | 展開線艦艇的側邊 | `reserveCourse(zoneState, request)` |
+| 衝鋒舟 | LST 側邊，走配對好的灘際通道 | `reserveBoatCourse(zoneState, beachLaneId, request)` |
 
-模組除了呼叫端傳進來的 state（`queueCounters`、`laneSlots`）之外是純的，不碰遊戲 API。通道結構見 [laneGeometry](laneGeometry.md)。
+呼叫端只給 `request`（`guid`、`launchPos`、`routeConfig`）。`reserve*` 自己管 `zoneState` 裡的 `queueCounters`、`laneSlots`、障礙格，也自己清掉已不存在的車位持有者（經 `TrackedUnits`）。其餘函式是純的，不碰遊戲 API。通道結構見 [laneGeometry](laneGeometry.md)。
 
 ---
 
@@ -69,6 +69,8 @@ zoneState.laneSlots = {
 
 | 函式 | 說明 |
 |---|---|
+| `reserveCourse(zoneState, request, opts)` | 給兩棲車、氣墊船用；zone 還沒有通道時回 `nil`，其餘同 `buildRoute` |
+| `reserveBoatCourse(zoneState, beachLaneId, request)` | 衝鋒舟航線，並預約 S_lane 那格；通道不存在回 `nil` |
 | `buildRoute(params, opts)` | 回傳 `SBJ__RoutePlanResult`（`course`、`waterLaneId`、`beachLaneId`、`slot`）或 `nil`；成功時已預約停車位 |
 | `buildBoatRoute(beachLaneId, params)` | 衝鋒舟航線；灘際通道 id 不存在回 `nil` |
 | `sortWaterLanes`、`sortWaterLanesByLateral`、`selectWaterLane` | 選通道的排序 |

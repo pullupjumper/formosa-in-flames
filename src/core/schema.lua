@@ -815,6 +815,12 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__BuildRouteOpts: table
 ---@field isFromDeployLine? boolean Prepend the water lane's deployment line point (units launched far offshore)
 
+---One unit asking RoutePlanner for a course in a zone
+---@class SBJ__CourseRequest: table
+---@field guid string Unit that will hold the parking slot
+---@field launchPos CMO__Location Where the unit starts
+---@field routeConfig SBJ__RouteConfig
+
 ---@class SBJ__RoutePlanResult: table
 ---@field course CMO__Location[]
 ---@field waterLaneId string

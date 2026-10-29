@@ -42,7 +42,7 @@ flowchart TD
 
 `launchBoats` 對 `pending` 的舟，載艦進入 `zone.landing.acv.area` 且舟 `readytime_v == 0` 才放：
 
-1. `RoutePlanner.buildBoatRoute` 算航線（走配對的灘際通道，見 [routePlanner](routePlanner.md)）
+1. `RoutePlanner.reserveBoatCourse` 算航線並預約 S_lane 的停車位（走配對的灘際通道，見 [routePlanner](routePlanner.md)）
 2. `boat.course = 航線`，`manualSpeed = tuning.assaultBoat.speed`，再 `boat:Launch(true)` — **先 course 再 Launch**
 3. 狀態改 `launched`，記 `finalPoint`（S_lane）
 
