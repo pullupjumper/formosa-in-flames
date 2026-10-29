@@ -156,125 +156,16 @@ describe("LandingOps", function()
   end)
 
   describe("launchACV", function()
-    local ACV_WAVE = { lossRatio = 0.3, holdSec = 1800 }
-
-    ---@param phase string
-    ---@return table saveData
-    ---@return table zoneState
-    local function buildZoneSaveData(phase)
-      local zoneState = { phase = phase }
-      return buildSaveData({ zoneStates = { ZoneAlpha = zoneState } }), zoneState
-    end
-
-    before_each(function()
-      trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(1000))
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-    end)
-
-    it("should launch ACVs with quota and a router when the zone is in ASSAULT_LANDING", function()
+    it("should forward the amphibious config, zone states and ship to AmphibiousAssault", function()
       local ship = buildShip()
-      local zone = buildZone({ name = "ZoneAlpha" })
-      local saveData, zoneState = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
-      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV")
-        .returns({ count = 2, isEmpty = false, isPaused = false }))
+      local amphibOpsConfig = { zones = {} }
+      local saveData = buildSaveData({ zoneStates = {} })
+      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV").returns(true))
 
-      local result = LandingOps.launchACV(buildConfig({ acvLaunchBatchSize = 5, tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
+      local result = LandingOps.launchACV(buildConfig(amphibOpsConfig), saveData, ship)
 
       assert.is_true(result)
-      local params = stubLaunch.calls[1].vals[1]
-      assert.are.same(ship, params.ship)
-      assert.are.equal(5, params.num)
-      assert.are.equal(180, params.bearing)
-      assert.are.same({ zbd05 = 112, ztd05 = 112 }, params.quota)
-      assert.are.equal("function", type(params.routeACV))
-      assert.is_not_nil(zoneState.acvGuids)
-    end)
-
-    it("should record the ACV and fall back to the zone destination when no lane is available", function()
-      local zone = buildZone({ name = "ZoneAlpha" })
-      local saveData, zoneState = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
-      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      local course
-      trackStub(stub(AmphibiousAssault, "launchACV").invokes(function(params)
-        course = params.routeACV({ guid = "ACV-1", latitude = 25.0, longitude = 121.0 }, "zbd05")
-        return { count = 1, isEmpty = false, isPaused = false }
-      end))
-      trackStub(stub(Logger, "warn"))
-
-      LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, buildShip())
-
-      assert.are.same(zone.landing.acv.destination, course)
-      assert.are.same({ "ACV-1" }, zoneState.acvGuids.zbd05)
-    end)
-
-    it("should not launch before the zone reaches ASSAULT_LANDING", function()
-      local zone = buildZone({ name = "ZoneAlpha" })
-      local saveData = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
-      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      local stubLaunch = trackStub(stub(AmphibiousAssault, "launchACV"))
-
-      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData,
-        buildShip())
-
-      assert.is_false(result)
-      assert.stub(stubLaunch).was_not.called()
-    end)
-
-    it("should return false when ship is not a ferry or LST", function()
-      local ship = buildShip()
-      local stubIsFerry = trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(false))
-      local stubGetZone = trackStub(stub(AmphibiousAssault, "getShipZone"))
-
-      local result = LandingOps.launchACV(buildConfig({}), buildSaveData({}), ship)
-
-      assert.is_false(result)
-      assert.stub(stubIsFerry).was.called_with(ship)
-      assert.stub(stubGetZone).was_not.called()
-    end)
-
-    it("should host the ship back to base and RTB when the ship is empty", function()
-      local wasRTB = false
-      local ship = buildShip({
-        RTB = function(_, force)
-          wasRTB = force
-        end,
-      })
-      local zone = buildZone({ name = "ZoneAlpha" })
-      local saveData = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.COMPLETED)
-      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = true, isPaused = false }))
-      local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent").returns(true))
-
-      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
-
-      assert.is_true(result)
-      assert.is_true(wasRTB)
-      assert.stub(stubHost).was.called_with({
-        HostedUnitNameOrID = ship.guid,
-        SelectedBaseNameOrID = zone.movement.baseGUID
-      })
-    end)
-
-    it("should not RTB the ship when the wave is paused", function()
-      local wasRTB = false
-      local ship = buildShip({ RTB = function() wasRTB = true end })
-      local zone = buildZone({ name = "ZoneAlpha" })
-      local saveData = buildZoneSaveData(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
-      trackStub(stub(AmphibiousAssault, "isFerryOrLST").returns(true))
-      trackStub(stub(AmphibiousAssault, "getShipZone").returns(zone))
-      trackStub(stub(AmphibiousAssault, "launchACV").returns({ count = 0, isEmpty = false, isPaused = true }))
-      local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent"))
-
-      local result = LandingOps.launchACV(buildConfig({ tuning = { acvWave = ACV_WAVE, route = {} } }), saveData, ship)
-
-      assert.is_true(result)
-      assert.is_false(wasRTB)
-      assert.stub(stubHost).was_not.called()
+      assert.stub(stubLaunch).was.called_with(amphibOpsConfig, saveData.red.amphibOps.zoneStates, ship)
     end)
   end)
 

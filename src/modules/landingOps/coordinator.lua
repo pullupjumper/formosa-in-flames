@@ -139,7 +139,7 @@ local function stepAssaultLanding(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
   local counts = AmphibiousAssault.countUnitsInEachArea(amphibOps.zones)[zone.name]
   local landedVehicles = 0
-  for _, acvType in ipairs(AmphibiousAssault.ACV_TYPES) do
+  for _, acvType in ipairs(AcvWave.ACV_TYPES) do
     landedVehicles = landedVehicles + (counts and counts[acvType.name] or 0)
   end
   local hasBeachhead = landedVehicles >= zone.landing.beachheadVehicles

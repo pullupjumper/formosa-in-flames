@@ -4,12 +4,9 @@ local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
 local AttackManager = require("src.modules.attackManager")
-local AcvWave = require("src.modules.landingOps.acvWave")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local Coordinator = require("src.modules.landingOps.coordinator")
-local DebugFlow = require("src.modules.landingOps.debugFlow")
-local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
@@ -18,36 +15,6 @@ local LandingOps = {}
 -- ============================================================================
 -- Helpers
 -- ============================================================================
-
----Build the per-ACV course callback. It plans a course through the cleared lanes to a parking slot
----and counts the ACV against the wave quota. It falls back to the zone destination when no lane has room.
----@param amphibOps SBJ__AmphibOpsConfig
----@param zone SBJ__OperationalZoneDescriptor
----@param zoneState SBJ__ZoneState
----@return fun(unit: CMO__Unit, acvKey: string): CMO__Location[]|nil
-local function buildACVRouter(amphibOps, zone, zoneState)
-  return function(unit, acvKey)
-    AcvWave.addACV(zoneState, acvKey, unit.guid)
-
-    local plan = RoutePlanner.reserveCourse(zoneState, {
-      guid = unit.guid,
-      launchPos = { latitude = unit.latitude, longitude = unit.longitude },
-      routeConfig = amphibOps.tuning.route,
-    })
-
-    if not plan then
-      Logger.warn(LogFormat.line("WARN", { zone = zone.name, unit = unit.guid, reason = "no_cleared_lane_slot" }))
-      return zone.landing.acv.destination
-    end
-
-    if DebugFlow.isLandingTeleport(amphibOps) then
-      DebugFlow.teleport(unit.guid, plan.course[#plan.course])
-      return nil
-    end
-
-    return plan.course
-  end
-end
 
 ---Find a SAG descriptor by group name across all zones
 ---@param zones SBJ__OperationalZoneDescriptor[]
@@ -112,56 +79,14 @@ function LandingOps.process(config, saveData)
   }))
 end
 
----Launch amphibious combat vehicles for a ship after its zone reaches the assault landing.
----A paused wave leaves the ship waiting at the launch line. An empty ship returns to base.
+---Launch amphibious combat vehicles for a ship after its zone reaches the assault landing
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
 ---@return boolean # True if the launch workflow was handled
 function LandingOps.launchACV(config, saveData, ship)
-  if not AmphibiousAssault.isFerryOrLST(ship) then
-    return false
-  end
-
-  local amphibOps = config.red.amphibOps
-
-  local zone = AmphibiousAssault.getShipZone(amphibOps.zones, ship)
-  if not zone then
-    return false
-  end
-
-  local zoneState = PersistentState.landingOps(saveData).amphibOps.zoneStates[zone.name]
-  if not zoneState or not constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
-    return false
-  end
-
-  local result = AmphibiousAssault.launchACV({
-    ship = ship,
-    num = amphibOps.acvLaunchBatchSize,
-    bearing = zone.heading,
-    distance = zone.landing.acv.distance,
-    quota = AcvWave.getQuota(
-      zoneState,
-      AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone),
-      GameApi.ScenEdit_CurrentTime()
-    ),
-    routeACV = buildACVRouter(amphibOps, zone, zoneState),
-  })
-
-  if result and result.isEmpty then
-    local hosted = GameApi.ScenEdit_HostUnitToParent({
-      HostedUnitNameOrID = ship.guid,
-      SelectedBaseNameOrID = zone.movement.baseGUID
-    })
-
-    if not hosted then
-      return false
-    end
-
-    ship:RTB(true)
-  end
-
-  return true
+  return AmphibiousAssault.launchACV(
+    config.red.amphibOps, PersistentState.landingOps(saveData).amphibOps.zoneStates, ship)
 end
 
 ---Offload vehicles in the workflow for barge and RORO event units

@@ -882,7 +882,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field fireSupportOnHold? boolean Whether SRBM fire-support strikes are on hold for ammo conservation; set true when ammo low and not all zones arrived, cleared once all zones reach staging
 
 ---ACV deployment parameters for launching amphibious combat vehicles
----Input table for AmphibiousAssault.launchACV
+---Input table for spawning ACVs in AcvWave
 ---@class SBJ__ACVDeploymentParams: table
 ---@field bearing number Deployment direction (degrees)
 ---@field distance number Deployment distance (nautical miles)

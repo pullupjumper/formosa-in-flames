@@ -2,7 +2,7 @@ local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
-local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
+local AcvWave = require("src.modules.landingOps.acvWave")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
@@ -27,12 +27,6 @@ local FERRY_NAME = "Ferry"
 local NON_LST_NAMES = {
   RORO  = true,
   Barge = true,
-}
-
----@type {name: string, dbid: number, key: string}[]
-local ACV_TYPES = {
-  { name = "ZBD-05", dbid = constants.PLATFORMS.ZBD05, key = "zbd05" },
-  { name = "ZTD-05", dbid = constants.PLATFORMS.ZTD05, key = "ztd05" },
 }
 
 ---Unit types counted in each operational zone after they land
@@ -61,108 +55,27 @@ local function isLST(unit)
   return not NON_LST_NAMES[unit.name] and unit.dbid ~= constants.PLATFORMS.TYPE_082
 end
 
--- ============================================================================
--- ACV Spawning
--- ============================================================================
-
----Count the cargo items of one DBID aboard a ship
+---Check if a ship is a ferry or Landing Ship Tank (LST).
+---Include Type 071/072/073 and ferries that can launch ACVs or beach.
 ---@param ship CMO__Unit
----@param dbid number
----@return integer
-local function countCargo(ship, dbid)
-  local cargos = ship.cargo and ship.cargo[1] and ship.cargo[1].cargo or {}
-  local count = 0
-  for _, element in ipairs(cargos) do
-    if element.dbid == dbid then
-      count = count + 1
-    end
-  end
-  return count
+---@return boolean # True if ship is a ferry or LST
+local function isFerryOrLST(ship)
+  return FERRY_OR_LST_DBIDS[ship.dbid] == true or ship.name == FERRY_NAME
 end
 
----Remove cargo from a ship by priority for ACV deployment.
----Iterate ACV_TYPES in order. Give each type at most its own quota.
+---Get the operational zone of a ship from its location.
+---Match the ship position against the ACV deployment areas to get the zone configuration.
+---@param zones SBJ__OperationalZoneDescriptor[]
 ---@param ship CMO__Unit
----@param totalNum number
----@param quota table<string, integer> Remaining quota per ACV type key
----@return SBJ__AcvAllocation[] # Allocation array
-local function removeCargoByPriority(ship, totalNum, quota)
-  local allocations = {}
-  local remaining = totalNum
-
-  for _, acvType in ipairs(ACV_TYPES) do
-    if remaining <= 0 then break end
-    local num = math.min(remaining, quota[acvType.key] or 0)
-    local deleted = AmphibiousLogistics.removeCargo(ship, { type = 2, num = num, dbid = acvType.dbid })
-    if deleted > 0 then
-      table.insert(allocations, { acvType = acvType, count = deleted })
-      remaining = remaining - deleted
+---@return SBJ__OperationalZoneDescriptor|nil # Zone descriptor, or nil if the ship is not in any zone
+local function getShipZone(zones, ship)
+  for _, zone in ipairs(zones) do
+    if ship:inArea(zone.landing.acv.area) then
+      return zone
     end
   end
 
-  return allocations
-end
-
----Create a single ACV unit at the given location
----@param acvType SBJ__AcvType
----@param location CMO__Location
----@param routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
----@return SBJ__LogResult # Deferred log result describing the outcome
-local function createSingleACV(acvType, location, routeACV)
-  local addedUnit = GameApi.ScenEdit_AddUnit({
-    side = constants.SIDES.RED,
-    type = "Vehicle",
-    name = acvType.name,
-    dbid = acvType.dbid,
-    latitude = location.latitude,
-    longitude = location.longitude,
-  })
-
-  if not addedUnit then
-    return { tag = "FAIL", fields = { unit = acvType.name, reason = "add_unit_failed" } }
-  end
-
-  local doctrine = GameApi.ScenEdit_SetDoctrine({ guid = addedUnit.guid }, { automatic_evasion = "no" })
-
-  if not doctrine then
-    return { tag = "FAIL", fields = { unit = acvType.name, reason = "set_doctrine_failed" } }
-  end
-
-  addedUnit.throttle = "Full"
-  addedUnit.course = routeACV(addedUnit, acvType.key)
-  return {
-    tag = "OK",
-    fields = {
-      unit = acvType.name,
-      lat = string.format("%.4f", location.latitude),
-      lon = string.format("%.4f", location.longitude)
-    }
-  }
-end
-
----Create every allocated ACV. Stop at the first failure
----@param allocations SBJ__AcvAllocation[]
----@param locations CMO__Location[]
----@param routeACV fun(unit: CMO__Unit, acvKey: string): CMO__Location[]
----@return integer|nil count ACVs launched, nil when a spawn failed
----@return SBJ__LogResult[] results Deferred log results in emission order
-local function createAllocatedACVs(allocations, locations, routeACV)
-  local results = {}
-  local index = 0
-
-  for _, allocation in ipairs(allocations) do
-    for _ = 1, allocation.count do
-      index = index + 1
-      local result = createSingleACV(allocation.acvType, locations[index], routeACV)
-      table.insert(results, result)
-
-      if result.tag == "FAIL" then
-        return nil, results
-      end
-    end
-  end
-
-  return index, results
+  return nil
 end
 
 -- ============================================================================
@@ -316,8 +229,6 @@ end
 -- Public API
 -- ============================================================================
 
-AmphibiousAssault.ACV_TYPES = ACV_TYPES
-
 ---Record when the air landing began. It starts the clock for the periodic remaining-cargo transfer
 ---@param zoneState SBJ__ZoneState
 function AmphibiousAssault.recordLandingStartTime(zoneState)
@@ -407,45 +318,43 @@ function AmphibiousAssault.countUnitsInEachArea(zones)
   return result
 end
 
----Launch Amphibious Combat Vehicles (ACVs) from an amphibious ship.
----Create ZBD-05 and ZTD-05 amphibious vehicles abreast of the ship, within the per-type quota.
----@param params SBJ__ACVDeploymentParams
----@return SBJ__LaunchACVResult|nil # nil when the ship is missing or destroyed
-function AmphibiousAssault.launchACV(params)
-  local ship = params.ship
-  if not ship or ship.IsDestroyed then return end
+---Launch amphibious combat vehicles for a ship after its zone reaches the assault landing.
+---A paused wave leaves the ship waiting at the launch line. An empty ship returns to base.
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param zoneStates table<string, SBJ__ZoneState> Zone states indexed by zone name
+---@param ship CMO__Unit
+---@return boolean # True if the launch workflow was handled
+function AmphibiousAssault.launchACV(amphibOps, zoneStates, ship)
+  if not isFerryOrLST(ship) then
+    return false
+  end
 
-  local hasCargo, hasQuotaForCargo = false, false
-  for _, acvType in ipairs(ACV_TYPES) do
-    if countCargo(ship, acvType.dbid) > 0 then
-      hasCargo = true
-      hasQuotaForCargo = hasQuotaForCargo or (params.quota[acvType.key] or 0) > 0
+  local zone = getShipZone(amphibOps.zones, ship)
+  if not zone then
+    return false
+  end
+
+  local zoneState = zoneStates[zone.name]
+  if not zoneState or not constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
+    return false
+  end
+
+  local result = AcvWave.release(amphibOps, zone, zoneState, ship)
+
+  if result and result.isEmpty then
+    local hosted = GameApi.ScenEdit_HostUnitToParent({
+      HostedUnitNameOrID = ship.guid,
+      SelectedBaseNameOrID = zone.movement.baseGUID
+    })
+
+    if not hosted then
+      return false
     end
+
+    ship:RTB(true)
   end
 
-  if not hasCargo then
-    return { count = 0, isEmpty = true, isPaused = false }
-  end
-  if not hasQuotaForCargo then
-    return { count = 0, isEmpty = false, isPaused = true }
-  end
-
-  local acvLocations = GameUtils.buildLocations({
-    initialLocation = { latitude = ship.latitude, longitude = ship.longitude },
-    num = params.num,
-    bearing = params.bearing,
-    distance = params.distance
-  })
-
-  local allocations = removeCargoByPriority(ship, params.num, params.quota)
-  local count, results = createAllocatedACVs(allocations, acvLocations, params.routeACV)
-
-  local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_ASSAULT, "ship=" .. (ship.name or ship.guid), "Launch ACV")
-  report.addAll(results)
-  report.emit()
-
-  return { count = count, isEmpty = false, isPaused = false }
+  return true
 end
 
 ---Check if any LST or ferry on the deploy line still carries ACVs
@@ -455,39 +364,14 @@ end
 function AmphibiousAssault.hasUnreleasedACV(zone, ships)
   for _, u in ipairs(ships) do
     local ship = GameApi.ScenEdit_GetUnit(u.guid)
-    if ship and AmphibiousAssault.isFerryOrLST(ship) and ship:inArea(zone.landing.acv.area) then
-      for _, acvType in ipairs(ACV_TYPES) do
-        if countCargo(ship, acvType.dbid) > 0 then
-          return true
-        end
+    if ship and isFerryOrLST(ship) and ship:inArea(zone.landing.acv.area) then
+      if AcvWave.hasCargo(ship) then
+        return true
       end
     end
   end
 
   return false
-end
-
----Check if a ship is a ferry or Landing Ship Tank (LST).
----Include Type 071/072/073 and ferries that can launch ACVs or beach.
----@param ship CMO__Unit
----@return boolean # True if ship is a ferry or LST
-function AmphibiousAssault.isFerryOrLST(ship)
-  return FERRY_OR_LST_DBIDS[ship.dbid] == true or ship.name == FERRY_NAME
-end
-
----Get the operational zone of a ship from its location.
----Match the ship position against the ACV deployment areas to get the zone configuration.
----@param zones SBJ__OperationalZoneDescriptor[]
----@param ship CMO__Unit
----@return SBJ__OperationalZoneDescriptor|nil # Zone descriptor, or nil if the ship is not in any zone
-function AmphibiousAssault.getShipZone(zones, ship)
-  for _, zone in ipairs(zones) do
-    if ship:inArea(zone.landing.acv.area) then
-      return zone
-    end
-  end
-
-  return nil
 end
 
 return AmphibiousAssault

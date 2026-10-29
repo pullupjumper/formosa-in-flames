@@ -1,6 +1,7 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps AmphibiousAssault Unit Tests
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
+local AcvWave = require("src.modules.landingOps.acvWave")
 local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
@@ -530,461 +531,146 @@ describe("AmphibiousAssault", function()
   end)
 
   describe("launchACV", function()
-    local stubGetPoint, stubAddUnit, stubSetDoctrine
-
-    before_each(function()
-      stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
-      stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
-      stubSetDoctrine = trackStub(stub(GameApi, "ScenEdit_SetDoctrine"))
-    end)
-
-    ---Create a ship carrying the given number of ZBD and ZTD vehicles
-    ---@param zbd integer
-    ---@param ztd integer
-    ---@return table ship
-    ---@return string[] deleted GUIDs removed from the ship cargo
-    local function buildCargoShip(zbd, ztd)
-      local cargo, deleted = {}, {}
-      for i = 1, zbd do table.insert(cargo, { guid = "CARGO-ZBD-" .. i, dbid = 241 }) end
-      for i = 1, ztd do table.insert(cargo, { guid = "CARGO-ZTD-" .. i, dbid = 240 }) end
-      local ship = buildUnit({ cargo = { [1] = { cargo = cargo } } })
-      ship.deleteUnitCargo = function(_, guid)
-        table.insert(deleted, guid)
-        return true
-      end
-      return ship, deleted
+    ---@param phase string
+    ---@return table zoneStates
+    ---@return table zoneState
+    local function buildZoneStates(phase)
+      local zoneState = { phase = phase }
+      return { ZoneAlpha = zoneState }, zoneState
     end
 
-    ---Make successive placement requests resolve to the given locations
-    ---@param locations table[]
-    local function placeAt(locations)
-      local calls = 0
-      stubGetPoint.invokes(function()
-        calls = calls + 1
-        return locations[calls]
+    ---Create a loaded LST inside the ACV area of ZoneAlpha
+    ---@param overrides? table
+    ---@return table
+    local function buildLaunchShip(overrides)
+      local ship = buildUnit({ inArea = function() return true end, RTB = function() end })
+      for k, v in pairs(overrides or {}) do ship[k] = v end
+      return ship
+    end
+
+    it("should release ACVs once the ship's zone reaches ASSAULT_LANDING", function()
+      local ship = buildLaunchShip()
+      local amphibOps = buildAmphibOpsConfig()
+      local zoneStates, zoneState = buildZoneStates(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      local stubRelease = trackStub(stub(AcvWave, "release").returns({ count = 2, isEmpty = false, isPaused = false }))
+
+      local result = AmphibiousAssault.launchACV(amphibOps, zoneStates, ship)
+
+      assert.is_true(result)
+      assert.stub(stubRelease).was.called_with(amphibOps, amphibOps.zones[1], zoneState, ship)
+    end)
+
+    it("should not release before the zone reaches ASSAULT_LANDING", function()
+      local zoneStates = buildZoneStates(constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
+      local stubRelease = trackStub(stub(AcvWave, "release"))
+
+      local result = AmphibiousAssault.launchACV(buildAmphibOpsConfig(), zoneStates, buildLaunchShip())
+
+      assert.is_false(result)
+      assert.stub(stubRelease).was_not.called()
+    end)
+
+    it("should return false when the ship is in no zone's ACV area", function()
+      local zoneStates = buildZoneStates(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      local stubRelease = trackStub(stub(AcvWave, "release"))
+
+      local result = AmphibiousAssault.launchACV(buildAmphibOpsConfig(), zoneStates,
+        buildLaunchShip({ inArea = function() return false end }))
+
+      assert.is_false(result)
+      assert.stub(stubRelease).was_not.called()
+    end)
+
+    local SHIP_CASES = {
+      { label = "Type 071", overrides = { dbid = constants.PLATFORMS.TYPE_071 }, isReleased = true },
+      { label = "Type 072III", overrides = { dbid = constants.PLATFORMS.TYPE_072III }, isReleased = true },
+      { label = "Type 072A", overrides = { dbid = constants.PLATFORMS.TYPE_072A }, isReleased = true },
+      { label = "Type 073A", overrides = { dbid = constants.PLATFORMS.TYPE_073A }, isReleased = true },
+      { label = "a ship named Ferry", overrides = { name = "Ferry", dbid = 99999 }, isReleased = true },
+      { label = "an unrecognized ship", overrides = { name = "Destroyer", dbid = 99999 }, isReleased = false },
+      { label = "a Type 529 minesweeper", overrides = { name = "Type 529", dbid = constants.PLATFORMS.TYPE_082 }, isReleased = false },
+      { label = "a Type 075 LHD", overrides = { name = "Type075", dbid = constants.PLATFORMS.TYPE_075 }, isReleased = false },
+    }
+
+    for _, case in ipairs(SHIP_CASES) do
+      it("should " .. (case.isReleased and "" or "not ") .. "release ACVs from " .. case.label, function()
+        local zoneStates = buildZoneStates(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+        local stubRelease = trackStub(stub(AcvWave, "release").returns({ count = 1, isEmpty = false, isPaused = false }))
+
+        local result = AmphibiousAssault.launchACV(buildAmphibOpsConfig(), zoneStates, buildLaunchShip(case.overrides))
+
+        assert.are.equal(case.isReleased, result)
+        assert.stub(stubRelease).was.called(case.isReleased and 1 or 0)
       end)
     end
 
-    it("should launch both ZBD and ZTD vehicles and return total count", function()
-      local locations = {
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-        { latitude = 25.3, longitude = 121.3 },
-        { latitude = 25.4, longitude = 121.4 },
-      }
-      placeAt(locations)
-      stubAddUnit.returns({ guid = "NEW-UNIT" })
-      stubSetDoctrine.returns(true)
-
-      local ship = buildCargoShip(2, 2)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 4,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local count = AmphibiousAssault.launchACV(params).count
-
-      assert.are.equal(4, count)
-      assert.stub(stubAddUnit).was.called(4)
-      assert.stub(stubSetDoctrine).was.called(4)
-      assert.stub(logStub).was.called()
-    end)
-
-    it("should launch only ZTD vehicles when ZBD cargo is zero", function()
-      local locations = {
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      }
-      placeAt(locations)
-      stubAddUnit.returns({ guid = "NEW-UNIT" })
-      stubSetDoctrine.returns(true)
-
-      local ship = buildCargoShip(0, 2)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 2,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local count = AmphibiousAssault.launchACV(params).count
-
-      assert.are.equal(2, count)
-    end)
-
-    it("should launch only ZBD vehicles when ZTD cargo request is zero", function()
-      local locations = {
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      }
-      placeAt(locations)
-      stubAddUnit.returns({ guid = "NEW-UNIT" })
-      stubSetDoctrine.returns(true)
-
-      local ship = buildCargoShip(2, 0)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 2,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local count = AmphibiousAssault.launchACV(params).count
-
-      assert.are.equal(2, count)
-    end)
-
-    it("should set throttle to Full and assign destination course", function()
-      local locations = { { latitude = 25.1, longitude = 121.1 } }
-      placeAt(locations)
-      local addedUnit = { guid = "NEW-UNIT", throttle = nil, course = nil }
-      stubAddUnit.returns(addedUnit)
-      stubSetDoctrine.returns(true)
-
-      local destination = { { latitude = 25.0, longitude = 121.0 } }
-      local ship = buildCargoShip(0, 1)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return destination end,
-        num = 1,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      AmphibiousAssault.launchACV(params)
-
-      assert.are.equal("Full", addedUnit.throttle)
-      assert.are.same(destination, addedUnit.course)
-    end)
-
-    it("should return nil when ship is nil", function()
-      local params = {
-        ship = nil,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        num = 2,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local result = AmphibiousAssault.launchACV(params)
-
-      assert.is_nil(result)
-    end)
-
-    it("should return nil when ship is destroyed", function()
-      local ship = buildUnit({ IsDestroyed = true })
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        num = 2,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local result = AmphibiousAssault.launchACV(params)
-
-      assert.is_nil(result)
-    end)
-
-    it("should return nil when adding ZTD unit fails", function()
-      local locations = { { latitude = 25.1, longitude = 121.1 } }
-      placeAt(locations)
-      stubAddUnit.returns(nil)
-
-      local ship = buildCargoShip(0, 1)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 1,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local result = AmphibiousAssault.launchACV(params)
-
-      assert.is_nil(result.count)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=add_unit_failed"))
-    end)
-
-    it("should return nil when setting doctrine fails for ZTD unit", function()
-      local locations = { { latitude = 25.1, longitude = 121.1 } }
-      placeAt(locations)
-      stubAddUnit.returns({ guid = "NEW-UNIT" })
-      stubSetDoctrine.returns(nil)
-
-      local ship = buildCargoShip(0, 1)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 1,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local result = AmphibiousAssault.launchACV(params)
-
-      assert.is_nil(result.count)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZTD%-05 reason=set_doctrine_failed"))
-    end)
-
-    it("should return nil when adding ZBD unit fails", function()
-      local locations = {
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      }
-      placeAt(locations)
-      -- Only ZBD is carried; AddUnit fails for it
-      stubAddUnit.returns(nil)
-
-      local ship = buildCargoShip(1, 0)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 1,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local result = AmphibiousAssault.launchACV(params)
-
-      assert.is_nil(result.count)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=add_unit_failed"))
-    end)
-
-    it("should return nil when setting doctrine fails for ZBD unit", function()
-      local locations = {
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      }
-      placeAt(locations)
-      stubAddUnit.returns({ guid = "NEW-UNIT" })
-      stubSetDoctrine.returns(nil)
-
-      local ship = buildCargoShip(1, 0)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 1,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local result = AmphibiousAssault.launchACV(params)
-
-      assert.is_nil(result.count)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "unit=ZBD%-05 reason=set_doctrine_failed"))
-    end)
-
-    it("should return zero when no cargo is available for deletion", function()
-      local locations = {}
-      placeAt(locations)
-
-      local ship = buildCargoShip(0, 0)
-      local params = {
-        ship = ship,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return { { latitude = 25.0, longitude = 121.0 } } end,
-        num = 2,
-        bearing = 90,
-        distance = 0.5,
-      }
-
-      local count = AmphibiousAssault.launchACV(params).count
-
-      assert.are.equal(0, count)
-      assert.stub(stubAddUnit).was_not.called()
-    end)
-
-    -- An empty ship reports isEmpty so the caller can send it home
-    it("should report isEmpty when the ship carries no ZBD or ZTD", function()
-      local ship, deleted = buildCargoShip(0, 0)
-      table.insert(ship.cargo[1].cargo, { guid = "MC-1", dbid = constants.PLATFORMS.MC })
-
-      local result = AmphibiousAssault.launchACV({
-        ship = ship,
-        num = 5,
-        bearing = 90,
-        distance = 0.5,
-        quota = { zbd05 = 99, ztd05 = 99 },
-        routeACV = function() return {} end
-      })
-
-      assert.are.same({ count = 0, isEmpty = true, isPaused = false }, result)
-      assert.are.same({}, deleted)
-    end)
-
-    it("should report isPaused and keep cargo when the quota allows none of it", function()
-      local ship, deleted = buildCargoShip(2, 2)
-
-      local result = AmphibiousAssault.launchACV({
-        ship = ship,
-        num = 5,
-        bearing = 90,
-        distance = 0.5,
-        quota = { zbd05 = 0, ztd05 = 0 },
-        routeACV = function() return {} end
-      })
-
-      assert.are.same({ count = 0, isEmpty = false, isPaused = true }, result)
-      assert.are.same({}, deleted)
-    end)
-
-    it("should request at most each type's quota from cargo", function()
-      placeAt({ { latitude = 25.1, longitude = 121.1 }, { latitude = 25.2, longitude = 121.2 } })
-      stubAddUnit.returns({ guid = "NEW-UNIT" })
-      stubSetDoctrine.returns(true)
-      local ship, deleted = buildCargoShip(2, 2)
-
-      local result = AmphibiousAssault.launchACV({
-        ship = ship,
-        num = 5,
-        bearing = 90,
-        distance = 0.5,
-        quota = { zbd05 = 1, ztd05 = 1 },
-        routeACV = function() return {} end
-      })
-
-      assert.are.equal(2, result.count)
-      assert.are.same({ "CARGO-ZBD-1", "CARGO-ZTD-1" }, deleted)
-    end)
-
-    it("should ask routeACV for each spawned ACV's course with its type key", function()
-      placeAt({ { latitude = 25.1, longitude = 121.1 } })
-      local addedUnit = { guid = "NEW-UNIT" }
-      stubAddUnit.returns(addedUnit)
-      stubSetDoctrine.returns(true)
-      local route = { { latitude = 25.5, longitude = 121.5 } }
-      local routedUnit, routedKey
-      local function routeACV(unit, acvKey)
-        routedUnit, routedKey = unit, acvKey
-        return route
-      end
-
-      AmphibiousAssault.launchACV({
-        ship = buildCargoShip(1, 0),
-        num = 1,
-        bearing = 90,
-        distance = 0.5,
-        quota = { zbd05 = 5, ztd05 = 5 },
-        routeACV = routeACV
-      })
-
-      assert.are.equal(addedUnit, routedUnit)
-      assert.are.equal("zbd05", routedKey)
-      assert.are.same(route, addedUnit.course)
-    end)
-  end)
-
-  describe("isFerryOrLST", function()
-    it("should return true for Type 071 ship", function()
-      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_071 })
-      assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    it("should return true for Type 072III ship", function()
-      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_072III })
-      assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    it("should return true for Type 072A ship", function()
-      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_072A })
-      assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    it("should return true for Type 073A ship", function()
-      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_073A })
-      assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    it("should return true for a ship named Ferry regardless of dbid", function()
-      local ship = buildUnit({ name = "Ferry", dbid = 99999 })
-      assert.is_true(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    it("should return false for a ship with unrecognized dbid and name", function()
-      local ship = buildUnit({ name = "Destroyer", dbid = 99999 })
-      assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    -- Type 529 sweepers no longer launch ACVs
-    it("should return false for Type 529 minesweeper", function()
-      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_082, name = "Type 529" })
-      assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-
-    it("should return false for Type 075 LHD", function()
-      local ship = buildUnit({ dbid = constants.PLATFORMS.TYPE_075, name = "Type075" })
-      assert.is_false(AmphibiousAssault.isFerryOrLST(ship))
-    end)
-  end)
-
-  describe("getShipZone", function()
-    it("should return the matching zone when ship is in ACV area", function()
+    it("should release into the zone whose ACV area holds the ship", function()
       local zone1 = buildZone({ name = "ZoneAlpha" })
       local zone2 = buildZone({ name = "ZoneBravo" })
+      local amphibOps = buildAmphibOpsConfig({ zones = { zone1, zone2 } })
+      local zoneStates = {
+        ZoneAlpha = { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING },
+        ZoneBravo = { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING },
+      }
+      local ship = buildLaunchShip({ inArea = function(_, area) return area == zone2.landing.acv.area end })
+      local stubRelease = trackStub(stub(AcvWave, "release").returns({ count = 1, isEmpty = false, isPaused = false }))
 
-      local ship = buildUnit({
-        inArea = function(_, area)
-          return area == zone2.landing.acv.area
-        end,
-      })
+      AmphibiousAssault.launchACV(amphibOps, zoneStates, ship)
 
-      local config = buildAmphibOpsConfig({ zones = { zone1, zone2 } })
-
-      local result = AmphibiousAssault.getShipZone(config.zones, ship)
-      assert.are.equal("ZoneBravo", result.name)
+      assert.stub(stubRelease).was.called_with(amphibOps, zone2, zoneStates.ZoneBravo, ship)
     end)
 
-    it("should return the first matching zone", function()
+    it("should release into the first zone when several ACV areas hold the ship", function()
       local zone1 = buildZone({ name = "ZoneAlpha" })
-      local zone2 = buildZone({ name = "ZoneBravo" })
+      local amphibOps = buildAmphibOpsConfig({ zones = { zone1, buildZone({ name = "ZoneBravo" }) } })
+      local zoneStates = {
+        ZoneAlpha = { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING },
+        ZoneBravo = { phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING },
+      }
+      local ship = buildLaunchShip()
+      local stubRelease = trackStub(stub(AcvWave, "release").returns({ count = 1, isEmpty = false, isPaused = false }))
 
-      local ship = buildUnit({
-        inArea = function() return true end,
-      })
+      AmphibiousAssault.launchACV(amphibOps, zoneStates, ship)
 
-      local config = buildAmphibOpsConfig({ zones = { zone1, zone2 } })
-
-      local result = AmphibiousAssault.getShipZone(config.zones, ship)
-      assert.are.equal("ZoneAlpha", result.name)
+      assert.stub(stubRelease).was.called_with(amphibOps, zone1, zoneStates.ZoneAlpha, ship)
     end)
 
-    it("should return nil when ship is not in any zone", function()
-      local ship = buildUnit({
-        inArea = function() return false end,
-      })
+    it("should return false when there are no operational zones", function()
+      local stubRelease = trackStub(stub(AcvWave, "release"))
 
-      local config = buildAmphibOpsConfig()
+      local result = AmphibiousAssault.launchACV(buildAmphibOpsConfig({ zones = {} }), {}, buildLaunchShip())
 
-      local result = AmphibiousAssault.getShipZone(config.zones, ship)
-
-      assert.is_nil(result)
+      assert.is_false(result)
+      assert.stub(stubRelease).was_not.called()
     end)
 
-    it("should return nil when there are no operational zones", function()
-      local ship = buildUnit()
-      local config = buildAmphibOpsConfig({ zones = {} })
+    it("should host the ship back to base and RTB when the ship is empty", function()
+      local wasRTB = false
+      local ship = buildLaunchShip({ RTB = function(_, force) wasRTB = force end })
+      local amphibOps = buildAmphibOpsConfig({ zones = { buildZone({ movement = { baseGUID = "BASE-001" } }) } })
+      local zoneStates = buildZoneStates(constants.AMPHIBIOUS_PHASES.COMPLETED)
+      trackStub(stub(AcvWave, "release").returns({ count = 0, isEmpty = true, isPaused = false }))
+      local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent").returns(true))
 
-      local result = AmphibiousAssault.getShipZone(config.zones, ship)
+      local result = AmphibiousAssault.launchACV(amphibOps, zoneStates, ship)
 
-      assert.is_nil(result)
+      assert.is_true(result)
+      assert.is_true(wasRTB)
+      assert.stub(stubHost).was.called_with({ HostedUnitNameOrID = ship.guid, SelectedBaseNameOrID = "BASE-001" })
+    end)
+
+    it("should not RTB the ship when the wave is paused", function()
+      local wasRTB = false
+      local ship = buildLaunchShip({ RTB = function() wasRTB = true end })
+      local zoneStates = buildZoneStates(constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING)
+      trackStub(stub(AcvWave, "release").returns({ count = 0, isEmpty = false, isPaused = true }))
+      local stubHost = trackStub(stub(GameApi, "ScenEdit_HostUnitToParent"))
+
+      local result = AmphibiousAssault.launchACV(buildAmphibOpsConfig(), zoneStates, ship)
+
+      assert.is_true(result)
+      assert.is_false(wasRTB)
+      assert.stub(stubHost).was_not.called()
     end)
   end)
 
