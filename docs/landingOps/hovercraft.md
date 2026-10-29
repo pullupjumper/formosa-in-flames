@@ -44,7 +44,7 @@ flowchart TD
 | phase | 動作 | 下一個 phase |
 |---|---|---|
 | `enroute` | 離 `finalPoint` 小於 `tuning.route.arrivalNm` 時 `ScenEdit_UnloadCargo` | `unloading` |
-| `unloading` | `GameUtils.isCargoUnloaded`（`condition` 是 `"Underway"` 且不是 `"Transfering Cargo"`）成立時 `RTB(true)` | `returning` |
+| `unloading` | `GameUtils.isCargoUnloaded`（`condition` 是 `"Underway"` 且 `cargo` 已空）成立時 `RTB(true)` | `returning` |
 | `returning` | 不再處理 | — |
 
 流程與直升機一致，見 [heliWave](heliWave.md)。卸貨後直接返航，所以不再設 `unit.mission`；`missionName` 欄位目前沒有用到。舊存檔沒有 `phase` 的氣墊船不會被推進。

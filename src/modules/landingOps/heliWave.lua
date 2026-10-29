@@ -644,32 +644,20 @@ function HeliWave.update(tickCtx, zone, zoneState)
   return true
 end
 
----Forget a destroyed attack helicopter so the next wave replaces it
+---Forget a destroyed attack helicopter, transport helicopter or transport aircraft.
+---An attack helicopter stops counting toward escortSize. A removed transport is no longer polled,
+---and still counts as destroyed when the wave ends.
 ---@param zoneState SBJ__ZoneState
 ---@param guid string
----@return boolean # True if the attack helicopter was recorded and is now removed
-function HeliWave.removeAttacker(zoneState, guid)
-  local attackerMap = zoneState.heliWave and zoneState.heliWave.attackers
-  if not (attackerMap and attackerMap[guid]) then
-    return false
-  end
-
-  attackerMap[guid] = nil
-  return true
-end
-
----Forget a destroyed transport helicopter or transport aircraft, so it is no longer polled.
----The wave still ends the same way: a removed transport counts as destroyed.
----@param zoneState SBJ__ZoneState
----@param guid string
----@return boolean # True if the transport was recorded and is now removed
-function HeliWave.removeTransport(zoneState, guid)
+---@return boolean # True if the unit was recorded and is now removed
+function HeliWave.removeDestroyed(zoneState, guid)
   local heliWave = zoneState.heliWave
   if not heliWave then
     return false
   end
 
-  for _, unitMap in ipairs({ heliWave.units, heliWave.airlift and heliWave.airlift.units or {} }) do
+  local airlift = heliWave.airlift
+  for _, unitMap in ipairs({ heliWave.attackers, heliWave.units, airlift and airlift.units or {} }) do
     if unitMap[guid] then
       unitMap[guid] = nil
       return true

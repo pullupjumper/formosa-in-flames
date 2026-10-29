@@ -432,4 +432,22 @@ describe("LandingOps", function()
       assert.stub(stubSetDoctrine).was_not.called()
     end)
   end)
+
+  describe("removeDestroyedHeliWaveUnit", function()
+    it("should remove the unit from the zone that recorded it", function()
+      local zoneStateA = { heliWave = { units = {}, attackers = {} } }
+      local zoneStateB = { heliWave = { units = { T1 = {} }, attackers = {} } }
+      local saveData = buildSaveData({ zoneStates = { A = zoneStateA, B = zoneStateB } })
+
+      assert.is_true(LandingOps.removeDestroyedHeliWaveUnit(saveData, "T1"))
+
+      assert.is_nil(zoneStateB.heliWave.units.T1)
+    end)
+
+    it("should return false when no zone recorded the unit", function()
+      local saveData = buildSaveData({ zoneStates = { A = { heliWave = { units = {}, attackers = {} } } } })
+
+      assert.is_false(LandingOps.removeDestroyedHeliWaveUnit(saveData, "NOPE"))
+    end)
+  end)
 end)

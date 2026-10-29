@@ -12,7 +12,9 @@
 - 移除後，一波（批）是否結束的判斷不變：移除等同「已被擊殺」，不算還在空中。
 - 移除不改變下一波的架數計算：運輸直升機、運輸機的架數只看候選（`waveSize`、`airlift.size`），不看 `units`；`units` 只用來判斷這一波（批）結束了沒。
 - 沒有紀錄的 GUID 不報錯，回 `false`。
-- `destroyUnits.lua` 在 Z-18（運輸直升機）和 IL-76（運輸機）被擊殺時呼叫同一個 `LandingOps` facade 函式。
+- 移除改由一個函式處理：`HeliWave.removeDestroyed`（facade `LandingOps.removeDestroyedHeliWaveUnit`）依 GUID 找 `attackers`、`units`、`airlift.units`，取代原本的 `removeAttacker`。
+- `GameUtils.isCargoUnloaded` 多一個條件：`condition` 是 `UNDERWAY` 且 `cargo == nil` 才算卸完（hovercraft 與運輸機共用）。
+- `destroyUnits.lua` 在 Z-10、Z-18、IL-76 被擊殺時呼叫同一個 `LandingOps` facade 函式，不再巢狀判斷。
 - 攻擊直升機的移除（`attackers`）行為不變。
 
 ## 不做

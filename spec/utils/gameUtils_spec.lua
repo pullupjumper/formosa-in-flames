@@ -41,4 +41,23 @@ describe("GameUtils", function()
       assert.is_false(GameUtils.hasUnit("U-GONE"))
     end)
   end)
+
+  describe("isCargoUnloaded", function()
+    local constants = require("src.core.constants")
+
+    it("should be true when underway with no cargo left", function()
+      assert.is_true(GameUtils.isCargoUnloaded({ condition = constants.UNIT_CONDITIONS.UNDERWAY }))
+    end)
+
+    it("should be false while still transferring cargo", function()
+      assert.is_false(GameUtils.isCargoUnloaded({ condition = constants.UNIT_CONDITIONS.TRANSFERRING_CARGO }))
+    end)
+
+    it("should be false when underway but cargo is still aboard", function()
+      assert.is_false(GameUtils.isCargoUnloaded({
+        condition = constants.UNIT_CONDITIONS.UNDERWAY,
+        cargo = { { cargo = {} } },
+      }))
+    end)
+  end)
 end)

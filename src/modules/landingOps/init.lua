@@ -277,26 +277,13 @@ function LandingOps.attackAirlandingZone(config, ship)
   return true
 end
 
----Forget a destroyed attack helicopter in every zone, so the next wave replaces it
+---Forget a destroyed attack helicopter, transport helicopter or transport aircraft in every zone
 ---@param saveData SBJ__SaveData
 ---@param guid string
----@return boolean # True if a zone recorded the helicopter and it is now removed
-function LandingOps.removeDestroyedAttackHelicopter(saveData, guid)
+---@return boolean # True if a zone recorded the unit and it is now removed
+function LandingOps.removeDestroyedHeliWaveUnit(saveData, guid)
   for _, zoneState in pairs(PersistentState.landingOps(saveData).amphibOps.zoneStates) do
-    if HeliWave.removeAttacker(zoneState, guid) then
-      return true
-    end
-  end
-  return false
-end
-
----Forget a destroyed transport helicopter or transport aircraft in every zone, so it is no longer polled
----@param saveData SBJ__SaveData
----@param guid string
----@return boolean # True if a zone recorded the transport and it is now removed
-function LandingOps.removeDestroyedTransport(saveData, guid)
-  for _, zoneState in pairs(PersistentState.landingOps(saveData).amphibOps.zoneStates) do
-    if HeliWave.removeTransport(zoneState, guid) then
+    if HeliWave.removeDestroyed(zoneState, guid) then
       return true
     end
   end
