@@ -224,7 +224,7 @@ end
 ---@param unit CMO__Unit
 ---@return boolean
 function GameUtils.isCargoUnloaded(unit)
-  return unit.condition == constants.UNIT_CONDITIONS.UNDERWAY
+  return unit.condition == constants.UNIT_CONDITIONS.UNDERWAY and unit.cargo == nil
 end
 
 ---Check if current scenario time has reached or passed the specified start time
