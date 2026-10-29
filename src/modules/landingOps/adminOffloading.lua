@@ -265,7 +265,7 @@ end
 ---@param ship CMO__Unit
 ---@return boolean # True if barge has an active bridge GUID
 function AdminOffloading.hasExtendedBridge(bargeMap, ship)
-  return bargeMap[ship.guid].bridgeGUID ~= nil
+  return bargeMap[ship.guid] ~= nil and bargeMap[ship.guid].bridgeGUID ~= nil
 end
 
 ---Get the operational zone for a barge-RORO pair.
@@ -397,12 +397,16 @@ end
 
 ---Handle a barge or RORO reaching its offload position.
 ---A barge stops and extends a bridge once, then offloads its paired ROROs while the bridge stands.
----A RORO stops in place.
+---A RORO stops in place. A barge missing from the registry is not handled.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if the offload workflow was handled
 function AdminOffloading.handleShipArrival(amphibOps, bargeMap, ship)
+  if ship.name == SHIP_NAMES.BARGE and not bargeMap[ship.guid] then
+    return false
+  end
+
   if ship.name == SHIP_NAMES.BARGE and not AdminOffloading.hasExtendedBridge(bargeMap, ship) then
     holdInPlace(ship)
 

@@ -908,6 +908,13 @@ describe("AdminOffloading", function()
 
       assert.is_false(result)
     end)
+    it("should return false for a barge missing from the registry", function()
+      local ship = buildUnit({ guid = "UNKNOWN-001" })
+
+      local result = AdminOffloading.hasExtendedBridge({}, ship)
+
+      assert.is_false(result)
+    end)
   end)
 
   describe("getBargeROROZone", function()
@@ -1062,6 +1069,16 @@ describe("AdminOffloading", function()
       assert.is_true(barge.holdposition)
       assert.are.equal("BRIDGE-001", barges[barge.guid].bridgeGUID)
       assert.stub(stubAddUnit).was.called(1)
+    end)
+
+    it("should return false and create no bridge for a barge missing from the registry", function()
+      local barge = buildUnit({ guid = "BARGE-UNKNOWN", name = "Barge" })
+      local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "BRIDGE-001" }))
+
+      local result = AdminOffloading.handleShipArrival(buildAmphibOpsConfig(), {}, barge)
+
+      assert.is_false(result)
+      assert.stub(stubAddUnit).was_not.called()
     end)
 
     it("should return false when the bridge cannot be created", function()
