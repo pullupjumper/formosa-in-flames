@@ -1,7 +1,7 @@
 local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
-local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
+local CargoRun = require("src.modules.landingOps.cargoRun")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
 local RoutePlanner = require("src.modules.landingOps.routePlanner")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
@@ -11,45 +11,15 @@ local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 local Hovercraft = {}
 
 -- ============================================================================
--- Constants
--- ============================================================================
-
----@enum SBJ__HovercraftPhaseType
-local PHASE = {
-  ENROUTE   = "enroute",
-  UNLOADING = "unloading",
-  RETURNING = "returning",
-}
-
--- ============================================================================
 -- Helpers
 -- ============================================================================
-
----Check if a unit carries any cargo
----@param unit CMO__Unit
----@return boolean # True if the unit carries any cargo
-local function hasCargo(unit)
-  return unit.cargo ~= nil and unit.cargo[1] ~= nil and unit.cargo[1].cargo ~= nil and #unit.cargo[1].cargo > 0
-end
 
 ---Find the hovercraft on one mothership that are ready, loaded, and not yet routed
 ---@param ship CMO__Unit
 ---@param hovercraftMap table<string, SBJ__HovercraftState>
 ---@return CMO__Unit[]
 local function findReadyHovercraft(ship, hovercraftMap)
-  local ready = {}
-  local embarked = ship.embarkedUnits and ship.embarkedUnits[constants.PLATFORM_TYPES.BOATS] or {}
-
-  for _, guid in ipairs(embarked) do
-    if not hovercraftMap[guid] then
-      local craft = GameApi.ScenEdit_GetUnit(guid)
-      if craft and craft.dbid == constants.PLATFORMS.TYPE_726A and craft.readytime_v == 0 and hasCargo(craft) then
-        table.insert(ready, craft)
-      end
-    end
-  end
-
-  return ready
+  return CargoRun.findReady(ship, constants.PLATFORM_TYPES.BOATS, constants.PLATFORMS.TYPE_726A, hovercraftMap)
 end
 
 -- ============================================================================
@@ -109,7 +79,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
           craft:Launch(true)
           zoneState.hovercraft[craft.guid] = {
             finalPoint = plan.course[#plan.course],
-            phase = PHASE.ENROUTE,
+            phase = CargoRun.PHASE.ENROUTE,
           }
 
           report.add("OK", { hovercraft = craft.guid, beachLane = plan.beachLaneId, slot = plan.slot })
@@ -128,22 +98,12 @@ end
 ---@param craft CMO__Unit
 ---@param entry SBJ__HovercraftState
 local function updateHovercraftPhase(amphibOps, craft, entry)
-  if entry.phase == PHASE.ENROUTE then
-    if DebugFlow.isLandingTeleport(amphibOps) then
-      craft.course = nil
-      DebugFlow.teleport(craft.guid, entry.finalPoint)
-    end
-
-    local range = GameApi.Tool_Range(craft.guid, entry.finalPoint)
-
-    if range and range < amphibOps.tuning.route.arrivalNm then
-      GameApi.ScenEdit_UnloadCargo(craft.guid)
-      entry.phase = PHASE.UNLOADING
-    end
-  elseif entry.phase == PHASE.UNLOADING and GameUtils.isCargoUnloaded(craft) then
-    craft:RTB(true)
-    entry.phase = PHASE.RETURNING
+  if entry.phase == CargoRun.PHASE.ENROUTE and DebugFlow.isLandingTeleport(amphibOps) then
+    craft.course = nil
+    DebugFlow.teleport(craft.guid, entry.finalPoint)
   end
+
+  CargoRun.step(craft, entry, entry.finalPoint, amphibOps.tuning.route.arrivalNm)
 end
 
 ---Update the hovercraft: unload at the parking slot, then return to base once the cargo is out

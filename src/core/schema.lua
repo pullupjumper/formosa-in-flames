@@ -835,7 +835,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---@class SBJ__HovercraftState: table
 ---@field finalPoint CMO__Location Parking slot
----@field phase SBJ__HovercraftPhaseType
+---@field phase SBJ__CargoRunPhaseType
 
 ---Helicopter wave progress of one zone. Hold only the wave in the air; a new wave replaces it
 ---@class SBJ__HeliWaveState: table

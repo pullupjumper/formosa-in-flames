@@ -4,6 +4,7 @@ local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
+local CargoRun = require("src.modules.landingOps.cargoRun")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
@@ -42,22 +43,15 @@ local WING_SIGN = {
 
 ---@enum SBJ__HeliPhaseType
 local PHASE = {
-  ENROUTE   = "enroute",
-  UNLOADING = "unloading",
+  ENROUTE   = CargoRun.PHASE.ENROUTE,
+  UNLOADING = CargoRun.PHASE.UNLOADING,
   CAS       = "cas",
-  RETURNING = "returning",
+  RETURNING = CargoRun.PHASE.RETURNING,
 }
 
 -- ============================================================================
 -- Candidates
 -- ============================================================================
-
----Check if a unit carries any cargo
----@param unit CMO__Unit
----@return boolean # True if the unit carries at least one cargo item
-local function hasCargo(unit)
-  return unit.cargo ~= nil and unit.cargo[1] ~= nil and unit.cargo[1].cargo ~= nil and #unit.cargo[1].cargo > 0
-end
 
 ---Find the motherships anchored in the zone
 ---@param zone SBJ__OperationalZoneDescriptor
@@ -87,16 +81,15 @@ local function findCandidates(zone, motherships)
   local transportDBID, attackDBID = air.transportHelicopter.dbid, air.attackHelicopter.dbid
 
   for _, ship in ipairs(motherships) do
-    local embarked = ship.embarkedUnits and ship.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT] or {}
+    for _, heli in ipairs(CargoRun.findReady(ship, constants.PLATFORM_TYPES.AIRCRAFT, transportDBID)) do
+      table.insert(transports, heli)
+    end
 
+    local embarked = ship.embarkedUnits and ship.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT] or {}
     for _, guid in ipairs(embarked) do
       local heli = GameApi.ScenEdit_GetUnit(guid)
-      if heli and heli.readytime_v == 0 then
-        if heli.dbid == transportDBID and hasCargo(heli) then
-          table.insert(transports, heli)
-        elseif heli.dbid == attackDBID then
-          table.insert(attackers, heli)
-        end
+      if heli and heli.readytime_v == 0 and heli.dbid == attackDBID then
+        table.insert(attackers, heli)
       end
     end
   end
@@ -109,18 +102,10 @@ end
 ---@return CMO__Unit[]
 local function findAirliftCandidates(transportAircraft)
   local airfield = GameApi.ScenEdit_GetUnit(transportAircraft.guid)
-  local embarked = airfield and airfield.embarkedUnits and airfield.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT] or
-      {}
-  local candidates = {}
-
-  for _, guid in ipairs(embarked) do
-    local aircraft = GameApi.ScenEdit_GetUnit(guid)
-    if aircraft and aircraft.dbid == transportAircraft.dbid and aircraft.readytime_v == 0 and hasCargo(aircraft) then
-      table.insert(candidates, aircraft)
-    end
+  if not airfield then
+    return {}
   end
-
-  return candidates
+  return CargoRun.findReady(airfield, constants.PLATFORM_TYPES.AIRCRAFT, transportAircraft.dbid)
 end
 
 ---Get the name of the zone's CAS mission
@@ -415,14 +400,6 @@ end
 -- Wave Progress
 -- ============================================================================
 
----Move a helicopter home
----@param heli CMO__Unit
----@param entry SBJ__HeliState
-local function moveHome(heli, entry)
-  heli:RTB(true)
-  entry.phase = PHASE.RETURNING
-end
-
 ---Find the transports of the wave that are alive and not yet on their way home
 ---@param zoneState SBJ__ZoneState
 ---@param unitMap table<string, SBJ__HeliState>
@@ -463,21 +440,6 @@ local function hasArrived(heli, entry, arrivalNm)
   return range ~= nil and range < arrivalNm
 end
 
----Update one transport through unloading
----@param heli CMO__Unit
----@param entry SBJ__HeliState
----@param arrivalNm number
-local function updateTransport(heli, entry, arrivalNm)
-  if entry.phase == PHASE.ENROUTE then
-    if hasArrived(heli, entry, arrivalNm) then
-      GameApi.ScenEdit_UnloadCargo(heli.guid)
-      entry.phase = PHASE.UNLOADING
-    end
-  elseif entry.phase == PHASE.UNLOADING and GameUtils.isCargoUnloaded(heli) then
-    moveHome(heli, entry)
-  end
-end
-
 ---Update one attack helicopter on its way. Near its landing point it joins the CAS mission, which takes over
 ---@param heli CMO__Unit
 ---@param entry SBJ__HeliState
@@ -496,7 +458,7 @@ end
 ---@param unitMap table<string, SBJ__HeliState>
 local function moveHomeTransports(zoneState, unitMap)
   for guid, heli in pairs(findFlyingTransports(zoneState, unitMap)) do
-    moveHome(heli, unitMap[guid])
+    CargoRun.sendHome(heli, unitMap[guid])
   end
 end
 
@@ -508,7 +470,7 @@ local function updateTransports(zoneState, unitMap, arrivalNm)
   for guid, entry in pairs(unitMap) do
     local heli = TrackedUnits.findUnit(zoneState, guid)
     if heli then
-      updateTransport(heli, entry, arrivalNm)
+      CargoRun.step(heli, entry, entry.landingPoint, arrivalNm)
     end
   end
 end

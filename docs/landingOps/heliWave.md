@@ -68,7 +68,8 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 | 運輸 | `enroute` → 距降落點 < `arrivalNm` 時 `UnloadCargo` → `unloading` → 卸完 `RTB(true)` → `returning` |
 | 攻擊 | `enroute` → 距降落點 < `casAssignNm` 時指派進 CAS 任務 → `cas`（之後不再處理） |
 
-- 卸完：`GameUtils.isCargoUnloaded`，即 `unit.condition == "Underway"`（且不是 `"Transfering Cargo"`）且 `cargo == nil`。字串是暫定，見 `constants.UNIT_CONDITIONS`，需對遊戲日誌校正。
+- 運輸的階段由 [cargoRun](cargoRun.md) 推進。
+- 卸完：`isCargoUnloaded`，即 `unit.condition == "Underway"`（且不是 `"Transfering Cargo"`）且 `cargo == nil`。字串是暫定，見 `constants.UNIT_CONDITIONS`，需對遊戲日誌校正。
 - 被擊殺：`TrackedUnits.findUnit` 回 `nil`，該筆已從所有登記表刪掉，之後不再查。
 
 ### 一波結束與逾時

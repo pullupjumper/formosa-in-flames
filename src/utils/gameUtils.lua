@@ -213,14 +213,6 @@ function GameUtils.createArea(position, params)
   return (rpTable)
 end
 
-
----Check if a unit has finished unloading its cargo: it is under way again
----@param unit CMO__Unit
----@return boolean
-function GameUtils.isCargoUnloaded(unit)
-  return unit.condition == constants.UNIT_CONDITIONS.UNDERWAY and unit.cargo == nil
-end
-
 ---Check if current scenario time has reached or passed the specified start time
 ---@param time string|number A string in the format "YYYY-MM-DD HH:MM:SS" or a timestamp number
 ---@param advanceSeconds? number

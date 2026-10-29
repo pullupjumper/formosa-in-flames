@@ -39,12 +39,12 @@ flowchart TD
 
 ## 到達
 
-`updateHovercraft` 依 `entry.phase` 推進每艘氣墊船：
+`updateHovercraft` 依 `entry.phase` 推進每艘氣墊船（由 [cargoRun](cargoRun.md) 推進）：
 
 | phase | 動作 | 下一個 phase |
 |---|---|---|
 | `enroute` | 離 `finalPoint` 小於 `tuning.route.arrivalNm` 時 `ScenEdit_UnloadCargo` | `unloading` |
-| `unloading` | `GameUtils.isCargoUnloaded`（`condition` 是 `"Underway"` 且 `cargo` 已空）成立時 `RTB(true)` | `returning` |
+| `unloading` | `isCargoUnloaded`（`condition` 是 `"Underway"` 且 `cargo` 已空）成立時 `RTB(true)` | `returning` |
 | `returning` | 不再處理 | — |
 
 查不到的氣墊船（已被擊殺）由 [trackedUnits](trackedUnits.md) 整筆刪掉，之後不再查；擊殺事件也會刪。
