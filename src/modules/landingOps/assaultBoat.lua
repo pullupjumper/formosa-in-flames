@@ -139,6 +139,40 @@ local function selectBeachLanes(lanes, frame, picks)
 end
 
 -- ============================================================================
+-- Launch
+-- ============================================================================
+
+---Check if a carrier may launch its boats: it is in the ACV staging area
+---@param zone SBJ__OperationalZoneDescriptor
+---@param carrier CMO__Unit
+---@return boolean
+local function isCarrierAtLaunch(zone, carrier)
+  return carrier:inArea(zone.landing.acv.area)
+end
+
+---Estimate the seconds until a carrier's boat reaches S_lane.
+---A carrier at launch launches now. Any other carrier is assumed to sail to the outer edge of the station band first,
+---since the shape of the staging area is not known here
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param zone SBJ__OperationalZoneDescriptor
+---@param frame SBJ__LaneFrame
+---@param carrier CMO__Unit
+---@return number
+local function estimateRunSec(amphibOps, zone, frame, carrier)
+  local route = amphibOps.tuning.route
+  local offshoreNm = -LaneGeometry.projectPoint(frame, carrier) / constants.METERS_PER_NM
+  local launchNm = offshoreNm
+  if not isCarrierAtLaunch(zone, carrier) then
+    launchNm = math.min(offshoreNm, route.launchStationFarNm)
+  end
+
+  local sailHours = (offshoreNm - launchNm) / amphibOps.formation.shipSpeed
+  local runHours = math.max(0, launchNm - route.shoreStandoffM / constants.METERS_PER_NM) / amphibOps.tuning.assaultBoat.speed
+
+  return (sailHours + runHours) * constants.SECONDS_PER_HOUR
+end
+
+-- ============================================================================
 -- Public API
 -- ============================================================================
 
@@ -190,7 +224,7 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
       local ship = GameApi.ScenEdit_GetUnit(entry.shipGuid)
       local boat = TrackedUnits.findUnit(zoneState, boatGuid)
 
-      if ship and boat and boat.readytime_v == 0 and ship:inArea(zone.landing.acv.area) then
+      if ship and boat and boat.readytime_v == 0 and isCarrierAtLaunch(zone, ship) then
         local course = RoutePlanner.reserveBoatCourse(zoneState, entry.beachLaneId, {
           guid = boatGuid,
           launchPos = { latitude = ship.latitude, longitude = ship.longitude },
@@ -210,6 +244,33 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
   end
 
   report.emit()
+end
+
+---Estimate when the last pending boat reaches S_lane, by the same launch rule as launchBoats
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@param currentTime number
+---@return number # Time of the arrival. currentTime when no boat is pending
+function AssaultBoat.estimateShoreArrival(amphibOps, zone, zoneState, currentTime)
+  local lanes = zoneState.lanes
+  if not lanes then
+    return currentTime
+  end
+
+  local frame = LaneGeometry.buildFrame(lanes)
+  local arrivalAt = currentTime
+
+  for _, entry in pairs(zoneState.boats or {}) do
+    if entry.status == STATUS.PENDING then
+      local carrier = GameApi.ScenEdit_GetUnit(entry.shipGuid)
+      if carrier then
+        arrivalAt = math.max(arrivalAt, currentTime + estimateRunSec(amphibOps, zone, frame, carrier))
+      end
+    end
+  end
+
+  return arrivalAt
 end
 
 ---Update boats until each one reaches S_lane. A boat that is no longer found no longer holds the zone back

@@ -29,7 +29,7 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 
 `launchAt = max(現在, T − 飛行時間)`。
 
-- **T**：最遠的衝鋒舟母艦航到就位帶外緣（`launchStationFarNm`），再加衝鋒舟從那裡跑到岸邊（`shoreStandoffM`）的時間。
+- **T**：衝鋒舟到岸時間，由 `AssaultBoat.estimateShoreArrival` 估（規則見 [assaultBoat](assaultBoat.md)）。
 - **飛行時間**：第一艘母艦沿左右翼較長者的航線長度 ÷ `cruiseSpeedKt`。
 - 沒有配對衝鋒舟時，`T = 現在`，立刻放。
 

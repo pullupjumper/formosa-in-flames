@@ -1,6 +1,7 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- LandingOps HeliWave Unit Tests
 local HeliWave = require("src.modules.landingOps.heliWave")
+local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local GameApi = require("src.utils.gameApi")
@@ -28,7 +29,7 @@ describe("HeliWave", function()
   local ranges
   -- Scenario clock readings: before and after every wave launch time
   local BEFORE_LAUNCH, AFTER_LAUNCH = 0, 4102444800
-  local stubGetUnit, stubUnload, stubCurrentTime, stubAddMission, stubAssign
+  local stubGetUnit, stubUnload, stubCurrentTime, stubAddMission, stubAssign, stubBoatArrival
 
   ---Register a fake unit that the GetUnit stub can return
   ---@param guid string
@@ -102,10 +103,7 @@ describe("HeliWave", function()
   ---@return SBJ__AmphibOpsConfig
   local function buildAmphibOps(overrides)
     local amphibOps = {
-      formation = { shipSpeed = 14 },
       tuning = {
-        route = { launchStationFarNm = 4, shoreStandoffM = 100 },
-        assaultBoat = { speed = 30 },
         heliWave = {
           waveSize = 8,
           escortSize = 4,
@@ -245,6 +243,8 @@ describe("HeliWave", function()
     trackStub(stub(Logger, "warn"))
     trackStub(stub(Logger, "error"))
     stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit", function(guid) return units[guid] end))
+    -- No boat pending by default: the boats are on the shore now
+    stubBoatArrival = trackStub(stub(AssaultBoat, "estimateShoreArrival", function(_, _, _, currentTime) return currentTime end))
     trackStub(stub(GameApi, "Tool_Range", function(guid) return ranges[guid] or FAR end))
     stubUnload = trackStub(stub(GameApi, "ScenEdit_UnloadCargo"))
     stubAddMission = trackStub(stub(GameApi, "ScenEdit_AddMission", function() return {} end))
@@ -266,14 +266,12 @@ describe("HeliWave", function()
   describe("schedule", function()
     it("should plan the first wave before the boats reach the shore", function()
       addFleet(8, 4)
-      local carrierPos = LaneGeometry.buildPoint(FRAME, -20 * 1852, 0)
-      addUnit("CARRIER", { latitude = carrierPos.latitude, longitude = carrierPos.longitude })
-      local zoneState = buildZoneState({ boats = { B1 = { shipGuid = "CARRIER" } } })
+      stubBoatArrival.invokes(function() return 5588 end)
+      local zoneState = buildZoneState()
 
       HeliWave.schedule(buildCtx(1000), buildZone(), zoneState)
 
-      -- By hand: the carrier sails 16 nm at 14 kt (1.14 h), its boats run 3.95 nm at 30 kt (0.13 h),
-      -- so they reach the shore at about 1000 + 4588 = 5588 s. The helicopters must leave after now and before that.
+      -- The boats reach the shore at 5588 s. The helicopters must leave after now and before that.
       local launchAt = zoneState.heliWave.launchAt
       assert.is_true(launchAt > 1000)
       assert.is_true(launchAt < 5588)
@@ -645,10 +643,10 @@ describe("HeliWave", function()
 
         HeliWave.schedule(buildCtx(1000), buildAirliftZone(), zoneState)
 
-        -- By hand, no boat paired: the boats run in 3.95 nm at 30 kt (474 s), so T = 1474. Left wing: 103310 m to the turn point (3000 m inland, 8000 m left),
+        -- By hand, no boat pending: T = 1000. Left wing: 103310 m to the turn point (3000 m inland, 8000 m left),
         -- then 7906 m to the landing point (5500 m, 500 m left) = 111216 m = 60.05 nm = 540 s at 400 kt.
-        -- Launch = 1474 + 600 - 540 = 1534.
-        assert.is_near(1534, zoneState.heliWave.airlift.launchAt, 3)
+        -- Launch = 1000 + 600 - 540 = 1060.
+        assert.is_near(1060, zoneState.heliWave.airlift.launchAt, 3)
         assert.are.equal(0, zoneState.heliWave.airlift.waveIndex)
       end)
 

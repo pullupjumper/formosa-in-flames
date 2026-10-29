@@ -4,6 +4,7 @@ local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
 local Utils = require("src.utils.utils")
+local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local CargoRun = require("src.modules.landingOps.cargoRun")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
@@ -216,37 +217,6 @@ local function calculateCourseLengthM(startPos, course)
     previous = point
   end
   return length
-end
-
----Calculate when the paired assault boats reach the shore line.
----The farthest carrier sails to the outer edge of the launch station band, then its boats run in to the shore.
----@param amphibOps SBJ__AmphibOpsConfig
----@param zoneState SBJ__ZoneState
----@param currentTime number
----@return number # Time of the boat arrival
-local function calculateBoatArrivalTime(amphibOps, zoneState, currentTime)
-  local lanes = zoneState.lanes
-  if not lanes then
-    return currentTime
-  end
-
-  local frame = LaneGeometry.buildFrame(lanes)
-  local route = amphibOps.tuning.route
-  local farthestNm = 0
-
-  for _, entry in pairs(zoneState.boats or {}) do
-    local carrier = GameApi.ScenEdit_GetUnit(entry.shipGuid)
-    if carrier then
-      local along = LaneGeometry.projectPoint(frame, carrier)
-      farthestNm = math.max(farthestNm, -along / constants.METERS_PER_NM)
-    end
-  end
-
-  local sailHours = math.max(0, farthestNm - route.launchStationFarNm) / amphibOps.formation.shipSpeed
-  local runInNm = route.launchStationFarNm - route.shoreStandoffM / constants.METERS_PER_NM
-  local runHours = runInNm / amphibOps.tuning.assaultBoat.speed
-
-  return currentTime + (sailHours + runHours) * constants.SECONDS_PER_HOUR
 end
 
 ---Calculate the flight time of a wave from the first mothership along the longer wing
@@ -528,7 +498,7 @@ end
 function HeliWave.schedule(tickCtx, zone, zoneState)
   local amphibOps, currentTime = tickCtx.config.red.amphibOps, tickCtx.currentTime
   local flightCtx = buildFlightContext(zone, zoneState, getHeliConfig(tickCtx))
-  local boatArrivalAt = calculateBoatArrivalTime(amphibOps, zoneState, currentTime)
+  local boatArrivalAt = AssaultBoat.estimateShoreArrival(amphibOps, zone, zoneState, currentTime)
   local flightSec = calculateFlightSec(flightCtx, findMotherships(zone, tickCtx.filteredShips))
 
   zoneState.heliWave = {
@@ -540,8 +510,8 @@ function HeliWave.schedule(tickCtx, zone, zoneState)
 
   if zone.air.transportAircraft then
     local airliftConfig = getHeliConfig(tickCtx).airlift
-    local airfield = GameApi.ScenEdit_GetUnit(zone.air.transportAircraft.guid)
-    local airliftFlightSec = calculateAirliftFlightSec(flightCtx, airfield)
+    local airbase = GameApi.ScenEdit_GetUnit(zone.air.transportAircraft.guid)
+    local airliftFlightSec = calculateAirliftFlightSec(flightCtx, airbase)
     zoneState.heliWave.airlift = {
       waveIndex = 0,
       launchAt = math.max(currentTime, boatArrivalAt + airliftConfig.delaySec - airliftFlightSec),

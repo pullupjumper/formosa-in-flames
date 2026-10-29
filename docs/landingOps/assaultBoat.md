@@ -48,6 +48,12 @@ flowchart TD
 
 `launchBoats` 和 `updateBoats` 查不到舟就整筆刪掉。`updateBoats` 判斷：離 `finalPoint` 小於 `arrivalNm` → `arrived`。沒有任何舟處於 `pending` 或 `launched` 時回 `true`。
 
+`estimateShoreArrival` 估最後一艘 `pending` 舟到 S_lane 的時間，給 [heliWave](heliWave.md) 倒推放飛時間。和 `launchBoats` 用同一條放出規則：
+
+- 載艦已在 `landing.acv.area` 內：現在放，從載艦位置跑到 S_lane。
+- 不在區內：假設載艦先以 `formation.shipSpeed` 航到就位帶外緣（`launchStationFarNm`）再放；已比外緣靠岸就原地放。
+- 沒有 `pending` 的舟：回傳現在。
+
 `findLandedLaneIdSet` 回傳「舟已到達且仍存活」的灘際通道（查不到的舟同樣刪掉），[obstacleClearing](obstacleClearing.md) 只對這些通道破障。
 
 ---
@@ -59,6 +65,7 @@ flowchart TD
 | `pairBoats(zone, zoneState, ships)` | 配對並寫入 `zoneState.boats` |
 | `launchBoats(amphibOps, zone, zoneState)` | 放出已配對的舟 |
 | `updateBoats(amphibOps, zoneState)` | 更新狀態，全部完成回 `true` |
+| `estimateShoreArrival(amphibOps, zone, zoneState, currentTime)` | 估最後一艘 `pending` 舟到岸的時間 |
 | `findLandedLaneIdSet(zoneState)` | 已登岸且存活的舟所在的灘際通道 |
 
 ---
@@ -69,6 +76,7 @@ flowchart TD
 |---|---|
 | `tuning.assaultBoat.speed` | 衝鋒舟速度 |
 | `tuning.route.arrivalNm` | 到達判斷 |
+| `tuning.route.launchStationFarNm`、`shoreStandoffM`、`formation.shipSpeed` | 估到岸時間 |
 | `zones[].landing.acv.area` | 載艦進入此區才放出 |
 
 ---

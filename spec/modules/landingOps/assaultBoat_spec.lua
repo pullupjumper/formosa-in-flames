@@ -326,6 +326,96 @@ describe("AssaultBoat", function()
     end)
   end)
 
+  describe("estimateShoreArrival", function()
+    local NOW = 1000
+
+    ---@return SBJ__AmphibOpsConfig
+    local function buildEstimateConfig()
+      local amphibOps = buildConfig()
+      amphibOps.formation = { shipSpeed = 14 }
+      amphibOps.tuning.route.launchStationFarNm = 4
+      return amphibOps
+    end
+
+    ---Add a carrier `offshoreNm` off the lane origin with one pending boat
+    ---@param unitMap table<string, table>
+    ---@param boats table<string, SBJ__AssaultBoatState>
+    ---@param guid string
+    ---@param offshoreNm number
+    ---@param isInArea boolean Whether the carrier is in the ACV staging area
+    local function addCarrier(unitMap, boats, guid, offshoreNm, isInArea)
+      local pos = LaneGeometry.buildPoint(frame, -offshoreNm * constants.METERS_PER_NM, 0)
+      unitMap[guid] = {
+        guid = guid,
+        latitude = pos.latitude,
+        longitude = pos.longitude,
+        inArea = function() return isInArea end,
+      }
+      boats["BOAT-" .. guid] = { shipGuid = guid, beachLaneId = "W1-B1", status = "pending" }
+    end
+
+    ---@param boats table<string, SBJ__AssaultBoatState>
+    ---@return SBJ__ZoneState
+    local function buildEstimateZoneState(boats)
+      return { lanes = { origin = ORIGIN, bearing = BEARING, waterLanes = {} }, boats = boats }
+    end
+
+    it("should launch the boats now when their carrier is already in the staging area", function()
+      local unitMap, boats = {}, {}
+      addCarrier(unitMap, boats, "LST-1", 5, true)
+      stubUnits(unitMap)
+
+      local arrivalAt = AssaultBoat.estimateShoreArrival(buildEstimateConfig(), zone, buildEstimateZoneState(boats), NOW)
+
+      -- By hand: the boat runs 5 nm - 100 m = 4.946 nm at 30 kt = 593.5 s
+      assert.is_near(NOW + 593.5, arrivalAt, 1)
+    end)
+
+    it("should let a carrier outside the staging area sail to the outer edge of the station band first", function()
+      local unitMap, boats = {}, {}
+      addCarrier(unitMap, boats, "LST-1", 20, false)
+      stubUnits(unitMap)
+
+      local arrivalAt = AssaultBoat.estimateShoreArrival(buildEstimateConfig(), zone, buildEstimateZoneState(boats), NOW)
+
+      -- By hand: the carrier sails 16 nm at 14 kt (4114.3 s), then the boat runs 3.946 nm at 30 kt (473.5 s)
+      assert.is_near(NOW + 4587.8, arrivalAt, 1)
+    end)
+
+    it("should launch from where the carrier is when it is already inside the outer edge", function()
+      local unitMap, boats = {}, {}
+      addCarrier(unitMap, boats, "LST-1", 3, false)
+      stubUnits(unitMap)
+
+      local arrivalAt = AssaultBoat.estimateShoreArrival(buildEstimateConfig(), zone, buildEstimateZoneState(boats), NOW)
+
+      -- By hand: the boat runs 3 nm - 100 m = 2.946 nm at 30 kt = 353.5 s
+      assert.is_near(NOW + 353.5, arrivalAt, 1)
+    end)
+
+    it("should wait for the last boat to reach the shore", function()
+      local unitMap, boats = {}, {}
+      addCarrier(unitMap, boats, "LST-1", 5, true)
+      addCarrier(unitMap, boats, "LST-2", 20, false)
+      stubUnits(unitMap)
+
+      local arrivalAt = AssaultBoat.estimateShoreArrival(buildEstimateConfig(), zone, buildEstimateZoneState(boats), NOW)
+
+      assert.is_near(NOW + 4587.8, arrivalAt, 1)
+    end)
+
+    it("should return now when no boat is still pending", function()
+      local unitMap, boats = {}, {}
+      addCarrier(unitMap, boats, "LST-1", 20, false)
+      boats["BOAT-LST-1"].status = "launched"
+      stubUnits(unitMap)
+
+      local arrivalAt = AssaultBoat.estimateShoreArrival(buildEstimateConfig(), zone, buildEstimateZoneState(boats), NOW)
+
+      assert.are.equal(NOW, arrivalAt)
+    end)
+  end)
+
   describe("findLandedLaneIdSet", function()
     it("should stop looking up a landed boat that is no longer found", function()
       local getUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
