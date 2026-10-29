@@ -109,7 +109,8 @@ end
 ---@return CMO__Unit[]
 local function findAirliftCandidates(transportAircraft)
   local airfield = GameApi.ScenEdit_GetUnit(transportAircraft.guid)
-  local embarked = airfield and airfield.embarkedUnits and airfield.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT] or {}
+  local embarked = airfield and airfield.embarkedUnits and airfield.embarkedUnits[constants.PLATFORM_TYPES.AIRCRAFT] or
+      {}
   local candidates = {}
 
   for _, guid in ipairs(embarked) do
@@ -423,12 +424,13 @@ local function moveHome(heli, entry)
 end
 
 ---Find the transports of the wave that are alive and not yet on their way home
+---@param zoneState SBJ__ZoneState
 ---@param unitMap table<string, SBJ__HeliState>
 ---@return table<string, CMO__Unit> # Alive transports indexed by GUID
-local function findFlyingTransports(unitMap)
+local function findFlyingTransports(zoneState, unitMap)
   local helis = {}
   for guid, entry in pairs(unitMap) do
-    local heli = entry.phase ~= PHASE.RETURNING and GameApi.ScenEdit_GetUnit(guid)
+    local heli = entry.phase ~= PHASE.RETURNING and TrackedUnits.findUnit(zoneState, guid)
     if heli then
       helis[guid] = heli
     end
@@ -444,10 +446,11 @@ local function getHeliConfig(tickCtx)
 end
 
 ---Check if the wave is over: every transport is on its way home or destroyed
+---@param zoneState SBJ__ZoneState
 ---@param unitMap table<string, SBJ__HeliState>
 ---@return boolean # True if no transport of the wave is still in the air
-local function isWaveDone(unitMap)
-  return next(findFlyingTransports(unitMap)) == nil
+local function isWaveDone(zoneState, unitMap)
+  return next(findFlyingTransports(zoneState, unitMap)) == nil
 end
 
 ---Check if a helicopter is close enough to its landing point
@@ -489,9 +492,10 @@ local function updateAttacker(heli, entry, casAssignNm, missionName)
 end
 
 ---Move home every transport of the wave still in the air
+---@param zoneState SBJ__ZoneState
 ---@param unitMap table<string, SBJ__HeliState>
-local function moveHomeTransports(unitMap)
-  for guid, heli in pairs(findFlyingTransports(unitMap)) do
+local function moveHomeTransports(zoneState, unitMap)
+  for guid, heli in pairs(findFlyingTransports(zoneState, unitMap)) do
     moveHome(heli, unitMap[guid])
   end
 end
@@ -526,25 +530,27 @@ end
 ---Recall the transports of a fleet (helicopter wave or airlift batch) that stayed out past the timeout
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
----@param fleet SBJ__HeliWaveState|SBJ__AirliftState
----@param fleetName string Which fleet, for the log
+---@param zoneState SBJ__ZoneState
+---@param params SBJ__RecallOnTimeoutParams
 ---@return SBJ__LogResult|nil # nil when nothing timed out
-local function recallOnTimeout(tickCtx, zone, fleet, fleetName)
+local function recallOnTimeout(tickCtx, zone, zoneState, params)
+  local fleet = params.fleet
   -- A transport stuck unloading is moved home too, so it cannot block the next wave
   if not (fleet.waveLaunchedAt and tickCtx.currentTime - fleet.waveLaunchedAt >= getHeliConfig(tickCtx).waveTimeoutSec and
-        not isWaveDone(fleet.units)) then
+        not isWaveDone(zoneState, fleet.units)) then
     return nil
   end
 
-  moveHomeTransports(fleet.units)
-  return { tag = "WARN", fields = { zone = zone.name, fleet = fleetName, wave = fleet.waveIndex, reason = "wave_timeout" } }
+  moveHomeTransports(zoneState, fleet.units)
+  return { tag = "WARN", fields = { zone = zone.name, fleet = params.fleetName, wave = fleet.waveIndex, reason = "wave_timeout" } }
 end
 
 ---Check if a fleet is done and its next launch time has come
+---@param zoneState SBJ__ZoneState
 ---@param fleet SBJ__HeliWaveState|SBJ__AirliftState
 ---@return boolean
-local function isFleetDue(fleet)
-  return isWaveDone(fleet.units) and (fleet.waveIndex > 0 or GameUtils.isAfterStartTime(fleet.launchAt))
+local function isFleetDue(zoneState, fleet)
+  return isWaveDone(zoneState, fleet.units) and (fleet.waveIndex > 0 or GameUtils.isAfterStartTime(fleet.launchAt))
 end
 
 -- ============================================================================
@@ -612,24 +618,26 @@ function HeliWave.update(tickCtx, zone, zoneState)
 
   local heliConfig = getHeliConfig(tickCtx)
   updateAttackers(zoneState, state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
-
   local airlift = state.airlift
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "heliWave", "launchWave")
   updateTransports(zoneState, state.units, heliConfig.arrivalNm)
-  report.addAll({ recallOnTimeout(tickCtx, zone, state, "heli") })
-  local isHeliReady = isFleetDue(state)
+  report.addAll({ recallOnTimeout(tickCtx, zone, zoneState, { fleet = state, fleetName = "heli" }) })
+  local isHeliReady = isFleetDue(zoneState, state)
   local isAirliftReady = false
+
   if airlift then
     updateTransports(zoneState, airlift.units, heliConfig.airlift.arrivalNm)
-    report.addAll({ recallOnTimeout(tickCtx, zone, airlift, "airlift") })
-    isAirliftReady = isFleetDue(airlift)
+    report.addAll({ recallOnTimeout(tickCtx, zone, zoneState, { fleet = airlift, fleetName = "airlift" }) })
+    isAirliftReady = isFleetDue(zoneState, airlift)
   end
+
   if not (isHeliReady or isAirliftReady) then
     report.emit()
     return true
   end
 
   local flightCtx = buildFlightContext(zone, zoneState, heliConfig)
+
   if not flightCtx then
     Logger.error(LogFormat.line("ERROR", { scope = "heliWave", zone = zone.name, reason = "landing_geometry_missing" }))
     return false
@@ -638,11 +646,12 @@ function HeliWave.update(tickCtx, zone, zoneState)
   if isHeliReady then
     report.addAll({ launchWave(tickCtx, zone, state, flightCtx) })
   end
+
   if airlift and isAirliftReady then
     report.addAll({ launchAirliftBatch(tickCtx, zone, airlift, flightCtx) })
   end
-  report.emit()
 
+  report.emit()
   return true
 end
 

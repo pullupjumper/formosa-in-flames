@@ -913,6 +913,11 @@ function ScenEdit_DeleteMine(params) end
 ---@field frame SBJ__LaneFrame
 ---@field shiftM number Meters toward shore applied to the whole formation
 
+---Inputs for HeliWave recallOnTimeout
+---@class SBJ__RecallOnTimeoutParams: table
+---@field fleet SBJ__HeliWaveState|SBJ__AirliftState
+---@field fleetName string Which fleet, for the log
+
 ---Inputs for LaneGeometry isStepRangeValid
 ---@class SBJ__IsStepRangeValidParams: table
 ---@field first integer Index of the first value
