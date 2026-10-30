@@ -236,111 +236,11 @@ local function createOffloadedVehicles(ship, cargoItems, locations)
   return #results, results
 end
 
--- ============================================================================
--- Public API: Queries
--- ============================================================================
-
----Check if the logistics bridge of a barge is destroyed.
----The bridge GUID must exist and its unit must be destroyed.
----@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
----@param ship CMO__Unit
----@return boolean # True if the bridge was created and is now destroyed
-function AdminOffloading.isBridgeDestroyed(bargeMap, ship)
-  if bargeMap[ship.guid] and bargeMap[ship.guid].bridgeGUID then
-    local bridge = GameApi.ScenEdit_GetUnit(bargeMap[ship.guid].bridgeGUID)
-
-    if not bridge then
-      return true
-    end
-
-    return false
-  end
-
-  return true
-end
-
----Check if a barge has an extended logistics bridge.
----The barge creates the bridge when it reaches the offload position for vehicle transfer.
----@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
----@param ship CMO__Unit
----@return boolean # True if barge has an active bridge GUID
-function AdminOffloading.hasExtendedBridge(bargeMap, ship)
-  return bargeMap[ship.guid] ~= nil and bargeMap[ship.guid].bridgeGUID ~= nil
-end
-
----Get the operational zone for a barge-RORO pair.
----The units must be in the same ACV area and closer than pairingRangeNm to each other.
----@param zones SBJ__OperationalZoneDescriptor[]
----@param barge CMO__Unit
----@param roro CMO__Unit
----@param pairingRangeNm number
----@return SBJ__OperationalZoneDescriptor|nil # Zone descriptor, or nil if the units are not in position
-function AdminOffloading.getBargeROROZone(zones, barge, roro, pairingRangeNm)
-  for _, zone in ipairs(zones) do
-    local distance = GameApi.Tool_Range(roro.guid, barge.guid)
-
-    if distance and roro:inArea(zone.landing.acv.area) and barge:inArea(zone.landing.acv.area) and distance < pairingRangeNm then
-      return zone
-    end
-  end
-
-  return nil
-end
-
--- ============================================================================
--- Public API: Operations
--- ============================================================================
-
----Start admin offloading in a single zone.
----Direct barges to the offload areas and RORO ships to follow. This creates the logistics chain RORO -> Barge -> Beach.
----@param zone SBJ__OperationalZoneDescriptor
----@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
----@param filteredUnits CMO__SideUnit[]
----@return boolean # True if admin offloading started
-function AdminOffloading.startAdminOffloading(zone, bargeMap, filteredUnits)
-  ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
-  local roros = {}
-  ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
-  local bargeEntries = {}
-  local report = LogFormat.report(constants.TAGS.ADMIN_OFFLOADING, "zone=" .. zone.name, "Admin offloading")
-
-  for _, u in ipairs(filteredUnits) do
-    local unit = GameApi.ScenEdit_GetUnit(u.guid)
-
-    if unit then
-      if unit.name == SHIP_NAMES.BARGE and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) then
-        local dest, result = processBarge(unit, zone, bargeMap)
-        report.add(result.tag, result.fields)
-        if dest then
-          table.insert(bargeEntries, { unit = unit, zone = zone, dest = dest })
-        end
-      end
-
-      if unit.name == SHIP_NAMES.RORO and unit.type == "Ship" and unit:inArea(zone.movement.holdingAreas.deployLine) then
-        table.insert(roros, { unit = unit, zone = zone })
-      end
-    end
-  end
-
-  for _, roro in ipairs(roros) do
-    for _, barge in ipairs(bargeEntries) do
-      if barge.unit:inArea(roro.zone.movement.holdingAreas.deployLine) then
-        local result = pairROROWithBarge(roro, barge, bargeMap)
-        report.add(result.tag, result.fields)
-      end
-    end
-  end
-
-  report.emit()
-
-  return true
-end
-
 ---Offload vehicles from the cargo of a ship to the beach.
 ---Delete the cargo from the ship. Create facility units in a line at calculated positions.
 ---@param params SBJ__VehicleOffloadParams
 ---@return integer|nil # Number of vehicles offloaded, or nil on error
-function AdminOffloading.offloadVehicles(params)
+local function offloadVehicles(params)
   local ship = params.ship
   if not ship or ship.IsDestroyed then return end
 
@@ -363,6 +263,61 @@ function AdminOffloading.offloadVehicles(params)
   return count
 end
 
+-- ============================================================================
+-- Bridge and Pairing
+-- ============================================================================
+
+---Check if the logistics bridge of a barge is destroyed.
+---The bridge GUID must exist and its unit must be destroyed.
+---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
+---@param ship CMO__Unit
+---@return boolean # True if the bridge was created and is now destroyed
+local function isBridgeDestroyed(bargeMap, ship)
+  if bargeMap[ship.guid] and bargeMap[ship.guid].bridgeGUID then
+    local bridge = GameApi.ScenEdit_GetUnit(bargeMap[ship.guid].bridgeGUID)
+
+    if not bridge then
+      return true
+    end
+
+    return false
+  end
+
+  return true
+end
+
+---Check if a barge has an extended logistics bridge.
+---The barge creates the bridge when it reaches the offload position for vehicle transfer.
+---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
+---@param ship CMO__Unit
+---@return boolean # True if barge has an active bridge GUID
+local function hasExtendedBridge(bargeMap, ship)
+  return bargeMap[ship.guid] ~= nil and bargeMap[ship.guid].bridgeGUID ~= nil
+end
+
+---Get the operational zone for a barge-RORO pair.
+---The units must be in the same ACV area and closer than pairingRangeNm to each other.
+---@param zones SBJ__OperationalZoneDescriptor[]
+---@param barge CMO__Unit
+---@param roro CMO__Unit
+---@param pairingRangeNm number
+---@return SBJ__OperationalZoneDescriptor|nil # Zone descriptor, or nil if the units are not in position
+local function getBargeROROZone(zones, barge, roro, pairingRangeNm)
+  for _, zone in ipairs(zones) do
+    local distance = GameApi.Tool_Range(roro.guid, barge.guid)
+
+    if distance and roro:inArea(zone.landing.acv.area) and barge:inArea(zone.landing.acv.area) and distance < pairingRangeNm then
+      return zone
+    end
+  end
+
+  return nil
+end
+
+-- ============================================================================
+-- Arrival Handling
+-- ============================================================================
+
 ---Stop a ship in place at its offload position
 ---@param ship CMO__Unit
 local function holdInPlace(ship)
@@ -380,10 +335,10 @@ local function offloadPairedROROs(amphibOps, barge, bargeState)
     local roro = GameApi.ScenEdit_GetUnit(guid)
 
     if roro then
-      local zone = AdminOffloading.getBargeROROZone(amphibOps.zones, barge, roro, amphibOps.bargeRoroPairingRangeNm)
+      local zone = getBargeROROZone(amphibOps.zones, barge, roro, amphibOps.bargeRoroPairingRangeNm)
 
       if zone then
-        AdminOffloading.offloadVehicles({
+        offloadVehicles({
           ship = roro,
           num = amphibOps.roroOffloadBatchSize,
           bearing = zone.heading,
@@ -395,19 +350,18 @@ local function offloadPairedROROs(amphibOps, barge, bargeState)
   end
 end
 
----Handle a barge or RORO reaching its offload position.
----A barge stops and extends a bridge once, then offloads its paired ROROs while the bridge stands.
----A RORO stops in place. A barge missing from the registry is not handled.
+---Extend a bridge once, then offload paired ROROs while the bridge stands.
+---A barge missing from the registry is not handled.
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
 ---@param ship CMO__Unit
 ---@return boolean # True if the offload workflow was handled
-function AdminOffloading.handleShipArrival(amphibOps, bargeMap, ship)
-  if ship.name == SHIP_NAMES.BARGE and not bargeMap[ship.guid] then
+local function handleBargeArrival(amphibOps, bargeMap, ship)
+  if not bargeMap[ship.guid] then
     return false
   end
 
-  if ship.name == SHIP_NAMES.BARGE and not AdminOffloading.hasExtendedBridge(bargeMap, ship) then
+  if not hasExtendedBridge(bargeMap, ship) then
     holdInPlace(ship)
 
     local bridge = GameApi.ScenEdit_AddUnit({
@@ -426,8 +380,76 @@ function AdminOffloading.handleShipArrival(amphibOps, bargeMap, ship)
     bargeMap[ship.guid].bridgeGUID = bridge.guid
   end
 
-  if ship.name == SHIP_NAMES.BARGE and not AdminOffloading.isBridgeDestroyed(bargeMap, ship) then
+  if not isBridgeDestroyed(bargeMap, ship) then
     offloadPairedROROs(amphibOps, ship, bargeMap[ship.guid])
+  end
+
+  return true
+end
+
+-- ============================================================================
+-- Public API
+-- ============================================================================
+
+---Start admin offloading in a single zone.
+---Direct barges to the offload areas and RORO ships to follow. This creates the logistics chain RORO -> Barge -> Beach.
+---@param zone SBJ__OperationalZoneDescriptor
+---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
+---@param filteredUnits CMO__SideUnit[]
+---@return boolean # True if admin offloading started
+function AdminOffloading.startAdminOffloading(zone, bargeMap, filteredUnits)
+  ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor }[]
+  local roros = {}
+  ---@type { unit: CMO__Unit, zone: SBJ__OperationalZoneDescriptor, dest: CMO__Waypoint[] }[]
+  local bargeEntries = {}
+  local report = LogFormat.report(constants.TAGS.ADMIN_OFFLOADING, "zone=" .. zone.name, "Admin offloading")
+
+  for _, sideUnit in ipairs(filteredUnits) do
+    local unit = GameApi.ScenEdit_GetUnit(sideUnit.guid)
+
+    if unit then
+      if unit.name == SHIP_NAMES.BARGE and
+          unit.type == constants.UNIT_TYPES.SHIP and
+          unit:inArea(zone.movement.holdingAreas.deployLine) then
+        local dest, result = processBarge(unit, zone, bargeMap)
+        report.add(result.tag, result.fields)
+
+        if dest then
+          table.insert(bargeEntries, { unit = unit, zone = zone, dest = dest })
+        end
+      end
+
+      if unit.name == SHIP_NAMES.RORO and
+          unit.type == constants.UNIT_TYPES.SHIP and
+          unit:inArea(zone.movement.holdingAreas.deployLine) then
+        table.insert(roros, { unit = unit, zone = zone })
+      end
+    end
+  end
+
+  for _, roro in ipairs(roros) do
+    for _, barge in ipairs(bargeEntries) do
+      if barge.unit:inArea(roro.zone.movement.holdingAreas.deployLine) then
+        local result = pairROROWithBarge(roro, barge, bargeMap)
+        report.add(result.tag, result.fields)
+      end
+    end
+  end
+
+  report.emit()
+  return true
+end
+
+---Handle a barge or RORO reaching its offload position.
+---A barge stops and extends a bridge once, then offloads its paired ROROs while the bridge stands.
+---A RORO stops in place. A barge missing from the registry is not handled.
+---@param amphibOps SBJ__AmphibOpsConfig
+---@param bargeMap table<string, SBJ__BargeState> Barge registry indexed by barge GUID
+---@param ship CMO__Unit
+---@return boolean # True if the offload workflow was handled
+function AdminOffloading.handleShipArrival(amphibOps, bargeMap, ship)
+  if ship.name == SHIP_NAMES.BARGE then
+    return handleBargeArrival(amphibOps, bargeMap, ship)
   end
 
   if ship.name == SHIP_NAMES.RORO then

@@ -624,436 +624,6 @@ describe("AdminOffloading", function()
     end)
   end)
 
-  describe("offloadVehicles", function()
-    local stubGetPoint, stubAddUnit
-
-    before_each(function()
-      stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
-      stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
-    end)
-
-    ---Make successive placement requests resolve to the given locations
-    ---@param locations table[]
-    local function placeAt(locations)
-      local calls = 0
-      stubGetPoint.invokes(function()
-        calls = calls + 1
-        return locations[calls]
-      end)
-    end
-
-    it("should offload vehicles and return count of successfully created units", function()
-      local params = buildOffloadParams()
-      local deleteStub = trackStub(stub(params.ship, "deleteUnitCargo"))
-
-      placeAt({
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      })
-      stubAddUnit.returns({ guid = "CREATED-001" })
-
-      local result = AdminOffloading.offloadVehicles(params)
-
-      assert.are.equal(2, result)
-      assert.stub(deleteStub).was.called(2)
-      assert.stub(stubAddUnit).was.called(2)
-      assert.stub(logStub).was.called(1)
-    end)
-
-    it("should create Ground unit when cargo item type is 2", function()
-      local params = buildOffloadParams({
-        num = 1,
-        ship = buildUnit({
-          cargo = {
-            [1] = {
-              cargo = {
-                buildCargoItem({ guid = "C-1", name = "GroundUnit-1", Type = 2 }),
-              },
-            },
-          },
-        }),
-      })
-      trackStub(stub(params.ship, "deleteUnitCargo"))
-
-      placeAt({ { latitude = 25.1, longitude = 121.1 }, })
-      stubAddUnit.returns({ guid = "CREATED-001" })
-
-      AdminOffloading.offloadVehicles(params)
-
-      assert.stub(stubAddUnit).was.called_with({
-        side = "China",
-        type = "Ground unit",
-        latitude = 25.1,
-        longitude = 121.1,
-        dbid = 3001,
-        unitname = "GroundUnit-1",
-      })
-      assert.stub(logStub).was.called(1)
-    end)
-
-    it("should create Facility when cargo item type is not 2", function()
-      local params = buildOffloadParams({
-        num = 1,
-        ship = buildUnit({
-          cargo = {
-            [1] = {
-              cargo = {
-                buildCargoItem({ guid = "C-1", name = "Facility-1", Type = 1 }),
-              },
-            },
-          },
-        }),
-      })
-      trackStub(stub(params.ship, "deleteUnitCargo"))
-
-      placeAt({
-        { latitude = 25.1, longitude = 121.1 },
-      })
-      stubAddUnit.returns({ guid = "CREATED-001" })
-
-      AdminOffloading.offloadVehicles(params)
-
-      assert.stub(stubAddUnit).was.called_with({
-        side = "China",
-        type = "Facility",
-        latitude = 25.1,
-        longitude = 121.1,
-        dbid = 3001,
-        unitname = "Facility-1",
-      })
-      assert.stub(logStub).was.called(1)
-    end)
-
-    it("should place vehicles along the bearing starting at the first distance from the ship", function()
-      local params = buildOffloadParams()
-      trackStub(stub(params.ship, "deleteUnitCargo"))
-
-      placeAt({
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      })
-      stubAddUnit.returns({ guid = "CREATED-001" })
-
-      AdminOffloading.offloadVehicles(params)
-
-      assert.are.same({
-        latitude = params.ship.latitude,
-        longitude = params.ship.longitude,
-        bearing = 90,
-        distance = 0.3,
-      }, stubGetPoint.calls[1].vals[1])
-      assert.are.same({
-        latitude = 25.1,
-        longitude = 121.1,
-        bearing = 90,
-        distance = 0.5,
-      }, stubGetPoint.calls[2].vals[1])
-      assert.stub(logStub).was.called(1)
-    end)
-
-    it("should return nil when ship is nil", function()
-      local params = buildOffloadParams()
-      params.ship = nil
-
-      local result = AdminOffloading.offloadVehicles(params)
-
-      assert.is_nil(result)
-      assert.stub(stubGetPoint).was_not.called()
-      assert.stub(logStub).was_not.called()
-    end)
-
-    it("should return nil when ship is destroyed", function()
-      local params = buildOffloadParams()
-      params.ship.IsDestroyed = true
-
-      local result = AdminOffloading.offloadVehicles(params)
-
-      assert.is_nil(result)
-      assert.stub(stubGetPoint).was_not.called()
-      assert.stub(logStub).was_not.called()
-    end)
-
-    it("should return nil when unit creation fails", function()
-      local params = buildOffloadParams()
-      trackStub(stub(params.ship, "deleteUnitCargo"))
-
-      placeAt({
-        { latitude = 25.1, longitude = 121.1 },
-        { latitude = 25.2, longitude = 121.2 },
-      })
-      stubAddUnit.invokes(function(unitParams)
-        if unitParams.unitname == "Vehicle-1" then
-          return { guid = "CREATED-001" }
-        end
-        return nil
-      end)
-
-      local result = AdminOffloading.offloadVehicles(params)
-
-      assert.is_nil(result)
-      assert.stub(logStub).was.called(1)
-      assert.stub(errorStub).was.called(1)
-      assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=add_unit_failed"))
-    end)
-
-    it("should only offload up to params.num items from cargo", function()
-      local params = buildOffloadParams({ num = 1 })
-      trackStub(stub(params.ship, "deleteUnitCargo"))
-
-      placeAt({
-        { latitude = 25.1, longitude = 121.1 },
-      })
-      stubAddUnit.returns({ guid = "CREATED-001" })
-
-      local result = AdminOffloading.offloadVehicles(params)
-
-      assert.are.equal(1, result)
-      assert.stub(stubAddUnit).was.called(1)
-      assert.stub(logStub).was.called(1)
-    end)
-  end)
-
-  describe("isBridgeDestroyed", function()
-    local stubGetUnit
-
-    before_each(function()
-      stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
-    end)
-
-    it("should return true when bridge exists in the barge registry but unit cannot be found", function()
-      local barges = {
-        ["BARGE-001"] = {
-          guid = "BARGE-001",
-          bridgeGUID = "BRIDGE-001",
-          roros = {},
-        },
-      }
-      local ship = buildUnit({ guid = "BARGE-001" })
-
-      stubGetUnit.returns(nil)
-
-      local result = AdminOffloading.isBridgeDestroyed(barges, ship)
-
-      assert.is_true(result)
-      assert.stub(logStub).was_not.called()
-    end)
-
-    it("should return false when bridge unit still exists", function()
-      local barges = {
-        ["BARGE-001"] = {
-          guid = "BARGE-001",
-          bridgeGUID = "BRIDGE-001",
-          roros = {},
-        },
-      }
-      local ship = buildUnit({ guid = "BARGE-001" })
-
-      stubGetUnit.returns({ guid = "BRIDGE-001" })
-
-      local result = AdminOffloading.isBridgeDestroyed(barges, ship)
-
-      assert.is_false(result)
-    end)
-
-    it("should return true when barge is not registered in the barge registry", function()
-      local barges = {}
-      local ship = buildUnit({ guid = "UNKNOWN-001" })
-
-      local result = AdminOffloading.isBridgeDestroyed(barges, ship)
-
-      assert.is_true(result)
-    end)
-
-    it("should return true when barge has no bridgeGUID", function()
-      local barges = {
-        ["BARGE-001"] = {
-          guid = "BARGE-001",
-          roros = {},
-        },
-      }
-      local ship = buildUnit({ guid = "BARGE-001" })
-
-      local result = AdminOffloading.isBridgeDestroyed(barges, ship)
-
-      assert.is_true(result)
-    end)
-  end)
-
-  describe("hasExtendedBridge", function()
-    it("should return true when barge has bridgeGUID in the barge registry", function()
-      local barges = {
-        ["BARGE-001"] = {
-          guid = "BARGE-001",
-          bridgeGUID = "BRIDGE-001",
-          roros = {},
-        },
-      }
-      local ship = buildUnit({ guid = "BARGE-001" })
-
-      local result = AdminOffloading.hasExtendedBridge(barges, ship)
-
-      assert.is_true(result)
-    end)
-
-    it("should return false when barge has no bridgeGUID", function()
-      local barges = {
-        ["BARGE-001"] = {
-          guid = "BARGE-001",
-          roros = {},
-        },
-      }
-      local ship = buildUnit({ guid = "BARGE-001" })
-
-      local result = AdminOffloading.hasExtendedBridge(barges, ship)
-
-      assert.is_false(result)
-    end)
-    it("should return false for a barge missing from the registry", function()
-      local ship = buildUnit({ guid = "UNKNOWN-001" })
-
-      local result = AdminOffloading.hasExtendedBridge({}, ship)
-
-      assert.is_false(result)
-    end)
-  end)
-
-  describe("getBargeROROZone", function()
-    local stubToolRange
-
-    before_each(function()
-      stubToolRange = trackStub(stub(GameApi, "Tool_Range"))
-    end)
-
-    it("should return zone when barge and RORO are in same ACV area within 1nm", function()
-      local zone = buildZone()
-      local config = buildAmphibOpsConfig({ zones = { zone } })
-
-      local barge = buildUnit({
-        guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-      local roro = buildUnit({
-        guid = "RORO-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-
-      stubToolRange.returns(0.5)
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-      assert.are.equal("ZoneAlpha", result.name)
-    end)
-
-    it("should return nil when units are 1nm or more apart", function()
-      local zone = buildZone()
-      local config = buildAmphibOpsConfig({ zones = { zone } })
-
-      local barge = buildUnit({
-        guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-      local roro = buildUnit({
-        guid = "RORO-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-
-      stubToolRange.returns(1.0)
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-
-      assert.is_nil(result)
-    end)
-
-    it("should return nil when Tool_Range returns nil", function()
-      local zone = buildZone()
-      local config = buildAmphibOpsConfig({ zones = { zone } })
-
-      local barge = buildUnit({
-        guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-      local roro = buildUnit({
-        guid = "RORO-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-
-      stubToolRange.returns(nil)
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-
-      assert.is_nil(result)
-    end)
-
-    it("should return nil when RORO is not in the ACV area", function()
-      local zone = buildZone()
-      local config = buildAmphibOpsConfig({ zones = { zone } })
-
-      local barge = buildUnit({
-        guid = "BARGE-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-      local roro = buildUnit({
-        guid = "RORO-001",
-        inArea = function() return false end,
-      })
-
-      stubToolRange.returns(0.5)
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-
-      assert.is_nil(result)
-    end)
-
-    it("should return nil when barge is not in the ACV area", function()
-      local zone = buildZone()
-      local config = buildAmphibOpsConfig({ zones = { zone } })
-
-      local barge = buildUnit({
-        guid = "BARGE-001",
-        inArea = function() return false end,
-      })
-      local roro = buildUnit({
-        guid = "RORO-001",
-        inArea = function(_, area) return area == zone.landing.acv.area end,
-      })
-
-      stubToolRange.returns(0.5)
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-
-      assert.is_nil(result)
-    end)
-
-    it("should return first matching zone from multiple operational zones", function()
-      local zone1 = buildZone({ name = "Zone1", landing = { acv = { area = { "AREA-1" } } } })
-      local zone2 = buildZone({ name = "Zone2", landing = { acv = { area = { "AREA-2" } } } })
-      local config = buildAmphibOpsConfig({ zones = { zone1, zone2 } })
-
-      local barge = buildUnit({
-        guid = "BARGE-001",
-        inArea = function(_, area) return area == zone2.landing.acv.area end,
-      })
-      local roro = buildUnit({
-        guid = "RORO-001",
-        inArea = function(_, area) return area == zone2.landing.acv.area end,
-      })
-
-      stubToolRange.returns(0.3)
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-
-      assert.are.equal("Zone2", result.name)
-    end)
-
-    it("should return nil when zones is empty", function()
-      local config = buildAmphibOpsConfig({ zones = {} })
-      local barge = buildUnit({ guid = "BARGE-001" })
-      local roro = buildUnit({ guid = "RORO-001" })
-
-      local result = AdminOffloading.getBargeROROZone(config.zones, barge, roro, config.bargeRoroPairingRangeNm)
-
-      assert.is_nil(result)
-    end)
-  end)
   describe("handleShipArrival", function()
     it("should stop the barge and extend a bridge when no bridge exists", function()
       local barge = buildUnit({ guid = "BARGE-001", name = "Barge", course = { { latitude = 25.1, longitude = 121.1 } } })
@@ -1092,44 +662,16 @@ describe("AdminOffloading", function()
       assert.is_nil(barges[barge.guid].bridgeGUID)
     end)
 
-    it("should offload vehicles for paired RORO units when the barge bridge is active", function()
+    it("should not create a second bridge when the barge already has one", function()
       local barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
-      local roro = buildUnit({ guid = "RORO-001", name = "RORO" })
-      local zone = buildZone()
-      local barges = { [barge.guid] = { guid = barge.guid, bridgeGUID = "BRIDGE-001", roros = { roro.guid } } }
-      local config = buildAmphibOpsConfig({ zones = { zone }, roroOffloadBatchSize = 20 })
+      local barges = { [barge.guid] = { guid = barge.guid, bridgeGUID = "BRIDGE-001", roros = {} } }
       local stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit"))
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
-        if guid == "BRIDGE-001" then return { guid = guid } end
-        if guid == roro.guid then return roro end
-      end))
-      local stubGetZone = trackStub(stub(AdminOffloading, "getBargeROROZone").returns(zone))
-      local stubOffload = trackStub(stub(AdminOffloading, "offloadVehicles").returns(20))
-
-      local result = AdminOffloading.handleShipArrival(config, barges, barge)
-
-      assert.is_true(result)
-      assert.stub(stubAddUnit).was_not.called()
-      assert.stub(stubGetZone).was.called_with({ zone }, barge, roro, 1)
-      assert.stub(stubOffload).was.called_with({
-        ship = roro,
-        num = 20,
-        bearing = zone.heading,
-        distance = zone.landing.acv.distance,
-        firstDistance = 1
-      })
-    end)
-
-    it("should not offload when the barge bridge is destroyed", function()
-      local barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
-      local barges = { [barge.guid] = { guid = barge.guid, bridgeGUID = "BRIDGE-001", roros = { "RORO-001" } } }
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
-      local stubOffload = trackStub(stub(AdminOffloading, "offloadVehicles"))
+      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "BRIDGE-001" }))
 
       local result = AdminOffloading.handleShipArrival(buildAmphibOpsConfig(), barges, barge)
 
       assert.is_true(result)
-      assert.stub(stubOffload).was_not.called()
+      assert.stub(stubAddUnit).was_not.called()
     end)
 
     it("should stop a RORO ship in place", function()
@@ -1141,6 +683,224 @@ describe("AdminOffloading", function()
       assert.is_nil(roro.course)
       assert.are.equal(0, roro.manualSpeed)
       assert.is_true(roro.holdposition)
+    end)
+
+    describe("with a paired RORO", function()
+      local zone, config, barge, roro, barges
+      local stubGetPoint, stubAddUnit, stubToolRange, roroLookup, bridgeLookup
+
+      ---Put the barge and RORO inside the zone's ACV area
+      local function placeInAcvArea()
+        local inAcv = function(_, area) return area == zone.landing.acv.area end
+        barge.inArea = inAcv
+        roro.inArea = inAcv
+      end
+
+      ---Make successive placement requests resolve to the given locations
+      ---@param locations table[]
+      local function placeAt(locations)
+        local calls = 0
+        stubGetPoint.invokes(function()
+          calls = calls + 1
+          return locations[calls]
+        end)
+      end
+
+      before_each(function()
+        zone = buildZone()
+        config = buildAmphibOpsConfig({ zones = { zone }, roroOffloadBatchSize = 2 })
+        barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
+        roro = buildUnit({
+          guid = "RORO-001",
+          name = "RORO",
+          cargo = {
+            [1] = {
+              cargo = {
+                buildCargoItem({ guid = "C-1", name = "Vehicle-1" }),
+                buildCargoItem({ guid = "C-2", name = "Vehicle-2" }),
+                buildCargoItem({ guid = "C-3", name = "Vehicle-3" }),
+              },
+            },
+          },
+        })
+        barges = { [barge.guid] = { guid = barge.guid, bridgeGUID = "BRIDGE-001", roros = { roro.guid } } }
+        placeInAcvArea()
+
+        roroLookup = roro
+        bridgeLookup = { guid = "BRIDGE-001" }
+        trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(guid)
+          if guid == "BRIDGE-001" then return bridgeLookup end
+          if guid == "RORO-001" then return roroLookup end
+        end))
+        stubToolRange = trackStub(stub(GameApi, "Tool_Range").returns(0.5))
+        stubGetPoint = trackStub(stub(GameApi, "World_GetPointFromBearing"))
+        stubAddUnit = trackStub(stub(GameApi, "ScenEdit_AddUnit").returns({ guid = "CREATED-001" }))
+        trackStub(stub(roro, "deleteUnitCargo"))
+        placeAt({
+          { latitude = 25.1, longitude = 121.1 },
+          { latitude = 25.2, longitude = 121.2 },
+        })
+      end)
+
+      it("should offload one batch of vehicles from the RORO", function()
+        local result = AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.is_true(result)
+        assert.stub(roro.deleteUnitCargo).was.called(2)
+        assert.stub(stubAddUnit).was.called(2)
+        assert.stub(logStub).was.called(1)
+      end)
+
+      it("should create a Ground unit when the cargo item type is 2", function()
+        roro.cargo[1].cargo = { buildCargoItem({ guid = "C-1", name = "GroundUnit-1", Type = 2 }) }
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was.called_with({
+          side = "China",
+          type = "Ground unit",
+          latitude = 25.1,
+          longitude = 121.1,
+          dbid = 3001,
+          unitname = "GroundUnit-1",
+        })
+      end)
+
+      it("should create a Facility when the cargo item type is not 2", function()
+        roro.cargo[1].cargo = { buildCargoItem({ guid = "C-1", name = "Facility-1", Type = 1 }) }
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was.called_with({
+          side = "China",
+          type = "Facility",
+          latitude = 25.1,
+          longitude = 121.1,
+          dbid = 3001,
+          unitname = "Facility-1",
+        })
+      end)
+
+      it("should place vehicles along the zone heading starting 1 nm from the RORO", function()
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.are.same({
+          latitude = roro.latitude,
+          longitude = roro.longitude,
+          bearing = zone.heading,
+          distance = 1,
+        }, stubGetPoint.calls[1].vals[1])
+        assert.are.same({
+          latitude = 25.1,
+          longitude = 121.1,
+          bearing = zone.heading,
+          distance = zone.landing.acv.distance,
+        }, stubGetPoint.calls[2].vals[1])
+      end)
+
+      it("should offload no more than the batch size", function()
+        config.roroOffloadBatchSize = 1
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was.called(1)
+      end)
+
+      it("should log the failure and still handle the arrival when unit creation fails", function()
+        stubAddUnit.invokes(function(unitParams)
+          if unitParams.unitname == "Vehicle-1" then
+            return { guid = "CREATED-001" }
+          end
+          return nil
+        end)
+
+        local result = AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.is_true(result)
+        assert.stub(logStub).was.called(1)
+        assert.stub(errorStub).was.called(1)
+        assert.truthy(string.find(errorStub.calls[1].vals[1], "reason=add_unit_failed"))
+      end)
+
+      it("should offload nothing when the RORO is missing", function()
+        roroLookup = nil
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was_not.called()
+        assert.stub(logStub).was_not.called()
+      end)
+
+      it("should offload nothing when the RORO is destroyed", function()
+        roro.IsDestroyed = true
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubGetPoint).was_not.called()
+        assert.stub(logStub).was_not.called()
+      end)
+
+      it("should offload nothing when the barge bridge is destroyed", function()
+        bridgeLookup = nil
+
+        local result = AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.is_true(result)
+        assert.stub(stubAddUnit).was_not.called()
+      end)
+
+      it("should offload nothing when the units are as far apart as the pairing range", function()
+        stubToolRange.returns(config.bargeRoroPairingRangeNm)
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was_not.called()
+      end)
+
+      it("should offload nothing when the range is unknown", function()
+        stubToolRange.returns(nil)
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was_not.called()
+      end)
+
+      it("should offload nothing when the RORO is not in the ACV area", function()
+        roro.inArea = function() return false end
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was_not.called()
+      end)
+
+      it("should offload nothing when the barge is not in the ACV area", function()
+        barge.inArea = function() return false end
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was_not.called()
+      end)
+
+      it("should use the first zone whose ACV area holds both units", function()
+        local zone1 = buildZone({ name = "Zone1", heading = 90, landing = { acv = { area = { "AREA-1" } } } })
+        local zone2 = buildZone({ name = "Zone2", heading = 180, landing = { acv = { area = { "AREA-2" } } } })
+        config.zones = { zone1, zone2 }
+        local inZone2 = function(_, area) return area == zone2.landing.acv.area end
+        barge.inArea = inZone2
+        roro.inArea = inZone2
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.are.equal(180, stubGetPoint.calls[1].vals[1].bearing)
+      end)
+
+      it("should offload nothing when there are no zones", function()
+        config.zones = {}
+
+        AdminOffloading.handleShipArrival(config, barges, barge)
+
+        assert.stub(stubAddUnit).was_not.called()
+      end)
     end)
   end)
 end)

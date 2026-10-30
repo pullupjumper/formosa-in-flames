@@ -47,7 +47,7 @@ flowchart TD
 
 ## 下卸
 
-`offloadVehicles(params)`（`SBJ__VehicleOffloadParams`）從船的貨艙取出最多 `num` 個項目，依 `buildLocations` 算出的位置逐個生成單位：
+私有函式 `offloadVehicles(params)`（`SBJ__VehicleOffloadParams`）從船的貨艙取出最多 `num` 個項目，依 `buildLocations` 算出的位置逐個生成單位：
 
 - 先 `deleteUnitCargo` 再 `AddUnit`，單一項目失敗即停止
 - 貨物 `Type == 2` 生成 `Ground unit`，其餘一律當 `Facility`（對應表 `CARGO_TYPE_MAP`）
@@ -55,7 +55,7 @@ flowchart TD
 
 ### 下卸何時才會發生？
 
-門面用 `getBargeROROZone` 決定某對 RORO 能否下卸：兩者都要在同一個 `landing.acv.area`，且距離小於 `bargeRoroPairingRangeNm`。`roros` 名單只記錄出發時的配對，下卸與否每次都以當下位置重新判斷。
+`handleShipArrival` 用私有函式 `getBargeROROZone` 決定某對 RORO 能否下卸：兩者都要在同一個 `landing.acv.area`，且距離小於 `bargeRoroPairingRangeNm`。`roros` 名單只記錄出發時的配對，下卸與否每次都以當下位置重新判斷。
 
 ---
 
@@ -65,12 +65,8 @@ flowchart TD
 |---|---|
 | `startAdminOffloading(zone, barges, filteredUnits)` | 單一作戰區的駁船出發與 RORO 配對 |
 | `handleShipArrival(amphibOps, barges, ship)` | 駁船或 RORO 到達下卸點；沒登記的駁船回 `false` |
-| `offloadVehicles(params)` | 下卸車輛到灘頭 |
-| `hasExtendedBridge(barges, ship)` | 駁船是否已有 `bridgeGUID` |
-| `isBridgeDestroyed(barges, ship)` | 沒有 `bridgeGUID`，或浮橋單位已不存在，都回 `true` |
-| `getBargeROROZone(zones, barge, roro, pairingRangeNm)` | 配對的 RORO 能否下卸，回傳所屬作戰區或 `nil` |
 
-注意 `isBridgeDestroyed` 對「從未架橋」也回 `true`，呼叫端要先用 `hasExtendedBridge` 區分。兩者對沒登記的駁船都不會報錯。
+私有函式（不對外）：`offloadVehicles`、`hasExtendedBridge`（駁船是否已有 `bridgeGUID`）、`isBridgeDestroyed`（沒有 `bridgeGUID`，或浮橋單位已不存在，都回 `true`）、`getBargeROROZone`（配對的 RORO 能否下卸，回傳所屬作戰區或 `nil`）。`isBridgeDestroyed` 對「從未架橋」也回 `true`，要先用 `hasExtendedBridge` 區分。
 
 ---
 
