@@ -335,14 +335,14 @@ local function offloadPairedROROs(amphibOps, barge, bargeState)
     local roro = GameApi.ScenEdit_GetUnit(guid)
 
     if roro then
-      local zone = getBargeROROZone(amphibOps.zones, barge, roro, amphibOps.bargeRoroPairingRangeNm)
+      local zone = getBargeROROZone(amphibOps.zones, barge, roro, amphibOps.adminOffloading.bargeRoroPairingRangeNm)
 
       if zone then
         offloadVehicles({
           ship = roro,
-          num = amphibOps.roroOffloadBatchSize,
+          num = amphibOps.adminOffloading.roroBatchSize,
           bearing = zone.heading,
-          distance = zone.landing.acv.distance,
+          distance = amphibOps.formation.acvSpacingNm,
           firstDistance = 1
         })
       end

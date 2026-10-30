@@ -54,7 +54,7 @@ function ObstacleClearing.startObstacleClearing(amphibOps, zone, zoneState, curr
 
   local frame = LaneGeometry.buildFrame(lanes)
   local polygon = GameUtils.findAreaLocations(constants.SIDES.BLUE, zone.landing.obstacleArea)
-  local cells = LaneGeometry.buildObstacleCells(frame, polygon, amphibOps.tuning.obstacle.cellSizeM)
+  local cells = LaneGeometry.buildObstacleCells(frame, polygon, amphibOps.obstacle.cellSizeM)
 
   zoneState.obstacle = { cells = cells }
   zoneState.obstacleStartedAt = currentTime
@@ -80,7 +80,7 @@ end
 function ObstacleClearing.updateObstacleClearing(amphibOps, zoneState, currentTime)
   local elapsed = currentTime - (zoneState.obstacleStartedAt or currentTime)
   local isFastForward = DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.OBSTACLE_CLEARING)
-  if not isFastForward and elapsed < amphibOps.tuning.obstacle.clearSec then
+  if not isFastForward and elapsed < amphibOps.obstacle.clearSec then
     return false
   end
 

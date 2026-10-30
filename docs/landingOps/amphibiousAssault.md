@@ -71,7 +71,7 @@ Type 082 在反水雷階段已經 RTB，RORO 與駁船要留在展開線等 [adm
 
 | 路徑 | 用途 |
 |---|---|
-| `config.red.amphibOps.tuning.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
+| `config.red.amphibOps.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
 | `zones[].landing.lstSettings.speed` | LST 速度 |
 | `zones[].landing.acv.area` | 判斷船所屬區 |
 | `zones[].movement.baseGUID` | 空船掛回的基地 |

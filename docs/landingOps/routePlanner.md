@@ -80,7 +80,7 @@ zoneState.laneSlots = {
 
 ## 設定
 
-`config.red.amphibOps.tuning.route`：`laneTieNm`、`laneTieM`、`columnSpacingM`、`queueDepth`、`queueSpacingM`。到達判斷的 `arrivalNm` 由各呼叫端模組使用。
+`config.red.amphibOps.route`：`laneTieNm`、`laneTieM`、`columnSpacingM`、`queueDepth`、`queueSpacingM`。到達判斷的 `arrivalNm` 由各呼叫端模組使用。
 
 ---
 

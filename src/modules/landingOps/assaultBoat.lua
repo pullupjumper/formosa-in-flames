@@ -159,7 +159,7 @@ end
 ---@param carrier CMO__Unit
 ---@return number
 local function estimateRunSec(amphibOps, zone, frame, carrier)
-  local route = amphibOps.tuning.route
+  local route = amphibOps.route
   local offshoreNm = -LaneGeometry.projectPoint(frame, carrier) / constants.METERS_PER_NM
   local launchNm = offshoreNm
   if not isCarrierAtLaunch(zone, carrier) then
@@ -167,7 +167,7 @@ local function estimateRunSec(amphibOps, zone, frame, carrier)
   end
 
   local sailHours = (offshoreNm - launchNm) / amphibOps.formation.shipSpeed
-  local runHours = math.max(0, launchNm - route.shoreStandoffM / constants.METERS_PER_NM) / amphibOps.tuning.assaultBoat.speed
+  local runHours = math.max(0, launchNm - route.shoreStandoffM / constants.METERS_PER_NM) / amphibOps.formation.assaultBoatSpeed
 
   return (sailHours + runHours) * constants.SECONDS_PER_HOUR
 end
@@ -228,12 +228,12 @@ function AssaultBoat.launchBoats(amphibOps, zone, zoneState)
         local course = RoutePlanner.reserveBoatCourse(zoneState, entry.beachLaneId, {
           guid = boatGuid,
           launchPos = { latitude = ship.latitude, longitude = ship.longitude },
-          routeConfig = amphibOps.tuning.route,
+          routeConfig = amphibOps.route,
         })
 
         if course then
           boat.course = course
-          boat.manualSpeed = amphibOps.tuning.assaultBoat.speed
+          boat.manualSpeed = amphibOps.formation.assaultBoatSpeed
           boat:Launch(true)
           entry.status = STATUS.LAUNCHED
           entry.finalPoint = course[#course]
@@ -278,7 +278,7 @@ end
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when no boat is still pending or under way
 function AssaultBoat.updateBoats(amphibOps, zoneState)
-  local arrivalNm = amphibOps.tuning.route.arrivalNm
+  local arrivalNm = amphibOps.route.arrivalNm
   local isAllDone = true
 
   for guid, entry in pairs(zoneState.boats or {}) do

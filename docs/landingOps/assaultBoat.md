@@ -43,7 +43,7 @@ flowchart TD
 `launchBoats` 對 `pending` 的舟，載艦進入 `zone.landing.acv.area` 且舟 `readytime_v == 0` 才放：
 
 1. `RoutePlanner.reserveBoatCourse` 算航線並預約 S_lane 的停車位（走配對的灘際通道，見 [routePlanner](routePlanner.md)）
-2. `boat.course = 航線`，`manualSpeed = tuning.assaultBoat.speed`，再 `boat:Launch(true)` — **先 course 再 Launch**
+2. `boat.course = 航線`，`manualSpeed = formation.assaultBoatSpeed`，再 `boat:Launch(true)` — **先 course 再 Launch**
 3. 狀態改 `launched`，記 `finalPoint`（S_lane）
 
 `launchBoats` 和 `updateBoats` 查不到舟就整筆刪掉。`updateBoats` 判斷：離 `finalPoint` 小於 `arrivalNm` → `arrived`。沒有任何舟處於 `pending` 或 `launched` 時回 `true`。
@@ -74,9 +74,9 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `tuning.assaultBoat.speed` | 衝鋒舟速度 |
-| `tuning.route.arrivalNm` | 到達判斷 |
-| `tuning.route.launchStationFarNm`、`shoreStandoffM`、`formation.shipSpeed` | 估到岸時間 |
+| `formation.assaultBoatSpeed` | 衝鋒舟速度 |
+| `route.arrivalNm` | 到達判斷 |
+| `route.launchStationFarNm`、`shoreStandoffM`、`formation.shipSpeed` | 估到岸時間 |
 | `zones[].landing.acv.area` | 載艦進入此區才放出 |
 
 ---

@@ -81,7 +81,7 @@ end
 ---@return integer # Mines deleted
 local function removeMinesOnLanes(amphibOps, lanes)
   local frame = LaneGeometry.buildFrame(lanes)
-  local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.tuning.mineClearing.cellSizeM)
+  local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.mineClearing.cellSizeM)
   local deleted = 0
 
   for _, minefield in ipairs(amphibOps.minefields or {}) do
@@ -160,11 +160,11 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
       frame = frame,
       ships = ships,
       count = #sweepers,
-      routeConfig = amphibOps.tuning.route,
+      routeConfig = amphibOps.route,
     }, report),
-    inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.tuning.route.inlandMarginM,
-    areaMarginM = amphibOps.tuning.mineClearing.areaMarginM,
-    routeConfig = amphibOps.tuning.route,
+    inlandDepthM = LaneGeometry.calculateInlandDepthM(frame, obstacle) + amphibOps.route.inlandMarginM,
+    areaMarginM = amphibOps.mineClearing.areaMarginM,
+    routeConfig = amphibOps.route,
   })
 
   zoneState.lanes = lanes
@@ -201,7 +201,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
       isDone = false,
     }
     sweeper.mission = zone.landing.sweeper.missionName
-    sweeper.manualSpeed = zone.landing.sweeper.speed
+    sweeper.manualSpeed = amphibOps.formation.sweeperSpeed
     sweeper.obeyEMCON = false
     GameApi.ScenEdit_SetEMCON("Unit", sweeper.guid, "Sonar=Active")
     report.add("OK", { ship = sweeper.name or sweeper.guid, waterLane = waterLane.id })
@@ -216,7 +216,7 @@ end
 ---@param zoneState SBJ__ZoneState
 ---@return boolean # True when every sweeper is done
 function MineClearing.updateMineClearing(amphibOps, zoneState)
-  local arrivalNm = amphibOps.tuning.route.arrivalNm
+  local arrivalNm = amphibOps.route.arrivalNm
   local isAllDone = true
 
   for guid, entry in pairs(zoneState.minesweepers or {}) do

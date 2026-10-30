@@ -49,7 +49,7 @@ phase 機只往前走，「所有 zone 到位」一旦成立就永遠成立，�
 
 | 路徑 | 用途 |
 |---|---|
-| `config.red.amphibOps.fireSupportHoldThreshold` | SRBM 總彈量百分比下限 |
+| `config.red.amphibOps.fireSupport.srbmHoldAmmoPct` | SRBM 總彈量百分比下限 |
 | `config.red.amphibOps.zones[]` | 判斷「所有 zone 已到位」的範圍 |
 
 ---

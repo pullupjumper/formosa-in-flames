@@ -43,13 +43,10 @@ describe("Hovercraft", function()
     }
   end
 
-  local CONFIG = { tuning = { route = buildRouteConfig(), acvWave = { capacity = { zbd05 = 1 }, hovercraftWaitSec = 3600 } }, formation = { hovercraftSpeed = 40 } }
+  local CONFIG = { route = buildRouteConfig(), acvWave = { hovercraftWaitSec = 3600 }, formation = { hovercraftSpeed = 40 } }
   local zone = {
     name = "Taoyuan",
     movement = { holdingAreas = { mothership = { "RP-ANC" } } },
-    landing = {
-      hovercraft = { speed = 40 },
-    },
   }
 
   ---@param isCleared boolean

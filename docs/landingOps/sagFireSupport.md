@@ -18,7 +18,7 @@
 4. 沒有符合的接觸就結束
 5. 把該編組的對地武器管制設為 `FREE`，再用 `AttackManager.attackContacts` 以 `HPJ_38` 射擊
 
-每個目標的射擊彈數是 `airlandingFireQty` 除以目標數（無條件捨去），也就是全部目標合計的彈數。
+每個目標的射擊彈數是 `fireSupport.airlandingShotQty` 除以目標數（無條件捨去），也就是全部目標合計的彈數。
 
 ---
 
@@ -34,5 +34,5 @@
 
 | 設定 | 說明 |
 |---|---|
-| `config.red.amphibOps.airlandingFireQty` | 全部目標合計的射擊彈數 |
+| `config.red.amphibOps.fireSupport.airlandingShotQty` | 全部目標合計的射擊彈數 |
 | `zone.sags[]` | SAG 描述：`groupName`、`area` |

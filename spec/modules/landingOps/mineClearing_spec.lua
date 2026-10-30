@@ -30,25 +30,23 @@ describe("MineClearing", function()
   ---@return table
   local function buildConfig()
     return {
-      tuning = {
-        route = {
-          deployLineNm = 12,
-          launchLineNm = 3,
-          assaultLineNm = 2,
-          waterLaneSpacingM = 750,
-          waterLaneMinSpacingM = 500,
-          waterLaneMaxSpacingM = 1000,
-          beachLaneOffsetsM = { -180, -60, 60, 180 },
-          shoreStandoffM = 100,
-          inlandMarginM = 100,
-          columnSpacingM = 100,
-          queueDepth = 5,
-          queueSpacingM = 50,
-          laneTieNm = 0.5,
-          arrivalNm = 0.1,
-        },
-        mineClearing = { areaMarginM = 60 },
+      route = {
+        deployLineNm = 12,
+        launchLineNm = 3,
+        assaultLineNm = 2,
+        waterLaneSpacingM = 750,
+        waterLaneMinSpacingM = 500,
+        waterLaneMaxSpacingM = 1000,
+        beachLaneOffsetsM = { -180, -60, 60, 180 },
+        shoreStandoffM = 100,
+        inlandMarginM = 100,
+        columnSpacingM = 100,
+        queueDepth = 5,
+        queueSpacingM = 50,
+        laneTieNm = 0.5,
+        arrivalNm = 0.1,
       },
+      mineClearing = { areaMarginM = 60 },
       minefields = {},
       formation = { shipSpeed = 17 }
     }
@@ -251,7 +249,7 @@ describe("MineClearing", function()
       trackStub(stub(GameApi, "ScenEdit_SetUnit"))
       local config = buildConfig()
       config.debug = { enabled = true }
-      config.tuning.mineClearing.cellSizeM = 50
+      config.mineClearing.cellSizeM = 50
       config.minefields = { { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 2, delay = 0 } }
 
       local zoneState = {}

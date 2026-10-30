@@ -1594,12 +1594,14 @@ config.red.amphibOps.debug = {
   teleportLanding = true,                                     -- hovercraft and ACVs jump to their parking slot
 }
 config.red.amphibOps.periodSec = 5 * 60
-config.red.amphibOps.acvLaunchBatchSize = 5               -- 每次放行的兩棲車數量
-config.red.amphibOps.roroOffloadBatchSize = 20          -- RORO 每次最多卸下的車輛數
-config.red.amphibOps.remainingCargoTransferSec = 2 * 3600 -- 空/機降任務開始後，每隔多久補運一次尚未運完的貨物
-config.red.amphibOps.airlandingFireQty = 440              -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
-config.red.amphibOps.bargeRoroPairingRangeNm = 1          -- 駁船與 RORO 距離小於此值才算同一組
-config.red.amphibOps.fireSupportHoldThreshold = 50        -- SRBM total-ammo % below which recon-driven SRBM strikes are held until all zones arrive at staging
+config.red.amphibOps.adminOffloading = {
+  roroBatchSize = 20,          -- RORO 每次最多卸下的車輛數
+  bargeRoroPairingRangeNm = 1, -- 駁船與 RORO 距離小於此值才算同一組
+}
+config.red.amphibOps.fireSupport = {
+  srbmHoldAmmoPct = 50,     -- SRBM 總彈量 % 低於此值時，偵察驅動的 SRBM 打擊暫停，直到所有區抵達集結水域
+  airlandingShotQty = 440,  -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
+}
 config.red.amphibOps.cargo = {
   type075 = {
     { type = 2, num = 16, dbid = constants.PLATFORMS.PLL05 }, -- PLL-05
@@ -1800,21 +1802,18 @@ config.red.amphibOps.transferCargo = {
     { type = 2, num = 3, dbid = constants.PLATFORMS.ZBD03 }, -- II-76 ZBD-03
   },
 }
-config.red.amphibOps.missionStartTime = {
-  reconUAV = { 0 }
-}
+-- Ship layout spacing and craft speeds shared by every zone
 config.red.amphibOps.formation = {
   deployLineSetbackNm = 13,
   horizontalDistanceNm = 0.4,
   verticalDistanceNm = 0.4,
   transitDistanceNm = 13,
+  acvSpacingNm = 0.05,   -- 兩棲車放行、RORO 卸車時的橫向間距
+  rowBearingOffset = 90, -- ship rows run this many degrees off the zone heading
   shipSpeed = 14,
-  acvSpeed = 8,
-  acvTransitDistanceNm = 5,
-  acvHorizontalDistanceNm = 0.05,
   hovercraftSpeed = 40,
   sweeperSpeed = 25,
-  rowBearingOffset = 90 -- ship rows run this many degrees off the zone heading
+  assaultBoatSpeed = 30,
 }
 config.red.amphibOps.minefields = {
   -- zone: zone name that owns the minefield; delay: CMO arming delay; area: BLUE-side reference points
@@ -1823,60 +1822,64 @@ config.red.amphibOps.minefields = {
   { zone = "Penghu",  area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
 }
 -- Lane layout and routing shared by Type 082, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
-config.red.amphibOps.tuning = {
-  route = {
-    deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
-    launchLineNm = 3,                           -- 泛水出發線，距岸
-    assaultLineNm = 2,                          -- 衝擊發起線，距岸
-    launchStationNearNm = 2,                    -- 登陸艦就位帶近岸界，距岸
-    launchStationFarNm = 4,                     -- 登陸艦就位帶外海界，距岸
-    waterLaneSpacingM = 750,                    -- 相鄰水際通道間距（備援；艦間空隙排不出通道時用，教範 500–1000 m）
-    waterLaneMinSpacingM = 500,                 -- 水際通道最小間距，也是可放通道的最小艦間空隙（教範 500–1000 m）
-    waterLaneMaxSpacingM = 1000,                -- 水際通道最大間距（教範 500–1000 m）
-    beachLaneOffsetsM = { -180, -60, 60, 180 }, -- 灘際通道相對水際通道的橫向偏移
-    shoreStandoffM = 100,                       -- S_lane 離岸距離
-    inlandMarginM = 100,                        -- E_lane 超出障礙範圍的距離
-    columnSpacingM = 100,                       -- 排隊入口點間距（往外海退）
-    queueDepth = 5,                             -- 排隊入口點數量
-    queueSpacingM = 50,                         -- 通道內停車位間距
-    laneTieNm = 0.5,                            -- 距離差在此內視為平手，改選負載少的通道
-    laneTieM = 100,                             -- 側邊釋放的單位選通道時，橫向距離差在此內視為平手
-    arrivalNm = 0.1,                            -- 離最後航點多近算到達
+config.red.amphibOps.route = {
+  deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
+  launchLineNm = 3,                           -- 泛水出發線，距岸
+  assaultLineNm = 2,                          -- 衝擊發起線，距岸
+  launchStationNearNm = 2,                    -- 登陸艦就位帶近岸界，距岸
+  launchStationFarNm = 4,                     -- 登陸艦就位帶外海界，距岸
+  waterLaneSpacingM = 750,                    -- 相鄰水際通道間距（備援；艦間空隙排不出通道時用，教範 500–1000 m）
+  waterLaneMinSpacingM = 500,                 -- 水際通道最小間距，也是可放通道的最小艦間空隙（教範 500–1000 m）
+  waterLaneMaxSpacingM = 1000,                -- 水際通道最大間距（教範 500–1000 m）
+  beachLaneOffsetsM = { -180, -60, 60, 180 }, -- 灘際通道相對水際通道的橫向偏移
+  shoreStandoffM = 100,                       -- S_lane 離岸距離
+  inlandMarginM = 100,                        -- E_lane 超出障礙範圍的距離
+  columnSpacingM = 100,                       -- 排隊入口點間距（往外海退）
+  queueDepth = 5,                             -- 排隊入口點數量
+  queueSpacingM = 50,                         -- 通道內停車位間距
+  laneTieNm = 0.5,                            -- 距離差在此內視為平手，改選負載少的通道
+  laneTieM = 100,                             -- 側邊釋放的單位選通道時，橫向距離差在此內視為平手
+  arrivalNm = 0.1,                            -- 離最後航點多近算到達
+}
+config.red.amphibOps.mineClearing = {
+  areaMarginM = 60, -- 掃雷任務區域比最外側灘際通道再寬多少
+  cellSizeM = 300,  -- 快轉掃雷時判斷水雷在不在通道內的方塊邊長
+}
+config.red.amphibOps.obstacle = {
+  cellSizeM = 50,
+  clearSec = 20 * 60,
+}
+config.red.amphibOps.acvWave = {
+  launchBatchSize = 5,        -- 每次放行的兩棲車數量
+  lossRatio = 0.3,            -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
+  holdSec = 30 * 60,          -- 暫停超過此秒數就補下一波
+  hovercraftWaitSec = 60 * 60, -- 氣墊船等第一波車波放滿的上限秒數，逾時直接放行
+}
+-- Helicopter waves and fixed-wing airlift batches into the airlanding zones
+config.red.amphibOps.heliWave = {
+  waveTimeoutSec = 30 * 60,  -- 一波（批）放飛後超過此秒數，還在空中的視為結束
+  cargoReloadSec = 2 * 3600, -- 空/機降任務開始後，每隔多久補運一次尚未運完的貨物
+  flightPath = {            -- 左右翼航線，直升機與 airlift 共用
+    wingOffsetM = 8000,     -- 左右翼離通道中心線的橫向距離
+    inlandEntryM = 3000,    -- 進內陸多深後轉向降落點
+    landingSpreadM = 500,   -- 左右翼降落點離降落區中心的橫向偏移
   },
-  mineClearing = {
-    areaMarginM = 60, -- 掃雷任務區域比最外側灘際通道再寬多少
-    cellSizeM = 300,  -- 快轉掃雷時判斷水雷在不在通道內的方塊邊長
+  transport = {             -- 運輸直升機（Z-18）
+    waveSize = 8,           -- 每波架數（左右翼各半）
+    cruiseSpeedKt = 130,    -- 倒推放飛時間用的巡航速度
+    cruiseAltitudeM = 304,  -- 放飛後的巡航高度（公尺）
+    arrivalNm = 0.5,        -- 離降落點多近算到達
   },
-  assaultBoat = {
-    speed = 30,
+  attack = {                -- 攻擊直升機（Z-10）
+    count = 4,              -- 每區總數（已進 CAS 的加飛往中的），下一波補到此數
+    casAssignNm = 3,        -- 離降落點多近就指派進 CAS 任務
   },
-  obstacle = {
-    cellSizeM = 50,
-    clearSec = 20 * 60,
-  },
-  heliWave = {
-    waveSize = 8,             -- 每波運輸直升機架數（左右翼各半）
-    escortSize = 4,           -- 每區攻擊直升機總數（已進 CAS 的加飛往中的），下一波補到此數
-    waveTimeoutSec = 30 * 60, -- 一波放飛後超過此秒數，還在空中的視為結束
-    arrivalNm = 0.5,          -- 離降落點多近算到達
-    casAssignNm = 3,          -- 攻擊直升機離降落點多近就指派進 CAS 任務
-    cruiseSpeedKt = 130,      -- 倒推放飛時間用的巡航速度（Z-18）
-    cruiseAltitudeM = 304,    -- 放飛後的巡航高度（公尺）
-    wingOffsetM = 8000,       -- 左右翼離通道中心線的橫向距離
-    inlandEntryM = 3000,      -- 進內陸多深後轉向降落點
-    landingSpreadM = 500,     -- 左右翼降落點離降落區中心的橫向偏移
-    airlift = {               -- 固定翼運輸機（IL-76），數值暫定，待遊戲內驗證
-      size = 3,               -- 每批架數
-      delaySec = 5 * 60,      -- 比衝鋒舟到岸晚多久到降落點
-      cruiseSpeedKt = 400,    -- 倒推放飛時間用的巡航速度
-      cruiseAltitudeM = 1500, -- 放飛後的巡航高度（公尺）
-      arrivalNm = 3,          -- 離降落點多近算到達
-    },
-  },
-  acvWave = {
-    lossRatio = 0.3,            -- 存活降到上限的 (1 - lossRatio) 以下就補下一波
-    holdSec = 30 * 60,          -- 暫停超過此秒數就補下一波
-    hovercraftWaitSec = 60 * 60, -- 氣墊船等第一波車波放滿的上限秒數，逾時直接放行
+  airlift = {               -- 固定翼運輸機（IL-76），數值暫定，待遊戲內驗證
+    batchSize = 3,          -- 每批架數
+    delaySec = 5 * 60,      -- 比衝鋒舟到岸晚多久到降落點
+    cruiseSpeedKt = 400,    -- 倒推放飛時間用的巡航速度
+    cruiseAltitudeM = 1500, -- 放飛後的巡航高度（公尺）
+    arrivalNm = 3,          -- 離降落點多近算到達
   },
 }
 config.red.amphibOps.zones = {
@@ -2019,15 +2022,12 @@ config.red.amphibOps.zones = {
             },
           }
         },
-        speed = config.red.amphibOps.formation.hovercraftSpeed
       },
       lstSettings = {
         speed = config.red.amphibOps.formation.shipSpeed,
         distance = config.red.amphibOps.formation.transitDistanceNm
       },
       acv = {
-        distance = config.red.amphibOps.formation.acvHorizontalDistanceNm,
-        speed = config.red.amphibOps.formation.acvSpeed,
         destination = {
           { latitude = "N 25.04.52", longitude = "E 121.10.05", },
           { latitude = "N 25.04.44", longitude = "E 121.13.54", },
@@ -2042,7 +2042,6 @@ config.red.amphibOps.zones = {
       sweeper = {
         missionName = "MINECLEARING/TOA/1/1",
         settings = {},
-        speed = config.red.amphibOps.formation.sweeperSpeed
       },
     },
   },
@@ -2182,15 +2181,12 @@ config.red.amphibOps.zones = {
             },
           }
         },
-        speed = config.red.amphibOps.formation.hovercraftSpeed
       },
       lstSettings = {
         speed = config.red.amphibOps.formation.shipSpeed,
         distance = config.red.amphibOps.formation.transitDistanceNm
       },
       acv = {
-        distance = config.red.amphibOps.formation.acvHorizontalDistanceNm,
-        speed = config.red.amphibOps.formation.acvSpeed,
         destination = {
           { latitude = "N 22.56.39", longitude = "E 120.10.37", },
           { latitude = "N 22.57.14", longitude = "E 120.12.09", },
@@ -2205,7 +2201,6 @@ config.red.amphibOps.zones = {
       sweeper = {
         missionName = "MINECLEARING/SISHU/1/1",
         settings = {},
-        speed = config.red.amphibOps.formation.sweeperSpeed
       },
     },
   },
@@ -2336,15 +2331,12 @@ config.red.amphibOps.zones = {
             },
           }
         },
-        speed = config.red.amphibOps.formation.hovercraftSpeed
       },
       lstSettings = {
         speed = config.red.amphibOps.formation.shipSpeed,
         distance = config.red.amphibOps.formation.transitDistanceNm
       },
       acv = {
-        distance = config.red.amphibOps.formation.acvHorizontalDistanceNm,
-        speed = config.red.amphibOps.formation.acvSpeed,
         destination = {
           { latitude = "N 23.31.00", longitude = "E 119.33.54", },
           { latitude = "N 23.31.35", longitude = "E 119.35.36", },
@@ -2360,7 +2352,6 @@ config.red.amphibOps.zones = {
       sweeper = {
         missionName = "MINECLEARING/PENGHU/1/1",
         settings = {},
-        speed = config.red.amphibOps.formation.sweeperSpeed
       },
     },
   },

@@ -55,7 +55,7 @@ flowchart TD
 
 ### 下卸何時才會發生？
 
-`handleShipArrival` 用私有函式 `getBargeROROZone` 決定某對 RORO 能否下卸：兩者都要在同一個 `landing.acv.area`，且距離小於 `bargeRoroPairingRangeNm`。`roros` 名單只記錄出發時的配對，下卸與否每次都以當下位置重新判斷。
+`handleShipArrival` 用私有函式 `getBargeROROZone` 決定某對 RORO 能否下卸：兩者都要在同一個 `landing.acv.area`，且距離小於 `adminOffloading.bargeRoroPairingRangeNm`。`roros` 名單只記錄出發時的配對，下卸與否每次都以當下位置重新判斷。
 
 ---
 
@@ -74,7 +74,7 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `config.red.amphibOps.bargeRoroPairingRangeNm` | RORO 與駁船可下卸的最大距離 |
+| `config.red.amphibOps.adminOffloading.bargeRoroPairingRangeNm` | RORO 與駁船可下卸的最大距離 |
 | `zones[].landing.offloadArea` | 駁船目的地參考點 |
 | `zones[].landing.lstSettings` | `speed`、`distance` |
 | `constants.PLATFORMS.BRIDGE` | 浮橋設施 DBID（門面建橋用） |

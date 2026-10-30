@@ -176,8 +176,8 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
     return true, {}
   end
 
-  local nearM = amphibOps.tuning.route.launchStationNearNm * constants.METERS_PER_NM
-  local farM = amphibOps.tuning.route.launchStationFarNm * constants.METERS_PER_NM
+  local nearM = amphibOps.route.launchStationNearNm * constants.METERS_PER_NM
+  local farM = amphibOps.route.launchStationFarNm * constants.METERS_PER_NM
   local seawardM, shoreM = entries[1].alongM, entries[1].alongM
   for _, entry in ipairs(entries) do
     seawardM = math.min(seawardM, entry.alongM)
@@ -190,7 +190,7 @@ local function moveZoneLSTsToLaunchStations(amphibOps, zone, units)
       fields = {
         reason = "formation_exceeds_station_band",
         depthNm = string.format("%.2f", (shoreM - seawardM) / constants.METERS_PER_NM),
-        bandNm = amphibOps.tuning.route.launchStationFarNm - amphibOps.tuning.route.launchStationNearNm,
+        bandNm = amphibOps.route.launchStationFarNm - amphibOps.route.launchStationNearNm,
       }
     } }
   end

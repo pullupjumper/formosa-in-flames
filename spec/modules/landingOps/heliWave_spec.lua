@@ -103,30 +103,22 @@ describe("HeliWave", function()
   ---@return SBJ__AmphibOpsConfig
   local function buildAmphibOps(overrides)
     local amphibOps = {
-      tuning = {
-        heliWave = {
-          waveSize = 8,
-          escortSize = 4,
-          waveTimeoutSec = 1800,
-          arrivalNm = 0.5,
-          casAssignNm = 3,
-          cruiseSpeedKt = 130,
-          cruiseAltitudeM = 304,
-          wingOffsetM = 8000,
-          inlandEntryM = 3000,
-          landingSpreadM = 500,
-          airlift = {
-            size = 3,
-            delaySec = 600,
-            cruiseSpeedKt = 400,
-            cruiseAltitudeM = 3000,
-            arrivalNm = 1,
-          },
+      heliWave = {
+        waveTimeoutSec = 1800,
+        flightPath = { wingOffsetM = 8000, inlandEntryM = 3000, landingSpreadM = 500 },
+        transport = { waveSize = 8, cruiseSpeedKt = 130, cruiseAltitudeM = 304, arrivalNm = 0.5 },
+        attack = { count = 4, casAssignNm = 3 },
+        airlift = {
+          batchSize = 3,
+          delaySec = 600,
+          cruiseSpeedKt = 400,
+          cruiseAltitudeM = 3000,
+          arrivalNm = 1,
         },
       },
     }
     for k, v in pairs(overrides or {}) do
-      amphibOps.tuning.heliWave[k] = v
+      amphibOps.heliWave[k] = v
     end
     return amphibOps
   end
@@ -654,7 +646,7 @@ describe("HeliWave", function()
         addTransportBase(3)
         local zoneState = buildZoneState()
         local ctx = buildCtx(1000)
-        ctx.config.red.amphibOps.tuning.heliWave.airlift.delaySec = 0
+        ctx.config.red.amphibOps.heliWave.airlift.delaySec = 0
 
         HeliWave.schedule(ctx, buildAirliftZone(), zoneState)
 

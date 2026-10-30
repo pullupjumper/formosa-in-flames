@@ -110,7 +110,9 @@ flowchart TB
 |---|---|
 | `config.red.amphibOps.debug` | 實測快轉開關，見 [debugFlow](debugFlow.md)；**正式跑必須 `enabled = false`** |
 | `config.red.amphibOps.zones[]` | 作戰區描述：`fleet`、`sags`、`movement`、`air`、`landing` |
-| `config.red.amphibOps.tuning` | 通道與波次參數：`route`、`mineClearing`、`assaultBoat`、`obstacle`、`acvWave` |
+| `config.red.amphibOps.route`、`mineClearing`、`obstacle`、`acvWave`、`heliWave` | 通道與波次參數 |
+| `config.red.amphibOps.formation` | 艦艇排列間距、各類艦艇速度 |
+| `config.red.amphibOps.adminOffloading`、`fireSupport` | 行政下卸、火力支援參數 |
 | `config.red.triggers.amphibiousOps.startTime` | 艦隊開始移動的時間 |
 | `constants.AMPHIBIOUS_PHASES`、`AMPHIBIOUS_PHASE_ORDER`、`AMPHIBIOUS_LANDING_PHASES` | 階段列舉、順序、「已進入登陸」集合 |
 | `constants.AREAS` | `.scen` 參考點名稱，清單見 [assaultTimeline](assaultTimeline.md) |

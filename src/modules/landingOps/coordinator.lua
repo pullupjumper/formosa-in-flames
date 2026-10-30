@@ -190,7 +190,7 @@ end
 local function stepHovercraft(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
 
-  if AcvWave.isFirstWaveFull(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone), tickCtx.currentTime) then
+  if AcvWave.isFirstWaveFull(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.acvWave, zone), tickCtx.currentTime) then
     Hovercraft.launchHovercraft(amphibOps, zone, zoneState, tickCtx.filteredShips)
   end
 
@@ -242,7 +242,7 @@ local function processRemainingCargoTransfer(tickCtx)
     if zoneState.airlandingMissionStartTime then
       local elapsed = currentTime - zoneState.airlandingMissionStartTime
 
-      if elapsed >= config.red.amphibOps.remainingCargoTransferSec then
+      if elapsed >= config.red.amphibOps.heliWave.cargoReloadSec then
         local ok = AmphibiousLogistics.transferRemainingCargos(zone, filteredShips)
 
         if ok then

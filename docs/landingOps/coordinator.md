@@ -86,7 +86,7 @@ step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 ste
 
 ## 貨物補運
 
-`airlandingMissionStartTime` 由 coordinator 在離開 `WAITING_ASSAULT` 時寫入（本 tick 的 `currentTime`）。`processRemainingCargoTransfer` 對它已設定的 zone，距上次裝載達 `remainingCargoTransferSec` 就呼叫 `AmphibiousLogistics.transferRemainingCargos`，成功才重設計時器。失敗時下個 tick 會再試。
+`airlandingMissionStartTime` 由 coordinator 在離開 `WAITING_ASSAULT` 時寫入（本 tick 的 `currentTime`）。`processRemainingCargoTransfer` 對它已設定的 zone，距上次裝載達 `heliWave.cargoReloadSec` 就呼叫 `AmphibiousLogistics.transferRemainingCargos`，成功才重設計時器。失敗時下個 tick 會再試。
 
 ---
 
@@ -109,7 +109,7 @@ step 之間**不互斥**：前一個 step 推進 phase 後，表中下一個 ste
 | 路徑 | 用途 |
 |---|---|
 | `config.red.amphibOps.periodSec` | `WAITING_ASSAULT` 的等待上限（秒） |
-| `config.red.amphibOps.remainingCargoTransferSec` | 補運貨物的間隔 |
+| `config.red.amphibOps.heliWave.cargoReloadSec` | 補運貨物的間隔 |
 | `config.red.amphibOps.zones[].movement.arrivalThreshold` | 認定艦隊抵達的艦數門檻 |
 | `config.red.amphibOps.zones[].air.contactThreshold` | 空/機降區可接受的最大接觸數 |
 

@@ -56,7 +56,7 @@ function FireSupportGate.evaluate(config, landingState, getAmmoInventory)
   )
   if not report then return nil end
 
-  if report.total.percentage < config.red.amphibOps.fireSupportHoldThreshold then
+  if report.total.percentage < config.red.amphibOps.fireSupport.srbmHoldAmmoPct then
     amphib.fireSupportOnHold = true
     return {
       tag = "HOLD",
@@ -64,7 +64,7 @@ function FireSupportGate.evaluate(config, landingState, getAmmoInventory)
         scope = "fireSupportGate",
         reason = "srbm_low",
         total = report.total.percentage,
-        threshold = config.red.amphibOps.fireSupportHoldThreshold,
+        threshold = config.red.amphibOps.fireSupport.srbmHoldAmmoPct,
         firing = report.firing.percentage,
         resupply = report.resupply.percentage,
         depot = report.ammo.percentage

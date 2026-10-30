@@ -43,7 +43,7 @@ flowchart TD
 
 | phase | 動作 | 下一個 phase |
 |---|---|---|
-| `enroute` | 離 `finalPoint` 小於 `tuning.route.arrivalNm` 時 `ScenEdit_UnloadCargo` | `unloading` |
+| `enroute` | 離 `finalPoint` 小於 `route.arrivalNm` 時 `ScenEdit_UnloadCargo` | `unloading` |
 | `unloading` | `isCargoUnloaded`（`condition` 是 `"Underway"` 且 `cargo` 已空）成立時 `RTB(true)` | `returning` |
 | `returning` | 不再處理 | — |
 
@@ -67,8 +67,8 @@ flowchart TD
 | 路徑 | 用途 |
 |---|---|
 | `zones[].landing.hovercraft` | `speed`、`missionName` |
-| `tuning.route.arrivalNm` | 到達判斷 |
-| `tuning.acvWave.hovercraftWaitSec` | 等第一波的上限，見 [acvWave](acvWave.md) |
+| `route.arrivalNm` | 到達判斷 |
+| `acvWave.hovercraftWaitSec` | 等第一波的上限，見 [acvWave](acvWave.md) |
 
 運量與航行時間推算見 [hovercraftCapacity](hovercraftCapacity.md)。
 

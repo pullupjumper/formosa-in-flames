@@ -99,8 +99,8 @@ describe("LandingOps Coordinator", function()
         amphibOps = {
           zones = { buildZone() },
           periodSec = 3600,
-          remainingCargoTransferSec = 7200,
-          tuning = { acvWave = { lossRatio = 0.3, holdSec = 300, hovercraftWaitSec = 300 } },
+          acvWave = { lossRatio = 0.3, holdSec = 300, hovercraftWaitSec = 300 },
+          heliWave = { cargoReloadSec = 7200 },
         },
         triggers = {
           amphibiousOps = { startTime = "2026-04-03 00:00:00" },
@@ -448,7 +448,7 @@ describe("LandingOps Coordinator", function()
       local landingState = buildLandingState()
       local zoneState = landingState.amphibOps.zoneStates.Taoyuan
       zoneState.phase = constants.AMPHIBIOUS_PHASES.ASSAULT_LANDING
-      zoneState.acvWaitStartedAt = 1000 - config.red.amphibOps.tuning.acvWave.hovercraftWaitSec
+      zoneState.acvWaitStartedAt = 1000 - config.red.amphibOps.acvWave.hovercraftWaitSec
 
       Coordinator.process(config, landingState,
         { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
@@ -626,7 +626,7 @@ describe("LandingOps Coordinator", function()
       ---@param overrides? table
       local function buildGateConfig(overrides)
         local config = buildConfig()
-        config.red.amphibOps.fireSupportHoldThreshold = 50
+        config.red.amphibOps.fireSupport = { srbmHoldAmmoPct = 50 }
         if overrides then
           for k, v in pairs(overrides) do config.red.amphibOps[k] = v end
         end

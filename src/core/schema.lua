@@ -974,9 +974,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Air Cushion Vehicle deployment configuration
 ---@class SBJ__ACVDescriptor: table
----@field distance number Horizontal spacing between ACVs (nautical miles)
 ---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05); sized to the zone's landing force
----@field speed number ACV transit speed (knots)
 ---@field destination CMO__Waypoint[] Destination waypoints
 ---@field area string[] Staging area reference points
 
@@ -989,7 +987,6 @@ function ScenEdit_DeleteMine(params) end
 
 ---Landing craft mission configuration for boat-based amphibious landings
 ---@class SBJ__HovercraftMissionDescriptor: SBJ__CargoLandingPlatformDescriptor
----@field speed number
 
 ---Transport helicopter configuration for air assault operations
 ---@class SBJ__TransportHelicopterDescriptor: SBJ__CargoLandingPlatformDescriptor
@@ -1017,7 +1014,6 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__SweeperDescriptor: table
 ---@field missionName string
 ---@field settings CMO__Mission
----@field speed number
 
 ---Operational zone descriptor for amphibious operations
 ---Defines one landing zone: its fleet and SAGs, plus holding areas, air and landing setup
@@ -1068,13 +1064,12 @@ function ScenEdit_DeleteMine(params) end
 ---@field horizontalDistanceNm number Horizontal spacing between ships in formation
 ---@field verticalDistanceNm number Vertical spacing between ships in formation
 ---@field transitDistanceNm number Distance for transit phase
----@field shipSpeed number Ship movement speed
----@field acvSpeed number Amphibious combat vehicle speed
----@field acvTransitDistanceNm number Amphibious combat vehicle transit distance
----@field acvHorizontalDistanceNm number Amphibious combat vehicle horizontal spacing
----@field hovercraftSpeed number
----@field sweeperSpeed number
+---@field acvSpacingNm number Lateral spacing between ACVs released from a ship or offloaded from a RORO
 ---@field rowBearingOffset number Degrees between the zone heading and the direction ships of one type line up along
+---@field shipSpeed number Ship movement speed (knots)
+---@field hovercraftSpeed number Hovercraft manual speed (knots)
+---@field sweeperSpeed number Type 082 manual speed (knots)
+---@field assaultBoatSpeed number Assault boat manual speed (knots)
 
 ---Fleet composition configuration for amphibious operations
 ---Defines the number of ships by type for amphibious assault fleets
@@ -1127,30 +1122,28 @@ function ScenEdit_DeleteMine(params) end
 ---cargo manifests, ship layouts, operational zones, and mission timing
 ---@class SBJ__AmphibOpsConfig: table
 ---@field periodSec number Check interval in seconds
----@field acvLaunchBatchSize integer ACVs released per launch call
----@field roroOffloadBatchSize integer Vehicles a RORO unloads per call
----@field remainingCargoTransferSec number Seconds between transfers of the remaining cargo while an airlanding mission runs
----@field airlandingFireQty number Total shots a SAG fires at the airlanding zone contacts, split among them
----@field bargeRoroPairingRangeNm number A barge and a RORO pair when they are closer than this (nm)
----@field fireSupportHoldThreshold number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
+---@field adminOffloading SBJ__AdminOffloadingConfig RORO and barge offloading
+---@field fireSupport SBJ__AmphibFireSupportConfig SRBM hold and SAG airlanding fire
 ---@field cargo table<string, SBJ__CargoDescriptor[]> Cargo manifest by ship type
 ---@field transferCargo table<string, SBJ__CargoDescriptor[]> Transfer cargo groups
 ---@field ships table<SBJ__AmphibiousShipType, SBJ__AmphibShipDescriptor> Ship definitions by ship type
----@field missionStartTime table<string, number[]> Mission start times by type (seconds)
 ---@field formation SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
 ---@field debug SBJ__AmphibDebugConfig Live-test shortcuts
----@field tuning SBJ__AmphibTuningConfig Shared lane, boat, obstacle and ACV wave parameters
 ---@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start
-
----Shared parameters used by every zone of the amphibious operations
----@class SBJ__AmphibTuningConfig: table
 ---@field route SBJ__RouteConfig Lane layout and routing through swept lanes
 ---@field mineClearing SBJ__MineClearingConfig Type 082 mine clearing settings
----@field assaultBoat SBJ__AssaultBoatConfig Assault boat settings
 ---@field obstacle SBJ__ObstacleConfig Beach obstacle settings
 ---@field acvWave SBJ__AcvWaveConfig ACV wave limits
----@field heliWave SBJ__HeliWaveConfig Helicopter wave size, timing and wing routes
+---@field heliWave SBJ__HeliWaveConfig Helicopter waves and airlift batches
+
+---@class SBJ__AdminOffloadingConfig: table
+---@field roroBatchSize integer Vehicles a RORO unloads per call
+---@field bargeRoroPairingRangeNm number A barge and a RORO pair when they are closer than this (nm)
+
+---@class SBJ__AmphibFireSupportConfig: table
+---@field srbmHoldAmmoPct number SRBM total-ammo % below which recon-driven SRBM strikes (STRIKE/INFRA/*) are held until all zones reach staging waters
+---@field airlandingShotQty number Total shots a SAG fires at the airlanding zone contacts, split among them
 
 ---Lane layout and routing settings (distances measured from the lane center on the shore)
 ---@class SBJ__RouteConfig: table
@@ -1183,24 +1176,31 @@ function ScenEdit_DeleteMine(params) end
 ---@field number integer Number of mines
 ---@field delay number CMO arming delay
 
----@class SBJ__AssaultBoatConfig: table
----@field speed number Manual speed (knots)
-
 ---@class SBJ__HeliWaveConfig: table
----@field waveSize integer Transport helicopters per wave
----@field escortSize integer Attack helicopters kept per zone, assigned or on the way
----@field waveTimeoutSec number A wave still in the air after this long counts as finished
----@field arrivalNm number Distance to the landing point that counts as arrived
----@field casAssignNm number Distance to the landing point where an attack helicopter joins the CAS mission
----@field cruiseSpeedKt number Cruise speed used to work back the launch time from the boat arrival
----@field cruiseAltitudeM number Altitude the helicopters fly at after launch
+---@field waveTimeoutSec number A wave or airlift batch still in the air after this long counts as finished
+---@field cargoReloadSec number Seconds between transfers of the remaining cargo while an airlanding mission runs
+---@field flightPath SBJ__HeliFlightPathConfig Wing course geometry shared by helicopters and airlift
+---@field transport SBJ__HeliTransportConfig Transport helicopter waves
+---@field attack SBJ__HeliAttackConfig Attack helicopters sent with the waves
+---@field airlift SBJ__AirliftConfig Fixed-wing transport batches
+
+---@class SBJ__HeliFlightPathConfig: table
 ---@field wingOffsetM number Lateral distance of each wing from the lane center line
 ---@field inlandEntryM number Distance inland where a wing turns toward its landing point
 ---@field landingSpreadM number Lateral offset of each wing's landing point from the landing zone center
----@field airlift SBJ__AirliftConfig Fixed-wing transport batches
+
+---@class SBJ__HeliTransportConfig: table
+---@field waveSize integer Transport helicopters per wave
+---@field cruiseSpeedKt number Cruise speed used to work back the launch time from the boat arrival
+---@field cruiseAltitudeM number Altitude the helicopters fly at after launch
+---@field arrivalNm number Distance to the landing point that counts as arrived
+
+---@class SBJ__HeliAttackConfig: table
+---@field count integer Attack helicopters kept per zone, assigned or on the way
+---@field casAssignNm number Distance to the landing point where an attack helicopter joins the CAS mission
 
 ---@class SBJ__AirliftConfig: table
----@field size integer Transport aircraft per batch
+---@field batchSize integer Transport aircraft per batch
 ---@field delaySec number Seconds later than the boats a batch reaches the landing points
 ---@field cruiseSpeedKt number Cruise speed used to work back the launch time
 ---@field cruiseAltitudeM number Altitude the aircraft fly at after launch
@@ -1211,12 +1211,16 @@ function ScenEdit_DeleteMine(params) end
 ---@field clearSec number Seconds after all boats land before obstacles are cleared
 
 ---@class SBJ__AcvWaveConfig: table
+---@field launchBatchSize integer ACVs released per launch call
 ---@field lossRatio number Resume when alive drops below capacity * (1 - lossRatio)
 ---@field holdSec number Resume when paused longer than this
 ---@field hovercraftWaitSec number Hovercraft stop waiting for the first ACV wave after this many seconds
 
----Shared wave tuning plus one zone's alive cap (built by AcvWave.buildZoneWaveConfig)
----@class SBJ__AcvZoneWaveConfig: SBJ__AcvWaveConfig
+---Shared wave settings plus one zone's alive cap (built by AcvWave.buildZoneWaveConfig)
+---@class SBJ__AcvZoneWaveConfig: table
+---@field lossRatio number Resume when alive drops below capacity * (1 - lossRatio)
+---@field holdSec number Resume when paused longer than this
+---@field hovercraftWaitSec number Hovercraft stop waiting for the first ACV wave after this many seconds
 ---@field capacity table<string, integer> Alive ACV cap per type key (zbd05, ztd05)
 
 ---Land-Attack Cruise Missile state: LACM operations

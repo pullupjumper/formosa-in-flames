@@ -63,8 +63,6 @@ describe("AmphibiousAssault", function()
         },
         acv = {
           area = { "RP-ACV-1", "RP-ACV-2" },
-          distance = 0.5,
-          speed = 20,
           destination = { { latitude = 25.0, longitude = 121.0 } },
         },
       },
@@ -150,7 +148,7 @@ describe("AmphibiousAssault", function()
     local center = { latitude = 25.0, longitude = 121.0 }
 
     local amphibOps = {
-      tuning = { route = { launchStationNearNm = 2, launchStationFarNm = 4 } },
+      route = { launchStationNearNm = 2, launchStationFarNm = 4 },
     }
 
     ---Create a side unit entry as returned by the side's unit list
@@ -304,7 +302,7 @@ describe("AmphibiousAssault", function()
 
     it("should teleport every SAG ship into formation in fast-forward", function()
       local ffConfig = {
-        tuning = amphibOps.tuning,
+        route = amphibOps.route,
         debug = { enabled = true, startStage = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT },
       }
       local sagCourse = { { latitude = 24.0, longitude = 120.0 } }

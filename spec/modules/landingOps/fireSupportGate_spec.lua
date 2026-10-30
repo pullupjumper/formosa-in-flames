@@ -27,7 +27,7 @@ describe("FireSupportGate", function()
       table.insert(zones, { name = name })
       zoneStates[name] = { phase = phase }
     end
-    local config = { red = { amphibOps = { zones = zones, fireSupportHoldThreshold = 50 } } }
+    local config = { red = { amphibOps = { zones = zones, fireSupport = { srbmHoldAmmoPct = 50 } } } }
     local landingState = {
       ground = {},
       amphibOps = { zoneStates = zoneStates, fireSupportOnHold = onHold },

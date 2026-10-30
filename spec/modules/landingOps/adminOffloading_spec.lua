@@ -42,8 +42,6 @@ describe("AdminOffloading", function()
         },
         acv = {
           area = { "RP-ACV-1", "RP-ACV-2" },
-          distance = 0.5,
-          speed = 20,
           destination = { { latitude = 25.0, longitude = 121.0 } },
         },
       },
@@ -66,7 +64,8 @@ describe("AdminOffloading", function()
   local function buildAmphibOpsConfig(overrides)
     local config = {
       zones = { buildZone() },
-      bargeRoroPairingRangeNm = 1,
+      adminOffloading = { roroBatchSize = 20, bargeRoroPairingRangeNm = 1 },
+      formation = { acvSpacingNm = 0.5 },
     }
     if overrides then
       for k, v in pairs(overrides) do config[k] = v end
@@ -708,7 +707,7 @@ describe("AdminOffloading", function()
 
       before_each(function()
         zone = buildZone()
-        config = buildAmphibOpsConfig({ zones = { zone }, roroOffloadBatchSize = 2 })
+        config = buildAmphibOpsConfig({ zones = { zone }, adminOffloading = { roroBatchSize = 2, bargeRoroPairingRangeNm = 1 } })
         barge = buildUnit({ guid = "BARGE-001", name = "Barge" })
         roro = buildUnit({
           guid = "RORO-001",
@@ -794,12 +793,12 @@ describe("AdminOffloading", function()
           latitude = 25.1,
           longitude = 121.1,
           bearing = zone.heading,
-          distance = zone.landing.acv.distance,
+          distance = config.formation.acvSpacingNm,
         }, stubGetPoint.calls[2].vals[1])
       end)
 
       it("should offload no more than the batch size", function()
-        config.roroOffloadBatchSize = 1
+        config.adminOffloading.roroBatchSize = 1
 
         AdminOffloading.handleShipArrival(config, barges, barge)
 
@@ -850,7 +849,7 @@ describe("AdminOffloading", function()
       end)
 
       it("should offload nothing when the units are as far apart as the pairing range", function()
-        stubToolRange.returns(config.bargeRoroPairingRangeNm)
+        stubToolRange.returns(config.adminOffloading.bargeRoroPairingRangeNm)
 
         AdminOffloading.handleShipArrival(config, barges, barge)
 

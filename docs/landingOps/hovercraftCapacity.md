@@ -109,7 +109,7 @@ SA-15 只有 071 的氣墊船會載（`deepAssaultGroup3`），071 共 8 艘，�
 
 ## 各作戰區空中突擊兵力
 
-**兵力是船上 `cargo` 的總量，不是 Z-18 一輪的運量。** Z-18 每次從母艦的 `cargo` 取一份貨送出（`transferCargo`），任務開始後每隔 `remainingCargoTransferSec`（2 小時）再補運一次尚未運完的貨（`processRemainingCargoTransfer`）。所以 Z-18 只決定「一輪運多快」。
+**兵力是船上 `cargo` 的總量，不是 Z-18 一輪的運量。** Z-18 每次從母艦的 `cargo` 取一份貨送出（`transferCargo`），任務開始後每隔 `heliWave.cargoReloadSec`（2 小時）再補運一次尚未運完的貨（`processRemainingCargoTransfer`）。所以 Z-18 只決定「一輪運多快」。
 
 船艦與 `cargo`（`unitGenerator.lua`：076 共用 `cargo.type075`）：
 

@@ -64,12 +64,12 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
         local plan = RoutePlanner.reserveCourse(zoneState, {
           guid = craft.guid,
           launchPos = { latitude = ship.latitude, longitude = ship.longitude },
-          routeConfig = amphibOps.tuning.route,
+          routeConfig = amphibOps.route,
         }, { isFromDeployLine = true })
 
         if plan then
           craft.course = plan.course
-          craft.manualSpeed = zone.landing.hovercraft.speed
+          craft.manualSpeed = amphibOps.formation.hovercraftSpeed
           craft:Launch(true)
           zoneState.hovercraft[craft.guid] = {
             finalPoint = plan.course[#plan.course],
@@ -97,7 +97,7 @@ local function updateHovercraftPhase(amphibOps, craft, entry)
     DebugFlow.teleport(craft.guid, entry.finalPoint)
   end
 
-  CargoRun.step(craft, entry, entry.finalPoint, amphibOps.tuning.route.arrivalNm)
+  CargoRun.step(craft, entry, entry.finalPoint, amphibOps.route.arrivalNm)
 end
 
 ---Update the hovercraft: unload at the parking slot, then return to base once the cargo is out

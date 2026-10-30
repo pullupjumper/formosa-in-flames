@@ -52,7 +52,7 @@ describe("SagFireSupport", function()
         }),
       }
       local configOverrides = {
-        airlandingFireQty = 440,
+        fireSupport = { airlandingShotQty = 440 },
         zones = {
           {
             sags = {

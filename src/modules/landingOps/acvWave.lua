@@ -61,16 +61,16 @@ local function calculateTypeQuota(zoneState, key, config, currentTime)
   return quota
 end
 
----Build the wave config of one zone: the shared wave tuning plus the zone's own alive cap per type
----@param tuning SBJ__AcvWaveConfig
+---Build the wave config of one zone: the shared wave settings plus the zone's own alive cap per type
+---@param waveConfig SBJ__AcvWaveConfig
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@return SBJ__AcvZoneWaveConfig
-function AcvWave.buildZoneWaveConfig(tuning, zone)
+function AcvWave.buildZoneWaveConfig(waveConfig, zone)
   return {
     capacity = zone.landing.acv.capacity,
-    lossRatio = tuning.lossRatio,
-    holdSec = tuning.holdSec,
-    hovercraftWaitSec = tuning.hovercraftWaitSec,
+    lossRatio = waveConfig.lossRatio,
+    holdSec = waveConfig.holdSec,
+    hovercraftWaitSec = waveConfig.hovercraftWaitSec,
   }
 end
 
@@ -143,7 +143,7 @@ local function buildACVRouter(amphibOps, zone, zoneState)
     local plan = RoutePlanner.reserveCourse(zoneState, {
       guid = unit.guid,
       launchPos = { latitude = unit.latitude, longitude = unit.longitude },
-      routeConfig = amphibOps.tuning.route,
+      routeConfig = amphibOps.route,
     })
 
     if not plan then
@@ -322,12 +322,12 @@ end
 function AcvWave.release(amphibOps, zone, zoneState, ship)
   return spawnACVs({
     ship = ship,
-    num = amphibOps.acvLaunchBatchSize,
+    num = amphibOps.acvWave.launchBatchSize,
     bearing = zone.heading,
-    distance = zone.landing.acv.distance,
+    distance = amphibOps.formation.acvSpacingNm,
     quota = AcvWave.getQuota(
       zoneState,
-      AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone),
+      AcvWave.buildZoneWaveConfig(amphibOps.acvWave, zone),
       GameApi.ScenEdit_CurrentTime()
     ),
     routeACV = buildACVRouter(amphibOps, zone, zoneState),

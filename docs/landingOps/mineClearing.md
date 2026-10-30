@@ -18,7 +18,7 @@
 
 一艘 082 對應一條水際通道，通道數 = 082 數量，所以 `config` 裡各區 `fleet` 的 `type082` 數量要等於營數。
 
-`updateMineClearing` 每 tick 檢查：走到最後航點（距離小於 `tuning.route.arrivalNm`）就 `RTB(true)`；查不到（被擊殺）就整筆刪掉，不再擋完成。全部完成才回 `true`，coordinator 才進入下一階段。
+`updateMineClearing` 每 tick 檢查：走到最後航點（距離小於 `route.arrivalNm`）就 `RTB(true)`；查不到（被擊殺）就整筆刪掉，不再擋完成。全部完成才回 `true`，coordinator 才進入下一階段。
 
 ---
 
@@ -65,9 +65,9 @@ CMO 的掃雷由內建任務完成。程式只把 082 指派到 `zone.landing.sw
 |---|---|
 | `zones[].landing.laneCenter`、`obstacleArea` | 通道原點與障礙範圍參考點（`constants.AREAS`） |
 | `zones[].landing.sweeper` | 掃雷任務名稱與速度 |
-| `tuning.mineClearing.areaMarginM` | 掃雷任務區域比最外側灘際通道多出的寬度 |
-| `tuning.mineClearing.cellSizeM` | 快轉掃雷的方塊邊長 |
-| `tuning.route.inlandMarginM`、`arrivalNm` | E_lane 超出障礙的距離、到達判斷 |
+| `mineClearing.areaMarginM` | 掃雷任務區域比最外側灘際通道多出的寬度 |
+| `mineClearing.cellSizeM` | 快轉掃雷的方塊邊長 |
+| `route.inlandMarginM`、`arrivalNm` | E_lane 超出障礙的距離、到達判斷 |
 | `amphibOps.minefields[]` | 雷區：`zone`、`area`、`number`、`delay` |
 
 ---

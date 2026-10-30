@@ -120,10 +120,10 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | 單位 | 速度 | 來源 |
 |---|---|---|
 | LST / LPD / 渡輪 / 駁船 | 14 kt | `formation.shipSpeed` |
-| 兩棲車 | 8 kt（約 14.8 km/h） | `formation.acvSpeed`，油門 Full |
-| 氣墊船（Type 726A） | 40 kt | `formation.hovercraftSpeed`，經 `zones[].landing.hovercraft.speed` 設 `manualSpeed` |
-| 運輸直升機（Z-18） | 約 130 kt | CMO 實測；倒推放飛時間用 `tuning.heliWave.cruiseSpeedKt` |
-| 衝鋒舟 | 30 kt | `config.red.amphibOps.tuning.assaultBoat.speed`（`manualSpeed`） |
+| 兩棲車 | 8 kt（約 14.8 km/h） | 油門 Full |
+| 氣墊船（Type 726A） | 40 kt | `formation.hovercraftSpeed`，設 `manualSpeed` |
+| 運輸直升機（Z-18） | 約 130 kt | CMO 實測；倒推放飛時間用 `heliWave.transport.cruiseSpeedKt` |
+| 衝鋒舟 | 30 kt | `formation.assaultBoatSpeed`（`manualSpeed`） |
 
 兩棲車與 LST 都比原文快（原文泛水編波約 7 km/h，過渡航態 14.4 km/h）。
 
@@ -188,7 +188,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 **流程**
 1. 所有衝鋒舟都走完航線、停在登陸區後，開始計時。
-2. 超過 `config.red.amphibOps.tuning.obstacle.clearSec`（預設值隨意給）後，衝鋒舟前方的方塊設為 `cleared`。
+2. 超過 `config.red.amphibOps.obstacle.clearSec`（預設值隨意給）後，衝鋒舟前方的方塊設為 `cleared`。
 3. 一條灘際通道的方塊全部 `cleared`，該通道算完成。
 
 **放行**：所有「有衝鋒舟破障的」灘際通道都完成，兩棲車才開始泛水，航線才能通過。沒有衝鋒舟的通道不計入，也不能走。第二組實際只能用 12 條。
@@ -240,7 +240,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 預計波次：桃園 3 波（224 / 224 / 192），喜樹 3 波（224 / 224 / 72），澎湖 1 波（56）。
 
-**config**（`config.red.amphibOps.tuning.acvWave`；各區的 `capacity` 在 `zones[i].landing.acv.capacity`）：`lossRatio`（0.3）、`holdSec`（30 × 60）、`hovercraftWaitSec`（氣墊船等第一波的上限）。
+**config**（`config.red.amphibOps.acvWave`；各區的 `capacity` 在 `zones[i].landing.acv.capacity`）：`lossRatio`（0.3）、`holdSec`（30 × 60）、`hovercraftWaitSec`（氣墊船等第一波的上限）。
 
 **state**（`SBJ__ZoneState`）：`acvGuids`、`acvPausedAt`、`acvFirstWaveFull`、`acvWaitStartedAt`。機制與取捨見 [acvWave](acvWave.md)。
 

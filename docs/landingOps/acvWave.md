@@ -32,7 +32,7 @@
 
 ## 放出兩棲車
 
-[amphibiousAssault](amphibiousAssault.md) 的 `launchACV` 決定哪艘船可以放，再呼叫 `release(amphibOps, zone, zoneState, ship)`。一次最多放 `acvLaunchBatchSize` 輛，額度由 `getQuota` 算出，不離開本模組。
+[amphibiousAssault](amphibiousAssault.md) 的 `launchACV` 決定哪艘船可以放，再呼叫 `release(amphibOps, zone, zoneState, ship)`。一次最多放 `acvWave.launchBatchSize` 輛，額度由 `getQuota` 算出，不離開本模組。
 
 ### 生成
 
@@ -86,16 +86,16 @@ ACV 的航線要走已掃出的通道：`buildACVRouter` 對每輛新生成的�
 | `ACV_TYPES` | 車種清單（名稱、DBID、額度 key） |
 | `getQuota(zoneState, config, currentTime)` | 各車種剩餘額度（key 為 `zbd05`、`ztd05`） |
 | `isFirstWaveFull(zoneState, config, currentTime)` | 氣墊船是否可放行 |
-| `buildZoneWaveConfig(tuning, zone)` | 共用參數加上該區的 `capacity` |
+| `buildZoneWaveConfig(waveConfig, zone)` | 共用參數加上該區的 `capacity` |
 | `addACV(zoneState, key, guid)` | 登記新放出的車 |
 
 ---
 
 ## 設定
 
-上限依作戰區規模各自設定：`zones[i].landing.acv.capacity`（Taoyuan、Sishu 各 112，Penghu 營級 28）。呼叫端用 `buildZoneWaveConfig(tuning, zone)` 把它併入共用參數。
+上限依作戰區規模各自設定：`zones[i].landing.acv.capacity`（Taoyuan、Sishu 各 112，Penghu 營級 28）。呼叫端用 `buildZoneWaveConfig(waveConfig, zone)` 把它併入共用參數。
 
-`config.red.amphibOps.tuning.acvWave`（各區共用）：
+`config.red.amphibOps.acvWave`（各區共用）：
 
 | 欄位 | 用途 |
 |---|---|

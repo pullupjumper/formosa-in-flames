@@ -44,7 +44,7 @@ describe("AssaultBoat", function()
 
   ---@return table
   local function buildConfig()
-    return { tuning = { route = buildRouteConfig(), assaultBoat = { speed = 30 } } }
+    return { route = buildRouteConfig(), formation = { assaultBoatSpeed = 30 } }
   end
 
   ---@param count integer
@@ -332,8 +332,8 @@ describe("AssaultBoat", function()
     ---@return SBJ__AmphibOpsConfig
     local function buildEstimateConfig()
       local amphibOps = buildConfig()
-      amphibOps.formation = { shipSpeed = 14 }
-      amphibOps.tuning.route.launchStationFarNm = 4
+      amphibOps.formation.shipSpeed = 14
+      amphibOps.route.launchStationFarNm = 4
       return amphibOps
     end
 

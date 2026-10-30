@@ -22,8 +22,8 @@ flowchart TD
     WAIT -->|超過 clearSec| DONE["通道標記 cleared"]
 ```
 
-1. `startObstacleClearing`（`BOAT_ASSAULT` 結束時）：以 `tuning.obstacle.cellSizeM` 鋪滿障礙範圍，把「有舟登岸的灘際通道」內陸線（A_lane 到 E_lane）碰到的方塊設為 `clearing`，記下開始時間 `obstacleStartedAt`。沒有 `zoneState.lanes` 時回 `false`
-2. `updateObstacleClearing`（`OBSTACLE_CLEARING` 每 tick）：距開始超過 `tuning.obstacle.clearSec`（快轉時略過）就把這些方塊設為 `cleared`，通道的 `isCleared = true`，回傳 `true`
+1. `startObstacleClearing`（`BOAT_ASSAULT` 結束時）：以 `obstacle.cellSizeM` 鋪滿障礙範圍，把「有舟登岸的灘際通道」內陸線（A_lane 到 E_lane）碰到的方塊設為 `clearing`，記下開始時間 `obstacleStartedAt`。沒有 `zoneState.lanes` 時回 `false`
+2. `updateObstacleClearing`（`OBSTACLE_CLEARING` 每 tick）：距開始超過 `obstacle.clearSec`（快轉時略過）就把這些方塊設為 `cleared`，通道的 `isCleared = true`，回傳 `true`
 
 ### 為什麼只有「有舟登岸」的通道才放行？
 
@@ -48,8 +48,8 @@ flowchart TD
 
 | 路徑 | 用途 |
 |---|---|
-| `tuning.obstacle.cellSizeM` | 方塊邊長 |
-| `tuning.obstacle.clearSec` | 破障耗時 |
+| `obstacle.cellSizeM` | 方塊邊長 |
+| `obstacle.clearSec` | 破障耗時 |
 | `zones[].landing.obstacleArea` | 障礙範圍（藍方參考點） |
 
 ---

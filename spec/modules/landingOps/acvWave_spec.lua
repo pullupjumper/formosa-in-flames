@@ -121,15 +121,15 @@ describe("AcvWave", function()
   end)
 
   describe("buildZoneWaveConfig", function()
-    it("should take the cap from the zone and keep the shared tuning", function()
-      local tuning = { lossRatio = 0.5, holdSec = 600 }
+    it("should take the cap from the zone and keep the shared settings", function()
+      local waveConfig = { lossRatio = 0.5, holdSec = 600 }
       local zone = { landing = { acv = { capacity = { zbd05 = 28, ztd05 = 28 } } } }
 
-      local config = AcvWave.buildZoneWaveConfig(tuning, zone)
+      local config = AcvWave.buildZoneWaveConfig(waveConfig, zone)
 
       assert.are.same({ zbd05 = 28, ztd05 = 28 }, config.capacity)
       assert.are.equal(0.5, config.lossRatio)
-      assert.is_nil(tuning.capacity)
+      assert.is_nil(waveConfig.capacity)
     end)
   end)
 
@@ -205,10 +205,14 @@ describe("AcvWave", function()
       local zone = {
         name = "ZoneAlpha",
         heading = 90,
-        landing = { acv = { distance = 0.5, capacity = params.quota, destination = DESTINATION } },
+        landing = { acv = { capacity = params.quota, destination = DESTINATION } },
       }
       local zoneState = {}
-      local amphibOps = { acvLaunchBatchSize = params.num, tuning = { acvWave = { lossRatio = 0.5, holdSec = 600 }, route = {} } }
+      local amphibOps = {
+        acvWave = { launchBatchSize = params.num, lossRatio = 0.5, holdSec = 600 },
+        route = {},
+        formation = { acvSpacingNm = 0.5 },
+      }
       return AcvWave.release(amphibOps, zone, zoneState, params.ship), zoneState
     end
 

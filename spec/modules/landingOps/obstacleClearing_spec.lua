@@ -22,7 +22,7 @@ describe("ObstacleClearing", function()
   local CENTER = { latitude = 25.0, longitude = 121.0 }
   local BEARING = 150
   local frame = { origin = CENTER, bearing = BEARING }
-  local CONFIG = { tuning = { obstacle = { cellSizeM = 50, clearSec = 600 } } }
+  local CONFIG = { obstacle = { cellSizeM = 50, clearSec = 600 } }
   local zone = { name = "Penghu", landing = { obstacleArea = { "RP-O1", "RP-O2", "RP-O3", "RP-O4" } } }
 
   ---@return SBJ__ZoneState

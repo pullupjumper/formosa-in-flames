@@ -59,7 +59,7 @@ function SagFireSupport.attackAirlandingZone(amphibOps, ship)
 
   AttackManager.attackContacts({
     contacts = filteredContacts,
-    qty = math.floor(amphibOps.airlandingFireQty / #filteredContacts),
+    qty = math.floor(amphibOps.fireSupport.airlandingShotQty / #filteredContacts),
     firingUnits = { ship },
     weaponDBID = constants.WEAPONS.HPJ_38,
   })

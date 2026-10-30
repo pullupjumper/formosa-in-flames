@@ -25,7 +25,7 @@ laneGeometry 不呼叫任何遊戲 API，輸入輸出都是座標與 table，所
 
 水際通道依序經過展開線、泛水出發線、衝擊發起線；從衝擊發起線起分出數條灘際通道，各自從 A_lane 經 S_lane 到 E_lane。
 
-| 點 | 意義 | 距岸（`tuning.route`） |
+| 點 | 意義 | 距岸（`route`） |
 |---|---|---|
 | `deployPoint` | 登陸艦艇展開線 | `deployLineNm` |
 | `launchPoint`（L_i） | 泛水出發線 | `launchLineNm` |
@@ -89,7 +89,7 @@ laneGeometry 不呼叫任何遊戲 API，輸入輸出都是座標與 table，所
 
 ## 設定
 
-通道距離參數集中在 `config.red.amphibOps.tuning.route`（型別 `SBJ__RouteConfig`），數值與單位以 `config.lua` 的行內註解為準；方塊邊長是 `tuning.obstacle.cellSizeM`。
+通道距離參數集中在 `config.red.amphibOps.route`（型別 `SBJ__RouteConfig`），數值與單位以 `config.lua` 的行內註解為準；方塊邊長是 `obstacle.cellSizeM`。
 
 ---
 

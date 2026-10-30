@@ -160,14 +160,14 @@ end
 ---@param wing SBJ__HeliWingType
 ---@return CMO__Waypoint[] course
 local function buildInlandCourse(flightCtx, wing)
-  local frame, center, heliConfig = flightCtx.frame, flightCtx.center, flightCtx.heliConfig
+  local frame, center, flightPath = flightCtx.frame, flightCtx.center, flightCtx.heliConfig.flightPath
   local sign = WING_SIGN[wing]
   local centerAlong, centerLateral = LaneGeometry.projectPoint(frame, center)
-  local wingLateral = sign * heliConfig.wingOffsetM
+  local wingLateral = sign * flightPath.wingOffsetM
 
   return {
-    LaneGeometry.buildPoint(frame, heliConfig.inlandEntryM, wingLateral),
-    LaneGeometry.buildPoint(frame, centerAlong, centerLateral + sign * heliConfig.landingSpreadM),
+    LaneGeometry.buildPoint(frame, flightPath.inlandEntryM, wingLateral),
+    LaneGeometry.buildPoint(frame, centerAlong, centerLateral + sign * flightPath.landingSpreadM),
   }
 end
 
@@ -179,7 +179,7 @@ end
 local function buildWingCourse(flightCtx, startPos, wing)
   local startAlong = LaneGeometry.projectPoint(flightCtx.frame, startPos)
   local inland = buildInlandCourse(flightCtx, wing)
-  local wingLateral = WING_SIGN[wing] * flightCtx.heliConfig.wingOffsetM
+  local wingLateral = WING_SIGN[wing] * flightCtx.heliConfig.flightPath.wingOffsetM
 
   return {
     LaneGeometry.buildPoint(flightCtx.frame, startAlong, wingLateral),
@@ -235,7 +235,7 @@ local function calculateFlightSec(flightCtx, motherships)
     longestM = math.max(longestM, calculateCourseLengthM(startPos, buildWingCourse(flightCtx, startPos, wing)))
   end
 
-  return longestM / constants.METERS_PER_NM / flightCtx.heliConfig.cruiseSpeedKt * constants.SECONDS_PER_HOUR
+  return longestM / constants.METERS_PER_NM / flightCtx.heliConfig.transport.cruiseSpeedKt * constants.SECONDS_PER_HOUR
 end
 
 ---Calculate the flight time of an airlift batch from the airfield along the longer wing
@@ -305,15 +305,15 @@ local function launchWave(tickCtx, zone, state, flightCtx)
   end
 
   local unitMap = {}
-  local attackerNeed = math.max(0, flightCtx.heliConfig.escortSize - Utils.getCount(state.attackers))
+  local attackerNeed = math.max(0, flightCtx.heliConfig.attack.count - Utils.getCount(state.attackers))
   local launchedBefore = Utils.getCount(state.attackers)
   local heliConfig = flightCtx.heliConfig
   local function courseOf(heli, wing)
     local course = buildWingCourse(flightCtx, { latitude = heli.latitude, longitude = heli.longitude }, wing)
-    course[1].desiredAltitude = heliConfig.cruiseAltitudeM
+    course[1].desiredAltitude = heliConfig.transport.cruiseAltitudeM
     return course
   end
-  launchGroup(selectRandom(transports, heliConfig.waveSize), ROLE.TRANSPORT, unitMap, courseOf)
+  launchGroup(selectRandom(transports, heliConfig.transport.waveSize), ROLE.TRANSPORT, unitMap, courseOf)
   launchGroup(selectRandom(attackers, attackerNeed), ROLE.ATTACK, state.attackers, courseOf)
 
   state.units = unitMap
@@ -356,7 +356,7 @@ local function launchAirliftBatch(tickCtx, zone, airlift, flightCtx)
     course[1].desiredAltitude = airliftConfig.cruiseAltitudeM
     return course
   end
-  launchGroup(selectRandom(candidates, airliftConfig.size), ROLE.AIRLIFT, unitMap, courseOf)
+  launchGroup(selectRandom(candidates, airliftConfig.batchSize), ROLE.AIRLIFT, unitMap, courseOf)
 
   airlift.units = unitMap
   airlift.waveIndex = airlift.waveIndex + 1
@@ -389,7 +389,7 @@ end
 ---@param tickCtx SBJ__LandingTickContext
 ---@return SBJ__HeliWaveConfig
 local function getHeliConfig(tickCtx)
-  return tickCtx.config.red.amphibOps.tuning.heliWave
+  return tickCtx.config.red.amphibOps.heliWave
 end
 
 ---Check if the wave is over: every transport is on its way home or destroyed
@@ -549,10 +549,10 @@ function HeliWave.update(tickCtx, zone, zoneState)
   end
 
   local heliConfig = getHeliConfig(tickCtx)
-  updateAttackers(zoneState, state.attackers, heliConfig.casAssignNm, getCasMissionName(zone))
+  updateAttackers(zoneState, state.attackers, heliConfig.attack.casAssignNm, getCasMissionName(zone))
   local airlift = state.airlift
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "heliWave", "launchWave")
-  updateTransports(zoneState, state.units, heliConfig.arrivalNm)
+  updateTransports(zoneState, state.units, heliConfig.transport.arrivalNm)
   report.addAll({ recallOnTimeout(tickCtx, zone, zoneState, { fleet = state, fleetName = "heli" }) })
   local isHeliReady = isFleetDue(zoneState, state)
   local isAirliftReady = false
