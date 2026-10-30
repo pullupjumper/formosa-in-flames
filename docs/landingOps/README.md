@@ -44,7 +44,7 @@
 | [hovercraft](hovercraft.md) | `hovercraft.lua` | 氣墊船走通道、到點標記 |
 | [cargoRun](cargoRun.md) | `cargoRun.lua` | 載運階段：找有貨的載具、到點卸貨、返航 |
 | [trackedUnits](trackedUnits.md) | `trackedUnits.lua` | 被擊殺的單位從所有登記表刪掉 |
-| sagFireSupport | `sagFireSupport.lua` | 052D 所屬 SAG 壓制空/機降區 |
+| [sagFireSupport](sagFireSupport.md) | `sagFireSupport.lua` | 052D 所屬 SAG 壓制空/機降區 |
 | [debugFlow](debugFlow.md) | `debugFlow.lua` | 實測用的快轉與瞬移開關 |
 
 ---
