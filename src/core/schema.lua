@@ -843,32 +843,28 @@ function ScenEdit_DeleteMine(params) end
 ---@field finalPoint CMO__Location Parking slot
 ---@field phase SBJ__CargoRunPhaseType
 
----Helicopter wave progress of one zone. Hold only the wave in the air; a new wave replaces it
+---Helicopter waves of one zone: the transport waves, the airlift batches and the attack helicopters
 ---@class SBJ__HeliWaveState: table
+---@field transport SBJ__AirWaveState Transport helicopter waves
+---@field airlift? SBJ__AirWaveState Transport aircraft batches (nil = zone has no transport aircraft)
+---@field attackHelis table<string, SBJ__WaveAircraftState> Attack helicopters of the zone indexed by GUID; kept across waves, removed when destroyed
+
+---Wave progress of one group of transports. Hold only the wave in the air; a new wave replaces it
+---@class SBJ__AirWaveState: table
 ---@field waveIndex integer Waves launched so far (0 = none yet)
----@field launchAt number Time the first wave launches (boat arrival minus flight time)
+---@field launchAt number Time the first wave launches
 ---@field waveLaunchedAt? number Time the current wave launched; drives the timeout
----@field units table<string, SBJ__HeliState> Transport helicopters of the current wave indexed by GUID
----@field attackers table<string, SBJ__HeliState> Attack helicopters of the zone indexed by GUID; kept across waves, removed when destroyed
----@field isWaitingLogged? boolean Latched after logging that no loaded helicopter is available
----@field airlift? SBJ__AirliftState Transport aircraft batches of the zone (nil = zone has no transport aircraft)
+---@field currentWave table<string, SBJ__WaveAircraftState> Transports of the current wave indexed by GUID
+---@field isWaitingLogged? boolean Latched after logging that no loaded transport is available
 
----Airlift batch progress of one zone. Hold only the batch in the air; a new batch replaces it
----@class SBJ__AirliftState: table
----@field waveIndex integer Batches launched so far (0 = none yet)
----@field launchAt number Time the first batch launches (boat arrival plus delay minus flight time)
----@field waveLaunchedAt? number Time the current batch launched; drives the timeout
----@field units table<string, SBJ__HeliState> Transport aircraft of the current batch indexed by GUID
----@field isWaitingLogged? boolean Latched after logging that no loaded aircraft is available
-
----Geometry shared by every course of one helicopter wave
----@class SBJ__HeliFlightContext: table
+---Geometry shared by every course of one air wave (helicopter or airlift)
+---@class SBJ__AirWaveFlightContext: table
 ---@field frame SBJ__LaneFrame Lane frame; wings are lateral offsets from its center line
 ---@field center CMO__Location Center of the air landing zone
 ---@field heliConfig SBJ__HeliWaveConfig
 
----One helicopter of the current wave
----@class SBJ__HeliState: table
+---One aircraft of the current wave (transport helicopter, attack helicopter or transport aircraft)
+---@class SBJ__WaveAircraftState: table
 ---@field role SBJ__HeliRoleType
 ---@field wing SBJ__HeliWingType
 ---@field phase SBJ__HeliPhaseType
@@ -919,10 +915,10 @@ function ScenEdit_DeleteMine(params) end
 ---@field frame SBJ__LaneFrame
 ---@field shiftM number Meters toward shore applied to the whole formation
 
----Inputs for HeliWave recallOnTimeout
----@class SBJ__RecallOnTimeoutParams: table
----@field fleet SBJ__HeliWaveState|SBJ__AirliftState
----@field fleetName string Which fleet, for the log
+---Inputs for HeliWave returnOnTimeout
+---@class SBJ__ReturnOnTimeoutParams: table
+---@field airWave SBJ__AirWaveState
+---@field airWaveKey string Which air wave, for the log ("heli" or "airlift")
 
 ---Inputs for LaneGeometry isStepRangeValid
 ---@class SBJ__IsStepRangeValidParams: table

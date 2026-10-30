@@ -80,11 +80,15 @@ BOAT_ASSAULT 開始  → schedule：建立本區 CAS 任務；估衝鋒舟到岸
 
 ## 狀態
 
-`zoneState.heliWave.airlift`（`SBJ__AirliftState`）：只存當前這一批，結構同 `units` / `waveIndex` / `launchAt`。
+`zoneState.heliWave`（`SBJ__HeliWaveState`）分三塊：
 
-`zoneState.heliWave`（`SBJ__HeliWaveState`）：`units` 只存當前這一波的運輸機，下一波放飛時整個換掉；`attackers` 存本區的攻擊直升機，跨波保留。`attackers` 的筆數就是已算進 `attack.count` 的架數，不去查 CMO 任務。欄位見 `schema.lua`。
+- `transport`：運輸直升機的機波。
+- `airlift`：運輸機的批次，區沒有運輸機就是 nil。
+- `attackHelis`：本區的攻擊直升機，跨波保留。筆數就是已算進 `attack.count` 的架數，不去查 CMO 任務。
 
-攻擊直升機、運輸直升機和運輸機被擊殺時，由 [trackedUnits](trackedUnits.md) 依 GUID 從 `attackers`、`units`、`airlift.units` 移除，之後輪詢不再查它（避免 `Unit not found` ERROR）。移除等同已被擊殺，一波（批）結束的判斷不變；下一波架數只看候選，不看 `units`。事件沒趕上時，輪詢透過 `TrackedUnits.findUnit` 第一次查不到就刪掉。
+`transport` 和 `airlift` 同型（`SBJ__AirWaveState`）：`currentWave` 只存當前這一波（批）的運輸機，下一波放飛時整個換掉；另有 `waveIndex` / `launchAt` / `waveLaunchedAt`。欄位見 `schema.lua`。
+
+攻擊直升機、運輸直升機和運輸機被擊殺時，由 [trackedUnits](trackedUnits.md) 依 GUID 從 `attackHelis`、`transport.currentWave`、`airlift.currentWave` 移除，之後輪詢不再查它（避免 `Unit not found` ERROR）。移除等同已被擊殺，一波（批）結束的判斷不變；下一波架數只看候選，不看 `currentWave`。事件沒趕上時，輪詢透過 `TrackedUnits.findUnit` 第一次查不到就刪掉。
 
 ---
 

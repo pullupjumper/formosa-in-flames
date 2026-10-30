@@ -87,7 +87,7 @@ function Hovercraft.launchHovercraft(amphibOps, zone, zoneState, ships)
   report.emit()
 end
 
----Update one hovercraft through unloading: at its parking slot unload the cargo, then head home
+---Update one hovercraft through unloading: at its parking slot unload the cargo, then return to base
 ---@param amphibOps SBJ__AmphibOpsConfig
 ---@param craft CMO__Unit
 ---@param entry SBJ__HovercraftState

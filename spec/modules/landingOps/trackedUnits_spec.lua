@@ -20,7 +20,11 @@ describe("TrackedUnits", function()
       boats = { [guid] = { status = "arrived" }, ["BOAT-KEEP"] = { status = "arrived" } },
       hovercraft = { [guid] = { phase = "enroute" } },
       minesweepers = { [guid] = { isDone = false } },
-      heliWave = { units = { [guid] = {} }, attackers = { [guid] = {} }, airlift = { units = { [guid] = {} } } },
+      heliWave = {
+        transport = { currentWave = { [guid] = {} } },
+        attackHelis = { [guid] = {} },
+        airlift = { currentWave = { [guid] = {} } },
+      },
       laneSlots = { ["W1-B1"] = { guid, "ACV-KEEP" } },
     }
   end
@@ -33,9 +37,9 @@ describe("TrackedUnits", function()
     assert.is_not_nil(zoneState.boats["BOAT-KEEP"])
     assert.is_nil(zoneState.hovercraft[guid])
     assert.is_nil(zoneState.minesweepers[guid])
-    assert.is_nil(zoneState.heliWave.units[guid])
-    assert.is_nil(zoneState.heliWave.attackers[guid])
-    assert.is_nil(zoneState.heliWave.airlift.units[guid])
+    assert.is_nil(zoneState.heliWave.transport.currentWave[guid])
+    assert.is_nil(zoneState.heliWave.attackHelis[guid])
+    assert.is_nil(zoneState.heliWave.airlift.currentWave[guid])
     assert.are.same({ false, "ACV-KEEP" }, zoneState.laneSlots["W1-B1"])
   end
 

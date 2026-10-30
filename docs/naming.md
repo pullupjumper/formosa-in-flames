@@ -54,7 +54,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `sort` | 排序 | `sortWaterLanes` |
 | `step` | 一輪裡的一個階段，吃 `tickCtx` | `stepMoving`、`stepHovercraft` |
 
-- **領域動詞**：直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。現有：`move`（開過去，要花時間）、`teleport`（瞬移，立刻到位）、`launch`、`attack`、`assign`、`transfer`、`offload`、`load`、`reload`、`repair`、`hide`、`abort`、`deploy`、`drop`（CMO 的 drop contact）、`collect`（只限 `collectSigint`）、`recover`、`activate`、`disable`、`strike`、`track`、`pair`、`complete`。一個動作只用一個字，不要 `launch` 和 `create` 混用。
+- **領域動詞**：直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。現有：`move`（開過去，要花時間）、`teleport`（瞬移，立刻到位）、`return`（返航，呼叫 CMO 的 `RTB`。`return` 是 Lua 保留字，單獨當名字時寫 `returnToBase`）、`launch`、`attack`、`assign`、`transfer`、`offload`、`load`、`reload`、`repair`、`hide`、`abort`、`deploy`、`drop`（CMO 的 drop contact）、`collect`（只限 `collectSigint`）、`recover`、`activate`、`disable`、`strike`、`track`、`pair`、`complete`。一個動作只用一個字，不要 `launch` 和 `create` 混用。
 - **工具類保留**：`deepCopy`、`compareFieldKeys`、`forEach*`、`deg` / `rad` / `atan`、`LogFormat.line` / `fields` / `merge` / `report`、`Logger.log` / `error` / `warn`。
 - **測試例外**：`spec/` 內的測試工具字 `stub`、`track`（`trackStub`、`stubUnits`）不受動詞表限制。測試資料 builder 一樣用 `build` 前綴，不用 `make`。
 - **用字原則（借 ASD-STE100 的精神，不用它的字典）：** 字只從上表和領域動詞選，不另外找字。一個字一個意思，一個意思一個字。要新增動詞，先加進上表再用。
@@ -66,6 +66,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
   - `abandon` → `abort`
   - `neutralize` → `attack`
   - `send` → `move`
+  - `recall`、`moveHome`、`sendHome`、`head home`、`go home` → `return`
   - `place` → `teleport`
   - `lay` → `create`
   - `choose` → `select`

@@ -14,7 +14,7 @@
 | `boats` | [assaultBoat](assaultBoat.md) | 刪 key |
 | `hovercraft` | [hovercraft](hovercraft.md) | 刪 key |
 | `minesweepers` | [mineClearing](mineClearing.md) | 刪 key |
-| `heliWave.units`、`heliWave.attackers`、`heliWave.airlift.units` | [heliWave](heliWave.md) | 刪 key |
+| `heliWave.transport.currentWave`、`heliWave.attackHelis`、`heliWave.airlift.currentWave` | [heliWave](heliWave.md) | 刪 key |
 | `laneSlots[beachLaneId]` | [routePlanner](routePlanner.md) | 寫 `false`，保持陣列連續 |
 
 同一個單位可能同時在兩個登記表（例如衝鋒舟和它預約的停車位），全部都刪。新增登記表時，要在這裡加一列。

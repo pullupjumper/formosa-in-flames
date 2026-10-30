@@ -264,7 +264,7 @@ describe("HeliWave", function()
       HeliWave.schedule(buildCtx(1000), buildZone(), zoneState)
 
       -- The boats reach the shore at 5588 s. The helicopters must leave after now and before that.
-      local launchAt = zoneState.heliWave.launchAt
+      local launchAt = zoneState.heliWave.transport.launchAt
       assert.is_true(launchAt > 1000)
       assert.is_true(launchAt < 5588)
     end)
@@ -285,7 +285,7 @@ describe("HeliWave", function()
 
       HeliWave.schedule(buildCtx(1000), buildZone(), zoneState)
 
-      assert.are.equal(1000, zoneState.heliWave.launchAt)
+      assert.are.equal(1000, zoneState.heliWave.transport.launchAt)
     end)
   end)
 
@@ -504,7 +504,7 @@ describe("HeliWave", function()
       assert.spy(units.RT1.Launch).was.called(1)
     end)
 
-    it("should recall the wave and launch the next one after the timeout", function()
+    it("should return the wave to base and launch the next one after the timeout", function()
       addFleet(2, 2)
       local zoneState = buildLaunchedZoneState()
       local firstWave = { units.T1, units.T2 }
@@ -567,13 +567,13 @@ describe("HeliWave", function()
     it("should drop the attack helicopter record so it no longer counts", function()
       addFleet(2, 2)
       local zoneState = buildLaunchedZoneState()
-      assert.is_not_nil(zoneState.heliWave.attackers.A1)
+      assert.is_not_nil(zoneState.heliWave.attackHelis.A1)
 
       assert.is_true(TrackedUnits.remove(zoneState, "A1"))
 
-      assert.is_nil(zoneState.heliWave.attackers.A1)
-      assert.is_not_nil(zoneState.heliWave.attackers.A2)
-      assert.is_not_nil(zoneState.heliWave.units.T1)
+      assert.is_nil(zoneState.heliWave.attackHelis.A1)
+      assert.is_not_nil(zoneState.heliWave.attackHelis.A2)
+      assert.is_not_nil(zoneState.heliWave.transport.currentWave.T1)
     end)
 
     it("should end the wave like a kill and stop querying a removed transport helicopter", function()
@@ -584,7 +584,7 @@ describe("HeliWave", function()
 
       assert.is_true(TrackedUnits.remove(zoneState, "T1"))
       assert.is_true(TrackedUnits.remove(zoneState, "T2"))
-      assert.is_nil(zoneState.heliWave.units.T1)
+      assert.is_nil(zoneState.heliWave.transport.currentWave.T1)
       ---@diagnostic disable-next-line: undefined-field
       stubGetUnit:clear()
       HeliWave.update(buildCtx(1500), buildZone(), zoneState)
@@ -601,8 +601,8 @@ describe("HeliWave", function()
       addTransportBase(1, "B2")
 
       assert.is_true(TrackedUnits.remove(zoneState, "AIRLIFT1"))
-      assert.is_nil(zoneState.heliWave.airlift.units.AIRLIFT1)
-      assert.is_not_nil(zoneState.heliWave.units.T1)
+      assert.is_nil(zoneState.heliWave.airlift.currentWave.AIRLIFT1)
+      assert.is_not_nil(zoneState.heliWave.transport.currentWave.T1)
       ---@diagnostic disable-next-line: undefined-field
       stubGetUnit:clear()
       HeliWave.update(buildCtx(1500), buildAirliftZone(), zoneState)
@@ -764,7 +764,7 @@ describe("HeliWave", function()
     end)
 
     describe("progress", function()
-      it("should unload on arrival, and go home only once unloaded", function()
+      it("should unload on arrival, and return to base only once unloaded", function()
         addTransportBase(2)
         local zoneState = buildLaunchedAirliftZoneState()
         ranges.AIRLIFT1 = ARRIVED
@@ -824,7 +824,7 @@ describe("HeliWave", function()
         assert.are.equal(2, zoneState.heliWave.airlift.waveIndex)
       end)
 
-      it("should recall the batch and launch the next one after the timeout", function()
+      it("should return the wave to base and launch the next one after the timeout", function()
         addTransportBase(2)
         local zoneState = buildLaunchedAirliftZoneState()
         local first = { units.AIRLIFT1, units.AIRLIFT2 }

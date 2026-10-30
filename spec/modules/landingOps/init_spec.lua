@@ -170,17 +170,17 @@ describe("LandingOps", function()
 
   describe("removeDestroyedUnit", function()
     it("should remove the unit from the zone that recorded it", function()
-      local zoneStateA = { heliWave = { units = {}, attackers = {} } }
-      local zoneStateB = { heliWave = { units = { T1 = {} }, attackers = {} } }
+      local zoneStateA = { heliWave = { transport = { currentWave = {} }, attackHelis = {} } }
+      local zoneStateB = { heliWave = { transport = { currentWave = { T1 = {} } }, attackHelis = {} } }
       local saveData = buildSaveData({ zoneStates = { A = zoneStateA, B = zoneStateB } })
 
       assert.is_true(LandingOps.removeDestroyedUnit(saveData, "T1"))
 
-      assert.is_nil(zoneStateB.heliWave.units.T1)
+      assert.is_nil(zoneStateB.heliWave.transport.currentWave.T1)
     end)
 
     it("should return false when no zone recorded the unit", function()
-      local saveData = buildSaveData({ zoneStates = { A = { heliWave = { units = {}, attackers = {} } } } })
+      local saveData = buildSaveData({ zoneStates = { A = { heliWave = { transport = { currentWave = {} }, attackHelis = {} } } } })
 
       assert.is_false(LandingOps.removeDestroyedUnit(saveData, "NOPE"))
     end)

@@ -108,7 +108,7 @@ describe("CargoRun", function()
       assert.are.equal(CargoRun.PHASE.ENROUTE, run.phase)
     end)
 
-    it("should head home once the cargo is out", function()
+    it("should return to base once the cargo is out", function()
       local unit = buildTransport("T-1", { condition = constants.UNIT_CONDITIONS.UNDERWAY })
       unit.cargo = nil
       local run = { phase = CargoRun.PHASE.UNLOADING }

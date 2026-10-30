@@ -64,9 +64,9 @@ function TrackedUnits.remove(zoneState, guid)
     zoneState.boats or {},
     zoneState.hovercraft or {},
     zoneState.minesweepers or {},
-    heliWave.units or {},
-    heliWave.attackers or {},
-    heliWave.airlift and heliWave.airlift.units or {},
+    heliWave.transport and heliWave.transport.currentWave or {},
+    heliWave.attackHelis or {},
+    heliWave.airlift and heliWave.airlift.currentWave or {},
   }, guid)
   local isACVRemoved = removeACV(zoneState.acvGuids or {}, guid)
   local isSlotRemoved = removeSlotHolder(zoneState.laneSlots or {}, guid)
