@@ -104,7 +104,7 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
 
   -- Lay this zone's mines first so the fast-forward sweep in startMineClearing has mines to remove
   if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
-    MineClearing.createMinefields(amphibOps, zone.name)
+    MineClearing.createMinefield(zone)
   end
 
   if MineClearing.startMineClearing(amphibOps, zone, zoneState, tickCtx.filteredShips) then

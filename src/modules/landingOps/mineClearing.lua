@@ -13,28 +13,24 @@ local MineClearing = {}
 -- Minefields
 -- ============================================================================
 
----Create the BLUE offshore minefields of one zone. Skip minefields that have no reference points
----@param amphibOpsConfig SBJ__AmphibOpsConfig
----@param zoneName string
-function MineClearing.createMinefields(amphibOpsConfig, zoneName)
-  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zoneName, "Lay minefields")
+---Create the BLUE offshore minefield of one zone. Skip it when it has no reference points
+---@param zone SBJ__OperationalZoneDescriptor
+function MineClearing.createMinefield(zone)
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "zone=" .. zone.name, "Lay minefield")
+  local minefield = zone.landing.minefield
 
-  for i, minefield in ipairs(amphibOpsConfig.minefields or {}) do
-    if minefield.zone == zoneName then
-      if not minefield.area or #minefield.area == 0 then
-        report.add("SKIP", { minefield = i, reason = "area_not_set" })
-      else
-        GameApi.ScenEdit_DeleteMinefield({ side = constants.SIDES.BLUE, area = minefield.area })
-        local laid = GameApi.ScenEdit_AddMinefield({
-          side = constants.SIDES.BLUE,
-          dbid = constants.WEAPONS.SEA_MINE,
-          number = minefield.number,
-          delay = minefield.delay,
-          area = minefield.area,
-        })
-        report.add(laid and "OK" or "FAIL", { minefield = i, laid = laid or 0 })
-      end
-    end
+  if #minefield.area == 0 then
+    report.add("SKIP", { reason = "area_not_set" })
+  else
+    GameApi.ScenEdit_DeleteMinefield({ side = constants.SIDES.BLUE, area = minefield.area })
+    local laid = GameApi.ScenEdit_AddMinefield({
+      side = constants.SIDES.BLUE,
+      dbid = constants.WEAPONS.SEA_MINE,
+      number = minefield.number,
+      delay = minefield.delay,
+      area = minefield.area,
+    })
+    report.add(laid and "OK" or "FAIL", { laid = laid or 0 })
   end
 
   report.emit()
@@ -74,25 +70,26 @@ end
 -- Fast-forward Mine Removal
 -- ============================================================================
 
----Remove every mine that lies in a water lane or beach lane cell.
+---Remove every mine of the zone's minefield that lies in a water lane or beach lane cell.
 ---This is the fast-forward stand-in for the sweepers. The mine cells are rebuilt on demand and never saved.
 ---@param amphibOps SBJ__AmphibOpsConfig
+---@param zone SBJ__OperationalZoneDescriptor
 ---@param lanes SBJ__LanePlanState
 ---@return integer # Mines deleted
-local function removeMinesOnLanes(amphibOps, lanes)
+local function removeMinesOnLanes(amphibOps, zone, lanes)
+  local area = zone.landing.minefield.area
+  if #area == 0 then
+    return 0
+  end
+
   local frame = LaneGeometry.buildFrame(lanes)
   local corridors = LaneGeometry.buildMineCorridors(lanes, amphibOps.mineClearing.cellSizeM)
   local deleted = 0
-
-  for _, minefield in ipairs(amphibOps.minefields or {}) do
-    if minefield.area and #minefield.area > 0 then
-      local mines = GameApi.ScenEdit_GetMinefield({ side = constants.SIDES.BLUE, area = minefield.area })
-      for _, mine in pairs(mines or {}) do
-        if LaneGeometry.findMineCell(frame, corridors, mine)
-            and GameApi.ScenEdit_DeleteMine({ side = constants.SIDES.BLUE, guid = mine.guid }) then
-          deleted = deleted + 1
-        end
-      end
+  local mines = GameApi.ScenEdit_GetMinefield({ side = constants.SIDES.BLUE, area = area })
+  for _, mine in pairs(mines or {}) do
+    if LaneGeometry.findMineCell(frame, corridors, mine)
+        and GameApi.ScenEdit_DeleteMine({ side = constants.SIDES.BLUE, guid = mine.guid }) then
+      deleted = deleted + 1
     end
   end
 
@@ -182,7 +179,7 @@ function MineClearing.startMineClearing(amphibOps, zone, zoneState, ships)
   end
 
   if DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.MINE_CLEARING) then
-    report.add("OK", { fastForwardMinesRemoved = removeMinesOnLanes(amphibOps, lanes) })
+    report.add("OK", { fastForwardMinesRemoved = removeMinesOnLanes(amphibOps, zone, lanes) })
   end
 
   for i, sweeper in ipairs(sweepers) do

@@ -1599,8 +1599,8 @@ config.red.amphibOps.adminOffloading = {
   bargeRoroPairingRangeNm = 1, -- 駁船與 RORO 距離小於此值才算同一組
 }
 config.red.amphibOps.fireSupport = {
-  srbmHoldAmmoPct = 50,     -- SRBM 總彈量 % 低於此值時，偵察驅動的 SRBM 打擊暫停，直到所有區抵達集結水域
-  airlandingShotQty = 440,  -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
+  srbmHoldAmmoPct = 50,    -- SRBM 總彈量 % 低於此值時，偵察驅動的 SRBM 打擊暫停，直到所有區抵達集結水域
+  airlandingShotQty = 440, -- SAG 壓制空/機降區時，全部目標合計的射擊彈數
 }
 config.red.amphibOps.cargo = {
   type075 = {
@@ -1815,12 +1815,6 @@ config.red.amphibOps.formation = {
   sweeperSpeed = 25,
   assaultBoatSpeed = 30,
 }
-config.red.amphibOps.minefields = {
-  -- zone: zone name that owns the minefield; delay: CMO arming delay; area: BLUE-side reference points
-  { zone = "Taoyuan", area = constants.AREAS.MINEFIELD_TAOYUAN, number = 500, delay = 0 },
-  { zone = "Sishu",   area = constants.AREAS.MINEFIELD_SISHU,   number = 500, delay = 0 },
-  { zone = "Penghu",  area = constants.AREAS.MINEFIELD_PENGHU,  number = 100, delay = 0 },
-}
 -- Lane layout and routing shared by Type 082, assault boats, ACVs and hovercraft (docs/landingOps/assaultTimeline.md)
 config.red.amphibOps.route = {
   deployLineNm = 12,                          -- 登陸艦艇展開線，距岸
@@ -1859,27 +1853,27 @@ config.red.amphibOps.acvWave = {
 config.red.amphibOps.heliWave = {
   waveTimeoutSec = 30 * 60,  -- 一波（批）放飛後超過此秒數，還在空中的視為結束
   cargoReloadSec = 2 * 3600, -- 空/機降任務開始後，每隔多久補運一次尚未運完的貨物
-  flightPath = {            -- 左右翼航線，直升機與 airlift 共用
-    wingOffsetM = 8000,     -- 左右翼離通道中心線的橫向距離
-    inlandEntryM = 3000,    -- 進內陸多深後轉向降落點
-    landingSpreadM = 500,   -- 左右翼降落點離降落區中心的橫向偏移
+  flightPath = {             -- 左右翼航線，直升機與 airlift 共用
+    wingOffsetM = 8000,      -- 左右翼離通道中心線的橫向距離
+    inlandEntryM = 3000,     -- 進內陸多深後轉向降落點
+    landingSpreadM = 500,    -- 左右翼降落點離降落區中心的橫向偏移
   },
-  transport = {             -- 運輸直升機（Z-18）
-    waveSize = 8,           -- 每波架數（左右翼各半）
-    cruiseSpeedKt = 130,    -- 倒推放飛時間用的巡航速度
-    cruiseAltitudeM = 304,  -- 放飛後的巡航高度（公尺）
-    arrivalNm = 0.5,        -- 離降落點多近算到達
+  transport = {              -- 運輸直升機（Z-18）
+    waveSize = 8,            -- 每波架數（左右翼各半）
+    cruiseSpeedKt = 130,     -- 倒推放飛時間用的巡航速度
+    cruiseAltitudeM = 304,   -- 放飛後的巡航高度（公尺）
+    arrivalNm = 0.5,         -- 離降落點多近算到達
   },
-  attack = {                -- 攻擊直升機（Z-10）
-    count = 4,              -- 每區總數（已進 CAS 的加飛往中的），下一波補到此數
-    casAssignNm = 3,        -- 離降落點多近就指派進 CAS 任務
+  attack = {                 -- 攻擊直升機（Z-10）
+    count = 4,               -- 每區總數（已進 CAS 的加飛往中的），下一波補到此數
+    casAssignNm = 3,         -- 離降落點多近就指派進 CAS 任務
   },
-  airlift = {               -- 固定翼運輸機（IL-76），數值暫定，待遊戲內驗證
-    batchSize = 3,          -- 每批架數
-    delaySec = 5 * 60,      -- 比衝鋒舟到岸晚多久到降落點
-    cruiseSpeedKt = 400,    -- 倒推放飛時間用的巡航速度
-    cruiseAltitudeM = 1500, -- 放飛後的巡航高度（公尺）
-    arrivalNm = 3,          -- 離降落點多近算到達
+  airlift = {                -- 固定翼運輸機（IL-76），數值暫定，待遊戲內驗證
+    batchSize = 3,           -- 每批架數
+    delaySec = 5 * 60,       -- 比衝鋒舟到岸晚多久到降落點
+    cruiseSpeedKt = 400,     -- 倒推放飛時間用的巡航速度
+    cruiseAltitudeM = 1500,  -- 放飛後的巡航高度（公尺）
+    arrivalNm = 3,           -- 離降落點多近算到達
   },
 }
 config.red.amphibOps.zones = {
@@ -2038,6 +2032,7 @@ config.red.amphibOps.zones = {
       beachheadVehicles = 168, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（旅級約 3/4）
       laneCenter = constants.AREAS.LANE_CENTER_TAOYUAN,
       obstacleArea = constants.AREAS.OBSTACLE_TAOYUAN,
+      minefield = { area = constants.AREAS.MINEFIELD_TAOYUAN, number = 500, delay = 0 }, -- 藍方近海雷區；delay 為 CMO 布設延遲
       offloadArea = constants.AREAS.OFFLOAD_AREA_TAOYUAN,
       sweeper = {
         missionName = "MINECLEARING/TOA/1/1",
@@ -2197,6 +2192,7 @@ config.red.amphibOps.zones = {
       beachheadVehicles = 168, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（旅級約 3/4）
       laneCenter = constants.AREAS.LANE_CENTER_SISHU,
       obstacleArea = constants.AREAS.OBSTACLE_SISHU,
+      minefield = { area = constants.AREAS.MINEFIELD_SISHU, number = 500, delay = 0 }, -- 藍方近海雷區；delay 為 CMO 布設延遲
       offloadArea = constants.AREAS.OFFLOAD_AREA_SISHU,
       sweeper = {
         missionName = "MINECLEARING/SISHU/1/1",
@@ -2348,6 +2344,7 @@ config.red.amphibOps.zones = {
       beachheadVehicles = 42, -- 區內 ZBD-05 + ZTD-05 合計達此數量才算灘頭穩固、開始行政下卸（營級）
       laneCenter = constants.AREAS.LANE_CENTER_PENGHU,
       obstacleArea = constants.AREAS.OBSTACLE_PENGHU,
+      minefield = { area = constants.AREAS.MINEFIELD_PENGHU, number = 100, delay = 0 }, -- 藍方近海雷區；delay 為 CMO 布設延遲
       offloadArea = constants.AREAS.OFFLOAD_AREA_PENGHU,
       sweeper = {
         missionName = "MINECLEARING/PENGHU/1/1",

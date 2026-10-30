@@ -47,7 +47,6 @@ describe("MineClearing", function()
         arrivalNm = 0.1,
       },
       mineClearing = { areaMarginM = 60 },
-      minefields = {},
       formation = { shipSpeed = 17 }
     }
   end
@@ -63,6 +62,7 @@ describe("MineClearing", function()
         obstacleArea = { "RP-O1", "RP-O2", "RP-O3" },
         sweeper = { missionName = "", settings = {} },
         acv = { area = { "RP-10", "RP-11" } },
+        minefield = { area = {}, number = 0, delay = 0 },
       },
     }
   end
@@ -120,13 +120,13 @@ describe("MineClearing", function()
     end))
   end
 
-  describe("createMinefields", function()
-    it("should lay BLUE sea mines for each configured minefield", function()
+  describe("createMinefield", function()
+    it("should lay BLUE sea mines for the zone's minefield", function()
       local stubAdd = trackStub(stub(GameApi, "ScenEdit_AddMinefield").returns(40))
+      local zone = buildZone()
+      zone.landing.minefield = { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 40, delay = 0 }
 
-      local config = { minefields = { { zone = "Z1", area = { "RP-M1", "RP-M2", "RP-M3" }, number = 40, delay = 0 } } }
-
-      MineClearing.createMinefields(config, "Z1")
+      MineClearing.createMinefield(zone)
 
       assert.stub(stubAdd).was.called_with({
         side = constants.SIDES.BLUE,
@@ -138,38 +138,12 @@ describe("MineClearing", function()
     end)
 
     -- Empty areas are skipped without calling CMO
-    it("should skip minefields whose area is not set", function()
+    it("should skip the minefield when its area is not set", function()
       local stubAdd = trackStub(stub(GameApi, "ScenEdit_AddMinefield"))
 
-      local config = { minefields = { { zone = "Z1", area = {}, number = 40, delay = 0 } } }
-
-      MineClearing.createMinefields(config, "Z1")
+      MineClearing.createMinefield(buildZone())
 
       assert.stub(stubAdd).was_not.called()
-    end)
-
-    -- Each zone lays only its own minefield, so a later zone never re-mines lanes an earlier zone cleared
-    it("should lay only the minefield of the given zone", function()
-      local stubAdd = trackStub(stub(GameApi, "ScenEdit_AddMinefield").returns(40))
-      trackStub(stub(GameApi, "ScenEdit_DeleteMinefield"))
-
-      local config = {
-        minefields = {
-          { zone = "Z1", area = { "RP-A" }, number = 40, delay = 0 },
-          { zone = "Z2", area = { "RP-B" }, number = 40, delay = 0 },
-        },
-      }
-
-      MineClearing.createMinefields(config, "Z2")
-
-      assert.stub(stubAdd).was.called(1)
-      assert.stub(stubAdd).was.called_with({
-        side = constants.SIDES.BLUE,
-        dbid = constants.WEAPONS.SEA_MINE,
-        number = 40,
-        delay = 0,
-        area = { "RP-B" },
-      })
     end)
   end)
 
@@ -250,12 +224,13 @@ describe("MineClearing", function()
       local config = buildConfig()
       config.debug = { enabled = true }
       config.mineClearing.cellSizeM = 50
-      config.minefields = { { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 2, delay = 0 } }
+      local zone = buildZone()
+      zone.landing.minefield = { area = { "RP-M1", "RP-M2", "RP-M3" }, number = 2, delay = 0 }
 
       local zoneState = {}
       local ships = { { guid = "529-1" } }
 
-      assert.is_true(MineClearing.startMineClearing(config, buildZone(), zoneState, ships))
+      assert.is_true(MineClearing.startMineClearing(config, zone, zoneState, ships))
 
       assert.stub(deleteStub).was.called(1)
       assert.stub(deleteStub).was.called_with({ side = constants.SIDES.BLUE, guid = "M-ON" })

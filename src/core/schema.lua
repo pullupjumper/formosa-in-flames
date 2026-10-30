@@ -1053,6 +1053,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field beachheadVehicles integer Landed ZBD-05 + ZTD-05 in the zone needed to count as a secured beachhead (force size differs per zone)
 ---@field laneCenter string[] Reference point name of the lane center on the shore (one point)
 ---@field obstacleArea string[] Beach obstacle polygon reference point names (BLUE side)
+---@field minefield SBJ__MinefieldDescriptor BLUE offshore minefield the zone's sweepers clear
 ---@field offloadArea string[] Vehicle offload area reference points
 ---@field sweeper SBJ__SweeperDescriptor
 
@@ -1130,7 +1131,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field formation SBJ__AmphibiousFormationConfig Ship formation layout configuration
 ---@field zones SBJ__OperationalZoneDescriptor[] Operation zone descriptors (fleet, SAGs and landing setup per zone)
 ---@field debug SBJ__AmphibDebugConfig Live-test shortcuts
----@field minefields SBJ__MinefieldDescriptor[] Offshore minefields laid at scenario start
 ---@field route SBJ__RouteConfig Lane layout and routing through swept lanes
 ---@field mineClearing SBJ__MineClearingConfig Type 082 mine clearing settings
 ---@field obstacle SBJ__ObstacleConfig Beach obstacle settings
@@ -1169,9 +1169,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field areaMarginM number Extra width of the sweep mission area beyond the outermost beach lane
 ---@field cellSizeM number Fast-forward mine cell edge length
 
----Offshore minefield laid for BLUE at scenario start
+---BLUE offshore minefield in front of a zone's beach
 ---@class SBJ__MinefieldDescriptor: table
----@field zone string Name of the operational zone that owns this minefield
 ---@field area string[] BLUE-side reference point names; empty skips this minefield
 ---@field number integer Number of mines
 ---@field delay number CMO arming delay

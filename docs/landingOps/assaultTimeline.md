@@ -255,7 +255,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 ## 8. 佈雷
 
-`MineClearing.createMinefields` 依 `config.red.amphibOps.minefields` 中屬於該區的每筆呼叫一次 `ScenEdit_AddMinefield`（藍方、`SEA_MINE`），`area` 是空的就跳過。目前**只有快轉模式會呼叫**（見 [debugFlow](debugFlow.md)），`LandingOps.init` 並不佈雷。灘岸雷區以後再做。
+`MineClearing.createMinefield` 依該區的 `zone.landing.minefield` 呼叫一次 `ScenEdit_AddMinefield`（藍方、`SEA_MINE`），`area` 是空的就跳過。目前**只有快轉模式會呼叫**（見 [debugFlow](debugFlow.md)），`LandingOps.init` 並不佈雷。灘岸雷區以後再做。
 
 ## 9. 航線規則與氣墊船
 
