@@ -2,7 +2,6 @@ local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 local LogFormat = require("src.utils.logFormat")
 local Logger = require("src.utils.logger")
-local Utils = require("src.utils.utils")
 local AcvWave = require("src.modules.landingOps.acvWave")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
@@ -32,15 +31,28 @@ local function startZoneAirSetup(config, landingState, zone)
   if zone.air.transportAircraft then
     AmphibiousLogistics.transferTransportAircraftCargo(zone.air.transportAircraft)
   end
+
   if zone.air.reconTemplate then
     StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates[zone.air.reconTemplate])
   end
+end
+
+---Check if every ship and craft on the deploy line has released its ACVs, hovercraft and boats
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@return boolean # True if no ACV, hovercraft or boat is left on the deploy line
+local function isDeployLineReleased(tickCtx, zone, zoneState)
+  return not AmphibiousAssault.hasUnreleasedACV(zone, tickCtx.filteredShips) and
+      not Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, tickCtx.filteredShips) and
+      not AssaultBoat.hasPendingBoats(zoneState)
 end
 
 ---MOVING: sail to the holding areas after the operation start time
 ---@type SBJ__PhaseStep
 local function stepMoving(tickCtx, zone, zoneState)
   local config = tickCtx.config
+
   if not GameUtils.isAfterStartTime(config.red.triggers.amphibiousOps.startTime) then
     return
   end
@@ -51,6 +63,7 @@ local function stepMoving(tickCtx, zone, zoneState)
     tickCtx.filteredShips,
     config.red.amphibOps
   )
+
   if done then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL
   end
@@ -61,12 +74,14 @@ end
 local function stepWaitingArrival(tickCtx, zone, zoneState)
   local result = AmphibiousLogistics.getUnitsInHoldingAreas(zone, tickCtx.filteredShips)
   local hasArrived = #result.units > zone.movement.arrivalThreshold and not result.isUnitMoving
+
   if not hasArrived then
     return
   end
 
-  local ok = AmphibiousLogistics.transfer(zone, result.units)
-  if ok then
+  local done = AmphibiousLogistics.transfer(zone, result.units)
+
+  if done then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT
     zoneState.amphibiousAssaultStartTime = tickCtx.currentTime
     startZoneAirSetup(tickCtx.config, tickCtx.landingState, zone)
@@ -82,6 +97,7 @@ local function stepWaitingAssault(tickCtx, zone, zoneState)
   local shouldLaunch = contactCount < zone.air.contactThreshold or
       elapsed >= amphibOps.periodSec or
       DebugFlow.isFastForward(amphibOps, constants.AMPHIBIOUS_PHASES.WAITING_ASSAULT)
+
   if not shouldLaunch then
     return
   end
@@ -102,13 +118,15 @@ end
 ---@type SBJ__PhaseStep
 local function stepMineClearing(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
+
   if not MineClearing.updateMineClearing(amphibOps, zoneState) then
     return
   end
 
-  local ok = AssaultBoat.pairBoats(zone, zoneState, tickCtx.filteredShips) and
+  local done = AssaultBoat.pairBoats(zone, zoneState, tickCtx.filteredShips) and
       AmphibiousAssault.moveToLaunchStations(amphibOps, zone, tickCtx.filteredShips)
-  if ok then
+
+  if done then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.BOAT_ASSAULT
     HeliWave.schedule(tickCtx, zone, zoneState)
   end
@@ -140,24 +158,16 @@ local function stepAssaultLanding(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
   local counts = AmphibiousAssault.countUnitsInEachArea(amphibOps.zones)[zone.name]
   local landedVehicles = 0
+
   for _, acvType in ipairs(AcvWave.ACV_TYPES) do
     landedVehicles = landedVehicles + (counts and counts[acvType.name] or 0)
   end
+
   local hasBeachhead = landedVehicles >= zone.landing.beachheadVehicles
+
   if hasBeachhead then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING
   end
-end
-
----Check if every ship and craft on the deploy line has released its ACVs, hovercraft and boats
----@param tickCtx SBJ__LandingTickContext
----@param zone SBJ__OperationalZoneDescriptor
----@param zoneState SBJ__ZoneState
----@return boolean # True if no ACV, hovercraft or boat is left on the deploy line
-local function isDeployLineReleased(tickCtx, zone, zoneState)
-  return not AmphibiousAssault.hasUnreleasedACV(zone, tickCtx.filteredShips) and
-      not Hovercraft.hasUnlaunchedHovercraft(zone, zoneState, tickCtx.filteredShips) and
-      not AssaultBoat.hasPendingBoats(zoneState)
 end
 
 ---WAITING_ADMIN_OFFLOADING: once the deploy line has released everything, start admin offloading. Then the zone is done
@@ -167,8 +177,9 @@ local function stepWaitingAdminOffloading(tickCtx, zone, zoneState)
     return
   end
 
-  local ok = AdminOffloading.startAdminOffloading(zone, tickCtx.landingState.amphibOps.barges, tickCtx.filteredShips)
-  if ok then
+  local done = AdminOffloading.startAdminOffloading(zone, tickCtx.landingState.amphibOps.barges, tickCtx.filteredShips)
+
+  if done then
     zoneState.phase = constants.AMPHIBIOUS_PHASES.COMPLETED
   end
 end
@@ -178,9 +189,11 @@ end
 ---@type SBJ__PhaseStep
 local function stepHovercraft(tickCtx, zone, zoneState)
   local amphibOps = tickCtx.config.red.amphibOps
+
   if AcvWave.isFirstWaveFull(zoneState, AcvWave.buildZoneWaveConfig(amphibOps.tuning.acvWave, zone), tickCtx.currentTime) then
     Hovercraft.launchHovercraft(amphibOps, zone, zoneState, tickCtx.filteredShips)
   end
+
   Hovercraft.updateHovercraft(amphibOps, zoneState)
 end
 
@@ -222,16 +235,21 @@ end
 local function processRemainingCargoTransfer(tickCtx)
   local config, landingState = tickCtx.config, tickCtx.landingState
   local currentTime, filteredShips = tickCtx.currentTime, tickCtx.filteredShips
+
   for _, zone in ipairs(config.red.amphibOps.zones) do
     local zoneState = landingState.amphibOps.zoneStates[zone.name]
+
     if zoneState.airlandingMissionStartTime then
       local elapsed = currentTime - zoneState.airlandingMissionStartTime
+
       if elapsed >= config.red.amphibOps.remainingCargoTransferSec then
         local ok = AmphibiousLogistics.transferRemainingCargos(zone, filteredShips)
+
         if ok then
           if zone.air.transportAircraft then
             AmphibiousLogistics.transferTransportAircraftCargo(zone.air.transportAircraft)
           end
+
           zoneState.airlandingMissionStartTime = currentTime
         end
       end

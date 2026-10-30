@@ -253,7 +253,6 @@ function AmphibiousLogistics.transfer(zone, unitsInHoldingAreas)
   end
 
   report.emit()
-
   return true
 end
 
@@ -261,22 +260,15 @@ end
 ---@param transportAircraft SBJ__TransportAircraftDescriptor
 ---@return boolean # True if all transfers completed
 function AmphibiousLogistics.transferTransportAircraftCargo(transportAircraft)
-  local report = LogFormat.report(
-    constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer cargo")
+  local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_LOGISTICS, "transportAircraft", "Transfer cargo")
 
-  transferCargo(
-    transportAircraft.guid,
-    {
-      platformType = constants.PLATFORM_TYPES.AIRCRAFT,
-      platformDBID = transportAircraft.dbid,
-      loadoutDBID = transportAircraft.cargoItemsForTransfer[1].loadoutId
-    },
-    transportAircraft.cargoItemsForTransfer[1].cargoItems
-  )
+  transferCargo(transportAircraft.guid, {
+    platformType = constants.PLATFORM_TYPES.AIRCRAFT,
+    platformDBID = transportAircraft.dbid,
+    loadoutDBID = transportAircraft.cargoItemsForTransfer[1].loadoutId
+  }, transportAircraft.cargoItemsForTransfer[1].cargoItems)
   report.add("OK", { aircraft = transportAircraft.name or transportAircraft.guid, dbid = transportAircraft.dbid })
-
   report.emit()
-
   return true
 end
 
@@ -301,7 +293,6 @@ function AmphibiousLogistics.transferRemainingCargos(zone, units)
   end
 
   report.emit()
-
   return true
 end
 
