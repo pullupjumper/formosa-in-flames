@@ -915,11 +915,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field frame SBJ__LaneFrame
 ---@field shiftM number Meters toward shore applied to the whole formation
 
----Inputs for HeliWave returnOnTimeout
----@class SBJ__ReturnOnTimeoutParams: table
----@field airWave SBJ__AirWaveState
----@field airWaveKey string Which air wave, for the log ("heli" or "airlift")
-
 ---Inputs for LaneGeometry isStepRangeValid
 ---@class SBJ__IsStepRangeValidParams: table
 ---@field first integer Index of the first value

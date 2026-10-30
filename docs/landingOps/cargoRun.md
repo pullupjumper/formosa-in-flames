@@ -30,4 +30,4 @@
 | `PHASE` | 三個階段的字串 |
 | `findReady(host, platformType, dbid, skipMap?)` | `host.embarkedUnits[platformType]` 裡 DBID 相符、`readytime_v == 0`、有貨的載具；`skipMap` 裡的 GUID 跳過 |
 | `step(unit, run, dropPoint, arrivalNm)` | 照上表推進一步 |
-| `returnToBase(unit, run)` | `RTB(true)` 並設為 `returning`（heliWave 逾時返航也用） |
+| `recallToBase(unit, run)` | `RTB(true)` 並設為 `returning`（heliWave 逾時返航也用） |

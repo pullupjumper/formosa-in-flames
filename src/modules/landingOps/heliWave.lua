@@ -9,13 +9,6 @@ local CargoRun = require("src.modules.landingOps.cargoRun")
 local LaneGeometry = require("src.modules.landingOps.laneGeometry")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
----Fly the zone's helicopters in waves. A wave is a group of transport helicopters plus attack helicopters topping up the zone's CAS force.
----It launches from the motherships, flies out along the left and right wings, and goes inland to its landing points.
----Transports unload and return. An attack helicopter is assigned to the zone's CAS mission near its landing point,
----and from then on the mission alone decides what it does.
----The next wave launches only after the transports of the wave in the air have finished or timed out.
----Fixed-wing transports (airlift) fly the same inland course from their airfield, in batches that reach the landing points
----a fixed delay after the wave. Their batches are tracked apart from the helicopter waves.
 local HeliWave = {}
 
 -- ============================================================================
@@ -424,12 +417,12 @@ local function updateAttackHeli(heli, entry, casAssignNm, missionName)
   end
 end
 
----Return to base every transport of the wave still in the air
+---Recall to base every transport of the wave still in the air
 ---@param zoneState SBJ__ZoneState
 ---@param unitMap table<string, SBJ__WaveAircraftState>
-local function returnTransports(zoneState, unitMap)
+local function recallTransports(zoneState, unitMap)
   for guid, heli in pairs(findFlyingTransports(zoneState, unitMap)) do
-    CargoRun.returnToBase(heli, unitMap[guid])
+    CargoRun.recallToBase(heli, unitMap[guid])
   end
 end
 
@@ -460,30 +453,77 @@ local function updateAttackHelis(zoneState, attackHeliMap, casAssignNm, missionN
   end
 end
 
----Return to base the transports of an air wave (helicopter wave or airlift wave) that stayed out past the timeout
+---Recall to base the transports of an air wave that stayed out past the timeout
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
----@param params SBJ__ReturnOnTimeoutParams
+---@param airWaveKey "transport"|"airlift"
 ---@return SBJ__LogResult|nil # nil when nothing timed out
-local function returnOnTimeout(tickCtx, zone, zoneState, params)
-  local airWave = params.airWave
-  -- A transport stuck unloading is moved home too, so it cannot block the next wave
-  if not (airWave.waveLaunchedAt and tickCtx.currentTime - airWave.waveLaunchedAt >= getHeliConfig(tickCtx).waveTimeoutSec and
-        not isWaveDone(zoneState, airWave.currentWave)) then
+local function recallTimedOutWave(tickCtx, zone, zoneState, airWaveKey)
+  local airWave = zoneState.heliWave[airWaveKey]
+  local isTimedOut = airWave.waveLaunchedAt ~= nil
+      and tickCtx.currentTime - airWave.waveLaunchedAt >= getHeliConfig(tickCtx).waveTimeoutSec
+  -- A transport stuck unloading is recalled too, so it cannot block the next wave
+  if not isTimedOut or isWaveDone(zoneState, airWave.currentWave) then
     return nil
   end
 
-  returnTransports(zoneState, airWave.currentWave)
-  return { tag = "WARN", fields = { zone = zone.name, airWave = params.airWaveKey, wave = airWave.waveIndex, reason = "wave_timeout" } }
+  recallTransports(zoneState, airWave.currentWave)
+  return { tag = "WARN", fields = { zone = zone.name, airWave = airWaveKey, wave = airWave.waveIndex, reason = "wave_timeout" } }
+end
+
+---Move the transports of an air wave and send them home if the wave timed out. Do nothing if the zone has no such air wave
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@param airWaveKey "transport"|"airlift"
+---@return SBJ__LogResult|nil # nil when nothing timed out
+local function advanceAirWave(tickCtx, zone, zoneState, airWaveKey)
+  local airWave = zoneState.heliWave[airWaveKey]
+  if not airWave then
+    return nil
+  end
+
+  updateTransports(zoneState, airWave.currentWave, getHeliConfig(tickCtx)[airWaveKey].arrivalNm)
+  return recallTimedOutWave(tickCtx, zone, zoneState, airWaveKey)
 end
 
 ---Check if an air wave is done and its next launch time has come
 ---@param zoneState SBJ__ZoneState
----@param airWave SBJ__AirWaveState
----@return boolean
-local function isAirWaveDue(zoneState, airWave)
-  return isWaveDone(zoneState, airWave.currentWave) and (airWave.waveIndex > 0 or GameUtils.isAfterStartTime(airWave.launchAt))
+---@param airWave SBJ__AirWaveState|nil
+---@return boolean # False if the zone has no such air wave
+local function canLaunchNextWave(zoneState, airWave)
+  return airWave ~= nil and isWaveDone(zoneState, airWave.currentWave)
+      and (airWave.waveIndex > 0 or GameUtils.isAfterStartTime(airWave.launchAt))
+end
+
+---Launch the next helicopter wave and the next airlift wave if they can launch
+---@param tickCtx SBJ__LandingTickContext
+---@param zone SBJ__OperationalZoneDescriptor
+---@param zoneState SBJ__ZoneState
+---@param heliWave SBJ__HeliWaveState
+---@return SBJ__LogResult[]|nil # nil when the lanes or the landing zone are missing
+local function launchNextWaves(tickCtx, zone, zoneState, heliWave)
+  local canLaunchHeli = canLaunchNextWave(zoneState, heliWave.transport)
+  local canLaunchAirlift = canLaunchNextWave(zoneState, heliWave.airlift)
+  if not (canLaunchHeli or canLaunchAirlift) then
+    return {}
+  end
+
+  local flightCtx = buildFlightContext(zone, zoneState, getHeliConfig(tickCtx))
+  if not flightCtx then
+    return nil
+  end
+
+  local results = {}
+  if canLaunchHeli then
+    results[#results + 1] = launchHeliWave(tickCtx, zone, heliWave, flightCtx)
+  end
+
+  if canLaunchAirlift then
+    results[#results + 1] = launchAirliftWave(tickCtx, zone, heliWave.airlift, flightCtx)
+  end
+  return results
 end
 
 -- ============================================================================
@@ -552,40 +592,22 @@ function HeliWave.update(tickCtx, zone, zoneState)
   end
 
   local heliConfig = getHeliConfig(tickCtx)
-  updateAttackHelis(zoneState, heliWave.attackHelis, heliConfig.attack.casAssignNm, getCasMissionName(zone))
-  local airlift = heliWave.airlift
   local report = LogFormat.report(constants.TAGS.AMPHIBIOUS_ASSAULT, "heliWave", "launchWave")
-  updateTransports(zoneState, heliWave.transport.currentWave, heliConfig.transport.arrivalNm)
-  report.addAll({ returnOnTimeout(tickCtx, zone, zoneState, { airWave = heliWave.transport, airWaveKey = "heli" }) })
-  local isHeliReady = isAirWaveDue(zoneState, heliWave.transport)
-  local isAirliftReady = false
 
-  if airlift then
-    updateTransports(zoneState, airlift.currentWave, heliConfig.airlift.arrivalNm)
-    report.addAll({ returnOnTimeout(tickCtx, zone, zoneState, { airWave = airlift, airWaveKey = "airlift" }) })
-    isAirliftReady = isAirWaveDue(zoneState, airlift)
-  end
+  -- Move the aircraft in the air
+  updateAttackHelis(zoneState, heliWave.attackHelis, heliConfig.attack.casAssignNm, getCasMissionName(zone))
+  report.addAll({ advanceAirWave(tickCtx, zone, zoneState, "transport") })
+  report.addAll({ advanceAirWave(tickCtx, zone, zoneState, "airlift") })
 
-  if not (isHeliReady or isAirliftReady) then
+  -- Launch the next waves
+  local launchResults = launchNextWaves(tickCtx, zone, zoneState, heliWave)
+  if not launchResults then
     report.emit()
-    return true
-  end
-
-  local flightCtx = buildFlightContext(zone, zoneState, heliConfig)
-
-  if not flightCtx then
     Logger.error(LogFormat.line("ERROR", { scope = "heliWave", zone = zone.name, reason = "landing_geometry_missing" }))
     return false
   end
 
-  if isHeliReady then
-    report.addAll({ launchHeliWave(tickCtx, zone, heliWave, flightCtx) })
-  end
-
-  if airlift and isAirliftReady then
-    report.addAll({ launchAirliftWave(tickCtx, zone, airlift, flightCtx) })
-  end
-
+  report.addAll(launchResults)
   report.emit()
   return true
 end

@@ -59,15 +59,15 @@ function CargoRun.findReady(host, platformType, dbid, skipMap)
   return ready
 end
 
----Return a transport to base and mark its run as returning
+---Recall a transport to base and mark its run as returning
 ---@param unit CMO__Unit
 ---@param run {phase: SBJ__CargoRunPhaseType}
-function CargoRun.returnToBase(unit, run)
+function CargoRun.recallToBase(unit, run)
   unit:RTB(true)
   run.phase = CargoRun.PHASE.RETURNING
 end
 
----Move a run one step: at the drop point unload the cargo, and once the cargo is out return to base
+---Move a run one step: at the drop point unload the cargo, and once the cargo is out recall it to base
 ---@param unit CMO__Unit
 ---@param run {phase: SBJ__CargoRunPhaseType}
 ---@param dropPoint CMO__Location
@@ -79,7 +79,7 @@ function CargoRun.step(unit, run, dropPoint, arrivalNm)
       run.phase = CargoRun.PHASE.UNLOADING
     end
   elseif run.phase == CargoRun.PHASE.UNLOADING and isCargoUnloaded(unit) then
-    CargoRun.returnToBase(unit, run)
+    CargoRun.recallToBase(unit, run)
   end
 end
 
