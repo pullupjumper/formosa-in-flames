@@ -26,7 +26,7 @@ amphibiousAssault 是突擊階段的動作集合，本身不決定「何時」�
 1. 以 `landing.laneCenter` 和 `zone.heading` 建座標系
 2. 找展開線上的 LST（Ship 型別、非 RORO、非 Barge、非 Type 082，見 `isLST`）
 3. 保持隊形，整體沿進場方位平移，讓隊形縱深中心落在 `launchStationNearNm ~ launchStationFarNm` 的正中
-4. 設航點與 `lstSettings.speed`
+4. 設航點與 `lst.speed`
 
 隊形縱深大於就位帶寬度時回 FAIL（`formation_exceeds_station_band`），**不改任何航線**，階段停在 `MINE_CLEARING`，下個 tick 重試。
 
@@ -72,7 +72,7 @@ Type 082 在反水雷階段已經 RTB，RORO 與駁船要留在展開線等 [adm
 | 路徑 | 用途 |
 |---|---|
 | `config.red.amphibOps.route.launchStationNearNm`、`launchStationFarNm` | LST 就位帶 |
-| `zones[].landing.lstSettings.speed` | LST 速度 |
+| `zones[].landing.lst.speed` | LST 速度 |
 | `zones[].landing.acv.area` | 判斷船所屬區 |
 | `zones[].movement.baseGUID` | 空船掛回的基地 |
 | `zones[].air.attackHelicopter.zone` | 登陸單位統計範圍 |

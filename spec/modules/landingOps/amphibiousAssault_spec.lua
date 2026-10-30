@@ -10,14 +10,12 @@ local StubTracker = require("spec.support.stubTracker")
 describe("AmphibiousAssault", function()
   ---@type luassert.spy
   local logStub
-  ---@type luassert.spy
-  local errorStub
   local trackStub = StubTracker.track
 
   before_each(function()
     logStub = trackStub(stub(Logger, "log"))
     trackStub(stub(Logger, "warn"))
-    errorStub = trackStub(stub(Logger, "error"))
+    trackStub(stub(Logger, "error"))
   end)
 
   after_each(function()
@@ -57,7 +55,7 @@ describe("AmphibiousAssault", function()
       landing = {
         laneCenter = { "RP-CENTER" },
         boat = { missions = { buildMission({ name = "BoatMission1" }) } },
-        lstSettings = {
+        lst = {
           speed = 10,
           distance = 5,
         },
@@ -142,7 +140,8 @@ describe("AmphibiousAssault", function()
 
   describe("moveToLaunchStations", function()
     local stubGetUnit, stubGetReferencePoints
-    local NM = constants.METERS_PER_NM / constants.METERS_PER_DEGREE -- degrees of latitude per nautical mile (laneGeometry flat-earth scale)
+    -- degrees of latitude per nautical mile (laneGeometry flat-earth scale)
+    local NM = constants.METERS_PER_NM / constants.METERS_PER_DEGREE
 
     -- Zone heading 0 (north) with the lane center at 25.0N: along = (latitude - 25.0) in meters toward the north
     local center = { latitude = 25.0, longitude = 121.0 }
@@ -196,14 +195,16 @@ describe("AmphibiousAssault", function()
         return id == "SHIP-001" and rear or front
       end)
 
-      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001"), sideUnit("SHIP-002") })
+      local result = AmphibiousAssault.moveToLaunchStations(
+        amphibOps, zone, { sideUnit("SHIP-001"), sideUnit("SHIP-002") }
+      )
 
       assert.is_true(result)
       assert.are.equal(1, #rear.course)
       assert.is_near(center.latitude - 3.4 * NM, rear.course[1].latitude, 1e-6)
       assert.is_near(center.latitude - 2.6 * NM, front.course[1].latitude, 1e-6)
       assert.is_near(center.longitude, rear.course[1].longitude, 1e-6)
-      assert.are.equal(zone.landing.lstSettings.speed, rear.manualSpeed)
+      assert.are.equal(zone.landing.lst.speed, rear.manualSpeed)
       assert.stub(logStub).was.called()
     end)
 
@@ -226,7 +227,8 @@ describe("AmphibiousAssault", function()
         return id == "SHIP-001" and rear or front
       end)
 
-      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone, { sideUnit("SHIP-001"), sideUnit("SHIP-002") })
+      local result = AmphibiousAssault.moveToLaunchStations(amphibOps, zone,
+        { sideUnit("SHIP-001"), sideUnit("SHIP-002") })
 
       assert.is_false(result)
       assert.are.same({}, rear.course)
@@ -569,14 +571,14 @@ describe("AmphibiousAssault", function()
     end)
 
     local SHIP_CASES = {
-      { label = "Type 071", overrides = { dbid = constants.PLATFORMS.TYPE_071 }, isReleased = true },
-      { label = "Type 072III", overrides = { dbid = constants.PLATFORMS.TYPE_072III }, isReleased = true },
-      { label = "Type 072A", overrides = { dbid = constants.PLATFORMS.TYPE_072A }, isReleased = true },
-      { label = "Type 073A", overrides = { dbid = constants.PLATFORMS.TYPE_073A }, isReleased = true },
-      { label = "a ship named Ferry", overrides = { name = "Ferry", dbid = 99999 }, isReleased = true },
-      { label = "an unrecognized ship", overrides = { name = "Destroyer", dbid = 99999 }, isReleased = false },
+      { label = "Type 071",               overrides = { dbid = constants.PLATFORMS.TYPE_071 },                    isReleased = true },
+      { label = "Type 072III",            overrides = { dbid = constants.PLATFORMS.TYPE_072III },                 isReleased = true },
+      { label = "Type 072A",              overrides = { dbid = constants.PLATFORMS.TYPE_072A },                   isReleased = true },
+      { label = "Type 073A",              overrides = { dbid = constants.PLATFORMS.TYPE_073A },                   isReleased = true },
+      { label = "a ship named Ferry",     overrides = { name = "Ferry", dbid = 99999 },                           isReleased = true },
+      { label = "an unrecognized ship",   overrides = { name = "Destroyer", dbid = 99999 },                       isReleased = false },
       { label = "a Type 529 minesweeper", overrides = { name = "Type 529", dbid = constants.PLATFORMS.TYPE_082 }, isReleased = false },
-      { label = "a Type 075 LHD", overrides = { name = "Type075", dbid = constants.PLATFORMS.TYPE_075 }, isReleased = false },
+      { label = "a Type 075 LHD",         overrides = { name = "Type075", dbid = constants.PLATFORMS.TYPE_075 },  isReleased = false },
     }
 
     for _, case in ipairs(SHIP_CASES) do

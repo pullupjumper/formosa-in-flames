@@ -98,13 +98,13 @@ local function moveLSTToLaunchStation(amphibOps, zone, entry, params)
     DebugFlow.teleport(unit.guid, station)
   end
   unit.course = { station }
-  unit.manualSpeed = zone.landing.lstSettings.speed
+  unit.manualSpeed = zone.landing.lst.speed
   return {
     tag = "OK",
     fields = {
       ship = unit.name,
       offshoreNm = string.format("%.1f", -alongM / constants.METERS_PER_NM),
-      speed = zone.landing.lstSettings.speed
+      speed = zone.landing.lst.speed
     }
   }
 end

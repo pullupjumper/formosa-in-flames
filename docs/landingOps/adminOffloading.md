@@ -28,12 +28,12 @@ flowchart LR
 
 `startAdminOffloading(zone, barges, filteredUnits)` 掃描在 `holdingAreas.deployLine` 內、型別為 Ship 的單位（以名稱 `Barge`／`RORO` 分辨）：
 
-1. 每艘駁船經 `processBarge` 算航線、以 `lstSettings.speed` 出發，並登記到 `barges`
+1. 每艘駁船經 `processBarge` 算航線、以 `lst.speed` 出發，並登記到 `barges`
 2. 每艘 RORO 與**同一條展開線內**的每艘駁船配對（`pairROROWithBarge`）：RORO 的 GUID 加入駁船的 `roros`，RORO 的航線是兩個航點
 
 ```mermaid
 flowchart TD
-    A["RORO 位置"] -->|"LST 進場方位 × lstSettings.distance"| B["第一航點"]
+    A["RORO 位置"] -->|"LST 進場方位 × lst.distance"| B["第一航點"]
     B --> C["駁船目的地"]
 ```
 
@@ -76,7 +76,7 @@ flowchart TD
 |---|---|
 | `config.red.amphibOps.adminOffloading.bargeRoroPairingRangeNm` | RORO 與駁船可下卸的最大距離 |
 | `zones[].landing.offloadArea` | 駁船目的地參考點 |
-| `zones[].landing.lstSettings` | `speed`、`distance` |
+| `zones[].landing.lst` | `speed`、`distance` |
 | `constants.PLATFORMS.BRIDGE` | 浮橋設施 DBID（門面建橋用） |
 
 ---

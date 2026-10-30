@@ -2023,7 +2023,7 @@ config.red.amphibOps.zones = {
           }
         },
       },
-      lstSettings = {
+      lst = {
         speed = config.red.amphibOps.formation.shipSpeed,
         distance = config.red.amphibOps.formation.transitDistanceNm
       },
@@ -2182,7 +2182,7 @@ config.red.amphibOps.zones = {
           }
         },
       },
-      lstSettings = {
+      lst = {
         speed = config.red.amphibOps.formation.shipSpeed,
         distance = config.red.amphibOps.formation.transitDistanceNm
       },
@@ -2332,7 +2332,7 @@ config.red.amphibOps.zones = {
           }
         },
       },
-      lstSettings = {
+      lst = {
         speed = config.red.amphibOps.formation.shipSpeed,
         distance = config.red.amphibOps.formation.transitDistanceNm
       },

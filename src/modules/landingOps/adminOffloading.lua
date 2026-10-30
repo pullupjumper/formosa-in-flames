@@ -83,7 +83,7 @@ local function buildCourseForRORO(zone, unit, bargeDest)
   local destination = GameApi.World_GetPointFromBearing({
     latitude = unit.latitude,
     longitude = unit.longitude,
-    distance = zone.landing.lstSettings.distance,
+    distance = zone.landing.lst.distance,
     bearing = zone.heading
   })
 
@@ -116,7 +116,7 @@ local function processBarge(unit, zone, bargeMap)
   end
 
   unit.course = { destination }
-  unit.manualSpeed = zone.landing.lstSettings.speed
+  unit.manualSpeed = zone.landing.lst.speed
   bargeMap[unit.guid] = { guid = unit.guid, roros = {} }
   return destination, {
     tag = "OK",
@@ -147,7 +147,7 @@ local function pairROROWithBarge(roroEntry, bargeEntry, bargeMap)
   end
 
   roroEntry.unit.course = course
-  roroEntry.unit.manualSpeed = roroEntry.zone.landing.lstSettings.speed
+  roroEntry.unit.manualSpeed = roroEntry.zone.landing.lst.speed
   return {
     tag = "OK",
     fields = {

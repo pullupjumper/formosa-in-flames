@@ -36,7 +36,7 @@ describe("AdminOffloading", function()
       },
       landing = {
         offloadArea = { "RP-OFF-1", "RP-OFF-2", "RP-OFF-3", "RP-OFF-4" },
-        lstSettings = {
+        lst = {
           speed = 10,
           distance = 5,
         },
@@ -202,7 +202,7 @@ describe("AdminOffloading", function()
 
       assert.is_true(result)
       assert.are.same({ destination }, bargeUnit.course)
-      assert.are.equal(zone.landing.lstSettings.speed, bargeUnit.manualSpeed)
+      assert.are.equal(zone.landing.lst.speed, bargeUnit.manualSpeed)
       assert.stub(logStub).was.called(1)
     end)
 
@@ -302,7 +302,7 @@ describe("AdminOffloading", function()
       assert.are.same({ "RORO-001" }, barges["BARGE-001"].roros)
       -- RORO course: first waypoint is approach, second is barge destination
       assert.are.same({ roroDest, bargeDest }, roroUnit.course)
-      assert.are.equal(zone.landing.lstSettings.speed, roroUnit.manualSpeed)
+      assert.are.equal(zone.landing.lst.speed, roroUnit.manualSpeed)
       assert.stub(logStub).was.called(1)
     end)
 
