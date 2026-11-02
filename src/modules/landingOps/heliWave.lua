@@ -153,7 +153,7 @@ end
 ---@param wing SBJ__HeliWingType
 ---@return CMO__Waypoint[] course
 local function buildInlandCourse(flightCtx, wing)
-  local frame, center, flightPath = flightCtx.frame, flightCtx.center, flightCtx.heliConfig.flightPath
+  local frame, center, flightPath = flightCtx.frame, flightCtx.center, flightCtx.flightPath
   local sign = WING_SIGN[wing]
   local centerAlong, centerLateral = LaneGeometry.projectPoint(frame, center)
   local wingLateral = sign * flightPath.wingOffsetM
@@ -172,7 +172,7 @@ end
 local function buildWingCourse(flightCtx, startPos, wing)
   local startAlong = LaneGeometry.projectPoint(flightCtx.frame, startPos)
   local inland = buildInlandCourse(flightCtx, wing)
-  local wingLateral = WING_SIGN[wing] * flightCtx.heliConfig.flightPath.wingOffsetM
+  local wingLateral = WING_SIGN[wing] * flightCtx.flightPath.wingOffsetM
 
   return {
     LaneGeometry.buildPoint(flightCtx.frame, startAlong, wingLateral),
@@ -196,6 +196,7 @@ local function buildFlightContext(zone, zoneState, heliConfig)
     frame = LaneGeometry.buildFrame(zoneState.lanes),
     center = center,
     heliConfig = heliConfig,
+    flightPath = heliConfig.flightPath,
   }
 end
 
@@ -457,7 +458,7 @@ end
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
----@param airWaveKey "transport"|"airlift"
+---@param airWaveKey SBJ__AirWaveKey
 ---@return SBJ__LogResult|nil # nil when nothing timed out
 local function recallTimedOutWave(tickCtx, zone, zoneState, airWaveKey)
   local airWave = zoneState.heliWave[airWaveKey]
@@ -472,11 +473,11 @@ local function recallTimedOutWave(tickCtx, zone, zoneState, airWaveKey)
   return { tag = "WARN", fields = { zone = zone.name, airWave = airWaveKey, wave = airWave.waveIndex, reason = "wave_timeout" } }
 end
 
----Move the transports of an air wave and send them home if the wave timed out. Do nothing if the zone has no such air wave
+---Advance an air wave: update its transports and recall them if the wave timed out. Do nothing if the zone has no such air wave
 ---@param tickCtx SBJ__LandingTickContext
 ---@param zone SBJ__OperationalZoneDescriptor
 ---@param zoneState SBJ__ZoneState
----@param airWaveKey "transport"|"airlift"
+---@param airWaveKey SBJ__AirWaveKey
 ---@return SBJ__LogResult|nil # nil when nothing timed out
 local function advanceAirWave(tickCtx, zone, zoneState, airWaveKey)
   local airWave = zoneState.heliWave[airWaveKey]

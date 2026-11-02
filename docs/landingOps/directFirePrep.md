@@ -24,9 +24,9 @@
 
 每個目標的射擊彈數是 `fireSupport.airlandingShotQty` 除以目標數（無條件捨去），也就是全部目標合計的彈數。目標數多於彈數時，每個目標分到 0 發。
 
-## 戰機：startAirRecon
+## 戰機：scheduleAirRecon
 
-[coordinator](coordinator.md) 在作戰區進入 `WAITING_ASSAULT` 時呼叫 `startAirRecon(config, reconState, zone)`。`zone.air.reconTemplate` 有值時，經 `StrikePlanner.addReconEntry` 排入偵察；之後依偵察目標的 `strikeMappings`（例如 `LANDING_SUPPORT_NORTH`）派機打擊，這段由 strikePlanner 負責。
+[coordinator](coordinator.md) 在作戰區進入 `WAITING_ASSAULT` 時呼叫 `scheduleAirRecon(config, reconState, zone)`。`zone.air.reconTemplate` 有值時，經 `StrikePlanner.addReconEntry` 排入偵察；之後依偵察目標的 `strikeMappings`（例如 `LANDING_SUPPORT_NORTH`）派機打擊，這段由 strikePlanner 負責。
 
 ---
 
@@ -35,7 +35,7 @@
 | 函式 | 說明 |
 |---|---|
 | `attackAirlandingZone(amphibOps, zoneStates, ship)` | 開火回 `true`；不符條件、階段不對或無目標回 `false` |
-| `startAirRecon(config, reconState, zone)` | 該區有 `reconTemplate` 就排入偵察 |
+| `scheduleAirRecon(config, reconState, zone)` | 該區有 `reconTemplate` 就排入偵察 |
 
 ---
 

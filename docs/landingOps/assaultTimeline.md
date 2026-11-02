@@ -81,6 +81,7 @@
 ```
 開場：藍方近海佈雷（ScenEdit_AddMinefield）
 航渡：母艦到乘載區，其他登陸艦艇到展開線
+  → 直接火力準備：GJ-11 偵察、戰機打擊；052D 艦砲壓制空/機降區（一直持續到衝擊上陸）
   → 獵雷艦（Type 082）反水雷，開水際通道與灘際通道（CMO 內建掃雷任務）
   → LST 到泛水出發線，釋放衝鋒舟
   → 衝鋒舟走水際通道，衝擊發起線轉橫隊，走灘際通道上岸
@@ -103,6 +104,8 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 | `OBSTACLE_CLEARING` | 計時 | 超過 `obstacle.clearSec` → 方塊標 `cleared` | `obstacleClearing.lua` |
 | `ASSAULT_LANDING` | 衝擊上陸：兩棲車分波、氣墊船走通道 | 灘頭堡建立（暫用 `air.attackHelicopter.zone` 內 ZBD-05 ≥ 1，TODO） | `acvWave.lua`、`hovercraft.lua` |
 | `WAITING_ADMIN_OFFLOADING` | 等絕對安全（TODO，目前直接放行） | `startAdminOffloading` 成功 | `adminOffloading.lua` |
+
+直接火力準備：偵察在進入 `WAITING_ASSAULT` 時排一次；艦砲在 `WAITING_ASSAULT` 到 `ASSAULT_LANDING` 之間開火，見第 5 節。
 
 兩棲車、氣墊船從 `ASSAULT_LANDING` 開始，之後的 phase（含 `COMPLETED`）也繼續跑。
 
@@ -156,7 +159,21 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 
 與原文差異：灘際通道原由破障階段處理，改由獵雷艦開，因為衝鋒舟不能反水雷。
 
-## 5. 衝鋒舟（Assault Boat，DBID 3948）
+## 5. 直接火力準備
+
+原文階段順序把直接火力準備排在破障之前，沒寫細節。本專案分兩條路，都在 [directFirePrep](directFirePrep.md)：
+
+| 項目 | 戰機 | 艦砲 |
+|---|---|---|
+| 誰 | `zone.air.reconTemplate` 的偵察機（GJ-11），找到的目標由 strikePlanner 派機打 | SAG 裡的 052D，用 `HPJ_38` |
+| 何時 | 作戰區進入 `WAITING_ASSAULT` 時排一次偵察 | 階段在 `WAITING_ASSAULT`、`MINE_CLEARING`、`BOAT_ASSAULT`、`OBSTACLE_CLEARING`、`ASSAULT_LANDING` 時 |
+| 打什麼 | 依偵察目標的 `strikeMappings` | SAG `area` 內、`FACILITY_MOBILE` 的紅方接觸 |
+| 怎麼觸發 | coordinator 換階段時 | 事件腳本 `attackAirlandingZone.lua`（Unit Remains in Area） |
+| 彈量 | strikePlanner 決定 | `fireSupport.airlandingShotQty` 平分給所有目標，對地武器管制設 `TIGHT` |
+
+與原文差異：原文是一個獨立階段；本專案沒有專屬 phase，從 `WAITING_ASSAULT` 起和反水雷、衝鋒舟、破障同時進行，到 `ASSAULT_LANDING` 結束。行政下卸時不再開火。
+
+## 6. 衝鋒舟（Assault Boat，DBID 3948）
 
 | 項目 | 設計 |
 |---|---|
@@ -178,7 +195,7 @@ WAITING_ASSAULT → MINE_CLEARING → BOAT_ASSAULT → OBSTACLE_CLEARING → ASS
 
 第二組獵雷艦仍開滿 16 條，不派衝鋒舟的 4 條取橫向排序後同一側最外側，其餘 12 條連續一對一配對，航線最短。
 
-## 6. 岸上破障（障礙區方塊）
+## 7. 岸上破障（障礙區方塊）
 
 CMO 沒有破障機制，改用「障礙區方塊」表示。
 
@@ -195,7 +212,7 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 
 **通過判斷**：航線（航點之間的線段）與方塊任一條邊相交（含相切）就算碰到。碰到的方塊都是 `cleared` 才放行，碰到任一 `intact` 就不放行。
 
-## 7. 兩棲車泛水與分波
+## 8. 兩棲車泛水與分波
 
 ### 改版前（參考）
 
@@ -253,15 +270,15 @@ CMO 沒有破障機制，改用「障礙區方塊」表示。
 - 每輛車放出後立刻記 GUID，同 tick 後面的船自然拿到較少額度。
 - 每輛車用 `routePlanner` 算自己的航線（走 `cleared` 灘際通道，停在自己的停車位）。沒有可用通道時退回 `zone.landing.acv.destination` 並記 WARN。
 
-## 8. 佈雷
+## 9. 佈雷
 
 `MineClearing.createMinefield` 依該區的 `zone.landing.minefield` 呼叫一次 `ScenEdit_AddMinefield`（藍方、`SEA_MINE`），`area` 是空的就跳過。目前**只有快轉模式會呼叫**（見 [debugFlow](debugFlow.md)），`LandingOps.init` 並不佈雷。灘岸雷區以後再做。
 
-## 9. 航線規則與氣墊船
+## 10. 航線規則與氣墊船
 
 航線規則（選通道、排隊入口點、停車位）見 [routePlanner](routePlanner.md)，氣墊船放出與到達見 [hovercraft](hovercraft.md)，兩者共用的通道幾何見 [laneGeometry](laneGeometry.md)。
 
-## 10. `.scen` 參考點清單
+## 11. `.scen` 參考點清單
 
 `constants.AREAS` 每區（Taoyuan、Sishu、Penghu）要填：
 

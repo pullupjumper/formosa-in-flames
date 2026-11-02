@@ -53,6 +53,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `select` | 照規則從候選挑出幾個 | `selectBeachLanes`、`selectBoats` |
 | `sort` | 排序 | `sortWaterLanes` |
 | `step` | 一輪裡的一個階段，吃 `tickCtx` | `stepMoving`、`stepHovercraft` |
+| `advance` | 把一段跨多輪的進度往前推一輪：更新現況，必要時收尾 | `advanceAirWave` |
 
 - **領域動詞**：直接對應軍事或遊戲動作的字可以用，因為換成通用字反而看不懂。現有：`move`（開過去，要花時間）、`teleport`（瞬移，立刻到位）、`recall`（返航，呼叫 CMO 的 `RTB`。不用 `return`，因為讀起來像回傳值）、`launch`、`attack`、`assign`、`transfer`、`offload`、`load`、`reload`、`repair`、`hide`、`abort`、`deploy`、`drop`（CMO 的 drop contact）、`collect`（只限 `collectSigint`）、`recover`、`activate`、`disable`、`strike`、`track`、`pair`、`complete`。一個動作只用一個字，不要 `launch` 和 `create` 混用。
 - **工具類保留**：`deepCopy`、`compareFieldKeys`、`forEach*`、`deg` / `rad` / `atan`、`LogFormat.line` / `fields` / `merge` / `report`、`Logger.log` / `error` / `warn`。

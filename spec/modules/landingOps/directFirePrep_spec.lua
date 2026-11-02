@@ -109,20 +109,22 @@ describe("DirectFirePrep", function()
       assert.stub(stubAttackContacts).was_not.called()
     end)
 
-    it("should hold fire before the zone reaches WAITING_ASSAULT", function()
-      local stubGetContacts = trackStub(stub(GameApi, "ScenEdit_GetContacts").returns({ buildContact() }))
-      local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
+    for _, phase in ipairs({ "WAITING_ARRIVAL", "MOVING" }) do
+      it("should hold fire in " .. phase .. " before the zone reaches WAITING_ASSAULT", function()
+        local stubGetContacts = trackStub(stub(GameApi, "ScenEdit_GetContacts").returns({ buildContact() }))
+        local stubAttackContacts = trackStub(stub(AttackManager, "attackContacts"))
 
-      local result = DirectFirePrep.attackAirlandingZone(
-        buildAmphibOps(),
-        buildZoneStates(constants.AMPHIBIOUS_PHASES.WAITING_ARRIVAL),
-        buildShip()
-      )
+        local result = DirectFirePrep.attackAirlandingZone(
+          buildAmphibOps(),
+          buildZoneStates(constants.AMPHIBIOUS_PHASES[phase]),
+          buildShip()
+        )
 
-      assert.is_false(result)
-      assert.stub(stubGetContacts).was_not.called()
-      assert.stub(stubAttackContacts).was_not.called()
-    end)
+        assert.is_false(result)
+        assert.stub(stubGetContacts).was_not.called()
+        assert.stub(stubAttackContacts).was_not.called()
+      end)
+    end
 
     it("should hold fire once the zone moves on to administrative offloading", function()
       trackStub(stub(GameApi, "ScenEdit_GetContacts").returns({ buildContact() }))
@@ -159,14 +161,14 @@ describe("DirectFirePrep", function()
     end)
   end)
 
-  describe("startAirRecon", function()
+  describe("scheduleAirRecon", function()
     it("should queue the zone's recon template", function()
       local template = { templateId = "GJ11_RECON" }
       local config = { red = { recon = { templates = { GJ11_RECON = template } } } }
       local reconState = {}
       local stubAddReconEntry = trackStub(stub(StrikePlanner, "addReconEntry"))
 
-      DirectFirePrep.startAirRecon(config, reconState, { air = { reconTemplate = "GJ11_RECON" } })
+      DirectFirePrep.scheduleAirRecon(config, reconState, { air = { reconTemplate = "GJ11_RECON" } })
 
       assert.stub(stubAddReconEntry).was.called_with(reconState, template)
     end)
@@ -174,7 +176,7 @@ describe("DirectFirePrep", function()
     it("should skip zones without a recon template", function()
       local stubAddReconEntry = trackStub(stub(StrikePlanner, "addReconEntry"))
 
-      DirectFirePrep.startAirRecon({ red = { recon = { templates = {} } } }, {}, { air = {} })
+      DirectFirePrep.scheduleAirRecon({ red = { recon = { templates = {} } } }, {}, { air = {} })
 
       assert.stub(stubAddReconEntry).was_not.called()
     end)

@@ -844,6 +844,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field phase SBJ__CargoRunPhaseType
 
 ---Helicopter waves of one zone: the transport waves, the airlift batches and the attack helicopters
+---@alias SBJ__AirWaveKey "transport"|"airlift"
+
 ---@class SBJ__HeliWaveState: table
 ---@field transport SBJ__AirWaveState Transport helicopter waves
 ---@field airlift? SBJ__AirWaveState Transport aircraft batches (nil = zone has no transport aircraft)
@@ -862,6 +864,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field frame SBJ__LaneFrame Lane frame; wings are lateral offsets from its center line
 ---@field center CMO__Location Center of the air landing zone
 ---@field heliConfig SBJ__HeliWaveConfig
+---@field flightPath SBJ__HeliFlightPathConfig
 
 ---One aircraft of the current wave (transport helicopter, attack helicopter or transport aircraft)
 ---@class SBJ__WaveAircraftState: table

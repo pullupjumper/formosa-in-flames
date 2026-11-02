@@ -22,6 +22,14 @@
 - 不改 strikePlanner 偵察後怎麼派機（`strikeMappings` 不動）。
 - 不改每目標彈數的算法。
 
+## 順帶的行為改變
+
+同一個 branch 的 refactor commit 帶出的改變，都是刻意的：
+
+- 快轉掃雷只清本區雷區裡、位在本區航道上的雷。舊版會掃所有區的雷區。三個雷區相距很遠，實際上沒差。
+- heliWave 存檔形狀改成 `transport` / `airlift` / `attackHelis`，沒有舊存檔轉換。直升機波次進行中的舊存檔可能讀不了，請改讀登陸作戰開始前的存檔。
+- heliWave 日誌欄位改名：`fleet` → `airWave`、`batch` → `wave`、`attackers` → `attackHelis`。
+
 ## 待確認
 
 - 目標數多於 `airlandingShotQty` 時，每目標 0 發。傾向：之後再處理。

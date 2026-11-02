@@ -32,7 +32,7 @@ local function startZoneAirSetup(config, landingState, zone)
     AmphibiousLogistics.transferTransportAircraftCargo(zone.air.transportAircraft)
   end
 
-  DirectFirePrep.startAirRecon(config, landingState.recon, zone)
+  DirectFirePrep.scheduleAirRecon(config, landingState.recon, zone)
 end
 
 ---Check if every ship and craft on the deploy line has released its ACVs, hovercraft and boats

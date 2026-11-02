@@ -58,15 +58,15 @@ function DirectFirePrep.attackAirlandingZone(amphibOps, zoneStates, ship)
     return false
   end
 
-  local filteredContacts = {}
+  local contactGUIDs = {}
 
   for _, contact in ipairs(contacts) do
     if contact:inArea(sagConfig.area) and contact.typed == constants.CONTACT_TYPES.FACILITY_MOBILE then
-      table.insert(filteredContacts, contact.guid)
+      table.insert(contactGUIDs, contact.guid)
     end
   end
 
-  if #filteredContacts == 0 then
+  if #contactGUIDs == 0 then
     return false
   end
 
@@ -76,8 +76,8 @@ function DirectFirePrep.attackAirlandingZone(amphibOps, zoneStates, ship)
   )
 
   AttackManager.attackContacts({
-    contacts = filteredContacts,
-    qty = math.floor(amphibOps.fireSupport.airlandingShotQty / #filteredContacts),
+    contacts = contactGUIDs,
+    qty = math.floor(amphibOps.fireSupport.airlandingShotQty / #contactGUIDs),
     firingUnits = { ship },
     weaponDBID = constants.WEAPONS.HPJ_38,
   })
@@ -85,11 +85,11 @@ function DirectFirePrep.attackAirlandingZone(amphibOps, zoneStates, ship)
   return true
 end
 
----Queue the zone's recon flight; the strike planner strikes what it finds
+---Schedule the zone's recon flight; the strike planner strikes what it finds
 ---@param config SBJ__Config
 ---@param reconState SBJ__ReconState
 ---@param zone SBJ__OperationalZoneDescriptor
-function DirectFirePrep.startAirRecon(config, reconState, zone)
+function DirectFirePrep.scheduleAirRecon(config, reconState, zone)
   if zone.air.reconTemplate then
     StrikePlanner.addReconEntry(reconState, config.red.recon.templates[zone.air.reconTemplate])
   end
