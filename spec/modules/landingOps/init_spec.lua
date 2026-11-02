@@ -7,7 +7,7 @@ local ShipMovement = require("src.modules.landingOps.shipMovement")
 local Coordinator = require("src.modules.landingOps.coordinator")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
-local SagFireSupport = require("src.modules.landingOps.sagFireSupport")
+local DirectFirePrep = require("src.modules.landingOps.directFirePrep")
 local constants = require("src.core.constants")
 local StubTracker = require("spec.support.stubTracker")
 
@@ -156,15 +156,17 @@ describe("LandingOps", function()
   end)
 
   describe("attackAirlandingZone", function()
-    it("should forward the amphibious config and ship to SagFireSupport", function()
+    it("should forward the amphibious config, zone states and ship to DirectFirePrep", function()
       local ship = buildShip()
       local amphibOpsConfig = { zones = {} }
-      local stubAttack = trackStub(stub(SagFireSupport, "attackAirlandingZone").returns(true))
+      local zoneStates = { A = {} }
+      local saveData = buildSaveData({ zoneStates = zoneStates })
+      local stubAttack = trackStub(stub(DirectFirePrep, "attackAirlandingZone").returns(true))
 
-      local result = LandingOps.attackAirlandingZone(buildConfig(amphibOpsConfig), ship)
+      local result = LandingOps.attackAirlandingZone(buildConfig(amphibOpsConfig), saveData, ship)
 
       assert.is_true(result)
-      assert.stub(stubAttack).was.called_with(amphibOpsConfig, ship)
+      assert.stub(stubAttack).was.called_with(amphibOpsConfig, zoneStates, ship)
     end)
   end)
 

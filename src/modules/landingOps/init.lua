@@ -6,7 +6,7 @@ local Logger = require("src.utils.logger")
 local AdminOffloading = require("src.modules.landingOps.adminOffloading")
 local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local Coordinator = require("src.modules.landingOps.coordinator")
-local SagFireSupport = require("src.modules.landingOps.sagFireSupport")
+local DirectFirePrep = require("src.modules.landingOps.directFirePrep")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local TrackedUnits = require("src.modules.landingOps.trackedUnits")
 
@@ -81,10 +81,15 @@ end
 
 ---Attack airlanding zone contacts with SAG surface fire support
 ---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 ---@param ship CMO__Unit
 ---@return boolean # True if the attack workflow was handled
-function LandingOps.attackAirlandingZone(config, ship)
-  return SagFireSupport.attackAirlandingZone(config.red.amphibOps, ship)
+function LandingOps.attackAirlandingZone(config, saveData, ship)
+  return DirectFirePrep.attackAirlandingZone(
+    config.red.amphibOps,
+    PersistentState.landingOps(saveData).amphibOps.zoneStates,
+    ship
+  )
 end
 
 ---Remove a destroyed unit from the landing records of every zone. Units that landingOps does not record are ignored

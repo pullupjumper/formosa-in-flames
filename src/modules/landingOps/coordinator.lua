@@ -8,6 +8,7 @@ local AmphibiousAssault = require("src.modules.landingOps.amphibiousAssault")
 local AmphibiousLogistics = require("src.modules.landingOps.amphibiousLogistics")
 local AssaultBoat = require("src.modules.landingOps.assaultBoat")
 local DebugFlow = require("src.modules.landingOps.debugFlow")
+local DirectFirePrep = require("src.modules.landingOps.directFirePrep")
 local FireSupportGate = require("src.modules.landingOps.fireSupportGate")
 local HeliWave = require("src.modules.landingOps.heliWave")
 local Hovercraft = require("src.modules.landingOps.hovercraft")
@@ -15,7 +16,6 @@ local MineClearing = require("src.modules.landingOps.mineClearing")
 local ObstacleClearing = require("src.modules.landingOps.obstacleClearing")
 local ShipMovement = require("src.modules.landingOps.shipMovement")
 local MissileSystem = require("src.modules.missileSystem.init")
-local StrikePlanner = require("src.modules.strikePlanner.init")
 
 local Coordinator = {}
 
@@ -32,9 +32,7 @@ local function startZoneAirSetup(config, landingState, zone)
     AmphibiousLogistics.transferTransportAircraftCargo(zone.air.transportAircraft)
   end
 
-  if zone.air.reconTemplate then
-    StrikePlanner.addReconEntry(landingState.recon, config.red.recon.templates[zone.air.reconTemplate])
-  end
+  DirectFirePrep.startAirRecon(config, landingState.recon, zone)
 end
 
 ---Check if every ship and craft on the deploy line has released its ACVs, hovercraft and boats
