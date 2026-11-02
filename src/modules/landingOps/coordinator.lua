@@ -211,22 +211,24 @@ local PHASE_STEPS = {
   { phase = constants.AMPHIBIOUS_PHASES.WAITING_ADMIN_OFFLOADING, step = stepWaitingAdminOffloading },
 }
 
----Process a single operational zone through all amphibious phases
+---Process operational zones through all amphibious phases
 ---@param tickCtx SBJ__LandingTickContext
----@param zone SBJ__OperationalZoneDescriptor
-local function processZone(tickCtx, zone)
-  local zoneState = tickCtx.landingState.amphibOps.zoneStates[zone.name]
+---@param zones SBJ__OperationalZoneDescriptor[]
+local function processZones(tickCtx, zones)
+  for _, zone in ipairs(zones) do
+    local zoneState = tickCtx.landingState.amphibOps.zoneStates[zone.name]
 
-  for _, entry in ipairs(PHASE_STEPS) do
-    if zoneState.phase == entry.phase then
-      entry.step(tickCtx, zone, zoneState)
+    for _, entry in ipairs(PHASE_STEPS) do
+      if zoneState.phase == entry.phase then
+        entry.step(tickCtx, zone, zoneState)
+      end
     end
-  end
 
-  HeliWave.update(tickCtx, zone, zoneState)
+    HeliWave.update(tickCtx, zone, zoneState)
 
-  if constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
-    stepHovercraft(tickCtx, zone, zoneState)
+    if constants.AMPHIBIOUS_LANDING_PHASES[zoneState.phase] then
+      stepHovercraft(tickCtx, zone, zoneState)
+    end
   end
 end
 
@@ -274,13 +276,11 @@ function Coordinator.process(config, landingState, params)
     currentTime = params.currentTime,
     filteredShips = params.filteredShips
   }
-  for _, zone in ipairs(config.red.amphibOps.zones) do
-    processZone(tickCtx, zone)
-  end
 
+  processZones(tickCtx, config.red.amphibOps.zones)
   processRemainingCargoTransfer(tickCtx)
-
   local gateResult = FireSupportGate.evaluate(config, landingState, MissileSystem.getAmmoInventory)
+
   if gateResult then
     Logger.log(constants.TAGS.AMPHIBIOUS_ASSAULT, LogFormat.line(gateResult.tag, gateResult.fields))
   end
