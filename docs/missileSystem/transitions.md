@@ -10,7 +10,7 @@
 
 ## 概觀
 
-狀態改變一律寫成有名字的轉換，事件路徑（[init](init.md) 的 FP/HA/RL/AHA handler）與定時路徑（[cycle](cycle.md)）共用同一組函式，所以同一個轉換只有一種寫法。
+狀態改變一律寫成有名字的轉換，事件路徑（[arrival](arrival.md) 的 FP/HA/RL/AHA handler）與定時路徑（[cycle](cycle.md)）共用同一組函式，所以同一個轉換只有一種寫法。
 
 需要同時改 CMO 待命模式的轉換（抵達 FP、掩蔽、開始裝填、無會合轉靜止）會順便呼叫 `Movement.applyMode`；純計時與移動結果的轉換不碰 CMO。
 

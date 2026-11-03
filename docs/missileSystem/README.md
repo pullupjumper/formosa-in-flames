@@ -189,6 +189,7 @@ flowchart TB
 ## 模組文件索引
 
 - [init](init.md)
+- [arrival](arrival.md)
 - [cycle](cycle.md)
 - [transitions](transitions.md)
 - [movement](movement.md)

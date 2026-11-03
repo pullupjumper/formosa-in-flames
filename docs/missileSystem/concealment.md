@@ -14,7 +14,7 @@ MASK 區建築隱蔽控制模組。
 
 當機動車組需要再次機動時，`moveFromHideArea` 會掃描 mask 內建築 cargo，找到對應 GUID 後卸載。
 
-此模組不決定何時隱蔽，時機由 `init.lua` 與 `cycle.lua` 流程控制。
+此模組不決定何時隱蔽，時機由 `arrival.lua`、`init.lua` 與 `cycle.lua` 流程控制。
 
 ---
 
