@@ -4,7 +4,7 @@
 
 > Source: `src/modules/missileSystem/cycle.lua`
 
-責任摘要：每次定時檢查中，依「FSP 射擊或低彈量 → stow 等待 → 機動 → 會合 → 完成再裝填」順序推進機動發射車與彈藥補給車的補給節奏。
+責任摘要：每次定時檢查中，觀察每個機動發射車與彈藥補給車，向 [rules](rules.md) 要步驟並執行。
 
 ---
 
@@ -12,111 +12,35 @@
 
 `Cycle.process` 是模組對外唯一進入點，內部分別跑 `processFiringUnits` 與 `processResupplyUnits`，逐一處理該飛彈系統中的所有機動發射車與彈藥補給車。
 
-對機動發射車而言，流程拆成兩段：先用 `startReloadMovement` 判定是否要從 STATIC 起跑（受 stow 等待時間管制），再用 `completeFiringUnitReload` 在 RELOAD 狀態下判定是否可以收尾。對彈藥補給車則對應 `startResupplyMovement` 與 `completeResupplyUnitTransload`，差別在於它的觸發條件是「彈量歸零且仍在作戰區」，並且不需要 stow 等待。
+每個單位走同一個模式：
 
-本模組只負責流程編排與條件判斷，實際動作（移動、武器管制、卸載／裝載、隱蔽）委派給 `Movement`、`Meeting`、`Ammo`、`Concealment`。`isAuto` 控制電腦控制陣營與玩家控制陣營的差異：只有 `isAuto=true` 才會主動驅動 stow 倒數與後續機動，但「完成再裝填」這段在兩種模式下都會執行。
+1. **觀察**：`processFiringUnit` / `processResupplyUnit` 收集觀察表（state、`Ammo.isLowAmmo`、`Meeting.hasMet*`、`Meeting.findUnitArea`、收車與裝填經過秒數、配對單位在不在）。
+2. **判斷**：交給 [rules](rules.md) 的 `evaluateFiringUnitTick` / `evaluateResupplyUnitTick`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、SAM 回 FP、補給車去 AHA）都寫在 rules，見 [rules](rules.md#主要機制)。
+3. **執行**：依步驟呼叫 `FIRING_UNIT_STEPS` / `RESUPPLY_UNIT_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，並加一列 log。
+
+`isAuto` 只影響判斷：自動模式才會啟動 stow 倒數與後續機動，「完成再裝填」在兩種模式都會執行。
 
 ---
 
 ## 主要機制
 
-### Stow 等待視窗（新）
-
-`startReloadMovement` 在機動發射車目前是 `STATIC` 且 `isAuto=true` 時才會運作，並引入 `firingUnitState.stowStartTime` 作為倒數起點：
-
-- 觸發來源有兩個：
-  - 低於 `ammoThreshold`（由 `Ammo.isLowAmmo` 判定）
-  - FSP 射擊後 `strikePlanner/fireSupportPlan.lua` 呼叫 `MissileSystem.startStow`，把 `stowStartTime` 設為當前時間
-- 第一個偵測到觸發的循環會把 `stowStartTime` 寫入並 return，留到下個循環才推進
-- 在 `elapsedTime < systemState.stowTime` 期間，車組維持 STATIC 不動，模擬射擊後的收車／撤收時間
-- 倒數結束後依當下彈量分流：
-  - **彈量充足**：呼叫 `Movement.moveToHideArea` 收回 HA，並清掉 `stowStartTime`（典型 FSP 一波打完後的撤收路徑）。移動失敗時一樣清掉、不重試，單位維持 `STATIC`
-  - **仍然低彈量**：先把對應的彈藥補給車從 HA 拉出（`Concealment.moveFromHideArea`）並送往 RL，再把機動發射車送往 RL，最後清掉 `stowStartTime`
-
-### Reload 完成條件
-
-`completeFiringUnitReload` 只在 `state == RELOAD` 時才執行（狀態由 RL 事件的 `Transitions.beginReload` 切換）：
-
-- 進入 RELOAD 後若 `reloadStartTime` 尚未設定，會在這裡補上一個起點
-- 透過 `isReadyToReloadFiringUnit` 同時檢查三件事：
-  - `ScenEdit_CurrentTime() - reloadStartTime >= reloadTime`
-  - `Meeting.hasMetResupplyUnit` 回 `true`（玩家控制流程在 `Meeting` 內部會放寬）
-  - `Ammo.isLowAmmo` 仍為 `true`，避免重複裝填
-- 條件達成才呼叫 `Ammo.reloadFiringUnit` 實際補彈
-- 自動模式下，補完後依系統類別決定下一步：
-  - `Transitions.staysDeployed`（SAM）→ `Movement.moveToFiringPoint`，盡快恢復防空火網
-  - 其他 TEL 類 → `Movement.moveToHideArea`，回到 HA 等下一輪
-  - 若彈藥補給車仍有存彈且還在作戰區，加碼呼叫 `Concealment.hideUnit` 把它藏回 MASK 建築
-
-### 彈藥補給車的二級補給
-
-`startResupplyMovement` 與 `completeResupplyUnitTransload` 與機動發射車對稱，但流程較精簡：
-
-- 觸發條件：自動模式 + `STATIC` + `weaponCountCurrent == 0` + 仍位於 `operationalArea` 任一陣地內
-- 觸發後呼叫 `Movement.moveToAmmoHoldingArea` 前往 AHA 與彈藥儲備點交會
-- `isReadyToReloadResupplyUnit` 確認 `reloadTime` 已過、`weaponCountCurrent` 仍為 0、`Meeting.hasMetAmmoDepot` 回 `true`
-- 條件達成呼叫 `Ammo.transferAmmunition`，並在自動模式下由 `Movement.moveResupplyUnitToReloadPoint` 回 RL 待命
-
-### 結果回傳
-
-每個內部 cycle 函式都會回傳 `SBJ__LogResult[]`，由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本），供 log 與 UI 使用。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `init.lua` 私有的 `process` 補上，本模組只負責 unit 層級的欄位。
-
----
-
-## 流程圖
+- 收車倒數的觸發來源有兩個：低於 `ammoThreshold`，或 FSP 射擊後 `strikePlanner/fireSupportPlan.lua` 呼叫 `MissileSystem.startStow` 寫入 `stowStartTime`。
+- 裝填計時：觀察表裡沒有 `reloadStartTime` 時經過秒數當 0，`ENSURE_RELOAD_CLOCK` 一定是 RELOAD 的第一步，所以結果和「先補計時再算」相同。
+- `HIDE_RESUPPLY_UNIT` 的 handler 自己檢查「補給車還有彈且在作戰區」，因為剩餘彈量要等 `COMPLETE_RELOAD` 做完才知道。
+- 每個 handler 回傳的 log 列都放進 `stepCtx.results`，由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本）。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `init.lua` 私有的 `process` 補上，本模組只負責 unit 層級的欄位。
 
 ```mermaid
 flowchart TD
     A[Cycle.process] --> B[processFiringUnits]
     A --> C[processResupplyUnits]
-
-    B --> B1[processFiringUnitReloadCycle]
-    B1 --> T[startReloadMovement]
-    B1 --> F[completeFiringUnitReload]
-
-    T --> T1{isAuto 且 STATIC?}
-    T1 -->|No| Tend([結束])
-    T1 -->|Yes| T2{有 stowStartTime 或 低彈量?}
-    T2 -->|No| Tend
-    T2 -->|Yes| T3{已設 stowStartTime?}
-    T3 -->|No| T4[寫入 stowStartTime 並 return]
-    T3 -->|Yes| T5{elapsed ≥ stowTime?}
-    T5 -->|No| Tend
-    T5 -->|Yes| T6{仍低彈量?}
-    T6 -->|No| T7[moveToHideArea]
-    T6 -->|Yes| T8[彈藥補給車 moveFromHideArea → moveToReloadPoint]
-    T8 --> T9[機動發射車 moveToReloadPoint]
-
-    F --> F1{state == RELOAD?}
-    F1 -->|No| Fend([結束])
-    F1 -->|Yes| F2{已達 reloadTime 且 hasMet 且 低彈量?}
-    F2 -->|No| Fend
-    F2 -->|Yes| F3[Ammo.reloadFiringUnit]
-    F3 --> F4{isAuto?}
-    F4 -->|No| Fok([回傳 OK])
-    F4 -->|Yes| F5{system == sam?}
-    F5 -->|Yes| F6[moveToFiringPoint]
-    F5 -->|No| F7[moveToHideArea]
-    F6 --> Fok
-    F7 --> Fok
-
-    C --> C1[processResupplyUnitReloadCycle]
-    C1 --> R[startResupplyMovement]
-    C1 --> S[completeResupplyUnitTransload]
-
-    R --> R1{isAuto 且 STATIC 且 weaponCountCurrent=0 且 在作戰區?}
-    R1 -->|Yes| R2[moveToAmmoHoldingArea]
-    R1 -->|No| Rend([結束])
-
-    S --> S1{state == RELOAD?}
-    S1 -->|No| Send([結束])
-    S1 -->|Yes| S2{已達 reloadTime 且 weaponCountCurrent=0 且 hasMet?}
-    S2 -->|No| Send
-    S2 -->|Yes| S3[Ammo.transferAmmunition]
-    S3 --> S4{isAuto?}
-    S4 -->|Yes| S5[moveResupplyUnitToReloadPoint]
-    S4 -->|No| Sok([回傳 OK])
-    S5 --> Sok
+    B --> B1[processFiringUnit<br/>收集觀察表]
+    C --> C1[processResupplyUnit<br/>收集觀察表]
+    B1 --> R1[Rules.evaluateFiringUnitTick]
+    C1 --> R2[Rules.evaluateResupplyUnitTick]
+    R1 --> S1[FIRING_UNIT_STEPS]
+    R2 --> S2[RESUPPLY_UNIT_STEPS]
+    S1 --> X[Movement / Concealment / Ammo<br/>+ Transitions]
+    S2 --> X
 ```
 
 ---
@@ -159,13 +83,13 @@ flowchart TD
 | `firingUnitState.weaponDBID` | 用來鎖定要回補的武器類別 |
 | `firingUnitState.stowStartTime` / `reloadStartTime` | 倒數時間錨點，存在 `saveData.*.ground.missileSystemTypes.<system>.firingUnits[*]` |
 | `resupplyUnitState.weaponCountCurrent` | 二級補給觸發條件 |
-| `constants.MISSILE_SYSTEM_STATE.STATIC` / `RELOAD` | stow 觸發與 reload 完成判斷的狀態守門 |
-| `constants.MISSILE_SYSTEM_TYPES.SAM` | 補完後是否回 FP 的分流 |
 
 ---
 
 ## 相關模組
 
+- [rules](rules.md)
+- [transitions](transitions.md)
 - [init](init.md)
 - [movement](movement.md)
 - [meeting](meeting.md)

@@ -191,6 +191,7 @@ flowchart TB
 - [init](init.md)
 - [arrival](arrival.md)
 - [cycle](cycle.md)
+- [rules](rules.md)
 - [transitions](transitions.md)
 - [movement](movement.md)
 - [meeting](meeting.md)

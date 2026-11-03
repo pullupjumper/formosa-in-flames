@@ -19,8 +19,8 @@
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `evaluateReadiness` | `groundState, missileSystem, firingUnitName, getUnit` | `missileSystemReadiness` | 判斷發射單位能不能接火力支援任務，回傳 readiness（見下方） |
-| `sendToFiringPoint` | `groundState, missileSystem, firingUnitName` | `boolean, boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`）與單位是否不見（實體或 runtime state 任一不存在） |
-| `startStow` | `groundState, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
+| `sendToFiringPoint` | `groundState, missileSystem, firingUnitName` | `boolean, boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP（條件在 `Rules.evaluateSendToFiringPoint`）；回傳是否已在 FP（`STATIC`）與單位是否不見（實體或 runtime state 任一不存在） |
+| `startStow` | `groundState, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過（`Rules.staysDeployed`）、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING`（`Rules.shouldStow`） |
 | `getAmmoInventory` | `groundState, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
 | `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫私有的 `process`（執行循環並輸出結果日誌）；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `moveCtx`，交給 `Arrival.processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
@@ -40,7 +40,7 @@
 
 ### Readiness
 
-readiness 是「這個發射單位現在能不能接火力支援任務、不能的話為什麼」。外部（strikePlanner）只拿 `groundState` 當不透明把手，不讀發射單位的 `state`。`evaluateReadiness` 依序檢查，回傳第一個不通過的 `constants.MISSILE_SYSTEM_READINESS`：
+readiness 是「這個發射單位現在能不能接火力支援任務、不能的話為什麼」。HIDE 與彈量的判斷在 `Rules.evaluateReadiness`，彈量用 callback 傳入，只有 HIDE 的單位才會讀。外部（strikePlanner）只拿 `groundState` 當不透明把手，不讀發射單位的 `state`。`evaluateReadiness` 依序檢查，回傳第一個不通過的 `constants.MISSILE_SYSTEM_READINESS`：
 
 | 代碼 | 值 | 意義 |
 |---|---|---|
@@ -77,6 +77,7 @@ readiness 是「這個發射單位現在能不能接火力支援任務、不能�
 
 ## 相關模組
 
+- [rules](rules.md)
 - [arrival](arrival.md)
 - [cycle](cycle.md)
 - [movement](movement.md)

@@ -134,18 +134,6 @@ describe("MissileSystem", function()
       assert.stub(moveFromHideAreaStub).was_not.called()
     end)
 
-    -- Negative: a unit on its way is not commanded again
-    it("should not command a REPOSITIONING unit", function()
-      local firingUnitState = { name = "FU1", state = STATE.REPOSITIONING }
-      local firingUnit = { name = "FU1" }
-      local moveStub = trackStub(Movement, "moveToFiringPoint")
-
-      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
-
-      assert.is_false(inPosition)
-      assert.stub(moveStub).was_not.called()
-    end)
-
     -- Negative: low ammo keeps the unit hidden
     it("should keep a hiding unit with low ammo in place", function()
       local firingUnitState = { name = "FU1", state = STATE.HIDE }

@@ -4,7 +4,7 @@
 
 > Source: `src/modules/missileSystem/arrival.lua`
 
-責任摘要：解析 `UnitEntersArea` 的 trigger，依陣地類型分派 handler，記錄狀態並輸出一份批次日誌。
+責任摘要：解析 `UnitEntersArea` 的 trigger，觀察抵達的單位，向 [rules](rules.md) 要步驟並執行，輸出一份批次日誌。
 
 ---
 
@@ -12,39 +12,29 @@
 
 外部只經 [init](init.md) 的 `processUnitEntersArea` 進來；它依觸發單位陣營組出 `moveCtx`（`isAuto`、`hideOnEnterHA`、`hideResupplyOnRLNoMeeting`、`firingUnitLookupSide`），再呼叫 `Arrival.processMoveToPositionEvent`。
 
-模組內將觸發流程拆成多個局部 handler：`processFiringPoint`、`processHideArea`、`processReloadPoint`、`processAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。狀態寫入一律呼叫 [transitions](transitions.md)。
+對每個啟用中的飛彈系統（`forEachEnabledSystem`）走同一個模式：
 
-`moveCtx` 允許不同陣營自訂流程，例如電腦控制陣營可在進入 HA 時自動 `hideUnit`（前提為彈藥充足），玩家控制陣營或低彈藥量單位則不做動作，以便接續前往 RL 補給。
+1. **觀察**：`POSITION_OBSERVERS` 依陣地挑一個 observer（`observeFiringPoint`、`observeHideArea`、`observeReloadPoint`、`observeAmmoHoldingArea`），收集觀察表，並把後面步驟要用的單位放進 `stepCtx`。
+2. **判斷**：`Rules.evaluateArrival(positionType, params)` 回傳步驟清單，條件見 [rules](rules.md#抵達陣地evaluatearrival)。
+3. **執行**：依步驟呼叫 `ARRIVAL_STEPS` 的 handler，每個 handler 經 [transitions](transitions.md) 記錄狀態、需要時呼叫 `Concealment.hideUnit`，回傳一列 log。
 
 ---
 
 ## 主要機制
 
-1. 由 `resolvePositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|AHA) ` 前綴）解析位置代碼。
+1. 由 `resolvePositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|AHA) ` 前綴）解析位置代碼；不認得的代碼直接結束，不丟接觸、不輸出 log。
 2. 非 FP 事件會先 `dropUnitContact`，降低非必要接觸資訊。
-3. 依陣地類型分派至對應 handler。
-4. HA 流程僅在 `moveCtx.hideOnEnterHA` 啟用 **且** 機動發射車彈藥充足時，才會 `Transitions.hide` 並執行 `hideUnit`；低彈單位保持原狀以便觸發後續補給流程。
-5. RL/AHA 流程會先做 `Meeting` 判斷，成功才進入 `RELOAD` 計時；RL 無會合時 `Transitions.settle` 一律以手動模式（`isAuto=false`）呼叫，避免短暫經過 RL 的機動發射車（例如重定位中途）被卡停。若 `moveCtx.hideResupplyOnRLNoMeeting` 啟用且對應機動發射車彈藥充足，會將彈藥車隱蔽。
+3. RL 沒會合時 `STOP_IN_MANUAL_MODE` 一律以手動模式（`isAuto=false`）呼叫 `Transitions.settle`，避免短暫經過 RL 的機動發射車（例如重定位中途）被卡停。
 
 ```mermaid
 flowchart TD
     A[processMoveToPositionEvent] --> B{resolvePositionType}
-    B -->|FP| C[processFiringPoint]
-    B -->|HA| D[processHideArea]
-    B -->|RL| E[processReloadPoint]
-    B -->|AHA| F[processAmmoHoldingArea]
-
-    D --> M{hideOnEnterHA<br/>且彈藥充足?}
-    M -->|Yes| N[Transitions.hide + hideUnit]
-    M -->|No| O[不動作]
-
-    E --> G{hasMetResupplyUnit}
-    G -->|Yes| H[Transitions.beginReload]
-    G -->|No| I[Transitions.settle]
-
-    F --> J{hasMetAmmoDepot}
-    J -->|Yes| K[Transitions.beginReload]
-    J -->|No| L[Transitions.settle]
+    B -->|FP/HA/RL/AHA| C[forEachEnabledSystem]
+    B -->|其他| Z([結束])
+    C --> D[POSITION_OBSERVERS<br/>收集觀察表]
+    D --> E[Rules.evaluateArrival]
+    E --> F[ARRIVAL_STEPS<br/>Transitions + Concealment]
+    F --> G[report.add]
 ```
 
 ---
@@ -74,6 +64,7 @@ flowchart TD
 
 ## 相關模組
 
+- [rules](rules.md)
 - [init](init.md)
 - [transitions](transitions.md)
 - [meeting](meeting.md)

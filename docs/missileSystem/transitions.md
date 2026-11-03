@@ -10,7 +10,7 @@
 
 ## 概觀
 
-狀態改變一律寫成有名字的轉換，事件路徑（[arrival](arrival.md) 的 FP/HA/RL/AHA handler）與定時路徑（[cycle](cycle.md)）共用同一組函式，所以同一個轉換只有一種寫法。
+狀態改變一律寫成有名字的轉換，事件路徑（[arrival](arrival.md)）與定時路徑（[cycle](cycle.md)）的步驟 handler 共用同一組函式，所以同一個轉換只有一種寫法。「什麼時候轉換」由 [rules](rules.md) 決定，本檔只負責寫入。
 
 需要同時改 CMO 待命模式的轉換（抵達 FP、掩蔽、開始裝填、無會合轉靜止）會順便呼叫 `Movement.applyMode`；純計時與移動結果的轉換不碰 CMO。
 
@@ -20,8 +20,7 @@
 
 - **出發**：`depart` 包住 `Movement.moveTo*` 的回傳值，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態並原樣回傳失敗欄位，避免單位沒動卻卡在 `REPOSITIONING`。
 - **收車倒數**：`beginStow` 已有倒數就保留並回傳 false；`endStow` 在單位被送走後清掉（移動失敗也清，不重試）。
-- **SAM**：`staysDeployed` 是唯一的 SAM 判斷：不收車、裝填後直接回 FP。`Shared.isSAM(dbid)`（選防空或對地 WCS）不屬於狀態機。
-- **手動模式**：沒有 `REPOSITIONING`；`isRepositioning` 在手動模式一律回傳 true，讓抵達 FP 的事件照常生效。
+- **查詢**：`staysDeployed`（SAM）與 `isRepositioning` 已搬到 [rules](rules.md)。`Shared.isSAM(dbid)`（選防空或對地 WCS）不屬於狀態機。
 
 ```mermaid
 stateDiagram-v2
@@ -40,8 +39,6 @@ stateDiagram-v2
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `staysDeployed` | `missileSystemType` | `boolean` | SAM（大小寫不拘）回傳 true |
-| `isRepositioning` | `firingUnitState?, isAuto` | `boolean` | 抵達 FP 事件是否生效 |
 | `depart` | `unitState, success, errorFields?` | `boolean, table?` | 移動成功才設 `REPOSITIONING`，原樣回傳 |
 | `arriveAtFiringPoint` | `firingUnitState, firingUnit, isAuto` | `nil` | `STATIC` + `WCS.FREE` |
 | `hide` | `firingUnitState, firingUnit, isAuto` | `nil` | `HIDE` + `WCS.HOLD` |
@@ -56,12 +53,14 @@ stateDiagram-v2
 
 ## 已知風險
 
-自動模式下，發射車往 FP 途中若穿過 RL，RL 無會合的 `settle` 會把它轉成 `STATIC`；抵達 FP 時 `isRepositioning` 回傳 false，WCS 不會開成 FREE。只有 RL 剛好在路上才會發生。
+自動模式下，發射車往 FP 途中若穿過 RL，RL 無會合的 `settle` 會把它轉成 `STATIC`；抵達 FP 時 `Rules.isRepositioning` 回傳 false，WCS 不會開成 FREE。只有 RL 剛好在路上才會發生。
 
 ---
 
 ## 相關模組
 
+- [rules](rules.md)
+- [arrival](arrival.md)
 - [movement](movement.md)
 - [ammo](ammo.md)
 - [cycle](cycle.md)

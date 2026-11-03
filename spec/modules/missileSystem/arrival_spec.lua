@@ -132,24 +132,6 @@ describe("MissileSystem Arrival", function()
       assert.is_truthy(string.find(message, "position=FP", 1, true))
     end)
 
-    -- Negative: FP + not repositioning keeps WCS untouched
-    it("should not set WCS to free when entering FP and not repositioning", function()
-      local unit = makeUnit()
-      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
-
-      local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
-
-      enterArea({
-        groundState = groundStateWith(systemState),
-        unit = unit,
-        event = enterEvent("FP"),
-      })
-
-      assert.stub(arriveAtFiringPointStub).was_not.called()
-      assert.stub(logStub).was_not.called()
-      assert.stub(warnStub).was_not.called()
-    end)
-
     -- Boundary: FP path must never drop contacts
     it("should not drop contacts when entering FP", function()
       local unit = makeUnit()
@@ -169,31 +151,6 @@ describe("MissileSystem Arrival", function()
     end)
 
     -- --- HA --------------------------------------------------------------
-
-    -- Negative: HA + no forced hide + not repositioning leaves state untouched
-    it("should leave HA state untouched when not repositioning and hideOnEnterHA is off", function()
-      local unit = makeUnit({ side = "Taiwan" })
-      local firingUnitState = { name = "FU1" }
-      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
-
-      local hideStub = trackStub(Transitions, "hide")
-      local hideUnitStub = trackStub(Concealment, "hideUnit")
-
-      enterArea({
-        groundState = groundStateWith(systemState),
-        unit = unit,
-        event = enterEvent("HA"),
-        policy = {
-          isAuto = false,
-          hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = false
-        }
-      })
-
-      assert.stub(hideStub).was_not.called()
-      assert.stub(hideUnitStub).was_not.called()
-      assert.stub(logStub).was_not.called()
-    end)
 
     -- Boundary: HA path drops only matching contacts
     it("should drop only contacts whose actualunitid matches the incoming unit", function()
@@ -278,28 +235,6 @@ describe("MissileSystem Arrival", function()
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "[WARN]", 1, true))
       assert.is_truthy(string.find(message, "action=concealment_failed", 1, true))
-    end)
-
-    -- Boundary: HA handler early-returns when unit is not a firing unit of the system
-    it("should skip HA handling when unit is not a firing unit of the system", function()
-      local unit = makeUnit({ name = "Unknown", guid = "guid-x" })
-      local systemState = makeSystemState()
-
-      local hideStub = trackStub(Transitions, "hide")
-      local hideUnitStub = trackStub(Concealment, "hideUnit")
-
-      enterArea({
-        groundState = groundStateWith(systemState),
-        unit = unit,
-        event = enterEvent("HA"),
-        policy = {
-          hideOnEnterHA = true,
-          hideResupplyOnRLNoMeeting = false
-        }
-      })
-
-      assert.stub(hideStub).was_not.called()
-      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- --- RL --------------------------------------------------------------
@@ -622,31 +557,6 @@ describe("MissileSystem Arrival", function()
       assert.stub(arriveAtFiringPointStub).was.called(1)
       assert.stub(arriveAtFiringPointStub).was.called_with(firingUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(hideStub).was_not.called()
-    end)
-
-    -- Boundary: with a paired firing unit that has ammo, the policy switch alone keeps the resupply unit out
-    it("should not hide on RL no-meeting when hideResupplyOnRLNoMeeting is off", function()
-      local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
-
-      trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      local settleStub = trackStub(Transitions, "settle")
-      trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
-      trackStub(Ammo, "isLowAmmo").returns(false)
-      local hideUnitStub = trackStub(Concealment, "hideUnit")
-
-      enterArea({
-        groundState = groundStateWith(systemState),
-        unit = unit,
-        event = enterEvent("RL"),
-        policy = { hideResupplyOnRLNoMeeting = false }
-      })
-
-      assert.stub(settleStub).was.called(1)
-      assert.stub(settleStub).was.called_with(systemState, unit, false)
-      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- Boundary: disabled systems must be skipped before any delegate is invoked
