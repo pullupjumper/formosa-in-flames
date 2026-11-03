@@ -8,32 +8,28 @@ local constants = require("src.core.constants")
 
 local FsemBuilder = {}
 
-local FIRING_UNIT_STATUS = {
-  AVAILABLE = "available",
-  ASSIGNED = "assigned",
-  UNIT_NOT_FOUND = "unit_not_found",
-  CONTEXT_NOT_FOUND = "context_not_found",
-  BAD_STATE = "bad_state",
-  LOW_AMMO = "low_ammo"
-}
+local READINESS = constants.MISSILE_SYSTEM_READINESS
+
+-- Planner-side status; every other status is a missile system readiness.
+local ASSIGNED_STATUS = "assigned"
 
 -- Single source for the counter keys and the order they appear in a log row.
 local FIRING_UNIT_STATUS_ORDER = {
-  FIRING_UNIT_STATUS.AVAILABLE,
-  FIRING_UNIT_STATUS.ASSIGNED,
-  FIRING_UNIT_STATUS.UNIT_NOT_FOUND,
-  FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND,
-  FIRING_UNIT_STATUS.BAD_STATE,
-  FIRING_UNIT_STATUS.LOW_AMMO
+  READINESS.READY,
+  ASSIGNED_STATUS,
+  READINESS.UNIT_NOT_FOUND,
+  READINESS.NO_STATE,
+  READINESS.NOT_HIDDEN,
+  READINESS.LOW_AMMO
 }
 
 local FIRING_UNIT_STATUS_LOG_FIELD = {
-  [FIRING_UNIT_STATUS.AVAILABLE] = "firingAvailable",
-  [FIRING_UNIT_STATUS.ASSIGNED] = "firingAssigned",
-  [FIRING_UNIT_STATUS.UNIT_NOT_FOUND] = "firingUnitNotFound",
-  [FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND] = "firingContextNotFound",
-  [FIRING_UNIT_STATUS.BAD_STATE] = "firingBadState",
-  [FIRING_UNIT_STATUS.LOW_AMMO] = "firingLowAmmo"
+  [READINESS.READY] = "firingAvailable",
+  [ASSIGNED_STATUS] = "firingAssigned",
+  [READINESS.UNIT_NOT_FOUND] = "firingUnitNotFound",
+  [READINESS.NO_STATE] = "firingContextNotFound",
+  [READINESS.NOT_HIDDEN] = "firingBadState",
+  [READINESS.LOW_AMMO] = "firingLowAmmo"
 }
 
 -- Failure reasons written straight into reason=<token>. INSUFFICIENT_TARGETS and
@@ -145,31 +141,20 @@ local function getCachedFiringUnit(firingUnitCache, firingUnitName)
   return actualUnit or nil
 end
 
----Validate one firing unit against assignment, existence, state and ammo
----@param firingUnitState SBJ__FiringUnitState
+---Evaluate one firing unit against assignment, then missile system readiness
+---@param plannerState SBJ__StrikePlannerState
+---@param missileSystemType string
+---@param firingUnitName string
 ---@param passCtx SBJ__FsemPassContext
----@return string # Firing unit status code from FIRING_UNIT_STATUS
-local function validateFiringUnitStatus(firingUnitState, passCtx)
-  local firingUnitName = firingUnitState.name
-
+---@return string # ASSIGNED_STATUS or a constants.MISSILE_SYSTEM_READINESS value
+local function evaluateFiringUnitStatus(plannerState, missileSystemType, firingUnitName, passCtx)
   if passCtx.assignedFiringUnitNames[firingUnitName] then
-    return FIRING_UNIT_STATUS.ASSIGNED
+    return ASSIGNED_STATUS
   end
 
-  local actualUnit = getCachedFiringUnit(passCtx.firingUnitCache, firingUnitName)
-  if not actualUnit then
-    return FIRING_UNIT_STATUS.UNIT_NOT_FOUND
-  end
-
-  if firingUnitState.state ~= constants.MISSILE_SYSTEM_STATE.HIDE then
-    return FIRING_UNIT_STATUS.BAD_STATE
-  end
-
-  if MissileSystem.isLowAmmo(firingUnitState, actualUnit) then
-    return FIRING_UNIT_STATUS.LOW_AMMO
-  end
-
-  return FIRING_UNIT_STATUS.AVAILABLE
+  return MissileSystem.evaluateReadiness(plannerState.ground, missileSystemType, firingUnitName, function(name)
+    return getCachedFiringUnit(passCtx.firingUnitCache, name)
+  end)
 end
 
 ---Select the firing units of a task template that are free and ready to fire
@@ -183,16 +168,11 @@ local function filterAvailableFiringUnits(plannerState, taskTemplate, firingUnit
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
     -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil state and
-    -- is rejected as CONTEXT_NOT_FOUND, so it never reaches an assignment map.
-    local firingUnitState = MissileSystem.getFiringUnitState(plannerState.ground, taskTemplate.missileSystemType, firingUnit.name)
-    local status = FIRING_UNIT_STATUS.CONTEXT_NOT_FOUND
-
-    if firingUnitState then
-      status = validateFiringUnitStatus(firingUnitState, passCtx)
-    end
+    -- is rejected as NO_STATE, so it never reaches an assignment map.
+    local status = evaluateFiringUnitStatus(plannerState, taskTemplate.missileSystemType, firingUnit.name, passCtx)
 
     updateFiringUnitStatus(firingUnitStatusCounter, status)
-    if status == FIRING_UNIT_STATUS.AVAILABLE then
+    if status == READINESS.READY then
       table.insert(availableFiringUnits, firingUnit)
     end
   end

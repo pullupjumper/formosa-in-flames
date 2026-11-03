@@ -10,7 +10,7 @@
 
 ## 概觀
 
-`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `processSide`（內部轉 `process`），場景事件腳本呼叫 `processUnitEntersArea`（內部轉私有的 `processMoveToPositionEvent`），其餘初始化與重建 API 也都由此轉發。
+`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `processSide`（內部轉私有的 `process`），場景事件腳本呼叫 `processUnitEntersArea`（內部轉私有的 `processMoveToPositionEvent`），其餘初始化與重建 API 也都由此轉發。
 
 模組內將觸發流程拆成多個局部 handler：`processFiringPoint`、`processHideArea`、`processReloadPoint`、`processAmmoHoldingArea`，再透過 `forEachEnabledSystem` 套用到啟用中的類別（`mlrs/srbm/...`）。
 
@@ -53,17 +53,14 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `getFiringUnitState` | `groundState, missileSystem, firingUnitName` | `SBJ__FiringUnitState?` | 依系統（大小寫皆可）與單位名稱取 runtime context |
-| `isLowAmmo` | `firingUnitState, firingUnit` | `boolean` | 以 context 內的 `ammoThreshold`／`weaponDBID` 判斷低彈量 |
-| `sendToFiringPoint` | `firingUnitState, firingUnit` | `boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`） |
+| `evaluateReadiness` | `groundState, missileSystem, firingUnitName, getUnit` | `missileSystemReadiness` | 判斷發射單位能不能接火力支援任務，回傳 readiness（見下方） |
+| `sendToFiringPoint` | `groundState, missileSystem, firingUnitName` | `boolean, boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP；回傳是否已在 FP（`STATIC`）與單位是否不見（實體或 runtime state 任一不存在） |
 | `startStow` | `groundState, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING` |
 | `getAmmoInventory` | `groundState, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
-| `process` | `groundState, missileSystemConfigMap, isAuto, sideName` | `nil` | 執行循環並輸出結果日誌 |
-| `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫 `process`；`scheduledReloadHideCheck.lua` 的入口 |
+| `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫私有的 `process`（執行循環並輸出結果日誌）；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營組出 policy／behavior，交給私有 `processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `unit, groundState` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
-| `redeploy` | `missileSystemConfigMap, groundState, sideName, layouts` | `nil` | 套用玩家選的陣地（`SBJ__MissileSystemLayout[]`），重建 zone／trigger、單位與 context |
-| `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 把 control panel 送回的 entries 轉成 layouts 後呼叫 `redeploy` |
+| `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 把 control panel 送回的 entries 轉成 layouts（`SBJ__MissileSystemLayout[]`），再由私有的 `redeploy` 依序重建 zone／trigger、單位與 context |
 | `buildDeploymentSystems` | `config, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點） |
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |
 | `buildBatteryStatuses` | `config, saveData, sideName` | `SBJ__BatteryStatus[]` | 供狀態 UI 使用，每個飛彈連（發射單位加配對的補給單位）一筆的狀態 |
@@ -73,6 +70,22 @@ flowchart TD
 `ensureGroundState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[groundStateStore](groundStateStore.md) 內的同名函式仍維持 `(missileSystemConfigMap, groundState)`。
 
 > 原本轉發 `Deployment.addMissileSystems` 的門面函式已刪除，外部改用 `deploySide`；`processMoveToPositionEvent` 改為私有，只經 `processUnitEntersArea` 進入。
+
+---
+
+### Readiness
+
+readiness 是「這個發射單位現在能不能接火力支援任務、不能的話為什麼」。外部（strikePlanner）只拿 `groundState` 當不透明把手，不讀發射單位的 `state`。`evaluateReadiness` 依序檢查，回傳第一個不通過的 `constants.MISSILE_SYSTEM_READINESS`：
+
+| 代碼 | 值 | 意義 |
+|---|---|---|
+| `NO_STATE` | `context_not_found` | 該系統沒有這個單位的 runtime state（大小寫不拘） |
+| `UNIT_NOT_FOUND` | `unit_not_found` | CMO 裡已無此單位 |
+| `NOT_HIDDEN` | `bad_state` | 不在 `HIDE` |
+| `LOW_AMMO` | `low_ammo` | 彈量不高於 `ammoThreshold` |
+| `READY` | `available` | 可以派任務 |
+
+值刻意與 FSEM 日誌的計數鍵相同。`getUnit` 由呼叫端提供，只有在單位有 runtime state 時才會被呼叫，讓 fsemBuilder 保留每趟一次的單位快取。先查單位再比對 `state` 的理由見 [fsemBuilder](../strikePlanner/fsemBuilder.md#為什麼先-getunit-再比對-state)。
 
 ---
 

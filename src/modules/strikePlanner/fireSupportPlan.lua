@@ -1,6 +1,5 @@
 local AttackManager = require("src.modules.attackManager")
 local GameUtils = require("src.utils.gameUtils")
-local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local MissileSystem = require("src.modules.missileSystem.init")
 local constants = require("src.core.constants")
@@ -10,22 +9,6 @@ local FireSupportPlan = {}
 -- ============================================================================
 -- Firing Unit Deployment
 -- ============================================================================
-
----Send single firing unit to its firing point and check if it is in position
----@param plannerState SBJ__StrikePlannerState
----@param task SBJ__FireSupportTask
----@param firingUnit SBJ__FiringUnit
----@return boolean inPosition Whether the unit is at firing point
----@return boolean unitMissing Whether the unit no longer exists in game or has no runtime state
-local function deploySingleFiringUnit(plannerState, task, firingUnit)
-  local actualUnit = GameApi.ScenEdit_GetUnit(firingUnit.name)
-  local firingUnitState = MissileSystem.getFiringUnitState(plannerState.ground, task.missileSystemType, firingUnit.name)
-  if not actualUnit or not firingUnitState then
-    return false, true
-  end
-
-  return MissileSystem.sendToFiringPoint(firingUnitState, actualUnit), false
-end
 
 ---Deploy all firing units in a task and check if all are in position
 ---Destroyed units are removed from the task; a task emptied this way is closed
@@ -44,7 +27,7 @@ local function deployTaskFiringUnits(plannerState, task)
   -- inserted at the head to preserve the original firing unit order in logs.
   for i = #task.firingUnits, 1, -1 do
     local firingUnit = task.firingUnits[i]
-    local inPosition, unitMissing = deploySingleFiringUnit(plannerState, task, firingUnit)
+    local inPosition, unitMissing = MissileSystem.sendToFiringPoint(plannerState.ground, task.missileSystemType, firingUnit.name)
 
     if unitMissing then
       table.remove(task.firingUnits, i)

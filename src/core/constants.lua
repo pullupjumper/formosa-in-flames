@@ -3070,6 +3070,16 @@ constants.MISSILE_SYSTEM_STATE = {
   HIDE = 3,
 }
 
+---Why a firing unit can or cannot take a fire support task; values double as FSEM log keys
+---@enum missileSystemReadiness
+constants.MISSILE_SYSTEM_READINESS = {
+  READY = "available",
+  NO_STATE = "context_not_found",
+  UNIT_NOT_FOUND = "unit_not_found",
+  NOT_HIDDEN = "bad_state",
+  LOW_AMMO = "low_ammo",
+}
+
 constants.UNIT_CONDITIONS = {
   AIRBORNE = "Airborne",
   UNDERWAY = "Underway",

@@ -66,6 +66,43 @@ describe("MissileSystem", function()
       moveFromHideAreaStub = trackStub(Concealment, "moveFromHideArea").returns(true)
     end)
 
+    ---Send FU1 of an SRBM battery whose state and game unit are given
+    ---@param firingUnitState table|nil
+    ---@param firingUnit table|nil
+    ---@return boolean inPosition
+    ---@return boolean isMissing
+    local function sendToFiringPoint(firingUnitState, firingUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      local groundState = { missileSystemTypes = { srbm = { firingUnits = { FU1 = firingUnitState } } } }
+      return MissileSystem.sendToFiringPoint(groundState, "SRBM", "FU1")
+    end
+
+    -- Negative: a tracked unit that no longer exists in game is reported missing
+    it("should report a missing unit without moving anything when the unit is gone", function()
+      local moveStub = trackStub(Movement, "moveToFiringPoint")
+
+      local inPosition, isMissing = sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, nil)
+
+      assert.is_false(inPosition)
+      assert.is_true(isMissing)
+      assert.stub(moveStub).was_not.called()
+    end)
+
+    -- Negative: a unit the missile system does not track is reported missing
+    it("should report a missing unit when it has no runtime state", function()
+      local inPosition, isMissing = sendToFiringPoint(nil, { name = "FU1" })
+
+      assert.is_false(inPosition)
+      assert.is_true(isMissing)
+    end)
+
+    -- Positive: a unit with both state and game unit is not missing
+    it("should report a present unit as not missing", function()
+      local _, isMissing = sendToFiringPoint({ name = "FU1", state = STATE.STATIC }, { name = "FU1" })
+
+      assert.is_false(isMissing)
+    end)
+
     -- Positive: a hiding unit with ammo leaves its hide area and heads to FP
     it("should unload and move a hiding unit with enough ammo", function()
       local firingUnitState = { name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 }
@@ -73,7 +110,7 @@ describe("MissileSystem", function()
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local moveStub = trackStub(Movement, "moveToFiringPoint").returns(true)
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 1)
@@ -88,7 +125,7 @@ describe("MissileSystem", function()
       local firingUnit = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_true(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -101,7 +138,7 @@ describe("MissileSystem", function()
       local firingUnit = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -115,7 +152,7 @@ describe("MissileSystem", function()
       trackStub(Ammo, "isLowAmmo").returns(true)
       local moveStub = trackStub(Movement, "moveToFiringPoint")
 
-      local inPosition = MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -131,7 +168,7 @@ describe("MissileSystem", function()
       trackStub(Movement, "moveToFiringPoint")
           .returns(false, { reason = "no_positions_available", position = "FP", area = "OPAREA-1" })
 
-      MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+      sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.stub(errorStub).was.called(1)
       assert.stub(errorStub).was.called_with(
@@ -147,9 +184,103 @@ describe("MissileSystem", function()
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveToFiringPoint").returns(false)
 
-      MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+      sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.stub(errorStub).was_not.called()
+    end)
+  end)
+
+  -- ============================================================================
+  -- evaluateReadiness
+  -- ============================================================================
+
+  describe("evaluateReadiness", function()
+    local STATE = constants.MISSILE_SYSTEM_STATE
+
+    ---@param firingUnitState table|nil
+    ---@return SBJ__GroundState
+    local function buildGroundState(firingUnitState)
+      return { missileSystemTypes = { srbm = { firingUnits = { FU1 = firingUnitState } } } }
+    end
+
+    ---@param current integer
+    ---@param max integer
+    ---@return table
+    local function buildUnit(current, max)
+      return {
+        name = "FU1",
+        guid = "guid-FU1",
+        mounts = { { mount_dbid = 10, mount_weapons = { { wpn_dbid = 1, wpn_default = max, wpn_current = current, wpn_maxcap = max } } } }
+      }
+    end
+
+    ---@param unit table|nil
+    ---@return table getUnit spy
+    local function trackGetUnit(unit)
+      trackStub(GameApi, "ScenEdit_WeaponAllocation").returns(nil)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(unit)
+      return spy.new(function() return unit end)
+    end
+
+    -- Negative: a unit the missile system does not track is never looked up in game
+    it("should report context_not_found without looking up the unit when it has no state", function()
+      local getUnit = trackGetUnit(buildUnit(6, 6))
+
+      local readiness = MissileSystem.evaluateReadiness(buildGroundState(nil), "SRBM", "FU1", getUnit)
+
+      assert.are.equal("context_not_found", readiness)
+      assert.spy(getUnit).was_not.called()
+    end)
+
+    -- Negative: a system the side does not field has no state for any unit
+    it("should report context_not_found for a missile system the side does not field", function()
+      local getUnit = trackGetUnit(buildUnit(6, 6))
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+
+      local readiness = MissileSystem.evaluateReadiness(groundState, "GLCM", "FU1", getUnit)
+
+      assert.are.equal("context_not_found", readiness)
+    end)
+
+    -- Negative: a tracked unit that no longer exists in game
+    it("should report unit_not_found when the tracked unit is gone from the game", function()
+      local getUnit = trackGetUnit(nil)
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+
+      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+
+      assert.are.equal("unit_not_found", readiness)
+      assert.spy(getUnit).was.called_with("FU1")
+    end)
+
+    -- Negative: only a hiding unit can be tasked, even with full ammo
+    it("should report bad_state for a unit that is not hiding", function()
+      local getUnit = trackGetUnit(buildUnit(6, 6))
+      local groundState = buildGroundState({ name = "FU1", state = STATE.STATIC, ammoThreshold = 40, weaponDBID = 1 })
+
+      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+
+      assert.are.equal("bad_state", readiness)
+    end)
+
+    -- Negative: 2 of 6 missiles left is 33%, at or below the 40% threshold
+    it("should report low_ammo for a hiding unit at or below its ammo threshold", function()
+      local getUnit = trackGetUnit(buildUnit(2, 6))
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+
+      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+
+      assert.are.equal("low_ammo", readiness)
+    end)
+
+    -- Positive: a hiding unit with 3 of 6 missiles (50%) is above the 40% threshold
+    it("should report available for a hiding unit above its ammo threshold", function()
+      local getUnit = trackGetUnit(buildUnit(3, 6))
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+
+      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+
+      assert.are.equal("available", readiness)
     end)
   end)
 
@@ -157,7 +288,17 @@ describe("MissileSystem", function()
   -- process
   -- ============================================================================
 
-  describe("process", function()
+  describe("processSide reload cycle", function()
+    ---Run one reload cycle for Taiwan with the given ground slice, system config and policy mode
+    ---@param groundState table
+    ---@param missileSystemConfigMap table
+    ---@param isAuto boolean
+    local function processTaiwan(groundState, missileSystemConfigMap, isAuto)
+      local config = { blue = { ground = { missileSystemTypes = missileSystemConfigMap, policy = { isAuto = isAuto } } } }
+      local saveData = { blue = { ground = groundState } }
+      MissileSystem.processSide(config, saveData, constants.SIDES.BLUE)
+    end
+
     -- Positive: each enabled system gets a run context with its own config and the shared isAuto, plus sideName
     it("should call Cycle.process with each system context and its config", function()
       local srbmState = { enabled = true, id = "srbm" }
@@ -177,7 +318,7 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundState, missileSystemConfigMap, true, "Taiwan")
+      processTaiwan(groundState, missileSystemConfigMap, true)
 
       assert.stub(cycleProcessStub).was.called(2)
       assert.stub(cycleProcessStub).was.called_with(srbmState, match.is_same({ systemConfig = srbmConfig, isAuto = true }),
@@ -209,7 +350,7 @@ describe("MissileSystem", function()
         return {}
       end)
 
-      MissileSystem.process(groundState, missileSystemConfigMap, true, "Taiwan")
+      processTaiwan(groundState, missileSystemConfigMap, true)
 
       assert.stub(cycleProcessStub).was.called(2) -- MLRS disabled is skipped
       assert.stub(logStub).was.called(1)
@@ -234,7 +375,7 @@ describe("MissileSystem", function()
       local missileSystemConfigMap = {}
       trackStub(Cycle, "process").returns({ { tag = "OK", fields = { unit = "SRBM1", action = "reload_done" } } })
 
-      MissileSystem.process(groundState, missileSystemConfigMap, false, "Taiwan")
+      processTaiwan(groundState, missileSystemConfigMap, false)
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "mode=manual", 1, true))
@@ -257,7 +398,7 @@ describe("MissileSystem", function()
         }
       })
 
-      MissileSystem.process(groundState, missileSystemConfigMap, true, "Taiwan")
+      processTaiwan(groundState, missileSystemConfigMap, true)
 
       assert.stub(logStub).was_not.called()
       assert.stub(errorStub).was.called(1)
@@ -280,7 +421,7 @@ describe("MissileSystem", function()
 
       local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
-      MissileSystem.process(groundState, missileSystemConfigMap, false, "Taiwan")
+      processTaiwan(groundState, missileSystemConfigMap, false)
 
       assert.stub(cycleProcessStub).was.called(1)
       assert.stub(cycleProcessStub).was.called_with(srbmState, match.is_same({ systemConfig = srbmConfig, isAuto = false }),
@@ -320,17 +461,25 @@ describe("MissileSystem", function()
 
   describe("processSide", function()
     -- Positive: each side runs with its own ground slice, ground config and isAuto from policy
-    it("should pass the side's slice, config and policy mode to process", function()
+    it("should run each side's cycle on its own slice, config and policy mode", function()
       local config, saveData = makeSides()
-      local processStub = trackStub(MissileSystem, "process")
+      local redState = { enabled = true }
+      local blueState = { enabled = true }
+      local redConfig = { reloadTime = 300 }
+      local blueConfig = { reloadTime = 600 }
+      config.red.ground.missileSystemTypes = { srbm = redConfig }
+      config.blue.ground.missileSystemTypes = { srbm = blueConfig }
+      saveData.red.ground.missileSystemTypes = { srbm = redState }
+      saveData.blue.ground.missileSystemTypes = { srbm = blueState }
+      local cycleProcessStub = trackStub(Cycle, "process").returns({})
 
       MissileSystem.processSide(config, saveData, constants.SIDES.RED)
       MissileSystem.processSide(config, saveData, constants.SIDES.BLUE)
 
-      assert.stub(processStub).was.called(2)
-      assert.stub(processStub).was.called_with(saveData.red.ground, config.red.ground.missileSystemTypes, true,
+      assert.stub(cycleProcessStub).was.called(2)
+      assert.stub(cycleProcessStub).was.called_with(redState, match.is_same({ systemConfig = redConfig, isAuto = true }),
         constants.SIDES.RED)
-      assert.stub(processStub).was.called_with(saveData.blue.ground, config.blue.ground.missileSystemTypes, false,
+      assert.stub(cycleProcessStub).was.called_with(blueState, match.is_same({ systemConfig = blueConfig, isAuto = false }),
         constants.SIDES.BLUE)
     end)
   end)
@@ -393,27 +542,6 @@ describe("MissileSystem", function()
       MissileSystem.ensureGroundState(config, saveData, constants.SIDES.BLUE)
 
       assert.stub(seedStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground)
-    end)
-  end)
-
-  -- ============================================================================
-  -- redeployFromControlPanel
-  -- ============================================================================
-
-  describe("redeployFromControlPanel", function()
-    -- Positive: setup entries become layouts that redeploy the side's config and slice
-    it("should redeploy the side with layouts built from the setup entries", function()
-      local config, saveData = makeSides()
-      local entries = { { unitname = "FU-1" } }
-      local layouts = { { unitname = "FU-1" } }
-      local buildLayoutsStub = trackStub(ControlPanelLayout, "buildLayouts").returns(layouts)
-      local redeployStub = trackStub(MissileSystem, "redeploy")
-
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
-
-      assert.stub(buildLayoutsStub).was.called_with(entries)
-      assert.stub(redeployStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
-        constants.SIDES.BLUE, layouts)
     end)
   end)
 
@@ -639,53 +767,6 @@ describe("MissileSystem", function()
 
       assert.is_false(processed)
       assert.stub(logStub).was_not.called()
-    end)
-  end)
-
-  -- ============================================================================
-  -- isLowAmmo
-  -- ============================================================================
-
-  describe("isLowAmmo", function()
-    -- Positive: the unit's own threshold and weapon DBID drive the check
-    it("should report low ammo using the firing unit's threshold and weapon", function()
-      local firingUnitState = { name = "FU1", ammoThreshold = 40, weaponDBID = 7 }
-      local firingUnit = { name = "FU1" }
-      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(true)
-
-      local isLow = MissileSystem.isLowAmmo(firingUnitState, firingUnit)
-
-      assert.is_true(isLow)
-      assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 7)
-    end)
-  end)
-
-  -- ============================================================================
-  -- getFiringUnitState
-  -- ============================================================================
-
-  describe("getFiringUnitState", function()
-    local function makeGroundState()
-      return { missileSystemTypes = { srbm = { firingUnits = { FU1 = { name = "FU1" } } } } }
-    end
-
-    -- Positive: the system name is matched in any case
-    it("should resolve the context from an upper-case system name", function()
-      local groundState = makeGroundState()
-
-      local firingUnitState = MissileSystem.getFiringUnitState(groundState, "SRBM", "FU1")
-
-      assert.are.equal(groundState.missileSystemTypes.srbm.firingUnits.FU1, firingUnitState)
-    end)
-
-    -- Negative: an unknown unit resolves to nothing
-    it("should return nil for an unknown firing unit", function()
-      assert.is_nil(MissileSystem.getFiringUnitState(makeGroundState(), "srbm", "Ghost"))
-    end)
-
-    -- Negative: an unknown system resolves to nothing
-    it("should return nil for an unknown system", function()
-      assert.is_nil(MissileSystem.getFiringUnitState(makeGroundState(), "glcm", "FU1"))
     end)
   end)
 
@@ -1373,15 +1454,18 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- redeploy
+  -- redeployFromControlPanel
   -- ============================================================================
 
-  describe("redeploy", function()
-    -- Positive: layouts are applied first, then zones, units and state are rebuilt in order
-    it("should apply layouts, then rebuild triggers, units and contexts in order", function()
-      local missileSystemConfigMap = {}
-      local groundState = {}
+  describe("redeployFromControlPanel", function()
+    -- Positive: setup entries become layouts applied first, then zones, units and state are rebuilt in order
+    it("should apply layouts from the setup entries, then rebuild triggers, units and contexts in order", function()
+      local config, saveData = makeSides()
+      local missileSystemConfigMap = config.blue.ground.missileSystemTypes
+      local groundState = saveData.blue.ground
+      local entries = { { unitname = "FU-1" } }
       local layouts = { { category = "srbm", unitname = "FU-1", operationalArea = { name = "#NEW" } } }
+      local buildLayoutsStub = trackStub(ControlPanelLayout, "buildLayouts").returns(layouts)
       local newAreas = { { name = "#NEW" } }
       local oldAreas = { { name = "OPAREA-OLD" } }
       local calls = {}
@@ -1400,8 +1484,9 @@ describe("MissileSystem", function()
         table.insert(calls, "initMissileSystemStates")
       end)
 
-      MissileSystem.redeploy(missileSystemConfigMap, groundState, "Taiwan", layouts)
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 
+      assert.stub(buildLayoutsStub).was.called_with(entries)
       assert.are.same({ "updateLayouts", "initEventTriggers", "addMissileSystems", "initMissileSystemStates" }, calls)
       assert.stub(triggersStub).was.called_with(newAreas, oldAreas, {
         constants.POSITION_TYPES.RELOAD_POINT,

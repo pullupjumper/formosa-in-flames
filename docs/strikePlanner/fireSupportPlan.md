@@ -22,9 +22,8 @@
 |---|---|
 | `src.modules.attackManager` | 透過 `attackContacts()` 對目標 GUID 清單發射武器。 |
 | `src.utils.gameUtils` | 使用 `isAfterStartTime()` 判斷 FST 是否已達啟動時間。 |
-| `src.utils.gameApi` | 透過 `ScenEdit_GetUnit()` 取得實體單位，透過 `ScenEdit_CurrentTime()` 寫入 stow 起始時間。 |
 | `src.utils.logFormat` | 透過 `LogFormat.report` 收集並輸出 `[OK]`／`[SKIP]` 行。 |
-| `src.modules.missileSystem.init` | 檢查彈量並移動發射單元至射擊點。 |
+| `src.modules.missileSystem.init` | `sendToFiringPoint()` 派出發射單元並回報是否就位或不見；`startStow()` 射擊後收車。 |
 | `src.core.constants` | 使用 `MISSILE_SYSTEM_STATE` 與 `TAGS.GROUND`。 |
 
 ---
@@ -33,11 +32,10 @@
 
 ### Firing Unit Deployment
 
-`processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 會由 `deploySingleFiringUnit()` 取得實體單位與 runtime context：
+`processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 以 `MissileSystem.sendToFiringPoint(saveData.red.ground, task.missileSystemType, firingUnit.name)` 交給 missileSystem：
 
-1. `GameApi.ScenEdit_GetUnit(firingUnit.name)` 取得 CMO 實體單位。
-2. `MissileSystem.getFiringUnitState(saveData.red.ground, task.missileSystemType, firingUnit.name)` 取得 runtime context。實體或 context 任一不存在，都視同陣亡、從 FST 移除。
-3. `MissileSystem.sendToFiringPoint()` 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。
+1. missileSystem 自己取得 CMO 實體單位與 runtime context。任一不存在就回報單位不見，本模組視同陣亡、從 FST 移除。
+2. 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。
 
 若任一 firing unit 尚未就位，該 FST 會被列入 pending 結果，並在日誌中輸出 `reason=firing_units_not_in_position` 與單位名稱。
 
@@ -105,8 +103,6 @@ flowchart TD
     PROCESS["processActiveMatrix()"]
     DEPLOY_TASK["遍歷已達 startTime 的 FST"]
     DEPLOY_UNIT["deployTaskFiringUnits()"]
-    GET_UNIT["GameApi.ScenEdit_GetUnit()"]
-    GET_CTX["讀取 firingUnitState"]
     SEND["MissileSystem.sendToFiringPoint()"]
     STATIC{"已在射擊位置?"}
     ALL_READY{"matrix.allFiringUnitsInPosition?"}
@@ -126,9 +122,7 @@ flowchart TD
     ACTIVE -->|是| PROCESS
     PROCESS --> DEPLOY_TASK
     DEPLOY_TASK --> DEPLOY_UNIT
-    DEPLOY_UNIT --> GET_UNIT
-    GET_UNIT --> GET_CTX
-    GET_CTX --> SEND
+    DEPLOY_UNIT --> SEND
     SEND --> STATIC
     STATIC --> PROCESS
     PROCESS --> ALL_READY
@@ -206,7 +200,7 @@ saveData.red.ground
 | `config.logging.modules[constants.TAGS.GROUND]` | 控制 `constants.TAGS.GROUND` 日誌是否 verbose。 |
 | `config.red.ground.missileSystemTypes.<system>.reloadTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
 | `config.red.ground.missileSystemTypes.<system>.stowTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.stowTime`，供打擊後 stow 視窗使用。 |
-| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitState` 後由 `MissileSystem.isLowAmmo()` 使用。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitState` 後由 `MissileSystem.sendToFiringPoint()` 內部的低彈量判斷使用。 |
 | `config.red.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitState` 後用於彈量檢查與發射單元武器設定。 |
 | `config.red.fireSupportTaskTemplates.*.target.minTargetCount` | 上游 `fsemBuilder` 建立 FSEM 前用來過濾目標數不足的 FST；本模組執行時不直接讀取。 |
 | `config.red.fireSupportTaskTemplates.*.target.ammoPerTarget` | 進入 executable FST 後成為 `task.target.ammoPerTarget`，本模組傳給 `AttackManager.attackContacts()` 的 `qty`。 |
@@ -241,7 +235,6 @@ saveData.red.ground
 
 | helper | 責任 | 主要輸入 | 主要輸出 |
 |---|---|---|---|
-| `deploySingleFiringUnit()` | 取得實體單位與 context，交給 `MissileSystem.sendToFiringPoint()`，並回報是否就位或已不存在。 | `saveData`, `task`, `firingUnit` | `inPosition`, `unitMissing` |
 | `deployTaskFiringUnits()` | 部署一個 FST 的所有 firing units。 | `saveData`, `task` | `allInPosition`, `notReadyNames` |
 | `startFireSupportTasks()` | 對可執行 FST 發射武器並標記完成。 | `saveData`, `matrix` | `{ taskName, fired }[]` |
 | `isMatrixFinished()` | 判斷 FSEM 內所有 FST 是否完成。 | `matrix` | `boolean` |

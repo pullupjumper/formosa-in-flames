@@ -54,7 +54,7 @@ flowchart TD
 
 ### 為什麼快取只活一次 execute()
 
-`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableFiringUnits()` → `validateFiringUnitStatus()`，內含兩個只活一趟的快取：
+`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableFiringUnits()` → `evaluateFiringUnitStatus()`，內含兩個只活一趟的快取：
 
 | 欄位 | 取代的行為 |
 |---|---|
@@ -67,7 +67,7 @@ flowchart TD
 
 ### 為什麼先 GetUnit 再比對 state
 
-`validateFiringUnitStatus()` 刻意維持「先查 CMO unit，再比對 `state`」的順序，而不是把便宜的 state 比較提前。
+`MissileSystem.evaluateReadiness()` 刻意維持「先查 CMO unit，再比對 `state`」的順序，而不是把便宜的 state 比較提前。
 
 把 state 提前雖然省一次查詢，但已被摧毀且狀態非 `HIDE` 的單位會從 `unit_not_found` 變成 `bad_state`——日誌上就丟失了「這個旅已經沒了」的訊號，只剩一個看起來像暫時性問題的狀態碼。重複查詢的成本改由 `firingUnitCache` 消除。
 
@@ -86,7 +86,7 @@ flowchart TD
 | `firingBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
 | `firingLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
 
-`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.getFiringUnitState()` 會以 nil key 讀取而回傳 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
+`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.evaluateReadiness()` 會以 nil key 讀取 runtime state 而得到 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
 
 ### 為什麼目標以 FST 索引為 key
 
@@ -211,7 +211,7 @@ SAM 任務依慣例排除在 stow 之外。
 |---|---|
 | `src.modules.strikePlanner.operationBatch` | `run()` 驅動每個 tick：篩選 ground operations、判定觀察窗、依 outcome 標記或移除 operation。 |
 | `src.modules.strikePlanner.dynamicPlan` | `evaluateTargets()` 依 FST target template 取得可打擊目標；`insert()` 命名、寫入 `fireSupportPlan` 並登記 generated operation。 |
-| `src.modules.missileSystem.init` | `isLowAmmo()` 檢查發射單元彈量是否低於門檻。 |
+| `src.modules.missileSystem.init` | `evaluateReadiness()` 判斷發射單元能否派任務（runtime state、存在、`HIDE`、彈量），回傳值即日誌計數鍵；`startStow()` 退役 FSEM 時收車。 |
 | `src.utils.gameApi` | `ScenEdit_CurrentTime()` 取目前時間、`ScenEdit_GetUnit()` 驗證發射單元是否仍存在。 |
 | `src.utils.utils` | `deepCopy()`，用於 matrix 與 FST template 拷貝。 |
 | `src.utils.logFormat` | `report()` 收集並輸出處理摘要。 |

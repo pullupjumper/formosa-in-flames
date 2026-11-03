@@ -158,19 +158,17 @@ describe("FireSupportPlan", function()
   -- ============================================================================
 
   describe("firing unit deployment", function()
-    -- Positive: each live unit is handed to missileSystem with its runtime state
+    -- Positive: each unit is handed to missileSystem by its ground state, system and name
     it("should send each firing unit to its firing point through MissileSystem", function()
       local plannerState = makePlannerState({ firingUnitState = constants.MISSILE_SYSTEM_STATE.HIDE })
-      local mockUnit = { guid = "UNIT-1", name = "Battery-1" }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
-      trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
+      local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
       FireSupportPlan.process(plannerState)
 
       assert.stub(stubSend).was.called(1)
-      assert.stub(stubSend).was.called_with(plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"], mockUnit)
+      assert.stub(stubSend).was.called_with(plannerState.ground, "SRBM", "Battery-1")
     end)
 
     -- Positive: all units at firing point
@@ -212,14 +210,12 @@ describe("FireSupportPlan", function()
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"] = nil
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "UNIT-1", name = "Battery-1" }))
-      local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint"))
 
       FireSupportPlan.process(plannerState)
 
       local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.are.equal(0, #task.firingUnits)
       assert.is_true(task.isFinished)
-      assert.stub(stubSend).was_not.called()
     end)
 
     -- Negative: not at STATIC state
@@ -253,7 +249,7 @@ describe("FireSupportPlan", function()
         if name == "Battery-2" then return { guid = "U2", name = "Battery-2" } end
         return nil
       end))
-      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
       FireSupportPlan.process(plannerState)
 
@@ -425,7 +421,7 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
       FireSupportPlan.process(plannerState)
@@ -670,7 +666,7 @@ describe("FireSupportPlan", function()
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
-      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
       FireSupportPlan.process(plannerState)
 
@@ -777,7 +773,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
         return { guid = "U-" .. name, name = name }
       end))
-      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false))
+      trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
       FireSupportPlan.process(plannerState)
 

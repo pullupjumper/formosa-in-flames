@@ -87,27 +87,37 @@ local function startMoveToFiringPoint(firingUnitState, firingUnit)
   end
 end
 
----Check if a firing unit is below its own ammunition threshold
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
----@return boolean # Whether it is low ammunition
-function MissileSystem.isLowAmmo(firingUnitState, firingUnit)
-  return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+---Find a firing unit runtime state by missile system and unit name
+---@param groundState SBJ__GroundState
+---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnitName string
+---@return SBJ__FiringUnitState|nil # Firing unit runtime state, or nil when missing
+local function findFiringUnitState(groundState, missileSystemType, firingUnitName)
+  local systemState = groundState.missileSystemTypes[string.lower(missileSystemType)] --[[@as SBJ__MissileSystemState?]]
+  return systemState and systemState.firingUnits and systemState.firingUnits[firingUnitName]
 end
 
 ---Send a firing unit from its hide area to its firing point when it is ready
 ---A unit is ready when it is hiding with enough ammunition; units already out are left alone.
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
+---@param groundState SBJ__GroundState
+---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnitName string
 ---@return boolean inPosition Whether the unit is at its firing point
-function MissileSystem.sendToFiringPoint(firingUnitState, firingUnit)
+---@return boolean isMissing Whether the unit no longer exists in game or has no runtime state
+function MissileSystem.sendToFiringPoint(groundState, missileSystemType, firingUnitName)
+  local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
+  local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
+  if not firingUnit or not firingUnitState then
+    return false, true
+  end
+
   if firingUnitState.state == constants.MISSILE_SYSTEM_STATE.HIDE and
       not Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
     Concealment.moveFromHideArea(firingUnitState, firingUnit)
     startMoveToFiringPoint(firingUnitState, firingUnit)
   end
 
-  return firingUnitState.state == constants.MISSILE_SYSTEM_STATE.STATIC
+  return firingUnitState.state == constants.MISSILE_SYSTEM_STATE.STATIC, false
 end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
@@ -124,14 +134,33 @@ function MissileSystem.getAmmoInventory(groundState, missileSystemType, sideName
   return Ammo.getInventory(systemState, sideName)
 end
 
----Resolve a firing unit runtime state by missile system and unit name
+---Evaluate whether a firing unit can take a fire support task, and why not
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnitName string
----@return SBJ__FiringUnitState|nil # Firing unit runtime state, or nil when missing
-function MissileSystem.getFiringUnitState(groundState, missileSystemType, firingUnitName)
-  local systemState = groundState.missileSystemTypes[string.lower(missileSystemType)] --[[@as SBJ__MissileSystemState?]]
-  return systemState and systemState.firingUnits and systemState.firingUnits[firingUnitName]
+---@param getUnit fun(name: string): CMO__Unit|nil Called only when the unit has a runtime state
+---@return missileSystemReadiness
+function MissileSystem.evaluateReadiness(groundState, missileSystemType, firingUnitName, getUnit)
+  local readiness = constants.MISSILE_SYSTEM_READINESS
+  local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
+  if not firingUnitState then
+    return readiness.NO_STATE
+  end
+
+  local firingUnit = getUnit(firingUnitName)
+  if not firingUnit then
+    return readiness.UNIT_NOT_FOUND
+  end
+
+  if firingUnitState.state ~= constants.MISSILE_SYSTEM_STATE.HIDE then
+    return readiness.NOT_HIDDEN
+  end
+
+  if Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
+    return readiness.LOW_AMMO
+  end
+
+  return readiness.READY
 end
 
 ---Start the stow countdown so the reload cycle sends the firing units back
@@ -149,7 +178,7 @@ function MissileSystem.startStow(groundState, missileSystemType, firingUnits, op
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
   for _, firingUnit in ipairs(firingUnits) do
-    local firingUnitState = MissileSystem.getFiringUnitState(groundState, missileSystemType, firingUnit.name)
+    local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnit.name)
 
     if firingUnitState and not firingUnitState.stowStartTime and (not onlyDeployed or DEPLOYED_STATES[firingUnitState.state]) then
       firingUnitState.stowStartTime = currentTime
@@ -162,7 +191,7 @@ end
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param isAuto boolean
 ---@param sideName string
-function MissileSystem.process(groundState, missileSystemConfigMap, isAuto, sideName)
+local function process(groundState, missileSystemConfigMap, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
   for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
@@ -191,7 +220,7 @@ end
 function MissileSystem.processSide(config, saveData, sideName)
   local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
 
-  MissileSystem.process(
+  process(
     PersistentState.ground(saveData, sideName),
     sideConfig.ground.missileSystemTypes,
     sideConfig.ground.policy.isAuto,
@@ -233,7 +262,7 @@ end
 ---@param groundState SBJ__GroundState
 ---@param sideName string
 ---@param layouts SBJ__MissileSystemLayout[]
-function MissileSystem.redeploy(missileSystemConfigMap, groundState, sideName, layouts)
+local function redeploy(missileSystemConfigMap, groundState, sideName, layouts)
   local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, layouts)
 
   Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
@@ -251,7 +280,7 @@ end
 ---@param sideName string
 ---@param entries SBJ__MissileSystemResult[]
 function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
-  MissileSystem.redeploy(
+  redeploy(
     getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName),
     sideName,
