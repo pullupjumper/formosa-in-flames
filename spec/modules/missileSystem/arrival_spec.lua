@@ -110,10 +110,9 @@ describe("MissileSystem Arrival", function()
     -- Positive: FP + repositioning triggers arriveAtFiringPoint exactly once
     it("should set WCS to free exactly once when entering FP while repositioning", function()
       local unit = makeUnit()
-      local firingUnitState = { name = "FU1" }
+      local firingUnitState = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
-      trackStub(Transitions, "isRepositioning").returns(true)
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
 
       enterArea({
@@ -138,7 +137,6 @@ describe("MissileSystem Arrival", function()
       local unit = makeUnit()
       local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
 
-      trackStub(Transitions, "isRepositioning").returns(false)
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
 
       enterArea({
@@ -159,7 +157,6 @@ describe("MissileSystem Arrival", function()
       local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
 
       local dropContactStub = trackStub(contact, "DropContact")
-      trackStub(Transitions, "isRepositioning").returns(false)
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -179,7 +176,6 @@ describe("MissileSystem Arrival", function()
       local firingUnitState = { name = "FU1" }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
-      trackStub(Transitions, "isRepositioning").returns(false)
       local hideStub = trackStub(Transitions, "hide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
@@ -209,7 +205,6 @@ describe("MissileSystem Arrival", function()
 
       local matchingDropContactStub = trackStub(matchingContact, "DropContact")
       local otherDropContactStub = trackStub(otherContact, "DropContact")
-      trackStub(Transitions, "isRepositioning").returns(false)
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -232,7 +227,6 @@ describe("MissileSystem Arrival", function()
       local firingUnitState = { name = "FU1" }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
-      trackStub(Transitions, "isRepositioning").returns(false)
       local hideStub = trackStub(Transitions, "hide")
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
@@ -264,7 +258,6 @@ describe("MissileSystem Arrival", function()
       local firingUnitState = { name = "FU1" }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
-      trackStub(Transitions, "isRepositioning").returns(false)
       trackStub(Transitions, "hide")
       trackStub(Concealment, "hideUnit")
           .returns(false, { reason = "no_buildings_in_mask", area = "OPAREA-1" })
@@ -292,7 +285,6 @@ describe("MissileSystem Arrival", function()
       local unit = makeUnit({ name = "Unknown", guid = "guid-x" })
       local systemState = makeSystemState()
 
-      local isRepositioningStub = trackStub(Transitions, "isRepositioning").returns(true)
       local hideStub = trackStub(Transitions, "hide")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
@@ -306,7 +298,6 @@ describe("MissileSystem Arrival", function()
         }
       })
 
-      assert.stub(isRepositioningStub).was_not.called()
       assert.stub(hideStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
     end)
@@ -584,9 +575,8 @@ describe("MissileSystem Arrival", function()
     -- Boundary: descriptions outside the "Arrive in <TYPE> " format must not be matched
     it("should ignore descriptions that do not follow the 'Arrive in <TYPE>' format", function()
       local unit = makeUnit()
-      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1" } } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING } } })
 
-      trackStub(Transitions, "isRepositioning").returns(true)
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
       local hideStub = trackStub(Transitions, "hide")
       local settleStub = trackStub(Transitions, "settle")
@@ -616,10 +606,9 @@ describe("MissileSystem Arrival", function()
     -- Boundary: real position type is preferred when areaName contains position-like substrings
     it("should match the real position type when areaName contains position-like substrings", function()
       local unit = makeUnit()
-      local firingUnitState = { name = "FU1" }
+      local firingUnitState = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
-      trackStub(Transitions, "isRepositioning").returns(true)
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
       local hideStub = trackStub(Transitions, "hide")
 
@@ -644,7 +633,7 @@ describe("MissileSystem Arrival", function()
 
       trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
       local settleStub = trackStub(Transitions, "settle")
-      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
+      trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
       trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
@@ -657,7 +646,6 @@ describe("MissileSystem Arrival", function()
 
       assert.stub(settleStub).was.called(1)
       assert.stub(settleStub).was.called_with(systemState, unit, false)
-      assert.stub(getUnitStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
     end)
 
@@ -666,7 +654,6 @@ describe("MissileSystem Arrival", function()
       local unit = makeUnit()
       local disabledState = makeSystemState({ enabled = false, firingUnits = { [unit.name] = { name = "FU1" } } })
 
-      local isRepositioningStub = trackStub(Transitions, "isRepositioning").returns(true)
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
 
       enterArea({
@@ -675,7 +662,6 @@ describe("MissileSystem Arrival", function()
         event = enterEvent("FP"),
       })
 
-      assert.stub(isRepositioningStub).was_not.called()
       assert.stub(arriveAtFiringPointStub).was_not.called()
     end)
   end)

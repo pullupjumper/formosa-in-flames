@@ -1,13 +1,17 @@
-local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
+local LogFormat = require("src.utils.logFormat")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
+local Rules = require("src.modules.missileSystem.rules")
 local Transitions = require("src.modules.missileSystem.transitions")
 
----Reacts to a unit entering one of its battery's FP / HA / RL / AHA zones.
+---Reacts to a unit entering one of its battery's FP / HA / RL / AHA zones:
+---observes the unit, asks Rules for the steps and carries them out.
 local Arrival = {}
+
+local STEP = Rules.STEP
 
 ---Manual mode for flows that must never halt a unit
 local MANUAL_MODE = false
@@ -62,47 +66,28 @@ local function forEachEnabledSystem(groundState, callback)
   end
 end
 
----Handle entering firing point logic for a single missile system state
----Position handlers share one signature so they can be dispatched from a table;
----this one has no behavior switches of its own.
----@param missileSystemType string
----@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
----@return SBJ__LogResult|nil result Deferred log row when state changed
-local function processFiringPoint(missileSystemType, systemState, unit, moveCtx)
-  local firingUnitState = systemState.firingUnits[unit.name]
-  if Transitions.isRepositioning(firingUnitState, moveCtx.isAuto) then
-    Transitions.arriveAtFiringPoint(firingUnitState, unit, moveCtx.isAuto)
+---Arrival steps keyed by Rules.STEP; each one acts on CMO, records the transition and returns its log row
+---@type table<string, fun(stepCtx: SBJ__ArrivalStepContext): SBJ__LogResult|nil>
+local ARRIVAL_STEPS = {
+  [STEP.ARRIVE_AT_FIRING_POINT] = function(stepCtx)
+    local unit = stepCtx.unit
+    Transitions.arriveAtFiringPoint(stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]], unit, stepCtx.moveCtx.isAuto)
     return {
       tag = "OK",
-      fields = { system = missileSystemType, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
+      fields = { system = stepCtx.missileSystemType, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
     }
-  end
+  end,
 
-  return nil
-end
-
----Handle entering hide area logic for a single missile system state
----@param missileSystemType string
----@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param moveCtx SBJ__MoveToPositionContext
----@return SBJ__LogResult|nil result Deferred log row when the hide flow ran
-local function processHideArea(missileSystemType, systemState, unit, moveCtx)
-  local firingUnitState = systemState.firingUnits[unit.name]
-  if not firingUnitState then
-    return nil
-  end
-
-  if moveCtx.hideOnEnterHA and not Ammo.isLowAmmo(unit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
-    Transitions.hide(firingUnitState, unit, moveCtx.isAuto)
+  [STEP.HIDE_FIRING_UNIT] = function(stepCtx)
+    local unit = stepCtx.unit
+    local firingUnitState = stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]]
+    Transitions.hide(firingUnitState, unit, stepCtx.moveCtx.isAuto)
     local success, errorFields = Concealment.hideUnit(firingUnitState, unit)
     if success == false then
       return {
         tag = "WARN",
         fields = LogFormat.merge({
-          system = missileSystemType,
+          system = stepCtx.missileSystemType,
           unit = unit.name,
           action = "concealment_failed",
           state = "HIDE"
@@ -110,46 +95,56 @@ local function processHideArea(missileSystemType, systemState, unit, moveCtx)
       }
     end
 
-    return { tag = "OK", fields = { system = missileSystemType, unit = unit.name, action = "concealed", state = "HIDE" } }
-  end
+    return { tag = "OK", fields = { system = stepCtx.missileSystemType, unit = unit.name, action = "concealed", state = "HIDE" } }
+  end,
 
-  return nil
-end
+  [STEP.BEGIN_RELOAD] = function(stepCtx)
+    local firingUnitState = stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]]
+    Transitions.beginReload(firingUnitState, stepCtx.firingUnit --[[@as CMO__Unit]], stepCtx.moveCtx.isAuto)
+    return {
+      tag = "OK",
+      fields = {
+        system = stepCtx.missileSystemType,
+        unit = firingUnitState.name,
+        action = "reload_started",
+        triggerUnit = stepCtx.unit.name,
+        state = "RELOAD",
+        startedAt = os.date(constants.DATE_FORMAT, firingUnitState.reloadStartTime)
+      }
+    }
+  end,
 
----Handle reload-point fallback when no meeting occurs
----@param missileSystemType string
----@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param moveCtx SBJ__MoveToPositionContext
----@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
-local function processReloadPointNoMeeting(missileSystemType, systemState, unit, moveCtx)
-  -- Use the manual mode instead of moveCtx so a firing unit drifting through RL during repositioning is not halted.
-  Transitions.settle(systemState, unit, MANUAL_MODE)
-  if not moveCtx.hideResupplyOnRLNoMeeting then
+  [STEP.WARN_FIRING_UNIT_NOT_FOUND] = function(stepCtx)
+    return {
+      tag = "WARN",
+      fields = {
+        system = stepCtx.missileSystemType,
+        unit = (stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]]).name,
+        action = "reload_not_started",
+        triggerUnit = stepCtx.unit.name,
+        reason = "firing_unit_not_found"
+      }
+    }
+  end,
+
+  -- The manual mode keeps a firing unit drifting through RL during repositioning from being halted.
+  [STEP.STOP_IN_MANUAL_MODE] = function(stepCtx)
+    Transitions.settle(stepCtx.systemState, stepCtx.unit, MANUAL_MODE)
     return nil
-  end
+  end,
 
-  local resupplyUnitState = systemState.resupplyUnits[unit.name]
-  if not resupplyUnitState then
-    return nil
-  end
-
-  local firingUnitState = systemState.firingUnits[resupplyUnitState.firingUnit]
-  if not firingUnitState then
-    return nil
-  end
-
-  local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitState.name, moveCtx.firingUnitLookupSide)
-  if firingUnit and not Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
-    local success, errorFields = Concealment.hideUnit(resupplyUnitState, unit)
+  [STEP.HIDE_RESUPPLY_UNIT] = function(stepCtx)
+    local unit = stepCtx.unit
+    local pairedFiringUnitName = (stepCtx.pairedFiringUnitState --[[@as SBJ__FiringUnitState]]).name
+    local success, errorFields = Concealment.hideUnit(stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]], unit)
     if success == false then
       return {
         tag = "WARN",
         fields = LogFormat.merge({
-          system = missileSystemType,
+          system = stepCtx.missileSystemType,
           unit = unit.name,
           action = "resupply_concealment_failed",
-          pairedFiringUnit = firingUnitState.name
+          pairedFiringUnit = pairedFiringUnitName
         }, errorFields)
       }
     end
@@ -157,100 +152,131 @@ local function processReloadPointNoMeeting(missileSystemType, systemState, unit,
     return {
       tag = "OK",
       fields = {
-        system = missileSystemType,
+        system = stepCtx.missileSystemType,
         unit = unit.name,
         action = "resupply_concealed",
-        pairedFiringUnit = firingUnitState.name,
+        pairedFiringUnit = pairedFiringUnitName,
         ammoStatus = "sufficient"
       }
     }
-  end
+  end,
 
-  return nil
-end
-
----Handle entering reload point logic for a single missile system state
----@param missileSystemType string
----@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param moveCtx SBJ__MoveToPositionContext
----@return SBJ__LogResult|nil result Deferred log row when the reload flow changed state
-local function processReloadPoint(missileSystemType, systemState, unit, moveCtx)
-  local hasMet, firingUnitState = Meeting.hasMetResupplyUnit(systemState, unit, moveCtx.isAuto)
-
-  if hasMet and firingUnitState then
-    local firingUnit = (unit.name == firingUnitState.name) and unit or
-        GameApi.ScenEdit_GetUnit(firingUnitState.name, unit.side)
-    if firingUnit then
-      Transitions.beginReload(firingUnitState, firingUnit, moveCtx.isAuto)
-      return {
-        tag = "OK",
-        fields = {
-          system = missileSystemType,
-          unit = firingUnitState.name,
-          action = "reload_started",
-          triggerUnit = unit.name,
-          state = "RELOAD",
-          startedAt = os.date(constants.DATE_FORMAT, firingUnitState.reloadStartTime)
-        }
-      }
-    end
-
-    return {
-      tag = "WARN",
-      fields = {
-        system = missileSystemType,
-        unit = firingUnitState.name,
-        action = "reload_not_started",
-        triggerUnit = unit.name,
-        reason = "firing_unit_not_found"
-      }
-    }
-  end
-
-  return processReloadPointNoMeeting(missileSystemType, systemState, unit, moveCtx)
-end
-
----Handle entering ammo holding area logic for a single missile system state
----Position handlers share one signature so they can be dispatched from a table;
----this one has no behavior switches of its own.
----@param missileSystemType string
----@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param moveCtx SBJ__MoveToPositionContext Side-specific switches, unused here
----@return SBJ__LogResult|nil result Deferred log row when the transload flow changed state
-local function processAmmoHoldingArea(missileSystemType, systemState, unit, moveCtx)
-  local hasMet, resupplyUnit = Meeting.hasMetAmmoDepot(systemState, unit, moveCtx.isAuto)
-  local resupplyUnitState = systemState.resupplyUnits[unit.name]
-
-  if resupplyUnitState and hasMet and resupplyUnit then
-    Transitions.beginReload(resupplyUnit, unit, moveCtx.isAuto)
+  [STEP.BEGIN_TRANSLOAD] = function(stepCtx)
+    local metResupplyUnitState = stepCtx.metResupplyUnitState --[[@as SBJ__ResupplyUnitState]]
+    Transitions.beginReload(metResupplyUnitState, stepCtx.unit, stepCtx.moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
-        system = missileSystemType,
-        unit = resupplyUnit.name,
+        system = stepCtx.missileSystemType,
+        unit = metResupplyUnitState.name,
         action = "transload_started",
         state = "RELOAD",
-        startedAt = os.date(constants.DATE_FORMAT, resupplyUnitState.reloadStartTime)
+        startedAt = os.date(constants.DATE_FORMAT, (stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]).reloadStartTime)
       }
     }
-  end
+  end,
 
-  Transitions.settle(systemState, unit, moveCtx.isAuto)
-  return nil
+  [STEP.STOP] = function(stepCtx)
+    Transitions.settle(stepCtx.systemState, stepCtx.unit, stepCtx.moveCtx.isAuto)
+    return nil
+  end,
+}
+
+---Observe a firing unit entering its firing point
+---@param stepCtx SBJ__ArrivalStepContext
+---@return SBJ__ArrivalRuleParams
+local function observeFiringPoint(stepCtx)
+  stepCtx.firingUnitState = stepCtx.systemState.firingUnits[stepCtx.unit.name]
+  return { isAuto = stepCtx.moveCtx.isAuto, firingUnitState = stepCtx.firingUnitState }
 end
 
----Position handlers keyed by the token extracted from the event trigger.
----Every entry takes the same arguments so the dispatch site never has to know
----which of them a given handler actually uses.
----@type table<string, fun(missileSystemType: string, systemState: SBJ__MissileSystemState, unit: CMO__Unit, moveCtx: SBJ__MoveToPositionContext): SBJ__LogResult|nil>
-local POSITION_HANDLERS = {
-  [constants.POSITION_TYPES.FIRING_POINT]      = processFiringPoint,
-  [constants.POSITION_TYPES.HIDE_AREA]         = processHideArea,
-  [constants.POSITION_TYPES.RELOAD_POINT]      = processReloadPoint,
-  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = processAmmoHoldingArea,
+---Observe a firing unit entering its hide area
+---@param stepCtx SBJ__ArrivalStepContext
+---@return SBJ__ArrivalRuleParams
+local function observeHideArea(stepCtx)
+  local unit, moveCtx = stepCtx.unit, stepCtx.moveCtx
+  local firingUnitState = stepCtx.systemState.firingUnits[unit.name]
+  stepCtx.firingUnitState = firingUnitState
+  return {
+    isAuto = moveCtx.isAuto,
+    firingUnitState = firingUnitState,
+    hideOnEnterHA = moveCtx.hideOnEnterHA,
+    isLowAmmo = firingUnitState ~= nil and Ammo.isLowAmmo(unit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID),
+  }
+end
+
+---Observe a unit entering its reload point: the meeting, and the arriving resupply unit's paired firing unit
+---@param stepCtx SBJ__ArrivalStepContext
+---@return SBJ__ArrivalRuleParams
+local function observeReloadPoint(stepCtx)
+  local unit, moveCtx, systemState = stepCtx.unit, stepCtx.moveCtx, stepCtx.systemState
+  local hasMet, metFiringUnitState = Meeting.hasMetResupplyUnit(systemState, unit, moveCtx.isAuto)
+  hasMet = hasMet and metFiringUnitState ~= nil
+  if hasMet and metFiringUnitState then
+    stepCtx.firingUnitState = metFiringUnitState
+    stepCtx.firingUnit = (unit.name == metFiringUnitState.name) and unit or
+        GameApi.ScenEdit_GetUnit(metFiringUnitState.name, unit.side)
+  end
+
+  local resupplyUnitState = systemState.resupplyUnits[unit.name]
+  local pairedFiringUnitState = resupplyUnitState and systemState.firingUnits[resupplyUnitState.firingUnit]
+  local pairedFiringUnit = pairedFiringUnitState and
+      GameApi.ScenEdit_GetUnit(pairedFiringUnitState.name, moveCtx.firingUnitLookupSide)
+  stepCtx.resupplyUnitState = resupplyUnitState
+  stepCtx.pairedFiringUnitState = pairedFiringUnitState
+
+  return {
+    isAuto = moveCtx.isAuto,
+    hasMet = hasMet,
+    hasFiringUnit = stepCtx.firingUnit ~= nil,
+    hideResupplyOnRLNoMeeting = moveCtx.hideResupplyOnRLNoMeeting,
+    resupplyUnitState = resupplyUnitState,
+    pairedFiringUnitState = pairedFiringUnitState,
+    hasPairedFiringUnit = pairedFiringUnit ~= nil,
+    isPairedFiringUnitLowAmmo = pairedFiringUnit ~= nil and
+        Ammo.isLowAmmo(pairedFiringUnit, pairedFiringUnitState.ammoThreshold, pairedFiringUnitState.weaponDBID),
+  }
+end
+
+---Observe a resupply unit entering its ammo holding area
+---@param stepCtx SBJ__ArrivalStepContext
+---@return SBJ__ArrivalRuleParams
+local function observeAmmoHoldingArea(stepCtx)
+  local unit, moveCtx = stepCtx.unit, stepCtx.moveCtx
+  local hasMet, metResupplyUnitState = Meeting.hasMetAmmoDepot(stepCtx.systemState, unit, moveCtx.isAuto)
+  local resupplyUnitState = stepCtx.systemState.resupplyUnits[unit.name]
+  stepCtx.resupplyUnitState = resupplyUnitState
+  stepCtx.metResupplyUnitState = metResupplyUnitState
+  return {
+    isAuto = moveCtx.isAuto,
+    hasMet = resupplyUnitState ~= nil and hasMet and metResupplyUnitState ~= nil,
+  }
+end
+
+---Position observers keyed by the token extracted from the event trigger
+---@type table<string, fun(stepCtx: SBJ__ArrivalStepContext): SBJ__ArrivalRuleParams>
+local POSITION_OBSERVERS = {
+  [constants.POSITION_TYPES.FIRING_POINT]      = observeFiringPoint,
+  [constants.POSITION_TYPES.HIDE_AREA]         = observeHideArea,
+  [constants.POSITION_TYPES.RELOAD_POINT]      = observeReloadPoint,
+  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = observeAmmoHoldingArea,
 }
+
+---Observe one missile system, ask Rules for the steps and run them
+---@param positionType string
+---@param stepCtx SBJ__ArrivalStepContext
+---@return SBJ__LogResult[] rows Log rows of the steps that produced one
+local function processSystem(positionType, stepCtx)
+  local rows = {}
+  local steps = Rules.evaluateArrival(positionType, POSITION_OBSERVERS[positionType](stepCtx))
+  for _, step in ipairs(steps) do
+    local row = ARRIVAL_STEPS[step](stepCtx)
+    if row then
+      table.insert(rows, row)
+    end
+  end
+  return rows
+end
 
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
 ---@param params SBJ__MoveToPositionEventParams
@@ -258,9 +284,7 @@ function Arrival.processMoveToPositionEvent(params)
   local unit = params.unit
   local moveCtx = params.moveCtx
   local positionType = resolvePositionType(params.event)
-  local handler = POSITION_HANDLERS[positionType]
-
-  if not handler then
+  if not positionType or not POSITION_OBSERVERS[positionType] then
     return
   end
 
@@ -271,8 +295,13 @@ function Arrival.processMoveToPositionEvent(params)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
   forEachEnabledSystem(params.groundState, function(systemState, missileSystemType)
-    local row = handler(missileSystemType, systemState, unit, moveCtx)
-    if row then
+    local rows = processSystem(positionType, {
+      missileSystemType = missileSystemType,
+      systemState = systemState,
+      unit = unit,
+      moveCtx = moveCtx
+    })
+    for _, row in ipairs(rows) do
       report.add(row.tag, row.fields)
     end
   end)

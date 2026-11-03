@@ -1534,6 +1534,19 @@ function ScenEdit_DeleteMine(params) end
 ---@field resupplyUnit CMO__Unit Resupply unit in the game
 ---@field results SBJ__LogResult[] Rows the steps add, in step order
 
+---Units and switches shared by the steps of one missile system in a missileSystem UnitEntersArea event
+---Observers fill the unit fields their position needs; steps read only those.
+---@class SBJ__ArrivalStepContext: table
+---@field missileSystemType string Missile system type key (e.g., "srbm")
+---@field systemState SBJ__MissileSystemState Missile system being processed
+---@field unit CMO__Unit Unit that entered the zone
+---@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
+---@field firingUnitState? SBJ__FiringUnitState Arriving firing unit (FP, HA) or the met one (RL)
+---@field firingUnit? CMO__Unit Met firing unit in the game (RL)
+---@field resupplyUnitState? SBJ__ResupplyUnitState Arriving resupply unit (RL, AHA)
+---@field pairedFiringUnitState? SBJ__FiringUnitState Firing unit paired with the arriving resupply unit (RL)
+---@field metResupplyUnitState? SBJ__ResupplyUnitState Resupply unit that met its ammo depot (AHA)
+
 ---Observations for missileSystem Rules.evaluateArrival; each position reads only its own fields
 ---@class SBJ__ArrivalRuleParams: table
 ---@field isAuto boolean Whether the side runs in auto mode
