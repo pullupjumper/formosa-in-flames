@@ -1,0 +1,122 @@
+local GameApi = require("src.utils.gameApi")
+local constants = require("src.core.constants")
+local Movement = require("src.modules.missileSystem.movement")
+
+---The only writer of a battery's state, reload clock and stow clock.
+---Other files issue CMO commands and ask this one to record what the commands mean.
+local Transitions = {}
+
+---Whether a missile system keeps its firing units deployed instead of stowing them
+---SAM never stows and returns straight to its firing point after a reload.
+---@param missileSystemType string Missile system name in any case (e.g., "SAM", "sam")
+---@return boolean # Whether the system stays deployed
+function Transitions.staysDeployed(missileSystemType)
+  return string.lower(missileSystemType) == constants.MISSILE_SYSTEM_TYPES.SAM
+end
+
+---Check if firing unit is currently repositioning
+---@param firingUnitState SBJ__FiringUnitState|nil
+---@param isAuto boolean
+---@return boolean # Whether the unit is repositioning
+function Transitions.isRepositioning(firingUnitState, isAuto)
+  if not firingUnitState then
+    return false
+  end
+
+  if isAuto then
+    return firingUnitState.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+  end
+
+  return true
+end
+
+---Record a move order; the unit is repositioning only when the order went out
+---Takes a Movement command's results as-is so callers can wrap the call directly.
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---@param success boolean
+---@param errorFields table<string, any>|nil
+---@return boolean success
+---@return table<string, any>|nil errorFields
+function Transitions.depart(unitState, success, errorFields)
+  if success then
+    unitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+  end
+
+  return success, errorFields
+end
+
+---Firing unit reached its firing point: ready to fire
+---@param firingUnitState SBJ__FiringUnitState
+---@param firingUnit CMO__Unit
+---@param isAuto boolean
+function Transitions.arriveAtFiringPoint(firingUnitState, firingUnit, isAuto)
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  Movement.applyMode(firingUnit, isAuto, constants.WCS.FREE)
+end
+
+---Firing unit reached its hide area and goes into hiding
+---@param firingUnitState SBJ__FiringUnitState
+---@param firingUnit CMO__Unit
+---@param isAuto boolean
+function Transitions.hide(firingUnitState, firingUnit, isAuto)
+  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.HIDE
+  Movement.applyMode(firingUnit, isAuto, constants.WCS.HOLD)
+end
+
+---Unit met its partner (resupply unit at RL, ammo depot at AHA): start the reload clock
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---@param unit CMO__Unit
+---@param isAuto boolean
+function Transitions.beginReload(unitState, unit, isAuto)
+  unitState.state = constants.MISSILE_SYSTEM_STATE.RELOAD
+  unitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
+  Movement.applyMode(unit, isAuto, constants.WCS.HOLD)
+end
+
+---Start the reload clock of a reloading unit that has none yet
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+function Transitions.ensureReloadClock(unitState)
+  if unitState.reloadStartTime == nil then
+    unitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
+  end
+end
+
+---Reload or transload is done: the unit stands still and its reload clock stops
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+function Transitions.finishReload(unitState)
+  unitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  unitState.reloadStartTime = nil
+end
+
+---Unit arrived without a reload: it stands still and its reload clock stops
+---@param systemState SBJ__MissileSystemState
+---@param unit CMO__Unit
+---@param isAuto boolean
+function Transitions.settle(systemState, unit, isAuto)
+  local unitState = systemState.firingUnits[unit.name] or systemState.resupplyUnits[unit.name]
+
+  if unitState then
+    Transitions.finishReload(unitState)
+    Movement.applyMode(unit, isAuto, constants.WCS.HOLD)
+  end
+end
+
+---Start the stow countdown unless one is already running
+---@param firingUnitState SBJ__FiringUnitState
+---@return boolean # Whether a new countdown started
+function Transitions.beginStow(firingUnitState)
+  if firingUnitState.stowStartTime then
+    return false
+  end
+
+  firingUnitState.stowStartTime = GameApi.ScenEdit_CurrentTime()
+  return true
+end
+
+---Stop the stow countdown once the unit has been sent on
+---@param firingUnitState SBJ__FiringUnitState
+function Transitions.endStow(firingUnitState)
+  firingUnitState.stowStartTime = nil
+end
+
+return Transitions

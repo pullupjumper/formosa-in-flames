@@ -26,16 +26,16 @@
 
 - 觸發來源有兩個：
   - 低於 `ammoThreshold`（由 `Ammo.isLowAmmo` 判定）
-  - FSP 射擊後由 `strikePlanner/fireSupportPlan.lua` 把 `stowStartTime` 設為當前時間
+  - FSP 射擊後 `strikePlanner/fireSupportPlan.lua` 呼叫 `MissileSystem.startStow`，把 `stowStartTime` 設為當前時間
 - 第一個偵測到觸發的循環會把 `stowStartTime` 寫入並 return，留到下個循環才推進
 - 在 `elapsedTime < systemState.stowTime` 期間，車組維持 STATIC 不動，模擬射擊後的收車／撤收時間
 - 倒數結束後依當下彈量分流：
-  - **彈量充足**：呼叫 `Movement.moveToHideArea` 收回 HA，並清掉 `stowStartTime`（典型 FSP 一波打完後的撤收路徑）
+  - **彈量充足**：呼叫 `Movement.moveToHideArea` 收回 HA，並清掉 `stowStartTime`（典型 FSP 一波打完後的撤收路徑）。移動失敗時一樣清掉、不重試，單位維持 `STATIC`
   - **仍然低彈量**：先把對應的彈藥補給車從 HA 拉出（`Concealment.moveFromHideArea`）並送往 RL，再把機動發射車送往 RL，最後清掉 `stowStartTime`
 
 ### Reload 完成條件
 
-`completeFiringUnitReload` 只在 `state == RELOAD` 時才執行（狀態由 `Movement.setReloadStartTime` 切換）：
+`completeFiringUnitReload` 只在 `state == RELOAD` 時才執行（狀態由 RL 事件的 `Transitions.beginReload` 切換）：
 
 - 進入 RELOAD 後若 `reloadStartTime` 尚未設定，會在這裡補上一個起點
 - 透過 `isReadyToReloadFiringUnit` 同時檢查三件事：
@@ -44,7 +44,7 @@
   - `Ammo.isLowAmmo` 仍為 `true`，避免重複裝填
 - 條件達成才呼叫 `Ammo.reloadFiringUnit` 實際補彈
 - 自動模式下，補完後依系統類別決定下一步：
-  - `systemState.name == "sam"` → `Movement.moveToFiringPoint`，盡快恢復防空火網
+  - `Transitions.staysDeployed`（SAM）→ `Movement.moveToFiringPoint`，盡快恢復防空火網
   - 其他 TEL 類 → `Movement.moveToHideArea`，回到 HA 等下一輪
   - 若彈藥補給車仍有存彈且還在作戰區，加碼呼叫 `Concealment.hideUnit` 把它藏回 MASK 建築
 
@@ -120,6 +120,10 @@ flowchart TD
 ```
 
 ---
+
+## 狀態寫入
+
+本檔的狀態與計時器寫入都經 [transitions](transitions.md)：移動用 `Transitions.depart` 包住 `Movement.moveTo*`，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態，留給下一輪或下一次事件。
 
 ## Public API
 

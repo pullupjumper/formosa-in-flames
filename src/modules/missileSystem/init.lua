@@ -9,6 +9,7 @@ local Meeting = require("src.modules.missileSystem.meeting")
 local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Cycle = require("src.modules.missileSystem.cycle")
+local Transitions = require("src.modules.missileSystem.transitions")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Deployment = require("src.modules.missileSystem.deployment")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
@@ -77,7 +78,7 @@ end
 ---@param firingUnitState SBJ__FiringUnitState
 ---@param firingUnit CMO__Unit
 local function startMoveToFiringPoint(firingUnitState, firingUnit)
-  local success, errorFields = Movement.moveToFiringPoint(firingUnitState, firingUnit)
+  local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToFiringPoint(firingUnitState, firingUnit))
   if not success and errorFields then
     Logger.error(LogFormat.line("FAIL", LogFormat.merge({
       module = constants.TAGS.MISSILE_SYSTEM,
@@ -170,18 +171,17 @@ end
 ---@param firingUnits SBJ__FiringUnit[]|nil
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
 function MissileSystem.startStow(groundState, missileSystemType, firingUnits, opts)
-  if not missileSystemType or not firingUnits or string.lower(missileSystemType) == constants.MISSILE_SYSTEM_TYPES.SAM then
+  if not missileSystemType or not firingUnits or Transitions.staysDeployed(missileSystemType) then
     return
   end
 
   local onlyDeployed = opts and opts.onlyDeployed
-  local currentTime = GameApi.ScenEdit_CurrentTime()
 
   for _, firingUnit in ipairs(firingUnits) do
     local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnit.name)
 
-    if firingUnitState and not firingUnitState.stowStartTime and (not onlyDeployed or DEPLOYED_STATES[firingUnitState.state]) then
-      firingUnitState.stowStartTime = currentTime
+    if firingUnitState and (not onlyDeployed or DEPLOYED_STATES[firingUnitState.state]) then
+      Transitions.beginStow(firingUnitState)
     end
   end
 end
@@ -368,8 +368,8 @@ end
 ---@return SBJ__LogResult|nil result Deferred log row when state changed
 local function processFiringPoint(missileSystemType, systemState, unit, moveCtx)
   local firingUnitState = systemState.firingUnits[unit.name]
-  if Movement.isRepositioning(firingUnitState, moveCtx.isAuto) then
-    Movement.setWCSToFree(firingUnitState, unit, moveCtx.isAuto)
+  if Transitions.isRepositioning(firingUnitState, moveCtx.isAuto) then
+    Transitions.arriveAtFiringPoint(firingUnitState, unit, moveCtx.isAuto)
     return {
       tag = "OK",
       fields = { system = missileSystemType, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
@@ -392,7 +392,7 @@ local function processHideArea(missileSystemType, systemState, unit, moveCtx)
   end
 
   if moveCtx.hideOnEnterHA and not Ammo.isLowAmmo(unit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
-    Movement.setStateToHide(firingUnitState, unit, moveCtx.isAuto)
+    Transitions.hide(firingUnitState, unit, moveCtx.isAuto)
     local success, errorFields = Concealment.hideUnit(firingUnitState, unit)
     if success == false then
       return {
@@ -420,7 +420,7 @@ end
 ---@return SBJ__LogResult|nil result Deferred log row when the fallback performed a visible action
 local function processReloadPointNoMeeting(missileSystemType, systemState, unit, moveCtx)
   -- Use the manual mode instead of moveCtx so a firing unit drifting through RL during repositioning is not halted.
-  Movement.setStateToStatic(systemState, unit, MANUAL_MODE)
+  Transitions.settle(systemState, unit, MANUAL_MODE)
   if not moveCtx.hideResupplyOnRLNoMeeting then
     return nil
   end
@@ -478,7 +478,7 @@ local function processReloadPoint(missileSystemType, systemState, unit, moveCtx)
     local firingUnit = (unit.name == firingUnitState.name) and unit or
         GameApi.ScenEdit_GetUnit(firingUnitState.name, unit.side)
     if firingUnit then
-      Movement.setReloadStartTime(firingUnitState, firingUnit, moveCtx.isAuto)
+      Transitions.beginReload(firingUnitState, firingUnit, moveCtx.isAuto)
       return {
         tag = "OK",
         fields = {
@@ -520,7 +520,7 @@ local function processAmmoHoldingArea(missileSystemType, systemState, unit, move
   local resupplyUnitState = systemState.resupplyUnits[unit.name]
 
   if resupplyUnitState and hasMet and resupplyUnit then
-    Movement.setReloadStartTime(resupplyUnit, unit, moveCtx.isAuto)
+    Transitions.beginReload(resupplyUnit, unit, moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
@@ -533,7 +533,7 @@ local function processAmmoHoldingArea(missileSystemType, systemState, unit, move
     }
   end
 
-  Movement.setStateToStatic(systemState, unit, moveCtx.isAuto)
+  Transitions.settle(systemState, unit, moveCtx.isAuto)
   return nil
 end
 

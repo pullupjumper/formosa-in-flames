@@ -399,6 +399,38 @@ describe("MissileSystem Cycle", function()
       assert.are.equal("move_to_hide_area", results[1].fields.action)
       assert.are.equal("no_ha_defined", results[1].fields.reason)
       assert.is_nil(results[1].fields.detail)
+      -- Not stuck REPOSITIONING, and the stow is not retried every cycle
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.is_nil(systemState.firingUnits["Firing Unit Alpha"].stowStartTime)
+    end)
+
+    -- Negative: a resupply unit that cannot reach AHA stays STATIC so the next cycle can retry
+    it("should keep an empty resupply unit STATIC when its AHA move fails", function()
+      local systemState = makeSystemState({
+        firingUnits = {},
+        resupplyUnits = {
+          ["Ammo Sec, Alpha"] = {
+            name = "Ammo Sec, Alpha",
+            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            weaponCountCurrent = 0,
+            weaponCountDefault = 20,
+            operationalArea = {
+              name = "OPAREA-1",
+              RL = { { area = { "RP-001" } } },
+              AHA = {}
+            }
+          }
+        }
+      })
+      local resupplyUnit = { guid = "R1", name = "Ammo Sec, Alpha", side = "Taiwan", inArea = function() return true end }
+
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(resupplyUnit)
+
+      local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
+
+      assert.are.equal("FAIL", results[1].tag)
+      assert.are.equal("move_to_ammo_holding_area", results[1].fields.action)
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
     end)
 
     -- Positive: moves firing unit to hide area when stow elapsed and ammo sufficient in auto mode

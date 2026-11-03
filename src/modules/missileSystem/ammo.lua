@@ -1,6 +1,5 @@
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
-local constants = require("src.core.constants")
 local Shared = require("src.modules.missileSystem.shared")
 
 local Ammo = {}
@@ -15,9 +14,6 @@ function Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
     resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + ammoToTransfer
     ammoDepotState.weaponCountCurrent = ammoDepotState.weaponCountCurrent - ammoToTransfer
   end
-
-  resupplyUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
-  resupplyUnitState.reloadStartTime = nil
 end
 
 ---Reload ammunition for a single unit
@@ -62,8 +58,6 @@ function Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, weaponDBID, s
     totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitState)
   end
 
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
-  firingUnitState.reloadStartTime = nil
   return totalLoaded
 end
 

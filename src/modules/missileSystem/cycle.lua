@@ -6,6 +6,7 @@ local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
+local Transitions = require("src.modules.missileSystem.transitions")
 
 local Cycle = {}
 
@@ -71,8 +72,7 @@ local function startReloadMovement(systemState, runCtx, firingUnitState, firingU
   end
 
   -- Begin the stow countdown the first cycle we detect a redeploy trigger
-  if not firingUnitState.stowStartTime then
-    firingUnitState.stowStartTime = GameApi.ScenEdit_CurrentTime()
+  if Transitions.beginStow(firingUnitState) then
     table.insert(results, {
       tag = "OK",
       fields = {
@@ -92,9 +92,9 @@ local function startReloadMovement(systemState, runCtx, firingUnitState, firingU
 
   -- Stow complete: sufficient ammo -> hide area; low -> reload point
   if not isLowAmmo then
-    local success, errorFields = Movement.moveToHideArea(firingUnitState, firingUnit)
+    local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToHideArea(firingUnitState, firingUnit))
     addCommandResult(results, { unit = firingUnitState.name, action = "move_to_hide_area" }, success, errorFields)
-    firingUnitState.stowStartTime = nil
+    Transitions.endStow(firingUnitState)
     return results
   end
 
@@ -114,11 +114,11 @@ local function startReloadMovement(systemState, runCtx, firingUnitState, firingU
         })
       end
 
-      local success, errorFields = Movement.moveToReloadPoint(
+      local success, errorFields = Transitions.depart(resupplyUnitState, Movement.moveToReloadPoint(
         resupplyUnitState,
         resupplyUnit,
         resupplyUnitState.operationalArea.SHRL
-      )
+      ))
       addCommandResult(results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" }, success, errorFields)
     else
       table.insert(results, {
@@ -141,9 +141,9 @@ local function startReloadMovement(systemState, runCtx, firingUnitState, firingU
     })
   end
 
-  local success, errorFields = Movement.moveToReloadPoint(firingUnitState, firingUnit)
+  local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToReloadPoint(firingUnitState, firingUnit))
   addCommandResult(results, { unit = firingUnitState.name, action = "move_firing_unit_to_reload_point" }, success, errorFields)
-  firingUnitState.stowStartTime = nil
+  Transitions.endStow(firingUnitState)
   return results
 end
 
@@ -161,9 +161,7 @@ local function completeFiringUnitReload(systemState, runCtx, firingUnitState, fi
     return results
   end
 
-  if firingUnitState.reloadStartTime == nil then
-    firingUnitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
-  end
+  Transitions.ensureReloadClock(firingUnitState)
 
   local hasMet = Meeting.hasMetResupplyUnit(systemState, firingUnit, isAuto)
   local isReadyToReload = isReadyToReloadFiringUnit(firingUnitState, systemConfig, hasMet, firingUnit)
@@ -175,6 +173,7 @@ local function completeFiringUnitReload(systemState, runCtx, firingUnitState, fi
   local resupplyUnitState = systemState.resupplyUnits[firingUnitState.resupplyUnit]
   local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitState.name, firingUnit.side)
   local loaded = Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, firingUnitState.weaponDBID, firingUnit.side)
+  Transitions.finishReload(firingUnitState)
   table.insert(results, {
     tag = "OK",
     fields = {
@@ -199,11 +198,11 @@ local function completeFiringUnitReload(systemState, runCtx, firingUnitState, fi
     end
 
     local success, errorFields
-    if systemState.name == constants.MISSILE_SYSTEM_TYPES.SAM then
-      success, errorFields = Movement.moveToFiringPoint(firingUnitState, firingUnit)
+    if Transitions.staysDeployed(systemState.name) then
+      success, errorFields = Transitions.depart(firingUnitState, Movement.moveToFiringPoint(firingUnitState, firingUnit))
       addCommandResult(results, { unit = firingUnitState.name, action = "move_to_firing_point" }, success, errorFields)
     else
-      success, errorFields = Movement.moveToHideArea(firingUnitState, firingUnit)
+      success, errorFields = Transitions.depart(firingUnitState, Movement.moveToHideArea(firingUnitState, firingUnit))
       addCommandResult(results, { unit = firingUnitState.name, action = "move_to_hide_area" }, success, errorFields)
     end
   end
@@ -236,7 +235,7 @@ local function startResupplyMovement(resupplyUnitState, resupplyUnit, runCtx)
   end
 
   if resupplyUnitState.weaponCountCurrent == 0 and Meeting.findUnitArea(resupplyUnit, resupplyUnitState.operationalArea) then
-    local success, errorFields = Movement.moveToAmmoHoldingArea(resupplyUnitState, resupplyUnit)
+    local success, errorFields = Transitions.depart(resupplyUnitState, Movement.moveToAmmoHoldingArea(resupplyUnitState, resupplyUnit))
     addCommandResult(results, { unit = resupplyUnitState.name, action = "move_to_ammo_holding_area" }, success, errorFields)
   end
 
@@ -257,9 +256,7 @@ local function completeResupplyUnitTransload(systemState, runCtx, resupplyUnitSt
     return results
   end
 
-  if resupplyUnitState.reloadStartTime == nil then
-    resupplyUnitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
-  end
+  Transitions.ensureReloadClock(resupplyUnitState)
 
   local hasMet = Meeting.hasMetAmmoDepot(systemState, resupplyUnit, isAuto)
   local isReadyToReload = isReadyToReloadResupplyUnit(resupplyUnitState, systemConfig, hasMet)
@@ -284,6 +281,7 @@ local function completeResupplyUnitTransload(systemState, runCtx, resupplyUnitSt
   local beforeResupply = resupplyUnitState.weaponCountCurrent
   local beforeDepot = ammoDepotState.weaponCountCurrent
   Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
+  Transitions.finishReload(resupplyUnitState)
   local transferred = resupplyUnitState.weaponCountCurrent - beforeResupply
   table.insert(results, {
     tag = "OK",
@@ -297,7 +295,7 @@ local function completeResupplyUnitTransload(systemState, runCtx, resupplyUnitSt
   })
 
   if isAuto then
-    local success, errorFields = Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, resupplyUnit)
+    local success, errorFields = Transitions.depart(resupplyUnitState, Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, resupplyUnit))
     addCommandResult(results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" }, success, errorFields)
   end
 

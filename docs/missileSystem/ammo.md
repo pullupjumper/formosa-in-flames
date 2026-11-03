@@ -49,8 +49,8 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `transferAmmunition` | `resupplyUnitState, ammoDepotState` | `nil` | 從彈藥儲備點補滿彈藥補給車（受庫存限制） |
-| `reloadFiringUnit` | `firingUnitState, resupplyUnitState, weaponDBID, sideName` | `integer` | 機動車組裝填，回傳總裝填量 |
+| `transferAmmunition` | `resupplyUnitState, ammoDepotState` | `nil` | 從彈藥儲備點補滿彈藥補給車（受庫存限制）；不改狀態，呼叫端接著 `Transitions.finishReload` |
+| `reloadFiringUnit` | `firingUnitState, resupplyUnitState, weaponDBID, sideName` | `integer` | 機動車組裝填，回傳總裝填量；不改狀態，呼叫端接著 `Transitions.finishReload` |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 低彈量判定 |
 | `getInventory` | `systemState, sideName` | `SBJ__AmmoInventoryResult` | 聚合 firing / resupply / ammo 三類子總和並算出整體百分比 |
 

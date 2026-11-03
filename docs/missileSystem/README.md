@@ -179,7 +179,7 @@ flowchart TB
 |---|---|
 | `scheduledReloadHideCheck.lua` | 提供定時檢查，驅動再裝填、機動流程 |
 | `moveToPosition.lua` | 機動車組進入陣地後，立即更新對應狀態與武器管制 |
-| `strikePlanner/fireSupportPlan.lua` | FSP 射擊後寫入 `firingUnitState.stowStartTime`，觸發 stow 等待視窗 |
+| `strikePlanner/fireSupportPlan.lua` | FSP 射擊後呼叫 `MissileSystem.startStow`，觸發 stow 等待視窗 |
 | `addMissileSystems.lua`（special action） | 經 `MissileSystem.deploySide` 創建飛彈系統單位與 context，常用於測試/重部署 |
 | `destroyUnits.lua` / `taiwaneseAssetIsDestroy.lua` | 彈藥車與彈藥庫戰損同步反映到庫存與後續火力支援能力 |
 | `unitStatusUI.lua` | 將狀態與作戰區域可視化，利於除錯與調校 |
@@ -190,6 +190,7 @@ flowchart TB
 
 - [init](init.md)
 - [cycle](cycle.md)
+- [transitions](transitions.md)
 - [movement](movement.md)
 - [meeting](meeting.md)
 - [ammo](ammo.md)

@@ -1,8 +1,8 @@
 local Utils = require("src.utils.utils")
-local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Shared = require("src.modules.missileSystem.shared")
 
+---CMO movement and mode commands; Transitions records what they mean for a unit's state
 local Movement = {}
 
 ---Move units to a randomly selected position
@@ -59,7 +59,6 @@ end
 ---@return boolean success
 ---@return table<string, any>? errorFields
 function Movement.moveToReloadPoint(unitState, unit, positions)
-  unitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
     unitName = unitState.name,
     firingUnit = unit,
@@ -83,7 +82,6 @@ function Movement.moveToHideArea(firingUnitState, firingUnit)
     }
   end
 
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
     unitName = firingUnitState.name,
     firingUnit = firingUnit,
@@ -100,7 +98,6 @@ end
 ---@return boolean success
 ---@return table<string, any>? errorFields
 function Movement.moveToAmmoHoldingArea(resupplyUnitState, resupplyUnit)
-  resupplyUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
     unitName = resupplyUnitState.name,
     firingUnit = resupplyUnit,
@@ -116,7 +113,6 @@ end
 ---@return boolean success
 ---@return table<string, any>? errorFields
 function Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, resupplyUnit)
-  resupplyUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
     unitName = resupplyUnitState.name,
     firingUnit = resupplyUnit,
@@ -133,7 +129,6 @@ end
 ---@return boolean success
 ---@return table<string, any>? errorFields
 function Movement.moveToFiringPoint(firingUnitState, firingUnit)
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   return moveUnitToPosition({
     unitName = firingUnitState.name,
     firingUnit = firingUnit,
@@ -143,70 +138,14 @@ function Movement.moveToFiringPoint(firingUnitState, firingUnit)
   })
 end
 
----Set firing unit reload start time
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
+---Hold or release a unit group in place under the auto/manual mode, with the given weapon control status
+---@param unit CMO__Unit
 ---@param isAuto boolean
-function Movement.setReloadStartTime(firingUnitState, firingUnit, isAuto)
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.RELOAD
-  firingUnitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
-  Shared.setGroupUnitProperties(firingUnit, function(unit)
-    return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
+---@param wcs integer
+function Movement.applyMode(unit, isAuto, wcs)
+  Shared.setGroupUnitProperties(unit, function()
+    return Shared.buildModeProperties(isAuto, wcs)
   end)
-end
-
----Set firing unit weapon control status to free fire
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
----@param isAuto boolean
-function Movement.setWCSToFree(firingUnitState, firingUnit, isAuto)
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
-  Shared.setGroupUnitProperties(firingUnit, function(unit)
-    return Shared.buildModeProperties(isAuto, constants.WCS.FREE)
-  end)
-end
-
----Set firing unit status to hide
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
----@param isAuto boolean
-function Movement.setStateToHide(firingUnitState, firingUnit, isAuto)
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.HIDE
-  Shared.setGroupUnitProperties(firingUnit, function(unit)
-    return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
-  end)
-end
-
----Reset unit state to STATIC and clear reload timer
----@param systemState SBJ__MissileSystemState
----@param firingUnit CMO__Unit
----@param isAuto boolean
-function Movement.setStateToStatic(systemState, firingUnit, isAuto)
-  local unitState = systemState.firingUnits[firingUnit.name] or systemState.resupplyUnits[firingUnit.name]
-
-  if unitState then
-    unitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
-    unitState.reloadStartTime = nil
-    Shared.setGroupUnitProperties(firingUnit, function(unit)
-      return Shared.buildModeProperties(isAuto, constants.WCS.HOLD)
-    end)
-  end
-end
-
----Check if firing unit is currently repositioning
----@param firingUnitState SBJ__FiringUnitState|nil
----@param isAuto boolean
----@return boolean # Whether the unit is repositioning
-function Movement.isRepositioning(firingUnitState, isAuto)
-  if not firingUnitState then
-    return false
-  end
-
-  if isAuto then
-    return firingUnitState.state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING
-  end
-
-  return true
 end
 
 return Movement
