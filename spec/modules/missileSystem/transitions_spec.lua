@@ -37,37 +37,6 @@ describe("MissileSystem Transitions", function()
     activeStubs = {}
   end)
 
-  describe("staysDeployed", function()
-    -- Positive: SAM stays deployed in any letter case
-    it("should be true for SAM in any case", function()
-      assert.is_true(Transitions.staysDeployed("sam"))
-      assert.is_true(Transitions.staysDeployed("SAM"))
-    end)
-
-    -- Negative: other systems stow
-    it("should be false for other systems", function()
-      assert.is_false(Transitions.staysDeployed("srbm"))
-    end)
-  end)
-
-  describe("isRepositioning", function()
-    -- Boundary: no state means not repositioning
-    it("should return false when firingUnitState is nil", function()
-      assert.is_false(Transitions.isRepositioning(nil, true))
-    end)
-
-    -- Positive: auto mode follows the state
-    it("should follow the REPOSITIONING state in auto mode", function()
-      assert.is_true(Transitions.isRepositioning({ state = STATE.REPOSITIONING }, true))
-      assert.is_false(Transitions.isRepositioning({ state = STATE.STATIC }, true))
-    end)
-
-    -- Positive: manual mode has no REPOSITIONING, so every arrival counts
-    it("should always return true in manual mode", function()
-      assert.is_true(Transitions.isRepositioning({ state = STATE.STATIC }, false))
-    end)
-  end)
-
   describe("depart", function()
     -- Positive: a move order that went out marks the unit repositioning
     it("should mark the unit REPOSITIONING when the move succeeded", function()

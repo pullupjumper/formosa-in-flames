@@ -9,6 +9,16 @@ local POSITION = constants.POSITION_TYPES
 local READINESS = constants.MISSILE_SYSTEM_READINESS
 local STEP = Rules.STEP
 
+---Ammo callback that answers isLowAmmo, or fails the test when called
+---@param isLowAmmo boolean|nil nil means the rule must not read ammo
+---@return fun(): boolean
+local function answerLowAmmo(isLowAmmo)
+  return function()
+    assert.is_not_nil(isLowAmmo)
+    return isLowAmmo --[[@as boolean]]
+  end
+end
+
 ---Copy defaults, then apply overrides
 ---@param defaults table
 ---@param overrides table|nil
@@ -62,6 +72,13 @@ describe("MissileSystem Rules", function()
     end)
   end)
 
+  describe("isInPosition", function()
+    it("should be true only for a STATIC unit", function()
+      assert.is_true(Rules.isInPosition({ state = STATE.STATIC }))
+      assert.is_false(Rules.isInPosition({ state = STATE.REPOSITIONING }))
+    end)
+  end)
+
   describe("shouldStow", function()
     local rows = {
       { name = "no state", state = nil, opts = nil, expected = false },
@@ -82,15 +99,15 @@ describe("MissileSystem Rules", function()
 
   describe("evaluateReadiness", function()
     it("should report NOT_HIDDEN for a unit that is not hiding", function()
-      assert.are.equal(READINESS.NOT_HIDDEN, Rules.evaluateReadiness({ state = STATE.STATIC }, false))
+      assert.are.equal(READINESS.NOT_HIDDEN, Rules.evaluateReadiness({ state = STATE.STATIC }, answerLowAmmo(nil)))
     end)
 
     it("should report LOW_AMMO for a hiding unit with low ammo", function()
-      assert.are.equal(READINESS.LOW_AMMO, Rules.evaluateReadiness({ state = STATE.HIDE }, true))
+      assert.are.equal(READINESS.LOW_AMMO, Rules.evaluateReadiness({ state = STATE.HIDE }, answerLowAmmo(true)))
     end)
 
     it("should report READY for a hiding unit with enough ammo", function()
-      assert.are.equal(READINESS.READY, Rules.evaluateReadiness({ state = STATE.HIDE }, false))
+      assert.are.equal(READINESS.READY, Rules.evaluateReadiness({ state = STATE.HIDE }, answerLowAmmo(false)))
     end)
   end)
 
@@ -98,10 +115,10 @@ describe("MissileSystem Rules", function()
     runRows({
       { name = "should unhide and move a hiding unit with enough ammo", params = { state = STATE.HIDE, isLowAmmo = false }, steps = { STEP.UNHIDE, STEP.MOVE_TO_FIRING_POINT } },
       { name = "should keep a hiding unit with low ammo", params = { state = STATE.HIDE, isLowAmmo = true }, steps = {} },
-      { name = "should leave a STATIC unit alone", params = { state = STATE.STATIC, isLowAmmo = false }, steps = {} },
-      { name = "should leave a REPOSITIONING unit alone", params = { state = STATE.REPOSITIONING, isLowAmmo = false }, steps = {} },
+      { name = "should leave a STATIC unit alone", params = { state = STATE.STATIC }, steps = {} },
+      { name = "should leave a REPOSITIONING unit alone", params = { state = STATE.REPOSITIONING }, steps = {} },
     }, function(params)
-      return Rules.evaluateSendToFiringPoint({ state = params.state }, params.isLowAmmo)
+      return Rules.evaluateSendToFiringPoint({ state = params.state }, answerLowAmmo(params.isLowAmmo))
     end)
   end)
 

@@ -9,6 +9,7 @@ local Arrival = require("src.modules.missileSystem.arrival")
 local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Cycle = require("src.modules.missileSystem.cycle")
+local Rules = require("src.modules.missileSystem.rules")
 local Transitions = require("src.modules.missileSystem.transitions")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Deployment = require("src.modules.missileSystem.deployment")
@@ -17,12 +18,6 @@ local StatusView = require("src.modules.missileSystem.statusView")
 local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
 
 local MissileSystem = {}
-
----Firing unit states in which the unit is out of its hide area and has to be stowed back
-local DEPLOYED_STATES = {
-  [constants.MISSILE_SYSTEM_STATE.STATIC] = true,
-  [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = true
-}
 
 ---Position types whose zones and triggers are rebuilt when batteries are redeployed
 local REDEPLOY_POSITION_TYPES = {
@@ -45,6 +40,15 @@ local function startMoveToFiringPoint(firingUnitState, firingUnit)
     }, errorFields)))
   end
 end
+
+---Steps of a fire support plan dispatch keyed by Rules.STEP
+---@type table<string, fun(firingUnitState: SBJ__FiringUnitState, firingUnit: CMO__Unit)>
+local SEND_TO_FIRING_POINT_STEPS = {
+  [Rules.STEP.UNHIDE] = function(firingUnitState, firingUnit)
+    Concealment.moveFromHideArea(firingUnitState, firingUnit)
+  end,
+  [Rules.STEP.MOVE_TO_FIRING_POINT] = startMoveToFiringPoint,
+}
 
 ---Find a firing unit runtime state by missile system and unit name
 ---@param groundState SBJ__GroundState
@@ -70,13 +74,15 @@ function MissileSystem.sendToFiringPoint(groundState, missileSystemType, firingU
     return false, true
   end
 
-  if firingUnitState.state == constants.MISSILE_SYSTEM_STATE.HIDE and
-      not Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
-    Concealment.moveFromHideArea(firingUnitState, firingUnit)
-    startMoveToFiringPoint(firingUnitState, firingUnit)
+  local function isLowAmmo()
+    return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
   end
 
-  return firingUnitState.state == constants.MISSILE_SYSTEM_STATE.STATIC, false
+  for _, step in ipairs(Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)) do
+    SEND_TO_FIRING_POINT_STEPS[step](firingUnitState, firingUnit)
+  end
+
+  return Rules.isInPosition(firingUnitState), false
 end
 
 ---Calculate ammunition inventory across firing/resupply/ammo for a missile system
@@ -111,15 +117,9 @@ function MissileSystem.evaluateReadiness(groundState, missileSystemType, firingU
     return readiness.UNIT_NOT_FOUND
   end
 
-  if firingUnitState.state ~= constants.MISSILE_SYSTEM_STATE.HIDE then
-    return readiness.NOT_HIDDEN
-  end
-
-  if Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID) then
-    return readiness.LOW_AMMO
-  end
-
-  return readiness.READY
+  return Rules.evaluateReadiness(firingUnitState, function()
+    return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+  end)
 end
 
 ---Start the stow countdown so the reload cycle sends the firing units back
@@ -129,16 +129,14 @@ end
 ---@param firingUnits SBJ__FiringUnit[]|nil
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
 function MissileSystem.startStow(groundState, missileSystemType, firingUnits, opts)
-  if not missileSystemType or not firingUnits or Transitions.staysDeployed(missileSystemType) then
+  if not missileSystemType or not firingUnits or Rules.staysDeployed(missileSystemType) then
     return
   end
-
-  local onlyDeployed = opts and opts.onlyDeployed
 
   for _, firingUnit in ipairs(firingUnits) do
     local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnit.name)
 
-    if firingUnitState and (not onlyDeployed or DEPLOYED_STATES[firingUnitState.state]) then
+    if firingUnitState and Rules.shouldStow(firingUnitState, opts) then
       Transitions.beginStow(firingUnitState)
     end
   end

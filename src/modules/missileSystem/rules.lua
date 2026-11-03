@@ -73,6 +73,13 @@ function Rules.isRepositioning(firingUnitState, isAuto)
   return true
 end
 
+---Whether a firing unit stands still at its position, ready to fire once at FP
+---@param firingUnitState SBJ__FiringUnitState
+---@return boolean # True if the unit is STATIC
+function Rules.isInPosition(firingUnitState)
+  return firingUnitState.state == STATE.STATIC
+end
+
 ---Whether a stow countdown may start for a firing unit
 ---@param firingUnitState SBJ__FiringUnitState|nil
 ---@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
@@ -86,8 +93,9 @@ function Rules.shouldStow(firingUnitState, opts)
 end
 
 ---Evaluate whether a tracked, present firing unit can take a fire support task
+---The ammo read is a callback because fire support planning asks every tick, and only hiding units need it.
 ---@param firingUnitState SBJ__FiringUnitState
----@param isLowAmmo boolean
+---@param isLowAmmo fun(): boolean Called only for a hiding unit
 ---@return missileSystemReadiness
 function Rules.evaluateReadiness(firingUnitState, isLowAmmo)
   local readiness = constants.MISSILE_SYSTEM_READINESS
@@ -96,7 +104,7 @@ function Rules.evaluateReadiness(firingUnitState, isLowAmmo)
     return readiness.NOT_HIDDEN
   end
 
-  if isLowAmmo then
+  if isLowAmmo() then
     return readiness.LOW_AMMO
   end
 
@@ -106,10 +114,10 @@ end
 ---Evaluate the steps for a fire support plan sending a firing unit to its firing point
 ---Only a hiding unit with enough ammunition leaves; units already out are left alone.
 ---@param firingUnitState SBJ__FiringUnitState
----@param isLowAmmo boolean
+---@param isLowAmmo fun(): boolean Called only for a hiding unit, as in evaluateReadiness
 ---@return string[] steps
 function Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)
-  if firingUnitState.state == STATE.HIDE and not isLowAmmo then
+  if firingUnitState.state == STATE.HIDE and not isLowAmmo() then
     return { STEP.UNHIDE, STEP.MOVE_TO_FIRING_POINT }
   end
 
