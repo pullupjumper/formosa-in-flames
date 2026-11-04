@@ -115,21 +115,47 @@ function MissileSystem.evaluateReadiness(groundState, missileSystemType, firingU
   end)
 end
 
----Start the stow countdown so the reload cycle sends the firing units back
----SAM never stows, and a countdown already running is kept.
+---Find the states of a fire task's firing units that leave their position once the task ends
+---SAM stays on station to guard the airspace, so it has none.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnits SBJ__FiringUnit[]|nil
----@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
-function MissileSystem.startStow(groundState, missileSystemType, firingUnits, opts)
+---@return SBJ__FiringUnitState[]
+local function findLeavingFiringUnitStates(groundState, missileSystemType, firingUnits)
+  local firingUnitStates = {}
   if not missileSystemType or not firingUnits or Rules.staysDeployed(missileSystemType) then
-    return
+    return firingUnitStates
   end
 
   for _, firingUnit in ipairs(firingUnits) do
     local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnit.name)
+    if firingUnitState then
+      table.insert(firingUnitStates, firingUnitState)
+    end
+  end
 
-    if firingUnitState and Rules.shouldStow(firingUnitState, opts) then
+  return firingUnitStates
+end
+
+---End a fire task that fired: its firing units stow, then the reload cycle sends them back
+---A countdown already running is kept.
+---@param groundState SBJ__GroundState
+---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnits SBJ__FiringUnit[]|nil
+function MissileSystem.completeFireTask(groundState, missileSystemType, firingUnits)
+  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnits)) do
+    Transitions.beginStow(firingUnitState)
+  end
+end
+
+---End a fire task that never fired: only firing units already out of their hide area stow
+---A countdown already running is kept.
+---@param groundState SBJ__GroundState
+---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnits SBJ__FiringUnit[]|nil
+function MissileSystem.abortFireTask(groundState, missileSystemType, firingUnits)
+  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnits)) do
+    if Rules.isDeployed(firingUnitState) then
       Transitions.beginStow(firingUnitState)
     end
   end
@@ -167,7 +193,6 @@ end
 ---@param sideName string
 function MissileSystem.processSide(config, saveData, sideName)
   local sideConfig = config[GameUtils.getCachedSideConfig(sideName).field]
-
   process(
     PersistentState.ground(saveData, sideName),
     sideConfig.ground.missileSystemTypes,

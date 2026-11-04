@@ -20,7 +20,8 @@
 |---|---|---|---|
 | `evaluateReadiness` | `groundState, missileSystem, firingUnitName, getUnit` | `missileSystemReadiness` | 判斷發射單位能不能接火力支援任務，回傳 readiness（見下方） |
 | `sendToFiringPoint` | `groundState, missileSystem, firingUnitName` | `boolean, boolean` | `HIDE` 且彈量足夠時卸出隱蔽區並前往 FP（條件在 `Rules.evaluateSendToFiringPoint`）；回傳是否已在 FP（`STATIC`）與單位是否不見（實體或 runtime state 任一不存在） |
-| `startStow` | `groundState, missileSystem, firingUnits, opts?` | `nil` | 啟動 stow 倒數；SAM 略過（`Rules.staysDeployed`）、已有倒數保留；`opts.onlyDeployed` 只處理 `STATIC`／`REPOSITIONING`（`Rules.shouldStow`） |
+| `completeFireTask` | `groundState, missileSystem, firingUnits` | `nil` | 射擊後啟動 stow 倒數；SAM 留在原地（`Rules.staysDeployed`）、已有倒數保留 |
+| `abortFireTask` | `groundState, missileSystem, firingUnits` | `nil` | 任務作廢，只對 `STATIC`／`REPOSITIONING` 啟動 stow 倒數（`Rules.isDeployed`）；SAM 留在原地、已有倒數保留 |
 | `getAmmoInventory` | `groundState, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
 | `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫私有的 `process`（執行循環並輸出結果日誌）；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `moveCtx`，交給 `Arrival.processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |

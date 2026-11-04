@@ -23,7 +23,7 @@
 | `src.modules.attackManager` | 透過 `attackContacts()` 對目標 GUID 清單發射武器。 |
 | `src.utils.gameUtils` | 使用 `isAfterStartTime()` 判斷 FST 是否已達啟動時間。 |
 | `src.utils.logFormat` | 透過 `LogFormat.report` 收集並輸出 `[OK]`／`[SKIP]` 行。 |
-| `src.modules.missileSystem.init` | `sendToFiringPoint()` 派出發射單元並回報是否就位或不見；`startStow()` 射擊後收車。 |
+| `src.modules.missileSystem.init` | `sendToFiringPoint()` 派出發射單元並回報是否就位或不見；`completeFireTask()` 射擊後收車。 |
 | `src.core.constants` | 使用 `MISSILE_SYSTEM_STATE` 與 `TAGS.GROUND`。 |
 
 ---
@@ -67,7 +67,7 @@ AttackManager.attackContacts({
 成功發射後，模組呼叫：
 
 ```lua
-MissileSystem.startStow(saveData.red.ground, task.missileSystemType, task.firingUnits)
+MissileSystem.completeFireTask(saveData.red.ground, task.missileSystemType, task.firingUnits)
 ```
 
 由 missileSystem 替每個 firing unit 啟動 stow 倒數。已有倒數的不覆寫；SAM 任務整批略過，因為 SAM firing unit 不走打擊後 stow 流程。
@@ -110,7 +110,7 @@ flowchart TD
     TASK_READY{"FST 未完成<br/>且已達 startTime?"}
     ATTACK["AttackManager.attackContacts()"]
     FIRED{"fired > 0?"}
-    STOW["MissileSystem.startStow()"]
+    STOW["MissileSystem.completeFireTask()"]
     TASK_DONE["task.isFinished = true"]
     MATRIX_DONE{"isMatrixFinished()?"}
     FINISH["matrix.isFinished = true"]

@@ -65,8 +65,8 @@ missileSystem 的流程分成三層：
 | `evaluateSendToFiringPoint(firingUnitState, isLowAmmo)` | `sendToFiringPoint` | HIDE 且彈量足 → `UNHIDE`、`MOVE_TO_FIRING_POINT` |
 | `evaluateReadiness(firingUnitState, isLowAmmo)` | `evaluateReadiness` | 不是 HIDE → `NOT_HIDDEN`；低彈 → `LOW_AMMO`；否則 `READY` |
 | `isInPosition(firingUnitState)` | `sendToFiringPoint` | `STATIC` 算在位置上 |
-| `shouldStow(firingUnitState, opts)` | `startStow` | `opts.onlyDeployed` 只收 STATIC / REPOSITIONING |
-| `staysDeployed(missileSystemType)` | `startStow`、cycle | SAM 不收車、裝填後回 FP；唯一的 SAM 判斷 |
+| `isDeployed(firingUnitState)` | `abortFireTask` | STATIC / REPOSITIONING 才算已出門 |
+| `staysDeployed(missileSystemType)` | `completeFireTask`、`abortFireTask`、cycle | SAM 守領空，任務結束留在原地，低彈量才撤收去 RL，裝填後回 FP；唯一的 SAM 判斷 |
 | `isRepositioning(firingUnitState, isAuto)` | 抵達 FP | 手動模式沒有 REPOSITIONING，一律算在移動中 |
 
 前兩個的 `isLowAmmo` 是 callback，只在單位 HIDE 時才呼叫：FSP 每輪都會問，移動中的單位不必讀彈量。

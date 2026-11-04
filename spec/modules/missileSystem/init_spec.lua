@@ -624,10 +624,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- startStow
+  -- completeFireTask / abortFireTask
   -- ============================================================================
 
-  describe("startStow", function()
+  describe("completeFireTask / abortFireTask", function()
     local STATE = constants.MISSILE_SYSTEM_STATE
 
     local function makeGroundState()
@@ -658,7 +658,7 @@ describe("MissileSystem", function()
       local groundState = makeGroundState()
       local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.startStow(groundState, "SRBM", firingUnits)
+      MissileSystem.completeFireTask(groundState, "SRBM", firingUnits)
 
       assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
       assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
@@ -669,28 +669,29 @@ describe("MissileSystem", function()
       local groundState = makeGroundState()
       local firingUnits = { { name = "FU-Stowing" } }
 
-      MissileSystem.startStow(groundState, "srbm", firingUnits)
+      MissileSystem.completeFireTask(groundState, "srbm", firingUnits)
 
       assert.are.equal(500, groundState.missileSystemTypes.srbm.firingUnits["FU-Stowing"].stowStartTime)
     end)
 
-    -- Boundary: onlyDeployed leaves units still in their hide area alone
-    it("should skip non-deployed units when onlyDeployed is set", function()
+    -- Boundary: an aborted task leaves units still in their hide area alone
+    it("should skip non-deployed units when the task is aborted", function()
       local groundState = makeGroundState()
       local firingUnits = { { name = "FU-Static" }, { name = "FU-Hide" } }
 
-      MissileSystem.startStow(groundState, "SRBM", firingUnits, { onlyDeployed = true })
+      MissileSystem.abortFireTask(groundState, "SRBM", firingUnits)
 
       assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
       assert.is_nil(groundState.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
     end)
 
-    -- Negative: SAM never stows
+    -- Negative: SAM stays on station when its task ends
     it("should not stamp SAM firing units", function()
       local groundState = makeGroundState()
       local firingUnits = { { name = "SAM-1" } }
 
-      MissileSystem.startStow(groundState, "SAM", firingUnits)
+      MissileSystem.completeFireTask(groundState, "SAM", firingUnits)
+      MissileSystem.abortFireTask(groundState, "SAM", firingUnits)
 
       assert.is_nil(groundState.missileSystemTypes.sam.firingUnits["SAM-1"].stowStartTime)
     end)
@@ -702,10 +703,10 @@ describe("MissileSystem", function()
       local staticUnits = { { name = "FU-Static" } }
 
       assert.has_no.Error(function()
-        MissileSystem.startStow(groundState, "SRBM", ghostUnits)
-        MissileSystem.startStow(groundState, "GLCM", staticUnits)
-        MissileSystem.startStow(groundState, nil, staticUnits)
-        MissileSystem.startStow(groundState, "SRBM", nil)
+        MissileSystem.completeFireTask(groundState, "SRBM", ghostUnits)
+        MissileSystem.completeFireTask(groundState, "GLCM", staticUnits)
+        MissileSystem.completeFireTask(groundState, nil, staticUnits)
+        MissileSystem.completeFireTask(groundState, "SRBM", nil)
       end)
       assert.is_nil(groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
     end)

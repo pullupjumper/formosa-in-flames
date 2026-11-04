@@ -49,8 +49,8 @@ local DEPLOYED_STATES = {
   [STATE.REPOSITIONING] = true
 }
 
----Whether a missile system keeps its firing units deployed instead of stowing them
----SAM never stows and returns straight to its firing point after a reload.
+---Whether a missile system keeps its firing units on station after firing
+---SAM guards the airspace, so it leaves its position only when low on ammo and returns to its firing point after a reload.
 ---@param missileSystemType string Missile system name in any case (e.g., "SAM", "sam")
 ---@return boolean # Whether the system stays deployed
 function Rules.staysDeployed(missileSystemType)
@@ -81,16 +81,12 @@ function Rules.isInPosition(firingUnitState)
   return firingUnitState.state == STATE.STATIC
 end
 
----Whether a stow countdown may start for a firing unit
----@param firingUnitState SBJ__FiringUnitState|nil
----@param opts {onlyDeployed: boolean}|nil onlyDeployed skips units still in their hide area or reloading
----@return boolean # True if the countdown may start
-function Rules.shouldStow(firingUnitState, opts)
-  if not firingUnitState then
-    return false
-  end
-
-  return not (opts and opts.onlyDeployed) or DEPLOYED_STATES[firingUnitState.state] == true
+---Whether a firing unit is out of its hide area, so an aborted fire task has to stow it back
+---HIDE and RELOAD units are left alone; RELOAD already ends in HA.
+---@param firingUnitState SBJ__FiringUnitState
+---@return boolean # True if the unit is STATIC or REPOSITIONING
+function Rules.isDeployed(firingUnitState)
+  return DEPLOYED_STATES[firingUnitState.state] == true
 end
 
 ---Evaluate whether a tracked, present firing unit can take a fire support task

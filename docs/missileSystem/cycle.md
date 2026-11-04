@@ -24,7 +24,7 @@
 
 ## 主要機制
 
-- 收車倒數的觸發來源有兩個：低於 `ammoThreshold`，或 FSP 射擊後 `strikePlanner/fireSupportPlan.lua` 呼叫 `MissileSystem.startStow` 寫入 `stowStartTime`。
+- 收車倒數的觸發來源有兩個：低於 `ammoThreshold`，或 FSP 射擊後 `strikePlanner/fireSupportPlan.lua` 呼叫 `MissileSystem.completeFireTask` 寫入 `stowStartTime`。
 - 裝填計時：沒有 `reloadStartTime` 時經過秒數當 0，`ENSURE_RELOAD_CLOCK` 一定是 RELOAD 的第一步，所以結果和「先補計時再算」相同。
 - `COMPLETE_RELOAD` 裝的是 `pair.buildReload()` 算好的那一份計畫，和 Rules 決定要不要藏補給車時看的是同一份。
 - 每個 handler 回傳的 log 列由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本）。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `init.lua` 私有的 `process` 補上，本模組只負責 unit 層級的欄位。

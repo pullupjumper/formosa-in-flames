@@ -373,8 +373,7 @@ local function retireStaleMatrices(plannerState, currentTime, staleAfterSec, opR
 
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
-          -- Only units that left their hide area need to go back; RELOAD already ends in HA.
-          MissileSystem.startStow(plannerState.ground, task.missileSystemType, task.firingUnits, { onlyDeployed = true })
+          MissileSystem.abortFireTask(plannerState.ground, task.missileSystemType, task.firingUnits)
         end
       end
 

@@ -79,20 +79,17 @@ describe("MissileSystem Rules", function()
     end)
   end)
 
-  describe("shouldStow", function()
+  describe("isDeployed", function()
     local rows = {
-      { name = "no state", state = nil, opts = nil, expected = false },
-      { name = "any state without opts", state = STATE.HIDE, opts = nil, expected = true },
-      { name = "HIDE with onlyDeployed", state = STATE.HIDE, opts = { onlyDeployed = true }, expected = false },
-      { name = "RELOAD with onlyDeployed", state = STATE.RELOAD, opts = { onlyDeployed = true }, expected = false },
-      { name = "STATIC with onlyDeployed", state = STATE.STATIC, opts = { onlyDeployed = true }, expected = true },
-      { name = "REPOSITIONING with onlyDeployed", state = STATE.REPOSITIONING, opts = { onlyDeployed = true }, expected = true },
+      { state = STATE.HIDE, expected = false },
+      { state = STATE.RELOAD, expected = false },
+      { state = STATE.STATIC, expected = true },
+      { state = STATE.REPOSITIONING, expected = true },
     }
 
     for _, row in ipairs(rows) do
-      it("should return " .. tostring(row.expected) .. " for " .. row.name, function()
-        local firingUnitState = row.state and { state = row.state } or nil
-        assert.are.equal(row.expected, Rules.shouldStow(firingUnitState, row.opts))
+      it("should return " .. tostring(row.expected) .. " for state " .. row.state, function()
+        assert.are.equal(row.expected, Rules.isDeployed({ state = row.state }))
       end)
     end
   end)
@@ -254,6 +251,9 @@ describe("MissileSystem Rules", function()
         { name = "should move with its resupply unit to RL when low once stowed", params = { isLow = true, stowStartTime = stowed }, steps = sendToReloadPoint },
         { name = "should warn and still move to RL when the resupply unit is gone", params = { isLow = true, stowStartTime = stowed, pair = false }, steps = { STEP.WARN_RESUPPLY_UNIT_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
         { name = "should warn and still move to RL when the resupply unit has no state", params = { isLow = true, stowStartTime = stowed, pair = false, hasResupplyUnitState = false }, steps = { STEP.WARN_RESUPPLY_STATE_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
+        { name = "should begin the stow countdown for SAM when low", params = { isLow = true, staysDeployed = true }, steps = { STEP.BEGIN_STOW } },
+        { name = "should wait out the stow time for SAM before RL", params = { isLow = true, staysDeployed = true, stowStartTime = stowed + 1 }, steps = {} },
+        { name = "should move SAM with its resupply unit to RL when low once stowed", params = { isLow = true, staysDeployed = true, stowStartTime = stowed }, steps = sendToReloadPoint },
         { name = "should do nothing in manual mode", params = { isAuto = false, stowStartTime = stowed }, steps = {} },
       }, tick)
     end)

@@ -120,7 +120,7 @@ flowchart TD
 |---|---|
 | 判定條件 | `matrix.isActivated and not matrix.isFinished`，且 `currentTime - matrix.createdAt > config.red.recon.fsemStaleAfterSec`。缺 `createdAt` 的舊存檔永不過期。 |
 | 退役動作 | 設 `matrix.isFinished = true`。matrix 保留在 FSP 內供命名唯一性檢查，不刪除。 |
-| 單元處置 | 掃描未完成的 FST，呼叫 `MissileSystem.startStow(..., { onlyDeployed = true })`：非 SAM 且已離開隱蔽區（`STATIC`／`REPOSITIONING`）的發射單元啟動 stow 倒數，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
+| 單元處置 | 掃描未完成的 FST，呼叫 `MissileSystem.abortFireTask(...)`：非 SAM 且已離開隱蔽區（`STATIC`／`REPOSITIONING`）的發射單元啟動 stow 倒數，由 [missileSystem](../missileSystem/README.md) 的 cycle 送回隱蔽區。已有倒數的單元保留原時戳。 |
 | 日誌 | 每退役一個 matrix 輸出一列 `[WARN] matrix=<name> reason=fsem_stale_timeout ageSec=<age>`。 |
 
 `isFinished = true` 同時達成兩件事：釋放發射單元回可分配池，並讓 `FireSupportPlan.strike` 停止指揮這些單位，避免與 stow 倒數形成重複指令。
@@ -211,7 +211,7 @@ SAM 任務依慣例排除在 stow 之外。
 |---|---|
 | `src.modules.strikePlanner.operationBatch` | `run()` 驅動每個 tick：篩選 ground operations、判定觀察窗、依 outcome 標記或移除 operation。 |
 | `src.modules.strikePlanner.dynamicPlan` | `evaluateTargets()` 依 FST target template 取得可打擊目標；`insert()` 命名、寫入 `fireSupportPlan` 並登記 generated operation。 |
-| `src.modules.missileSystem.init` | `evaluateReadiness()` 判斷發射單元能否派任務（runtime state、存在、`HIDE`、彈量），回傳值即日誌計數鍵；`startStow()` 退役 FSEM 時收車。 |
+| `src.modules.missileSystem.init` | `evaluateReadiness()` 判斷發射單元能否派任務（runtime state、存在、`HIDE`、彈量），回傳值即日誌計數鍵；`abortFireTask()` 退役 FSEM 時收車。 |
 | `src.utils.gameApi` | `ScenEdit_CurrentTime()` 取目前時間、`ScenEdit_GetUnit()` 驗證發射單元是否仍存在。 |
 | `src.utils.utils` | `deepCopy()`，用於 matrix 與 FST template 拷貝。 |
 | `src.utils.logFormat` | `report()` 收集並輸出處理摘要。 |
