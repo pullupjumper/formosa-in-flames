@@ -3,6 +3,7 @@
 local stub = require("luassert.stub")
 local Arrival = require("src.modules.missileSystem.arrival")
 local Transitions = require("src.modules.missileSystem.transitions")
+local Triggers = require("src.modules.missileSystem.triggers")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Ammo = require("src.modules.missileSystem.ammo")
@@ -94,10 +95,8 @@ describe("MissileSystem Arrival", function()
       })
     end
 
-    -- Real trigger descriptions look like "(Side) Arrive in TYPE - idx - areaName"
     local function enterEvent(positionType, areaName)
-      local description = string.format("(China) Arrive in %s - 1 - %s",
-        positionType, areaName or "AreaA")
+      local description = Triggers.formatTriggerName("China", positionType, 1, areaName or "AreaA")
       return { triggers = { { UnitEntersArea = { Description = description } } } }
     end
 

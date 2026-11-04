@@ -13,6 +13,44 @@ local ZONE_COLORS = {
   DEFAULT = "4d8b5cf6"
 }
 
+---Position types whose triggers drive arrival handling
+local ARRIVAL_POSITION_TYPES = {
+  [constants.POSITION_TYPES.FIRING_POINT] = true,
+  [constants.POSITION_TYPES.HIDE_AREA] = true,
+  [constants.POSITION_TYPES.RELOAD_POINT] = true,
+  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = true,
+}
+
+---Build the CMO event name that collects a side's arrival triggers for one position type.
+---Must match the event already defined in the scenario.
+---@param sideName string
+---@param positionType string
+---@return string
+local function formatEventName(sideName, positionType)
+  return string.format("(%s) Arrive in %s", sideName, positionType)
+end
+
+---Build the description of one position's unit-enters-area trigger
+---@param sideName string
+---@param positionType string
+---@param index integer
+---@param areaName string
+---@return string
+function Triggers.formatTriggerName(sideName, positionType, index, areaName)
+  return string.format("%s - %d - %s", formatEventName(sideName, positionType), index, areaName)
+end
+
+---Read the position type back from a trigger description built by formatTriggerName
+---@param description string|nil
+---@return string|nil # Position type token (FP/HA/RL/AHA), nil when not an arrival trigger
+function Triggers.parsePositionType(description)
+  local positionType = description and string.match(description, "Arrive in (%u+) ")
+  if positionType and ARRIVAL_POSITION_TYPES[positionType] then
+    return positionType
+  end
+  return nil
+end
+
 ---Get area color code based on position type
 ---@param positionType string
 ---@return string # Hexadecimal color code
@@ -54,7 +92,7 @@ end
 local function buildEventAndTriggerNames(sideName, positionTypes)
   local eventNames = {}
   for _, posType in ipairs(positionTypes) do
-    table.insert(eventNames, string.format("(%s) Arrive in %s", sideName, posType))
+    table.insert(eventNames, formatEventName(sideName, posType))
   end
   return eventNames
 end
@@ -253,8 +291,12 @@ end
 ---@return boolean success Whether trigger was successfully added
 ---@return string? reason Failure reason if trigger creation failed
 local function addTriggerToEvent(params)
-  local triggerName = string.format("(%s) Arrive in %s - %d - %s", params.sideName, params.positionType, params.index,
-    params.operationalArea.name)
+  local triggerName = Triggers.formatTriggerName(
+    params.sideName,
+    params.positionType,
+    params.index,
+    params.operationalArea.name
+  )
   local zoneName = params.positionType .. "/" .. tostring(params.index) .. "/" .. params.operationalArea.name
   local zone = GameApi.ScenEdit_AddZone(params.sideName, constants.ZONE_TYPES.STANDARD, {
     area = params.position.area,
@@ -262,7 +304,7 @@ local function addTriggerToEvent(params)
   })
 
   if zone then
-    local eventName = string.format("(%s) Arrive in %s", params.sideName, params.positionType)
+    local eventName = formatEventName(params.sideName, params.positionType)
     zone.areacolor = getOperationalAreaColor(params.positionType)
     params.position.area = GameUtils.normalizeToRPArray(zone)
     local triggerResult = GameApi.ScenEdit_SetTrigger({

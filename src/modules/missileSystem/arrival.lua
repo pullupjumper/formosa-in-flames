@@ -7,6 +7,7 @@ local Concealment = require("src.modules.missileSystem.concealment")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local Rules = require("src.modules.missileSystem.rules")
 local Transitions = require("src.modules.missileSystem.transitions")
+local Triggers = require("src.modules.missileSystem.triggers")
 
 ---Reacts to a unit entering one of its battery's FP / HA / RL / AHA zones:
 ---observes the unit, asks Rules for the steps and carries them out.
@@ -28,10 +29,7 @@ local function resolvePositionType(event)
   for _, trigger in ipairs(event.triggers) do
     local entersArea = trigger["UnitEntersArea"]
     if entersArea and entersArea.Description then
-      local positionType = string.match(entersArea.Description, "Arrive in (FP) ") or
-          string.match(entersArea.Description, "Arrive in (AHA) ") or
-          string.match(entersArea.Description, "Arrive in (HA) ") or
-          string.match(entersArea.Description, "Arrive in (RL) ")
+      local positionType = Triggers.parsePositionType(entersArea.Description)
       if positionType then
         return positionType
       end
