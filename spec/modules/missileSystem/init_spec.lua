@@ -553,16 +553,19 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("buildDeploymentSystems", function()
-    -- Positive: rows come from the side's ground config
-    it("should return the deployment systems built from the side's ground config", function()
+    -- Positive: rows come from the side's ground config and saved ground state
+    it("should return the deployment systems built from the side's ground config and saved state", function()
       local config = makeSides()
       local rows = { srbm = { id = "row" } }
       local rowsStub = trackStub(ControlPanelLayout, "buildDeploymentSystems").returns(rows)
 
-      local result = MissileSystem.buildDeploymentSystems(config, constants.SIDES.BLUE)
+      local saveData = { blue = { ground = { missileSystemTypes = {} } } }
+
+      local result = MissileSystem.buildDeploymentSystems(config, saveData, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, constants.SIDES.BLUE)
+      assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
+        constants.SIDES.BLUE)
     end)
   end)
 

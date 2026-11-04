@@ -244,13 +244,15 @@ function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entr
   )
 end
 
----Build a side's missile system rows for the control panel
+---Build a side's missile system rows for the control panel, placed where the save says they are
 ---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 ---@param sideName string
 ---@return table<string, SBJ__MissileSystemConfig> # Config copies with zone vertices, keyed by system type
-function MissileSystem.buildDeploymentSystems(config, sideName)
+function MissileSystem.buildDeploymentSystems(config, saveData, sideName)
   return ControlPanelLayout.buildDeploymentSystems(
     getMissileSystemTypes(config, sideName),
+    PersistentState.ground(saveData, sideName),
     sideName
   )
 end

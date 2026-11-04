@@ -100,19 +100,30 @@ local function findWeaponRange(weaponDBID)
 end
 
 ---Build the control panel's missile system rows, with zone names resolved to vertices
+---Config is only the template: a firing unit already in the saved state is drawn at its
+---saved operational area, which holds the player's placement after a save/load.
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param groundState SBJ__GroundState
 ---@param sideName string
 ---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
-function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, sideName)
+function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groundState, sideName)
   local rows = {}
 
   for key, system in pairs(missileSystemConfigMap) do
     local copy = Utils.deepCopy(system)
     copy.resupplyUnits = nil
     copy.ammunitions = nil
+    local systemState = groundState.missileSystemTypes[key]
+    local savedFiringUnits = systemState and systemState.firingUnits or {}
 
     for _, descriptor in pairs(copy.firingUnits) do
       ---@cast descriptor SBJ__FiringUnitWithWeaponRangeDescriptor
+      local savedState = savedFiringUnits[descriptor.name]
+
+      if savedState and savedState.operationalArea then
+        descriptor.operationalArea = Utils.deepCopy(savedState.operationalArea)
+      end
+
       local operationalArea = descriptor.operationalArea
       descriptor.weaponRange = findWeaponRange(descriptor.weaponDBID) or 0
 

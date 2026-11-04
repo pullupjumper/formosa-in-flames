@@ -155,6 +155,12 @@ describe("MissileSystem ControlPanelLayout", function()
   describe("buildDeploymentSystems", function()
     local queryDbStub
 
+    ---Ground state with nothing saved yet, so every row comes from config
+    ---@return SBJ__GroundState
+    local function emptyGroundState()
+      return { enabled = true, missileSystemTypes = {} }
+    end
+
     before_each(function()
       queryDbStub = trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 150 } } }))
       trackStub(stub(GameApi, "ScenEdit_GetReferencePoints").invokes(function(selector)
@@ -170,7 +176,7 @@ describe("MissileSystem ControlPanelLayout", function()
 
     -- Positive: the control panel only needs firing units
     it("should drop resupply units and ammunitions from the copy", function()
-      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
 
       assert.is_nil(rows.srbm.resupplyUnits)
       assert.is_nil(rows.srbm.ammunitions)
@@ -179,7 +185,7 @@ describe("MissileSystem ControlPanelLayout", function()
 
     -- Positive: the map draws the weapon's range circle from this
     it("should set weaponRange from the weapon database", function()
-      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
 
       assert.are.equal(150, rows.srbm.firingUnits.fu.weaponRange)
     end)
@@ -189,14 +195,14 @@ describe("MissileSystem ControlPanelLayout", function()
       queryDbStub:revert()
       trackStub(stub(GameApi, "ScenEdit_QueryDB").returns(nil))
 
-      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
 
       assert.are.equal(0, rows.srbm.firingUnits.fu.weaponRange)
     end)
 
     -- Positive: zone names become numeric vertices the menu can draw
     it("should resolve zone and mask names to numeric vertices", function()
-      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
       local operationalArea = rows.srbm.firingUnits.fu.operationalArea
 
       assert.are.same({ { latitude = 25.5, longitude = 121.5 } }, operationalArea.HA[1].area)
@@ -207,7 +213,7 @@ describe("MissileSystem ControlPanelLayout", function()
     it("should leave the source config untouched", function()
       local missileSystemConfigMap = makeMissileSystemConfigMap()
 
-      ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, "Taiwan")
+      ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, emptyGroundState(), "Taiwan")
 
       assert.are.same({ "rp-1" }, missileSystemConfigMap.srbm.firingUnits.fu.operationalArea.HA[1].area)
       assert.is_not_nil(missileSystemConfigMap.srbm.resupplyUnits)
@@ -215,15 +221,53 @@ describe("MissileSystem ControlPanelLayout", function()
 
     -- Boundary: reference points that no longer exist keep their names
     it("should keep zone names that resolve to no vertices", function()
-      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), "Taiwan")
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
 
       assert.are.same({ "rp-missing" }, rows.srbm.firingUnits.fu.operationalArea.FP[1].area)
+    end)
+
+    ---Ground state holding one saved firing unit placed at a redeployed area
+    ---@return table
+    local function groundStateWithSavedArea()
+      return {
+        enabled = true,
+        missileSystemTypes = {
+          srbm = {
+            firingUnits = {
+              ["FU-1"] = {
+                name = "FU-1",
+                operationalArea = { name = "#ABC", HA = { { area = { "rp-1" } } }, mask = { area = { "rp-mask" } } }
+              }
+            }
+          }
+        }
+      }
+    end
+
+    -- Positive: after a save/load the config is the template again, but the panel must show the player's placement
+    it("should draw a firing unit at its saved operational area", function()
+      local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), groundStateWithSavedArea(),
+        "Taiwan")
+      local operationalArea = rows.srbm.firingUnits.fu.operationalArea
+
+      assert.are.equal("#ABC", operationalArea.name)
+      assert.is_nil(operationalArea.FP)
+      assert.are.same({ { latitude = 25.5, longitude = 121.5 } }, operationalArea.HA[1].area)
+    end)
+
+    -- Negative: resolving vertices must not rewrite the saved state
+    it("should leave the saved operational area untouched", function()
+      local groundState = groundStateWithSavedArea()
+
+      ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), groundState, "Taiwan")
+
+      assert.are.same({ "rp-1" }, groundState.missileSystemTypes.srbm.firingUnits["FU-1"].operationalArea.HA[1].area)
     end)
 
     -- Boundary: an unresolved mask leaves no U-shape rather than an empty one
     it("should not set U-shape vertices when the mask does not resolve", function()
       local rows = ControlPanelLayout.buildDeploymentSystems(
-        makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), "Taiwan")
+        makeMissileSystemConfigMap({ mask = { area = { "rp-missing" } } }), emptyGroundState(), "Taiwan")
 
       assert.is_nil(rows.srbm.firingUnits.fu.operationalArea.uShapeVertices)
     end)

@@ -62,7 +62,7 @@ describe("UnitStatusUI", function()
   ---@return table
   local function makeSaveData(overrides)
     local function makeSideState()
-      return { sigint = { transmissions = {} }, iads = {}, air = {} }
+      return { sigint = { transmissions = {} }, iads = {}, air = {}, ground = { missileSystemTypes = {} } }
     end
     local saveData = { red = makeSideState(), blue = makeSideState(), ally = makeSideState() }
     if overrides then

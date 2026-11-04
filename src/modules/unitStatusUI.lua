@@ -448,7 +448,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
       getControlPanelTemplate(),
       createGnssJammerDataString(config, sideName),
       createDeployedAircraftDataString(config, sideName),
-      gKH.json.stringify(MissileSystem.buildDeploymentSystems(config, sideName)),
+      gKH.json.stringify(MissileSystem.buildDeploymentSystems(config, saveData, sideName)),
       sideName,
       gKH.json.stringify(buildAddUnitRows(sideName)),
       createAmphibiousTaskForceLocationDataString(config),

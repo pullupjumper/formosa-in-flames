@@ -26,7 +26,7 @@
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `moveCtx`，交給 `Arrival.processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `unit, groundState` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
 | `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 把 control panel 送回的 entries 轉成 layouts（`SBJ__MissileSystemLayout[]`），再由私有的 `redeploy` 依序重建 zone／trigger、單位與 context |
-| `buildDeploymentSystems` | `config, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點） |
+| `buildDeploymentSystems` | `config, saveData, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點）；已在存檔裡的發射單位用存檔的作戰區 |
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |
 | `buildBatteryStatuses` | `config, saveData, sideName` | `SBJ__BatteryStatus[]` | 供狀態 UI 使用，每個飛彈連（發射單位加配對的補給單位）一筆的狀態 |
 | `ensureGroundState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `GroundStateStore.ensureGroundState` |
