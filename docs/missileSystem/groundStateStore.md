@@ -37,6 +37,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
+| `resolvePair` | `systemState, unitName` | `firingUnitState?, resupplyUnitState?, ammoDepotState?` | 用任一端名稱找出整組配對，缺的一端為 nil |
 | `processSupplyAssetDestruction` | `unit, systemState` | `boolean` | 補給資產戰損後同步修正庫存 |
 | `initMissileSystemStates` | `missileSystemConfigMap, groundState` | `nil` | 初始化 runtime state |
 

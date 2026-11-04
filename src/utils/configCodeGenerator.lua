@@ -463,19 +463,12 @@ local function formatField(field, value, ctx)
   return result or formatDefaultValue(value, ctx)
 end
 
----Serialize a firingUnit reference (string or string-array), or nil if unsupported type
----@param value string|string[]|any Single unit name, array of unit names, or other
----@return string|nil # Quoted string, inline array, or nil when value type is unsupported
+---Serialize a firingUnit reference, or nil when it is not a unit name
+---@param value string|any Firing unit name, or other
+---@return string|nil # Quoted string, or nil when value is not a string
 local function formatFiringUnitRef(value)
   if type(value) == "string" then
     return string.format("%q", value)
-  end
-  if type(value) == "table" then
-    local parts = {}
-    for _, v in ipairs(value) do
-      parts[#parts + 1] = string.format("%q", v)
-    end
-    return "{ " .. table.concat(parts, ", ") .. " }"
   end
   return nil
 end

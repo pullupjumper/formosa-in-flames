@@ -22,14 +22,14 @@ RL/AHA 同區域會合與補給必要性判斷模組。
 
 - `findUnitArea`：以 RL 區塊判斷目前所在區域。
 - `isValidStateForMeeting`（module-local）：自動模式下限制為 `REPOSITIONING` 或 `RELOAD`。
-- `resolvePair`（module-local）：以觸發單位名稱向 `systemState.firingUnits` / `systemState.resupplyUnits` 雙向查找，回傳該對射擊/補給 context；支援 `resupplyUnitState.firingUnit` 為字串或陣列（取第一筆）。
+- 配對查找改用 `GroundStateStore.resolvePair`：以任一端單位名稱雙向查找，回傳射擊/補給/彈藥庫 state，缺的一端為 nil。
 - `resolveCmoUnit`（module-local）：若 context 名稱與觸發單位相同則直接重用，避免重複的 `ScenEdit_GetUnit` 呼叫。
 - `hasMetResupplyUnit`：依序檢查「配對存在 → 觸發端狀態合法 → 兩端 CMO unit 取得 → 射擊端低彈量且補給端有彈 → 同 RL 區」。
 - `hasMetAmmoDepot`：以 guard clauses 提前退出（觸發端必須是補給車、狀態合法、彈量為 0、彈藥儲備點存在），最後在 AHA 位置清單找共同區域。
 
 ```mermaid
 flowchart TD
-    A[hasMetResupplyUnit] --> B[resolvePair]
+    A[hasMetResupplyUnit] --> B[GroundStateStore.resolvePair]
     B --> C{找到配對?}
     C -->|No| X1[hasMet=false]
     C -->|Yes| D{觸發端狀態合法?}
@@ -61,7 +61,7 @@ flowchart TD
 | `hasMetResupplyUnit` | `systemState, unit, runCtx` | `boolean, firingUnitState?` | 機動發射車/彈藥補給車於 RL 交會；固定回傳 firing unit context |
 | `hasMetAmmoDepot` | `systemState, unit, runCtx` | `boolean, resupplyUnitState?` | 彈藥補給車與彈藥儲備點於 AHA 交會 |
 
-> 內部輔助函式 `isValidStateForMeeting`、`resolvePair`、`resolveCmoUnit` 為 module-local，不對外暴露。
+> 內部輔助函式 `isValidStateForMeeting`、`resolveCmoUnit` 為 module-local，不對外暴露。
 
 ---
 

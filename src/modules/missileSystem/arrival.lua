@@ -4,6 +4,7 @@ local LogFormat = require("src.utils.logFormat")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local Rules = require("src.modules.missileSystem.rules")
 local Transitions = require("src.modules.missileSystem.transitions")
 
@@ -219,7 +220,7 @@ local function observeReloadPoint(stepCtx)
   end
 
   local resupplyUnitState = systemState.resupplyUnits[unit.name]
-  local pairedFiringUnitState = resupplyUnitState and systemState.firingUnits[resupplyUnitState.firingUnit]
+  local pairedFiringUnitState = resupplyUnitState and (GroundStateStore.resolvePair(systemState, unit.name))
   local pairedFiringUnit = pairedFiringUnitState and
       GameApi.ScenEdit_GetUnit(pairedFiringUnitState.name, moveCtx.firingUnitLookupSide)
   stepCtx.resupplyUnitState = resupplyUnitState
@@ -233,7 +234,7 @@ local function observeReloadPoint(stepCtx)
     resupplyUnitState = resupplyUnitState,
     pairedFiringUnitState = pairedFiringUnitState,
     hasPairedFiringUnit = pairedFiringUnit ~= nil,
-    isPairedFiringUnitLowAmmo = pairedFiringUnit ~= nil and
+    isPairedFiringUnitLowAmmo = pairedFiringUnitState ~= nil and pairedFiringUnit ~= nil and
         Ammo.isLowAmmo(pairedFiringUnit, pairedFiringUnitState.ammoThreshold, pairedFiringUnitState.weaponDBID),
   }
 end

@@ -214,6 +214,50 @@ describe("MissileSystem GroundStateStore", function()
   end)
 
   -- ============================================================================
+  -- resolvePair
+  -- ============================================================================
+
+  describe("resolvePair", function()
+    local systemState
+
+    before_each(function()
+      systemState = {
+        firingUnits = {
+          ["FU1"] = { name = "FU1", resupplyUnit = "RU1" },
+          ["FU2"] = { name = "FU2", resupplyUnit = "RU-missing" },
+        },
+        resupplyUnits = {
+          ["RU1"] = { name = "RU1", firingUnit = "FU1", ammunition = "AD1" },
+          ["RU2"] = { name = "RU2", firingUnit = "FU-missing", ammunition = "AD-missing" },
+        },
+        ammunitions = {
+          ["AD1"] = { name = "AD1" },
+        },
+      }
+    end)
+
+    local cases = {
+      -- Positive: either end of the pair resolves the whole chain
+      { desc = "firing unit name", unitName = "FU1", firing = "FU1", resupply = "RU1", depot = "AD1" },
+      { desc = "resupply unit name", unitName = "RU1", firing = "FU1", resupply = "RU1", depot = "AD1" },
+      -- Negative: a missing link leaves that end and everything past it nil
+      { desc = "firing unit whose resupply unit is missing", unitName = "FU2", firing = "FU2" },
+      { desc = "resupply unit whose partners are missing", unitName = "RU2", resupply = "RU2" },
+      { desc = "unknown name", unitName = "nobody" },
+    }
+
+    for _, case in ipairs(cases) do
+      it("should resolve the pair from a " .. case.desc, function()
+        local firingUnitState, resupplyUnitState, ammoDepotState = GroundStateStore.resolvePair(systemState, case.unitName)
+
+        assert.are.equal(case.firing, firingUnitState and firingUnitState.name)
+        assert.are.equal(case.resupply, resupplyUnitState and resupplyUnitState.name)
+        assert.are.equal(case.depot, ammoDepotState and ammoDepotState.name)
+      end)
+    end
+  end)
+
+  -- ============================================================================
   -- ensureGroundState
   -- ============================================================================
 

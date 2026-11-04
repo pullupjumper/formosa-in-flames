@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Ammo = require("src.modules.missileSystem.ammo")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
 local Meeting = {}
 
@@ -29,29 +30,6 @@ local function isValidStateForMeeting(state, isAuto)
   return state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING or state == constants.MISSILE_SYSTEM_STATE.RELOAD
 end
 
----Resolve the firing/resupply state pair from either end's unit name
----@param systemState SBJ__MissileSystemState
----@param unitName string
----@return SBJ__FiringUnitState|nil firingUnitState Firing unit state of the pair
----@return SBJ__ResupplyUnitState|nil resupplyUnitState Resupply unit state of the pair
-local function resolvePair(systemState, unitName)
-  local firingUnitState = systemState.firingUnits[unitName]
-  if firingUnitState then
-    return firingUnitState, systemState.resupplyUnits[firingUnitState.resupplyUnit]
-  end
-
-  local resupplyUnitState = systemState.resupplyUnits[unitName]
-  if resupplyUnitState then
-    local partner = resupplyUnitState.firingUnit
-    if type(partner) == "table" then
-      partner = partner[1]
-    end
-    return systemState.firingUnits[partner], resupplyUnitState
-  end
-
-  return nil, nil
-end
-
 ---Resolve the CMO unit for a state, reusing the triggering unit when names match
 ---@param unitState SBJ__UnitBase
 ---@param triggeringUnit CMO__Unit
@@ -70,7 +48,7 @@ end
 ---@return boolean hasMet Whether the pair has met with reload required
 ---@return SBJ__FiringUnitState|nil firingUnitState Firing unit state targeted for reload
 function Meeting.hasMetResupplyUnit(systemState, unit, isAuto)
-  local firingUnitState, resupplyUnitState = resolvePair(systemState, unit.name)
+  local firingUnitState, resupplyUnitState = GroundStateStore.resolvePair(systemState, unit.name)
   if not firingUnitState or not resupplyUnitState then
     return false, nil
   end

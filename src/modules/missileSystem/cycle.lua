@@ -6,6 +6,7 @@ local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local Rules = require("src.modules.missileSystem.rules")
 local Transitions = require("src.modules.missileSystem.transitions")
 
@@ -27,7 +28,8 @@ local function addCommandResult(results, params, success, errorDetail)
     return
   end
 
-  table.insert(results, { tag = "FAIL", fields = LogFormat.merge({ unit = params.unit, action = params.action }, errorDetail) })
+  table.insert(results,
+    { tag = "FAIL", fields = LogFormat.merge({ unit = params.unit, action = params.action }, errorDetail) })
 end
 
 ---Seconds since a clock started, or 0 when it has not started yet
@@ -60,7 +62,8 @@ local FIRING_UNIT_STEPS = {
 
   [STEP.MOVE_TO_HIDE_AREA] = function(stepCtx)
     local firingUnitState = stepCtx.firingUnitState
-    local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToHideArea(firingUnitState, stepCtx.firingUnit))
+    local success, errorFields = Transitions.depart(firingUnitState,
+      Movement.moveToHideArea(firingUnitState, stepCtx.firingUnit))
     addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_to_hide_area" }, success, errorFields)
   end,
 
@@ -85,7 +88,8 @@ local FIRING_UNIT_STEPS = {
       stepCtx.resupplyUnit,
       resupplyUnitState.operationalArea.SHRL
     ))
-    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" }, success, errorFields)
+    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" },
+      success, errorFields)
   end,
 
   [STEP.WARN_RESUPPLY_UNIT_NOT_FOUND] = function(stepCtx)
@@ -112,8 +116,10 @@ local FIRING_UNIT_STEPS = {
 
   [STEP.MOVE_TO_RELOAD_POINT] = function(stepCtx)
     local firingUnitState = stepCtx.firingUnitState
-    local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToReloadPoint(firingUnitState, stepCtx.firingUnit))
-    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_firing_unit_to_reload_point" }, success, errorFields)
+    local success, errorFields = Transitions.depart(firingUnitState,
+      Movement.moveToReloadPoint(firingUnitState, stepCtx.firingUnit))
+    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_firing_unit_to_reload_point" },
+      success, errorFields)
   end,
 
   [STEP.ENSURE_RELOAD_CLOCK] = function(stepCtx)
@@ -123,7 +129,8 @@ local FIRING_UNIT_STEPS = {
   [STEP.COMPLETE_RELOAD] = function(stepCtx)
     local firingUnitState = stepCtx.firingUnitState
     local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    local loaded = Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, firingUnitState.weaponDBID, stepCtx.firingUnit.side)
+    local loaded = Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, firingUnitState.weaponDBID,
+      stepCtx.firingUnit.side)
     Transitions.finishReload(firingUnitState)
     table.insert(stepCtx.results, {
       tag = "OK",
@@ -158,8 +165,10 @@ local FIRING_UNIT_STEPS = {
 
   [STEP.MOVE_TO_FIRING_POINT] = function(stepCtx)
     local firingUnitState = stepCtx.firingUnitState
-    local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToFiringPoint(firingUnitState, stepCtx.firingUnit))
-    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_to_firing_point" }, success, errorFields)
+    local success, errorFields = Transitions.depart(firingUnitState,
+      Movement.moveToFiringPoint(firingUnitState, stepCtx.firingUnit))
+    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_to_firing_point" }, success,
+      errorFields)
   end,
 }
 
@@ -168,8 +177,10 @@ local FIRING_UNIT_STEPS = {
 local RESUPPLY_UNIT_STEPS = {
   [STEP.MOVE_TO_AMMO_HOLDING_AREA] = function(stepCtx)
     local resupplyUnitState = stepCtx.resupplyUnitState
-    local success, errorFields = Transitions.depart(resupplyUnitState, Movement.moveToAmmoHoldingArea(resupplyUnitState, stepCtx.resupplyUnit))
-    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_to_ammo_holding_area" }, success, errorFields)
+    local success, errorFields = Transitions.depart(resupplyUnitState,
+      Movement.moveToAmmoHoldingArea(resupplyUnitState, stepCtx.resupplyUnit))
+    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_to_ammo_holding_area" }, success,
+      errorFields)
   end,
 
   [STEP.ENSURE_RELOAD_CLOCK] = function(stepCtx)
@@ -189,7 +200,8 @@ local RESUPPLY_UNIT_STEPS = {
 
   [STEP.COMPLETE_TRANSLOAD] = function(stepCtx)
     local resupplyUnitState = stepCtx.resupplyUnitState
-    local ammoDepotState = stepCtx.systemState.ammunitions[resupplyUnitState.ammunition] --[[@as SBJ__AmmunitionState]]
+    local _, _, ammoDepotState = GroundStateStore.resolvePair(stepCtx.systemState, resupplyUnitState.name)
+    ---@cast ammoDepotState SBJ__AmmunitionState
     local beforeResupply = resupplyUnitState.weaponCountCurrent
     local beforeDepot = ammoDepotState.weaponCountCurrent
     Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
@@ -208,8 +220,10 @@ local RESUPPLY_UNIT_STEPS = {
 
   [STEP.RECALL_TO_RELOAD_POINT] = function(stepCtx)
     local resupplyUnitState = stepCtx.resupplyUnitState
-    local success, errorFields = Transitions.depart(resupplyUnitState, Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, stepCtx.resupplyUnit))
-    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" }, success, errorFields)
+    local success, errorFields = Transitions.depart(resupplyUnitState,
+      Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, stepCtx.resupplyUnit))
+    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" },
+      success, errorFields)
   end,
 }
 
@@ -233,7 +247,7 @@ end
 ---@param firingUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function processFiringUnit(systemState, runCtx, firingUnitState, firingUnit)
-  local resupplyUnitState = systemState.resupplyUnits[firingUnitState.resupplyUnit]
+  local _, resupplyUnitState = GroundStateStore.resolvePair(systemState, firingUnitState.name)
   local resupplyUnit = resupplyUnitState and GameApi.ScenEdit_GetUnit(resupplyUnitState.name, firingUnit.side)
   local currentTime = GameApi.ScenEdit_CurrentTime()
 
@@ -268,6 +282,7 @@ end
 ---@param resupplyUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnit)
+  local _, _, ammoDepotState = GroundStateStore.resolvePair(systemState, resupplyUnitState.name)
   local steps = Rules.evaluateResupplyUnitTick({
     state = resupplyUnitState.state,
     isAuto = runCtx.isAuto,
@@ -276,7 +291,7 @@ local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resup
     reloadElapsedSec = calculateElapsedSec(resupplyUnitState.reloadStartTime, GameApi.ScenEdit_CurrentTime()),
     reloadTimeSec = runCtx.systemConfig.reloadTime,
     hasMet = (Meeting.hasMetAmmoDepot(systemState, resupplyUnit, runCtx.isAuto)),
-    hasAmmoDepotState = systemState.ammunitions[resupplyUnitState.ammunition] ~= nil,
+    hasAmmoDepotState = ammoDepotState ~= nil,
   })
 
   return runSteps(steps, RESUPPLY_UNIT_STEPS, {

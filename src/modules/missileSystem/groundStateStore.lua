@@ -2,6 +2,27 @@ local Utils = require("src.utils.utils")
 
 local GroundStateStore = {}
 
+---Find the firing unit, resupply unit and ammo depot states paired with either end's unit name
+---Any link can be missing when config names a partner that does not exist; it and everything past it is nil.
+---@param systemState SBJ__MissileSystemState
+---@param unitName string Firing or resupply unit name
+---@return SBJ__FiringUnitState|nil firingUnitState Firing unit state of the pair
+---@return SBJ__ResupplyUnitState|nil resupplyUnitState Resupply unit state of the pair
+---@return SBJ__AmmunitionState|nil ammoDepotState Ammo depot state of the resupply unit
+function GroundStateStore.resolvePair(systemState, unitName)
+  local firingUnitState = systemState.firingUnits[unitName]
+  local resupplyUnitState
+  if firingUnitState then
+    resupplyUnitState = systemState.resupplyUnits[firingUnitState.resupplyUnit]
+  else
+    resupplyUnitState = systemState.resupplyUnits[unitName]
+    firingUnitState = resupplyUnitState and systemState.firingUnits[resupplyUnitState.firingUnit]
+  end
+
+  local ammoDepotState = resupplyUnitState and systemState.ammunitions[resupplyUnitState.ammunition]
+  return firingUnitState, resupplyUnitState, ammoDepotState
+end
+
 ---Handle logic when resupply unit is destroyed
 ---@param unit CMO__Unit
 ---@param systemState SBJ__MissileSystemState
@@ -29,6 +50,7 @@ function GroundStateStore.processSupplyAssetDestruction(unit, systemState)
     return false, nil
   end
 
+  -- The destroyed unit is one vehicle; resupply state is keyed by its group's name
   local resupplyUnitState = systemState.resupplyUnits[unit.group.name]
 
   if resupplyUnitState and resupplyUnitState.weaponCountCurrent > 0 then

@@ -1,4 +1,5 @@
 local constants = require("src.core.constants")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
 local StatusView = {}
 
@@ -47,7 +48,10 @@ function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, cu
 
     if firingUnitStates then
       for _, firingUnitState in pairs(firingUnitStates) do
-        local resupplyUnitState = missileSystemState.resupplyUnits[firingUnitState.resupplyUnit]
+        local _, resupplyUnitState, ammoDepotState = GroundStateStore.resolvePair(missileSystemState, firingUnitState.name)
+        -- Config pairs every firing unit with a resupply unit and its ammo depot
+        ---@cast resupplyUnitState SBJ__ResupplyUnitState
+        ---@cast ammoDepotState SBJ__AmmunitionState
 
         table.insert(statuses, {
           name = firingUnitState.name,
@@ -56,8 +60,8 @@ function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, cu
           resupplyUnitState = formatState(resupplyUnitState.state),
           missilesInAmmoVehicles = resupplyUnitState.weaponCountCurrent,
           missilesInTransloaderDefault = resupplyUnitState.weaponCountDefault,
-          missilesInAHA = missileSystemState.ammunitions[resupplyUnitState.ammunition].weaponCountCurrent,
-          missilesInAHADefault = missileSystemState.ammunitions[resupplyUnitState.ammunition].weaponCountDefault,
+          missilesInAHA = ammoDepotState.weaponCountCurrent,
+          missilesInAHADefault = ammoDepotState.weaponCountDefault,
           firingUnitReloadTime = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
           resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
           defaultReloadTime = missileSystemConfigMap[missileSystemType].reloadTime / 60

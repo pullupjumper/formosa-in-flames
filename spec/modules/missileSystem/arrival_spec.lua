@@ -56,7 +56,7 @@ describe("MissileSystem Arrival", function()
 
     ---@param overrides? table Fields to override on the default enabled, empty system state
     local function makeSystemState(overrides)
-      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = {} }
+      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
       for k, v in pairs(overrides or {}) do
         systemState[k] = v
       end
