@@ -214,6 +214,7 @@ function MissileSystem.processSupplyAssetDestruction(saveData, unit)
 end
 
 ---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
+---Only the moved batteries are rebuilt; every other battery keeps its units and runtime state.
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
 ---@param sideName string
@@ -226,8 +227,9 @@ local function redeploy(missileSystemConfigMap, groundState, sideName, layouts)
   for _, layout in ipairs(layouts) do
     rebuiltFiringUnits[layout.unitname] = true
   end
-  Deployment.addMissileSystems(missileSystemConfigMap, sideName, rebuiltFiringUnits)
-  GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
+  local rebuiltBatteries = Deployment.selectBatteries(missileSystemConfigMap, rebuiltFiringUnits)
+  Deployment.addMissileSystems(rebuiltBatteries, sideName)
+  GroundStateStore.initMissileSystemStates(rebuiltBatteries, groundState)
 end
 
 ---Redeploy a side's batteries to the placements submitted by the control panel

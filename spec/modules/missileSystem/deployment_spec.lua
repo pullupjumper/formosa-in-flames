@@ -102,8 +102,8 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
     end)
 
-    -- Positive: only the firing units named in the filter are removed and rebuilt, with their resupply units
-    it("should rebuild only the named firing units and leave the others untouched", function()
+    -- Positive: only the batteries picked by selectBatteries are removed and rebuilt
+    it("should rebuild only the selected batteries and leave the others untouched", function()
       local function makeUnitPair(suffix)
         return {
           name = "FU-" .. suffix,
@@ -137,13 +137,63 @@ describe("MissileSystem Deployment", function()
         return { guid = "new-" .. opts.unitname, name = opts.unitname, mounts = {} }
       end)
 
-      Deployment.addMissileSystems(missileSystemConfigMap, constants.SIDES.RED, { ["FU-A"] = true })
+      Deployment.addMissileSystems(
+        Deployment.selectBatteries(missileSystemConfigMap, { ["FU-A"] = true }),
+        constants.SIDES.RED
+      )
 
       table.sort(addedNames)
       assert.are.same({ "FU-A", "RU-A" }, addedNames)
       assert.stub(deleteStub).was.called_with({ side = constants.SIDES.RED, guid = "old-FU-A" })
       assert.stub(deleteStub).was_not.called_with({ side = constants.SIDES.RED, guid = "old-FU-B" })
       assert.stub(deleteStub).was_not.called_with({ side = constants.SIDES.RED, guid = "old-RU-B" })
+    end)
+  end)
+
+  -- ============================================================================
+  -- selectBatteries
+  -- ============================================================================
+
+  describe("selectBatteries", function()
+    -- Positive: a named firing unit brings its resupply unit and ammo; other systems and batteries are left out
+    it("should keep only the named batteries and the systems that field them", function()
+      local missileSystemConfigMap = {
+        srbm = {
+          reloadTime = 600,
+          firingUnits = {
+            ["FU-A"] = { name = "FU-A", resupplyUnit = "RU-A" },
+            ["FU-B"] = { name = "FU-B", resupplyUnit = "RU-B" }
+          },
+          resupplyUnits = {
+            ["RU-A"] = { name = "RU-A", ammunition = "AMMO-A" },
+            ["RU-B"] = { name = "RU-B", ammunition = "AMMO-B" }
+          },
+          ammunitions = { ["AMMO-A"] = { name = "AMMO-A" }, ["AMMO-B"] = { name = "AMMO-B" } }
+        },
+        glcm = {
+          firingUnits = { ["FU-C"] = { name = "FU-C", resupplyUnit = "RU-C" } },
+          resupplyUnits = { ["RU-C"] = { name = "RU-C" } },
+          ammunitions = {}
+        }
+      }
+
+      local function keysOf(map)
+        local keys = {}
+        for key in pairs(map) do
+          table.insert(keys, key)
+        end
+        table.sort(keys)
+        return keys
+      end
+
+      local selected = Deployment.selectBatteries(missileSystemConfigMap, { ["FU-A"] = true })
+
+      assert.is_nil(selected.glcm)
+      assert.are.equal(600, selected.srbm.reloadTime)
+      assert.are.same({ "FU-A" }, keysOf(selected.srbm.firingUnits))
+      assert.are.same({ "RU-A" }, keysOf(selected.srbm.resupplyUnits))
+      assert.are.same({ "AMMO-A" }, keysOf(selected.srbm.ammunitions))
+      assert.are.same({ "FU-A", "FU-B" }, keysOf(missileSystemConfigMap.srbm.firingUnits))
     end)
   end)
 

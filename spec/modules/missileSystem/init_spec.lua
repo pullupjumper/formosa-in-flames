@@ -831,6 +831,8 @@ describe("MissileSystem", function()
       local contextStub = trackStub(GroundStateStore, "initMissileSystemStates").invokes(function()
         table.insert(calls, "initMissileSystemStates")
       end)
+      local rebuiltBatteries = { srbm = { id = "rebuilt" } }
+      local selectStub = trackStub(Deployment, "selectBatteries").returns(rebuiltBatteries)
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 
@@ -842,8 +844,57 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMO_HOLDING_AREA
       }, "Taiwan")
-      assert.stub(addStub).was.called_with(missileSystemConfigMap, "Taiwan", { ["FU-1"] = true })
-      assert.stub(contextStub).was.called_with(missileSystemConfigMap, groundState)
+      assert.stub(selectStub).was.called_with(missileSystemConfigMap, { ["FU-1"] = true })
+      assert.stub(addStub).was.called_with(rebuiltBatteries, "Taiwan")
+      assert.stub(contextStub).was.called_with(rebuiltBatteries, groundState)
+    end)
+
+    -- Positive: only the redeployed battery is reset; another battery keeps its runtime state and ammo
+    it("should reset only the redeployed battery and keep the other batteries' state", function()
+      local function makeBattery(suffix)
+        return { name = "FU-" .. suffix, state = constants.MISSILE_SYSTEM_STATE.HIDE, resupplyUnit = "RU-" .. suffix,
+            operationalArea = { name = "OPAREA-" .. suffix } },
+          { name = "RU-" .. suffix, weaponCountCurrent = 8, ammunition = "AMMO-" .. suffix,
+            operationalArea = { name = "OPAREA-" .. suffix } },
+          { name = "AMMO-" .. suffix, weaponCountCurrent = 40 }
+      end
+      local firingA, resupplyA, ammoA = makeBattery("A")
+      local firingB, resupplyB, ammoB = makeBattery("B")
+      local config = {
+        blue = { ground = { missileSystemTypes = { srbm = {
+          firingUnits = { ["FU-A"] = firingA, ["FU-B"] = firingB },
+          resupplyUnits = { ["RU-A"] = resupplyA, ["RU-B"] = resupplyB },
+          ammunitions = { ["AMMO-A"] = ammoA, ["AMMO-B"] = ammoB }
+        } } } }
+      }
+      local saveData = { blue = { ground = {} } }
+      local configMap = config.blue.ground.missileSystemTypes
+      GroundStateStore.ensureGroundState(configMap, saveData.blue.ground)
+      GroundStateStore.initMissileSystemStates(configMap, saveData.blue.ground)
+
+      local systemState = saveData.blue.ground.missileSystemTypes.srbm
+      systemState.firingUnits["FU-A"].weaponCountCurrent = 1
+      systemState.firingUnits["FU-B"].state = constants.MISSILE_SYSTEM_STATE.RELOAD
+      systemState.firingUnits["FU-B"].reloadStartTime = 123
+      systemState.resupplyUnits["RU-B"].weaponCountCurrent = 2
+      systemState.ammunitions["AMMO-B"].weaponCountCurrent = 5
+
+      local newArea = { name = "#NEW" }
+      trackStub(ControlPanelLayout, "buildLayouts").returns({
+        { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea }
+      })
+      trackStub(Triggers, "initEventTriggers")
+      trackStub(Deployment, "addMissileSystems")
+      local entries = { { unitname = "FU-A" } }
+
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
+
+      assert.are.same(newArea, systemState.firingUnits["FU-A"].operationalArea)
+      assert.is_nil(systemState.firingUnits["FU-A"].weaponCountCurrent)
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemState.firingUnits["FU-B"].state)
+      assert.are.equal(123, systemState.firingUnits["FU-B"].reloadStartTime)
+      assert.are.equal(2, systemState.resupplyUnits["RU-B"].weaponCountCurrent)
+      assert.are.equal(5, systemState.ammunitions["AMMO-B"].weaponCountCurrent)
     end)
   end)
 end)

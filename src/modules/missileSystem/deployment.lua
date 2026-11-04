@@ -356,41 +356,50 @@ local function addAmmunition(missileSystemType, systemConfig, descriptor, sideNa
   return false, { { tag = "FAIL", fields = LogFormat.merge(context, { reason = "no_matching_resupply_unit" }) } }
 end
 
----The firing units, resupply units and ammunitions to rebuild for one system
----@param systemConfig SBJ__MissileSystemConfig
----@param firingUnitNameSet table<string, boolean>|nil Selected firing unit names; nil selects everything
----@return table<string, SBJ__FiringUnitDescriptor> firingUnits
----@return table<string, SBJ__ResupplyUnitDescriptor> resupplyUnits
----@return table<string, SBJ__AmmunitionUnitDescriptor> ammunitions
-local function selectUnitsToRebuild(systemConfig, firingUnitNameSet)
-  if not firingUnitNameSet then
-    return systemConfig.firingUnits, systemConfig.resupplyUnits, systemConfig.ammunitions
-  end
+---Narrow a config map to the named firing units with their resupply units and ammunition
+---Systems with none of the named firing units are left out. Descriptors are shared, not copied.
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param firingUnitNameSet table<string, boolean>
+---@return table<string, SBJ__MissileSystemConfig> # Shallow system copies holding only the selected batteries
+function Deployment.selectBatteries(missileSystemConfigMap, firingUnitNameSet)
+  local selected = {}
 
-  local firingUnits, resupplyUnits, ammunitions = {}, {}, {}
+  for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
+    local firingUnits, resupplyUnits, ammunitions = {}, {}, {}
+    local hasBattery = false
 
-  for key, descriptor in pairs(systemConfig.firingUnits) do
-    local resupply = systemConfig.resupplyUnits[descriptor.resupplyUnit]
-    if firingUnitNameSet[descriptor.name] then
-      firingUnits[key] = descriptor
-      if resupply then
-        resupplyUnits[resupply.name] = resupply
-        local ammo = systemConfig.ammunitions[resupply.ammunition]
-        if ammo then
-          ammunitions[ammo.name] = ammo
+    for key, descriptor in pairs(systemConfig.firingUnits) do
+      if firingUnitNameSet[descriptor.name] then
+        hasBattery = true
+        firingUnits[key] = descriptor
+        local resupply = systemConfig.resupplyUnits[descriptor.resupplyUnit]
+        if resupply then
+          resupplyUnits[resupply.name] = resupply
+          local ammo = systemConfig.ammunitions[resupply.ammunition]
+          if ammo then
+            ammunitions[ammo.name] = ammo
+          end
         end
       end
     end
+
+    if hasBattery then
+      local copy = {}
+      for field, value in pairs(systemConfig) do
+        copy[field] = value
+      end
+      copy.firingUnits, copy.resupplyUnits, copy.ammunitions = firingUnits, resupplyUnits, ammunitions
+      selected[missileSystemType] = copy
+    end
   end
 
-  return firingUnits, resupplyUnits, ammunitions
+  return selected
 end
 
----Add missile system units to the game
+---Add missile system units to the game, replacing any that already exist
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param sideName string
----@param firingUnitNameSet? table<string, boolean> Rebuild only these firing units with their resupply units and ammunition; nil rebuilds everything
-function Deployment.addMissileSystems(missileSystemConfigMap, sideName, firingUnitNameSet)
+function Deployment.addMissileSystems(missileSystemConfigMap, sideName)
   -- systemHasFailure is derived from the rows each helper produced, so it cannot
   -- drift from them. It only picks the tag of the per-system summary row; the
   -- report already routes the individual FAIL rows to the error sink.
@@ -398,9 +407,8 @@ function Deployment.addMissileSystems(missileSystemConfigMap, sideName, firingUn
 
   for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
     local systemHasFailure = false
-    local firingUnits, resupplyUnits, ammunitions = selectUnitsToRebuild(systemConfig, firingUnitNameSet)
     local fuTotal, fuExpected = 0, 0
-    for _, descriptor in pairs(firingUnits) do
+    for _, descriptor in pairs(systemConfig.firingUnits) do
       local removeEntries = removeMissileSystem(missileSystemType, "firing", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
@@ -413,7 +421,7 @@ function Deployment.addMissileSystems(missileSystemConfigMap, sideName, firingUn
     end
 
     local ruTotal, ruExpected = 0, 0
-    for _, descriptor in pairs(resupplyUnits) do
+    for _, descriptor in pairs(systemConfig.resupplyUnits) do
       local removeEntries = removeMissileSystem(missileSystemType, "resupply", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
@@ -426,7 +434,7 @@ function Deployment.addMissileSystems(missileSystemConfigMap, sideName, firingUn
     end
 
     local ammoOk, ammoTotal = 0, 0
-    for _, descriptor in pairs(ammunitions) do
+    for _, descriptor in pairs(systemConfig.ammunitions) do
       local removeEntries = removeMissileSystem(missileSystemType, "ammo", descriptor, sideName)
       report.addAll(removeEntries)
       systemHasFailure = systemHasFailure or LogFormat.hasFailure(removeEntries)
