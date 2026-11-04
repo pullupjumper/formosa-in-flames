@@ -16,49 +16,48 @@ function Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
   end
 end
 
----Reload ammunition for a single unit
----@param unit CMO__Unit|nil
+---Build the reloads a firing unit's group needs, filling each unit and weapon in order until the stock runs out
+---Reads CMO only, so the plan can be decided on before any reload is written.
+---@param firingUnit CMO__Unit
 ---@param weaponDBID number|number[]
----@param resupplyUnitState SBJ__ResupplyUnitState
----@return integer # Total ammunition consumed
-local function reloadUnit(unit, weaponDBID, resupplyUnitState)
-  if not unit then return 0 end
+---@param stock integer Missiles the resupply unit carries
+---@return SBJ__ReloadPlan
+function Ammo.buildReload(firingUnit, weaponDBID, stock)
   local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
-  local totalLoaded = 0
+  local plan = { entries = {}, count = 0 }
 
-  for _, dbid in ipairs(weaponDBIDs) do
-    local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
-    local required = wpnInfo.maxWeapons - wpnInfo.availableWeapons
+  for _, guid in ipairs(Shared.getGroupUnits(firingUnit)) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
 
-    if required > 0 and resupplyUnitState.weaponCountCurrent > 0 then
-      local ammoToLoad = math.min(required, resupplyUnitState.weaponCountCurrent)
-      GameApi.ScenEdit_AddReloadsToUnit({ guid = unit.guid, side = unit.side, wpn_dbid = dbid, number = ammoToLoad })
-      resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent - ammoToLoad
-      totalLoaded = totalLoaded + ammoToLoad
+    if unit then
+      for _, dbid in ipairs(weaponDBIDs) do
+        local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
+        local required = wpnInfo.maxWeapons - wpnInfo.availableWeapons
+        local remaining = stock - plan.count
+
+        if required > 0 and remaining > 0 then
+          local number = math.min(required, remaining)
+          table.insert(plan.entries, { guid = unit.guid, side = unit.side, weaponDBID = dbid, number = number })
+          plan.count = plan.count + number
+        end
+      end
     end
   end
 
-  return totalLoaded
+  return plan
 end
 
----Execute reload for firing unit
----@param firingUnitState SBJ__FiringUnitState
+---Load a reload plan into the firing unit's group and take the missiles from the resupply unit
 ---@param resupplyUnitState SBJ__ResupplyUnitState
----@param weaponDBID number|number[]
----@param sideName string
+---@param plan SBJ__ReloadPlan From Ammo.buildReload with this resupply unit's stock
 ---@return integer # Total ammunition loaded
-function Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, weaponDBID, sideName)
-  local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitState.name, sideName)
-  if not firingUnit then return 0 end
-  local units = Shared.getGroupUnits(firingUnit)
-
-  local totalLoaded = 0
-  for _, guid in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-    totalLoaded = totalLoaded + reloadUnit(unit, weaponDBID, resupplyUnitState)
+function Ammo.reloadFiringUnit(resupplyUnitState, plan)
+  for _, entry in ipairs(plan.entries) do
+    GameApi.ScenEdit_AddReloadsToUnit({ guid = entry.guid, side = entry.side, wpn_dbid = entry.weaponDBID, number = entry.number })
   end
 
-  return totalLoaded
+  resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent - plan.count
+  return plan.count
 end
 
 ---Sum loaded and maximum weapons across every unit of a firing unit's group

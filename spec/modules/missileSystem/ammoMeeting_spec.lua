@@ -189,6 +189,66 @@ describe("MissileSystem Ammo And Meeting", function()
   end)
 
   -- ============================================================================
+  -- buildReload / reloadFiringUnit
+  -- ============================================================================
+
+  describe("buildReload", function()
+    ---Stub a two-member group whose members each miss `missing` missiles of every weapon
+    ---@param missing integer
+    ---@return table firingUnit
+    local function stubGroup(missing)
+      local members = {
+        F1 = { guid = "F1", side = "Taiwan" },
+        F2 = { guid = "F2", side = "Taiwan" },
+      }
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guid) return members[guid] end)
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10 - missing, maxWeapons = 10 })
+      return { guid = "F1", side = "Taiwan", group = { unitlist = { "F1", "F2" } } }
+    end
+
+    -- Positive: fills every member and weapon when the stock covers them
+    it("should fill every member and weapon when the stock covers them", function()
+      local plan = Ammo.buildReload(stubGroup(3), { 1111, 2222 }, 20)
+
+      assert.are.equal(12, plan.count)
+      assert.are.same({ guid = "F1", side = "Taiwan", weaponDBID = 1111, number = 3 }, plan.entries[1])
+      assert.are.same({ guid = "F2", side = "Taiwan", weaponDBID = 2222, number = 3 }, plan.entries[4])
+    end)
+
+    -- Boundary: stops filling when the stock runs out, partway through a member
+    it("should stop filling when the stock runs out", function()
+      local plan = Ammo.buildReload(stubGroup(3), 1111, 4)
+
+      assert.are.equal(4, plan.count)
+      assert.are.same({ guid = "F1", side = "Taiwan", weaponDBID = 1111, number = 3 }, plan.entries[1])
+      assert.are.same({ guid = "F2", side = "Taiwan", weaponDBID = 1111, number = 1 }, plan.entries[2])
+      assert.are.equal(2, #plan.entries)
+    end)
+
+    -- Boundary: a full group needs nothing
+    it("should build an empty plan for a full group", function()
+      local plan = Ammo.buildReload(stubGroup(0), 1111, 10)
+
+      assert.are.equal(0, plan.count)
+      assert.are.same({}, plan.entries)
+    end)
+
+    -- Positive: loading the plan writes each entry and takes its count from the stock
+    it("should load every entry and take the count from the resupply unit", function()
+      local plan = Ammo.buildReload(stubGroup(3), 1111, 10)
+      local addReloads = trackStub(GameApi, "ScenEdit_AddReloadsToUnit")
+      local resupplyUnitState = { weaponCountCurrent = 10 }
+
+      local loaded = Ammo.reloadFiringUnit(resupplyUnitState, plan)
+
+      assert.are.equal(6, loaded)
+      assert.are.equal(4, resupplyUnitState.weaponCountCurrent)
+      assert.stub(addReloads).was.called(2)
+      assert.stub(addReloads).was.called_with({ guid = "F2", side = "Taiwan", wpn_dbid = 1111, number = 3 })
+    end)
+  end)
+
+  -- ============================================================================
   -- getInventory
   -- ============================================================================
 

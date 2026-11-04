@@ -113,8 +113,8 @@ local FIRING_UNIT_STEPS = {
   [STEP.COMPLETE_RELOAD] = function(stepCtx)
     local firingUnitState = stepCtx.firingUnitState
     local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    local loaded = Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, firingUnitState.weaponDBID,
-      stepCtx.firingUnit.side)
+    local loaded = Ammo.reloadFiringUnit(resupplyUnitState,
+      Ammo.buildReload(stepCtx.firingUnit, firingUnitState.weaponDBID, resupplyUnitState.weaponCountCurrent))
     Transitions.finishReload(firingUnitState)
     table.insert(stepCtx.results, {
       tag = "OK",

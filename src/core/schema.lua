@@ -1495,6 +1495,18 @@ function ScenEdit_DeleteMine(params) end
 ---@field wcs? integer Weapon control status set with the move; nil leaves doctrine untouched
 ---@field useLastCourse? boolean Send only the last waypoint of the chosen course
 
+---One reload command of a missileSystem reload plan
+---@class SBJ__ReloadEntry: table
+---@field guid string Group member that takes the missiles
+---@field side string Side of that member
+---@field weaponDBID number Weapon loaded
+---@field number integer Missiles loaded
+
+---Reloads a firing unit's group takes from its resupply unit, worked out before any is written
+---@class SBJ__ReloadPlan: table
+---@field entries SBJ__ReloadEntry[] Commands in load order
+---@field count integer Missiles the entries load in total; never more than the stock the plan was built with
+
 ---Per-run mode shared by every unit handled in one missileSystem run
 ---@class SBJ__MissileRunContext: table
 ---@field isAuto boolean Whether the run is automatic (computer-controlled side)
