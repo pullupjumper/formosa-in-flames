@@ -1,11 +1,11 @@
 local constants = require("src.core.constants")
-local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local Rules = require("src.modules.missileSystem.rules")
+local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
 local Triggers = require("src.modules.missileSystem.triggers")
 
@@ -14,9 +14,6 @@ local Triggers = require("src.modules.missileSystem.triggers")
 local Arrival = {}
 
 local STEP = Rules.STEP
-
----Manual mode for flows that must never halt a unit
-local MANUAL_MODE = false
 
 ---Extract position type token from UnitEntersArea trigger description
 ---@param event CMO__Event|nil
@@ -54,93 +51,64 @@ local function dropUnitContact(unit, contacts)
   end
 end
 
----Iterate through enabled missile systems only
----@param groundState SBJ__GroundState
----@param callback fun(systemState: SBJ__MissileSystemState, missileSystemType: string)
-local function forEachEnabledSystem(groundState, callback)
-  for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
-    if systemState.enabled then
-      callback(systemState, missileSystemType)
-    end
-  end
-end
-
----Arrival steps keyed by Rules.STEP; each one acts on CMO, records the transition and returns its log row
----@type table<string, fun(stepCtx: SBJ__ArrivalStepContext): SBJ__LogResult|nil>
-local ARRIVAL_STEPS = {
-  [STEP.ARRIVE_AT_FIRING_POINT] = function(stepCtx)
-    local unit = stepCtx.unit
-    Transitions.arriveAtFiringPoint(stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]], unit, stepCtx.moveCtx.isAuto)
-    return {
-      tag = "OK",
-      fields = { system = stepCtx.missileSystemType, unit = unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" }
-    }
+---Firing point steps keyed by Rules.STEP; each one acts on CMO, records the transition and returns its log row
+---@type table<string, fun(ctx: SBJ__ArrivalContext, firingUnitState: SBJ__FiringUnitState): SBJ__LogResult|nil>
+local FIRING_POINT_STEPS = {
+  [STEP.ARRIVE_AT_FIRING_POINT] = function(ctx, firingUnitState)
+    Transitions.arriveAtFiringPoint(firingUnitState, ctx.unit, ctx.moveCtx.isAuto)
+    return { tag = "OK", fields = { unit = ctx.unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" } }
   end,
+}
 
-  [STEP.HIDE_FIRING_UNIT] = function(stepCtx)
-    local unit = stepCtx.unit
-    local firingUnitState = stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]]
-    Transitions.hide(firingUnitState, unit, stepCtx.moveCtx.isAuto)
-    local success, errorFields = Concealment.hideUnit(firingUnitState, unit)
+---Hide area steps keyed by Rules.STEP
+---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__HideAreaObservation): SBJ__LogResult|nil>
+local HIDE_AREA_STEPS = {
+  [STEP.HIDE_FIRING_UNIT] = function(ctx, observation)
+    local unit = ctx.unit
+    Transitions.hide(observation.firingUnitState, unit, ctx.moveCtx.isAuto)
+    local success, errorFields = Concealment.hideUnit(observation.firingUnitState, unit)
     if success == false then
       return {
         tag = "WARN",
-        fields = LogFormat.merge({
-          system = stepCtx.missileSystemType,
-          unit = unit.name,
-          action = "concealment_failed",
-          state = "HIDE"
-        }, errorFields)
+        fields = LogFormat.merge({ unit = unit.name, action = "concealment_failed", state = "HIDE" }, errorFields)
       }
     end
 
-    return { tag = "OK", fields = { system = stepCtx.missileSystemType, unit = unit.name, action = "concealed", state = "HIDE" } }
+    return { tag = "OK", fields = { unit = unit.name, action = "concealed", state = "HIDE" } }
   end,
+}
 
-  [STEP.BEGIN_RELOAD] = function(stepCtx)
-    local firingUnitState = stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]]
-    Transitions.beginReload(firingUnitState, stepCtx.firingUnit --[[@as CMO__Unit]], stepCtx.moveCtx.isAuto)
+---Reload point steps keyed by Rules.STEP
+---@type table<string, fun(ctx: SBJ__ArrivalContext, pair: SBJ__ReloadPair): SBJ__LogResult|nil>
+local RELOAD_POINT_STEPS = {
+  [STEP.BEGIN_RELOAD] = function(ctx, pair)
+    local firingUnitState = pair.firingUnitState
+    Transitions.beginReload(firingUnitState, pair.firingUnit, ctx.moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
-        system = stepCtx.missileSystemType,
         unit = firingUnitState.name,
         action = "reload_started",
-        triggerUnit = stepCtx.unit.name,
+        triggerUnit = ctx.unit.name,
         state = "RELOAD",
         startedAt = os.date(constants.DATE_FORMAT, firingUnitState.reloadStartTime)
       }
     }
   end,
 
-  [STEP.WARN_FIRING_UNIT_NOT_FOUND] = function(stepCtx)
-    return {
-      tag = "WARN",
-      fields = {
-        system = stepCtx.missileSystemType,
-        unit = (stepCtx.firingUnitState --[[@as SBJ__FiringUnitState]]).name,
-        action = "reload_not_started",
-        triggerUnit = stepCtx.unit.name,
-        reason = "firing_unit_not_found"
-      }
-    }
+  -- Manual mode keeps a firing unit drifting through RL during repositioning from being halted.
+  [STEP.STOP_IN_MANUAL_MODE] = function(ctx)
+    Transitions.settle(ctx.systemState, ctx.unit, false)
   end,
 
-  -- The manual mode keeps a firing unit drifting through RL during repositioning from being halted.
-  [STEP.STOP_IN_MANUAL_MODE] = function(stepCtx)
-    Transitions.settle(stepCtx.systemState, stepCtx.unit, MANUAL_MODE)
-    return nil
-  end,
-
-  [STEP.HIDE_RESUPPLY_UNIT] = function(stepCtx)
-    local unit = stepCtx.unit
-    local pairedFiringUnitName = (stepCtx.pairedFiringUnitState --[[@as SBJ__FiringUnitState]]).name
-    local success, errorFields = Concealment.hideUnit(stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]], unit)
+  [STEP.HIDE_UNMET_RESUPPLY_UNIT] = function(ctx, pair)
+    local unit = ctx.unit
+    local pairedFiringUnitName = pair.firingUnitState.name
+    local success, errorFields = Concealment.hideUnit(pair.resupplyUnitState, unit)
     if success == false then
       return {
         tag = "WARN",
         fields = LogFormat.merge({
-          system = stepCtx.missileSystemType,
           unit = unit.name,
           action = "resupply_concealment_failed",
           pairedFiringUnit = pairedFiringUnitName
@@ -151,7 +119,6 @@ local ARRIVAL_STEPS = {
     return {
       tag = "OK",
       fields = {
-        system = stepCtx.missileSystemType,
         unit = unit.name,
         action = "resupply_concealed",
         pairedFiringUnit = pairedFiringUnitName,
@@ -159,123 +126,90 @@ local ARRIVAL_STEPS = {
       }
     }
   end,
+}
 
-  [STEP.BEGIN_TRANSLOAD] = function(stepCtx)
-    local metResupplyUnitState = stepCtx.metResupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    Transitions.beginReload(metResupplyUnitState, stepCtx.unit, stepCtx.moveCtx.isAuto)
+---Ammo holding area steps keyed by Rules.STEP
+---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__AmmoHoldingAreaObservation): SBJ__LogResult|nil>
+local AMMO_HOLDING_AREA_STEPS = {
+  [STEP.BEGIN_TRANSLOAD] = function(ctx, observation)
+    local resupplyUnitState = observation.resupplyUnitState
+    Transitions.beginReload(resupplyUnitState, ctx.unit, ctx.moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
-        system = stepCtx.missileSystemType,
-        unit = metResupplyUnitState.name,
+        unit = resupplyUnitState.name,
         action = "transload_started",
         state = "RELOAD",
-        startedAt = os.date(constants.DATE_FORMAT, (stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]).reloadStartTime)
+        startedAt = os.date(constants.DATE_FORMAT, resupplyUnitState.reloadStartTime)
       }
     }
   end,
 
-  [STEP.STOP] = function(stepCtx)
-    Transitions.settle(stepCtx.systemState, stepCtx.unit, stepCtx.moveCtx.isAuto)
-    return nil
+  [STEP.STOP] = function(ctx)
+    Transitions.settle(ctx.systemState, ctx.unit, ctx.moveCtx.isAuto)
   end,
 }
 
----Observe a firing unit entering its firing point
----@param stepCtx SBJ__ArrivalStepContext
----@return SBJ__ArrivalRuleParams
-local function observeFiringPoint(stepCtx)
-  stepCtx.firingUnitState = stepCtx.systemState.firingUnits[stepCtx.unit.name]
-  return { isAuto = stepCtx.moveCtx.isAuto, firingUnitState = stepCtx.firingUnitState }
-end
+---Observe a unit entering its hide area
+---@param ctx SBJ__ArrivalContext
+---@return SBJ__HideAreaObservation|nil # Nil when the unit is not a firing unit of this system
+local function observeHideArea(ctx)
+  local unit = ctx.unit
+  local firingUnitState = ctx.systemState.firingUnits[unit.name]
+  if not firingUnitState then
+    return nil
+  end
 
----Observe a firing unit entering its hide area
----@param stepCtx SBJ__ArrivalStepContext
----@return SBJ__ArrivalRuleParams
-local function observeHideArea(stepCtx)
-  local unit, moveCtx = stepCtx.unit, stepCtx.moveCtx
-  local firingUnitState = stepCtx.systemState.firingUnits[unit.name]
-  stepCtx.firingUnitState = firingUnitState
   return {
-    isAuto = moveCtx.isAuto,
     firingUnitState = firingUnitState,
-    hideOnEnterHA = moveCtx.hideOnEnterHA,
-    isLowAmmo = firingUnitState ~= nil and Ammo.isLowAmmo(unit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID),
+    isLowAmmo = function()
+      return Ammo.isLowAmmo(unit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+    end,
   }
 end
 
----Observe a unit entering its reload point: the meeting, and the arriving resupply unit's paired firing unit
----@param stepCtx SBJ__ArrivalStepContext
----@return SBJ__ArrivalRuleParams
-local function observeReloadPoint(stepCtx)
-  local unit, moveCtx, systemState = stepCtx.unit, stepCtx.moveCtx, stepCtx.systemState
-  local hasMet, metFiringUnitState = Meeting.hasMetResupplyUnit(systemState, unit, moveCtx.isAuto)
-  hasMet = hasMet and metFiringUnitState ~= nil
-  if hasMet and metFiringUnitState then
-    stepCtx.firingUnitState = metFiringUnitState
-    stepCtx.firingUnit = (unit.name == metFiringUnitState.name) and unit or
-        GameApi.ScenEdit_GetUnit(metFiringUnitState.name, unit.side)
+---Observe a unit entering its ammo holding area
+---@param ctx SBJ__ArrivalContext
+---@return SBJ__AmmoHoldingAreaObservation|nil # Nil when the unit is not a resupply unit of this system
+local function observeAmmoHoldingArea(ctx)
+  local unit = ctx.unit
+  local resupplyUnitState = ctx.systemState.resupplyUnits[unit.name]
+  if not resupplyUnitState then
+    return nil
   end
 
-  local resupplyUnitState = systemState.resupplyUnits[unit.name]
-  local pairedFiringUnitState = resupplyUnitState and (GroundStateStore.resolvePair(systemState, unit.name))
-  local pairedFiringUnit = pairedFiringUnitState and
-      GameApi.ScenEdit_GetUnit(pairedFiringUnitState.name, moveCtx.firingUnitLookupSide)
-  stepCtx.resupplyUnitState = resupplyUnitState
-  stepCtx.pairedFiringUnitState = pairedFiringUnitState
-
   return {
-    isAuto = moveCtx.isAuto,
-    hasMet = hasMet,
-    hasFiringUnit = stepCtx.firingUnit ~= nil,
-    hideResupplyOnRLNoMeeting = moveCtx.hideResupplyOnRLNoMeeting,
     resupplyUnitState = resupplyUnitState,
-    pairedFiringUnitState = pairedFiringUnitState,
-    hasPairedFiringUnit = pairedFiringUnit ~= nil,
-    isPairedFiringUnitLowAmmo = pairedFiringUnitState ~= nil and pairedFiringUnit ~= nil and
-        Ammo.isLowAmmo(pairedFiringUnit, pairedFiringUnitState.ammoThreshold, pairedFiringUnitState.weaponDBID),
+    isAtAmmoDepot = function()
+      return Meeting.isAtAmmoDepot(resupplyUnitState, unit)
+    end,
   }
 end
 
----Observe a resupply unit entering its ammo holding area
----@param stepCtx SBJ__ArrivalStepContext
----@return SBJ__ArrivalRuleParams
-local function observeAmmoHoldingArea(stepCtx)
-  local unit, moveCtx = stepCtx.unit, stepCtx.moveCtx
-  local hasMet, metResupplyUnitState = Meeting.hasMetAmmoDepot(stepCtx.systemState, unit, moveCtx.isAuto)
-  local resupplyUnitState = stepCtx.systemState.resupplyUnits[unit.name]
-  stepCtx.resupplyUnitState = resupplyUnitState
-  stepCtx.metResupplyUnitState = metResupplyUnitState
-  return {
-    isAuto = moveCtx.isAuto,
-    hasMet = resupplyUnitState ~= nil and hasMet and metResupplyUnitState ~= nil,
-  }
-end
-
----Position observers keyed by the token extracted from the event trigger
----@type table<string, fun(stepCtx: SBJ__ArrivalStepContext): SBJ__ArrivalRuleParams>
-local POSITION_OBSERVERS = {
-  [constants.POSITION_TYPES.FIRING_POINT]      = observeFiringPoint,
-  [constants.POSITION_TYPES.HIDE_AREA]         = observeHideArea,
-  [constants.POSITION_TYPES.RELOAD_POINT]      = observeReloadPoint,
-  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = observeAmmoHoldingArea,
+---How each position is observed, decided and carried out, keyed by the token extracted from the event trigger
+---@type table<string, SBJ__ArrivalPosition>
+local POSITIONS = {
+  [constants.POSITION_TYPES.FIRING_POINT] = {
+    observe = function(ctx) return ctx.systemState.firingUnits[ctx.unit.name] end,
+    evaluate = Rules.evaluateFiringPointArrival,
+    steps = FIRING_POINT_STEPS,
+  },
+  [constants.POSITION_TYPES.HIDE_AREA] = {
+    observe = observeHideArea,
+    evaluate = Rules.evaluateHideAreaArrival,
+    steps = HIDE_AREA_STEPS,
+  },
+  [constants.POSITION_TYPES.RELOAD_POINT] = {
+    observe = function(ctx) return Meeting.resolveReloadPair(ctx.systemState, ctx.unit) end,
+    evaluate = Rules.evaluateReloadPointArrival,
+    steps = RELOAD_POINT_STEPS,
+  },
+  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = {
+    observe = observeAmmoHoldingArea,
+    evaluate = Rules.evaluateAmmoHoldingAreaArrival,
+    steps = AMMO_HOLDING_AREA_STEPS,
+  },
 }
-
----Observe one missile system, ask Rules for the steps and run them
----@param positionType string
----@param stepCtx SBJ__ArrivalStepContext
----@return SBJ__LogResult[] rows Log rows of the steps that produced one
-local function processSystem(positionType, stepCtx)
-  local rows = {}
-  local steps = Rules.evaluateArrival(positionType, POSITION_OBSERVERS[positionType](stepCtx))
-  for _, step in ipairs(steps) do
-    local row = ARRIVAL_STEPS[step](stepCtx)
-    if row then
-      table.insert(rows, row)
-    end
-  end
-  return rows
-end
 
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
 ---@param params SBJ__MoveToPositionEventParams
@@ -283,7 +217,8 @@ function Arrival.processMoveToPositionEvent(params)
   local unit = params.unit
   local moveCtx = params.moveCtx
   local positionType = resolvePositionType(params.event)
-  if not positionType or not POSITION_OBSERVERS[positionType] then
+  local position = positionType and POSITIONS[positionType]
+  if not position then
     return
   end
 
@@ -293,14 +228,13 @@ function Arrival.processMoveToPositionEvent(params)
 
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
-  forEachEnabledSystem(params.groundState, function(systemState, missileSystemType)
-    local rows = processSystem(positionType, {
-      missileSystemType = missileSystemType,
-      systemState = systemState,
-      unit = unit,
-      moveCtx = moveCtx
-    })
-    for _, row in ipairs(rows) do
+  GroundStateStore.forEachEnabledSystem(params.groundState, function(systemState, missileSystemType)
+    ---@type SBJ__ArrivalContext
+    local ctx = { systemState = systemState, unit = unit, moveCtx = moveCtx }
+    local observation = position.observe(ctx)
+    local steps = position.evaluate(moveCtx, observation)
+    for _, row in ipairs(Shared.processSteps(steps, position.steps, ctx, observation)) do
+      row.fields.system = missileSystemType
       report.add(row.tag, row.fields)
     end
   end)

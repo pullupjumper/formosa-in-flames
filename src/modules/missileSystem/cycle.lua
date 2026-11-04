@@ -1,4 +1,3 @@
-local constants = require("src.core.constants")
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local Utils = require("src.utils.utils")
@@ -8,6 +7,7 @@ local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local Rules = require("src.modules.missileSystem.rules")
+local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
 
 ---Runs the reload cycle: observes each unit, asks Rules for the steps and carries them out.
@@ -16,134 +16,105 @@ local Cycle = {}
 local STEP = Rules.STEP
 local ORDER = Movement.ORDER
 
----Step that sends the firing unit on a move order and keeps its row
+---Step that sends the firing unit on a move order
 ---@param order SBJ__MoveOrder
----@return fun(stepCtx: SBJ__FiringUnitStepContext)
+---@return fun(tick: SBJ__FiringUnitTick): SBJ__LogResult
 local function departFiringUnit(order)
-  return function(stepCtx)
-    table.insert(stepCtx.results, Transitions.depart(stepCtx.firingUnitState, stepCtx.firingUnit, order))
+  return function(tick)
+    return Transitions.depart(tick.firingUnitState, tick.firingUnit, order)
   end
 end
 
----Step that sends the resupply unit on a move order and keeps its row
----Rules emits these steps only when the resupply unit and its state exist.
----@param order SBJ__MoveOrder
----@return fun(stepCtx: SBJ__FiringUnitStepContext|SBJ__ResupplyUnitStepContext)
-local function departResupplyUnit(order)
-  return function(stepCtx)
-    table.insert(stepCtx.results, Transitions.depart(
-      stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]], stepCtx.resupplyUnit --[[@as CMO__Unit]], order))
-  end
-end
-
----Seconds since a clock started, or 0 when it has not started yet
----@param startTime number|nil
----@param currentTime number
----@return number
-local function calculateElapsedSec(startTime, currentTime)
-  return startTime and currentTime - startTime or 0
-end
-
----Firing unit steps keyed by Rules.STEP; each one acts on CMO, records the transition and adds its log rows
----@type table<string, fun(stepCtx: SBJ__FiringUnitStepContext)>
+---Firing unit steps keyed by Rules.STEP; each one acts on CMO, records the transition and returns its log row
+---@type table<string, fun(tick: SBJ__FiringUnitTick, pair: SBJ__ReloadPair): SBJ__LogResult|nil>
 local FIRING_UNIT_STEPS = {
-  [STEP.BEGIN_STOW] = function(stepCtx)
-    local firingUnitState = stepCtx.firingUnitState
+  [STEP.BEGIN_STOW] = function(tick)
+    local firingUnitState = tick.firingUnitState
     Transitions.beginStow(firingUnitState)
-    table.insert(stepCtx.results, {
+    return {
       tag = "OK",
       fields = {
         unit = firingUnitState.name,
         action = "stow_countdown_started",
         startedAt = firingUnitState.stowStartTime
       }
-    })
+    }
   end,
 
-  [STEP.END_STOW] = function(stepCtx)
-    Transitions.endStow(stepCtx.firingUnitState)
+  [STEP.END_STOW] = function(tick)
+    Transitions.endStow(tick.firingUnitState)
   end,
 
   [STEP.MOVE_TO_HIDE_AREA] = departFiringUnit(ORDER.HIDE_AREA),
 
-  [STEP.UNHIDE_RESUPPLY_UNIT] = function(stepCtx)
-    local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    local success, errorFields = Concealment.moveFromHideArea(resupplyUnitState, stepCtx.resupplyUnit)
+  [STEP.UNHIDE_RESUPPLY_UNIT] = function(_, pair)
+    local success, errorFields = Concealment.moveFromHideArea(pair.resupplyUnitState, pair.resupplyUnit)
     if not success then
-      table.insert(stepCtx.results, {
+      return {
         tag = "WARN",
         fields = LogFormat.merge({
-          unit = resupplyUnitState.name,
+          unit = pair.resupplyUnitState.name,
           action = "unload_from_hide_area"
         }, errorFields)
-      })
+      }
     end
   end,
 
-  [STEP.MOVE_RESUPPLY_UNIT_TO_RELOAD_POINT] = departResupplyUnit(ORDER.RESUPPLY_VIA_SHRL),
+  [STEP.MOVE_RESUPPLY_UNIT_TO_RELOAD_POINT] = function(_, pair)
+    return Transitions.depart(pair.resupplyUnitState, pair.resupplyUnit, ORDER.RESUPPLY_VIA_SHRL)
+  end,
 
-  [STEP.WARN_RESUPPLY_UNIT_NOT_FOUND] = function(stepCtx)
-    table.insert(stepCtx.results, {
+  [STEP.WARN_RESUPPLY_UNIT_NOT_FOUND] = function(tick)
+    return {
       tag = "WARN",
       fields = {
-        unit = (stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]).name,
+        unit = tick.firingUnitState.resupplyUnit,
         action = ORDER.RESUPPLY_VIA_SHRL.action,
         reason = "unit_not_found"
       }
-    })
+    }
   end,
 
-  [STEP.WARN_RESUPPLY_STATE_NOT_FOUND] = function(stepCtx)
-    table.insert(stepCtx.results, {
+  [STEP.WARN_RESUPPLY_STATE_NOT_FOUND] = function(tick)
+    return {
       tag = "WARN",
       fields = {
-        unit = stepCtx.firingUnitState.resupplyUnit or "unknown",
+        unit = tick.firingUnitState.resupplyUnit or "unknown",
         action = ORDER.RESUPPLY_VIA_SHRL.action,
         reason = "context_not_found"
       }
-    })
+    }
   end,
 
   [STEP.MOVE_TO_RELOAD_POINT] = departFiringUnit(ORDER.RELOAD_POINT),
 
-  [STEP.ENSURE_RELOAD_CLOCK] = function(stepCtx)
-    Transitions.ensureReloadClock(stepCtx.firingUnitState)
+  [STEP.ENSURE_RELOAD_CLOCK] = function(tick)
+    Transitions.ensureReloadClock(tick.firingUnitState)
   end,
 
-  [STEP.COMPLETE_RELOAD] = function(stepCtx)
-    local firingUnitState = stepCtx.firingUnitState
-    local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    local loaded = Ammo.reloadFiringUnit(resupplyUnitState,
-      Ammo.buildReload(stepCtx.firingUnit, firingUnitState.weaponDBID, resupplyUnitState.weaponCountCurrent))
-    Transitions.finishReload(firingUnitState)
-    table.insert(stepCtx.results, {
+  [STEP.COMPLETE_RELOAD] = function(tick, pair)
+    local loaded = Ammo.reloadFiringUnit(pair.resupplyUnitState, pair.buildReload())
+    Transitions.finishReload(tick.firingUnitState)
+    return {
       tag = "OK",
       fields = {
-        unit = firingUnitState.name,
+        unit = tick.firingUnitState.name,
         action = "missile_reload_finished",
         loaded = loaded
       }
-    })
+    }
   end,
 
-  -- The resupply unit's remaining missiles are known only after the reload, so the stock check stays here.
-  [STEP.HIDE_RESUPPLY_UNIT] = function(stepCtx)
-    local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    local resupplyUnit = stepCtx.resupplyUnit
-    if not resupplyUnit or resupplyUnitState.weaponCountCurrent <= 0
-        or not Meeting.findUnitArea(resupplyUnit, resupplyUnitState.operationalArea) then
-      return
-    end
-
-    local success, errorFields = Concealment.hideUnit(resupplyUnitState, resupplyUnit)
+  [STEP.HIDE_RESUPPLY_UNIT_AFTER_RELOAD] = function(_, pair)
+    local success, errorFields = Concealment.hideUnit(pair.resupplyUnitState, pair.resupplyUnit)
     if not success then
-      table.insert(stepCtx.results, {
+      return {
         tag = "WARN",
         fields = LogFormat.merge({
-          unit = resupplyUnitState.name,
+          unit = pair.resupplyUnitState.name,
           action = "hide_resupply_unit"
         }, errorFields)
-      })
+      }
     end
   end,
 
@@ -151,34 +122,34 @@ local FIRING_UNIT_STEPS = {
 }
 
 ---Resupply unit steps keyed by Rules.STEP
----@type table<string, fun(stepCtx: SBJ__ResupplyUnitStepContext)>
+---@type table<string, fun(tick: SBJ__ResupplyUnitTick, ammoDepotState: SBJ__AmmunitionState): SBJ__LogResult|nil>
 local RESUPPLY_UNIT_STEPS = {
-  [STEP.MOVE_TO_AMMO_HOLDING_AREA] = departResupplyUnit(ORDER.AMMO_HOLDING_AREA),
-
-  [STEP.ENSURE_RELOAD_CLOCK] = function(stepCtx)
-    Transitions.ensureReloadClock(stepCtx.resupplyUnitState)
+  [STEP.MOVE_TO_AMMO_HOLDING_AREA] = function(tick)
+    return Transitions.depart(tick.resupplyUnitState, tick.resupplyUnit, ORDER.AMMO_HOLDING_AREA)
   end,
 
-  [STEP.FAIL_AMMO_DEPOT_STATE_NOT_FOUND] = function(stepCtx)
-    table.insert(stepCtx.results, {
+  [STEP.ENSURE_RELOAD_CLOCK] = function(tick)
+    Transitions.ensureReloadClock(tick.resupplyUnitState)
+  end,
+
+  [STEP.FAIL_AMMO_DEPOT_STATE_NOT_FOUND] = function(tick)
+    return {
       tag = "FAIL",
       fields = {
-        unit = stepCtx.resupplyUnitState.name,
+        unit = tick.resupplyUnitState.name,
         action = "ammo_transload_finished",
         reason = "ammo_context_not_found"
       }
-    })
+    }
   end,
 
-  [STEP.COMPLETE_TRANSLOAD] = function(stepCtx)
-    local resupplyUnitState = stepCtx.resupplyUnitState
-    local _, _, ammoDepotState = GroundStateStore.resolvePair(stepCtx.systemState, resupplyUnitState.name)
-    ---@cast ammoDepotState SBJ__AmmunitionState
+  [STEP.COMPLETE_TRANSLOAD] = function(tick, ammoDepotState)
+    local resupplyUnitState = tick.resupplyUnitState
     local beforeResupply = resupplyUnitState.weaponCountCurrent
     local beforeDepot = ammoDepotState.weaponCountCurrent
     Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
     Transitions.finishReload(resupplyUnitState)
-    table.insert(stepCtx.results, {
+    return {
       tag = "OK",
       fields = {
         unit = resupplyUnitState.name,
@@ -187,24 +158,13 @@ local RESUPPLY_UNIT_STEPS = {
         depotBefore = beforeDepot,
         depotAfter = ammoDepotState.weaponCountCurrent
       }
-    })
+    }
   end,
 
-  [STEP.RECALL_TO_RELOAD_POINT] = departResupplyUnit(ORDER.RESUPPLY_RECALL),
+  [STEP.RECALL_TO_RELOAD_POINT] = function(tick)
+    return Transitions.depart(tick.resupplyUnitState, tick.resupplyUnit, ORDER.RESUPPLY_RECALL)
+  end,
 }
-
----Run steps in order against their handlers
----@param steps string[]
----@generic T: SBJ__FiringUnitStepContext|SBJ__ResupplyUnitStepContext
----@param handlers table<string, fun(stepCtx: T)>
----@param stepCtx T
----@return SBJ__LogResult[] results Collected structured results
-local function runSteps(steps, handlers, stepCtx)
-  for _, step in ipairs(steps) do
-    handlers[step](stepCtx)
-  end
-  return stepCtx.results
-end
 
 ---Run one reload cycle step for a firing unit
 ---@param systemState SBJ__MissileSystemState
@@ -213,32 +173,23 @@ end
 ---@param firingUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function processFiringUnit(systemState, runCtx, firingUnitState, firingUnit)
-  local _, resupplyUnitState = GroundStateStore.resolvePair(systemState, firingUnitState.name)
-  local resupplyUnit = resupplyUnitState and GameApi.ScenEdit_GetUnit(resupplyUnitState.name, firingUnit.side)
-  local currentTime = GameApi.ScenEdit_CurrentTime()
-
-  local steps = Rules.evaluateFiringUnitTick({
-    state = firingUnitState.state,
-    isAuto = runCtx.isAuto,
-    isLowAmmo = Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID),
-    stowElapsedSec = firingUnitState.stowStartTime and currentTime - firingUnitState.stowStartTime,
-    stowTimeSec = runCtx.systemConfig.stowTime,
-    reloadElapsedSec = calculateElapsedSec(firingUnitState.reloadStartTime, currentTime),
-    reloadTimeSec = runCtx.systemConfig.reloadTime,
-    hasMet = (Meeting.hasMetResupplyUnit(systemState, firingUnit, runCtx.isAuto)),
-    staysDeployed = Rules.staysDeployed(systemState.name),
-    hasResupplyUnitState = resupplyUnitState ~= nil,
-    hasResupplyUnit = resupplyUnit ~= nil,
-  })
-
-  return runSteps(steps, FIRING_UNIT_STEPS, {
-    systemState = systemState,
+  ---@type SBJ__FiringUnitTick
+  local tick = {
     firingUnitState = firingUnitState,
     firingUnit = firingUnit,
-    resupplyUnitState = resupplyUnitState,
-    resupplyUnit = resupplyUnit,
-    results = {}
-  })
+    isAuto = runCtx.isAuto,
+    now = GameApi.ScenEdit_CurrentTime(),
+    stowTimeSec = runCtx.systemConfig.stowTime,
+    reloadTimeSec = runCtx.systemConfig.reloadTime,
+    staysDeployed = Rules.staysDeployed(systemState.name),
+    hasResupplyUnitState = systemState.resupplyUnits[firingUnitState.resupplyUnit] ~= nil,
+    isLowAmmo = function()
+      return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+    end,
+  }
+  local pair = Meeting.resolveReloadPair(systemState, firingUnit)
+
+  return Shared.processSteps(Rules.evaluateFiringUnitTick(tick, pair), FIRING_UNIT_STEPS, tick, pair)
 end
 
 ---Run one reload cycle step for a resupply unit
@@ -248,68 +199,48 @@ end
 ---@param resupplyUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
 local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnit)
-  local _, _, ammoDepotState = GroundStateStore.resolvePair(systemState, resupplyUnitState.name)
-  local steps = Rules.evaluateResupplyUnitTick({
-    state = resupplyUnitState.state,
-    isAuto = runCtx.isAuto,
-    weaponCount = resupplyUnitState.weaponCountCurrent,
-    isInOperationalArea = Meeting.findUnitArea(resupplyUnit, resupplyUnitState.operationalArea) ~= nil,
-    reloadElapsedSec = calculateElapsedSec(resupplyUnitState.reloadStartTime, GameApi.ScenEdit_CurrentTime()),
-    reloadTimeSec = runCtx.systemConfig.reloadTime,
-    hasMet = (Meeting.hasMetAmmoDepot(systemState, resupplyUnit, runCtx.isAuto)),
-    hasAmmoDepotState = ammoDepotState ~= nil,
-  })
-
-  return runSteps(steps, RESUPPLY_UNIT_STEPS, {
-    systemState = systemState,
+  ---@type SBJ__ResupplyUnitTick
+  local tick = {
     resupplyUnitState = resupplyUnitState,
     resupplyUnit = resupplyUnit,
-    results = {}
-  })
-end
+    isAuto = runCtx.isAuto,
+    now = GameApi.ScenEdit_CurrentTime(),
+    reloadTimeSec = runCtx.systemConfig.reloadTime,
+    isInReloadArea = function()
+      return Meeting.findReloadArea(resupplyUnit, resupplyUnitState.operationalArea) ~= nil
+    end,
+    isAtAmmoDepot = function()
+      return Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit)
+    end,
+  }
+  local _, _, ammoDepotState = GroundStateStore.resolvePair(systemState, resupplyUnitState.name)
 
----Process all firing units and collect structured results
----@param systemState SBJ__MissileSystemState
----@param runCtx SBJ__CycleRunContext
----@param sideName string
----@return SBJ__LogResult[] results Collected structured results
-local function processFiringUnits(systemState, runCtx, sideName)
-  local results = {}
-  for _, firingUnitState in pairs(systemState.firingUnits) do
-    local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitState.name, sideName)
-
-    if firingUnit then
-      Utils.addAll(results, processFiringUnit(systemState, runCtx, firingUnitState, firingUnit))
-    end
-  end
-  return results
-end
-
----Process all resupply units and collect structured results
----@param systemState SBJ__MissileSystemState
----@param runCtx SBJ__CycleRunContext
----@param sideName string
----@return SBJ__LogResult[] results Collected structured results
-local function processResupplyUnits(systemState, runCtx, sideName)
-  local results = {}
-  for _, resupplyUnitState in pairs(systemState.resupplyUnits) do
-    local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitState.name, sideName)
-
-    if resupplyUnit then
-      Utils.addAll(results, processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnit))
-    end
-  end
-  return results
+  return Shared.processSteps(Rules.evaluateResupplyUnitTick(tick, ammoDepotState), RESUPPLY_UNIT_STEPS, tick,
+    ammoDepotState)
 end
 
 ---Process missile-system reload cycles and return structured results
+---Firing units go first: their steps change the resupply unit states the resupply loop then reads.
 ---@param systemState SBJ__MissileSystemState
 ---@param runCtx SBJ__CycleRunContext
 ---@param sideName string
 ---@return SBJ__LogResult[] results Collected structured results
 function Cycle.process(systemState, runCtx, sideName)
-  local results = processFiringUnits(systemState, runCtx, sideName)
-  Utils.addAll(results, processResupplyUnits(systemState, runCtx, sideName))
+  local results = {}
+  for _, firingUnitState in pairs(systemState.firingUnits) do
+    local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitState.name, sideName)
+    if firingUnit then
+      Utils.addAll(results, processFiringUnit(systemState, runCtx, firingUnitState, firingUnit))
+    end
+  end
+
+  for _, resupplyUnitState in pairs(systemState.resupplyUnits) do
+    local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitState.name, sideName)
+    if resupplyUnit then
+      Utils.addAll(results, processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnit))
+    end
+  end
+
   return results
 end
 

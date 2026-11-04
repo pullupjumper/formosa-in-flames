@@ -6,8 +6,6 @@ local Transitions = require("src.modules.missileSystem.transitions")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
-local Ammo = require("src.modules.missileSystem.ammo")
-local GameApi = require("src.utils.gameApi")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
 
@@ -70,8 +68,7 @@ describe("MissileSystem Arrival", function()
       local moveCtx = {
         isAuto = true,
         hideOnEnterHA = false,
-        hideResupplyOnRLNoMeeting = false,
-        firingUnitLookupSide = "China"
+        hideResupplyOnRLNoMeeting = false
       }
       for k, v in pairs(overrides or {}) do
         moveCtx[k] = v
@@ -238,13 +235,31 @@ describe("MissileSystem Arrival", function()
 
     -- --- RL --------------------------------------------------------------
 
+    ---Pair Meeting.resolveReloadPair hands to the RL rule: FU1 (the arriving unit by default) with RS1
+    ---@param overrides? table Fields to override on the default pair, which has met
+    local function buildPair(overrides)
+      local pair = {
+        firingUnitState = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING },
+        firingUnit = makeUnit(),
+        resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 8 },
+        resupplyUnit = makeUnit({ name = "RS1", guid = "guid-rs1" }),
+        isTriggeredByFiringUnit = true,
+        isFiringUnitLowAmmo = function() return true end,
+        isInSameReloadArea = function() return true end,
+      }
+      for k, v in pairs(overrides or {}) do
+        pair[k] = v
+      end
+      return pair
+    end
+
     -- Positive: RL + firing unit + meeting confirmed starts reload
     it("should set reload start time on RL when firing unit has met resupply unit", function()
-      local unit = makeUnit()
-      local firingUnitState = { name = "FU1" }
-      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState }, resupplyUnits = { RS1 = { name = "RS1" } } })
+      local pair = buildPair()
+      local unit = pair.firingUnit
+      local systemState = makeSystemState()
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitState)
+      local resolvePairStub = trackStub(Meeting, "resolveReloadPair").returns(pair)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       local settleStub = trackStub(Transitions, "settle")
 
@@ -254,45 +269,49 @@ describe("MissileSystem Arrival", function()
         event = enterEvent("RL"),
       })
 
+      assert.stub(resolvePairStub).was.called_with(systemState, unit)
       assert.stub(beginReloadStub).was.called(1)
-      assert.stub(beginReloadStub).was.called_with(firingUnitState, unit, makeMoveCtx().isAuto)
+      assert.stub(beginReloadStub).was.called_with(pair.firingUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(settleStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "action=reload_started", 1, true))
+      assert.is_truthy(string.find(message, "system=" .. SYSTEM_KEY, 1, true))
     end)
 
-    -- Negative: a confirmed meeting whose firing unit cannot be found in game starts nothing
-    it("should warn and not start reload when the met firing unit is not in the game", function()
+    -- Negative: a unit without a complete pair stops in manual mode and hides nothing
+    it("should stop in manual mode on RL when the unit has no complete pair", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local firingUnitState = { name = "FU1" }
-      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { RS1 = { name = "RS1" } } })
+      local systemState = makeSystemState()
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(true, firingUnitState)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
+      trackStub(Meeting, "resolveReloadPair").returns(nil)
       local beginReloadStub = trackStub(Transitions, "beginReload")
+      local settleStub = trackStub(Transitions, "settle")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
         groundState = groundStateWith(systemState),
         unit = unit,
         event = enterEvent("RL"),
+        policy = { hideResupplyOnRLNoMeeting = true },
       })
 
       assert.stub(beginReloadStub).was_not.called()
-      local message = logStub.calls[1].vals[2]
-      assert.is_truthy(string.find(message, "action=reload_not_started", 1, true))
+      assert.stub(settleStub).was.called_with(systemState, unit, false)
+      assert.stub(hideUnitStub).was_not.called()
+      assert.stub(logStub).was_not.called()
     end)
 
     -- Negative: RL + firing unit + meeting not detected falls back to no-meeting path.
     -- The policy mode is intentionally NOT forwarded: settle always runs in manual mode
     -- so a firing unit that drifts through RL during repositioning does not halt mid-move.
     it("should fall back to no-meeting path on RL when firing unit exists but no meeting", function()
-      local unit = makeUnit()
-      local firingUnitState = { name = "FU1" }
-      local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
+      local pair = buildPair({ isInSameReloadArea = function() return false end })
+      local unit = pair.firingUnit
+      local systemState = makeSystemState()
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
+      trackStub(Meeting, "resolveReloadPair").returns(pair)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       local settleStub = trackStub(Transitions, "settle")
 
@@ -308,18 +327,29 @@ describe("MissileSystem Arrival", function()
       assert.stub(logStub).was_not.called()
     end)
 
+    -- Negative: in auto mode a unit that is not on its way does not meet
+    it("should not begin a reload on RL in auto mode when the arriving unit is not repositioning", function()
+      local pair = buildPair()
+      pair.firingUnitState.state = constants.MISSILE_SYSTEM_STATE.HIDE
+      local systemState = makeSystemState()
+
+      trackStub(Meeting, "resolveReloadPair").returns(pair)
+      local beginReloadStub = trackStub(Transitions, "beginReload")
+      trackStub(Transitions, "settle")
+
+      enterArea({ groundState = groundStateWith(systemState), unit = pair.firingUnit, event = enterEvent("RL") })
+
+      assert.stub(beginReloadStub).was_not.called()
+    end)
+
     -- Positive: RL no-meeting + hideResupplyOnRLNoMeeting + ammo sufficient hides resupply unit
     it("should hide resupply unit on RL no-meeting when firing unit ammo is sufficient", function()
-      local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
-      local firingUnit = { name = "FU1" }
+      local pair = buildPair({ isTriggeredByFiringUnit = false, isFiringUnitLowAmmo = function() return false end })
+      local unit = pair.resupplyUnit
+      local systemState = makeSystemState()
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
+      trackStub(Meeting, "resolveReloadPair").returns(pair)
       local settleStub = trackStub(Transitions, "settle")
-      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
-      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
       enterArea({
@@ -334,34 +364,27 @@ describe("MissileSystem Arrival", function()
 
       assert.stub(settleStub).was.called(1)
       assert.stub(settleStub).was.called_with(systemState, unit, false)
-      assert.stub(getUnitStub).was.called(1)
-      assert.stub(getUnitStub).was.called_with("FU1", "China")
-      assert.stub(isLowAmmoStub).was.called(1)
-      assert.stub(isLowAmmoStub).was.called_with(firingUnit, 30, 123)
       assert.stub(hideUnitStub).was.called(1)
-      assert.stub(hideUnitStub).was.called_with(resupplyUnitState, unit)
+      assert.stub(hideUnitStub).was.called_with(pair.resupplyUnitState, unit)
       assert.stub(logStub).was.called(1)
 
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "action=resupply_concealed", 1, true))
+      assert.is_truthy(string.find(message, "pairedFiringUnit=FU1", 1, true))
     end)
 
     -- Negative: RL no-meeting + low ammo must not hide the resupply unit
     it("should not hide resupply unit on RL no-meeting when firing unit ammo is low", function()
-      local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
+      local pair = buildPair({ isTriggeredByFiringUnit = false, isInSameReloadArea = function() return false end })
+      local systemState = makeSystemState()
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
+      trackStub(Meeting, "resolveReloadPair").returns(pair)
       local settleStub = trackStub(Transitions, "settle")
-      trackStub(GameApi, "ScenEdit_GetUnit").returns({ name = "FU1" })
-      trackStub(Ammo, "isLowAmmo").returns(true)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
         groundState = groundStateWith(systemState),
-        unit = unit,
+        unit = pair.resupplyUnit,
         event = enterEvent("RL"),
         policy = {
           hideOnEnterHA = false,
@@ -374,58 +397,22 @@ describe("MissileSystem Arrival", function()
       assert.stub(logStub).was_not.called()
     end)
 
-    -- Boundary: ScenEdit_GetUnit returning nil short-circuits before ammo/hide checks
-    it("should skip ammo and hide checks on RL no-meeting when ScenEdit_GetUnit returns nil", function()
-      local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", firingUnit = "FU1" }
-      local firingUnitState = { name = "FU1", ammoThreshold = 30, weaponDBID = 123 }
-      local systemState = makeSystemState({ firingUnits = { FU1 = firingUnitState }, resupplyUnits = { [unit.name] = resupplyUnitState } })
+    -- Negative: a firing unit arriving alone never hides its resupply unit
+    it("should not hide on RL no-meeting when the arriving unit is the firing unit", function()
+      local pair = buildPair({ isFiringUnitLowAmmo = function() return false end })
+      local systemState = makeSystemState()
 
-      trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
+      trackStub(Meeting, "resolveReloadPair").returns(pair)
       trackStub(Transitions, "settle")
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
-      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
         groundState = groundStateWith(systemState),
-        unit = unit,
+        unit = pair.firingUnit,
         event = enterEvent("RL"),
-        policy = {
-          hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = true
-        }
+        policy = { hideResupplyOnRLNoMeeting = true },
       })
 
-      assert.stub(isLowAmmoStub).was_not.called()
-      assert.stub(hideUnitStub).was_not.called()
-    end)
-
-    -- Boundary: firingUnitState lookup failure on RL no-meeting short-circuits before API call
-    it("should skip hide flow on RL no-meeting when resupply unit references an unknown firing unit", function()
-      local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", firingUnit = "MISSING" }
-      local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
-
-      trackStub(Meeting, "hasMetResupplyUnit").returns(false, nil)
-      local settleStub = trackStub(Transitions, "settle")
-      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit")
-      local isLowAmmoStub = trackStub(Ammo, "isLowAmmo")
-      local hideUnitStub = trackStub(Concealment, "hideUnit")
-
-      enterArea({
-        groundState = groundStateWith(systemState),
-        unit = unit,
-        event = enterEvent("RL"),
-        policy = {
-          hideOnEnterHA = false,
-          hideResupplyOnRLNoMeeting = true
-        }
-      })
-
-      assert.stub(settleStub).was.called(1)
-      assert.stub(getUnitStub).was_not.called()
-      assert.stub(isLowAmmoStub).was_not.called()
       assert.stub(hideUnitStub).was_not.called()
     end)
 
@@ -434,10 +421,10 @@ describe("MissileSystem Arrival", function()
     -- Positive: AHA + meeting confirmed starts reload
     it("should set reload start time on AHA when ammo depot meeting is confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1" }
+      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
-      trackStub(Meeting, "hasMetAmmoDepot").returns(true, resupplyUnitState)
+      local isAtAmmoDepotStub = trackStub(Meeting, "isAtAmmoDepot").returns(true)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       local settleStub = trackStub(Transitions, "settle")
 
@@ -447,6 +434,7 @@ describe("MissileSystem Arrival", function()
         event = enterEvent("AHA"),
       })
 
+      assert.stub(isAtAmmoDepotStub).was.called_with(resupplyUnitState, unit)
       assert.stub(beginReloadStub).was.called(1)
       assert.stub(beginReloadStub).was.called_with(resupplyUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(settleStub).was_not.called()
@@ -459,10 +447,10 @@ describe("MissileSystem Arrival", function()
     -- Negative: AHA fallback resets state when meeting fails
     it("should set state to static on AHA when ammo depot meeting is not confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1" }
+      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
-      trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
+      trackStub(Meeting, "isAtAmmoDepot").returns(false)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       local settleStub = trackStub(Transitions, "settle")
 
@@ -476,6 +464,22 @@ describe("MissileSystem Arrival", function()
       assert.stub(settleStub).was.called(1)
       assert.stub(settleStub).was.called_with(systemState, unit, makeMoveCtx().isAuto)
       assert.stub(logStub).was_not.called()
+    end)
+
+    -- Negative: a resupply unit that still carries missiles does not meet its depot
+    it("should not begin a transload on AHA when the resupply unit still carries missiles", function()
+      local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
+      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 3 }
+      local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
+
+      local isAtAmmoDepotStub = trackStub(Meeting, "isAtAmmoDepot").returns(true)
+      local beginReloadStub = trackStub(Transitions, "beginReload")
+      trackStub(Transitions, "settle")
+
+      enterArea({ groundState = groundStateWith(systemState), unit = unit, event = enterEvent("AHA") })
+
+      assert.stub(beginReloadStub).was_not.called()
+      assert.stub(isAtAmmoDepotStub).was_not.called()
     end)
 
     -- --- Boundaries -------------------------------------------------------

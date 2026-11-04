@@ -10,13 +10,13 @@
 
 ## 概觀
 
-外部只經 [init](init.md) 的 `processUnitEntersArea` 進來；它依觸發單位陣營組出 `moveCtx`（`isAuto`、`hideOnEnterHA`、`hideResupplyOnRLNoMeeting`、`firingUnitLookupSide`），再呼叫 `Arrival.processMoveToPositionEvent`。
+外部只經 [init](init.md) 的 `processUnitEntersArea` 進來；它依觸發單位陣營組出 `moveCtx`（`isAuto`、`hideOnEnterHA`、`hideResupplyOnRLNoMeeting`），再呼叫 `Arrival.processMoveToPositionEvent`。
 
-對每個啟用中的飛彈系統（`forEachEnabledSystem`）走同一個模式：
+`POSITIONS` 是唯一依陣地分的表，每個陣地有 `observe`、`evaluate`、`steps` 三項。對每個啟用中的飛彈系統（`GroundStateStore.forEachEnabledSystem`）走同一個模式：
 
-1. **觀察**：`POSITION_OBSERVERS` 依陣地挑一個 observer（`observeFiringPoint`、`observeHideArea`、`observeReloadPoint`、`observeAmmoHoldingArea`），收集觀察表，並把後面步驟要用的單位放進 `stepCtx`。
-2. **判斷**：`Rules.evaluateArrival(positionType, params)` 回傳步驟清單，條件見 [rules](rules.md#抵達陣地evaluatearrival)。
-3. **執行**：依步驟呼叫 `ARRIVAL_STEPS` 的 handler，每個 handler 經 [transitions](transitions.md) 記錄狀態、需要時呼叫 `Concealment.hideUnit`，回傳一列 log。
+1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；AHA：`SBJ__AmmoHoldingAreaObservation`）。`ctx`（`systemState`、`unit`、`moveCtx`）建好後沒人寫。
+2. **判斷**：`evaluate(moveCtx, observation)` 是 Rules 對應陣地的函式，條件見 [rules](rules.md)。
+3. **執行**：`Shared.processSteps` 依步驟呼叫該陣地的 handler，每個 handler 經 [transitions](transitions.md) 記錄狀態、需要時呼叫 `Concealment.hideUnit`，回傳一列 log。`system=` 由迴圈補上。
 
 ---
 
@@ -31,9 +31,9 @@ flowchart TD
     A[processMoveToPositionEvent] --> B{resolvePositionType}
     B -->|FP/HA/RL/AHA| C[forEachEnabledSystem]
     B -->|其他| Z([結束])
-    C --> D[POSITION_OBSERVERS<br/>收集觀察表]
-    D --> E[Rules.evaluateArrival]
-    E --> F[ARRIVAL_STEPS<br/>Transitions + Concealment]
+    C --> D[POSITIONS.observe]
+    D --> E[POSITIONS.evaluate<br/>Rules.evaluate*Arrival]
+    E --> F[Shared.processSteps<br/>Transitions + Concealment]
     F --> G[report.add]
 ```
 
@@ -58,7 +58,7 @@ flowchart TD
          area=OPAREA-1 reason=no_buildings_in_mask
 ```
 
-**行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後三個 WARN（`concealment_failed`／`resupply_concealment_failed`／`reload_not_started`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
+**行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後兩個 WARN（`concealment_failed`／`resupply_concealment_failed`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
 
 ---
 

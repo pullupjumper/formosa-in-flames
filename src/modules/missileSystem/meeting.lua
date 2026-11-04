@@ -1,15 +1,15 @@
 local GameApi = require("src.utils.gameApi")
-local constants = require("src.core.constants")
 local Ammo = require("src.modules.missileSystem.ammo")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
+---Finds where battery units stand and which partner they can meet. Decides nothing: Rules does.
 local Meeting = {}
 
----Find the area where the unit is located within RL areas
+---Find the RL zone of an operational area that a unit stands in
 ---@param unit CMO__Unit
 ---@param operationalArea SBJ__OperationalArea
----@return string[]|nil # Area reference points or nil
-function Meeting.findUnitArea(unit, operationalArea)
+---@return string[]|nil # Zone reference points, nil when the unit is in no RL zone
+function Meeting.findReloadArea(unit, operationalArea)
   for _, pos in ipairs(operationalArea.RL) do
     if unit:inArea(pos.area) then
       return pos.area
@@ -17,17 +17,6 @@ function Meeting.findUnitArea(unit, operationalArea)
   end
 
   return nil
-end
-
----Check if a unit state is valid for meeting in the given mode
----@param state integer
----@param isAuto boolean
----@return boolean # Whether the state allows meeting
-local function isValidStateForMeeting(state, isAuto)
-  if not isAuto then
-    return true
-  end
-  return state == constants.MISSILE_SYSTEM_STATE.REPOSITIONING or state == constants.MISSILE_SYSTEM_STATE.RELOAD
 end
 
 ---Resolve the CMO unit for a state, reusing the triggering unit when names match
@@ -41,70 +30,60 @@ local function resolveCmoUnit(unitState, triggeringUnit)
   return GameApi.ScenEdit_GetUnit(unitState.name, triggeringUnit.side)
 end
 
----Check if firing unit and its paired resupply unit have met in a shared RL area
+---Resolve the firing unit and resupply unit paired with a unit, both states and both CMO units
 ---@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param isAuto boolean
----@return boolean hasMet Whether the pair has met with reload required
----@return SBJ__FiringUnitState|nil firingUnitState Firing unit state targeted for reload
-function Meeting.hasMetResupplyUnit(systemState, unit, isAuto)
+---@param unit CMO__Unit Firing or resupply unit; reused for its own end, the other end is looked up on its side
+---@return SBJ__ReloadPair|nil # Nil when either state or either CMO unit is missing
+function Meeting.resolveReloadPair(systemState, unit)
   local firingUnitState, resupplyUnitState = GroundStateStore.resolvePair(systemState, unit.name)
   if not firingUnitState or not resupplyUnitState then
-    return false, nil
-  end
-
-  local triggeringState = (unit.name == firingUnitState.name) and firingUnitState or resupplyUnitState
-  if not isValidStateForMeeting(triggeringState.state, isAuto) then
-    return false, nil
+    return nil
   end
 
   local firingUnit = resolveCmoUnit(firingUnitState, unit)
   local resupplyUnit = resolveCmoUnit(resupplyUnitState, unit)
   if not firingUnit or not resupplyUnit then
-    return false, nil
+    return nil
   end
 
-  if not Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
-      or resupplyUnitState.weaponCountCurrent <= 0 then
-    return false, nil
-  end
-
-  local area = Meeting.findUnitArea(firingUnit, firingUnitState.operationalArea)
-  if not area or not resupplyUnit:inArea(area) then
-    return false, nil
-  end
-
-  return true, firingUnitState
+  local reload
+  return {
+    firingUnitState = firingUnitState,
+    firingUnit = firingUnit,
+    resupplyUnitState = resupplyUnitState,
+    resupplyUnit = resupplyUnit,
+    isTriggeredByFiringUnit = unit.name == firingUnitState.name,
+    isFiringUnitLowAmmo = function()
+      return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+    end,
+    isInSameReloadArea = function()
+      local area = Meeting.findReloadArea(firingUnit, firingUnitState.operationalArea)
+      return area ~= nil and resupplyUnit:inArea(area)
+    end,
+    buildReload = function()
+      reload = reload or Ammo.buildReload(firingUnit, firingUnitState.weaponDBID, resupplyUnitState.weaponCountCurrent)
+      return reload
+    end,
+  }
 end
 
----Check if resupply unit has met with ammunition depot in a shared AHA
----@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit
----@param isAuto boolean
----@return boolean hasMet Whether units have met
----@return SBJ__ResupplyUnitState|nil resupplyUnitState The matched resupply unit state
-function Meeting.hasMetAmmoDepot(systemState, unit, isAuto)
-  local resupplyUnitState = systemState.resupplyUnits[unit.name]
-  if not resupplyUnitState or not isValidStateForMeeting(resupplyUnitState.state, isAuto) then
-    return false, nil
-  end
-
-  if resupplyUnitState.weaponCountCurrent ~= 0 then
-    return false, nil
-  end
-
-  local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitState.ammunition, unit.side)
+---Whether a resupply unit and its ammo depot stand in one AHA zone
+---@param resupplyUnitState SBJ__ResupplyUnitState
+---@param resupplyUnit CMO__Unit
+---@return boolean # False also when the ammo depot is not in the game
+function Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit)
+  local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitState.ammunition, resupplyUnit.side)
   if not ammoDepot then
-    return false, nil
+    return false
   end
 
   for _, pos in ipairs(resupplyUnitState.operationalArea.AHA) do
-    if unit:inArea(pos.area) and ammoDepot:inArea(pos.area) then
-      return true, resupplyUnitState
+    if resupplyUnit:inArea(pos.area) and ammoDepot:inArea(pos.area) then
+      return true
     end
   end
 
-  return false, nil
+  return false
 end
 
 return Meeting

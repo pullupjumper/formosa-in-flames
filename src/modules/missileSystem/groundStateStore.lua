@@ -23,6 +23,17 @@ function GroundStateStore.resolvePair(systemState, unitName)
   return firingUnitState, resupplyUnitState, ammoDepotState
 end
 
+---Call back once for every enabled missile system
+---@param groundState SBJ__GroundState
+---@param callback fun(systemState: SBJ__MissileSystemState, missileSystemType: string)
+function GroundStateStore.forEachEnabledSystem(groundState, callback)
+  for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
+    if systemState.enabled then
+      callback(systemState, missileSystemType)
+    end
+  end
+end
+
 ---Handle logic when resupply unit is destroyed
 ---@param unit CMO__Unit
 ---@param systemState SBJ__MissileSystemState

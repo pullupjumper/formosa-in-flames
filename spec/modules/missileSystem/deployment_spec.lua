@@ -5,6 +5,7 @@ local Deployment = require("src.modules.missileSystem.deployment")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
+local config = require("src.core.config")
 local constants = require("src.core.constants")
 
 describe("MissileSystem Deployment", function()
@@ -301,5 +302,27 @@ describe("MissileSystem Deployment", function()
       assert.are.same({}, operationalAreasToRemove)
       assert.are.equal(oldArea, missileSystemConfigMap.srbm.firingUnits["FU-1"].operationalArea)
     end)
+  end)
+
+  -- ============================================================================
+  -- configured batteries
+  -- ============================================================================
+
+  -- The reload cycle hides a resupply unit after a reload on the strength of its meeting in the
+  -- firing unit's RL zone, which holds only while both units share one operational area.
+  it("should give each configured firing unit and its resupply unit the same operational area", function()
+    local pairCount = 0
+    for _, field in ipairs({ "red", "blue", "ally" }) do
+      local ground = config[field] and config[field].ground
+      for systemType, systemConfig in pairs(ground and ground.missileSystemTypes or {}) do
+        for name, firingUnit in pairs(systemConfig.firingUnits or {}) do
+          local resupplyUnit = systemConfig.resupplyUnits[firingUnit.resupplyUnit]
+          assert.is_not_nil(resupplyUnit)
+          assert.are.same(firingUnit.operationalArea, resupplyUnit.operationalArea, field .. "/" .. systemType .. "/" .. name)
+          pairCount = pairCount + 1
+        end
+      end
+    end
+    assert.is_true(pairCount > 0)
   end)
 end)

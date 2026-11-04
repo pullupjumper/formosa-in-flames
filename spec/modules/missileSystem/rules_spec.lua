@@ -1,6 +1,6 @@
 ---@diagnostic disable: missing-fields, param-type-mismatch
 -- MissileSystem Rules Unit Tests
--- Each row: observations in, ordered steps out. Rules is pure, so no stubs are needed.
+-- Each row: observations in, ordered steps out. Rules never calls CMO, so no stubs are needed.
 local Rules = require("src.modules.missileSystem.rules")
 local constants = require("src.core.constants")
 
@@ -9,13 +9,13 @@ local POSITION = constants.POSITION_TYPES
 local READINESS = constants.MISSILE_SYSTEM_READINESS
 local STEP = Rules.STEP
 
----Ammo callback that answers isLowAmmo, or fails the test when called
----@param isLowAmmo boolean|nil nil means the rule must not read ammo
+---Observation function that answers, or fails the test when the rule must not read it
+---@param value boolean|nil nil means the rule must not call it
 ---@return fun(): boolean
-local function answerLowAmmo(isLowAmmo)
+local function answer(value)
   return function()
-    assert.is_not_nil(isLowAmmo)
-    return isLowAmmo --[[@as boolean]]
+    assert.is_not_nil(value)
+    return value --[[@as boolean]]
   end
 end
 
@@ -99,15 +99,15 @@ describe("MissileSystem Rules", function()
 
   describe("evaluateReadiness", function()
     it("should report NOT_HIDDEN for a unit that is not hiding", function()
-      assert.are.equal(READINESS.NOT_HIDDEN, Rules.evaluateReadiness({ state = STATE.STATIC }, answerLowAmmo(nil)))
+      assert.are.equal(READINESS.NOT_HIDDEN, Rules.evaluateReadiness({ state = STATE.STATIC }, answer(nil)))
     end)
 
     it("should report LOW_AMMO for a hiding unit with low ammo", function()
-      assert.are.equal(READINESS.LOW_AMMO, Rules.evaluateReadiness({ state = STATE.HIDE }, answerLowAmmo(true)))
+      assert.are.equal(READINESS.LOW_AMMO, Rules.evaluateReadiness({ state = STATE.HIDE }, answer(true)))
     end)
 
     it("should report READY for a hiding unit with enough ammo", function()
-      assert.are.equal(READINESS.READY, Rules.evaluateReadiness({ state = STATE.HIDE }, answerLowAmmo(false)))
+      assert.are.equal(READINESS.READY, Rules.evaluateReadiness({ state = STATE.HIDE }, answer(false)))
     end)
   end)
 
@@ -118,16 +118,35 @@ describe("MissileSystem Rules", function()
       { name = "should leave a STATIC unit alone", params = { state = STATE.STATIC }, steps = {} },
       { name = "should leave a REPOSITIONING unit alone", params = { state = STATE.REPOSITIONING }, steps = {} },
     }, function(params)
-      return Rules.evaluateSendToFiringPoint({ state = params.state }, answerLowAmmo(params.isLowAmmo))
+      return Rules.evaluateSendToFiringPoint({ state = params.state }, answer(params.isLowAmmo))
     end)
   end)
 
-  describe("evaluateArrival", function()
-    local function arrive(positionType)
-      return function(params)
-        return Rules.evaluateArrival(positionType, buildParams({ isAuto = true }, params))
-      end
-    end
+  ---Pair with a met firing unit FU1 and resupply unit RS1; overrides are plain values, wrapped into observation functions
+  ---@param overrides table|nil firingState, resupplyState, stock, isTriggeredByFiringUnit, isLow, isInSameArea, reloadCount
+  ---@return SBJ__ReloadPair
+  local function buildPair(overrides)
+    local o = buildParams({
+      firingState = STATE.REPOSITIONING,
+      resupplyState = STATE.REPOSITIONING,
+      stock = 8,
+      isTriggeredByFiringUnit = true,
+      isLow = true,
+      isInSameArea = true,
+      reloadCount = 6,
+    }, overrides)
+    return {
+      firingUnitState = { name = "FU1", state = o.firingState },
+      resupplyUnitState = { name = "RS1", state = o.resupplyState, weaponCountCurrent = o.stock },
+      isTriggeredByFiringUnit = o.isTriggeredByFiringUnit,
+      isFiringUnitLowAmmo = answer(o.isLow),
+      isInSameReloadArea = answer(o.isInSameArea),
+      buildReload = function() return { entries = {}, count = o.reloadCount } end,
+    }
+  end
+
+  describe("arrival", function()
+    local moveCtx = { isAuto = true, hideOnEnterHA = true, hideResupplyOnRLNoMeeting = true }
 
     describe("FP", function()
       runRows({
@@ -135,68 +154,88 @@ describe("MissileSystem Rules", function()
         { name = "should do nothing when static in auto mode", params = { firingUnitState = { state = STATE.STATIC } }, steps = {} },
         { name = "should arrive in manual mode whatever the state", params = { isAuto = false, firingUnitState = { state = STATE.STATIC } }, steps = { STEP.ARRIVE_AT_FIRING_POINT } },
         { name = "should do nothing for a unit that is not a firing unit", params = {}, steps = {} },
-      }, arrive(POSITION.FIRING_POINT))
+      }, function(params)
+        return Rules.evaluateFiringPointArrival(buildParams(moveCtx, { isAuto = params.isAuto ~= false }), params.firingUnitState)
+      end)
     end)
 
     describe("HA", function()
-      local firingUnitState = { state = STATE.REPOSITIONING }
       runRows({
-        { name = "should hide a firing unit with enough ammo when the policy hides on HA", params = { firingUnitState = firingUnitState, hideOnEnterHA = true, isLowAmmo = false }, steps = { STEP.HIDE_FIRING_UNIT } },
-        { name = "should not hide a low-ammo firing unit", params = { firingUnitState = firingUnitState, hideOnEnterHA = true, isLowAmmo = true }, steps = {} },
-        { name = "should not hide when the policy is off", params = { firingUnitState = firingUnitState, hideOnEnterHA = false, isLowAmmo = false }, steps = {} },
-        { name = "should do nothing for a unit that is not a firing unit", params = { hideOnEnterHA = true, isLowAmmo = false }, steps = {} },
-      }, arrive(POSITION.HIDE_AREA))
+        { name = "should hide a firing unit with enough ammo when the policy hides on HA", params = { isLow = false }, steps = { STEP.HIDE_FIRING_UNIT } },
+        { name = "should not hide a low-ammo firing unit", params = { isLow = true }, steps = {} },
+        { name = "should not hide or read ammo when the policy is off", params = { hideOnEnterHA = false }, steps = {} },
+        { name = "should do nothing for a unit that is not a firing unit", params = { isFiringUnit = false }, steps = {} },
+      }, function(params)
+        local observation = params.isFiringUnit ~= false
+            and { firingUnitState = { state = STATE.REPOSITIONING }, isLowAmmo = answer(params.isLow) } or nil
+        return Rules.evaluateHideAreaArrival(buildParams(moveCtx, { hideOnEnterHA = params.hideOnEnterHA ~= false }), observation)
+      end)
     end)
 
     describe("RL", function()
-      local paired = {
-        hideResupplyOnRLNoMeeting = true,
-        resupplyUnitState = { name = "RS1" },
-        pairedFiringUnitState = { name = "FU1" },
-        hasPairedFiringUnit = true,
-        isPairedFiringUnitLowAmmo = false,
-      }
+      local alone = { isTriggeredByFiringUnit = false, isLow = false }
       runRows({
-        { name = "should begin the reload after a meeting", params = { hasMet = true, hasFiringUnit = true }, steps = { STEP.BEGIN_RELOAD } },
-        { name = "should warn when the met firing unit is gone", params = { hasMet = true, hasFiringUnit = false }, steps = { STEP.WARN_FIRING_UNIT_NOT_FOUND } },
-        { name = "should stop in manual mode and hide the resupply unit when its firing unit has ammo", params = buildParams(paired, { hasMet = false }), steps = { STEP.STOP_IN_MANUAL_MODE, STEP.HIDE_RESUPPLY_UNIT } },
-        { name = "should not hide when the policy is off", params = buildParams(paired, { hideResupplyOnRLNoMeeting = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
-        { name = "should not hide when the paired firing unit is low", params = buildParams(paired, { isPairedFiringUnitLowAmmo = true }), steps = { STEP.STOP_IN_MANUAL_MODE } },
-        { name = "should not hide when the paired firing unit is gone", params = buildParams(paired, { hasPairedFiringUnit = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
-        { name = "should not hide when the paired firing unit has no state", params = buildParams(paired, { pairedFiringUnitState = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
-        { name = "should not hide a unit that is not a resupply unit", params = buildParams(paired, { resupplyUnitState = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
-      }, arrive(POSITION.RELOAD_POINT))
+        { name = "should begin the reload after a meeting", params = {}, steps = { STEP.BEGIN_RELOAD } },
+        { name = "should begin the reload when the resupply unit arrives to meet", params = { isTriggeredByFiringUnit = false }, steps = { STEP.BEGIN_RELOAD } },
+        { name = "should begin the reload in manual mode whatever the state", params = { isAuto = false, firingState = STATE.HIDE }, steps = { STEP.BEGIN_RELOAD } },
+        { name = "should stop in manual mode when the pair is incomplete", params = { noPair = true }, steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should not meet in auto mode when the arriving unit is not on its way", params = { firingState = STATE.STATIC, isLow = false }, steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should not meet when the firing unit has enough ammo", params = { isLow = false }, steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should not meet when the resupply unit is empty", params = { stock = 0 }, steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should not meet when they stand in different zones", params = { isInSameArea = false }, steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should stop in manual mode and hide the resupply unit when its firing unit has ammo", params = alone, steps = { STEP.STOP_IN_MANUAL_MODE, STEP.HIDE_UNMET_RESUPPLY_UNIT } },
+        { name = "should not hide when the policy is off", params = buildParams(alone, { hideResupplyOnRLNoMeeting = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should not hide when the paired firing unit is low", params = buildParams(alone, { isLow = true, isInSameArea = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
+        { name = "should not hide a resupply unit when the firing unit arrives", params = buildParams(alone, { isTriggeredByFiringUnit = true }), steps = { STEP.STOP_IN_MANUAL_MODE } },
+      }, function(params)
+        local ctx = buildParams(moveCtx, {
+          isAuto = params.isAuto ~= false,
+          hideResupplyOnRLNoMeeting = params.hideResupplyOnRLNoMeeting ~= false,
+        })
+        return Rules.evaluateReloadPointArrival(ctx, not params.noPair and buildPair(params) or nil)
+      end)
     end)
 
     describe("AHA", function()
       runRows({
-        { name = "should begin the transload after a meeting", params = { hasMet = true }, steps = { STEP.BEGIN_TRANSLOAD } },
-        { name = "should stop without a meeting", params = { hasMet = false }, steps = { STEP.STOP } },
-      }, arrive(POSITION.AMMO_HOLDING_AREA))
-    end)
-
-    it("should return no steps for an unknown position type", function()
-      assert.are.same({}, Rules.evaluateArrival(POSITION.MASK, { isAuto = true }))
+        { name = "should begin the transload after meeting its depot", params = { isAtDepot = true }, steps = { STEP.BEGIN_TRANSLOAD } },
+        { name = "should stop when not at its depot", params = { isAtDepot = false }, steps = { STEP.STOP } },
+        { name = "should stop when it still carries missiles", params = { stock = 2 }, steps = { STEP.STOP } },
+        { name = "should stop in auto mode when not on its way", params = { state = STATE.STATIC }, steps = { STEP.STOP } },
+        { name = "should stop for a unit that is not a resupply unit", params = { isResupplyUnit = false }, steps = { STEP.STOP } },
+      }, function(params)
+        local o = buildParams({ state = STATE.REPOSITIONING, stock = 0, isResupplyUnit = true }, params)
+        local observation = o.isResupplyUnit and {
+          resupplyUnitState = { state = o.state, weaponCountCurrent = o.stock },
+          isAtAmmoDepot = answer(o.isAtDepot),
+        } or nil
+        return Rules.evaluateAmmoHoldingAreaArrival(moveCtx, observation)
+      end)
     end)
   end)
 
   describe("evaluateFiringUnitTick", function()
-    local defaults = {
-      state = STATE.STATIC,
-      isAuto = true,
-      isLowAmmo = false,
-      stowElapsedSec = nil,
-      stowTimeSec = 600,
-      reloadElapsedSec = 0,
-      reloadTimeSec = 1800,
-      hasMet = false,
-      staysDeployed = false,
-      hasResupplyUnitState = true,
-      hasResupplyUnit = true,
-    }
-
+    ---Firing unit tick, plus its pair unless params.pair is false
+    ---@param params table state, isAuto, isLow, stowStartTime, reloadStartTime, staysDeployed, hasResupplyUnitState, pair (overrides or false)
     local function tick(params)
-      return Rules.evaluateFiringUnitTick(buildParams(defaults, params))
+      local o = buildParams({
+        state = STATE.STATIC,
+        isAuto = true,
+        now = 10000,
+        staysDeployed = false,
+        hasResupplyUnitState = true,
+      }, params)
+      local pair = params.pair ~= false and buildPair(buildParams({ firingState = o.state }, params.pair)) or nil
+      return Rules.evaluateFiringUnitTick({
+        firingUnitState = { state = o.state, stowStartTime = o.stowStartTime, reloadStartTime = o.reloadStartTime },
+        isAuto = o.isAuto,
+        now = o.now,
+        stowTimeSec = 600,
+        reloadTimeSec = 1800,
+        staysDeployed = o.staysDeployed,
+        hasResupplyUnitState = o.hasResupplyUnitState,
+        isLowAmmo = answer(o.isLow),
+      }, pair)
     end
 
     describe("STATIC", function()
@@ -206,67 +245,71 @@ describe("MissileSystem Rules", function()
         STEP.MOVE_TO_RELOAD_POINT,
         STEP.END_STOW,
       }
+      local stowed = 10000 - 600
       runRows({
-        { name = "should do nothing with enough ammo and no countdown", params = {}, steps = {} },
-        { name = "should begin the stow countdown when low", params = { isLowAmmo = true }, steps = { STEP.BEGIN_STOW } },
-        { name = "should wait while the countdown runs", params = { isLowAmmo = true, stowElapsedSec = 599 }, steps = {} },
-        { name = "should move to HA with enough ammo once stowed", params = { stowElapsedSec = 600 }, steps = { STEP.MOVE_TO_HIDE_AREA, STEP.END_STOW } },
-        { name = "should move with its resupply unit to RL when low once stowed", params = { isLowAmmo = true, stowElapsedSec = 600 }, steps = sendToReloadPoint },
-        { name = "should warn and still move to RL when the resupply unit is gone", params = { isLowAmmo = true, stowElapsedSec = 600, hasResupplyUnit = false }, steps = { STEP.WARN_RESUPPLY_UNIT_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
-        { name = "should warn and still move to RL when the resupply unit has no state", params = { isLowAmmo = true, stowElapsedSec = 600, hasResupplyUnitState = false }, steps = { STEP.WARN_RESUPPLY_STATE_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
-        { name = "should do nothing in manual mode", params = { isAuto = false, isLowAmmo = true, stowElapsedSec = 600 }, steps = {} },
+        { name = "should do nothing with enough ammo and no countdown", params = { isLow = false }, steps = {} },
+        { name = "should begin the stow countdown when low", params = { isLow = true }, steps = { STEP.BEGIN_STOW } },
+        { name = "should wait without reading ammo while the countdown runs", params = { stowStartTime = stowed + 1 }, steps = {} },
+        { name = "should move to HA with enough ammo once stowed", params = { isLow = false, stowStartTime = stowed }, steps = { STEP.MOVE_TO_HIDE_AREA, STEP.END_STOW } },
+        { name = "should move with its resupply unit to RL when low once stowed", params = { isLow = true, stowStartTime = stowed }, steps = sendToReloadPoint },
+        { name = "should warn and still move to RL when the resupply unit is gone", params = { isLow = true, stowStartTime = stowed, pair = false }, steps = { STEP.WARN_RESUPPLY_UNIT_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
+        { name = "should warn and still move to RL when the resupply unit has no state", params = { isLow = true, stowStartTime = stowed, pair = false, hasResupplyUnitState = false }, steps = { STEP.WARN_RESUPPLY_STATE_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
+        { name = "should do nothing in manual mode", params = { isAuto = false, stowStartTime = stowed }, steps = {} },
       }, tick)
     end)
 
     describe("RELOAD", function()
-      local ready = { state = STATE.RELOAD, reloadElapsedSec = 1800, hasMet = true, isLowAmmo = true }
+      local ready = { state = STATE.RELOAD, reloadStartTime = 10000 - 1800 }
       runRows({
-        { name = "should only keep the clock running before the reload time", params = buildParams(ready, { reloadElapsedSec = 1799 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should not finish without a meeting", params = buildParams(ready, { hasMet = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should not finish when no longer low", params = buildParams(ready, { isLowAmmo = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should finish, hide the resupply unit and move to HA", params = ready, steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_RESUPPLY_UNIT, STEP.MOVE_TO_HIDE_AREA } },
-        { name = "should move SAM back to FP", params = buildParams(ready, { staysDeployed = true }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_RESUPPLY_UNIT, STEP.MOVE_TO_FIRING_POINT } },
+        { name = "should only keep the clock running before the reload time", params = buildParams(ready, { reloadStartTime = 10000 - 1799 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should only keep the clock running when the clock has not started", params = { state = STATE.RELOAD }, steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish without its resupply unit", params = buildParams(ready, { pair = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish without a meeting", params = buildParams(ready, { pair = { isInSameArea = false } }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish when no longer low", params = buildParams(ready, { pair = { isLow = false } }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should finish, hide the resupply unit and move to HA", params = ready, steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_RESUPPLY_UNIT_AFTER_RELOAD, STEP.MOVE_TO_HIDE_AREA } },
+        { name = "should not hide a resupply unit the reload empties exactly", params = buildParams(ready, { pair = { stock = 6, reloadCount = 6 } }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.MOVE_TO_HIDE_AREA } },
+        { name = "should hide a resupply unit one missile left after the reload", params = buildParams(ready, { pair = { stock = 7, reloadCount = 6 } }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_RESUPPLY_UNIT_AFTER_RELOAD, STEP.MOVE_TO_HIDE_AREA } },
+        { name = "should move SAM back to FP", params = buildParams(ready, { staysDeployed = true }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_RESUPPLY_UNIT_AFTER_RELOAD, STEP.MOVE_TO_FIRING_POINT } },
         { name = "should only finish in manual mode", params = buildParams(ready, { isAuto = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD } },
       }, tick)
     end)
 
     runRows({
-      { name = "should do nothing while repositioning", params = { state = STATE.REPOSITIONING, isLowAmmo = true, stowElapsedSec = 600 }, steps = {} },
-      { name = "should do nothing while hiding", params = { state = STATE.HIDE, isLowAmmo = true }, steps = {} },
+      { name = "should do nothing while repositioning", params = { state = STATE.REPOSITIONING, stowStartTime = 0 }, steps = {} },
+      { name = "should do nothing while hiding", params = { state = STATE.HIDE }, steps = {} },
     }, tick)
   end)
 
   describe("evaluateResupplyUnitTick", function()
-    local defaults = {
-      state = STATE.STATIC,
-      isAuto = true,
-      weaponCount = 0,
-      isInOperationalArea = true,
-      reloadElapsedSec = 0,
-      reloadTimeSec = 1800,
-      hasMet = false,
-      hasAmmoDepotState = true,
-    }
-
+    ---Resupply unit tick with its ammo depot state unless params.hasAmmoDepotState is false
+    ---@param params table state, isAuto, stock, reloadStartTime, isInReloadArea, isAtDepot, hasAmmoDepotState
     local function tick(params)
-      return Rules.evaluateResupplyUnitTick(buildParams(defaults, params))
+      local o = buildParams({ state = STATE.STATIC, isAuto = true, stock = 0, hasAmmoDepotState = true }, params)
+      return Rules.evaluateResupplyUnitTick({
+        resupplyUnitState = { state = o.state, weaponCountCurrent = o.stock, reloadStartTime = o.reloadStartTime },
+        isAuto = o.isAuto,
+        now = 10000,
+        reloadTimeSec = 1800,
+        isInReloadArea = answer(o.isInReloadArea),
+        isAtAmmoDepot = answer(o.isAtDepot),
+      }, o.hasAmmoDepotState and { name = "AD1" } or nil)
     end
 
     describe("STATIC", function()
       runRows({
-        { name = "should move an empty unit to AHA", params = {}, steps = { STEP.MOVE_TO_AMMO_HOLDING_AREA } },
-        { name = "should keep a unit that still carries missiles", params = { weaponCount = 4 }, steps = {} },
-        { name = "should keep a unit outside its operational area", params = { isInOperationalArea = false }, steps = {} },
+        { name = "should move an empty unit in an RL zone to AHA", params = { isInReloadArea = true }, steps = { STEP.MOVE_TO_AMMO_HOLDING_AREA } },
+        { name = "should keep a unit that still carries missiles", params = { stock = 4 }, steps = {} },
+        { name = "should keep a unit outside its RL zones", params = { isInReloadArea = false }, steps = {} },
         { name = "should do nothing in manual mode", params = { isAuto = false }, steps = {} },
       }, tick)
     end)
 
     describe("RELOAD", function()
-      local ready = { state = STATE.RELOAD, reloadElapsedSec = 1800, hasMet = true }
+      local ready = { state = STATE.RELOAD, reloadStartTime = 10000 - 1800, isAtDepot = true }
       runRows({
-        { name = "should only keep the clock running before the reload time", params = buildParams(ready, { reloadElapsedSec = 1799 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should not finish without a meeting", params = buildParams(ready, { hasMet = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should not finish when it carries missiles", params = buildParams(ready, { weaponCount = 2 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should only keep the clock running before the reload time", params = buildParams(ready, { reloadStartTime = 10000 - 1799 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish without a meeting", params = buildParams(ready, { isAtDepot = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish when it carries missiles", params = buildParams(ready, { stock = 2 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
         { name = "should fail when the ammo depot has no state", params = buildParams(ready, { hasAmmoDepotState = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.FAIL_AMMO_DEPOT_STATE_NOT_FOUND } },
         { name = "should finish and recall to RL", params = ready, steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_TRANSLOAD, STEP.RECALL_TO_RELOAD_POINT } },
         { name = "should only finish in manual mode", params = buildParams(ready, { isAuto = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_TRANSLOAD } },

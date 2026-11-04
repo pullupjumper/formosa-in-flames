@@ -372,343 +372,169 @@ describe("MissileSystem Ammo And Meeting", function()
   end)
 
   -- ============================================================================
-  -- hasMetResupplyUnit
+  -- resolveReloadPair
   -- ============================================================================
 
-  describe("hasMetResupplyUnit", function()
+  describe("resolveReloadPair", function()
     local mockSystemState
+    local firingUnit
+    local resupplyUnit
 
     before_each(function()
       mockSystemState = makeSystemState()
+      firingUnit = {
+        guid = "FIRING-001",
+        name = "Firing Unit Alpha",
+        side = "Taiwan",
+        group = { unitlist = { "FIRING-001" } },
+        inArea = function(_, area) return area[1] == "RP-001" end
+      }
+      resupplyUnit = {
+        guid = "RESUPPLY-001",
+        name = "Ammo Sec, Alpha",
+        side = "Taiwan",
+        inArea = function(_, area) return area[1] == "RP-001" end
+      }
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        if guidOrName == "Firing Unit Alpha" or guidOrName == "FIRING-001" then return firingUnit end
+        return nil
+      end)
     end)
 
-    -- Boundary: returns false when unit is unknown
-    it("should return false when unit name not in firingUnits or resupplyUnits", function()
+    -- Boundary: a unit outside the system has no pair
+    it("should return nil when unit name not in firingUnits or resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "Taiwan" }
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, unit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
+      assert.is_nil(Meeting.resolveReloadPair(mockSystemState, unit))
     end)
 
-    -- Boundary: returns false when firing unit is not in any reload area
-    it("should return false when unit is firing unit but not in any RL area", function()
-      local firingUnit = {
-        guid = "FIRING-001",
-        name = "Firing Unit Alpha",
-        side = "Taiwan",
-        inArea = function() return false end
-      }
-
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
+    -- Negative: a partner missing from the game leaves no pair
+    it("should return nil when the partner unit is not in the game", function()
+      resupplyUnit = nil
+      assert.is_nil(Meeting.resolveReloadPair(mockSystemState, firingUnit))
     end)
 
-    -- Boundary: returns false when resupply unit is not in any reload area
-    it("should return false when unit is resupply unit but not in any RL area", function()
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "Taiwan",
-        inArea = function() return false end
-      }
-
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, resupplyUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
+    -- Negative: a partner without state leaves no pair, and nothing is looked up
+    it("should return nil without a lookup when the partner has no state", function()
+      mockSystemState.resupplyUnits = {}
+      assert.is_nil(Meeting.resolveReloadPair(mockSystemState, firingUnit))
+      assert.stub(GameApi.ScenEdit_GetUnit).was_not.called()
     end)
 
-    -- Positive: returns true when firing unit meets resupply unit in same area
-    it("should return true when firing unit meets resupply unit in same area", function()
-      local firingUnit = {
-        guid = "FIRING-001",
-        name = "Firing Unit Alpha",
-        side = "Taiwan",
-        group = { unitlist = { "FIRING-001" } },
-        inArea = function(_, area) return area[1] == "RP-001" end,
-        mounts = { { mount_dbid = 100, mount_weapons = { { wpn_dbid = 1234, wpn_current = 2, wpn_maxcap = 10, wpn_default = 10 } } } }
-      }
-      local mockResupplyUnit = {
-        guid = "RESUPPLY-001",
-        side = "Taiwan",
-        inArea = function(_, area) return area[1] == "RP-001" end
-      }
+    -- Positive: resolved from the firing unit, the firing unit is reused and its partner looked up on its side
+    it("should resolve both ends from the firing unit", function()
+      local pair = Meeting.resolveReloadPair(mockSystemState, firingUnit)
 
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Sec, Alpha" then return mockResupplyUnit end
-        if guidOrName == "FIRING-001" then return firingUnit end
-        return nil
-      end)
-      trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
-
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
-      assert.is_true(hasMet)
-      assert.are.equal("Firing Unit Alpha", ctx.name)
+      assert.are.equal(firingUnit, pair.firingUnit)
+      assert.are.equal(resupplyUnit, pair.resupplyUnit)
+      assert.are.equal(mockSystemState.firingUnits["Firing Unit Alpha"], pair.firingUnitState)
+      assert.are.equal(mockSystemState.resupplyUnits["Ammo Sec, Alpha"], pair.resupplyUnitState)
+      assert.is_true(pair.isTriggeredByFiringUnit)
+      assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("Ammo Sec, Alpha", "Taiwan")
     end)
 
-    -- Positive: returns true when resupply unit meets firing unit in same area
-    it("should return true when resupply unit meets firing unit in same area", function()
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "Taiwan",
-        inArea = function(_, area) return area[1] == "RP-001" end
-      }
-      local mockFiringUnit = {
-        guid = "FIRING-001",
-        side = "Taiwan",
-        group = { unitlist = { "FIRING-001" } },
-        inArea = function(_, area) return area[1] == "RP-001" end,
-        mounts = { { mount_dbid = 100, mount_weapons = { { wpn_dbid = 1234, wpn_current = 2, wpn_maxcap = 10, wpn_default = 10 } } } }
-      }
+    -- Positive: resolved from the resupply unit, the pair says so
+    it("should resolve both ends from the resupply unit", function()
+      local pair = Meeting.resolveReloadPair(mockSystemState, resupplyUnit)
 
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return mockFiringUnit end
-        if guidOrName == "FIRING-001" then return mockFiringUnit end
-        return nil
-      end)
-      trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
-
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, resupplyUnit, true)
-      assert.is_true(hasMet)
-      assert.are.equal("Firing Unit Alpha", ctx.name)
+      assert.are.equal(firingUnit, pair.firingUnit)
+      assert.are.equal(resupplyUnit, pair.resupplyUnit)
+      assert.is_false(pair.isTriggeredByFiringUnit)
     end)
 
-    -- Negative: returns false when units are in different areas
-    it("should return false when units are in different areas", function()
-      local firingUnit = {
-        guid = "FIRING-001",
-        name = "Firing Unit Alpha",
-        side = "Taiwan",
-        group = { unitlist = { "FIRING-001" } },
-        inArea = function(_, area) return area[1] == "RP-001" end,
-        mounts = { { mount_dbid = 100, mount_weapons = { { wpn_dbid = 1234, wpn_current = 2, wpn_maxcap = 10, wpn_default = 10 } } } }
-      }
-      local mockResupplyUnit = {
-        guid = "RESUPPLY-001",
-        side = "Taiwan",
-        inArea = function() return false end
-      }
-
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Sec, Alpha" then return mockResupplyUnit end
-        if guidOrName == "FIRING-001" then return firingUnit end
-        return nil
-      end)
-
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
+    -- Positive: both in the firing unit's RL zone
+    it("should report both units in one RL zone", function()
+      assert.is_true(Meeting.resolveReloadPair(mockSystemState, firingUnit).isInSameReloadArea())
     end)
 
-    -- Negative: rejects STATIC state in auto mode
-    it("should not match when state is STATIC in auto mode", function()
-      mockSystemState.firingUnits["Firing Unit Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
-
-      local firingUnit = {
-        guid = "FIRING-001",
-        name = "Firing Unit Alpha",
-        side = "Taiwan",
-        inArea = function(_, area) return area[1] == "RP-001" end
-      }
-
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
+    -- Negative: the resupply unit outside that zone
+    it("should report different zones when the resupply unit is elsewhere", function()
+      resupplyUnit.inArea = function() return false end
+      assert.is_false(Meeting.resolveReloadPair(mockSystemState, firingUnit).isInSameReloadArea())
     end)
 
-    -- Positive: allows STATIC state in manual mode
-    it("should match when state is STATIC in manual mode", function()
-      mockSystemState.firingUnits["Firing Unit Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+    -- Negative: the firing unit in no RL zone
+    it("should report different zones when the firing unit is in no RL zone", function()
+      firingUnit.inArea = function() return false end
+      assert.is_false(Meeting.resolveReloadPair(mockSystemState, firingUnit).isInSameReloadArea())
+    end)
 
-      local firingUnit = {
-        guid = "FIRING-001",
-        name = "Firing Unit Alpha",
-        side = "Taiwan",
-        group = { unitlist = { "FIRING-001" } },
-        inArea = function(_, area) return area[1] == "RP-001" end,
-        mounts = { { mount_dbid = 100, mount_weapons = { { wpn_dbid = 1234, wpn_current = 2, wpn_maxcap = 10, wpn_default = 10 } } } }
-      }
-      local mockResupplyUnit = {
-        guid = "RESUPPLY-001",
-        side = "Taiwan",
-        inArea = function(_, area) return area[1] == "RP-001" end
-      }
+    -- Positive: low ammo reads the firing unit's threshold and weapon
+    it("should read the firing unit's ammo against its threshold", function()
+      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
+      assert.is_true(Meeting.resolveReloadPair(mockSystemState, firingUnit).isFiringUnitLowAmmo())
+    end)
 
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Sec, Alpha" then return mockResupplyUnit end
-        if guidOrName == "FIRING-001" then return firingUnit end
-        return nil
-      end)
-      trackStub(GameApi, "ScenEdit_WeaponAllocation").returns({})
+    -- Positive: the reload is built once from the resupply unit's stock, so the rule and the step see one value
+    it("should build the reload once from the resupply unit's stock", function()
+      local getWeaponInfoStub = trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
+      local pair = Meeting.resolveReloadPair(mockSystemState, firingUnit)
 
-      local hasMet, ctx = Meeting.hasMetResupplyUnit(mockSystemState, firingUnit, false)
-      assert.is_true(hasMet)
-      assert.is_not_nil(ctx)
+      local reload = pair.buildReload()
+
+      assert.are.equal(8, reload.count)
+      assert.are.equal(reload, pair.buildReload())
+      assert.stub(getWeaponInfoStub).was.called(1)
     end)
   end)
 
   -- ============================================================================
-  -- hasMetAmmoDepot
+  -- isAtAmmoDepot
   -- ============================================================================
 
-  describe("hasMetAmmoDepot", function()
-    local mockSystemState
+  describe("isAtAmmoDepot", function()
+    local resupplyUnitState
+    local resupplyUnit
+    local ammoDepot
 
     before_each(function()
-      mockSystemState = makeSystemState({
-        firingUnits = {},
-        resupplyUnits = {
-          ["Ammo Sec, Alpha"] = {
-            name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-            ammunition = "Ammo Revetment, Alpha",
-            weaponCountCurrent = 0,
-            operationalArea = {
-              name = "OPAREA-1",
-              AHA = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }
-            }
-          }
+      resupplyUnitState = {
+        name = "Ammo Sec, Alpha",
+        ammunition = "Ammo Revetment, Alpha",
+        operationalArea = {
+          name = "OPAREA-1",
+          AHA = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }
         }
-      })
-    end)
-
-    -- Boundary: returns false when unit is unknown
-    it("should return false when unit name not in resupplyUnits", function()
-      local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "China" }
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, unit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
-    end)
-
-    -- Boundary: returns false when resupply unit is not in any AHA area
-    it("should return false when unit is resupply unit but not in any AHA area", function()
-      local resupplyUnit = {
+      }
+      resupplyUnit = {
         guid = "RESUPPLY-001",
         name = "Ammo Sec, Alpha",
         side = "China",
-        inArea = function() return false end
+        inArea = function(_, area) return area[1] == "RP-101" end
       }
-      local mockAmmoDepot = {
+      ammoDepot = {
         guid = "AMMO-001",
         side = "China",
         inArea = function(_, area) return area[1] == "RP-101" end
       }
-
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Revetment, Alpha" then return mockAmmoDepot end
+        if guidOrName == "Ammo Revetment, Alpha" then return ammoDepot end
         return nil
       end)
-
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
     end)
 
-    -- Positive: returns true when resupply unit meets ammo depot in same AHA
+    -- Positive: both in one AHA zone
     it("should return true when resupply unit meets ammo depot in same AHA", function()
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-      local mockAmmoDepot = {
-        guid = "AMMO-001",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Revetment, Alpha" then return mockAmmoDepot end
-        return nil
-      end)
-
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
-      assert.is_true(hasMet)
-      assert.are.equal("Ammo Sec, Alpha", ctx.name)
+      assert.is_true(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
+      assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("Ammo Revetment, Alpha", "China")
     end)
 
-    -- Negative: returns false when resupply unit and ammo depot are in different areas
+    -- Boundary: the resupply unit in no AHA zone
+    it("should return false when the resupply unit is in no AHA zone", function()
+      resupplyUnit.inArea = function() return false end
+      assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
+    end)
+
+    -- Negative: the depot elsewhere
     it("should return false when resupply unit and ammo depot are in different areas", function()
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-      local mockAmmoDepot = {
-        guid = "AMMO-001",
-        side = "China",
-        inArea = function() return false end
-      }
-
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Revetment, Alpha" then return mockAmmoDepot end
-        return nil
-      end)
-
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
+      ammoDepot.inArea = function() return false end
+      assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
     end)
 
-    -- Negative: returns false when ammunition depot does not exist
+    -- Negative: the depot gone
     it("should return false when ammunition depot does not exist", function()
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
-
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
-    end)
-
-    -- Negative: rejects STATIC state in auto mode
-    it("should not match when state is STATIC in auto mode", function()
-      mockSystemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
-
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, true)
-      assert.is_false(hasMet)
-      assert.is_nil(ctx)
-    end)
-
-    -- Positive: allows STATIC state in manual mode
-    it("should match when state is STATIC in manual mode", function()
-      mockSystemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
-
-      local resupplyUnit = {
-        guid = "RESUPPLY-001",
-        name = "Ammo Sec, Alpha",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-      local mockAmmoDepot = {
-        guid = "AMMO-001",
-        side = "China",
-        inArea = function(_, area) return area[1] == "RP-101" end
-      }
-
-      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Revetment, Alpha" then return mockAmmoDepot end
-        return nil
-      end)
-
-      local hasMet, ctx = Meeting.hasMetAmmoDepot(mockSystemState, resupplyUnit, false)
-      assert.is_true(hasMet)
-      assert.is_not_nil(ctx)
+      ammoDepot = nil
+      assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
     end)
   end)
 end)

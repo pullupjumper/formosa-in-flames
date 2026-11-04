@@ -1519,7 +1519,6 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__MoveToPositionContext: SBJ__MissileRunContext
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideResupplyOnRLNoMeeting boolean Whether RL no-meeting fallback may hide resupply unit
----@field firingUnitLookupSide string Side name used to resolve paired firing unit
 
 ---Input parameters for missileSystem UnitEntersArea event handling
 ---@class SBJ__MoveToPositionEventParams: table
@@ -1529,73 +1528,61 @@ function ScenEdit_DeleteMine(params) end
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
 ---@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
 
----Units and result rows shared by the steps of one firing unit in a missileSystem reload cycle
----@class SBJ__FiringUnitStepContext: table
----@field systemState SBJ__MissileSystemState Missile system the unit belongs to
----@field firingUnitState SBJ__FiringUnitState Firing unit runtime state
----@field firingUnit CMO__Unit Firing unit in the game
----@field resupplyUnitState? SBJ__ResupplyUnitState Paired resupply unit runtime state; nil when missing
----@field resupplyUnit? CMO__Unit Paired resupply unit in the game; nil when gone
----@field results SBJ__LogResult[] Rows the steps add, in step order
+---A firing unit and its resupply unit, both tracked and both in the game
+---Meeting.resolveReloadPair returns nil rather than a pair with a missing member, so no field is optional.
+---@class SBJ__ReloadPair: table
+---@field firingUnitState SBJ__FiringUnitState
+---@field firingUnit CMO__Unit
+---@field resupplyUnitState SBJ__ResupplyUnitState
+---@field resupplyUnit CMO__Unit
+---@field isTriggeredByFiringUnit boolean Whether the pair was resolved from the firing unit rather than the resupply unit
+---@field isFiringUnitLowAmmo fun(): boolean Reads CMO: whether the firing unit is at or below its ammo threshold
+---@field isInSameReloadArea fun(): boolean Reads CMO: whether both stand in one RL zone of the firing unit's operational area
+---@field buildReload fun(): SBJ__ReloadPlan Reads CMO once: the reload the firing unit's group would take from the resupply unit's stock
 
----Units and result rows shared by the steps of one resupply unit in a missileSystem reload cycle
----@class SBJ__ResupplyUnitStepContext: table
----@field systemState SBJ__MissileSystemState Missile system the unit belongs to
----@field resupplyUnitState SBJ__ResupplyUnitState Resupply unit runtime state
----@field resupplyUnit CMO__Unit Resupply unit in the game
----@field results SBJ__LogResult[] Rows the steps add, in step order
-
----Units and switches shared by the steps of one missile system in a missileSystem UnitEntersArea event
----Observers fill the unit fields their position needs; steps read only those.
----@class SBJ__ArrivalStepContext: table
----@field missileSystemType string Missile system type key (e.g., "srbm")
+---What every step of one missile system in a missileSystem UnitEntersArea event may read; steps never write it
+---@class SBJ__ArrivalContext: table
 ---@field systemState SBJ__MissileSystemState Missile system being processed
 ---@field unit CMO__Unit Unit that entered the zone
 ---@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
----@field firingUnitState? SBJ__FiringUnitState Arriving firing unit (FP, HA) or the met one (RL)
----@field firingUnit? CMO__Unit Met firing unit in the game (RL)
----@field resupplyUnitState? SBJ__ResupplyUnitState Arriving resupply unit (RL, AHA)
----@field pairedFiringUnitState? SBJ__FiringUnitState Firing unit paired with the arriving resupply unit (RL)
----@field metResupplyUnitState? SBJ__ResupplyUnitState Resupply unit that met its ammo depot (AHA)
 
----Observations for missileSystem Rules.evaluateArrival; each position reads only its own fields
----@class SBJ__ArrivalRuleParams: table
----@field isAuto boolean Whether the side runs in auto mode
----@field firingUnitState? SBJ__FiringUnitState Runtime state of the arriving firing unit (FP, HA)
----@field isLowAmmo? boolean Whether the arriving firing unit is at or below its ammo threshold (HA)
----@field hideOnEnterHA? boolean Policy switch: hide firing units that enter HA (HA)
----@field hasMet? boolean Whether the pair met: resupply unit at RL, ammo depot at AHA (RL, AHA)
----@field hasFiringUnit? boolean Whether the met firing unit is still in the game (RL)
----@field hideResupplyOnRLNoMeeting? boolean Policy switch: hide a resupply unit that reaches RL alone (RL)
----@field resupplyUnitState? SBJ__ResupplyUnitState Runtime state of the arriving resupply unit (RL)
----@field pairedFiringUnitState? SBJ__FiringUnitState Runtime state of that resupply unit's firing unit (RL)
----@field hasPairedFiringUnit? boolean Whether that firing unit is still in the game (RL)
----@field isPairedFiringUnitLowAmmo? boolean Whether that firing unit is at or below its ammo threshold (RL)
+---A firing unit entering its hide area
+---@class SBJ__HideAreaObservation: table
+---@field firingUnitState SBJ__FiringUnitState
+---@field isLowAmmo fun(): boolean Reads CMO: whether it is at or below its ammo threshold
 
----Observations for missileSystem Rules.evaluateFiringUnitTick
----@class SBJ__FiringUnitTickRuleParams: table
----@field state integer Firing unit state (constants.MISSILE_SYSTEM_STATE)
+---A resupply unit entering its ammo holding area
+---@class SBJ__AmmoHoldingAreaObservation: table
+---@field resupplyUnitState SBJ__ResupplyUnitState
+---@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one AHA zone
+
+---How arrival observes, decides and carries out one position type
+---@class SBJ__ArrivalPosition: table
+---@field observe fun(ctx: SBJ__ArrivalContext): any Observation for the position's evaluate and steps; nil when the unit has none here
+---@field evaluate fun(moveCtx: SBJ__MoveToPositionContext, observation: any): string[] One of Rules.evaluate*Arrival
+---@field steps table<string, fun(ctx: SBJ__ArrivalContext, observation: any): SBJ__LogResult|nil> Handlers keyed by Rules.STEP
+
+---What every step of one firing unit in a missileSystem reload cycle may read; steps never write it
+---@class SBJ__FiringUnitTick: table
+---@field firingUnitState SBJ__FiringUnitState
+---@field firingUnit CMO__Unit
 ---@field isAuto boolean Whether the side runs in auto mode
----@field isLowAmmo boolean Whether the firing unit is at or below its ammo threshold
----@field stowElapsedSec number|nil Seconds since the stow countdown started; nil when none runs
+---@field now number Scenario time of this cycle
 ---@field stowTimeSec number Stow countdown length in seconds
----@field reloadElapsedSec number Seconds since the reload clock started; 0 when none runs yet
 ---@field reloadTimeSec number Reload length in seconds
----@field hasMet boolean Whether the firing unit met its resupply unit at RL
 ---@field staysDeployed boolean Whether the system returns to FP instead of HA after a reload (SAM)
 ---@field hasResupplyUnitState boolean Whether the paired resupply unit has a runtime state
----@field hasResupplyUnit boolean Whether the paired resupply unit is still in the game
+---@field isLowAmmo fun(): boolean Reads CMO: whether the firing unit is at or below its ammo threshold
 
----Observations for missileSystem Rules.evaluateResupplyUnitTick
----@class SBJ__ResupplyUnitTickRuleParams: table
----@field state integer Resupply unit state (constants.MISSILE_SYSTEM_STATE)
+---What every step of one resupply unit in a missileSystem reload cycle may read; steps never write it
+---@class SBJ__ResupplyUnitTick: table
+---@field resupplyUnitState SBJ__ResupplyUnitState
+---@field resupplyUnit CMO__Unit
 ---@field isAuto boolean Whether the side runs in auto mode
----@field weaponCount integer Missiles the resupply unit carries
----@field isInOperationalArea boolean Whether the resupply unit is inside its operational area
----@field reloadElapsedSec number Seconds since the transload clock started; 0 when none runs yet
+---@field now number Scenario time of this cycle
 ---@field reloadTimeSec number Transload length in seconds
----@field hasMet boolean Whether the resupply unit met its ammo depot at AHA
----@field hasAmmoDepotState boolean Whether the paired ammo depot has a runtime state
+---@field isInReloadArea fun(): boolean Reads CMO: whether the resupply unit stands in an RL zone of its operational area
+---@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one AHA zone
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table

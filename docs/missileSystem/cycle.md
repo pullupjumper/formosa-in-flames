@@ -10,13 +10,13 @@
 
 ## 概觀
 
-`Cycle.process` 是模組對外唯一進入點，內部分別跑 `processFiringUnits` 與 `processResupplyUnits`，逐一處理該飛彈系統中的所有機動發射車與彈藥補給車。
+`Cycle.process` 是模組對外唯一進入點，先逐一處理機動發射車，再處理彈藥補給車（發射車的步驟會改到補給車的 state）。
 
 每個單位走同一個模式：
 
-1. **觀察**：`processFiringUnit` / `processResupplyUnit` 收集觀察表（state、`Ammo.isLowAmmo`、`Meeting.hasMet*`、`Meeting.findUnitArea`、收車與裝填經過秒數、配對單位在不在）。
-2. **判斷**：交給 [rules](rules.md) 的 `evaluateFiringUnitTick` / `evaluateResupplyUnitTick`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、SAM 回 FP、補給車去 AHA）都寫在 rules，見 [rules](rules.md#主要機制)。
-3. **執行**：依步驟呼叫 `FIRING_UNIT_STEPS` / `RESUPPLY_UNIT_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，並加一列 log。
+1. **觀察**：`processFiringUnit` 建 `SBJ__FiringUnitTick`（state、計時、`isLowAmmo` 函式），配對用 `Meeting.resolveReloadPair`；`processResupplyUnit` 建 `SBJ__ResupplyUnitTick`（`isInReloadArea`、`isAtAmmoDepot` 函式），觀察是彈藥庫 state。讀 CMO 的部分都是函式，HIDE / REPOSITIONING 的單位不會讀。
+2. **判斷**：交給 [rules](rules.md) 的 `evaluateFiringUnitTick(tick, pair)` / `evaluateResupplyUnitTick(tick, ammoDepotState)`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、裝填後藏補給車、SAM 回 FP、補給車去 AHA）都寫在 rules。
+3. **執行**：`Shared.processSteps` 依步驟呼叫 `FIRING_UNIT_STEPS` / `RESUPPLY_UNIT_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，回傳一列 log 或 nil。
 
 `isAuto` 只影響判斷：自動模式才會啟動 stow 倒數與後續機動，「完成再裝填」在兩種模式都會執行。
 
@@ -25,16 +25,14 @@
 ## 主要機制
 
 - 收車倒數的觸發來源有兩個：低於 `ammoThreshold`，或 FSP 射擊後 `strikePlanner/fireSupportPlan.lua` 呼叫 `MissileSystem.startStow` 寫入 `stowStartTime`。
-- 裝填計時：觀察表裡沒有 `reloadStartTime` 時經過秒數當 0，`ENSURE_RELOAD_CLOCK` 一定是 RELOAD 的第一步，所以結果和「先補計時再算」相同。
-- `HIDE_RESUPPLY_UNIT` 的 handler 自己檢查「補給車還有彈且在作戰區」，因為剩餘彈量要等 `COMPLETE_RELOAD` 做完才知道。
-- 每個 handler 回傳的 log 列都放進 `stepCtx.results`，由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本）。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `init.lua` 私有的 `process` 補上，本模組只負責 unit 層級的欄位。
+- 裝填計時：沒有 `reloadStartTime` 時經過秒數當 0，`ENSURE_RELOAD_CLOCK` 一定是 RELOAD 的第一步，所以結果和「先補計時再算」相同。
+- `COMPLETE_RELOAD` 裝的是 `pair.buildReload()` 算好的那一份計畫，和 Rules 決定要不要藏補給車時看的是同一份。
+- 每個 handler 回傳的 log 列由 `Cycle.process` 併成單一陣列回給呼叫端（通常是 `scheduledReloadHideCheck` 系列腳本）。回傳結構固定為 `{ tag = "OK", fields = { unit = ..., action = ..., ... } }`；`system=` 由呼叫端 `init.lua` 私有的 `process` 補上，本模組只負責 unit 層級的欄位。
 
 ```mermaid
 flowchart TD
-    A[Cycle.process] --> B[processFiringUnits]
-    A --> C[processResupplyUnits]
-    B --> B1[processFiringUnit<br/>收集觀察表]
-    C --> C1[processResupplyUnit<br/>收集觀察表]
+    A[Cycle.process] --> B1[processFiringUnit<br/>tick + pair]
+    A --> C1[processResupplyUnit<br/>tick + ammoDepotState]
     B1 --> R1[Rules.evaluateFiringUnitTick]
     C1 --> R2[Rules.evaluateResupplyUnitTick]
     R1 --> S1[FIRING_UNIT_STEPS]

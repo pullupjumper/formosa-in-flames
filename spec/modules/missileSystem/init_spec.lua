@@ -614,7 +614,7 @@ describe("MissileSystem", function()
       local systemState = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
       saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
-      trackStub(Meeting, "hasMetAmmoDepot").returns(false, nil)
+      trackStub(Meeting, "isAtAmmoDepot").returns(false)
       local settleStub = trackStub(Transitions, "settle")
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)

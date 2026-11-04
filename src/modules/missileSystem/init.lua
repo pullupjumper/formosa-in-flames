@@ -10,6 +10,7 @@ local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Cycle = require("src.modules.missileSystem.cycle")
 local Rules = require("src.modules.missileSystem.rules")
+local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
 local Triggers = require("src.modules.missileSystem.triggers")
 local Deployment = require("src.modules.missileSystem.deployment")
@@ -28,17 +29,13 @@ local REDEPLOY_POSITION_TYPES = {
 }
 
 ---Steps of a fire support plan dispatch keyed by Rules.STEP
----@type table<string, fun(firingUnitState: SBJ__FiringUnitState, firingUnit: CMO__Unit)>
+---@type table<string, fun(firingUnitState: SBJ__FiringUnitState, firingUnit: CMO__Unit): SBJ__LogResult|nil>
 local SEND_TO_FIRING_POINT_STEPS = {
   [Rules.STEP.UNHIDE] = function(firingUnitState, firingUnit)
     Concealment.moveFromHideArea(firingUnitState, firingUnit)
   end,
-  -- A single dispatch, not a report, so only a failure is written.
   [Rules.STEP.MOVE_TO_FIRING_POINT] = function(firingUnitState, firingUnit)
-    local result = Transitions.depart(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
-    if result.tag == "FAIL" then
-      Logger.error(LogFormat.line("FAIL", LogFormat.merge({ module = constants.TAGS.MISSILE_SYSTEM }, result.fields)))
-    end
+    return Transitions.depart(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
   end,
 }
 
@@ -70,8 +67,12 @@ function MissileSystem.sendToFiringPoint(groundState, missileSystemType, firingU
     return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
   end
 
-  for _, step in ipairs(Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)) do
-    SEND_TO_FIRING_POINT_STEPS[step](firingUnitState, firingUnit)
+  local steps = Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)
+  for _, row in ipairs(Shared.processSteps(steps, SEND_TO_FIRING_POINT_STEPS, firingUnitState, firingUnit)) do
+    -- A single dispatch, not a report, so only a failure is written.
+    if row.tag == "FAIL" then
+      Logger.error(LogFormat.line("FAIL", LogFormat.merge({ module = constants.TAGS.MISSILE_SYSTEM }, row.fields)))
+    end
   end
 
   return Rules.isInPosition(firingUnitState), false
@@ -142,14 +143,13 @@ end
 local function process(groundState, missileSystemConfigMap, isAuto, sideName)
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. sideName, "Reload cycle")
 
-  for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
-    if systemState.enabled then
-      for _, result in ipairs(Cycle.process(systemState, { systemConfig = missileSystemConfigMap[missileSystemType], isAuto = isAuto }, sideName)) do
-        result.fields.system = missileSystemType
-        report.add(result.tag, result.fields)
-      end
+  GroundStateStore.forEachEnabledSystem(groundState, function(systemState, missileSystemType)
+    local runCtx = { systemConfig = missileSystemConfigMap[missileSystemType], isAuto = isAuto }
+    for _, result in ipairs(Cycle.process(systemState, runCtx, sideName)) do
+      result.fields.system = missileSystemType
+      report.add(result.tag, result.fields)
     end
-  end
+  end)
 
   report.emit({ mode = isAuto and "auto" or "manual" })
 end
@@ -315,8 +315,7 @@ function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
     moveCtx = {
       isAuto = policy.isAuto,
       hideOnEnterHA = policy.hideOnEnterHA,
-      hideResupplyOnRLNoMeeting = policy.hideResupplyOnRLNoMeeting,
-      firingUnitLookupSide = unit.side
+      hideResupplyOnRLNoMeeting = policy.hideResupplyOnRLNoMeeting
     }
   })
 end
