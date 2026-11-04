@@ -5164,7 +5164,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    ammunition = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
     firingUnit = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
