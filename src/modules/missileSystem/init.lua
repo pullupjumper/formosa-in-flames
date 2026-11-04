@@ -27,27 +27,19 @@ local REDEPLOY_POSITION_TYPES = {
   constants.POSITION_TYPES.AMMO_HOLDING_AREA
 }
 
----Command firing unit to move to firing point (FP), logging any failure
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
-local function startMoveToFiringPoint(firingUnitState, firingUnit)
-  local success, errorFields = Transitions.depart(firingUnitState, Movement.moveToFiringPoint(firingUnitState, firingUnit))
-  if not success and errorFields then
-    Logger.error(LogFormat.line("FAIL", LogFormat.merge({
-      module = constants.TAGS.MISSILE_SYSTEM,
-      action = "move_to_firing_point",
-      unit = firingUnitState.name or firingUnit.name
-    }, errorFields)))
-  end
-end
-
 ---Steps of a fire support plan dispatch keyed by Rules.STEP
 ---@type table<string, fun(firingUnitState: SBJ__FiringUnitState, firingUnit: CMO__Unit)>
 local SEND_TO_FIRING_POINT_STEPS = {
   [Rules.STEP.UNHIDE] = function(firingUnitState, firingUnit)
     Concealment.moveFromHideArea(firingUnitState, firingUnit)
   end,
-  [Rules.STEP.MOVE_TO_FIRING_POINT] = startMoveToFiringPoint,
+  -- A single dispatch, not a report, so only a failure is written.
+  [Rules.STEP.MOVE_TO_FIRING_POINT] = function(firingUnitState, firingUnit)
+    local result = Transitions.depart(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+    if result.tag == "FAIL" then
+      Logger.error(LogFormat.line("FAIL", LogFormat.merge({ module = constants.TAGS.MISSILE_SYSTEM }, result.fields)))
+    end
+  end,
 }
 
 ---Find a firing unit runtime state by missile system and unit name

@@ -1,4 +1,5 @@
 local GameApi = require("src.utils.gameApi")
+local LogFormat = require("src.utils.logFormat")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 local Shared = require("src.modules.missileSystem.shared")
@@ -64,134 +65,115 @@ local function setGroupUnitProperties(groupUnit, props)
   end
 end
 
----Move units to a randomly selected position
----Failure fields omit the unit name because every caller already labels the row
----with the unit it was acting on.
----@param params SBJ__MoveToPositionParams
----@return boolean success Whether the move was successful
----@return table<string, any>? errorFields Log fields describing the failure
-local function moveUnitToPosition(params)
-  local posCount = Utils.getCount(params.positions)
+local POSITION_TYPES = constants.POSITION_TYPES
+
+---Every path that sends a battery unit somewhere; Transitions.depart is the only caller of moveTo
+---@type table<string, SBJ__MoveOrder>
+Movement.ORDER = {
+  FIRING_POINT = {
+    action = "move_to_firing_point", positionType = POSITION_TYPES.FIRING_POINT, positionKeys = { "FP" }
+  },
+  HIDE_AREA = {
+    action = "move_to_hide_area",
+    positionType = POSITION_TYPES.HIDE_AREA,
+    positionKeys = { "HA" },
+    absentReason = "no_ha_defined",
+    wcs = constants.WCS.HOLD
+  },
+  RELOAD_POINT = {
+    action = "move_firing_unit_to_reload_point",
+    positionType = POSITION_TYPES.RELOAD_POINT,
+    positionKeys = { "RL" },
+    wcs = constants.WCS.HOLD
+  },
+  -- Stow ended: the resupply unit leaves its shelter along SHRL; areas without SHRL take RL.
+  RESUPPLY_VIA_SHRL = {
+    action = "move_resupply_to_reload_point",
+    positionType = POSITION_TYPES.RELOAD_POINT,
+    positionKeys = { "SHRL", "RL" },
+    wcs = constants.WCS.HOLD
+  },
+  -- Transload done: the resupply unit drives straight to the last waypoint of an RL course.
+  RESUPPLY_RECALL = {
+    action = "move_resupply_to_reload_point",
+    positionType = POSITION_TYPES.RELOAD_POINT,
+    positionKeys = { "RL" },
+    useLastCourse = true
+  },
+  AMMO_HOLDING_AREA = {
+    action = "move_to_ammo_holding_area", positionType = POSITION_TYPES.AMMO_HOLDING_AREA, positionKeys = { "AHA" }
+  },
+}
+
+---First position list the order names that the operational area defines
+---@param operationalArea SBJ__OperationalArea
+---@param order SBJ__MoveOrder
+---@return SBJ__Position[]|nil
+local function findPositions(operationalArea, order)
+  for _, key in ipairs(order.positionKeys) do
+    if operationalArea[key] then
+      return operationalArea[key]
+    end
+  end
+  return nil
+end
+
+---Send the unit group along the course of a random position
+---@param unit CMO__Unit
+---@param positions SBJ__Position[]
+---@param order SBJ__MoveOrder
+---@param areaName string
+---@return table<string, any>|nil errorFields Log fields describing the failure; nil when the order went out
+local function issueMove(unit, positions, order, areaName)
+  local posCount = Utils.getCount(positions)
   if posCount == 0 then
-    return false, {
-      reason = "no_positions_available",
-      position = params.positionType,
-      area = params.areaName
-    }
+    return { reason = "no_positions_available", position = order.positionType, area = areaName }
   end
 
   local posIdx = math.random(posCount)
-  local position = params.positions[posIdx]
+  local position = positions[posIdx]
 
   if not position or not position.course then
-    return false, {
-      reason = "invalid_position_data",
-      position = params.positionType,
-      index = posIdx,
-      area = params.areaName
-    }
+    return { reason = "invalid_position_data", position = order.positionType, index = posIdx, area = areaName }
   end
 
   local course = position.course
-  if params.useLastCourse and type(course) == "table" and #course > 0 then
+  if order.useLastCourse and type(course) == "table" and #course > 0 then
     course = { course[#course] }
   end
 
-  setGroupUnitProperties(params.firingUnit, {
+  setGroupUnitProperties(unit, {
     throttle = constants.THROTTLES.FULL,
     speed = constants.SPEEDS.NORMAL,
     course = course,
     holdPosition = false,
-    wcs = params.wcs
+    wcs = order.wcs
   })
 
-  return true, nil
+  return nil
 end
 
----Command unit to move to reload point (RL)
+---Order a unit to a position of its operational area; call through Transitions.depart, which records the move
 ---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param unit CMO__Unit
----@param positions? SBJ__Position[]
----@return boolean success
----@return table<string, any>? errorFields
-function Movement.moveToReloadPoint(unitState, unit, positions)
-  return moveUnitToPosition({
-    unitName = unitState.name,
-    firingUnit = unit,
-    positions = positions or unitState.operationalArea.RL,
-    positionType = constants.POSITION_TYPES.RELOAD_POINT,
-    areaName = unitState.operationalArea.name,
-    wcs = constants.WCS.HOLD
-  })
-end
+---@param order SBJ__MoveOrder
+---@return SBJ__LogResult # OK with unit and action; FAIL adds the reason
+function Movement.moveTo(unitState, unit, order)
+  local operationalArea = unitState.operationalArea
+  local positions = findPositions(operationalArea, order)
+  local fields = { unit = unitState.name, action = order.action }
+  local errorFields
 
----Command firing unit to move to hide area (HA)
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
----@return boolean success
----@return table<string, any>? errorFields
-function Movement.moveToHideArea(firingUnitState, firingUnit)
-  if not firingUnitState.operationalArea.HA then
-    return false, {
-      reason = "no_ha_defined",
-      area = firingUnitState.operationalArea.name
-    }
+  if not positions and order.absentReason then
+    errorFields = { reason = order.absentReason, area = operationalArea.name }
+  else
+    errorFields = issueMove(unit, positions or {}, order, operationalArea.name)
   end
 
-  return moveUnitToPosition({
-    unitName = firingUnitState.name,
-    firingUnit = firingUnit,
-    positions = firingUnitState.operationalArea.HA,
-    positionType = constants.POSITION_TYPES.HIDE_AREA,
-    areaName = firingUnitState.operationalArea.name,
-    wcs = constants.WCS.HOLD
-  })
-end
-
----Command resupply unit to move to ammunition holding area (AHA)
----@param resupplyUnitState SBJ__ResupplyUnitState
----@param resupplyUnit CMO__Unit
----@return boolean success
----@return table<string, any>? errorFields
-function Movement.moveToAmmoHoldingArea(resupplyUnitState, resupplyUnit)
-  return moveUnitToPosition({
-    unitName = resupplyUnitState.name,
-    firingUnit = resupplyUnit,
-    positions = resupplyUnitState.operationalArea.AHA,
-    positionType = constants.POSITION_TYPES.AMMO_HOLDING_AREA,
-    areaName = resupplyUnitState.operationalArea.name
-  })
-end
-
----Command resupply unit to move to reload point (RL)
----@param resupplyUnitState SBJ__ResupplyUnitState
----@param resupplyUnit CMO__Unit
----@return boolean success
----@return table<string, any>? errorFields
-function Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, resupplyUnit)
-  return moveUnitToPosition({
-    unitName = resupplyUnitState.name,
-    firingUnit = resupplyUnit,
-    positions = resupplyUnitState.operationalArea.RL,
-    positionType = constants.POSITION_TYPES.RELOAD_POINT,
-    areaName = resupplyUnitState.operationalArea.name,
-    useLastCourse = true
-  })
-end
-
----Command firing unit to move to firing point (FP)
----@param firingUnitState SBJ__FiringUnitState
----@param firingUnit CMO__Unit
----@return boolean success
----@return table<string, any>? errorFields
-function Movement.moveToFiringPoint(firingUnitState, firingUnit)
-  return moveUnitToPosition({
-    unitName = firingUnitState.name,
-    firingUnit = firingUnit,
-    positions = firingUnitState.operationalArea.FP,
-    positionType = constants.POSITION_TYPES.FIRING_POINT,
-    areaName = firingUnitState.operationalArea.name
-  })
+  if errorFields then
+    return { tag = "FAIL", fields = LogFormat.merge(fields, errorFields) }
+  end
+  return { tag = "OK", fields = fields }
 end
 
 ---Hold or release a unit group in place under the auto/manual mode, with the given weapon control status

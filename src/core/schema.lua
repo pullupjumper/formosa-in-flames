@@ -1486,15 +1486,14 @@ function ScenEdit_DeleteMine(params) end
 ---@field reconType string Reconnaissance source that triggered the operation
 ---@field buildPlan fun(planName: string): table Builds the plan entry for the generated name
 
----Movement parameters for commanding units to a randomly selected position
----@class SBJ__MoveToPositionParams: table
----@field unitName string Unit name (for messages)
----@field firingUnit CMO__Unit Unit group
----@field positions SBJ__Position[] Position array
----@field positionType string Position type (RL/HA/AHA/FP)
----@field areaName string Operational area name (for messages)
----@field wcs? integer Weapon control status
----@field useLastCourse? boolean Whether to use the last waypoint in course
+---One path that sends a battery unit somewhere: where, how, and what the log calls it
+---@class SBJ__MoveOrder: table
+---@field action string Log action of this path
+---@field positionType string Position type logged on failure (constants.POSITION_TYPES)
+---@field positionKeys string[] Operational area fields tried in order; the first one defined is used
+---@field absentReason? string Fail reason when none of positionKeys is defined; without it an absent area counts as empty
+---@field wcs? integer Weapon control status set with the move; nil leaves doctrine untouched
+---@field useLastCourse? boolean Send only the last waypoint of the chosen course
 
 ---Per-run mode shared by every unit handled in one missileSystem run
 ---@class SBJ__MissileRunContext: table

@@ -14,22 +14,26 @@ local Transitions = require("src.modules.missileSystem.transitions")
 local Cycle = {}
 
 local STEP = Rules.STEP
+local ORDER = Movement.ORDER
 
----Append a movement command result
----Rows carry only unit-level fields; the caller adds the owning system name.
----The failing helper supplies its own reason, so no generic one is invented here.
----@param results SBJ__LogResult[]
----@param params {unit: string, action: string}
----@param success boolean
----@param errorDetail table<string, any>|nil
-local function addCommandResult(results, params, success, errorDetail)
-  if success then
-    table.insert(results, { tag = "OK", fields = { unit = params.unit, action = params.action } })
-    return
+---Step that sends the firing unit on a move order and keeps its row
+---@param order SBJ__MoveOrder
+---@return fun(stepCtx: SBJ__FiringUnitStepContext)
+local function departFiringUnit(order)
+  return function(stepCtx)
+    table.insert(stepCtx.results, Transitions.depart(stepCtx.firingUnitState, stepCtx.firingUnit, order))
   end
+end
 
-  table.insert(results,
-    { tag = "FAIL", fields = LogFormat.merge({ unit = params.unit, action = params.action }, errorDetail) })
+---Step that sends the resupply unit on a move order and keeps its row
+---Rules emits these steps only when the resupply unit and its state exist.
+---@param order SBJ__MoveOrder
+---@return fun(stepCtx: SBJ__FiringUnitStepContext|SBJ__ResupplyUnitStepContext)
+local function departResupplyUnit(order)
+  return function(stepCtx)
+    table.insert(stepCtx.results, Transitions.depart(
+      stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]], stepCtx.resupplyUnit --[[@as CMO__Unit]], order))
+  end
 end
 
 ---Seconds since a clock started, or 0 when it has not started yet
@@ -60,12 +64,7 @@ local FIRING_UNIT_STEPS = {
     Transitions.endStow(stepCtx.firingUnitState)
   end,
 
-  [STEP.MOVE_TO_HIDE_AREA] = function(stepCtx)
-    local firingUnitState = stepCtx.firingUnitState
-    local success, errorFields = Transitions.depart(firingUnitState,
-      Movement.moveToHideArea(firingUnitState, stepCtx.firingUnit))
-    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_to_hide_area" }, success, errorFields)
-  end,
+  [STEP.MOVE_TO_HIDE_AREA] = departFiringUnit(ORDER.HIDE_AREA),
 
   [STEP.UNHIDE_RESUPPLY_UNIT] = function(stepCtx)
     local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
@@ -81,23 +80,14 @@ local FIRING_UNIT_STEPS = {
     end
   end,
 
-  [STEP.MOVE_RESUPPLY_UNIT_TO_RELOAD_POINT] = function(stepCtx)
-    local resupplyUnitState = stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]
-    local success, errorFields = Transitions.depart(resupplyUnitState, Movement.moveToReloadPoint(
-      resupplyUnitState,
-      stepCtx.resupplyUnit,
-      resupplyUnitState.operationalArea.SHRL
-    ))
-    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" },
-      success, errorFields)
-  end,
+  [STEP.MOVE_RESUPPLY_UNIT_TO_RELOAD_POINT] = departResupplyUnit(ORDER.RESUPPLY_VIA_SHRL),
 
   [STEP.WARN_RESUPPLY_UNIT_NOT_FOUND] = function(stepCtx)
     table.insert(stepCtx.results, {
       tag = "WARN",
       fields = {
         unit = (stepCtx.resupplyUnitState --[[@as SBJ__ResupplyUnitState]]).name,
-        action = "move_resupply_to_reload_point",
+        action = ORDER.RESUPPLY_VIA_SHRL.action,
         reason = "unit_not_found"
       }
     })
@@ -108,19 +98,13 @@ local FIRING_UNIT_STEPS = {
       tag = "WARN",
       fields = {
         unit = stepCtx.firingUnitState.resupplyUnit or "unknown",
-        action = "move_resupply_to_reload_point",
+        action = ORDER.RESUPPLY_VIA_SHRL.action,
         reason = "context_not_found"
       }
     })
   end,
 
-  [STEP.MOVE_TO_RELOAD_POINT] = function(stepCtx)
-    local firingUnitState = stepCtx.firingUnitState
-    local success, errorFields = Transitions.depart(firingUnitState,
-      Movement.moveToReloadPoint(firingUnitState, stepCtx.firingUnit))
-    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_firing_unit_to_reload_point" },
-      success, errorFields)
-  end,
+  [STEP.MOVE_TO_RELOAD_POINT] = departFiringUnit(ORDER.RELOAD_POINT),
 
   [STEP.ENSURE_RELOAD_CLOCK] = function(stepCtx)
     Transitions.ensureReloadClock(stepCtx.firingUnitState)
@@ -163,25 +147,13 @@ local FIRING_UNIT_STEPS = {
     end
   end,
 
-  [STEP.MOVE_TO_FIRING_POINT] = function(stepCtx)
-    local firingUnitState = stepCtx.firingUnitState
-    local success, errorFields = Transitions.depart(firingUnitState,
-      Movement.moveToFiringPoint(firingUnitState, stepCtx.firingUnit))
-    addCommandResult(stepCtx.results, { unit = firingUnitState.name, action = "move_to_firing_point" }, success,
-      errorFields)
-  end,
+  [STEP.MOVE_TO_FIRING_POINT] = departFiringUnit(ORDER.FIRING_POINT),
 }
 
 ---Resupply unit steps keyed by Rules.STEP
 ---@type table<string, fun(stepCtx: SBJ__ResupplyUnitStepContext)>
 local RESUPPLY_UNIT_STEPS = {
-  [STEP.MOVE_TO_AMMO_HOLDING_AREA] = function(stepCtx)
-    local resupplyUnitState = stepCtx.resupplyUnitState
-    local success, errorFields = Transitions.depart(resupplyUnitState,
-      Movement.moveToAmmoHoldingArea(resupplyUnitState, stepCtx.resupplyUnit))
-    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_to_ammo_holding_area" }, success,
-      errorFields)
-  end,
+  [STEP.MOVE_TO_AMMO_HOLDING_AREA] = departResupplyUnit(ORDER.AMMO_HOLDING_AREA),
 
   [STEP.ENSURE_RELOAD_CLOCK] = function(stepCtx)
     Transitions.ensureReloadClock(stepCtx.resupplyUnitState)
@@ -218,13 +190,7 @@ local RESUPPLY_UNIT_STEPS = {
     })
   end,
 
-  [STEP.RECALL_TO_RELOAD_POINT] = function(stepCtx)
-    local resupplyUnitState = stepCtx.resupplyUnitState
-    local success, errorFields = Transitions.depart(resupplyUnitState,
-      Movement.moveResupplyUnitToReloadPoint(resupplyUnitState, stepCtx.resupplyUnit))
-    addCommandResult(stepCtx.results, { unit = resupplyUnitState.name, action = "move_resupply_to_reload_point" },
-      success, errorFields)
-  end,
+  [STEP.RECALL_TO_RELOAD_POINT] = departResupplyUnit(ORDER.RESUPPLY_RECALL),
 }
 
 ---Run steps in order against their handlers

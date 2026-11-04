@@ -1,6 +1,7 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field, missing-fields
 -- MissileSystem Transitions Unit Tests
 local stub = require("luassert.stub")
+local match = require("luassert.match")
 local Transitions = require("src.modules.missileSystem.transitions")
 local Movement = require("src.modules.missileSystem.movement")
 local GameApi = require("src.utils.gameApi")
@@ -42,22 +43,26 @@ describe("MissileSystem Transitions", function()
     it("should mark the unit REPOSITIONING when the move succeeded", function()
       local unitState = { state = STATE.STATIC }
 
-      local success, errorFields = Transitions.depart(unitState, true, nil)
+      local unit = { guid = "U1" }
+      local row = { tag = "OK", fields = { unit = "U1", action = "move_to_hide_area" } }
+      local moveStub = trackStub(Movement, "moveTo").returns(row)
 
-      assert.is_true(success)
-      assert.is_nil(errorFields)
+      local result = Transitions.depart(unitState, unit, Movement.ORDER.HIDE_AREA)
+
+      assert.are.equal(row, result)
+      assert.stub(moveStub).was.called_with(match.is_ref(unitState), match.is_ref(unit), match.is_ref(Movement.ORDER.HIDE_AREA))
       assert.are.equal(STATE.REPOSITIONING, unitState.state)
     end)
 
     -- Negative: a failed move keeps the old state so the unit is not stuck as REPOSITIONING
     it("should keep the state and pass the failure through when the move failed", function()
       local unitState = { state = STATE.HIDE }
-      local failure = { reason = "no_positions_available" }
+      local row = { tag = "FAIL", fields = { reason = "no_positions_available" } }
+      trackStub(Movement, "moveTo").returns(row)
 
-      local success, errorFields = Transitions.depart(unitState, false, failure)
+      local result = Transitions.depart(unitState, { guid = "U1" }, Movement.ORDER.HIDE_AREA)
 
-      assert.is_false(success)
-      assert.are.equal(failure, errorFields)
+      assert.are.equal(row, result)
       assert.are.equal(STATE.HIDE, unitState.state)
     end)
   end)

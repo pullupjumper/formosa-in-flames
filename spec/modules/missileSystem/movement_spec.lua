@@ -52,10 +52,10 @@ describe("MissileSystem Movement", function()
   end)
 
   -- ============================================================================
-  -- moveToFiringPoint
+  -- moveTo
   -- ============================================================================
 
-  describe("moveToFiringPoint", function()
+  describe("moveTo", function()
     -- Positive: the state change is left to Transitions, which records it only after a successful order
     it("should leave the unit state unchanged", function()
       local firingUnitState = makeFiringUnitState()
@@ -65,13 +65,13 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingUnitState.state)
     end)
 
-    -- Positive: returns true when move is successful
-    it("should return true when move is successful", function()
+    -- Positive: a move that went out returns an OK row labelled with the unit and action
+    it("should return an OK row when move is successful", function()
       local firingUnitState = makeFiringUnitState()
       local firingUnit = { guid = "F1" }
 
@@ -79,13 +79,13 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      local result = Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      local result = Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
-      assert.is_true(result)
+      assert.are.same({ tag = "OK", fields = { unit = "Firing Unit Alpha", action = "move_to_firing_point" } }, result)
     end)
 
-    -- Boundary: returns false when FP positions array is empty
-    it("should return false when FP positions array is empty", function()
+    -- Boundary: an empty FP list fails with no_positions_available
+    it("should return a FAIL row when FP positions array is empty", function()
       local firingUnitState = makeFiringUnitState({
         operationalArea = {
           name = "OPAREA-1",
@@ -94,13 +94,15 @@ describe("MissileSystem Movement", function()
       })
       local firingUnit = { guid = "F1" }
 
-      local result = Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      local result = Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
-      assert.is_false(result)
+      assert.are.equal("FAIL", result.tag)
+      assert.are.equal("no_positions_available", result.fields.reason)
+      assert.are.equal(constants.POSITION_TYPES.FIRING_POINT, result.fields.position)
     end)
 
-    -- Boundary: returns false when position has no course
-    it("should return false when position has no course", function()
+    -- Boundary: a position without a course fails with invalid_position_data
+    it("should return a FAIL row when position has no course", function()
       local firingUnitState = makeFiringUnitState({
         operationalArea = {
           name = "OPAREA-1",
@@ -111,9 +113,11 @@ describe("MissileSystem Movement", function()
 
       trackStub(math, "random").returns(1)
 
-      local result = Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      local result = Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
-      assert.is_false(result)
+      assert.are.equal("FAIL", result.tag)
+      assert.are.equal("invalid_position_data", result.fields.reason)
+      assert.are.equal(1, result.fields.index)
     end)
 
     -- Positive: sets unit properties for a single unit
@@ -125,7 +129,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.are.equal("F1", stubSetUnit.calls[1].vals[1].guid)
@@ -152,7 +156,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
       assert.are.same(expectedCourse, stubSetUnit.calls[1].vals[1].course)
     end)
@@ -175,7 +179,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
       assert.stub(stubSetUnit).was.called(3)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -201,7 +205,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -227,9 +231,88 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveToFiringPoint(firingUnitState, firingUnit)
+      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
       assert.are.same(course2, stubSetUnit.calls[1].vals[1].course)
+    end)
+
+    local function course(tag)
+      return { { latitude = tag .. "-a" }, { latitude = tag .. "-b" } }
+    end
+
+    local function makeAreaState(overrides)
+      local operationalArea = {
+        name = "OPAREA-1",
+        FP = { { course = course("FP") } },
+        HA = { { course = course("HA") } },
+        RL = { { course = course("RL") } },
+        SHRL = { { course = course("SHRL") } },
+        AHA = { { course = course("AHA") } }
+      }
+      for key, value in pairs(overrides or {}) do
+        operationalArea[key] = value or nil
+      end
+      return { name = "Unit Alpha", operationalArea = operationalArea }
+    end
+
+    ---Send a ground unit on an order and report what CMO received
+    local function send(order, overrides)
+      local unit = { guid = "U1", side = "Taiwan", dbid = 1 }
+      trackStub(math, "random").returns(1)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(unit)
+      local setUnit = trackStub(GameApi, "ScenEdit_SetUnit")
+      local setDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
+
+      local result = Movement.moveTo(makeAreaState(overrides), unit, order)
+
+      local sentCourse = setUnit.calls[1] and setUnit.calls[1].vals[1].course
+      local doctrine = setDoctrine.calls[1] and setDoctrine.calls[1].vals[2]
+      return result, sentCourse, doctrine
+    end
+
+    -- Positive: each order drives its own position list, course trimming and weapon control
+    local hold = { weapon_control_status_land = constants.WCS.HOLD }
+    for _, case in ipairs({
+      { "FIRING_POINT", "move_to_firing_point", course("FP"), nil },
+      { "HIDE_AREA", "move_to_hide_area", course("HA"), hold },
+      { "RELOAD_POINT", "move_firing_unit_to_reload_point", course("RL"), hold },
+      { "RESUPPLY_VIA_SHRL", "move_resupply_to_reload_point", course("SHRL"), hold },
+      { "RESUPPLY_RECALL", "move_resupply_to_reload_point", { course("RL")[2] }, nil },
+      { "AMMO_HOLDING_AREA", "move_to_ammo_holding_area", course("AHA"), nil },
+    }) do
+      it("should send " .. case[1] .. " along its own course with its own weapon control", function()
+        local result, sentCourse, doctrine = send(Movement.ORDER[case[1]])
+
+        assert.are.same({ tag = "OK", fields = { unit = "Unit Alpha", action = case[2] } }, result)
+        assert.are.same(case[3], sentCourse)
+        assert.are.same(case[4], doctrine)
+      end)
+    end
+
+    -- Boundary: an area without HA fails before any command, naming the area
+    it("should fail with no_ha_defined when the area has no hide area", function()
+      local result, sentCourse = send(Movement.ORDER.HIDE_AREA, { HA = false })
+
+      assert.are.same({ tag = "FAIL", fields = {
+        unit = "Unit Alpha", action = "move_to_hide_area", reason = "no_ha_defined", area = "OPAREA-1"
+      } }, result)
+      assert.is_nil(sentCourse)
+    end)
+
+    -- Boundary: a resupply unit leaving its shelter takes RL when the area has no SHRL
+    it("should fall back to RL when the area has no SHRL", function()
+      local result, sentCourse = send(Movement.ORDER.RESUPPLY_VIA_SHRL, { SHRL = false })
+
+      assert.are.equal("OK", result.tag)
+      assert.are.same(course("RL"), sentCourse)
+    end)
+
+    -- Boundary: an empty SHRL list is defined, so it fails instead of falling back
+    it("should fail rather than fall back when SHRL is empty", function()
+      local result, sentCourse = send(Movement.ORDER.RESUPPLY_VIA_SHRL, { SHRL = {} })
+
+      assert.are.equal("no_positions_available", result.fields.reason)
+      assert.is_nil(sentCourse)
     end)
   end)
 

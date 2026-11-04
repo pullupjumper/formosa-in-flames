@@ -6,19 +6,18 @@ local Movement = require("src.modules.missileSystem.movement")
 ---Other files issue CMO commands and ask this one to record what the commands mean.
 local Transitions = {}
 
----Record a move order; the unit is repositioning only when the order went out
----Takes a Movement command's results as-is so callers can wrap the call directly.
+---Send a unit on a move order; it is repositioning only when the order went out
 ---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
----@param success boolean
----@param errorFields table<string, any>|nil
----@return boolean success
----@return table<string, any>|nil errorFields
-function Transitions.depart(unitState, success, errorFields)
-  if success then
+---@param unit CMO__Unit
+---@param order SBJ__MoveOrder One of Movement.ORDER
+---@return SBJ__LogResult # The order's row, for the caller to keep or log
+function Transitions.depart(unitState, unit, order)
+  local result = Movement.moveTo(unitState, unit, order)
+  if result.tag == "OK" then
     unitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
   end
 
-  return success, errorFields
+  return result
 end
 
 ---Firing unit reached its firing point: ready to fire

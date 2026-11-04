@@ -80,7 +80,7 @@ describe("MissileSystem", function()
 
     -- Negative: a tracked unit that no longer exists in game is reported missing
     it("should report a missing unit without moving anything when the unit is gone", function()
-      local moveStub = trackStub(Movement, "moveToFiringPoint")
+      local moveStub = trackStub(Movement, "moveTo")
 
       local inPosition, isMissing = sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, nil)
 
@@ -109,14 +109,14 @@ describe("MissileSystem", function()
       local firingUnitState = { name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 }
       local firingUnit = { name = "FU1" }
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
-      local moveStub = trackStub(Movement, "moveToFiringPoint").returns(true)
+      local moveStub = trackStub(Movement, "moveTo").returns({ tag = "OK", fields = {} })
 
       local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.is_false(inPosition)
       assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 1)
       assert.stub(moveFromHideAreaStub).was.called_with(match.is_ref(firingUnitState), firingUnit)
-      assert.stub(moveStub).was.called_with(match.is_ref(firingUnitState), firingUnit)
+      assert.stub(moveStub).was.called_with(match.is_ref(firingUnitState), firingUnit, Movement.ORDER.FIRING_POINT)
       assert.stub(errorStub).was_not.called()
       assert.are.equal(STATE.REPOSITIONING, firingUnitState.state)
     end)
@@ -125,7 +125,7 @@ describe("MissileSystem", function()
     it("should report in position for a STATIC unit without moving it", function()
       local firingUnitState = { name = "FU1", state = STATE.STATIC }
       local firingUnit = { name = "FU1" }
-      local moveStub = trackStub(Movement, "moveToFiringPoint")
+      local moveStub = trackStub(Movement, "moveTo")
 
       local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
@@ -140,7 +140,7 @@ describe("MissileSystem", function()
       local firingUnit = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(true)
-      local moveStub = trackStub(Movement, "moveToFiringPoint")
+      local moveStub = trackStub(Movement, "moveTo")
 
       local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
 
@@ -155,8 +155,9 @@ describe("MissileSystem", function()
       local firingUnit = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(false)
-      trackStub(Movement, "moveToFiringPoint")
-          .returns(false, { reason = "no_positions_available", position = "FP", area = "OPAREA-1" })
+      trackStub(Movement, "moveTo").returns({ tag = "FAIL", fields = {
+        unit = "FU1", action = "move_to_firing_point", reason = "no_positions_available", position = "FP", area = "OPAREA-1"
+      } })
 
       sendToFiringPoint(firingUnitState, firingUnit)
 
@@ -172,24 +173,11 @@ describe("MissileSystem", function()
       local firingUnit = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(false)
-      trackStub(Movement, "moveToFiringPoint").returns(false, { reason = "no_positions_available" })
+      trackStub(Movement, "moveTo").returns({ tag = "FAIL", fields = { reason = "no_positions_available" } })
 
       sendToFiringPoint(firingUnitState, firingUnit)
 
       assert.are.equal(STATE.HIDE, firingUnitState.state)
-    end)
-
-    -- Boundary: failure without error fields should not log (avoid "[FAIL] nil")
-    it("should not log when movement fails without error fields", function()
-      local firingUnitState = { name = "FU1", state = STATE.HIDE }
-      local firingUnit = { name = "FU1" }
-
-      trackStub(Ammo, "isLowAmmo").returns(false)
-      trackStub(Movement, "moveToFiringPoint").returns(false)
-
-      sendToFiringPoint(firingUnitState, firingUnit)
-
-      assert.stub(errorStub).was_not.called()
     end)
   end)
 

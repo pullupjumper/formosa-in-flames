@@ -47,7 +47,7 @@ flowchart TD
 
 ## 狀態寫入
 
-本檔的狀態與計時器寫入都經 [transitions](transitions.md)：移動用 `Transitions.depart` 包住 `Movement.moveTo*`，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態，留給下一輪或下一次事件。
+本檔的狀態與計時器寫入都經 [transitions](transitions.md)：移動用 `Transitions.depart(unitState, unit, Movement.ORDER.X)`，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態，留給下一輪或下一次事件。
 
 ## Public API
 
