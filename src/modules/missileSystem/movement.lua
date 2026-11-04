@@ -1,9 +1,68 @@
+local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 local Shared = require("src.modules.missileSystem.shared")
 
 ---CMO movement and mode commands; Transitions records what they mean for a unit's state
 local Movement = {}
+
+---Platforms whose weapon control status lives in the air doctrine field instead of land
+---@type table<number, true>
+local AIR_WCS_DBIDS = {
+  [constants.PLATFORMS.PAC3] = true,
+  [constants.PLATFORMS.SKY_GUARD] = true,
+  [constants.PLATFORMS.TC2] = true,
+  [constants.PLATFORMS.CUSTOMED_TK3] = true,
+  [constants.PLATFORMS.CUSTOMED_SAM] = true,
+  [constants.PLATFORMS.S300] = true,
+  [constants.PLATFORMS.S400] = true,
+  [constants.PLATFORMS.HQ12] = true,
+  [constants.PLATFORMS.HQ22] = true,
+}
+
+---Set unit movement and weapon control status
+---@param unit CMO__Unit
+---@param params SBJ__SetUnitPropertiesOpts
+local function setUnitProperties(unit, params)
+  local unitSetParams = {
+    guid = unit.guid,
+    manualthrottle = params.throttle or "Stop",
+    manualSpeed = params.speed or 0,
+    holdposition = params.holdPosition == nil and true or params.holdPosition
+  }
+
+  if params.course then
+    unitSetParams.course = params.course
+  end
+
+  GameApi.ScenEdit_SetUnit(unitSetParams)
+
+  if params.wcs then
+    local doctrine = { weapon_control_status_land = params.wcs }
+
+    if AIR_WCS_DBIDS[unit.dbid] then
+      doctrine = { weapon_control_status_air = params.wcs }
+    end
+
+    GameApi.ScenEdit_SetDoctrine({ side = unit.side, guid = unit.guid }, doctrine)
+  end
+
+  if params.formation then
+    unit.formation = params.formation
+  end
+end
+
+---Apply the same properties to all units in a group
+---@param groupUnit CMO__Unit
+---@param props SBJ__SetUnitPropertiesOpts
+local function setGroupUnitProperties(groupUnit, props)
+  for _, guid in ipairs(Shared.getGroupUnits(groupUnit)) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+    if unit then
+      setUnitProperties(unit, props)
+    end
+  end
+end
 
 ---Move units to a randomly selected position
 ---Failure fields omit the unit name because every caller already labels the row
@@ -38,16 +97,13 @@ local function moveUnitToPosition(params)
     course = { course[#course] }
   end
 
-  Shared.setGroupUnitProperties(params.firingUnit, function(unit)
-    return {
-      unit = unit,
-      throttle = constants.THROTTLES.FULL,
-      speed = constants.SPEEDS.NORMAL,
-      course = course,
-      holdPosition = false,
-      wcs = params.wcs
-    }
-  end)
+  setGroupUnitProperties(params.firingUnit, {
+    throttle = constants.THROTTLES.FULL,
+    speed = constants.SPEEDS.NORMAL,
+    course = course,
+    holdPosition = false,
+    wcs = params.wcs
+  })
 
   return true, nil
 end
@@ -143,9 +199,12 @@ end
 ---@param isAuto boolean
 ---@param wcs integer
 function Movement.applyMode(unit, isAuto, wcs)
-  Shared.setGroupUnitProperties(unit, function()
-    return Shared.buildModeProperties(isAuto, wcs)
-  end)
+  setGroupUnitProperties(unit, {
+    holdPosition = isAuto,
+    throttle = isAuto and "Stop" or "OFF",
+    speed = isAuto and 0 or "OFF",
+    wcs = wcs,
+  })
 end
 
 return Movement

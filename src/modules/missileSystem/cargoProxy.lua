@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
+local Shared = require("src.modules.missileSystem.shared")
 
 local CargoProxy = {}
 
@@ -166,7 +167,7 @@ function CargoProxy.loadCargo(base, unitState, sideName)
   local actualUnit = GameApi.ScenEdit_GetUnit(unitState.name, sideName)
   if not actualUnit then return end
 
-  local group = actualUnit.group and actualUnit.group.unitlist or { actualUnit.guid }
+  local group = Shared.getGroupUnits(actualUnit)
   local loadCtx = { weaponDBIDSet = normalizeWeaponDBIDs(unitState.weaponDBID), sideName = sideName }
   local report = LogFormat.report(
     constants.TAGS.MISSILE_SYSTEM, "ship=" .. (base.name or base.guid), "Load cargo")

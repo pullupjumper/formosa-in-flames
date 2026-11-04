@@ -61,6 +61,30 @@ function Ammo.reloadFiringUnit(firingUnitState, resupplyUnitState, weaponDBID, s
   return totalLoaded
 end
 
+---Sum loaded and maximum weapons across every unit of a firing unit's group
+---@param firingUnit CMO__Unit
+---@param weaponDBID number|number[]
+---@return integer current Weapons loaded
+---@return integer max Weapon capacity
+local function tallyWeapons(firingUnit, weaponDBID)
+  local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
+  local current, max = 0, 0
+
+  for _, guid in ipairs(Shared.getGroupUnits(firingUnit)) do
+    local unit = GameApi.ScenEdit_GetUnit(guid)
+
+    if unit then
+      for _, dbid in ipairs(weaponDBIDs) do
+        local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
+        current = current + wpnInfo.availableWeapons
+        max = max + wpnInfo.maxWeapons
+      end
+    end
+  end
+
+  return current, max
+end
+
 ---Check if unit/group ammunition is below specified percentage
 ---@param firingUnit CMO__Unit
 ---@param percentage number|nil
@@ -71,23 +95,7 @@ function Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
     return false
   end
 
-  local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
-  local totalCurrent = 0
-  local totalMax = 0
-
-  local units = Shared.getGroupUnits(firingUnit)
-  for _, guid in ipairs(units) do
-    local unit = GameApi.ScenEdit_GetUnit(guid)
-
-    if unit then
-      for _, dbid in ipairs(weaponDBIDs) do
-        local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
-        totalCurrent = totalCurrent + wpnInfo.availableWeapons
-        totalMax = totalMax + wpnInfo.maxWeapons
-      end
-    end
-  end
-
+  local totalCurrent, totalMax = tallyWeapons(firingUnit, weaponDBID)
   if totalMax == 0 then return false end
   return (totalCurrent / totalMax * 100) <= percentage
 end
@@ -111,18 +119,9 @@ local function countFiringUnits(firingUnitMap, sideName)
   for _, firingState in pairs(firingUnitMap) do
     local firingUnit = GameApi.ScenEdit_GetUnit(firingState.name, sideName)
     if firingUnit then
-      local weaponDBIDs = Shared.normalizeWeaponDBIDs(firingState.weaponDBID)
-      local units = Shared.getGroupUnits(firingUnit)
-      for _, guid in ipairs(units) do
-        local unit = GameApi.ScenEdit_GetUnit(guid)
-        if unit then
-          for _, dbid in ipairs(weaponDBIDs) do
-            local wpnInfo = GameUtils.getWeaponInfo(unit, dbid)
-            subtotal.current = subtotal.current + wpnInfo.availableWeapons
-            subtotal.max = subtotal.max + wpnInfo.maxWeapons
-          end
-        end
-      end
+      local current, max = tallyWeapons(firingUnit, firingState.weaponDBID)
+      subtotal.current = subtotal.current + current
+      subtotal.max = subtotal.max + max
     end
   end
 

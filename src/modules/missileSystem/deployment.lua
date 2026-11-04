@@ -3,6 +3,7 @@ local LogFormat = require("src.utils.logFormat")
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 local Shared = require("src.modules.missileSystem.shared")
+local Rules = require("src.modules.missileSystem.rules")
 local Utils = require("src.utils.utils")
 
 local Deployment = {}
@@ -21,9 +22,7 @@ local function removeMissileSystem(missileSystemType, role, descriptor, sideName
     return entries
   end
 
-  local guids = unit.group and unit.group.unitlist or { unit.guid }
-
-  for _, guid in ipairs(guids) do
+  for _, guid in ipairs(Shared.getGroupUnits(unit)) do
     local deleted = GameApi.ScenEdit_DeleteUnit({ side = sideName, guid = guid })
     if not deleted then
       table.insert(entries, {
@@ -120,7 +119,7 @@ end
 ---@return integer expected Total number of units expected to create
 ---@return SBJ__LogResult[] entries Failure log rows, including configuration rejections
 local function addFiringUnit(missileSystemType, systemConfig, descriptor, sideName)
-  local isSam = missileSystemType == "sam"
+  local isSam = Rules.staysDeployed(missileSystemType)
   local context = {
     system = missileSystemType,
     role = "firing",

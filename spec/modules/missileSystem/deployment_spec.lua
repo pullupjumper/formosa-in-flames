@@ -102,6 +102,55 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
     end)
 
+    -- Positive: a SAM firing unit spawns at a firing point, other systems at their hide area
+    it("should spawn SAM firing units at a firing point and others at the hide area", function()
+      local function makeSystem(name)
+        return {
+          firingUnits = { [name] = { name = name, dbid = 1234, resupplyUnit = "RU-" .. name, weaponDBID = 5678,
+            operationalArea = { name = "OPAREA-" .. name,
+              HA = { { course = { { latitude = 1, longitude = 1 } } } },
+              FP = { { course = { { latitude = 2, longitude = 2 } } } } } } },
+          resupplyUnits = { ["RU-" .. name] = { name = "RU-" .. name, unitCount = 1,
+            operationalArea = { name = "OPAREA-" .. name, RL = { { course = { { latitude = 3, longitude = 3 } } } } } } },
+          ammunitions = {}
+        }
+      end
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
+      trackStub(GameUtils, "resolveUnitType").returns("Unit")
+      local spawnedAt = {}
+      trackStub(GameApi, "ScenEdit_AddUnit").invokes(function(opts)
+        spawnedAt[opts.unitname] = opts.latitude
+        return { guid = "new-" .. opts.unitname, name = opts.unitname, mounts = {} }
+      end)
+
+      Deployment.addMissileSystems({ sam = makeSystem("FU-SAM"), srbm = makeSystem("FU-SRBM") }, constants.SIDES.BLUE)
+
+      assert.are.equal(2, spawnedAt["FU-SAM"])
+      assert.are.equal(1, spawnedAt["FU-SRBM"])
+    end)
+
+    -- Positive: replacing a grouped unit deletes every member of the group
+    it("should delete every member of an existing group before rebuilding", function()
+      local missileSystemConfigMap = makeMissileSystemConfigMap()
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(name)
+        if name == "Firing Unit Alpha" then
+          return { guid = "G-1", name = name, group = { unitlist = { "M-1", "M-2" } } }
+        end
+        return nil
+      end)
+      trackStub(GameUtils, "resolveUnitType").returns("Unit")
+      local deleteStub = trackStub(GameApi, "ScenEdit_DeleteUnit").returns(true)
+      trackStub(GameApi, "ScenEdit_AddUnit").invokes(function(opts)
+        return { guid = "new-" .. opts.unitname, name = opts.unitname, mounts = {} }
+      end)
+
+      Deployment.addMissileSystems(missileSystemConfigMap, constants.SIDES.RED)
+
+      assert.stub(deleteStub).was.called(2)
+      assert.stub(deleteStub).was.called_with({ side = constants.SIDES.RED, guid = "M-1" })
+      assert.stub(deleteStub).was.called_with({ side = constants.SIDES.RED, guid = "M-2" })
+    end)
+
     -- Positive: only the batteries picked by selectBatteries are removed and rebuilt
     it("should rebuild only the selected batteries and leave the others untouched", function()
       local function makeUnitPair(suffix)

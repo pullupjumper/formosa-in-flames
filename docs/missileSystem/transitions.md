@@ -20,7 +20,7 @@
 
 - **出發**：`depart` 包住 `Movement.moveTo*` 的回傳值，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態並原樣回傳失敗欄位，避免單位沒動卻卡在 `REPOSITIONING`。
 - **收車倒數**：`beginStow` 已有倒數就保留並回傳 false；`endStow` 在單位被送走後清掉（移動失敗也清，不重試）。
-- **查詢**：`staysDeployed`（SAM）與 `isRepositioning` 已搬到 [rules](rules.md)。`Shared.isSAM(dbid)`（選防空或對地 WCS）不屬於狀態機。
+- **查詢**：`staysDeployed`（SAM）與 `isRepositioning` 已搬到 [rules](rules.md)。`movement.lua` 的 `AIR_WCS_DBIDS`（選防空或對地 WCS）不屬於狀態機。
 
 ```mermaid
 stateDiagram-v2

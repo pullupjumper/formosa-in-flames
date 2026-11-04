@@ -1412,7 +1412,7 @@ function ScenEdit_DeleteMine(params) end
 ---Passing nil applies every default
 ---@class SBJ__SetUnitPropertiesOpts: table
 ---@field throttle? string Throttle setting (default: 'Stop')
----@field speed? number Speed (default: 0)
+---@field speed? number|"OFF" Speed (default: 0); "OFF" releases manual speed
 ---@field course? CMO__Waypoint[] Waypoints
 ---@field holdPosition? boolean Whether to hold position (default: true)
 ---@field wcs? integer Weapon control status: 1=Free, 2=Hold
