@@ -25,7 +25,7 @@
 - 進入 `stowTime` 等待視窗，模擬射擊／撤收時間，期間不立即機動
 - stow 結束後若仍低於 `ammoThreshold`，機動發射車前往 RL（Reload Point，再裝填陣地）；若彈量已充足（FSP 收車情境），則直接回 HA
 - 彈藥補給車從 MASK 建築拉出後與機動發射車在 RL 交會，進入再裝填計時
-- 彈藥補給車彈量耗盡時，再前往 ATP（Ammunition Transfer Point，彈藥轉運點）與彈罐庫存交會
+- 彈藥補給車彈量耗盡時，再前往 ATP（Ammunition Transfer Point，彈藥轉運點）與彈箱庫存交會
 - 轉運完成後彈藥補給車回 RL 待命
 
 **再裝填後的機動與存活流程**
@@ -81,7 +81,7 @@ flowchart TB
     CN_RU0 -->|Yes| CN_ATP[自動前往 ATP]
     CN_RU0 -->|No| CN_RLREADY[彈藥補給車回 RL 待命]
     CN_ATP --> CN_ATPMEET{ATP 交會成功?}
-    CN_ATPMEET -->|Yes| CN_TRANSFER[彈罐庫存轉運完成]
+    CN_ATPMEET -->|Yes| CN_TRANSFER[彈箱庫存轉運完成]
     CN_TRANSFER --> CN_RLREADY
 ```
 
@@ -117,7 +117,7 @@ flowchart TB
 | 設計機制 | 遊戲中的效果 |
 |---|---|
 | RL 交會 + 再裝填時間 | 形成射擊節奏與火力間隙，避免連續無限火力投射 |
-| ATP 二級補給 | 補給流程可被中斷，摧毀彈罐庫存可成為有效戰術 |
+| ATP 二級補給 | 補給流程可被中斷，摧毀彈箱庫存可成為有效戰術 |
 | TEL 回 HA + 建築掩蔽 | 降低被持續偵蒐與反制打擊的機率 |
 | SAM 補完回 FP | 防空火網覆蓋恢復較快，空域威脅起伏更明顯 |
 | 狀態機（STATIC/REPOSITIONING/RELOAD/HIDE） | 流程可預期、可調校、可在 UI/事件中解讀 |
@@ -131,7 +131,7 @@ flowchart TB
 - 對應資料欄位 `resupplyUnits[*].weaponCountCurrent` 會下降或歸零
 - 機動發射車短期仍可作戰，但無法進行再裝填
 
-**情境 B：彈罐庫存被摧毀**
+**情境 B：彈箱庫存被摧毀**
 
 - 對應 `canisterStocks[*].weaponCountCurrent` 歸零
 - 彈藥補給車用盡後無法再裝填，該作戰區飛彈系統續戰力將衰退
@@ -139,7 +139,7 @@ flowchart TB
 **情境 C：未在同一陣地交會**
 
 - 機動發射車與彈藥補給車若未在同一 RL 陣地交會，無法進入有效 `RELOAD` 完成狀態
-- 彈藥補給車若未在同一 ATP 陣地與彈罐庫存交會，將無法完成再裝填
+- 彈藥補給車若未在同一 ATP 陣地與彈箱庫存交會，將無法完成再裝填
 
 ---
 
@@ -151,7 +151,7 @@ flowchart TB
 | `config.*.ground.missileSystemTypes.<type>.reloadTime` | 再裝填所需時間 |
 | `config.*.ground.missileSystemTypes.<type>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
 | `config.*.ground.missileSystemTypes.<type>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
-| `config.*.ground.missileSystemTypes.<type>.canisterStocks[*].weaponCountDefault` | 彈罐庫存的初始彈量 |
+| `config.*.ground.missileSystemTypes.<type>.canisterStocks[*].weaponCountDefault` | 彈箱庫存的初始彈量 |
 | `operationalArea` 的 FP/HA/RL/ATP 陣地位置 | 補給路徑與交會條件 |
 
 ---
@@ -167,7 +167,7 @@ flowchart TB
 **主要結果**
 
 - 機動車組移動與射擊管制命令（移動、武器管制）
-- 彈藥庫存變化（機動發射車/彈藥補給車/彈罐庫存）
+- 彈藥庫存變化（機動發射車/彈藥補給車/彈箱庫存）
 - 利用 CMO `cargo` 裝載/卸載機制，模擬機動車組進入掩體或建築進行隱藏（`cargoProxy` 負責把地面單位轉成建築上的 cargo proxy）
 - 事件trigger 與 zone 移除與創建結果（由玩家手動部署單位部署陣地）
 
@@ -181,7 +181,7 @@ flowchart TB
 | `moveToPosition.lua` | 機動車組進入陣地後，立即更新對應狀態與武器管制 |
 | `strikePlanner/fireSupportPlan.lua` | FSP 射擊後呼叫 `MissileSystem.completeFireTask`，觸發 stow 等待視窗 |
 | `addMissileSystems.lua`（special action） | 經 `MissileSystem.deploySide` 創建飛彈系統單位與 context，常用於測試/重部署 |
-| `destroyUnits.lua` / `taiwaneseAssetIsDestroy.lua` | 彈藥車與彈罐庫存戰損同步反映到庫存與後續火力支援能力 |
+| `destroyUnits.lua` / `taiwaneseAssetIsDestroy.lua` | 彈藥車與彈箱庫存戰損同步反映到庫存與後續火力支援能力 |
 | `unitStatusUI.lua` | 將狀態與作戰區域可視化，利於除錯與調校 |
 
 ---

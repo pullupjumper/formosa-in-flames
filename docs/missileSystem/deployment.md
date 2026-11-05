@@ -4,7 +4,7 @@
 
 > Source: `src/modules/missileSystem/deployment.lua`
 
-責任摘要：把 config 的一連（發射車、補給車、彈罐庫存）組成 `SBJ__Battery`，在該連的陣地上建出單位並整理武器掛載。
+責任摘要：把 config 的一連（發射車、補給車、彈箱庫存）組成 `SBJ__Battery`，在該連的陣地上建出單位並整理武器掛載。
 
 ---
 

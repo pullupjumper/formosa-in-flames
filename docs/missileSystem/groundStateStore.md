@@ -14,7 +14,7 @@
 
 `processSupplyAssetDestruction` 會在分數腳本觸發時被呼叫：
 
-- 若擊毀彈罐庫存（非 group），直接將對應 `canisterStockState.weaponCountCurrent = 0`
+- 若擊毀彈箱庫存（非 group），直接將對應 `canisterStockState.weaponCountCurrent = 0`
 - 若擊毀彈藥補給車群組成員，按每車平均彈量扣減群組 `weaponCountCurrent`
 
 ---

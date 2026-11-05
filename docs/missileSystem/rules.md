@@ -35,7 +35,7 @@ missileSystem 的流程分成三層：
 會合條件（module-local）：
 
 - `hasMetResupplyUnit(pair, isAuto)`：觸發端狀態可會合（自動模式要 REPOSITIONING / RELOAD）→ 發射車低彈 → 補給車有彈 → 兩車在同一 RL 區。
-- `hasMetCanisterStock(resupplyUnitState, isAuto, isAtCanisterStock)`：狀態可會合 → 補給車彈量 0 → 和彈罐庫存在同一 ATP 區。
+- `hasMetCanisterStock(resupplyUnitState, isAuto, isAtCanisterStock)`：狀態可會合 → 補給車彈量 0 → 和彈箱庫存在同一 ATP 區。
 
 | 陣地 | 條件 | 步驟 |
 |---|---|---|
@@ -56,7 +56,7 @@ missileSystem 的流程分成三層：
 ### 補給車定時循環（`evaluateResupplyUnitTick`）
 
 - **STATIC**：自動模式 + 彈量 0 + 在某個 RL 區 → `MOVE_TO_AMMUNITION_TRANSFER_POINT`。
-- **RELOAD**：先 `ENSURE_RELOAD_CLOCK`。`reloadTime` 已過 + 彈量 0 + 有會合 → 彈罐庫存沒有狀態就 `FAIL_CANISTER_STOCK_STATE_NOT_FOUND`，否則 `COMPLETE_TRANSLOAD`，自動模式再 `RECALL_TO_RELOAD_POINT`。
+- **RELOAD**：先 `ENSURE_RELOAD_CLOCK`。`reloadTime` 已過 + 彈量 0 + 有會合 → 彈箱庫存沒有狀態就 `FAIL_CANISTER_STOCK_STATE_NOT_FOUND`，否則 `COMPLETE_TRANSLOAD`，自動模式再 `RECALL_TO_RELOAD_POINT`。
 
 ### Facade 用的判斷
 

@@ -4,7 +4,7 @@
 
 missileSystem 的彈藥用詞照 MLRS 野戰手冊統一。現在「存彈藥的單位」有七個名字（`docs/missileSystem/naming-review-2026-11-05.md` N1），補給地點叫 AHA（Ammo Holding Area）。手冊把這個地點叫 ATP（Ammunition Transfer Point），彈藥以 canister 為單位。
 
-改成：地點一律叫 ATP；存彈的單位一律叫 canister stock（`canisterStock`）。canister 這個字只指一罐彈，不拿來叫單位。這次連 config、saveData 的 key 一起改（N1 選 B），所以 `.scen` 也要轉換。
+改成：地點一律叫 ATP；存彈的單位一律叫 canister stock（`canisterStock`）。canister（彈箱）這個字只指一個彈箱，不拿來叫單位；中文叫彈箱庫存。這次連 config、saveData 的 key 一起改（N1 選 B），所以 `.scen` 也要轉換。
 
 ## 要做到的行為
 
@@ -26,7 +26,7 @@ missileSystem 的彈藥用詞照 MLRS 野戰手冊統一。現在「存彈藥的
 - 彈藥庫被擊毀的 log：`role=ammo_depot` 改成 `role=canister_stock`。
 - 部署 summary 欄位 `ammo=` 改成 `canister_stock=`；火力支援暫停（`fireSupportGate`）的欄位 `depot` 改成 `canisterStock`。
 - 步驟名 `failAmmoDepotStateNotFound` 改成 `failCanisterStockStateNotFound`，它的 reason `ammo_context_not_found` 改成 `canister_stock_state_not_found`。
-- 控制面板資料欄位 `missilesInAHA` 改成 `missilesInCanisterStock`（存的是彈罐庫存的彈量，不是地點）。
+- 控制面板資料欄位 `missilesInAHA` 改成 `missilesInCanisterStock`（存的是彈箱庫存的彈量，不是地點）。
 
 ## 不做
 

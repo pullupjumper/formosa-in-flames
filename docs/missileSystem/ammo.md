@@ -4,7 +4,7 @@
 
 > Source: `src/modules/missileSystem/ammo.lua`
 
-責任摘要：維護彈藥補給車/彈罐庫存的存量，並將彈藥實際裝填到機動發射車。
+責任摘要：維護彈藥補給車/彈箱庫存的存量，並將彈藥實際裝填到機動發射車。
 
 ---
 
@@ -12,9 +12,9 @@
 
 `ammo.lua` 同時處理三件事：
 
-- `transferCanisters`：彈罐庫存 → 彈藥補給車
+- `transferCanisters`：彈箱庫存 → 彈藥補給車
 - `buildReload` / `reloadFiringUnit`：彈藥補給車 → 機動發射車（含 group），先算後裝
-- `getInventory`：跨整個飛彈系統聚合彈藥庫存（firing / resupply / 彈罐庫存）並產生百分比報告，供火力支援暫停閘門等上層判斷使用
+- `getInventory`：跨整個飛彈系統聚合彈藥庫存（firing / resupply / 彈箱庫存）並產生百分比報告，供火力支援暫停閘門等上層判斷使用
 
 模組支援 `weaponDBID` 為單值或陣列，會先用 `Shared.normalizeWeaponDBIDs` 做一致化，再逐一計算缺額與實際補入數量。
 
@@ -49,7 +49,7 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `transferCanisters` | `resupplyUnitState, canisterStockState` | `nil` | 從彈罐庫存補滿彈藥補給車（受庫存限制）；不改狀態，呼叫端接著 `Transitions.finishReload` |
+| `transferCanisters` | `resupplyUnitState, canisterStockState` | `nil` | 從彈箱庫存補滿彈藥補給車（受庫存限制）；不改狀態，呼叫端接著 `Transitions.finishReload` |
 | `buildReload` | `firingUnit, weaponDBID, stock` | `SBJ__ReloadPlan` | 算出 group 要裝的每一筆，總數不超過 `stock`；只讀不寫 |
 | `reloadFiringUnit` | `resupplyUnitState, plan` | `integer` | 照計畫裝填並扣補給車存量，回傳總裝填量；不改狀態，呼叫端接著 `Transitions.finishReload` |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 低彈量判定 |

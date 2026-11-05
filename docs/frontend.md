@@ -122,7 +122,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
 Allowed:
 - `id` / `guid` / `dbid`
 - Unit suffixes `Nm`, `Meters`, `Ms` (`rangeNm`, `radiusMeters`, `MOUSE_MOVE_THROTTLE_MS`)
-- Game-domain codes `fp` / `ha` / `rl` / `aha` / `shrl`: camelCase inside identifiers (`fpGateway`, `shrlPathPositions`); JSON keys keep the Lua-side uppercase (`paths.FP`)
+- Game-domain codes `fp` / `ha` / `rl` / `atp` / `shrl`: camelCase inside identifiers (`fpGateway`, `shrlPathPositions`); JSON keys keep the Lua-side uppercase (`paths.FP`)
 
 Forbidden: `ctr`, `idx`, `cb`, `lo`, `e`, `evt`, `coords`, `pos`. Single-letter names only inside one-line lambdas (`_` for ignored params is fine).
 
