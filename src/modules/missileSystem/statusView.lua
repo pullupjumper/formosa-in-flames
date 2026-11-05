@@ -4,14 +4,14 @@ local StatusView = {}
 
 ---Display labels for missile system states
 local STATE_LABELS = {
-  [constants.MISSILE_SYSTEM_STATE.STATIC] = "STATIC",
-  [constants.MISSILE_SYSTEM_STATE.REPOSITIONING] = "REPOSITIONING",
-  [constants.MISSILE_SYSTEM_STATE.HIDE] = "HIDE",
-  [constants.MISSILE_SYSTEM_STATE.RELOAD] = "RELOAD",
+  [constants.MISSILE_UNIT_POSTURE.STATIC] = "STATIC",
+  [constants.MISSILE_UNIT_POSTURE.REPOSITIONING] = "REPOSITIONING",
+  [constants.MISSILE_UNIT_POSTURE.HIDE] = "HIDE",
+  [constants.MISSILE_UNIT_POSTURE.RELOAD] = "RELOAD",
 }
 
 ---Convert a missile system state enum to its display label
----@param state missileSystemState
+---@param state missileUnitPosture
 ---@return string # STATIC/REPOSITIONING/HIDE/RELOAD, or UNKNOWN
 local function formatState(state)
   return STATE_LABELS[state] or "UNKNOWN"

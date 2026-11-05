@@ -49,7 +49,7 @@ describe("MissileSystem Ammo And Meeting", function()
       firingUnits = {
         ["Firing Unit Alpha"] = {
           name = "Firing Unit Alpha",
-          state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+          state = constants.MISSILE_UNIT_POSTURE.RELOAD,
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -59,7 +59,7 @@ describe("MissileSystem Ammo And Meeting", function()
       resupplyUnits = {
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
-          state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+          state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
           weaponCountCurrent = 10,
           operationalArea = {
             name = "OPAREA-1",

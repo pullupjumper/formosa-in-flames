@@ -14,7 +14,7 @@ local Transitions = {}
 function Transitions.depart(unitState, unit, order)
   local result = Movement.moveTo(unitState, unit, order)
   if result.tag == "OK" then
-    unitState.state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+    unitState.state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING
   end
 
   return result
@@ -25,7 +25,7 @@ end
 ---@param firingUnit CMO__Unit
 ---@param isAuto boolean
 function Transitions.arriveAtFiringPoint(firingUnitState, firingUnit, isAuto)
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  firingUnitState.state = constants.MISSILE_UNIT_POSTURE.STATIC
   Movement.applyMode(firingUnit, isAuto, constants.WCS.FREE)
 end
 
@@ -34,7 +34,7 @@ end
 ---@param firingUnit CMO__Unit
 ---@param isAuto boolean
 function Transitions.hide(firingUnitState, firingUnit, isAuto)
-  firingUnitState.state = constants.MISSILE_SYSTEM_STATE.HIDE
+  firingUnitState.state = constants.MISSILE_UNIT_POSTURE.HIDE
   Movement.applyMode(firingUnit, isAuto, constants.WCS.HOLD)
 end
 
@@ -43,7 +43,7 @@ end
 ---@param unit CMO__Unit
 ---@param isAuto boolean
 function Transitions.beginReload(unitState, unit, isAuto)
-  unitState.state = constants.MISSILE_SYSTEM_STATE.RELOAD
+  unitState.state = constants.MISSILE_UNIT_POSTURE.RELOAD
   unitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
   Movement.applyMode(unit, isAuto, constants.WCS.HOLD)
 end
@@ -59,7 +59,7 @@ end
 ---Reload or transload is done: the unit stands still and its reload clock stops
 ---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 function Transitions.finishReload(unitState)
-  unitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+  unitState.state = constants.MISSILE_UNIT_POSTURE.STATIC
   unitState.reloadStartTime = nil
 end
 

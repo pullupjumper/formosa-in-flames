@@ -22,7 +22,7 @@ describe("MissileSystem Movement", function()
   local function makeFiringUnitState(overrides)
     local ctx = {
       name = "Firing Unit Alpha",
-      state = constants.MISSILE_SYSTEM_STATE.STATIC,
+      state = constants.MISSILE_UNIT_POSTURE.STATIC,
       operationalArea = {
         name = "OPAREA-1",
         FP = { { course = { { latitude = "N 25.00.00", longitude = "E 121.00.00" } } } }
@@ -67,7 +67,7 @@ describe("MissileSystem Movement", function()
 
       Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
 
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingUnitState.state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, firingUnitState.state)
     end)
 
     -- Positive: a move that went out returns an OK row labelled with the unit and action

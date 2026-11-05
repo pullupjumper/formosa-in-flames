@@ -4,7 +4,7 @@
 local Rules = require("src.modules.missileSystem.rules")
 local constants = require("src.core.constants")
 
-local STATE = constants.MISSILE_SYSTEM_STATE
+local STATE = constants.MISSILE_UNIT_POSTURE
 local POSITION = constants.POSITION_TYPES
 local READINESS = constants.MISSILE_SYSTEM_READINESS
 local STEP = Rules.STEP

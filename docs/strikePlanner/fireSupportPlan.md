@@ -24,7 +24,7 @@
 | `src.utils.gameUtils` | 使用 `isAfterStartTime()` 判斷 FST 是否已達啟動時間。 |
 | `src.utils.logFormat` | 透過 `LogFormat.report` 收集並輸出 `[OK]`／`[SKIP]` 行。 |
 | `src.modules.missileSystem.init` | `sendToFiringPoint()` 派出發射單元並回報是否就位或不見；`completeFireTask()` 射擊後收車。 |
-| `src.core.constants` | 使用 `MISSILE_SYSTEM_STATE` 與 `TAGS.GROUND`。 |
+| `src.core.constants` | 使用 `MISSILE_UNIT_POSTURE` 與 `TAGS.GROUND`。 |
 
 ---
 
@@ -172,7 +172,7 @@ saveData.red.ground
 ├── mlrs / glcm / srbm / mrbm / ascm / sam
 │   └── firingUnits: table<string, SBJ__FiringUnitState>
 │       └── <firingUnitName>
-│           ├── state: constants.MISSILE_SYSTEM_STATE
+│           ├── state: constants.MISSILE_UNIT_POSTURE
 │           └── stowStartTime?: number
 ```
 
@@ -209,8 +209,8 @@ saveData.red.ground
 
 | constants 路徑 | 用途 |
 |---|---|
-| `constants.MISSILE_SYSTEM_STATE.HIDE` | 判斷 firing unit 是否可從隱蔽位置部署。 |
-| `constants.MISSILE_SYSTEM_STATE.STATIC` | 判斷 firing unit 是否已在射擊位置。 |
+| `constants.MISSILE_UNIT_POSTURE.HIDE` | 判斷 firing unit 是否可從隱蔽位置部署。 |
+| `constants.MISSILE_UNIT_POSTURE.STATIC` | 判斷 firing unit 是否已在射擊位置。 |
 | `constants.TAGS.GROUND` | 作為 `Logger.log()` 的地面作戰日誌 tag。 |
 
 ---

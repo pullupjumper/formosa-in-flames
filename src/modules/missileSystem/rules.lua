@@ -7,7 +7,7 @@ local constants = require("src.core.constants")
 ---An observation is either complete or nil: a rule emits a step that reads it only after its own nil check.
 local Rules = {}
 
-local STATE = constants.MISSILE_SYSTEM_STATE
+local STATE = constants.MISSILE_UNIT_POSTURE
 
 ---Step names returned by the evaluate functions; executors key their handlers on these
 Rules.STEP = {

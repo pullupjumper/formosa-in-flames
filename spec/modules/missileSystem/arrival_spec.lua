@@ -112,7 +112,7 @@ describe("MissileSystem Arrival", function()
     -- Positive: FP + repositioning triggers arriveAtFiringPoint exactly once
     it("should set WCS to free exactly once when entering FP while repositioning", function()
       local unit = makeUnit()
-      local firingUnitState = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }
+      local firingUnitState = { name = "FU1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
@@ -258,9 +258,9 @@ describe("MissileSystem Arrival", function()
     ---@param overrides? table Fields to override on the default pair, which has met
     local function buildPair(overrides)
       local pair = {
-        firingUnitState = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING },
+        firingUnitState = { name = "FU1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING },
         firingUnit = makeUnit(),
-        resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 8 },
+        resupplyUnitState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 8 },
         resupplyUnit = makeUnit({ name = "RS1", guid = "guid-rs1" }),
         isTriggeredByFiringUnit = true,
         isFiringUnitLowAmmo = function() return true end,
@@ -349,7 +349,7 @@ describe("MissileSystem Arrival", function()
     -- Negative: in auto mode a unit that is not on its way does not meet
     it("should not begin a reload on RL in auto mode when the arriving unit is not repositioning", function()
       local pair = buildPair()
-      pair.firingUnitState.state = constants.MISSILE_SYSTEM_STATE.HIDE
+      pair.firingUnitState.state = constants.MISSILE_UNIT_POSTURE.HIDE
       local systemState = makeSystemState()
 
       trackStub(Meeting, "resolveReloadPair").returns(pair)
@@ -440,7 +440,7 @@ describe("MissileSystem Arrival", function()
     -- Positive: ATP + meeting confirmed starts reload
     it("should set reload start time on ATP when canister stock meeting is confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
+      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       local isAtCanisterStockStub = trackStub(Meeting, "isAtCanisterStock").returns(true)
@@ -466,7 +466,7 @@ describe("MissileSystem Arrival", function()
     -- Negative: ATP fallback resets state when meeting fails
     it("should set state to static on ATP when canister stock meeting is not confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
+      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       trackStub(Meeting, "isAtCanisterStock").returns(false)
@@ -488,7 +488,7 @@ describe("MissileSystem Arrival", function()
     -- Negative: a resupply unit that still carries missiles does not meet its canister stock
     it("should not begin a transload on ATP when the resupply unit still carries missiles", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 3 }
+      local resupplyUnitState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 3 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
       local isAtCanisterStockStub = trackStub(Meeting, "isAtCanisterStock").returns(true)
@@ -532,7 +532,7 @@ describe("MissileSystem Arrival", function()
     -- Boundary: descriptions outside the "Arrive in <TYPE> " format must not be matched
     it("should ignore descriptions that do not follow the 'Arrive in <TYPE>' format", function()
       local unit = makeUnit()
-      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING } } })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING } } })
 
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
       local hideStub = trackStub(Transitions, "hide")
@@ -563,7 +563,7 @@ describe("MissileSystem Arrival", function()
     -- Boundary: real position type is preferred when areaName contains position-like substrings
     it("should match the real position type when areaName contains position-like substrings", function()
       local unit = makeUnit()
-      local firingUnitState = { name = "FU1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING }
+      local firingUnitState = { name = "FU1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING }
       local systemState = makeSystemState({ firingUnits = { [unit.name] = firingUnitState } })
 
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")

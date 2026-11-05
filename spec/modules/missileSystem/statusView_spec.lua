@@ -4,7 +4,7 @@ local StatusView = require("src.modules.missileSystem.statusView")
 local constants = require("src.core.constants")
 
 describe("MissileSystem StatusView", function()
-  local STATE = constants.MISSILE_SYSTEM_STATE
+  local STATE = constants.MISSILE_UNIT_POSTURE
 
   -- ============================================================================
   -- Shared mock data builders

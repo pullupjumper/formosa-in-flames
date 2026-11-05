@@ -318,7 +318,7 @@ flowchart BT
 | `constants.LOADOUTS.WZ8_RECON` | WZ-8 偵察掛載 ID |
 | `constants.SENSORS.WZ8_RADAR` | WZ-8 雷達感測器 DBID |
 | `constants.SENSORS.*` | 各型 SAM/AEW 雷達感測器 DBID |
-| `constants.MISSILE_SYSTEM_STATE` | 飛彈系統狀態列舉 |
+| `constants.MISSILE_UNIT_POSTURE` | 飛彈單位姿態列舉（STATIC、HIDE…） |
 
 ---
 

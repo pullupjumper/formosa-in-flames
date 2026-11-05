@@ -34,7 +34,7 @@ describe("FsemBuilder", function()
   local function makeBatteryState(overrides)
     local context = {
       name = "Battery-1",
-      state = constants.MISSILE_SYSTEM_STATE.HIDE,
+      state = constants.MISSILE_UNIT_POSTURE.HIDE,
     }
     if overrides then
       for k, v in pairs(overrides) do context[k] = v end
@@ -415,7 +415,7 @@ describe("FsemBuilder", function()
         local operation = makeOperation()
         local plannerState = makePlannerState({
           srbmFiringUnits = {
-            ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
+            ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING })
           },
           reconTriggeredOperationBatches = { reconEntry }
         })
@@ -491,7 +491,7 @@ describe("FsemBuilder", function()
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({
               name = "Battery-2",
-              state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+              state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING
             }),
             ["Battery-3"] = makeBatteryState({ name = "Battery-3" })
           },
@@ -568,7 +568,7 @@ describe("FsemBuilder", function()
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({
               name = "Battery-2",
-              state = constants.MISSILE_SYSTEM_STATE.RELOAD
+              state = constants.MISSILE_UNIT_POSTURE.RELOAD
             })
           },
           reconTriggeredOperationBatches = { reconEntry }
@@ -595,7 +595,7 @@ describe("FsemBuilder", function()
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({
               name = "Battery-2",
-              state = constants.MISSILE_SYSTEM_STATE.RELOAD
+              state = constants.MISSILE_UNIT_POSTURE.RELOAD
             })
           },
           reconTriggeredOperationBatches = { reconEntry }
@@ -779,7 +779,7 @@ describe("FsemBuilder", function()
         local operation = makeOperation()
         local plannerState = makePlannerState({
           srbmFiringUnits = {
-            ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING })
+            ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING })
           },
           reconTriggeredOperationBatches = { reconEntry }
         })
@@ -968,7 +968,7 @@ describe("FsemBuilder", function()
         local plannerState = makePlannerState({
           fireSupportPlan = { [matrix.name] = matrix },
           srbmFiringUnits = {
-            ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_SYSTEM_STATE.STATIC })
+            ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_UNIT_POSTURE.STATIC })
           },
           reconTriggeredOperationBatches = {}
         })
@@ -1049,21 +1049,21 @@ describe("FsemBuilder", function()
         local plannerState = makePlannerState({
           fireSupportPlan = { [matrix.name] = matrix },
           srbmFiringUnits = {
-            ["Battery-S"] = makeBatteryState({ name = "Battery-S", state = constants.MISSILE_SYSTEM_STATE.STATIC }),
+            ["Battery-S"] = makeBatteryState({ name = "Battery-S", state = constants.MISSILE_UNIT_POSTURE.STATIC }),
             ["Battery-R"] = makeBatteryState({
               name = "Battery-R",
-              state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
+              state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING
             }),
-            ["Battery-H"] = makeBatteryState({ name = "Battery-H", state = constants.MISSILE_SYSTEM_STATE.HIDE }),
-            ["Battery-P"] = makeBatteryState({ name = "Battery-P", state = constants.MISSILE_SYSTEM_STATE.STATIC }),
-            ["Battery-F"] = makeBatteryState({ name = "Battery-F", state = constants.MISSILE_SYSTEM_STATE.STATIC })
+            ["Battery-H"] = makeBatteryState({ name = "Battery-H", state = constants.MISSILE_UNIT_POSTURE.HIDE }),
+            ["Battery-P"] = makeBatteryState({ name = "Battery-P", state = constants.MISSILE_UNIT_POSTURE.STATIC }),
+            ["Battery-F"] = makeBatteryState({ name = "Battery-F", state = constants.MISSILE_UNIT_POSTURE.STATIC })
           },
           reconTriggeredOperationBatches = { reconEntry }
         })
         plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-P"].stowStartTime = 500
         plannerState.ground.missileSystemTypes.sam = {
           firingUnits = {
-            ["Sam-1"] = makeBatteryState({ name = "Sam-1", state = constants.MISSILE_SYSTEM_STATE.STATIC })
+            ["Sam-1"] = makeBatteryState({ name = "Sam-1", state = constants.MISSILE_UNIT_POSTURE.STATIC })
           }
         }
 

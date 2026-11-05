@@ -1343,7 +1343,7 @@ function ScenEdit_DeleteMine(params) end
 ---What config builds for one resupply unit
 ---@class SBJ__ResupplyUnitDescriptor: table
 ---@field name string Group name
----@field state missileSystemState Starting state
+---@field state missileUnitPosture Starting state
 ---@field operationalArea SBJ__OperationalArea Starting operational area
 ---@field weaponCountCurrent number Starting missile count
 ---@field weaponCountDefault number Full missile count
@@ -1354,7 +1354,7 @@ function ScenEdit_DeleteMine(params) end
 ---What config builds for one firing unit
 ---@class SBJ__FiringUnitDescriptor: table
 ---@field name string Group name
----@field state missileSystemState Starting state
+---@field state missileUnitPosture Starting state
 ---@field operationalArea SBJ__OperationalArea Starting operational area
 ---@field weaponDBID number|number[] The weapon database ID(s) to use for the firing unit
 ---@field ammoThreshold number Ammo percentage at or below which the firing unit counts as low on ammo
@@ -1375,7 +1375,7 @@ function ScenEdit_DeleteMine(params) end
 ---What changes at runtime for one resupply unit; everything else is read from its descriptor by name
 ---@class SBJ__ResupplyUnitState: table
 ---@field name string Group name, the key of its descriptor
----@field state missileSystemState Current state
+---@field state missileUnitPosture Current state
 ---@field operationalArea SBJ__OperationalArea Where the battery is deployed now
 ---@field weaponCountCurrent number Missiles carried
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
@@ -1383,7 +1383,7 @@ function ScenEdit_DeleteMine(params) end
 ---What changes at runtime for one firing unit; everything else is read from its descriptor by name
 ---@class SBJ__FiringUnitState: table
 ---@field name string Group name, the key of its descriptor
----@field state missileSystemState Current state
+---@field state missileUnitPosture Current state
 ---@field operationalArea SBJ__OperationalArea Where the battery is deployed now
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 ---@field stowStartTime number|nil Stowing start timestamp, nil if not currently stowing

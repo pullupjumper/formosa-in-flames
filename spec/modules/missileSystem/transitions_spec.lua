@@ -8,7 +8,7 @@ local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 
 describe("MissileSystem Transitions", function()
-  local STATE = constants.MISSILE_SYSTEM_STATE
+  local STATE = constants.MISSILE_UNIT_POSTURE
 
   ---@type luassert.spy[]
   local activeStubs

@@ -58,7 +58,7 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("sendToFiringPoint", function()
-    local STATE = constants.MISSILE_SYSTEM_STATE
+    local STATE = constants.MISSILE_UNIT_POSTURE
 
     ---@type luassert.spy
     local moveFromHideAreaStub
@@ -200,7 +200,7 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("evaluateReadiness", function()
-    local STATE = constants.MISSILE_SYSTEM_STATE
+    local STATE = constants.MISSILE_UNIT_POSTURE
 
     ---@param firingUnitState table|nil
     ---@return SBJ__GroundState
@@ -679,7 +679,7 @@ describe("MissileSystem", function()
   -- ============================================================================
 
   describe("completeFireTask / abortFireTask", function()
-    local STATE = constants.MISSILE_SYSTEM_STATE
+    local STATE = constants.MISSILE_UNIT_POSTURE
 
     local function makeGroundState()
       return {
@@ -1002,7 +1002,7 @@ describe("MissileSystem", function()
     -- Positive: only the redeployed battery is reset; another battery keeps its runtime state and ammo
     it("should reset only the redeployed battery and keep the other batteries' state", function()
       local function makeBattery(suffix)
-        return { name = "FU-" .. suffix, state = constants.MISSILE_SYSTEM_STATE.HIDE, resupplyUnit = "RU-" .. suffix,
+        return { name = "FU-" .. suffix, state = constants.MISSILE_UNIT_POSTURE.HIDE, resupplyUnit = "RU-" .. suffix,
             operationalArea = { name = "OPAREA-" .. suffix } },
           { name = "RU-" .. suffix, weaponCountCurrent = 8, unitCount = 1, canisterStock = "AMMO-" .. suffix,
             operationalArea = { name = "OPAREA-" .. suffix } },
@@ -1024,7 +1024,7 @@ describe("MissileSystem", function()
 
       local systemState = saveData.blue.ground.missileSystemTypes.srbm
       systemState.firingUnits["FU-A"].weaponCountCurrent = 1
-      systemState.firingUnits["FU-B"].state = constants.MISSILE_SYSTEM_STATE.RELOAD
+      systemState.firingUnits["FU-B"].state = constants.MISSILE_UNIT_POSTURE.RELOAD
       systemState.firingUnits["FU-B"].reloadStartTime = 123
       systemState.resupplyUnits["RU-B"].weaponCountCurrent = 2
       systemState.canisterStocks["AMMO-B"].weaponCountCurrent = 5
@@ -1041,7 +1041,7 @@ describe("MissileSystem", function()
 
       assert.are.same(newArea, systemState.firingUnits["FU-A"].operationalArea)
       assert.is_nil(systemState.firingUnits["FU-A"].weaponCountCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemState.firingUnits["FU-B"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.firingUnits["FU-B"].state)
       assert.are.equal(123, systemState.firingUnits["FU-B"].reloadStartTime)
       assert.are.equal(2, systemState.resupplyUnits["RU-B"].weaponCountCurrent)
       assert.are.equal(5, systemState.canisterStocks["AMMO-B"].weaponCountCurrent)

@@ -360,7 +360,7 @@ end
 local function formatStateField(value, ctx)
   if type(value) ~= "number" then return nil end
   local key = ctx.reverseState[value]
-  return key and ("constants.MISSILE_SYSTEM_STATE." .. key) or tostring(value)
+  return key and ("constants.MISSILE_UNIT_POSTURE." .. key) or tostring(value)
 end
 
 ---Serialize an operationalArea table to its OPERATIONAL_AREAS reference
@@ -580,7 +580,7 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   local ctx = {
     configPath = "",
     opAreaMap = opAreaMap,
-    reverseState = buildReverseMap(constants.MISSILE_SYSTEM_STATE),
+    reverseState = buildReverseMap(constants.MISSILE_UNIT_POSTURE),
     reverseWeapons = buildReverseMap(constants.WEAPONS),
     reversePlatforms = buildReverseMap(constants.PLATFORMS),
   }

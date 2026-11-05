@@ -60,7 +60,7 @@ describe("MissileSystem Cycle", function()
       firingUnits = {
         ["Firing Unit Alpha"] = {
           name = "Firing Unit Alpha",
-          state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+          state = constants.MISSILE_UNIT_POSTURE.RELOAD,
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -70,7 +70,7 @@ describe("MissileSystem Cycle", function()
       resupplyUnits = {
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
-          state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+          state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
           weaponCountCurrent = 10,
           operationalArea = {
             name = "OPAREA-1",
@@ -114,7 +114,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             operationalArea = {
               name = "OPAREA-1",
@@ -125,7 +125,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+            state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
             weaponCountCurrent = 10,
             operationalArea = {
               name = "OPAREA-1",
@@ -161,7 +161,7 @@ describe("MissileSystem Cycle", function()
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
       assert.is_nil(systemState.firingUnits["Firing Unit Alpha"].reloadStartTime)
       assert.are.equal(1, #results)
       assert.are.equal("missile_reload_finished", results[1].fields.action)
@@ -174,7 +174,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             weaponCountCurrent = 0,
             operationalArea = {
@@ -215,7 +215,7 @@ describe("MissileSystem Cycle", function()
 
       assert.are.equal(20, systemState.resupplyUnits["Ammo Sec, Alpha"].weaponCountCurrent)
       assert.are.equal(80, systemState.canisterStocks["Canister Stock"].weaponCountCurrent)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
       assert.are.equal(1, #results)
       assert.are.equal("ammo_transload_finished", results[1].fields.action)
     end)
@@ -226,7 +226,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
           }
         },
@@ -237,7 +237,7 @@ describe("MissileSystem Cycle", function()
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
       assert.are.equal(0, #results)
     end)
 
@@ -259,7 +259,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
             operationalArea = {
@@ -271,7 +271,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             weaponCountCurrent = 10,
           }
         }
@@ -297,7 +297,7 @@ describe("MissileSystem Cycle", function()
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
       local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingState.state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, firingState.state)
       assert.is_nil(firingState.stowStartTime)
     end)
 
@@ -307,7 +307,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = nil,
             operationalArea = {
@@ -319,7 +319,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             weaponCountCurrent = 10,
           }
         }
@@ -344,7 +344,7 @@ describe("MissileSystem Cycle", function()
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
       local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingState.state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, firingState.state)
       assert.are.equal(2000, firingState.stowStartTime)
       assert.are.equal(1, #results)
       assert.are.equal("stow_countdown_started", results[1].fields.action)
@@ -357,7 +357,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
             operationalArea = {
@@ -368,7 +368,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             weaponCountCurrent = 20,
           }
         }
@@ -397,7 +397,7 @@ describe("MissileSystem Cycle", function()
       assert.are.equal("no_ha_defined", results[1].fields.reason)
       assert.is_nil(results[1].fields.detail)
       -- Not stuck REPOSITIONING, and the stow is not retried every cycle
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
       assert.is_nil(systemState.firingUnits["Firing Unit Alpha"].stowStartTime)
     end)
 
@@ -408,7 +408,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             weaponCountCurrent = 0,
             operationalArea = {
               name = "OPAREA-1",
@@ -426,7 +426,7 @@ describe("MissileSystem Cycle", function()
 
       assert.are.equal("FAIL", results[1].tag)
       assert.are.equal("move_to_ammunition_transfer_point", results[1].fields.action)
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
     end)
 
     -- Positive: moves firing unit to hide area when stow elapsed and ammo sufficient in auto mode
@@ -438,7 +438,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
             operationalArea = {
@@ -450,7 +450,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             weaponCountCurrent = 20,
           }
         }
@@ -476,7 +476,7 @@ describe("MissileSystem Cycle", function()
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
       local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, firingState.state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, firingState.state)
       assert.is_nil(firingState.stowStartTime)
       assert.are.same(hideCourse, stubSetUnit.calls[1].vals[1].course)
     end)
@@ -487,7 +487,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
             operationalArea = {
@@ -500,7 +500,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
+            state = constants.MISSILE_UNIT_POSTURE.STATIC,
             weaponCountCurrent = 20,
           }
         }
@@ -525,7 +525,7 @@ describe("MissileSystem Cycle", function()
       Cycle.process(systemState, { systemConfig = makeSystemConfig({ stowTime = 300 }), isAuto = true }, "Taiwan")
 
       local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, firingState.state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, firingState.state)
       assert.are.equal(1000, firingState.stowStartTime)
       assert.stub(stubSetUnit).was_not.called()
     end)
@@ -540,7 +540,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             operationalArea = {
               name = "OPAREA-1",
@@ -552,7 +552,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+            state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
             weaponCountCurrent = 10,
             operationalArea = {
               name = "OPAREA-1",
@@ -592,7 +592,7 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
       assert.are.same(hideCourse, stubSetUnit.calls[1].vals[1].course)
     end)
@@ -607,7 +607,7 @@ describe("MissileSystem Cycle", function()
         firingUnits = {
           ["Firing Unit Alpha"] = {
             name = "Firing Unit Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+            state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             operationalArea = {
               name = "OPAREA-1",
@@ -620,7 +620,7 @@ describe("MissileSystem Cycle", function()
         resupplyUnits = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
-            state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+            state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
             weaponCountCurrent = 10,
             operationalArea = {
               name = "OPAREA-1",
@@ -660,7 +660,7 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
       assert.are.same(fpCourse, stubSetUnit.calls[1].vals[1].course)
     end)
@@ -671,10 +671,10 @@ describe("MissileSystem Cycle", function()
       systemConfig.firingUnits["Firing Unit Alpha"].ammoThreshold = 30
       local systemState = makeSystemState()
       local firingUnitState = systemState.firingUnits["Firing Unit Alpha"]
-      firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+      firingUnitState.state = constants.MISSILE_UNIT_POSTURE.STATIC
       firingUnitState.ammoThreshold = 60
       firingUnitState.weaponDBID = 9999
-      systemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+      systemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_UNIT_POSTURE.STATIC
       local firingUnit = { guid = "F1", name = "Firing Unit Alpha", side = "Taiwan", group = { unitlist = { "F1" } } }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
@@ -705,7 +705,7 @@ describe("MissileSystem Cycle", function()
         { tag = "WARN", fields = { unit = "Ammo Sec, Alpha", action = "reload_cycle", reason = "descriptor_not_found" } },
       }, results)
       assert.stub(getUnitStub).was_not.called()
-      assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
     end)
   end)
 end)
