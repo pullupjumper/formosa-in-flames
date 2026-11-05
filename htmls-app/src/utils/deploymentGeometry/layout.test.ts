@@ -155,10 +155,10 @@ describe('generateLayout', () => {
         }
       });
 
-      it('puts the ammo area on the ATP radius', () => {
+      it('puts the ATP area on the ATP radius', () => {
         expect(layout.atpArea).toHaveLength(4);
         const range = calculateDistance(CENTER, calculateCentroid(layout.atpArea));
-        expect(range).toBeCloseTo(AREA_CONFIG.atpPoint.radius, 3);
+        expect(range).toBeCloseTo(AREA_CONFIG.atp.radius, 3);
       });
     });
   });

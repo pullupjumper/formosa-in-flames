@@ -30,8 +30,8 @@ export function BatteryStatusDetails({ status }: BatteryStatusDetailsProps) {
       />
       <BarRow
         label="ATP Missiles"
-        current={status.missilesInATP}
-        total={status.missilesInATPDefault}
+        current={status.missilesInCanisterStock}
+        total={status.missilesInCanisterStockDefault}
       />
     </>
   );

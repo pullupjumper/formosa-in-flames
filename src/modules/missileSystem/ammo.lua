@@ -4,15 +4,15 @@ local Shared = require("src.modules.missileSystem.shared")
 
 local Ammo = {}
 
----Transfer ammunition from canister stock to resupply unit
+---Transfer canisters from the canister stock to its resupply unit
 ---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param canisterStockState SBJ__CanisterStockState
 function Ammo.transferCanisters(resupplyUnitState, canisterStockState)
   if canisterStockState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < resupplyUnitState.weaponCountDefault then
     local deficit = resupplyUnitState.weaponCountDefault - resupplyUnitState.weaponCountCurrent
-    local ammoToTransfer = math.min(deficit, canisterStockState.weaponCountCurrent)
-    resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + ammoToTransfer
-    canisterStockState.weaponCountCurrent = canisterStockState.weaponCountCurrent - ammoToTransfer
+    local canistersToTransfer = math.min(deficit, canisterStockState.weaponCountCurrent)
+    resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + canistersToTransfer
+    canisterStockState.weaponCountCurrent = canisterStockState.weaponCountCurrent - canistersToTransfer
   end
 end
 

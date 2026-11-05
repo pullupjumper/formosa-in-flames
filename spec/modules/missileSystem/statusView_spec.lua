@@ -82,7 +82,7 @@ describe("MissileSystem StatusView", function()
           firingUnitState = "RELOAD",
           resupplyUnitState = "HIDE",
           missilesInAmmoVehicles = 4,
-          missilesInATP = 12,
+          missilesInCanisterStock = 12,
           firingUnitReloadTime = 2,
           resupplyUnitReloadTime = 0,
           defaultReloadTime = 30
@@ -97,7 +97,7 @@ describe("MissileSystem StatusView", function()
       local row = buildRow(groundState, 1120)
 
       assert.are.equal(8, row.missilesInTransloaderDefault)
-      assert.are.equal(24, row.missilesInATPDefault)
+      assert.are.equal(24, row.missilesInCanisterStockDefault)
     end)
 
     -- Positive: idle resupply units have no firing unit, so they produce no status

@@ -149,9 +149,9 @@ def replace_script(xml_bytes, lua_text):
     return xml_bytes[:m.start(2)] + escaped + xml_bytes[m.end(2):]
 
 
-def inject(scen_path, lua_path, out_path):
+def rewrite_scen(scen_path, transform, out_path):
+    """解開 scen、用 transform(xml_bytes) 改內容、包回去寫到 out_path。transform 沒改東西就不寫。"""
     scen_bytes = Path(scen_path).read_bytes()
-    lua_text = Path(lua_path).read_text(encoding="utf-8")
 
     outer = list(COMPRESSED_RE.finditer(scen_bytes))
     if len(outer) != 1:
@@ -159,7 +159,9 @@ def inject(scen_path, lua_path, out_path):
     om = outer[0]
 
     xml_bytes = decode_blob(om.group(2).decode("ascii"))
-    new_xml = replace_script(xml_bytes, lua_text)
+    new_xml = transform(xml_bytes)
+    if new_xml == xml_bytes:
+        return len(xml_bytes), len(new_xml), False
     new_b64 = encode_blob(new_xml)
 
     # 自我驗證：解回來要和寫進去的一模一樣
@@ -168,7 +170,13 @@ def inject(scen_path, lua_path, out_path):
 
     new_scen = scen_bytes[:om.start(2)] + new_b64 + scen_bytes[om.end(2):]
     Path(out_path).write_bytes(new_scen)
-    return len(xml_bytes), len(new_xml)
+    return len(xml_bytes), len(new_xml), True
+
+
+def inject(scen_path, lua_path, out_path):
+    lua_text = Path(lua_path).read_text(encoding="utf-8")
+    old_len, new_len, _ = rewrite_scen(scen_path, lambda xml: replace_script(xml, lua_text), out_path)
+    return old_len, new_len
 
 
 # ---------------------------------------------------------------- CLI

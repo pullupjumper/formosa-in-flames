@@ -145,7 +145,7 @@ end
 
 ---What differs between the three units of a battery. Everything else is the one path in deployRole.
 ---@class SBJ__BatteryRole
----@field role "firing"|"resupply"|"canisterStock" Log `role` field and summary column
+---@field role "firing"|"resupply"|"canister_stock" Log `role` field and summary column
 ---@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__UnitBase
 ---@field dbid? number Fixed platform; nil uses the firing unit's dbid
 ---@field isGroup boolean Builds battery.unitCount vehicles grouped under the descriptor name; otherwise one
@@ -195,7 +195,7 @@ local BATTERY_ROLES = {
     buildSpawnPosition = function(area) return buildCourseEnd(area.RL[1]) end,
   },
   {
-    role = "canisterStock",
+    role = "canister_stock",
     resolveDescriptor = function(battery) return battery.canisterStock end,
     dbid = constants.PLATFORMS.AMMO,
     isGroup = false,

@@ -53,7 +53,7 @@ flowchart LR
 | `buildReload` | `firingUnit, weaponDBID, stock` | `SBJ__ReloadPlan` | 算出 group 要裝的每一筆，總數不超過 `stock`；只讀不寫 |
 | `reloadFiringUnit` | `resupplyUnitState, plan` | `integer` | 照計畫裝填並扣補給車存量，回傳總裝填量；不改狀態，呼叫端接著 `Transitions.finishReload` |
 | `isLowAmmo` | `firingUnit, percentage, weaponDBID` | `boolean` | 低彈量判定 |
-| `getInventory` | `systemState, sideName` | `SBJ__AmmoInventoryResult` | 聚合 firing / resupply / ammo 三類子總和並算出整體百分比 |
+| `getInventory` | `systemState, sideName` | `SBJ__AmmoInventoryResult` | 聚合 firing / resupply / canisterStock 三類子總和並算出整體百分比 |
 
 ---
 

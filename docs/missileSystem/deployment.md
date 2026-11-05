@@ -29,7 +29,7 @@ flowchart TD
     B --> F[LogFormat.report: FAIL rows + one summary row per system]
 ```
 
-summary row 是 `firing=a/b resupply=a/b ammo=a/b`；只要該 system 有 FAIL row 就標 FAIL。陣地被拒絕時 `b` 仍算計畫車數（例如 `0/2`）。
+summary row 是 `firing=a/b resupply=a/b canister_stock=a/b`；只要該 system 有 FAIL row 就標 FAIL。陣地被拒絕時 `b` 仍算計畫車數（例如 `0/2`）。
 
 ---
 

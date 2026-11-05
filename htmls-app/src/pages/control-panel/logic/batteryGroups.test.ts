@@ -37,8 +37,8 @@ function status(name: string, missileSystemType: string): BatteryStatus {
     resupplyUnitReloadTime: 0,
     missilesInAmmoVehicles: 4,
     missilesInTransloaderDefault: 8,
-    missilesInATP: 8,
-    missilesInATPDefault: 16,
+    missilesInCanisterStock: 8,
+    missilesInCanisterStockDefault: 16,
   };
 }
 

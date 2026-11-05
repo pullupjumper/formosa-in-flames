@@ -3,7 +3,9 @@
 
 Renames the arrival events, triggers and zones (AHA -> ATP) and the missile
 system keys in the stored SaveData (ammunitions/ammunition/AHA ->
-canisterStocks/canisterStock/ATP). A second run finds nothing and writes nothing.
+canisterStocks/canisterStock/ATP). The SaveData rules are global inside the
+SaveData block, which is safe only while no other module saves an
+`ammunition` or `AHA` key. A second run finds nothing and writes nothing.
 
 Usage:
   rename_scen_missile_terms.py <scen> [--out FILE | --in-place]
@@ -14,70 +16,69 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cmo_scen_v5_decoder import COMPRESSED_RE, decode_blob, encode_blob  # noqa: E402
+from cmo_scen_v5_decoder import rewrite_scen  # noqa: E402
 
-DESCRIPTION_RULES = [
-    (re.compile(rb"(<Description>\((?:China|Taiwan)\) Arrive in )AHA\b"), rb"\1ATP"),
-    (re.compile(rb"(<Description>)AHA/"), rb"\1ATP/"),
-]
+BACKUP_SUFFIX = ".pre-rename.bak"
+
+DESCRIPTION_RULES = {
+    "arrival events and triggers": (re.compile(rb"(<Description>\((?:China|Taiwan)\) Arrive in )AHA\b"), rb"\1ATP"),
+    "position zones": (re.compile(rb"(<Description>)AHA/"), rb"\1ATP/"),
+}
 SAVE_DATA_RE = re.compile(rb"(&lt;SaveData&gt;)(.*?)(&lt;/SaveData&gt;)", re.DOTALL)
-SAVE_DATA_RULES = [
-    (re.compile(rb'"ammunitions":'), rb'"canisterStocks":'),
-    (re.compile(rb'"ammunition":'), rb'"canisterStock":'),
-    (re.compile(rb'"AHA":'), rb'"ATP":'),
-]
+SAVE_DATA_RULES = {
+    "SaveData canisterStocks": (re.compile(rb'"ammunitions":'), rb'"canisterStocks":'),
+    "SaveData canisterStock links": (re.compile(rb'"ammunition":'), rb'"canisterStock":'),
+    "SaveData ATP areas": (re.compile(rb'"AHA":'), rb'"ATP":'),
+}
+# A scen never converted hits all of these; hitting only some means it is shaped differently
+REQUIRED_TOGETHER = ("arrival events and triggers", "SaveData canisterStocks")
 
 
-def rename(xml_bytes):
-    counts = {}
-    for pattern, repl in DESCRIPTION_RULES:
-        xml_bytes, counts[pattern.pattern.decode()] = pattern.subn(repl, xml_bytes)
+def rename(xml_bytes, counts):
+    for name, (pattern, repl) in DESCRIPTION_RULES.items():
+        xml_bytes, counts[name] = pattern.subn(repl, xml_bytes)
 
     blocks = list(SAVE_DATA_RE.finditer(xml_bytes))
     if len(blocks) > 1:
         raise ValueError(f"expected at most 1 SaveData, found {len(blocks)}")
     if blocks:
-        m = blocks[0]
-        save_data = m.group(2)
-        for pattern, repl in SAVE_DATA_RULES:
-            save_data, counts[pattern.pattern.decode()] = pattern.subn(repl, save_data)
-        xml_bytes = xml_bytes[:m.start(2)] + save_data + xml_bytes[m.end(2):]
-    return xml_bytes, counts
+        match = blocks[0]
+        save_data = match.group(2)
+        for name, (pattern, repl) in SAVE_DATA_RULES.items():
+            save_data, counts[name] = pattern.subn(repl, save_data)
+        xml_bytes = xml_bytes[:match.start(2)] + save_data + xml_bytes[match.end(2):]
+
+    if any(counts.values()) and not all(counts.get(name) for name in REQUIRED_TOGETHER):
+        raise ValueError(f"partial match, nothing written: {counts}")
+    return xml_bytes
 
 
 def main():
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("scen", type=Path)
-    p.add_argument("--out", type=Path, help="output path (default <scen>.renamed.scen)")
-    p.add_argument("--in-place", action="store_true", help="overwrite the original, keeping a .bak copy")
-    a = p.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("scen", type=Path)
+    parser.add_argument("--out", type=Path, help="output path (default <scen>.renamed.scen)")
+    parser.add_argument("--in-place", action="store_true",
+                        help=f"overwrite the original, keeping a <scen>{BACKUP_SUFFIX} copy")
+    args = parser.parse_args()
 
-    scen_bytes = a.scen.read_bytes()
-    outer = list(COMPRESSED_RE.finditer(scen_bytes))
-    if len(outer) != 1:
-        raise ValueError(f"expected exactly 1 Scenario_Compressed, found {len(outer)}")
-    om = outer[0]
+    out = args.scen if args.in_place else (args.out or args.scen.with_suffix(".renamed.scen"))
+    backup = args.scen.with_suffix(args.scen.suffix + BACKUP_SUFFIX)
+    if args.in_place and backup.exists():
+        raise SystemExit(f"{backup.name} already exists; move it away first")
+    if args.in_place:
+        backup.write_bytes(args.scen.read_bytes())
 
-    xml_bytes = decode_blob(om.group(2).decode("ascii"))
-    new_xml, counts = rename(xml_bytes)
-    for rule, count in counts.items():
-        print(f"  {count:4d}  {rule}")
-    if new_xml == xml_bytes:
+    counts = {}
+    _, _, written = rewrite_scen(args.scen, lambda xml: rename(xml, counts), out)
+    for name, count in counts.items():
+        print(f"  {count:4d}  {name}")
+    if not written:
+        if args.in_place:
+            backup.unlink()
         print("  nothing to rename, nothing written")
         return
-
-    new_b64 = encode_blob(new_xml)
-    if decode_blob(new_b64.decode("ascii")) != new_xml:
-        raise RuntimeError("round-trip verification failed, nothing written")
-
-    if a.in_place:
-        backup = a.scen.with_suffix(a.scen.suffix + ".bak")
-        backup.write_bytes(scen_bytes)
-        out = a.scen
+    if args.in_place:
         print(f"  backup   {backup.name}")
-    else:
-        out = a.out or a.scen.with_suffix(".renamed.scen")
-    out.write_bytes(scen_bytes[:om.start(2)] + new_b64 + scen_bytes[om.end(2):])
     print(f"  written  {out}")
 
 

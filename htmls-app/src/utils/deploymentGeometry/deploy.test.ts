@@ -57,7 +57,7 @@ describe('generateDeploymentData', () => {
     expect(data!.missileSystemType).toBe('ascm');
     expect(data!.center).toEqual(INLAND);
     expect(data!.openingAngle).toBe(90);
-    expect(data!.atpRadius).toBe(AREA_CONFIG.atpPoint.radius);
+    expect(data!.atpRadius).toBe(AREA_CONFIG.atp.radius);
     expect(data!.atpCenter).toBeUndefined();
     expect(data!.tacticalAreas.uShapeVertices).toHaveLength(4);
     expect(data!.tacticalAreas.firePoints).toHaveLength(AREA_CONFIG.firePoints.count);

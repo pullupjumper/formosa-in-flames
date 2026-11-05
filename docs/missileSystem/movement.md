@@ -25,7 +25,7 @@
 | `RELOAD_POINT` | RL | HOLD | 否 | `move_firing_unit_to_reload_point` | 發射車去裝填點 |
 | `RESUPPLY_VIA_SHRL` | SHRL，沒有 SHRL 就用 RL | HOLD | 否 | `move_resupply_to_reload_point` | 收車結束，補給車從掩體出發 |
 | `RESUPPLY_RECALL` | RL | 不動 | 是 | `move_resupply_to_reload_point` | 轉載完成，補給車直接回 RL |
-| `AMMUNITION_TRANSFER_POINT` | ATP | 不動 | 否 | `move_to_ammunition_transfer_point` | 補給車去彈藥區 |
+| `AMMUNITION_TRANSFER_POINT` | ATP | 不動 | 否 | `move_to_ammunition_transfer_point` | 補給車去彈藥轉運點 |
 
 兩條補給車回 RL 的路線 log 名稱相同，要看路線才分得出來。
 

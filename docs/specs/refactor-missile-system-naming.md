@@ -24,8 +24,9 @@ missileSystem 的彈藥用詞照 MLRS 野戰手冊統一。現在「存彈藥的
 
 - 移動 action `move_to_ammo_holding_area` 改成 `move_to_ammunition_transfer_point`。
 - 彈藥庫被擊毀的 log：`role=ammo_depot` 改成 `role=canister_stock`。
-- 部署 summary 欄位 `ammo=` 改成 `canisterStock=`；火力支援暫停（`fireSupportGate`）的欄位 `depot` 改成 `canisterStock`。
-- 步驟名 `failAmmoDepotStateNotFound` 改成 `failCanisterStockStateNotFound`。
+- 部署 summary 欄位 `ammo=` 改成 `canister_stock=`；火力支援暫停（`fireSupportGate`）的欄位 `depot` 改成 `canisterStock`。
+- 步驟名 `failAmmoDepotStateNotFound` 改成 `failCanisterStockStateNotFound`，它的 reason `ammo_context_not_found` 改成 `canister_stock_state_not_found`。
+- 控制面板資料欄位 `missilesInAHA` 改成 `missilesInCanisterStock`（存的是彈罐庫存的彈量，不是地點）。
 
 ## 不做
 
@@ -36,7 +37,7 @@ missileSystem 的彈藥用詞照 MLRS 野戰手冊統一。現在「存彈藥的
 ## 驗收
 
 - 工具跑完，解開 `.scen` 找不到 `Arrive in AHA`、`AHA/` zone，SaveData 裡沒有舊 key；把新名字換回舊名字後，和原檔逐 byte 相同。
-- `grep` 在 `src/`、`spec/`、`htmls-app/src/` 找不到舊名（`AHA`、`ammunitions`、`ammoDepot`、`SBJ__Ammunition`），上面列的例外不算。
+- `grep` 在 `src/`、`spec/`、`htmls-app/src/` 找不到舊名（`AHA`、`ammunitions`、`ammoDepot`、`SBJ__Ammunition(Unit|State)`），上面列的例外不算。
 - 遊戲內：編輯模式部署 → 一連打完彈 → 補給車去 ATP、回來重裝成功；控制面板顯示 ATP。
 - Lua：`busted --lua=luajit spec`、`bash bin/build.sh -c -n -l -i` 沒有新增警告。
 - 前端：在 `htmls-app/` 跑 `npm test`、`npm run lint`。

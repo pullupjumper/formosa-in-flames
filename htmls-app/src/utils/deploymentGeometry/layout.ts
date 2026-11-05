@@ -114,7 +114,7 @@ function generateAtpArea(
   openingAngle: number,
   { atpRadius, atpCenter }: LayoutParams
 ): Coordinate[] {
-  const { squareSize, radius } = AREA_CONFIG.atpPoint;
+  const { squareSize, radius } = AREA_CONFIG.atp;
   if (atpCenter) {
     const bearingToCenter = calculateBearing(atpCenter, center);
     return generateSquareVertices(atpCenter, squareSize, bearingToCenter);

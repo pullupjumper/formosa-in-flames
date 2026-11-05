@@ -138,7 +138,7 @@ local RESUPPLY_UNIT_STEPS = {
       fields = {
         unit = tick.resupplyUnitState.name,
         action = "ammo_transload_finished",
-        reason = "ammo_context_not_found"
+        reason = "canister_stock_state_not_found"
       }
     }
   end,

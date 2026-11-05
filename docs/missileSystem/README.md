@@ -117,7 +117,7 @@ flowchart TB
 | 設計機制 | 遊戲中的效果 |
 |---|---|
 | RL 交會 + 再裝填時間 | 形成射擊節奏與火力間隙，避免連續無限火力投射 |
-| ATP 二級補給 | 補給流程可被中斷，摧毀彈藥儲存可成為有效戰術 |
+| ATP 二級補給 | 補給流程可被中斷，摧毀彈罐庫存可成為有效戰術 |
 | TEL 回 HA + 建築掩蔽 | 降低被持續偵蒐與反制打擊的機率 |
 | SAM 補完回 FP | 防空火網覆蓋恢復較快，空域威脅起伏更明顯 |
 | 狀態機（STATIC/REPOSITIONING/RELOAD/HIDE） | 流程可預期、可調校、可在 UI/事件中解讀 |
@@ -151,7 +151,7 @@ flowchart TB
 | `config.*.ground.missileSystemTypes.<type>.reloadTime` | 再裝填所需時間 |
 | `config.*.ground.missileSystemTypes.<type>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
 | `config.*.ground.missileSystemTypes.<type>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
-| `config.*.ground.missileSystemTypes.<type>.canisterStocks[*].weaponCountDefault` | 彈罐庫存初始庫存 |
+| `config.*.ground.missileSystemTypes.<type>.canisterStocks[*].weaponCountDefault` | 彈罐庫存的初始彈量 |
 | `operationalArea` 的 FP/HA/RL/ATP 陣地位置 | 補給路徑與交會條件 |
 
 ---

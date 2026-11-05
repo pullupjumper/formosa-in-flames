@@ -158,7 +158,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 ## 7. `config.lua` 與 `constants.lua` 的 key
 
 - `config.lua`：camelCase。UPPER_SNAKE 只用在人為指定的代號：`AIR_STRIKE_AB_W_1`、`WZ8_RECON_ISLAND`。陣營命名空間 `.red`、`.blue`、`.ally`（紅軍為腳本控制方，藍軍為玩家，友軍支援藍軍；是角色，不是國名）；計分用 `config.score`。
-- 裝很多個的 key 用複數（`missileSystemTypes`、`firingUnits`、`ammunitions`），單一設定區塊用單數（`policy`）；型別名一律單數。
+- 裝很多個的 key 用複數（`missileSystemTypes`、`firingUnits`、`canisterStocks`），單一設定區塊用單數（`policy`）；型別名一律單數。
 - 層級：第一層陣營，第二層一個功能（對應 `src/modules/` 一個模組或一個發射領域），第三層只在同功能底下有多個欄位一致的變體時才開。例：`config.red.ground.missileSystemTypes.srbm`。
 - 詞義：領域 `ground`、類別 `missileSystemType`（`mlrs`、`srbm`…）、具體系統 `missileSystem`（`firingUnit` 的字串欄位，如 `"DF-17"`）、部隊 `firingUnit`。
 - `constants.lua`：頂層與識別碼 UPPER_SNAKE（`constants.SIDES.RED`），描述物件內欄位 camelCase（`shelterPoints`）。

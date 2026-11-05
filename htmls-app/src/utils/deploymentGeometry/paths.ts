@@ -162,7 +162,7 @@ export function buildMovementPaths(
   // HA: reload -> hide, avoid ammo
   paths.HA.waypoints = generatePathWithAvoidance(reloadCenter, hideCenter, [atpArea]);
 
-  // ATP: reload -> ammo, avoid hide
+  // ATP: reload -> ATP, avoid hide
   paths.ATP.waypoints = generatePathWithAvoidance(reloadCenter, atpCenter, [hideArea]);
 
   if (firePoints) {

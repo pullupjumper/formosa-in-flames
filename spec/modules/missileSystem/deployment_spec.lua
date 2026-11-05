@@ -111,7 +111,7 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(string.find(message, "unit=\"A Bn, 1st Bde\"", 1, true))
       assert.is_not_nil(string.find(message, "firing=0/1", 1, true))
       assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
-      assert.is_not_nil(string.find(message, "canisterStock=1/1", 1, true))
+      assert.is_not_nil(string.find(message, "canister_stock=1/1", 1, true))
     end)
 
     -- Positive: a SAM firing unit spawns at a firing point, other systems at their hide area

@@ -90,7 +90,7 @@ export function generateDeploymentData({
         missileSystemType,
         center,
         openingAngle: angle,
-        atpRadius: atpRadiusOverride ?? AREA_CONFIG.atpPoint.radius,
+        atpRadius: atpRadiusOverride ?? AREA_CONFIG.atp.radius,
         ...(atpCenterOverride ? { atpCenter: atpCenterOverride } : {}),
         tacticalAreas,
         paths: buildMovementPaths(tacticalAreas, plan.gateways),

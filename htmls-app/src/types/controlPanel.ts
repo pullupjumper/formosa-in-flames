@@ -109,8 +109,8 @@ export interface BatteryStatus {
   resupplyUnitReloadTime: number;
   missilesInAmmoVehicles: number;
   missilesInTransloaderDefault: number;
-  missilesInATP: number;
-  missilesInATPDefault: number;
+  missilesInCanisterStock: number;
+  missilesInCanisterStockDefault: number;
 }
 
 export interface C2Unit {

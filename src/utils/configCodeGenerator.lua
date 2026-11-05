@@ -15,7 +15,7 @@ local ConfigCodeGenerator = {}
 --   Phase 1 (collectUniqueAreas)  : scan config -> dedupe operationalArea tables, build opAreaMap
 --   Phase 2 (formatAreasCode)   : emit `constants.AREAS = { ... }`, build areaRefMap for Phase 3
 --   Phase 3 (formatOpAreasCode) : emit `constants.OPERATIONAL_AREAS = { ... }` via POSITION_EMITTERS
---   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.missileSystemTypes.{sys}.{ammo,resupply,firing}` blocks
+--   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks
 -- ============================================================================
 
 local AREA_NAME_PREFIXES = {
@@ -504,13 +504,13 @@ local function formatCanisterStocksBlock(configPath, canisterStockMap, weaponCou
   if not canisterStockMap then return nil end
   local lines = { configPath .. ".canisterStocks = {" }
   for _, name in ipairs(getSortedStringKeys(canisterStockMap)) do
-    local ammo = canisterStockMap[name]
+    local canisterStock = canisterStockMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
-    lines[#lines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
+    lines[#lines + 1] = "    name = " .. string.format("%q", canisterStock.name) .. ","
     lines[#lines + 1] = "    weaponCountCurrent = " ..
-    formatWeaponCountRef(ammo.weaponCountCurrent, weaponCountDefault, configPath) .. ","
+    formatWeaponCountRef(canisterStock.weaponCountCurrent, weaponCountDefault, configPath) .. ","
     lines[#lines + 1] = "    weaponCountDefault = " ..
-    formatWeaponCountRef(ammo.weaponCountDefault, weaponCountDefault, configPath) .. ","
+    formatWeaponCountRef(canisterStock.weaponCountDefault, weaponCountDefault, configPath) .. ","
     lines[#lines + 1] = "  },"
   end
   lines[#lines + 1] = "}"
@@ -590,8 +590,8 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
     local sysConfig = missileSystemConfigMap[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
-      local ammoBlock = formatCanisterStocksBlock(ctx.configPath, sysConfig.canisterStocks, sysConfig.weaponCountDefault)
-      if ammoBlock then blocks[#blocks + 1] = ammoBlock end
+      local canisterStocksBlock = formatCanisterStocksBlock(ctx.configPath, sysConfig.canisterStocks, sysConfig.weaponCountDefault)
+      if canisterStocksBlock then blocks[#blocks + 1] = canisterStocksBlock end
       local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.weaponCountDefault,
         ctx)
       if resBlock then blocks[#blocks + 1] = resBlock end

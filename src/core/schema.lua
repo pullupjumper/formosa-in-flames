@@ -1328,8 +1328,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field resupplyUnitState string Paired resupply unit state label
 ---@field missilesInAmmoVehicles number Missiles carried by the resupply unit
 ---@field missilesInTransloaderDefault number
----@field missilesInATP number Missiles left in the paired ammunition transfer point
----@field missilesInATPDefault number
+---@field missilesInCanisterStock number Missiles left in the paired canister stock
+---@field missilesInCanisterStockDefault number
 ---@field firingUnitReloadTime number Minutes elapsed in the firing unit's reload, 0 when not reloading
 ---@field resupplyUnitReloadTime number Minutes elapsed in the resupply unit's reload, 0 when not reloading
 ---@field defaultReloadTime number Configured reload time in minutes
