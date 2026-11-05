@@ -127,6 +127,7 @@ function GroundStateStore.setBatteryStates(groundState, batteries)
 end
 
 ---Resolve where a battery is now: its saved state's area, or its config area before its first deploy
+---A state area without a name is a copy of the config area made by a save from before areas had names.
 ---Returns the stored table; copy it before changing it.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string
@@ -135,7 +136,8 @@ end
 function GroundStateStore.resolveOperationalArea(groundState, missileSystemType, firingUnitDescriptor)
   local systemState = groundState.missileSystemTypes and groundState.missileSystemTypes[missileSystemType]
   local firingUnitState = systemState and systemState.firingUnits[firingUnitDescriptor.name]
-  return firingUnitState and firingUnitState.operationalArea or firingUnitDescriptor.operationalArea
+  local stateArea = firingUnitState and firingUnitState.operationalArea
+  return stateArea and stateArea.name and stateArea or firingUnitDescriptor.operationalArea
 end
 
 return GroundStateStore

@@ -390,5 +390,11 @@ describe("MissileSystem GroundStateStore", function()
       assert.are.equal(configArea, GroundStateStore.resolveOperationalArea(
         { missileSystemTypes = { srbm = { firingUnits = {} } } }, "srbm", descriptor))
     end)
+
+    -- Boundary: an older save copied the config area without its name, so redeploy could not find its zones
+    it("should return the config area when the state area has no name", function()
+      local groundState = { missileSystemTypes = { srbm = { firingUnits = { ["FU-A"] = { operationalArea = {} } } } } }
+      assert.are.equal(configArea, GroundStateStore.resolveOperationalArea(groundState, "srbm", descriptor))
+    end)
   end)
 end)

@@ -300,6 +300,7 @@ local function formatOpAreasCode(uniqueAreas, areaRefMap)
   for _, entry in ipairs(uniqueAreas) do
     local key, opArea = entry.key, entry.opArea
     opLines[#opLines + 1] = "  " .. key .. " = {"
+    opLines[#opLines + 1] = "    name = \"#" .. key .. "\","
 
     for _, emitter in ipairs(POSITION_EMITTERS) do
       local positions = opArea[emitter.field]

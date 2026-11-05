@@ -32,6 +32,16 @@ describe("ConfigCodeGenerator", function()
   end
 
   describe("format", function()
+    -- Positive: the area name comes back, since redeploy finds an area's zones by it
+    it("should emit each operational area's name", function()
+      local missileSystemConfigMap = buildMlrsConfig()
+      missileSystemConfigMap.mlrs.firingUnits["TEL-1"].operationalArea = { name = "#ABC" }
+
+      local _, opAreasStr = ConfigCodeGenerator.format("China", missileSystemConfigMap)
+
+      assert.is_truthy(opAreasStr:find('  ABC = {\n    name = "#ABC",', 1, true))
+    end)
+
     -- Positive: emits one block per section under the config path
     it("should emit ammunitions, resupplyUnits and firingUnits blocks for a system", function()
       local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())

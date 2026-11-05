@@ -720,6 +720,7 @@ constants.THROTTLES = {
 constants.OPERATIONAL_AREAS = {
   -- START: CHINA_OPERATIONAL_AREAS_BLOCK
   EAJ = {
+    name = "#EAJ",
     RL = { {
       course = {
         { latitude = 25.399402941187, longitude = 119.02798900439, },
@@ -778,6 +779,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   GMJ = {
+    name = "#GMJ",
     RL = { {
       course = {
         { latitude = 29.157025146235, longitude = 119.62072174507, },
@@ -832,6 +834,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   GSU = {
+    name = "#GSU",
     RL = { {
       course = {
         { latitude = 26.050879812767, longitude = 117.32539092392, },
@@ -888,6 +891,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   HMJ = {
+    name = "#HMJ",
     RL = { {
       course = {
         { latitude = 24.739551896662, longitude = 113.68259215376, },
@@ -944,6 +948,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   HUZ = {
+    name = "#HUZ",
     RL = { {
       course = {
         { latitude = 24.277706964417, longitude = 115.97179012348, },
@@ -1000,6 +1005,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   IDC = {
+    name = "#IDC",
     RL = { {
       course = {
         { latitude = 26.963341334336, longitude = 120.05387306213, },
@@ -1054,6 +1060,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   IDP = {
+    name = "#IDP",
     RL = { {
       course = {
         { latitude = 25.897859666925, longitude = 114.95966381973, },
@@ -1108,6 +1115,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   JUK = {
+    name = "#JUK",
     RL = { {
       course = {
         { latitude = 25.45289196849,  longitude = 119.74590370725, },
@@ -1166,6 +1174,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   KRO = {
+    name = "#KRO",
     RL = { {
       course = {
         { latitude = 24.228201101717, longitude = 117.97005079105, },
@@ -1220,6 +1229,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   LPU = {
+    name = "#LPU",
     RL = { {
       course = {
         { latitude = 24.530056326777, longitude = 117.93849723398, },
@@ -1274,6 +1284,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   OJM = {
+    name = "#OJM",
     RL = { {
       course = {
         { latitude = 24.655812906253, longitude = 118.23662433642, },
@@ -1328,6 +1339,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   QXV = {
+    name = "#QXV",
     RL = { {
       course = {
         { latitude = 24.995987630933, longitude = 118.8582479756, },
@@ -1382,6 +1394,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   RCU = {
+    name = "#RCU",
     RL = { {
       course = {
         { latitude = 25.558154797217, longitude = 119.7759115077, },
@@ -1438,6 +1451,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   TXI = {
+    name = "#TXI",
     RL = { {
       course = {
         { latitude = 24.75474828383, longitude = 118.62907670023, },
@@ -1492,6 +1506,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   URF = {
+    name = "#URF",
     RL = { {
       course = {
         { latitude = 25.612759846404, longitude = 119.42979812622, },
@@ -1548,6 +1563,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   WEP = {
+    name = "#WEP",
     RL = { {
       course = {
         { latitude = 30.913357938696, longitude = 121.53191682793, },
@@ -1602,6 +1618,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   XZL = {
+    name = "#XZL",
     RL = { {
       course = {
         { latitude = 28.480963066895, longitude = 117.90473036242, },
@@ -1658,6 +1675,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   YMC = {
+    name = "#YMC",
     RL = { {
       course = {
         { latitude = 24.77135378448, longitude = 118.70935203709, },
@@ -1712,6 +1730,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   ZWQ = {
+    name = "#ZWQ",
     RL = { {
       course = {
         { latitude = 19.475509413783, longitude = 109.44829461197, },
@@ -1769,6 +1788,7 @@ constants.OPERATIONAL_AREAS = {
 
   -- START: TAIWAN_OPERATIONAL_AREAS_BLOCK
   AMG = {
+    name = "#AMG",
     RL = { {
       course = {
         { latitude = 22.591332673616, longitude = 120.518723497, },
@@ -1818,6 +1838,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   BPM = {
+    name = "#BPM",
     RL = { {
       course = {
         { latitude = 22.927993406315, longitude = 120.25782503585, },
@@ -1867,6 +1888,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   CSC = {
+    name = "#CSC",
     RL = { {
       course = {
         { latitude = 24.996670916322, longitude = 121.49693152645, },
@@ -1916,6 +1938,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   DJA = {
+    name = "#DJA",
     RL = { {
       course = {
         { latitude = 22.647086037038, longitude = 120.49447696756, },
@@ -1965,6 +1988,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   DLF = {
+    name = "#DLF",
     RL = { {
       course = {
         { latitude = 25.063398424484, longitude = 121.26262664795, },
@@ -2014,6 +2038,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   FMK = {
+    name = "#FMK",
     RL = { {
       course = {
         { latitude = 25.193052594676, longitude = 121.44377957358, },
@@ -2065,6 +2090,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   FZM = {
+    name = "#FZM",
     RL = { {
       course = {
         { latitude = 22.99888503755, longitude = 120.22496778269, },
@@ -2114,6 +2140,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   GRV = {
+    name = "#GRV",
     RL = { {
       course = {
         { latitude = 24.144889102887, longitude = 120.69415442585, },
@@ -2163,6 +2190,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   IDW = {
+    name = "#IDW",
     RL = { {
       course = {
         { latitude = 24.210906690558, longitude = 120.64456462145, },
@@ -2212,6 +2240,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   IKJ = {
+    name = "#IKJ",
     RL = { {
       course = {
         { latitude = 24.681100119978, longitude = 121.69604846787, },
@@ -2265,6 +2294,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   LPK = {
+    name = "#LPK",
     RL = { {
       course = {
         { latitude = 24.256869004407, longitude = 120.6844420654, },
@@ -2314,6 +2344,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   MAK = {
+    name = "#MAK",
     RL = { {
       course = {
         { latitude = 24.010394755101, longitude = 121.61252864755, },
@@ -2363,6 +2394,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   NUJ = {
+    name = "#NUJ",
     RL = { {
       course = {
         { latitude = 22.68333155036, longitude = 120.35560719907, },
@@ -2412,6 +2444,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   NVD = {
+    name = "#NVD",
     RL = { {
       course = {
         { latitude = 24.953020968327, longitude = 121.26220931594, },
@@ -2461,6 +2494,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   PDN = {
+    name = "#PDN",
     RL = { {
       course = {
         { latitude = 25.025041308958, longitude = 121.17571141438, },
@@ -2510,6 +2544,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   PXV = {
+    name = "#PXV",
     RL = { {
       course = {
         { latitude = 22.77038071148, longitude = 121.1333656311, },
@@ -2559,6 +2594,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   QPF = {
+    name = "#QPF",
     RL = { {
       course = {
         { latitude = 25.189896214498, longitude = 121.65023803711, },
@@ -2608,6 +2644,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   QTZ = {
+    name = "#QTZ",
     RL = { {
       course = {
         { latitude = 24.240811593087, longitude = 120.66866274066, },
@@ -2657,6 +2694,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   RHM = {
+    name = "#RHM",
     RL = { {
       course = {
         { latitude = 23.014333418832, longitude = 120.29055716718, },
@@ -2706,6 +2744,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   SET = {
+    name = "#SET",
     RL = { {
       course = {
         { latitude = 24.938007232049, longitude = 121.14898681641, },
@@ -2755,6 +2794,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   SKB = {
+    name = "#SKB",
     RL = { {
       course = {
         { latitude = 25.014905380543, longitude = 121.13340714104, },
@@ -2804,6 +2844,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   TGO = {
+    name = "#TGO",
     RL = { {
       course = {
         { latitude = 22.962051609203, longitude = 120.22955360473, },
@@ -2853,6 +2894,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   UVY = {
+    name = "#UVY",
     RL = { {
       course = {
         { latitude = 24.809735208554, longitude = 120.96383050197, },
@@ -2904,6 +2946,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   UYO = {
+    name = "#UYO",
     RL = { {
       course = {
         { latitude = 23.468881953898, longitude = 120.42542419753, },
@@ -2953,6 +2996,7 @@ constants.OPERATIONAL_AREAS = {
     },
   },
   XDY = {
+    name = "#XDY",
     RL = { {
       course = {
         { latitude = 25.048794038988, longitude = 121.56259734018, },
