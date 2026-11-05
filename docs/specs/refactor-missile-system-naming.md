@@ -14,7 +14,7 @@ missileSystem 的彈藥用詞照 MLRS 野戰手冊統一。現在「存彈藥的
   - 彈藥庫 → canister stock：型別、config／saveData 的表與連結欄位、battery 欄位、role。
 - 不改的：單獨的 `ammo` 指「彈藥數量」（`isLowAmmo`、`ammoThreshold`），照舊；`score/`、`attackManager` 裡的 `ammunition` 是別的意思，不動。
 - `.scen` 裡有舊名字：arrival 事件 `(China|Taiwan) Arrive in AHA`、它們的 trigger、`AHA/...` zone，以及 `.scen` 自帶的 SaveData 裡的 `ammunitions`、`ammunition`、`AHA` key。程式靠這些名字認位置、找要刪的 zone，所以必須一起改。
-- 用一次性工具 `tools/rename_scen_missile_terms.py` 改 `.scen`，程式碼裡不留讀檔轉換。工具重跑不會再改任何東西。
+- 用一次性工具改 `.scen`，程式碼裡不留讀檔轉換。工具在 `550195d` 加入、對劇本跑過一次後刪除，要再轉其他舊 `.scen` 時從 git 歷史取回。
 - 遊戲中途存的 `.save` 不支援：裡面的 trigger 名字是舊的，沒辦法在讀檔時修。
 - 控制面板（`htmls-app`）和 Lua 同一次改。面板送回的資料、注入的資料都用新名字，不留舊名的相容層。
 - `.scen` 裡參考點的名字（`RP-xxxxx`）不變。
