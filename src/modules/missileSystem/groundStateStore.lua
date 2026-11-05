@@ -107,29 +107,35 @@ function GroundStateStore.ensureGroundState(missileSystemConfigMap, groundState)
   end
 end
 
----Initialize missile system runtime states from configuration
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---Set each battery's runtime state fresh from its config descriptors, at the battery's operational area
+---Only the given batteries change; every other battery keeps its runtime state. Copies the area, so run it
+---after Triggers.initEventTriggers has written the mask onto a new area.
 ---@param groundState SBJ__GroundState
-function GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
-  for system, systemConfig in pairs(missileSystemConfigMap) do
-    local firingUnitMap = Utils.deepCopy(systemConfig.firingUnits)
-    for _, descriptor in pairs(firingUnitMap) do
-      local ctx = descriptor
-      groundState.missileSystemTypes[system].firingUnits[ctx.name] = ctx
-    end
+---@param batteries SBJ__Battery[]
+function GroundStateStore.setBatteryStates(groundState, batteries)
+  for _, battery in ipairs(batteries) do
+    local systemState = groundState.missileSystemTypes[battery.missileSystemType]
+    local firingUnitState = Utils.deepCopy(battery.firing)
+    local resupplyUnitState = Utils.deepCopy(battery.resupply)
+    firingUnitState.operationalArea = Utils.deepCopy(battery.operationalArea)
+    resupplyUnitState.operationalArea = Utils.deepCopy(battery.operationalArea)
 
-    local resupplyUnitMap = Utils.deepCopy(systemConfig.resupplyUnits)
-    for _, descriptor in pairs(resupplyUnitMap) do
-      local ctx = descriptor
-      groundState.missileSystemTypes[system].resupplyUnits[ctx.name] = ctx
-    end
-
-    local ammunitionMap = Utils.deepCopy(systemConfig.ammunitions)
-    for _, descriptor in pairs(ammunitionMap) do
-      local ctx = descriptor
-      groundState.missileSystemTypes[system].ammunitions[ctx.name] = ctx
-    end
+    systemState.firingUnits[firingUnitState.name] = firingUnitState
+    systemState.resupplyUnits[resupplyUnitState.name] = resupplyUnitState
+    systemState.ammunitions[battery.depot.name] = Utils.deepCopy(battery.depot)
   end
+end
+
+---Resolve where a battery is now: its saved state's area, or its config area before its first deploy
+---Returns the stored table; copy it before changing it.
+---@param groundState SBJ__GroundState
+---@param missileSystemType string
+---@param firingUnitDescriptor SBJ__FiringUnitDescriptor Config descriptor, the fallback
+---@return SBJ__OperationalArea
+function GroundStateStore.resolveOperationalArea(groundState, missileSystemType, firingUnitDescriptor)
+  local systemState = groundState.missileSystemTypes and groundState.missileSystemTypes[missileSystemType]
+  local firingUnitState = systemState and systemState.firingUnits[firingUnitDescriptor.name]
+  return firingUnitState and firingUnitState.operationalArea or firingUnitDescriptor.operationalArea
 end
 
 return GroundStateStore

@@ -231,22 +231,30 @@ function MissileSystem.processSupplyAssetDestruction(saveData, unit)
 end
 
 ---Move batteries to player-chosen operational areas, then rebuild their zones, units and state
----Only the moved batteries are rebuilt; every other battery keeps its units and runtime state.
+---Only the moved batteries are rebuilt; every other battery keeps its units and runtime state. Config is
+---only read. The area a battery leaves comes from its state, so a move after a save/load removes the
+---zones the battery really has.
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
 ---@param sideName string
 ---@param layouts SBJ__MissileSystemLayout[]
-local function redeploy(missileSystemConfigMap, groundState, sideName, layouts)
-  local operationalAreas, operationalAreasToRemove = Deployment.updateLayouts(missileSystemConfigMap, layouts)
+local function deployLayouts(missileSystemConfigMap, groundState, sideName, layouts)
+  local batteries, operationalAreas, operationalAreasToRemove = {}, {}, {}
 
-  Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
-  local rebuiltFiringUnits = {}
   for _, layout in ipairs(layouts) do
-    rebuiltFiringUnits[layout.unitname] = true
+    local battery = Deployment.resolveBattery(missileSystemConfigMap, layout)
+    if battery then
+      table.insert(batteries, battery)
+      table.insert(operationalAreas, battery.operationalArea)
+      table.insert(operationalAreasToRemove,
+        GroundStateStore.resolveOperationalArea(groundState, battery.missileSystemType, battery.firing))
+    end
   end
-  local rebuiltBatteries = Deployment.selectBatteries(missileSystemConfigMap, rebuiltFiringUnits)
-  Deployment.addMissileSystems(rebuiltBatteries, sideName)
-  GroundStateStore.initMissileSystemStates(rebuiltBatteries, groundState)
+
+  -- Triggers write the mask onto the new areas, which setBatteryStates then copies into state
+  Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
+  Deployment.deployBatteries(sideName, batteries)
+  GroundStateStore.setBatteryStates(groundState, batteries)
 end
 
 ---Redeploy a side's batteries to the placements submitted by the control panel
@@ -255,7 +263,7 @@ end
 ---@param sideName string
 ---@param entries SBJ__MissileSystemResult[]
 function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
-  redeploy(
+  deployLayouts(
     getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName),
     sideName,
@@ -281,10 +289,10 @@ end
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 function MissileSystem.deploySide(config, saveData, sideName)
-  local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
+  local batteries = Deployment.resolveBatteries(getMissileSystemTypes(config, sideName))
 
-  Deployment.addMissileSystems(missileSystemConfigMap, sideName)
-  GroundStateStore.initMissileSystemStates(missileSystemConfigMap, PersistentState.ground(saveData, sideName))
+  Deployment.deployBatteries(sideName, batteries)
+  GroundStateStore.setBatteryStates(PersistentState.ground(saveData, sideName), batteries)
 end
 
 ---Build a side's battery statuses for the control panel, one per battery (firing unit plus its paired resupply unit)
@@ -321,7 +329,7 @@ function MissileSystem.initSide(config, saveData, sideName)
     return
   end
 
-  GroundStateStore.initMissileSystemStates(getMissileSystemTypes(config, sideName), groundState)
+  GroundStateStore.setBatteryStates(groundState, Deployment.resolveBatteries(getMissileSystemTypes(config, sideName)))
 end
 
 ---Handle a UnitEntersArea event for the triggering unit's side, with its policy taken from config

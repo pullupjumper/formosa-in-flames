@@ -6,6 +6,7 @@
 
 local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
+local PersistentState = require("src.core.persistentState")
 
 local ConfigCodeGenerator = {}
 
@@ -635,7 +636,52 @@ local function printSection(name, body)
   print("@@GEN_BEGIN " .. name .. "\n" .. body .. "\n@@GEN_END " .. name)
 end
 
+---Copy a table's top-level fields, then set the given fields
+---@param source table
+---@param fields table
+---@return table
+local function buildCopyWith(source, fields)
+  local copy = {}
+  for field, value in pairs(source) do
+    copy[field] = value
+  end
+  for field, value in pairs(fields) do
+    copy[field] = value
+  end
+  return copy
+end
+
+---Build config copies with each battery at the operational area its ground state holds
+---Deploying from the control panel writes the new area into ground state only, never into config.
+---Only a control panel area has a name (buildLayout's "#XYZ"). A state area without one is a copy of
+---the config area, which resolveOpAreaKey can only match by identity, so the config table is kept.
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param groundState SBJ__GroundState
+---@return table<string, SBJ__MissileSystemConfig>
+local function buildPlacedConfigMap(missileSystemConfigMap, groundState)
+  local placedConfigMap = {}
+
+  for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
+    local systemState = groundState.missileSystemTypes and groundState.missileSystemTypes[missileSystemType]
+    local placed = buildCopyWith(systemConfig, { firingUnits = {}, resupplyUnits = {} })
+
+    for name, firing in pairs(systemConfig.firingUnits) do
+      local firingUnitState = systemState and systemState.firingUnits[name]
+      local stateArea = firingUnitState and firingUnitState.operationalArea
+      local area = { operationalArea = stateArea and stateArea.name and stateArea or firing.operationalArea }
+      local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
+      placed.firingUnits[name] = buildCopyWith(firing, area)
+      placed.resupplyUnits[resupply.name] = buildCopyWith(resupply, area)
+    end
+
+    placedConfigMap[missileSystemType] = placed
+  end
+
+  return placedConfigMap
+end
+
 ---Print the generated code into the CMO Lua log, wrapped in markers
+---Each battery is printed where the saved ground state places it; with no saved state, config is printed as is.
 ---Run `python tools/apply_generated_config.py` afterwards to write it into constants.lua / config.lua
 ---Example: ConfigCodeGenerator.dump("China", config.red.ground.missileSystemTypes)
 ---@param sideName string
@@ -644,7 +690,11 @@ function ConfigCodeGenerator.dump(sideName, missileSystemConfigMap)
   local field = GameUtils.getCachedSideConfig(sideName).field
   local tag = SIDE_BLOCK_TAGS[field]
   assert(tag, "ConfigCodeGenerator.dump: no constants.lua block for side " .. sideName)
-  local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format(sideName, missileSystemConfigMap)
+  local placedConfigMap = missileSystemConfigMap
+  PersistentState.read(function(state)
+    placedConfigMap = buildPlacedConfigMap(missileSystemConfigMap, PersistentState.ground(state, sideName))
+  end)
+  local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format(sideName, placedConfigMap)
   printSection(tag .. "_AREAS_BLOCK", stripTableWrapper(areasStr))
   printSection(tag .. "_OPERATIONAL_AREAS_BLOCK", stripTableWrapper(opAreasStr))
   printSection("CONFIG_" .. field, configStr)

@@ -1,6 +1,8 @@
 ---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
 -- ConfigCodeGenerator Unit Tests
+local stub = require("luassert.stub")
 local ConfigCodeGenerator = require("src.utils.configCodeGenerator")
+local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
 
 describe("ConfigCodeGenerator", function()
@@ -85,13 +87,18 @@ describe("ConfigCodeGenerator", function()
     local originalPrint = print
     local printed
 
+    ---@type luassert.spy
+    local noSaveStub
+
     before_each(function()
       printed = {}
       _G.print = function(s) printed[#printed + 1] = s end
+      noSaveStub = stub(PersistentState, "read").returns(false)
     end)
 
     after_each(function()
       _G.print = originalPrint
+      noSaveStub:revert()
     end)
 
     -- Positive: one marked section per generated block, tagged by side
@@ -103,6 +110,68 @@ describe("ConfigCodeGenerator", function()
       assert.is_truthy(printed[1]:find("\n@@GEN_END CHINA_AREAS_BLOCK$"))
       assert.is_truthy(printed[2]:find("^@@GEN_BEGIN CHINA_OPERATIONAL_AREAS_BLOCK\n"))
       assert.is_truthy(printed[3]:find("^@@GEN_BEGIN CONFIG_red\nconfig.red.ground.missileSystemTypes.mlrs.ammunitions = {"))
+    end)
+
+    -- Positive: a moved battery is printed at its saved area and config is untouched
+    it("should print each battery at its saved ground state area", function()
+      local formatStub = stub(ConfigCodeGenerator, "format").returns("", "", "")
+      local configArea = { name = "OPAREA-CONFIG" }
+      local savedArea = { name = "OPAREA-SAVED" }
+      local missileSystemConfigMap = buildMlrsConfig()
+      local mlrs = missileSystemConfigMap.mlrs
+      mlrs.firingUnits["TEL-1"].resupplyUnit = "RES-1"
+      mlrs.firingUnits["TEL-1"].operationalArea = configArea
+      mlrs.resupplyUnits["RES-1"].operationalArea = configArea
+      local groundState = { missileSystemTypes = { mlrs = { firingUnits = {
+        ["TEL-1"] = { name = "TEL-1", operationalArea = savedArea }
+      } } } }
+
+      noSaveStub:revert()
+      local readStub = stub(PersistentState, "read").invokes(function(fn)
+        fn({ red = { ground = groundState } })
+        return true
+      end)
+      ConfigCodeGenerator.dump("China", missileSystemConfigMap)
+      readStub:revert()
+      local placed = formatStub.calls[1].vals[2].mlrs
+      formatStub:revert()
+
+      assert.are.same(savedArea, placed.firingUnits["TEL-1"].operationalArea)
+      assert.are.same(savedArea, placed.resupplyUnits["RES-1"].operationalArea)
+      assert.are.equal(4, placed.weaponCountDefault)
+      assert.are.equal(configArea, mlrs.firingUnits["TEL-1"].operationalArea)
+      assert.are.equal(configArea, mlrs.resupplyUnits["RES-1"].operationalArea)
+    end)
+
+    -- Boundary: an unnamed state area is a copy of the config area, which format can only match by identity
+    it("should keep the config area for a battery whose state area has no name", function()
+      local placedConfigMap
+      local formatStub = stub(ConfigCodeGenerator, "format").invokes(function(_, map)
+        placedConfigMap = map
+        return "", "", ""
+      end)
+      local configArea = { HA = {} }
+      local missileSystemConfigMap = buildMlrsConfig()
+      local mlrs = missileSystemConfigMap.mlrs
+      mlrs.firingUnits["TEL-1"].resupplyUnit = "RES-1"
+      mlrs.firingUnits["TEL-1"].operationalArea = configArea
+      mlrs.resupplyUnits["RES-1"].operationalArea = configArea
+      local groundState = { missileSystemTypes = { mlrs = { firingUnits = {
+        ["TEL-1"] = { name = "TEL-1", operationalArea = { HA = {} } }
+      } } } }
+
+      noSaveStub:revert()
+      local readStub = stub(PersistentState, "read").invokes(function(fn)
+        fn({ red = { ground = groundState } })
+        return true
+      end)
+      ConfigCodeGenerator.dump("China", missileSystemConfigMap)
+      readStub:revert()
+      local placed = placedConfigMap.mlrs
+      formatStub:revert()
+
+      assert.are.equal(configArea, placed.firingUnits["TEL-1"].operationalArea)
+      assert.are.equal(configArea, placed.resupplyUnits["RES-1"].operationalArea)
     end)
 
     -- Boundary: table wrapper is stripped so the body fits between START/END markers

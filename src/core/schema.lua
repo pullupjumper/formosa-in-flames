@@ -1303,11 +1303,22 @@ function ScenEdit_DeleteMine(params) end
 ---@field SHRL? SBJ__Position[] Shelter-hide-reload loop path
 ---@field [SBJ__PositionType] SBJ__Position[]
 
----Player-chosen operational area for one battery, applied by MissileSystem.redeploy
+---Player-chosen operational area for one battery, applied by MissileSystem.redeployFromControlPanel
 ---@class SBJ__MissileSystemLayout: table
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field operationalArea SBJ__OperationalArea New operational area for the firing unit and its resupply unit
+
+---One battery: a firing unit, its resupply unit and its depot, joined by config links
+---The descriptors are config tables and are never written to. `operationalArea` is where the battery
+---is built: the config area for deploySide, the layout's area for a control panel deploy.
+---@class SBJ__Battery: table
+---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field firing SBJ__FiringUnitDescriptor
+---@field resupply SBJ__ResupplyUnitDescriptor Reached by firing.resupplyUnit
+---@field depot SBJ__AmmunitionUnitDescriptor Reached by resupply.ammunition
+---@field unitCount integer Vehicles of the firing and the resupply unit; config keeps it on the resupply unit
+---@field operationalArea SBJ__OperationalArea Area the firing and resupply units are built in
 
 ---One battery's status in the control panel (a firing unit plus its paired resupply unit), built by MissileSystem.buildBatteryStatuses
 ---@class SBJ__BatteryStatus: table

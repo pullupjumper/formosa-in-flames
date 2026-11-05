@@ -46,7 +46,7 @@ python3 tools/apply_generated_config.py [--dry-run]            # write ConfigCod
 
 ### Regenerate constants/config from the scenario
 
-1. In CMO's Lua console: `ConfigCodeGenerator.dump("China", config.red.ground.missileSystemTypes)` (prints marked blocks to the Lua log).
+1. In CMO's Lua console: `ConfigCodeGenerator.dump("China", config.red.ground.missileSystemTypes)` (prints marked blocks to the Lua log, with each battery where the saved state places it).
 2. `python3 tools/apply_generated_config.py --dry-run`, then again without `--dry-run`. It uses the newest `LuaHistory_*.txt` in CMO's `Logs/` (override with `--log-dir` / `--log`).
 3. `git diff` to review.
 

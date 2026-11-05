@@ -3,11 +3,12 @@
 local config = require("src.core.config")
 
 describe("config ground.missileSystemTypes batteries", function()
-  ---Call fn for every configured missile system of both sides
+  ---Call fn for every configured missile system of every side
   ---@param fn fun(label: string, systemConfig: SBJ__MissileSystemConfig)
   local function forEachSystem(fn)
-    for _, sideKey in ipairs({ "red", "blue" }) do
-      for systemType, systemConfig in pairs(config[sideKey].ground.missileSystemTypes) do
+    for _, sideKey in ipairs({ "red", "blue", "ally" }) do
+      local ground = config[sideKey] and config[sideKey].ground
+      for systemType, systemConfig in pairs(ground and ground.missileSystemTypes or {}) do
         fn(sideKey .. "." .. systemType, systemConfig)
       end
     end
@@ -76,6 +77,8 @@ describe("config ground.missileSystemTypes batteries", function()
     assert.are.same({}, problems)
   end)
 
+  -- The reload cycle hides a resupply unit after a reload on the strength of its meeting in the
+  -- firing unit's RL zone, which holds only while both units share one operational area.
   it("should place every firing unit and its resupply unit in the same operational area", function()
     local problems = {}
 

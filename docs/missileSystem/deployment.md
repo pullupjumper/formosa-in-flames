@@ -4,37 +4,32 @@
 
 > Source: `src/modules/missileSystem/deployment.lua`
 
-責任摘要：依 `missileSystemConfigMap` 建立機動發射車/彈藥補給車/彈藥儲備點三類配置並整理武器掛載。
+責任摘要：把 config 的一連（發射車、補給車、彈藥庫）組成 `SBJ__Battery`，在該連的陣地上建出單位並整理武器掛載。
 
 ---
 
 ## 概觀
 
-`deployment.lua` 主要用在 special action（創建飛彈系統單位）。每個 system 會先刪除既有飛彈系統單位，再按配置創建，最後輸出成功與失敗摘要。
+一連 = firing + resupply + depot，照 config 的連結找：`firing.resupplyUnit` → resupply，`resupply.ammunition` → depot。不從名字猜關係。`SBJ__Battery.operationalArea` 是這次要建在哪：`deploySide` 用 config 的陣地，控制面板部署用玩家選的陣地。descriptor 是 config 本身，只讀不寫。
 
-對 firing unit，會依 `isSam` 決定初始生成點（SAM 在 FP、其餘在 HA）。對 resupply/ammo，分別使用 RL 與 AHA 作為初始點。
+三種單位的差別寫在 `BATTERY_ROLES` 表（platform DBID、要不要成群、哪種陣地缺了就拒絕、生成點、建好後的設定）。`deployRole` 是唯一的建單位迴圈：先刪舊單位，檢查陣地，再一台一台建。
 
-建立後會執行 `removeAndRedistributeWeapons`，去除非目標武器並在單一 weaponDBID 情境下把可轉移彈數補回。
+- firing：SAM 從隨機一個 FP 生成，其餘從 HA[1]；建好後加 mount、`removeAndRedistributeWeapons`。
+- resupply：從 RL[1] 生成。
+- ammo（depot）：從 AHA[1] 生成，設成不可自動偵測。
 
----
-
-## 主要機制
-
-- `removeMissileSystem`: 兼容 group 與單一機動車組刪除。
-- `addFiringUnit`: 驗證 HA/FP 路徑、建立分隊、可套用 mountDescriptors。
-- `addResupplyUnit`: 依 `unitCount` 建立 Ammo Sec 群組。
-- `addAmmunition`: 依對應彈藥補給車的 AHA 配置放置彈藥儲備點。
+firing 和 resupply 的車數都是 `battery.unitCount`（config 放在 resupply 上）。多台時以 descriptor 名為 group，成員名把序數放在 firing unit 名前面：`Ammo Sec, 1st Bn, X` → `Ammo Sec, 2nd Coy, 1st Bn, X`。`spec/core/missileSystemConfig_spec.lua` 保證每個名字都以 firing unit 名結尾、連結一對一。
 
 ```mermaid
 flowchart TD
-    A[addMissileSystems] --> B[iterate each system]
-    B --> C[remove old firing/resupply/ammo]
-    C --> D[addFiringUnit]
-    C --> E[addResupplyUnit]
-    C --> F[addAmmunition]
-    D --> G[removeAndRedistributeWeapons]
-    B --> H[LogFormat.report]
+    A[resolveBattery / resolveBatteries] --> B[deployBatteries]
+    B --> C[each battery x BATTERY_ROLES]
+    C --> D[deployRole: remove → findRejection → AddUnit × count]
+    D --> E[setUp: setArmament / hide depot]
+    B --> F[LogFormat.report: FAIL rows + one summary row per system]
 ```
+
+summary row 是 `firing=a/b resupply=a/b ammo=a/b`；只要該 system 有 FAIL row 就標 FAIL。陣地被拒絕時 `b` 仍算計畫車數（例如 `0/2`）。
 
 ---
 
@@ -42,8 +37,9 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `addMissileSystems` | `missileSystemConfigMap, sideName` | `nil` | 依配置創建所有飛彈系統單位 |
-| `updateLayouts` | `missileSystemConfigMap, layouts` | `SBJ__OperationalArea[], SBJ__OperationalArea[]` | 把 firing／resupply descriptor 換成指向新陣地的副本；回傳新陣地與被取代的舊陣地，供 `MissileSystem.redeploy` 重建 zone／trigger |
+| `resolveBattery` | `missileSystemConfigMap, layout` | `SBJ__Battery\|nil` | 照 config 連結組出 layout 指名的那一連，放在 layout 的陣地；未知 system 或 firing unit 回 `nil` |
+| `resolveBatteries` | `missileSystemConfigMap` | `SBJ__Battery[]` | config 的每一連，放在 config 的陣地 |
+| `deployBatteries` | `sideName, batteries` | `nil` | 刪掉並重建這幾連的單位，輸出一份 report |
 
 ---
 

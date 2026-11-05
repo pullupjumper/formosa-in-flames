@@ -10,7 +10,7 @@
 
 ## 概觀
 
-`initMissileSystemStates` 會深拷貝 `firingUnits/resupplyUnits/ammunitions`，避免直接共用配置表，並為 firing/resupply 初始化 `reloadStartTime = nil`。
+`setBatteryStates` 只改傳進來的那幾連：深拷貝該連 firing、resupply、depot 的 config descriptor，firing 與 resupply 的 `operationalArea` 設成該連的陣地。其他連的 state 不動。state 是陣地唯一的家，`resolveOperationalArea` 讀它，還沒部署過才退回 config。
 
 `processSupplyAssetDestruction` 會在分數腳本觸發時被呼叫：
 
@@ -39,7 +39,8 @@ flowchart TD
 |---|---|---|---|
 | `resolvePair` | `systemState, unitName` | `firingUnitState?, resupplyUnitState?, ammoDepotState?` | 用任一端名稱找出整組配對，缺的一端為 nil |
 | `processSupplyAssetDestruction` | `unit, systemState` | `boolean` | 補給資產戰損後同步修正庫存 |
-| `initMissileSystemStates` | `missileSystemConfigMap, groundState` | `nil` | 初始化 runtime state |
+| `setBatteryStates` | `groundState, batteries` | `nil` | 把這幾連的 runtime state 重設成 config 初值，放在該連的陣地 |
+| `resolveOperationalArea` | `groundState, missileSystemType, firingUnitDescriptor` | `SBJ__OperationalArea` | 這一連現在的陣地：state 的，沒有 state 時用 config 的 |
 
 ---
 

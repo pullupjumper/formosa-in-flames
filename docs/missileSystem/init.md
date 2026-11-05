@@ -26,16 +26,16 @@
 | `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫私有的 `process`（執行循環並輸出結果日誌）；`scheduledReloadHideCheck.lua` 的入口 |
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `moveCtx`，交給 `Arrival.processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `unit, groundState` | `boolean` | 走訪所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
-| `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 把 control panel 送回的 entries 轉成 layouts（`SBJ__MissileSystemLayout[]`），再由私有的 `redeploy` 依序重建 zone／trigger、單位與 context |
+| `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 把 control panel 送回的 entries 轉成 layouts（`SBJ__MissileSystemLayout[]`），再由私有的 `deployLayouts` 依序重建 zone／trigger、單位與 state。離開的舊陣地從 state 讀（`GroundStateStore.resolveOperationalArea`），config 只讀不寫 |
 | `buildDeploymentSystems` | `config, saveData, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點）；已在存檔裡的發射單位用存檔的作戰區 |
-| `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.addMissileSystems` 建立單位並初始化 context；`addMissileSystems.lua` special action 的入口 |
+| `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.resolveBatteries` 取得每一連，`Deployment.deployBatteries` 建立單位，`GroundStateStore.setBatteryStates` 設定 state；`addMissileSystems.lua` special action 的入口 |
 | `buildBatteryStatuses` | `config, saveData, sideName` | `SBJ__BatteryStatus[]` | 供狀態 UI 使用，每個飛彈連（發射單位加配對的補給單位）一筆的狀態 |
 | `ensureGroundState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `GroundStateStore.ensureGroundState` |
-| `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `GroundStateStore.initMissileSystemStates` |
+| `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態，對每一連呼叫 `GroundStateStore.setBatteryStates` |
 
 `ensureGroundState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[groundStateStore](groundStateStore.md) 內的同名函式仍維持 `(missileSystemConfigMap, groundState)`。
 
-> 原本轉發 `Deployment.addMissileSystems` 的門面函式已刪除，外部改用 `deploySide`；位置事件的處理已搬到 [arrival](arrival.md)，外部只經 `processUnitEntersArea` 進入。
+> 外部建立單位只走 `deploySide`；位置事件的處理已搬到 [arrival](arrival.md)，外部只經 `processUnitEntersArea` 進入。
 
 ---
 

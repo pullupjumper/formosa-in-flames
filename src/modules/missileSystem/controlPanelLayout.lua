@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Utils = require("src.utils.utils")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
 local ControlPanelLayout = {}
 
@@ -29,7 +30,7 @@ end
 ---Build a battery layout from one control panel entry
 ---@param entry SBJ__MissileSystemResult
 ---@param areaName string
----@return SBJ__MissileSystemLayout # Layout accepted by MissileSystem.redeploy
+---@return SBJ__MissileSystemLayout # Layout accepted by MissileSystem.redeployFromControlPanel
 local function buildLayout(entry, areaName)
   local tacticalAreas = entry.tacticalAreas
   local paths = entry.paths
@@ -57,7 +58,7 @@ end
 
 ---Build battery layouts from control panel entries, giving each a random operational area name
 ---@param entries SBJ__MissileSystemResult[]
----@return SBJ__MissileSystemLayout[] # Layouts accepted by MissileSystem.redeploy
+---@return SBJ__MissileSystemLayout[] # Layouts accepted by MissileSystem.redeployFromControlPanel
 function ControlPanelLayout.buildLayouts(entries)
   local layouts = {}
 
@@ -100,8 +101,8 @@ local function findWeaponRange(weaponDBID)
 end
 
 ---Build the control panel's missile system rows, with zone names resolved to vertices
----Config is only the template: a firing unit already in the saved state is drawn at its
----saved operational area, which holds the player's placement after a save/load.
+---Each firing unit is drawn where its battery is now (GroundStateStore.resolveOperationalArea):
+---its saved state's area, or its config area before its first deploy.
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
 ---@param sideName string
@@ -113,18 +114,13 @@ function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groun
     local copy = Utils.deepCopy(system)
     copy.resupplyUnits = nil
     copy.ammunitions = nil
-    local systemState = groundState.missileSystemTypes[key]
-    local savedFiringUnits = systemState and systemState.firingUnits or {}
 
-    for _, descriptor in pairs(copy.firingUnits) do
+    for name, descriptor in pairs(copy.firingUnits) do
       ---@cast descriptor SBJ__FiringUnitWithWeaponRangeDescriptor
-      local savedState = savedFiringUnits[descriptor.name]
-
-      if savedState and savedState.operationalArea then
-        descriptor.operationalArea = Utils.deepCopy(savedState.operationalArea)
-      end
-
-      local operationalArea = descriptor.operationalArea
+      local operationalArea = Utils.deepCopy(
+        GroundStateStore.resolveOperationalArea(groundState, key, system.firingUnits[name])
+      )
+      descriptor.operationalArea = operationalArea
       descriptor.weaponRange = findWeaponRange(descriptor.weaponDBID) or 0
 
       for _, attr in ipairs(SETUP_POSITION_TYPES) do

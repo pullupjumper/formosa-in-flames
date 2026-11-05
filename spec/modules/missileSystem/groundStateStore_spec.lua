@@ -1,4 +1,4 @@
----@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field, missing-fields
 -- MissileSystem GroundStateStore Unit Tests
 local stub = require("luassert.stub")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
@@ -304,133 +304,91 @@ describe("MissileSystem GroundStateStore", function()
   end)
 
   -- ============================================================================
-  -- initMissileSystemStates
+  -- setBatteryStates
   -- ============================================================================
 
-  describe("initMissileSystemStates", function()
-    -- Positive: initializes firing unit states from config
-    it("should deep copy firing unit descriptors", function()
-      local missileSystemConfigMap = {
-        system1 = {
-          firingUnits = {
-            fu1 = { name = "FU-1", state = 0 }
-          },
-          resupplyUnits = {},
-          ammunitions = {}
-        }
+  describe("setBatteryStates", function()
+    ---One battery whose config descriptors carry the config area
+    local function buildBattery(suffix, area)
+      local configArea = { name = "OPAREA-CONFIG-" .. suffix }
+      return {
+        missileSystemType = "srbm",
+        firing = { name = "FU-" .. suffix, state = 0, operationalArea = configArea },
+        resupply = { name = "RU-" .. suffix, weaponCountCurrent = 8, operationalArea = configArea },
+        depot = { name = "AMMO-" .. suffix, weaponCountCurrent = 40 },
+        unitCount = 1,
+        operationalArea = area or configArea
       }
-      local groundState = {
-        missileSystemTypes = {
-          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
-        }
-      }
+    end
 
-      GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
+    local function buildGroundState()
+      return { missileSystemTypes = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } } }
+    end
 
-      local ctx = groundState.missileSystemTypes.system1.firingUnits["FU-1"]
-      assert.is_not_nil(ctx)
-      assert.are.equal("FU-1", ctx.name)
-      assert.are_not.equal(missileSystemConfigMap.system1.firingUnits.fu1, ctx)
+    -- Positive: the three units get fresh state copies at the battery's area
+    it("should copy the battery's descriptors into state at the battery's area", function()
+      local battery = buildBattery("A", { name = "OPAREA-NEW" })
+      local groundState = buildGroundState()
+
+      GroundStateStore.setBatteryStates(groundState, { battery })
+
+      local systemState = groundState.missileSystemTypes.srbm
+      assert.are.equal("OPAREA-NEW", systemState.firingUnits["FU-A"].operationalArea.name)
+      assert.are.equal("OPAREA-NEW", systemState.resupplyUnits["RU-A"].operationalArea.name)
+      assert.are.equal(8, systemState.resupplyUnits["RU-A"].weaponCountCurrent)
+      assert.are.equal(40, systemState.ammunitions["AMMO-A"].weaponCountCurrent)
     end)
 
-    -- Positive: initializes resupply unit states from config
-    it("should deep copy resupply unit descriptors", function()
-      local missileSystemConfigMap = {
-        system1 = {
-          firingUnits = {},
-          resupplyUnits = {
-            ru1 = { name = "RU-1", state = 0 }
-          },
-          ammunitions = {}
-        }
-      }
-      local groundState = {
-        missileSystemTypes = {
-          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
-        }
-      }
+    -- Negative: state must not alias config or the battery, or runtime writes would leak back
+    it("should not share tables with config or the battery's area", function()
+      local battery = buildBattery("A")
+      local groundState = buildGroundState()
 
-      GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
+      GroundStateStore.setBatteryStates(groundState, { battery })
 
-      local ctx = groundState.missileSystemTypes.system1.resupplyUnits["RU-1"]
-      assert.is_not_nil(ctx)
-      assert.are.equal("RU-1", ctx.name)
-      assert.are_not.equal(missileSystemConfigMap.system1.resupplyUnits.ru1, ctx)
+      local systemState = groundState.missileSystemTypes.srbm
+      systemState.firingUnits["FU-A"].operationalArea.name = "CHANGED"
+      systemState.ammunitions["AMMO-A"].weaponCountCurrent = 0
+      assert.are.equal("OPAREA-CONFIG-A", battery.firing.operationalArea.name)
+      assert.are.equal(40, battery.depot.weaponCountCurrent)
     end)
 
-    -- Positive: initializes ammunition states from config
-    it("should deep copy ammunition descriptors into state", function()
-      local missileSystemConfigMap = {
-        system1 = {
-          firingUnits = {},
-          resupplyUnits = {},
-          ammunitions = {
-            ammo1 = { name = "Ammo-1", weaponCountCurrent = 50 }
-          }
-        }
-      }
-      local groundState = {
-        missileSystemTypes = {
-          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
-        }
-      }
+    -- Negative: a battery that is not given keeps its runtime state
+    it("should leave other batteries' state untouched", function()
+      local groundState = buildGroundState()
+      local untouched = { name = "FU-B", state = 3, reloadStartTime = 123 }
+      groundState.missileSystemTypes.srbm.firingUnits["FU-B"] = untouched
 
-      GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
+      GroundStateStore.setBatteryStates(groundState, { buildBattery("A") })
 
-      local ctx = groundState.missileSystemTypes.system1.ammunitions["Ammo-1"]
-      assert.is_not_nil(ctx)
-      assert.are.equal("Ammo-1", ctx.name)
-      assert.are.equal(50, ctx.weaponCountCurrent)
+      assert.are.equal(untouched, groundState.missileSystemTypes.srbm.firingUnits["FU-B"])
+      assert.are.equal(123, untouched.reloadStartTime)
+    end)
+  end)
+
+  -- ============================================================================
+  -- resolveOperationalArea
+  -- ============================================================================
+
+  describe("resolveOperationalArea", function()
+    local configArea = { name = "OPAREA-CONFIG" }
+    local descriptor = { name = "FU-A", operationalArea = configArea }
+
+    -- Positive: a battery with state is where its state says
+    it("should return the saved state's area", function()
+      local savedArea = { name = "OPAREA-SAVED" }
+      local groundState = { missileSystemTypes = { srbm = { firingUnits = {
+        ["FU-A"] = { name = "FU-A", operationalArea = savedArea }
+      } } } }
+
+      assert.are.equal(savedArea, GroundStateStore.resolveOperationalArea(groundState, "srbm", descriptor))
     end)
 
-    -- Positive: isolates state from config references
-    it("should not share references between config and state", function()
-      local missileSystemConfigMap = {
-        system1 = {
-          firingUnits = {
-            fu1 = { name = "FU-1", state = 0, operationalArea = { name = "OA-1" } }
-          },
-          resupplyUnits = {},
-          ammunitions = {}
-        }
-      }
-      local groundState = {
-        missileSystemTypes = {
-          system1 = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
-        }
-      }
-
-      GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
-
-      groundState.missileSystemTypes.system1.firingUnits["FU-1"].operationalArea.name = "CHANGED"
-      assert.are.equal("OA-1", missileSystemConfigMap.system1.firingUnits.fu1.operationalArea.name)
-    end)
-
-    -- Positive: initializes states for multiple systems
-    it("should initialize states for multiple missile systems", function()
-      local missileSystemConfigMap = {
-        sysA = {
-          firingUnits = { a = { name = "A", state = 0 } },
-          resupplyUnits = {},
-          ammunitions = {}
-        },
-        sysB = {
-          firingUnits = {},
-          resupplyUnits = { b = { name = "B", state = 0 } },
-          ammunitions = {}
-        }
-      }
-      local groundState = {
-        missileSystemTypes = {
-          sysA = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} },
-          sysB = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
-        }
-      }
-
-      GroundStateStore.initMissileSystemStates(missileSystemConfigMap, groundState)
-
-      assert.is_not_nil(groundState.missileSystemTypes.sysA.firingUnits["A"])
-      assert.is_not_nil(groundState.missileSystemTypes.sysB.resupplyUnits["B"])
+    -- Boundary: before the first deploy there is no state, so the config area is current
+    it("should fall back to the config area when the battery has no state", function()
+      assert.are.equal(configArea, GroundStateStore.resolveOperationalArea({}, "srbm", descriptor))
+      assert.are.equal(configArea, GroundStateStore.resolveOperationalArea(
+        { missileSystemTypes = { srbm = { firingUnits = {} } } }, "srbm", descriptor))
     end)
   end)
 end)
