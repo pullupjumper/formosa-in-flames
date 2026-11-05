@@ -175,8 +175,7 @@ def rewrite_scen(scen_path, transform, out_path):
 
 def inject(scen_path, lua_path, out_path):
     lua_text = Path(lua_path).read_text(encoding="utf-8")
-    old_len, new_len, _ = rewrite_scen(scen_path, lambda xml: replace_script(xml, lua_text), out_path)
-    return old_len, new_len
+    return rewrite_scen(scen_path, lambda xml: replace_script(xml, lua_text), out_path)
 
 
 # ---------------------------------------------------------------- CLI
@@ -212,7 +211,10 @@ def main(argv=None):
     else:
         out = a.out or a.scen.with_suffix(".injected.scen")
 
-    old_len, new_len = inject(a.scen, a.lua, out)
+    old_len, new_len, written = inject(a.scen, a.lua, out)
+    if not written:
+        print(f"  {dim('unchanged')} {out.name} already has this {a.lua.name}, nothing written")
+        return
     print(f"  {dim('injected ')}{a.lua.name} → {out.name}")
     print(f"  {dim('xml      ')}{old_len:,} → {new_len:,} bytes")
 
