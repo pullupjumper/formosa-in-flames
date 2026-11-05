@@ -28,17 +28,17 @@ local function isHideSiteOccupied(building, unitGUID)
 end
 
 ---Find buildings within the mask area for TEL concealment
----@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---@param operationalArea SBJ__OperationalArea
 ---@param sideName string
 ---@return CMO__SideUnit[]|nil # Array of building units or nil
-local function findBuildingsInMaskArea(unitState, sideName)
+local function findBuildingsInMaskArea(operationalArea, sideName)
   local side = GameApi.VP_GetSide({ name = sideName })
-  if not side or not side.unitsInArea or not unitState.operationalArea.mask or not unitState.operationalArea.mask.area then
+  if not side or not side.unitsInArea or not operationalArea.mask or not operationalArea.mask.area then
     return nil
   end
 
   return side:unitsInArea({
-    Area = unitState.operationalArea.mask.area,
+    Area = operationalArea.mask.area,
     TargetFilter = {
       TargetType = constants.UNIT_TYPES.FACILITY,
       TargetSubType = constants.FIXED_FACILITY_CATEGORIES.BUILDING_SURFACE,
@@ -74,7 +74,7 @@ end
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.moveFromHideArea(unitState, unit)
   local group = Shared.getGroupUnits(unit)
-  local buildings = findBuildingsInMaskArea(unitState, unit.side)
+  local buildings = findBuildingsInMaskArea(unitState.operationalArea, unit.side)
 
   if not buildings then
     return false, { reason = "no_buildings_in_mask", area = unitState.operationalArea.name }
@@ -103,7 +103,7 @@ end
 ---@return boolean success Whether hide was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.hideUnit(unitState, unit)
-  local buildings = findBuildingsInMaskArea(unitState, unit.side)
+  local buildings = findBuildingsInMaskArea(unitState.operationalArea, unit.side)
 
   if not buildings then
     return false, { reason = "no_buildings_in_mask", area = unitState.operationalArea.name }
@@ -117,6 +117,51 @@ function Concealment.hideUnit(unitState, unit)
 
   CargoProxy.loadCargo(building, unitState, unit.side)
   return true, nil
+end
+
+---Add a bunker at each shelter point of an operational area
+---@param operationalArea SBJ__OperationalArea
+---@param sideName string
+---@return boolean # Whether every bunker was added; false when the area has no shelter points
+function Concealment.addBunkers(operationalArea, sideName)
+  if not operationalArea.shelterPoints then return false end
+
+  for idx, point in ipairs(operationalArea.shelterPoints) do
+    local addedUnit = GameApi.ScenEdit_AddUnit({
+      side = sideName,
+      unitname = "BUNKER/" .. operationalArea.name .. "/" .. tostring(idx),
+      dbid = constants.PLATFORMS.BUILDING,
+      type = constants.UNIT_TYPES.FACILITY,
+      latitude = point.latitude,
+      longitude = point.longitude
+    })
+
+    if not addedUnit then return false end
+  end
+
+  return true
+end
+
+---Remove every building inside the mask areas being left
+---@param operationalAreas SBJ__OperationalArea[]
+---@param sideName string
+---@return integer removedCount Number of buildings removed
+---@return boolean allSuccessful Whether every building was removed
+function Concealment.removeBunkers(operationalAreas, sideName)
+  local removedCount = 0
+  local allSuccessful = true
+
+  for _, operationalArea in ipairs(operationalAreas) do
+    for _, building in ipairs(findBuildingsInMaskArea(operationalArea, sideName) or {}) do
+      if GameApi.ScenEdit_DeleteUnit({ guid = building.guid }) then
+        removedCount = removedCount + 1
+      else
+        allSuccessful = false
+      end
+    end
+  end
+
+  return removedCount, allSuccessful
 end
 
 return Concealment

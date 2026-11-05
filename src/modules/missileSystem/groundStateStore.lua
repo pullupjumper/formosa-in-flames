@@ -109,7 +109,7 @@ end
 
 ---Set each battery's runtime state fresh from its config descriptors, at the battery's operational area
 ---Only the given batteries change; every other battery keeps its runtime state. Copies the area, so run it
----after Triggers.initEventTriggers has written the mask onto a new area.
+---after PositionZones.rebuild has written the mask onto a new area.
 ---@param groundState SBJ__GroundState
 ---@param batteries SBJ__Battery[]
 function GroundStateStore.setBatteryStates(groundState, batteries)

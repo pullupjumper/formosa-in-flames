@@ -12,7 +12,7 @@ local Cycle = require("src.modules.missileSystem.cycle")
 local Rules = require("src.modules.missileSystem.rules")
 local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
-local Triggers = require("src.modules.missileSystem.triggers")
+local PositionZones = require("src.modules.missileSystem.positionZones")
 local Deployment = require("src.modules.missileSystem.deployment")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local StatusView = require("src.modules.missileSystem.statusView")
@@ -251,8 +251,8 @@ local function deployLayouts(missileSystemConfigMap, groundState, sideName, layo
     end
   end
 
-  -- Triggers write the mask onto the new areas, which setBatteryStates then copies into state
-  Triggers.initEventTriggers(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
+  -- PositionZones writes the mask onto the new areas, which setBatteryStates then copies into state
+  PositionZones.rebuild(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
   Deployment.deployBatteries(sideName, batteries)
   GroundStateStore.setBatteryStates(groundState, batteries)
 end

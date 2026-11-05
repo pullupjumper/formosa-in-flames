@@ -1601,7 +1601,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field position SBJ__Position Position configuration
 ---@field index integer Position index within operational area
 ---@field operationalArea SBJ__OperationalArea Operational area configuration
----@field enemySide string Enemy side name for target filter
 ---@field sideName string Owner side name
 
 ---Structured result from missile-system supply asset destruction handling

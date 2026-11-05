@@ -45,6 +45,8 @@ flowchart TD
 |---|---|---|---|
 | `moveFromHideArea` | `unitState, unit` | `boolean, table?` | 卸載離開建築 |
 | `hideUnit` | `unitState, unit` | `boolean, table?` | 挑選未占用建築並經 `CargoProxy.loadCargo` 載入隱蔽 |
+| `addBunkers` | `operationalArea, sideName` | `boolean` | 在每個 `shelterPoints` 放一棟 `BUNKER/<oparea>/<idx>` |
+| `removeBunkers` | `operationalAreas, sideName` | `integer, boolean` | 刪掉這些作戰區 mask 內的所有建築，回傳刪除數與是否全部成功 |
 
 失敗時第二個回傳值是 log 欄位表而非散文訊息，呼叫端直接併進自己的 row：
 

@@ -200,5 +200,6 @@ flowchart TB
 - [cargoProxy](cargoProxy.md)
 - [deployment](deployment.md)
 - [groundStateStore](groundStateStore.md)
+- [positionZones](positionZones.md)
 - [triggers](triggers.md)
 - [shared](shared.md)

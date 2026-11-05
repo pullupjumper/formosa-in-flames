@@ -87,4 +87,5 @@ readiness 是「這個發射單位現在能不能接火力支援任務、不能�
 - [concealment](concealment.md)
 - [deployment](deployment.md)
 - [groundStateStore](groundStateStore.md)
+- [positionZones](positionZones.md)
 - [triggers](triggers.md)

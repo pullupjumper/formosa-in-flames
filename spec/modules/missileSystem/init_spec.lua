@@ -10,7 +10,7 @@ local Meeting = require("src.modules.missileSystem.meeting")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Ammo = require("src.modules.missileSystem.ammo")
 local Deployment = require("src.modules.missileSystem.deployment")
-local Triggers = require("src.modules.missileSystem.triggers")
+local PositionZones = require("src.modules.missileSystem.positionZones")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local StatusView = require("src.modules.missileSystem.statusView")
 local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
@@ -841,7 +841,7 @@ describe("MissileSystem", function()
       trackStub(ControlPanelLayout, "buildLayouts").returns({
         { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea }
       })
-      local triggersStub = trackStub(Triggers, "initEventTriggers")
+      local triggersStub = trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, { { unitname = "FU-A" } })
@@ -862,7 +862,7 @@ describe("MissileSystem", function()
       trackStub(ControlPanelLayout, "buildLayouts").returns({
         { missileSystemType = "srbm", unitname = "FU-A", operationalArea = { name = "OPAREA-NEW" } }
       })
-      trackStub(Triggers, "initEventTriggers")
+      trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, { { unitname = "FU-A" } })
@@ -885,8 +885,8 @@ describe("MissileSystem", function()
         { missileSystemType = "srbm", unitname = "Ghost", operationalArea = { name = "#GHOST" } }
       })
       local calls = {}
-      local triggersStub = trackStub(Triggers, "initEventTriggers").invokes(function()
-        table.insert(calls, "initEventTriggers")
+      local triggersStub = trackStub(PositionZones, "rebuild").invokes(function()
+        table.insert(calls, "rebuild")
       end)
       local deployStub = trackStub(Deployment, "deployBatteries").invokes(function()
         table.insert(calls, "deployBatteries")
@@ -898,7 +898,7 @@ describe("MissileSystem", function()
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 
       assert.stub(buildLayoutsStub).was.called_with(entries)
-      assert.are.same({ "initEventTriggers", "deployBatteries", "setBatteryStates" }, calls)
+      assert.are.same({ "rebuild", "deployBatteries", "setBatteryStates" }, calls)
       assert.stub(triggersStub).was.called_with({ newArea }, match._, {
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,
@@ -947,7 +947,7 @@ describe("MissileSystem", function()
       trackStub(ControlPanelLayout, "buildLayouts").returns({
         { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea }
       })
-      trackStub(Triggers, "initEventTriggers")
+      trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
       local entries = { { unitname = "FU-A" } }
 

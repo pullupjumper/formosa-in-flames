@@ -1,50 +1,27 @@
 # triggers.lua
 
-陣地tirgger 與 zone 管理模組。
+陣地 zone 與 arrival trigger 的名稱協定。
 
 > Source: `src/modules/missileSystem/triggers.lua`
 
-責任摘要：建立/清理 FP、HA、RL、AHA 與 MASK 對應的事件觸發器與 zone。
-
 ---
 
-## 概觀
+## 名稱
 
-`triggers.lua` 提供一個完整生命週期：先清理舊 trigger/zone，再為新 `operationalAreas` 建立對應觸發器與顏色標示 zone。
+| 物件 | 格式 | 函式 |
+|---|---|---|
+| 事件 | `(<side>) Arrive in <type>` | `formatEventName` |
+| Trigger | `(<side>) Arrive in <type> - <idx> - <oparea>` | `formatTriggerName` |
+| 陣地 zone | `<type>/<idx>/<oparea>` | `formatZoneName` |
+| Mask zone | `MASK/<oparea>` | `formatMaskZoneName` |
 
-清理時會透過 `isSameRPArray` 比對區域幾何，避免只用名稱造成誤刪。建立時 trigger 名稱採固定模板 `(<side>) Arrive in <type> - <idx> - <oparea>`。
+`parsePositionType` 從 trigger 名稱讀回 FP/HA/RL/AHA，`arrival.lua` 用它分派到達事件。
 
-此外會補建 `MASK` 區並回填 `operationalArea.mask.area`，供 concealment 後續查建築使用。
-
----
-
-## 主要機制
-
-- `removeExistingTriggersAndZones`：移除舊事件觸發與標準 zone。
-- `createPositionTriggers`：逐位置類型與索引建立 `UnitEntersArea` 觸發。
-- `addCustomEnvironmentZone`（實作上使用 STANDARD zone）: 建立 mask 區域並寫入 `operationalArea.mask`。
-
-```mermaid
-flowchart TD
-    A[initEventTriggers] --> B[removeExistingTriggersAndZones]
-    A --> C[for each operationalArea]
-    C --> D[createPositionTriggers FP/HA/RL/AHA]
-    C --> E[addCustomEnvironmentZone MASK]
-    D --> F[ScenEdit_SetTrigger + SetEventTrigger]
-    A --> G[LogFormat.report]
-```
-
----
-
-## Public API
-
-| 函式 | 參數 | 回傳 | 說明 |
-|---|---|---|---|
-| `initEventTriggers` | `operationalAreas, operationalAreasToRemove, positionTypes, sideName` | `nil` | trigger/zone 清理與創建 |
+redeploy 用這些名字找出要刪的 zone 與 trigger（見 [positionZones](positionZones.md)），所以 `.scen` 內建的 zone 與 trigger 也必須照這個格式命名。2026-11-05 驗證過：目前 `.scen` 的 264 個陣地 zone、44 個 mask zone、264 個 trigger 全部符合。
 
 ---
 
 ## 相關模組
 
-- [init](init.md)
-- [concealment](concealment.md)
+- [positionZones](positionZones.md)
+- [arrival](arrival.md)
