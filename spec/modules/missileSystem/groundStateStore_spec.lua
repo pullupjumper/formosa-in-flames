@@ -38,7 +38,7 @@ describe("MissileSystem GroundStateStore", function()
           }
         }
       },
-      ammunitions = {}
+      canisterStocks = {}
     }
 
     if overrides then
@@ -93,28 +93,28 @@ describe("MissileSystem GroundStateStore", function()
             unitCount = 4
           }
         },
-        ammunitions = {
-          ["Ammo Depot Alpha"] = {
-            name = "Ammo Depot Alpha",
+        canisterStocks = {
+          ["Canister Stock Alpha"] = {
+            name = "Canister Stock Alpha",
             weaponCountCurrent = 100
           },
-          ["Ammo Depot Empty"] = {
-            name = "Ammo Depot Empty",
+          ["Canister Stock Empty"] = {
+            name = "Canister Stock Empty",
             weaponCountCurrent = 0
           }
         }
       })
     end)
 
-    -- Positive: clears ammo depot ammo on destruction
-    it("should set weaponCountCurrent to 0 when ammo depot with ammo is destroyed", function()
-      local unit = { name = "Ammo Depot Alpha" }
+    -- Positive: clears canister stock ammo on destruction
+    it("should set weaponCountCurrent to 0 when canister stock with ammo is destroyed", function()
+      local unit = { name = "Canister Stock Alpha" }
 
       local result, detail = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemState)
 
       assert.is_true(result)
-      assert.are.equal(0, mockSystemState.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
-      assert.are.equal("ammo_depot", detail.role)
+      assert.are.equal(0, mockSystemState.canisterStocks["Canister Stock Alpha"].weaponCountCurrent)
+      assert.are.equal("canister_stock", detail.role)
       assert.are.equal(100, detail.ammoBefore)
       assert.are.equal(0, detail.ammoAfter)
       assert.are.equal(-100, detail.delta)
@@ -166,7 +166,7 @@ describe("MissileSystem GroundStateStore", function()
     end)
 
     -- Negative: returns false for unknown units
-    it("should return false when unit is not in ammunitions or resupplyUnits", function()
+    it("should return false when unit is not in canisterStocks or resupplyUnits", function()
       local unit = {
         name = "Unknown Unit",
         group = { name = "Unknown Group" }
@@ -194,22 +194,22 @@ describe("MissileSystem GroundStateStore", function()
       assert.are.equal(10, mockSystemState.resupplyUnits["Resupply Group Alpha"].weaponCountCurrent)
     end)
 
-    -- Positive: prioritizes ammo depot match over resupply group match
-    it("should prioritize ammo depot match over resupply unit match", function()
-      mockSystemState.resupplyUnits["Ammo Depot Alpha"] = {
-        name = "Ammo Depot Alpha",
+    -- Positive: prioritizes canister stock match over resupply group match
+    it("should prioritize canister stock match over resupply unit match", function()
+      mockSystemState.resupplyUnits["Canister Stock Alpha"] = {
+        name = "Canister Stock Alpha",
         weaponCountCurrent = 50,
         weaponCountDefault = 50,
         unitCount = 5
       }
 
-      local unit = { name = "Ammo Depot Alpha" }
+      local unit = { name = "Canister Stock Alpha" }
 
       local result = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemState)
 
       assert.is_true(result)
-      assert.are.equal(0, mockSystemState.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
-      assert.are.equal(50, mockSystemState.resupplyUnits["Ammo Depot Alpha"].weaponCountCurrent)
+      assert.are.equal(0, mockSystemState.canisterStocks["Canister Stock Alpha"].weaponCountCurrent)
+      assert.are.equal(50, mockSystemState.resupplyUnits["Canister Stock Alpha"].weaponCountCurrent)
     end)
   end)
 
@@ -227,10 +227,10 @@ describe("MissileSystem GroundStateStore", function()
           ["FU2"] = { name = "FU2", resupplyUnit = "RU-missing" },
         },
         resupplyUnits = {
-          ["RU1"] = { name = "RU1", firingUnit = "FU1", ammunition = "AD1" },
-          ["RU2"] = { name = "RU2", firingUnit = "FU-missing", ammunition = "AD-missing" },
+          ["RU1"] = { name = "RU1", firingUnit = "FU1", canisterStock = "AD1" },
+          ["RU2"] = { name = "RU2", firingUnit = "FU-missing", canisterStock = "AD-missing" },
         },
-        ammunitions = {
+        canisterStocks = {
           ["AD1"] = { name = "AD1" },
         },
       }
@@ -238,8 +238,8 @@ describe("MissileSystem GroundStateStore", function()
 
     local cases = {
       -- Positive: either end of the pair resolves the whole chain
-      { desc = "firing unit name", unitName = "FU1", firing = "FU1", resupply = "RU1", depot = "AD1" },
-      { desc = "resupply unit name", unitName = "RU1", firing = "FU1", resupply = "RU1", depot = "AD1" },
+      { desc = "firing unit name", unitName = "FU1", firing = "FU1", resupply = "RU1", canisterStock = "AD1" },
+      { desc = "resupply unit name", unitName = "RU1", firing = "FU1", resupply = "RU1", canisterStock = "AD1" },
       -- Negative: a missing link leaves that end and everything past it nil
       { desc = "firing unit whose resupply unit is missing", unitName = "FU2", firing = "FU2" },
       { desc = "resupply unit whose partners are missing", unitName = "RU2", resupply = "RU2" },
@@ -248,11 +248,11 @@ describe("MissileSystem GroundStateStore", function()
 
     for _, case in ipairs(cases) do
       it("should resolve the pair from a " .. case.desc, function()
-        local firingUnitState, resupplyUnitState, ammoDepotState = GroundStateStore.resolvePair(systemState, case.unitName)
+        local firingUnitState, resupplyUnitState, canisterStockState = GroundStateStore.resolvePair(systemState, case.unitName)
 
         assert.are.equal(case.firing, firingUnitState and firingUnitState.name)
         assert.are.equal(case.resupply, resupplyUnitState and resupplyUnitState.name)
-        assert.are.equal(case.depot, ammoDepotState and ammoDepotState.name)
+        assert.are.equal(case.canisterStock, canisterStockState and canisterStockState.name)
       end)
     end
   end)
@@ -272,7 +272,7 @@ describe("MissileSystem GroundStateStore", function()
       assert.are.same({
         name = "srbm",
         enabled = true,
-        ammunitions = {},
+        canisterStocks = {},
         resupplyUnits = {},
         firingUnits = {},
       }, groundState.missileSystemTypes.srbm)
@@ -315,14 +315,14 @@ describe("MissileSystem GroundStateStore", function()
         missileSystemType = "srbm",
         firing = { name = "FU-" .. suffix, state = 0, operationalArea = configArea },
         resupply = { name = "RU-" .. suffix, weaponCountCurrent = 8, operationalArea = configArea },
-        depot = { name = "AMMO-" .. suffix, weaponCountCurrent = 40 },
+        canisterStock = { name = "AMMO-" .. suffix, weaponCountCurrent = 40 },
         unitCount = 1,
         operationalArea = area or configArea
       }
     end
 
     local function buildGroundState()
-      return { missileSystemTypes = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } } }
+      return { missileSystemTypes = { srbm = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} } } }
     end
 
     -- Positive: the three units get fresh state copies at the battery's area
@@ -336,7 +336,7 @@ describe("MissileSystem GroundStateStore", function()
       assert.are.equal("OPAREA-NEW", systemState.firingUnits["FU-A"].operationalArea.name)
       assert.are.equal("OPAREA-NEW", systemState.resupplyUnits["RU-A"].operationalArea.name)
       assert.are.equal(8, systemState.resupplyUnits["RU-A"].weaponCountCurrent)
-      assert.are.equal(40, systemState.ammunitions["AMMO-A"].weaponCountCurrent)
+      assert.are.equal(40, systemState.canisterStocks["AMMO-A"].weaponCountCurrent)
     end)
 
     -- Negative: state must not alias config or the battery, or runtime writes would leak back
@@ -348,9 +348,9 @@ describe("MissileSystem GroundStateStore", function()
 
       local systemState = groundState.missileSystemTypes.srbm
       systemState.firingUnits["FU-A"].operationalArea.name = "CHANGED"
-      systemState.ammunitions["AMMO-A"].weaponCountCurrent = 0
+      systemState.canisterStocks["AMMO-A"].weaponCountCurrent = 0
       assert.are.equal("OPAREA-CONFIG-A", battery.firing.operationalArea.name)
-      assert.are.equal(40, battery.depot.weaponCountCurrent)
+      assert.are.equal(40, battery.canisterStock.weaponCountCurrent)
     end)
 
     -- Negative: a battery that is not given keeps its runtime state

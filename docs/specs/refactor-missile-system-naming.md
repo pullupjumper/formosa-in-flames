@@ -21,6 +21,9 @@ missileSystem 的彈藥用詞照 MLRS 野戰手冊統一。現在「存彈藥的
 ## Log 的改變
 
 - 移動 action `move_to_ammo_holding_area` 改成 `move_to_ammunition_transfer_point`。
+- 彈藥庫被擊毀的 log：`role=ammo_depot` 改成 `role=canister_stock`。
+- 部署 summary 欄位 `ammo=` 改成 `canisterStock=`；火力支援暫停（`fireSupportGate`）的欄位 `depot` 改成 `canisterStock`。
+- 步驟名 `failAmmoDepotStateNotFound` 改成 `failCanisterStockStateNotFound`。
 - 讀到舊存檔、做了轉換時，印一行 info。
 
 ## 不做

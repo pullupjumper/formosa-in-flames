@@ -48,10 +48,10 @@ function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, cu
 
     if firingUnitStates then
       for _, firingUnitState in pairs(firingUnitStates) do
-        local _, resupplyUnitState, ammoDepotState = GroundStateStore.resolvePair(missileSystemState, firingUnitState.name)
-        -- Config pairs every firing unit with a resupply unit and its ammo depot
+        local _, resupplyUnitState, canisterStockState = GroundStateStore.resolvePair(missileSystemState, firingUnitState.name)
+        -- Config pairs every firing unit with a resupply unit and its canister stock
         ---@cast resupplyUnitState SBJ__ResupplyUnitState
-        ---@cast ammoDepotState SBJ__AmmunitionState
+        ---@cast canisterStockState SBJ__CanisterStockState
 
         table.insert(statuses, {
           name = firingUnitState.name,
@@ -60,8 +60,8 @@ function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, cu
           resupplyUnitState = formatState(resupplyUnitState.state),
           missilesInAmmoVehicles = resupplyUnitState.weaponCountCurrent,
           missilesInTransloaderDefault = resupplyUnitState.weaponCountDefault,
-          missilesInATP = ammoDepotState.weaponCountCurrent,
-          missilesInATPDefault = ammoDepotState.weaponCountDefault,
+          missilesInATP = canisterStockState.weaponCountCurrent,
+          missilesInATPDefault = canisterStockState.weaponCountDefault,
           firingUnitReloadTime = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
           resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
           defaultReloadTime = missileSystemConfigMap[missileSystemType].reloadTime / 60

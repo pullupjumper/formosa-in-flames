@@ -307,7 +307,7 @@ config.red.ground.missileSystemTypes.mlrs.ammoThreshold = 55
 config.red.ground.missileSystemTypes.mlrs.contactAge = 30 * 60
 config.red.ground.missileSystemTypes.mlrs.reloadTime = 30 * 60
 config.red.ground.missileSystemTypes.mlrs.stowTime = 5 * 60
-config.red.ground.missileSystemTypes.mlrs.ammunitions = {
+config.red.ground.missileSystemTypes.mlrs.canisterStocks = {
   ["Ammo Revetment, 1st Bn, 1st Rockets Arty Bde"] = {
     name = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
     weaponCountCurrent = config.red.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,
@@ -327,7 +327,7 @@ config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.JUK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
+    canisterStock = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
     firingUnit = "1st Bn, 1st Rockets Arty Bde"
   },
   ["Ammo Sec, 6th Bn, 73rd Arty Bde"] = {
@@ -337,7 +337,7 @@ config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.YMC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
+    canisterStock = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
     firingUnit = "6th Bn, 73rd Arty Bde"
   },
 }
@@ -377,7 +377,7 @@ config.red.ground.missileSystemTypes.glcm.ammoThreshold = 55
 config.red.ground.missileSystemTypes.glcm.contactAge = 30 * 60
 config.red.ground.missileSystemTypes.glcm.reloadTime = 45 * 60
 config.red.ground.missileSystemTypes.glcm.stowTime = 5 * 60
-config.red.ground.missileSystemTypes.glcm.ammunitions = {
+config.red.ground.missileSystemTypes.glcm.canisterStocks = {
   ["Ammo Revetment, 635th Bde, PLARF"] = {
     name = "Ammo Revetment, 635th Bde, PLARF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
@@ -392,7 +392,7 @@ config.red.ground.missileSystemTypes.glcm.resupplyUnits = {
     unitCount = 5,
     operationalArea = constants.OPERATIONAL_AREAS.TXI,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 635th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 635th Bde, PLARF",
     firingUnit = "635th Bde, PLARF"
   },
 }
@@ -422,7 +422,7 @@ config.red.ground.missileSystemTypes.srbm.ammoThreshold = 55
 config.red.ground.missileSystemTypes.srbm.contactAge = 30 * 60
 config.red.ground.missileSystemTypes.srbm.reloadTime = 5 * 60
 config.red.ground.missileSystemTypes.srbm.stowTime = 5 * 60
-config.red.ground.missileSystemTypes.srbm.ammunitions = {
+config.red.ground.missileSystemTypes.srbm.canisterStocks = {
   ["Ammo Revetment, 613rd Bde, PLARF"] = {
     name = "Ammo Revetment, 613rd Bde, PLARF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
@@ -462,7 +462,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.XZL,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 613rd Bde, PLARF",
+    canisterStock = "Ammo Revetment, 613rd Bde, PLARF",
     firingUnit = "613rd Bde, PLARF"
   },
   ["Ammo Sec, 614th Bde, PLARF"] = {
@@ -472,7 +472,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.GSU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 614th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 614th Bde, PLARF",
     firingUnit = "614th Bde, PLARF"
   },
   ["Ammo Sec, 615th Bde, PLARF"] = {
@@ -482,7 +482,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.HUZ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 615th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 615th Bde, PLARF",
     firingUnit = "615th Bde, PLARF"
   },
   ["Ammo Sec, 616th Bde, PLARF"] = {
@@ -492,7 +492,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.IDP,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 616th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 616th Bde, PLARF",
     firingUnit = "616th Bde, PLARF"
   },
   ["Ammo Sec, 617th Bde, PLARF"] = {
@@ -502,7 +502,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 9,
     operationalArea = constants.OPERATIONAL_AREAS.GMJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 617th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 617th Bde, PLARF",
     firingUnit = "617th Bde, PLARF"
   },
   ["Ammo Sec, 636th Bde, PLARF"] = {
@@ -512,7 +512,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 9,
     operationalArea = constants.OPERATIONAL_AREAS.HMJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 636th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 636th Bde, PLARF",
     firingUnit = "636th Bde, PLARF"
   },
 }
@@ -602,7 +602,7 @@ config.red.ground.missileSystemTypes.mrbm.ammoThreshold = 55
 config.red.ground.missileSystemTypes.mrbm.contactAge = 30 * 60
 config.red.ground.missileSystemTypes.mrbm.reloadTime = 5 * 60
 config.red.ground.missileSystemTypes.mrbm.stowTime = 5 * 60
-config.red.ground.missileSystemTypes.mrbm.ammunitions = {
+config.red.ground.missileSystemTypes.mrbm.canisterStocks = {
   ["Ammo Revetment, 624th Bde, PLARF"] = {
     name = "Ammo Revetment, 624th Bde, PLARF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.mrbm.weaponCountDefault * 2,
@@ -617,7 +617,7 @@ config.red.ground.missileSystemTypes.mrbm.resupplyUnits = {
     unitCount = 6,
     operationalArea = constants.OPERATIONAL_AREAS.ZWQ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 624th Bde, PLARF",
+    canisterStock = "Ammo Revetment, 624th Bde, PLARF",
     firingUnit = "624th Bde, PLARF"
   },
 }
@@ -647,7 +647,7 @@ config.red.ground.missileSystemTypes.ascm.ammoThreshold = 55
 config.red.ground.missileSystemTypes.ascm.contactAge = 30 * 60
 config.red.ground.missileSystemTypes.ascm.reloadTime = 5 * 60
 config.red.ground.missileSystemTypes.ascm.stowTime = 5 * 60
-config.red.ground.missileSystemTypes.ascm.ammunitions = {
+config.red.ground.missileSystemTypes.ascm.canisterStocks = {
   ["Ammo Revetment, 1st Pili Reg"] = {
     name = "Ammo Revetment, 1st Pili Reg",
     weaponCountCurrent = config.red.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
@@ -662,7 +662,7 @@ config.red.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.RCU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Pili Reg",
+    canisterStock = "Ammo Revetment, 1st Pili Reg",
     firingUnit = "1st Pili Reg"
   },
 }
@@ -692,7 +692,7 @@ config.red.ground.missileSystemTypes.sam.ammoThreshold = 55
 config.red.ground.missileSystemTypes.sam.contactAge = 15 * 60
 config.red.ground.missileSystemTypes.sam.reloadTime = 5 * 60
 config.red.ground.missileSystemTypes.sam.stowTime = 5 * 60
-config.red.ground.missileSystemTypes.sam.ammunitions = {
+config.red.ground.missileSystemTypes.sam.canisterStocks = {
   ["Ammo Revetment, 94695 Unit, PLAAF"] = {
     name = "Ammo Revetment, 94695 Unit, PLAAF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.sam.weaponCountDefault * 2,
@@ -742,7 +742,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QXV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94695 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94695 Unit, PLAAF",
     firingUnit = "94695 Unit, PLAAF"
   },
   ["Ammo Sec, 94759 Unit, PLAAF"] = {
@@ -752,7 +752,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.URF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94759 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94759 Unit, PLAAF",
     firingUnit = "94759 Unit, PLAAF"
   },
   ["Ammo Sec, 94774 Unit, PLAAF"] = {
@@ -762,7 +762,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.WEP,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94774 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94774 Unit, PLAAF",
     firingUnit = "94774 Unit, PLAAF"
   },
   ["Ammo Sec, 94777 Unit, PLAAF"] = {
@@ -772,7 +772,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.EAJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94777 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94777 Unit, PLAAF",
     firingUnit = "94777 Unit, PLAAF"
   },
   ["Ammo Sec, 94807 Unit, PLAAF"] = {
@@ -782,7 +782,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IDC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94807 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94807 Unit, PLAAF",
     firingUnit = "94807 Unit, PLAAF"
   },
   ["Ammo Sec, 94908 Unit, PLAAF"] = {
@@ -792,7 +792,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.OJM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94908 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94908 Unit, PLAAF",
     firingUnit = "94908 Unit, PLAAF"
   },
   ["Ammo Sec, 94967 Unit, PLAAF"] = {
@@ -802,7 +802,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.LPU,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 94967 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 94967 Unit, PLAAF",
     firingUnit = "94967 Unit, PLAAF"
   },
   ["Ammo Sec, 95324 Unit, PLAAF"] = {
@@ -812,7 +812,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.KRO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 95324 Unit, PLAAF",
+    canisterStock = "Ammo Revetment, 95324 Unit, PLAAF",
     firingUnit = "95324 Unit, PLAAF"
   },
 }
@@ -4728,7 +4728,7 @@ config.blue.ground.missileSystemTypes.mlrs.weaponCountDefault = 144
 config.blue.ground.missileSystemTypes.mlrs.ammoThreshold = 25
 config.blue.ground.missileSystemTypes.mlrs.reloadTime = 30 * 60
 config.blue.ground.missileSystemTypes.mlrs.stowTime = 5 * 60
-config.blue.ground.missileSystemTypes.mlrs.ammunitions = {
+config.blue.ground.missileSystemTypes.mlrs.canisterStocks = {
   ["Ammo Revetment, Rocket Arty Coy, 21st Arty Command"] = {
     name = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.mlrs.weaponCountDefault,
@@ -4743,7 +4743,7 @@ config.blue.ground.missileSystemTypes.mlrs.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.NVD,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
+    canisterStock = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
     firingUnit = "Rocket Arty Coy, 21st Arty Command"
   },
 }
@@ -4771,7 +4771,7 @@ config.blue.ground.missileSystemTypes.srbm.weaponCountDefault = 27
 config.blue.ground.missileSystemTypes.srbm.ammoThreshold = 25
 config.blue.ground.missileSystemTypes.srbm.reloadTime = 10 * 60
 config.blue.ground.missileSystemTypes.srbm.stowTime = 5 * 60
-config.blue.ground.missileSystemTypes.srbm.ammunitions = {
+config.blue.ground.missileSystemTypes.srbm.canisterStocks = {
   ["Ammo Revetment, Rocket Arty Coy, 58th Arty Command"] = {
     name = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.srbm.weaponCountDefault,
@@ -4786,7 +4786,7 @@ config.blue.ground.missileSystemTypes.srbm.resupplyUnits = {
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.LPK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
+    canisterStock = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
     firingUnit = "Rocket Arty Coy, 58th Arty Command"
   },
 }
@@ -4814,7 +4814,7 @@ config.blue.ground.missileSystemTypes.glcm.weaponCountDefault = 48
 config.blue.ground.missileSystemTypes.glcm.ammoThreshold = 25
 config.blue.ground.missileSystemTypes.glcm.reloadTime = 45 * 60
 config.blue.ground.missileSystemTypes.glcm.stowTime = 5 * 60
-config.blue.ground.missileSystemTypes.glcm.ammunitions = {
+config.blue.ground.missileSystemTypes.glcm.canisterStocks = {
   ["Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde"] = {
     name = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.glcm.weaponCountDefault * 2,
@@ -4834,7 +4834,7 @@ config.blue.ground.missileSystemTypes.glcm.resupplyUnits = {
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.SET,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
     firingUnit = "641st Bn, 791st AFAD & Arty Bde"
   },
   ["Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde"] = {
@@ -4844,7 +4844,7 @@ config.blue.ground.missileSystemTypes.glcm.resupplyUnits = {
     unitCount = 3,
     operationalArea = constants.OPERATIONAL_AREAS.AMG,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
     firingUnit = "642nd Bn, 791st AFAD & Arty Bde"
   },
 }
@@ -4886,7 +4886,7 @@ config.blue.ground.missileSystemTypes.ascm.ammoThreshold = 25
 -- config.blue.ground.missileSystemTypes.ascm.reloadTime = 45 * 60
 config.blue.ground.missileSystemTypes.ascm.reloadTime = 5 * 60
 config.blue.ground.missileSystemTypes.ascm.stowTime = 5 * 60
-config.blue.ground.missileSystemTypes.ascm.ammunitions = {
+config.blue.ground.missileSystemTypes.ascm.canisterStocks = {
   ["Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
@@ -4926,7 +4926,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.FZM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn",
+    canisterStock = "Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn",
     firingUnit = "1st Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn"] = {
@@ -4936,7 +4936,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.DLF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn",
+    canisterStock = "Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn",
     firingUnit = "2nd Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn"] = {
@@ -4946,7 +4946,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.TGO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn",
+    canisterStock = "Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn",
     firingUnit = "3rd Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn"] = {
@@ -4956,7 +4956,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.BPM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn",
+    canisterStock = "Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn",
     firingUnit = "4th Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn"] = {
@@ -4966,7 +4966,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.PDN,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn",
+    canisterStock = "Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn",
     firingUnit = "5th Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn"] = {
@@ -4976,7 +4976,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     unitCount = 2,
     operationalArea = constants.OPERATIONAL_AREAS.SKB,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn",
+    canisterStock = "Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn",
     firingUnit = "6th Hai Feng Shore-based ASM MOB Sqn"
   },
 }
@@ -5059,7 +5059,7 @@ config.blue.ground.missileSystemTypes.sam.weaponCountDefault = 54
 config.blue.ground.missileSystemTypes.sam.ammoThreshold = 50
 config.blue.ground.missileSystemTypes.sam.reloadTime = 5 * 60
 config.blue.ground.missileSystemTypes.sam.stowTime = 5 * 60
-config.blue.ground.missileSystemTypes.sam.ammunitions = {
+config.blue.ground.missileSystemTypes.sam.canisterStocks = {
   ["Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     name = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     weaponCountCurrent = 96,
@@ -5144,7 +5144,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IKJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     firingUnit = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
@@ -5154,7 +5154,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.UVY,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     firingUnit = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
@@ -5164,7 +5164,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
     firingUnit = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
@@ -5174,7 +5174,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
     firingUnit = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
@@ -5184,7 +5184,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
     firingUnit = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
@@ -5194,7 +5194,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.MAK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     firingUnit = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
@@ -5204,7 +5204,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.FMK,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     firingUnit = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
@@ -5214,7 +5214,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     firingUnit = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
@@ -5224,7 +5224,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     firingUnit = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
@@ -5234,7 +5234,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     firingUnit = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
@@ -5244,7 +5244,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.PXV,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     firingUnit = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
@@ -5254,7 +5254,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.IDW,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     firingUnit = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
@@ -5264,7 +5264,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     firingUnit = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
@@ -5274,7 +5274,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     firingUnit = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
@@ -5284,7 +5284,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     unitCount = 1,
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
     state = constants.MISSILE_SYSTEM_STATE.STATIC,
-    ammunition = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    canisterStock = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     firingUnit = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
 }

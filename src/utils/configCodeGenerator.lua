@@ -1,6 +1,6 @@
 ---Generates Lua source-code strings from ground-force configuration.
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
----`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks.
+---`config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks.
 ---Invoked interactively (console/REPL) via `dump` to print marked sections into the CMO Lua log;
 ---`tools/apply_generated_config.py` then writes them into constants.lua / config.lua.
 
@@ -495,16 +495,16 @@ local function getOrderedFiringUnitFields(unit)
   return ordered
 end
 
----Emit the `config.{...}.ammunitions = { ... }` block, or nil if ammunitionMap absent
+---Emit the `config.{...}.canisterStocks = { ... }` block, or nil if canisterStockMap absent
 ---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
----@param ammunitionMap table<string, SBJ__AmmunitionUnitDescriptor>|nil
+---@param canisterStockMap table<string, SBJ__CanisterStockDescriptor>|nil
 ---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
----@return string|nil # Serialized block, or nil when ammunitionMap is nil
-local function formatAmmunitionsBlock(configPath, ammunitionMap, weaponCountDefault)
-  if not ammunitionMap then return nil end
-  local lines = { configPath .. ".ammunitions = {" }
-  for _, name in ipairs(getSortedStringKeys(ammunitionMap)) do
-    local ammo = ammunitionMap[name]
+---@return string|nil # Serialized block, or nil when canisterStockMap is nil
+local function formatCanisterStocksBlock(configPath, canisterStockMap, weaponCountDefault)
+  if not canisterStockMap then return nil end
+  local lines = { configPath .. ".canisterStocks = {" }
+  for _, name in ipairs(getSortedStringKeys(canisterStockMap)) do
+    local ammo = canisterStockMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    name = " .. string.format("%q", ammo.name) .. ","
     lines[#lines + 1] = "    weaponCountCurrent = " ..
@@ -537,7 +537,7 @@ local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCount
     lines[#lines + 1] = "    unitCount = " .. tostring(unit.unitCount) .. ","
     lines[#lines + 1] = "    operationalArea = " .. formatField("operationalArea", unit.operationalArea, ctx) .. ","
     lines[#lines + 1] = "    state = " .. formatField("state", unit.state, ctx) .. ","
-    lines[#lines + 1] = "    ammunition = " .. string.format("%q", unit.ammunition) .. ","
+    lines[#lines + 1] = "    canisterStock = " .. string.format("%q", unit.canisterStock) .. ","
 
     local firingUnitRef = formatFiringUnitRef(unit.firingUnit)
     if firingUnitRef then
@@ -571,11 +571,11 @@ local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
   return table.concat(lines, "\n")
 end
 
----Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
+---Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks
 ---@param sideField SBJ__SideKey
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
----@return string # Concatenated ammunitions/resupplyUnits/firingUnits blocks separated by newlines
+---@return string # Concatenated canisterStocks/resupplyUnits/firingUnits blocks separated by newlines
 local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   local ctx = {
     configPath = "",
@@ -590,7 +590,7 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
     local sysConfig = missileSystemConfigMap[sysKey]
     if type(sysConfig) == "table" and sysConfig.firingUnits then
       ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
-      local ammoBlock = formatAmmunitionsBlock(ctx.configPath, sysConfig.ammunitions, sysConfig.weaponCountDefault)
+      local ammoBlock = formatCanisterStocksBlock(ctx.configPath, sysConfig.canisterStocks, sysConfig.weaponCountDefault)
       if ammoBlock then blocks[#blocks + 1] = ammoBlock end
       local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.weaponCountDefault,
         ctx)
@@ -604,7 +604,7 @@ end
 
 ---Generate Lua source-code strings from ground-force configuration
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
----`config.{side}.ground.missileSystemTypes.{sys}.{ammunitions,resupplyUnits,firingUnits}` blocks
+---`config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks
 ---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.red.ground.missileSystemTypes)
 ---@param sideName string
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>

@@ -67,7 +67,7 @@ function FireSupportGate.evaluate(config, landingState, getAmmoInventory)
         threshold = config.red.amphibOps.fireSupport.srbmHoldAmmoPct,
         firing = report.firing.percentage,
         resupply = report.resupply.percentage,
-        depot = report.ammo.percentage
+        canisterStock = report.canisterStock.percentage
       }
     }
   end

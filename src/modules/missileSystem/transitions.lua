@@ -38,7 +38,7 @@ function Transitions.hide(firingUnitState, firingUnit, isAuto)
   Movement.applyMode(firingUnit, isAuto, constants.WCS.HOLD)
 end
 
----Unit met its partner (resupply unit at RL, ammo depot at ATP): start the reload clock
+---Unit met its partner (resupply unit at RL, canister stock at ATP): start the reload clock
 ---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param unit CMO__Unit
 ---@param isAuto boolean

@@ -93,7 +93,7 @@ describe("MissileSystem ControlPanelLayout", function()
       srbm = {
         reloadTime = 60,
         resupplyUnits = { rs = {} },
-        ammunitions = { atp = {} },
+        canisterStocks = { atp = {} },
         firingUnits = { fu = { name = "FU-1", operationalArea = operationalArea } }
       }
     }
@@ -175,11 +175,11 @@ describe("MissileSystem ControlPanelLayout", function()
     end)
 
     -- Positive: the control panel only needs firing units
-    it("should drop resupply units and ammunitions from the copy", function()
+    it("should drop resupply units and canisterStocks from the copy", function()
       local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
 
       assert.is_nil(rows.srbm.resupplyUnits)
-      assert.is_nil(rows.srbm.ammunitions)
+      assert.is_nil(rows.srbm.canisterStocks)
       assert.are.equal(60, rows.srbm.reloadTime)
     end)
 

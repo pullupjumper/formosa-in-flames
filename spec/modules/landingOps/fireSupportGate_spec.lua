@@ -12,7 +12,7 @@ describe("FireSupportGate", function()
     return {
       firing   = { current = 0, max = 0, percentage = 11 },
       resupply = { current = 0, max = 0, percentage = 22 },
-      ammo     = { current = 0, max = 0, percentage = 33 },
+      canisterStock = { current = 0, max = 0, percentage = 33 },
       total    = { current = 0, max = 0, percentage = totalPercentage },
     }
   end
@@ -56,7 +56,7 @@ describe("FireSupportGate", function()
       tag = "HOLD",
       fields = {
         scope = "fireSupportGate", reason = "srbm_low",
-        total = 40, threshold = 50, firing = 11, resupply = 22, depot = 33,
+        total = 40, threshold = 50, firing = 11, resupply = 22, canisterStock = 33,
       },
     }, result)
   end)

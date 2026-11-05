@@ -21,7 +21,7 @@
 - `findReloadArea`：回傳單位所在的 RL 區（只看 RL）。
 - `resolveCmoUnit`（module-local）：名稱和觸發單位相同就直接重用，另一端用觸發單位的陣營查。
 - `resolveReloadPair`：`GroundStateStore.resolvePair` → 兩端 CMO 單位 → `SBJ__ReloadPair`。配對裡的 `buildReload` 只算一次，Rules 用它決定裝填後要不要藏補給車，`COMPLETE_RELOAD` 用同一份計畫裝彈。
-- `isAtAmmoDepot`：補給車和它的彈藥庫在同一個 ATP 區；彈藥庫不在遊戲裡回 false。
+- `isAtCanisterStock`：補給車和它的彈罐庫存在同一個 ATP 區；彈罐庫存不在遊戲裡回 false。
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|---|---|
 | `findReloadArea` | `unit, operationalArea` | `string[]|nil` | 單位所在的 RL 區 |
 | `resolveReloadPair` | `systemState, unit` | `SBJ__ReloadPair|nil` | 任一端單位解析出完整配對；缺 state 或缺單位回 nil |
-| `isAtAmmoDepot` | `resupplyUnitState, resupplyUnit` | `boolean` | 補給車與彈藥庫在同一 ATP 區 |
+| `isAtCanisterStock` | `resupplyUnitState, resupplyUnit` | `boolean` | 補給車與彈罐庫存在同一 ATP 區 |
 
 ---
 

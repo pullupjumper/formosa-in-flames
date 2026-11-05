@@ -55,7 +55,7 @@ describe("MissileSystem Arrival", function()
 
     ---@param overrides? table Fields to override on the default enabled, empty system state
     local function makeSystemState(overrides)
-      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = {}, canisterStocks = {} }
       for k, v in pairs(overrides or {}) do
         systemState[k] = v
       end
@@ -419,12 +419,12 @@ describe("MissileSystem Arrival", function()
     -- --- ATP -------------------------------------------------------------
 
     -- Positive: ATP + meeting confirmed starts reload
-    it("should set reload start time on ATP when ammo depot meeting is confirmed", function()
+    it("should set reload start time on ATP when canister stock meeting is confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
       local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
-      local isAtAmmoDepotStub = trackStub(Meeting, "isAtAmmoDepot").returns(true)
+      local isAtCanisterStockStub = trackStub(Meeting, "isAtCanisterStock").returns(true)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       local settleStub = trackStub(Transitions, "settle")
 
@@ -434,7 +434,7 @@ describe("MissileSystem Arrival", function()
         event = enterEvent("ATP"),
       })
 
-      assert.stub(isAtAmmoDepotStub).was.called_with(resupplyUnitState, unit)
+      assert.stub(isAtCanisterStockStub).was.called_with(resupplyUnitState, unit)
       assert.stub(beginReloadStub).was.called(1)
       assert.stub(beginReloadStub).was.called_with(resupplyUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(settleStub).was_not.called()
@@ -445,12 +445,12 @@ describe("MissileSystem Arrival", function()
     end)
 
     -- Negative: ATP fallback resets state when meeting fails
-    it("should set state to static on ATP when ammo depot meeting is not confirmed", function()
+    it("should set state to static on ATP when canister stock meeting is not confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
       local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
-      trackStub(Meeting, "isAtAmmoDepot").returns(false)
+      trackStub(Meeting, "isAtCanisterStock").returns(false)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       local settleStub = trackStub(Transitions, "settle")
 
@@ -466,20 +466,20 @@ describe("MissileSystem Arrival", function()
       assert.stub(logStub).was_not.called()
     end)
 
-    -- Negative: a resupply unit that still carries missiles does not meet its depot
+    -- Negative: a resupply unit that still carries missiles does not meet its canister stock
     it("should not begin a transload on ATP when the resupply unit still carries missiles", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
       local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 3 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
 
-      local isAtAmmoDepotStub = trackStub(Meeting, "isAtAmmoDepot").returns(true)
+      local isAtCanisterStockStub = trackStub(Meeting, "isAtCanisterStock").returns(true)
       local beginReloadStub = trackStub(Transitions, "beginReload")
       trackStub(Transitions, "settle")
 
       enterArea({ groundState = groundStateWith(systemState), unit = unit, event = enterEvent("ATP") })
 
       assert.stub(beginReloadStub).was_not.called()
-      assert.stub(isAtAmmoDepotStub).was_not.called()
+      assert.stub(isAtCanisterStockStub).was_not.called()
     end)
 
     -- --- Boundaries -------------------------------------------------------

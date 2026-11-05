@@ -128,7 +128,7 @@ local RELOAD_POINT_STEPS = {
   end,
 }
 
----ammunition transfer point steps keyed by Rules.STEP
+---Ammunition transfer point steps keyed by Rules.STEP
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__AmmunitionTransferPointObservation): SBJ__LogResult|nil>
 local AMMUNITION_TRANSFER_POINT_STEPS = {
   [STEP.BEGIN_TRANSLOAD] = function(ctx, observation)
@@ -180,8 +180,8 @@ local function observeAmmunitionTransferPoint(ctx)
 
   return {
     resupplyUnitState = resupplyUnitState,
-    isAtAmmoDepot = function()
-      return Meeting.isAtAmmoDepot(resupplyUnitState, unit)
+    isAtCanisterStock = function()
+      return Meeting.isAtCanisterStock(resupplyUnitState, unit)
     end,
   }
 end

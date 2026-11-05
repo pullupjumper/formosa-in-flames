@@ -60,7 +60,7 @@ describe("MissileSystem Cycle", function()
           }
         }
       },
-      ammunitions = {}
+      canisterStocks = {}
     }
 
     if overrides then
@@ -162,7 +162,7 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
-            ammunition = "Ammo Depot",
+            canisterStock = "Canister Stock",
             weaponCountCurrent = 0,
             weaponCountDefault = 20,
             operationalArea = {
@@ -172,9 +172,9 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        ammunitions = {
-          ["Ammo Depot"] = {
-            name = "Ammo Depot",
+        canisterStocks = {
+          ["Canister Stock"] = {
+            name = "Canister Stock",
             weaponCountCurrent = 100
           }
         }
@@ -186,7 +186,7 @@ describe("MissileSystem Cycle", function()
         side = "Taiwan",
         inArea = function(_, area) return area[1] == "ATP-001" end
       }
-      local ammoDepotUnit = {
+      local canisterStockUnit = {
         guid = "AD1",
         side = "Taiwan",
         inArea = function(_, area) return area[1] == "ATP-001" end
@@ -195,14 +195,14 @@ describe("MissileSystem Cycle", function()
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
         if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
-        if guidOrName == "Ammo Depot" then return ammoDepotUnit end
+        if guidOrName == "Canister Stock" then return canisterStockUnit end
         return nil
       end)
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
       assert.are.equal(20, systemState.resupplyUnits["Ammo Sec, Alpha"].weaponCountCurrent)
-      assert.are.equal(80, systemState.ammunitions["Ammo Depot"].weaponCountCurrent)
+      assert.are.equal(80, systemState.canisterStocks["Canister Stock"].weaponCountCurrent)
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
       assert.are.equal(1, #results)
       assert.are.equal("ammo_transload_finished", results[1].fields.action)

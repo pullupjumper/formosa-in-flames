@@ -195,8 +195,8 @@ describe("MissileSystem Rules", function()
 
     describe("ATP", function()
       runRows({
-        { name = "should begin the transload after meeting its depot", params = { isAtDepot = true }, steps = { STEP.BEGIN_TRANSLOAD } },
-        { name = "should stop when not at its depot", params = { isAtDepot = false }, steps = { STEP.STOP } },
+        { name = "should begin the transload after meeting its canister stock", params = { isAtCanisterStock = true }, steps = { STEP.BEGIN_TRANSLOAD } },
+        { name = "should stop when not at its canister stock", params = { isAtCanisterStock = false }, steps = { STEP.STOP } },
         { name = "should stop when it still carries missiles", params = { stock = 2 }, steps = { STEP.STOP } },
         { name = "should stop in auto mode when not on its way", params = { state = STATE.STATIC }, steps = { STEP.STOP } },
         { name = "should stop for a unit that is not a resupply unit", params = { isResupplyUnit = false }, steps = { STEP.STOP } },
@@ -204,7 +204,7 @@ describe("MissileSystem Rules", function()
         local o = buildParams({ state = STATE.REPOSITIONING, stock = 0, isResupplyUnit = true }, params)
         local observation = o.isResupplyUnit and {
           resupplyUnitState = { state = o.state, weaponCountCurrent = o.stock },
-          isAtAmmoDepot = answer(o.isAtDepot),
+          isAtCanisterStock = answer(o.isAtCanisterStock),
         } or nil
         return Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
       end)
@@ -281,18 +281,18 @@ describe("MissileSystem Rules", function()
   end)
 
   describe("evaluateResupplyUnitTick", function()
-    ---Resupply unit tick with its ammo depot state unless params.hasAmmoDepotState is false
-    ---@param params table state, isAuto, stock, reloadStartTime, isInReloadArea, isAtDepot, hasAmmoDepotState
+    ---Resupply unit tick with its canister stock state unless params.hasCanisterStockState is false
+    ---@param params table state, isAuto, stock, reloadStartTime, isInReloadArea, isAtCanisterStock, hasCanisterStockState
     local function tick(params)
-      local o = buildParams({ state = STATE.STATIC, isAuto = true, stock = 0, hasAmmoDepotState = true }, params)
+      local o = buildParams({ state = STATE.STATIC, isAuto = true, stock = 0, hasCanisterStockState = true }, params)
       return Rules.evaluateResupplyUnitTick({
         resupplyUnitState = { state = o.state, weaponCountCurrent = o.stock, reloadStartTime = o.reloadStartTime },
         isAuto = o.isAuto,
         now = 10000,
         reloadTimeSec = 1800,
         isInReloadArea = answer(o.isInReloadArea),
-        isAtAmmoDepot = answer(o.isAtDepot),
-      }, o.hasAmmoDepotState and { name = "AD1" } or nil)
+        isAtCanisterStock = answer(o.isAtCanisterStock),
+      }, o.hasCanisterStockState and { name = "AD1" } or nil)
     end
 
     describe("STATIC", function()
@@ -305,12 +305,12 @@ describe("MissileSystem Rules", function()
     end)
 
     describe("RELOAD", function()
-      local ready = { state = STATE.RELOAD, reloadStartTime = 10000 - 1800, isAtDepot = true }
+      local ready = { state = STATE.RELOAD, reloadStartTime = 10000 - 1800, isAtCanisterStock = true }
       runRows({
         { name = "should only keep the clock running before the reload time", params = buildParams(ready, { reloadStartTime = 10000 - 1799 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should not finish without a meeting", params = buildParams(ready, { isAtDepot = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish without a meeting", params = buildParams(ready, { isAtCanisterStock = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
         { name = "should not finish when it carries missiles", params = buildParams(ready, { stock = 2 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should fail when the ammo depot has no state", params = buildParams(ready, { hasAmmoDepotState = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.FAIL_AMMO_DEPOT_STATE_NOT_FOUND } },
+        { name = "should fail when the canister stock has no state", params = buildParams(ready, { hasCanisterStockState = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.FAIL_CANISTER_STOCK_STATE_NOT_FOUND } },
         { name = "should finish and recall to RL", params = ready, steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_TRANSLOAD, STEP.RECALL_TO_RELOAD_POINT } },
         { name = "should only finish in manual mode", params = buildParams(ready, { isAuto = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_TRANSLOAD } },
       }, tick)

@@ -618,7 +618,7 @@ describe("LandingOps Coordinator", function()
         return {
           firing   = { current = 0, max = 0, percentage = 0 },
           resupply = { current = 0, max = 0, percentage = 0 },
-          ammo     = { current = 0, max = 0, percentage = 0 },
+          canisterStock = { current = 0, max = 0, percentage = 0 },
           total    = { current = 0, max = 0, percentage = totalPercentage },
         }
       end
@@ -636,7 +636,7 @@ describe("LandingOps Coordinator", function()
       ---@param overrides? table
       local function buildGateLandingState(overrides)
         local landingState = buildLandingState()
-        landingState.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} } }
+        landingState.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} } }
         if overrides then
           for k, v in pairs(overrides) do landingState.amphibOps[k] = v end
         end

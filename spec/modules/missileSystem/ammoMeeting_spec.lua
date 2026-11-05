@@ -51,7 +51,7 @@ describe("MissileSystem Ammo And Meeting", function()
           }
         }
       },
-      ammunitions = {}
+      canisterStocks = {}
     }
 
     if overrides then
@@ -258,19 +258,19 @@ describe("MissileSystem Ammo And Meeting", function()
       local systemState = {
         firingUnits = {},
         resupplyUnits = {},
-        ammunitions = {},
+        canisterStocks = {},
       }
 
       local report = Ammo.getInventory(systemState, "Taiwan")
 
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.resupply)
-      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.ammo)
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.canisterStock)
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.total)
     end)
 
     -- Positive: aggregates subtotals from firing/resupply/ammo and computes overall total
-    it("should aggregate subtotals across firing units, resupply units, and depots", function()
+    it("should aggregate subtotals across firing units, resupply units, and canister stocks", function()
       local systemState = {
         firingUnits = {
           ["FU-Alpha"] = { name = "FU-Alpha", weaponDBID = 1234 },
@@ -279,8 +279,8 @@ describe("MissileSystem Ammo And Meeting", function()
           ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 6, weaponCountDefault = 10 },
           ["RU-Bravo"] = { name = "RU-Bravo", weaponCountCurrent = 4, weaponCountDefault = 10 },
         },
-        ammunitions = {
-          ["Depot-1"] = { name = "Depot-1", weaponCountCurrent = 50, weaponCountDefault = 100 },
+        canisterStocks = {
+          ["Canister stock-1"] = { name = "Canister stock-1", weaponCountCurrent = 50, weaponCountDefault = 100 },
         },
       }
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(nameOrGuid)
@@ -293,7 +293,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
       assert.are.same({ current = 8, max = 20, percentage = 40 }, report.firing)
       assert.are.same({ current = 10, max = 20, percentage = 50 }, report.resupply)
-      assert.are.same({ current = 50, max = 100, percentage = 50 }, report.ammo)
+      assert.are.same({ current = 50, max = 100, percentage = 50 }, report.canisterStock)
       assert.are.equal(68, report.total.current)
       assert.are.equal(140, report.total.max)
       assert.are.equal(49, report.total.percentage)
@@ -308,7 +308,7 @@ describe("MissileSystem Ammo And Meeting", function()
         resupplyUnits = {
           ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 5, weaponCountDefault = 10 },
         },
-        ammunitions = {},
+        canisterStocks = {},
       }
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 99, maxWeapons = 99 })
@@ -329,7 +329,7 @@ describe("MissileSystem Ammo And Meeting", function()
         resupplyUnits = {
           ["RU-Empty"] = { name = "RU-Empty", weaponCountCurrent = 0, weaponCountDefault = 0 },
         },
-        ammunitions = {},
+        canisterStocks = {},
       }
 
       local report = Ammo.getInventory(systemState, "Taiwan")
@@ -345,7 +345,7 @@ describe("MissileSystem Ammo And Meeting", function()
           ["FU-Group"] = { name = "FU-Group", weaponDBID = { 1111, 2222 } },
         },
         resupplyUnits = {},
-        ammunitions = {},
+        canisterStocks = {},
       }
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(nameOrGuid)
         if nameOrGuid == "FU-Group" then
@@ -479,18 +479,18 @@ describe("MissileSystem Ammo And Meeting", function()
   end)
 
   -- ============================================================================
-  -- isAtAmmoDepot
+  -- isAtCanisterStock
   -- ============================================================================
 
-  describe("isAtAmmoDepot", function()
+  describe("isAtCanisterStock", function()
     local resupplyUnitState
     local resupplyUnit
-    local ammoDepot
+    local canisterStock
 
     before_each(function()
       resupplyUnitState = {
         name = "Ammo Sec, Alpha",
-        ammunition = "Ammo Revetment, Alpha",
+        canisterStock = "Ammo Revetment, Alpha",
         operationalArea = {
           name = "OPAREA-1",
           ATP = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }
@@ -502,39 +502,39 @@ describe("MissileSystem Ammo And Meeting", function()
         side = "China",
         inArea = function(_, area) return area[1] == "RP-101" end
       }
-      ammoDepot = {
+      canisterStock = {
         guid = "AMMO-001",
         side = "China",
         inArea = function(_, area) return area[1] == "RP-101" end
       }
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Revetment, Alpha" then return ammoDepot end
+        if guidOrName == "Ammo Revetment, Alpha" then return canisterStock end
         return nil
       end)
     end)
 
     -- Positive: both in one ATP zone
-    it("should return true when resupply unit meets ammo depot in same ATP", function()
-      assert.is_true(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
+    it("should return true when resupply unit meets canister stock in same ATP", function()
+      assert.is_true(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
       assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("Ammo Revetment, Alpha", "China")
     end)
 
     -- Boundary: the resupply unit in no ATP zone
     it("should return false when the resupply unit is in no ATP zone", function()
       resupplyUnit.inArea = function() return false end
-      assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
+      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
     end)
 
-    -- Negative: the depot elsewhere
-    it("should return false when resupply unit and ammo depot are in different areas", function()
-      ammoDepot.inArea = function() return false end
-      assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
+    -- Negative: the canister stock elsewhere
+    it("should return false when resupply unit and canister stock are in different areas", function()
+      canisterStock.inArea = function() return false end
+      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
     end)
 
-    -- Negative: the depot gone
-    it("should return false when ammunition depot does not exist", function()
-      ammoDepot = nil
-      assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
+    -- Negative: the canister stock gone
+    it("should return false when canister stock does not exist", function()
+      canisterStock = nil
+      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
     end)
   end)
 end)

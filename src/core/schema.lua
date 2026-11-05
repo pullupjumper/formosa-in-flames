@@ -234,7 +234,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field contactAge? number Contact valid age in seconds
 ---@field reloadTime number Reload time in seconds
 ---@field stowTime number Stow time in seconds
----@field ammunitions table<string, SBJ__AmmunitionUnitDescriptor> Ammunition units indexed by unit name
+---@field canisterStocks table<string, SBJ__CanisterStockDescriptor> Canister stock units indexed by unit name
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
 ---@field firingUnits table<string, SBJ__FiringUnitDescriptor|SBJ__FiringUnitWithWeaponRangeDescriptor> Firing units indexed by unit name
 
@@ -1309,14 +1309,14 @@ function ScenEdit_DeleteMine(params) end
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field operationalArea SBJ__OperationalArea New operational area for the firing unit and its resupply unit
 
----One battery: a firing unit, its resupply unit and its depot, joined by config links
+---One battery: a firing unit, its resupply unit and its canister stock, joined by config links
 ---The descriptors are config tables and are never written to. `operationalArea` is where the battery
 ---is built: the config area for deploySide, the layout's area for a control panel deploy.
 ---@class SBJ__Battery: table
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field firing SBJ__FiringUnitDescriptor
 ---@field resupply SBJ__ResupplyUnitDescriptor Reached by firing.resupplyUnit
----@field depot SBJ__AmmunitionUnitDescriptor Reached by resupply.ammunition
+---@field canisterStock SBJ__CanisterStockDescriptor Reached by resupply.canisterStock
 ---@field unitCount integer Vehicles of the firing and the resupply unit; config keeps it on the resupply unit
 ---@field operationalArea SBJ__OperationalArea Area the firing and resupply units are built in
 
@@ -1349,13 +1349,13 @@ function ScenEdit_DeleteMine(params) end
 ---@field state missileSystemState Current unit state (STATIC/HIDE, etc.)
 ---@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
 
----Ammunition unit descriptor combining base unit info and weapon status
----@class SBJ__AmmunitionUnitDescriptor: SBJ__UnitBase, SBJ__WeaponStatus
+---Canister stock descriptor combining base unit info and weapon status
+---@class SBJ__CanisterStockDescriptor: SBJ__UnitBase, SBJ__WeaponStatus
 
 ---Resupply unit descriptor with operational status and ammunition tracking
 ---@class SBJ__ResupplyUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus, SBJ__WeaponStatus
 ---@field unitCount number Number of resupply vehicles in this unit
----@field ammunition string Associated ammunition unit name for this resupply unit
+---@field canisterStock string Associated canister stock unit name for this resupply unit
 ---@field firingUnit string Associated firing unit name for this resupply unit
 
 ---Firing unit descriptor with weapon configuration and status
@@ -1371,9 +1371,9 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__FiringUnitWithWeaponRangeDescriptor: SBJ__FiringUnitDescriptor
 ---@field weaponRange number
 
----Ammunition state data structure
----Tracks ammunition unit status and remaining ammunition counts
----@class SBJ__AmmunitionState: SBJ__AmmunitionUnitDescriptor
+---Canister stock state data structure
+---Tracks canister stock unit status and remaining ammunition counts
+---@class SBJ__CanisterStockState: SBJ__CanisterStockDescriptor
 
 ---Resupply unit state data structure
 ---Extends ammunition state with operational area and resupply management
@@ -1393,7 +1393,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field enabled boolean Whether the weapon system is currently active
 ---@field firingUnits table<string, SBJ__FiringUnitState> Firing units indexed by GUID for attack operations
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitState> Resupply units indexed by GUID for ammunition replenishment
----@field ammunitions table<string, SBJ__AmmunitionState> Ammunition units indexed by GUID for tracking available munitions
+---@field canisterStocks table<string, SBJ__CanisterStockState> Canister stock units indexed by unit name
 ---@field test? table Test data structure
 
 ---Ammunition subtotal with current/max counts and usage percentage
@@ -1402,12 +1402,12 @@ function ScenEdit_DeleteMine(params) end
 ---@field max number Maximum ammunition count
 ---@field percentage integer Usage percentage (current/max * 100), rounded to nearest integer; 0 when max is 0
 
----Ammunition inventory report aggregating firing/resupply/ammo subtotals and overall total
+---Ammunition inventory report aggregating firing/resupply/canister stock subtotals and overall total
 ---@class SBJ__AmmoInventoryResult: table
 ---@field firing SBJ__AmmoSubtotalEntry Firing units total (queried from live game state)
 ---@field resupply SBJ__AmmoSubtotalEntry Resupply units total (sum of state weaponCountCurrent/weaponCountDefault)
----@field ammo SBJ__AmmoSubtotalEntry Ammunition depots total (sum of state weaponCountCurrent/weaponCountDefault)
----@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + ammo
+---@field canisterStock SBJ__AmmoSubtotalEntry Canister stocks total (sum of state weaponCountCurrent/weaponCountDefault)
+---@field total SBJ__AmmoSubtotalEntry Combined total across firing + resupply + canister stock
 
 ---Ground state base - common missile systems for all ground operations
 ---@class SBJ__GroundState: table
@@ -1565,7 +1565,7 @@ function ScenEdit_DeleteMine(params) end
 ---A resupply unit entering its ammunition transfer point
 ---@class SBJ__AmmunitionTransferPointObservation: table
 ---@field resupplyUnitState SBJ__ResupplyUnitState
----@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one ATP zone
+---@field isAtCanisterStock fun(): boolean Reads CMO: whether it and its canister stock stand in one ATP zone
 
 ---How arrival observes, decides and carries out one position type
 ---@class SBJ__ArrivalPosition: table
@@ -1593,7 +1593,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field now number Scenario time of this cycle
 ---@field reloadTimeSec number Transload length in seconds
 ---@field isInReloadArea fun(): boolean Reads CMO: whether the resupply unit stands in an RL zone of its operational area
----@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one ATP zone
+---@field isAtCanisterStock fun(): boolean Reads CMO: whether it and its canister stock stand in one ATP zone
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
@@ -2205,7 +2205,7 @@ function ScenEdit_DeleteMine(params) end
 ---Contains all generated vertices for U-shape, internal zones, and fire points
 ---@class SBJ__TacticalAreaLayout: table
 ---@field uShapeVertices CMO__Location[] Array of 8 vertices forming U-shape polygon
----@field atpArea? CMO__Location[] ammunition transfer point vertices (4 points) if internal squares configured
+---@field atpArea? CMO__Location[] Ammunition transfer point vertices (4 points) if internal squares configured
 ---@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
 ---@field reloadArea? CMO__Location[] Reload area vertices (4 points) if internal squares configured
 ---@field firePoints? table<integer, CMO__Location[]> Array of fire point areas, each with 4 vertices, if fire points configured

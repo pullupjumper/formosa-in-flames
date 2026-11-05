@@ -122,7 +122,7 @@ local FIRING_UNIT_STEPS = {
 }
 
 ---Resupply unit steps keyed by Rules.STEP
----@type table<string, fun(tick: SBJ__ResupplyUnitTick, ammoDepotState: SBJ__AmmunitionState): SBJ__LogResult|nil>
+---@type table<string, fun(tick: SBJ__ResupplyUnitTick, canisterStockState: SBJ__CanisterStockState): SBJ__LogResult|nil>
 local RESUPPLY_UNIT_STEPS = {
   [STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT] = function(tick)
     return Transitions.depart(tick.resupplyUnitState, tick.resupplyUnit, ORDER.AMMUNITION_TRANSFER_POINT)
@@ -132,7 +132,7 @@ local RESUPPLY_UNIT_STEPS = {
     Transitions.ensureReloadClock(tick.resupplyUnitState)
   end,
 
-  [STEP.FAIL_AMMO_DEPOT_STATE_NOT_FOUND] = function(tick)
+  [STEP.FAIL_CANISTER_STOCK_STATE_NOT_FOUND] = function(tick)
     return {
       tag = "FAIL",
       fields = {
@@ -143,11 +143,11 @@ local RESUPPLY_UNIT_STEPS = {
     }
   end,
 
-  [STEP.COMPLETE_TRANSLOAD] = function(tick, ammoDepotState)
+  [STEP.COMPLETE_TRANSLOAD] = function(tick, canisterStockState)
     local resupplyUnitState = tick.resupplyUnitState
     local beforeResupply = resupplyUnitState.weaponCountCurrent
-    local beforeDepot = ammoDepotState.weaponCountCurrent
-    Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
+    local beforeCanisterStock = canisterStockState.weaponCountCurrent
+    Ammo.transferCanisters(resupplyUnitState, canisterStockState)
     Transitions.finishReload(resupplyUnitState)
     return {
       tag = "OK",
@@ -155,8 +155,8 @@ local RESUPPLY_UNIT_STEPS = {
         unit = resupplyUnitState.name,
         action = "ammo_transload_finished",
         transferred = resupplyUnitState.weaponCountCurrent - beforeResupply,
-        depotBefore = beforeDepot,
-        depotAfter = ammoDepotState.weaponCountCurrent
+        canisterStockBefore = beforeCanisterStock,
+        canisterStockAfter = canisterStockState.weaponCountCurrent
       }
     }
   end,
@@ -209,14 +209,14 @@ local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resup
     isInReloadArea = function()
       return Meeting.findReloadArea(resupplyUnit, resupplyUnitState.operationalArea) ~= nil
     end,
-    isAtAmmoDepot = function()
-      return Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit)
+    isAtCanisterStock = function()
+      return Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit)
     end,
   }
-  local _, _, ammoDepotState = GroundStateStore.resolvePair(systemState, resupplyUnitState.name)
+  local _, _, canisterStockState = GroundStateStore.resolvePair(systemState, resupplyUnitState.name)
 
-  return Shared.processSteps(Rules.evaluateResupplyUnitTick(tick, ammoDepotState), RESUPPLY_UNIT_STEPS, tick,
-    ammoDepotState)
+  return Shared.processSteps(Rules.evaluateResupplyUnitTick(tick, canisterStockState), RESUPPLY_UNIT_STEPS, tick,
+    canisterStockState)
 end
 
 ---Process missile-system reload cycles and return structured results

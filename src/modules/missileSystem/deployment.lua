@@ -145,7 +145,7 @@ end
 
 ---What differs between the three units of a battery. Everything else is the one path in deployRole.
 ---@class SBJ__BatteryRole
----@field role "firing"|"resupply"|"ammo" Log `role` field and summary column
+---@field role "firing"|"resupply"|"canisterStock" Log `role` field and summary column
 ---@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__UnitBase
 ---@field dbid? number Fixed platform; nil uses the firing unit's dbid
 ---@field isGroup boolean Builds battery.unitCount vehicles grouped under the descriptor name; otherwise one
@@ -195,8 +195,8 @@ local BATTERY_ROLES = {
     buildSpawnPosition = function(area) return buildCourseEnd(area.RL[1]) end,
   },
   {
-    role = "ammo",
-    resolveDescriptor = function(battery) return battery.depot end,
+    role = "canisterStock",
+    resolveDescriptor = function(battery) return battery.canisterStock end,
     dbid = constants.PLATFORMS.AMMO,
     isGroup = false,
     findRejection = function(area)
@@ -286,7 +286,7 @@ local function deployRole(battery, batteryRole, sideName)
   return created, expected, entries
 end
 
----Join a layout's firing unit to its resupply unit and depot by config links
+---Join a layout's firing unit to its resupply unit and canister stock by config links
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param layout SBJ__MissileSystemLayout
 ---@return SBJ__Battery|nil # nil when the layout names an unknown system or firing unit
@@ -302,7 +302,7 @@ function Deployment.resolveBattery(missileSystemConfigMap, layout)
     missileSystemType = layout.missileSystemType,
     firing = firing,
     resupply = resupply,
-    depot = systemConfig.ammunitions[resupply.ammunition],
+    canisterStock = systemConfig.canisterStocks[resupply.canisterStock],
     unitCount = resupply.unitCount,
     operationalArea = layout.operationalArea
   }

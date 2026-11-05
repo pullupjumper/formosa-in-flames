@@ -21,11 +21,11 @@ describe("config ground.missileSystemTypes batteries", function()
     return name:sub(-#suffix) == suffix
   end
 
-  it("should link every firing unit to its own resupply unit and depot, and back", function()
+  it("should link every firing unit to its own resupply unit and canister stock, and back", function()
     local problems = {}
 
     forEachSystem(function(label, systemConfig)
-      local resupplyLinks, depotLinks = {}, {}
+      local resupplyLinks, canisterStockLinks = {}, {}
 
       for _, firing in pairs(systemConfig.firingUnits) do
         local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
@@ -33,12 +33,12 @@ describe("config ground.missileSystemTypes batteries", function()
           table.insert(problems, label .. " no resupply unit: " .. firing.name)
         else
           resupplyLinks[resupply.name] = (resupplyLinks[resupply.name] or 0) + 1
-          depotLinks[resupply.ammunition] = (depotLinks[resupply.ammunition] or 0) + 1
+          canisterStockLinks[resupply.canisterStock] = (canisterStockLinks[resupply.canisterStock] or 0) + 1
           if resupply.firingUnit ~= firing.name then
             table.insert(problems, label .. " resupply links back elsewhere: " .. resupply.name)
           end
-          if not systemConfig.ammunitions[resupply.ammunition] then
-            table.insert(problems, label .. " no depot: " .. resupply.name)
+          if not systemConfig.canisterStocks[resupply.canisterStock] then
+            table.insert(problems, label .. " no canister stock: " .. resupply.name)
           end
         end
       end
@@ -48,9 +48,9 @@ describe("config ground.missileSystemTypes batteries", function()
           table.insert(problems, label .. " resupply unit linked " .. (resupplyLinks[name] or 0) .. " times: " .. name)
         end
       end
-      for name in pairs(systemConfig.ammunitions) do
-        if depotLinks[name] ~= 1 then
-          table.insert(problems, label .. " depot linked " .. (depotLinks[name] or 0) .. " times: " .. name)
+      for name in pairs(systemConfig.canisterStocks) do
+        if canisterStockLinks[name] ~= 1 then
+          table.insert(problems, label .. " canister stock linked " .. (canisterStockLinks[name] or 0) .. " times: " .. name)
         end
       end
     end)
@@ -59,14 +59,14 @@ describe("config ground.missileSystemTypes batteries", function()
   end)
 
   -- Group members are named "<prefix><ordinal>, <firing unit name>", so every name must end with the firing unit name
-  it("should end every resupply unit and depot name with its firing unit name", function()
+  it("should end every resupply unit and canister stock name with its firing unit name", function()
     local problems = {}
 
     forEachSystem(function(label, systemConfig)
       for _, firing in pairs(systemConfig.firingUnits) do
         local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
-        local depot = resupply and systemConfig.ammunitions[resupply.ammunition]
-        for _, descriptor in ipairs({ resupply, depot }) do
+        local canisterStock = resupply and systemConfig.canisterStocks[resupply.canisterStock]
+        for _, descriptor in ipairs({ resupply, canisterStock }) do
           if not endsWith(descriptor.name, ", " .. firing.name) then
             table.insert(problems, label .. " " .. descriptor.name)
           end

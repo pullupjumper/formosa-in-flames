@@ -78,7 +78,7 @@ function MissileSystem.sendToFiringPoint(groundState, missileSystemType, firingU
   return Rules.isInPosition(firingUnitState), false
 end
 
----Calculate ammunition inventory across firing/resupply/ammo for a missile system
+---Calculate ammunition inventory across firing/resupply/canister stock for a missile system
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string
@@ -201,7 +201,7 @@ function MissileSystem.processSide(config, saveData, sideName)
   )
 end
 
----Deduct ammunition when an ammo depot or resupply vehicle of any missile system is destroyed
+---Deduct ammunition when a canister stock or resupply vehicle of any missile system is destroyed
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
 ---@return boolean processed Whether the unit belonged to a missile system and ammo was adjusted

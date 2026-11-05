@@ -90,14 +90,14 @@ end
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
 ---@param sideName string
----@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and ammunitions, keyed by system type
+---@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and canisterStocks, keyed by system type
 function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groundState, sideName)
   local rows = {}
 
   for key, system in pairs(missileSystemConfigMap) do
     local copy = Utils.deepCopy(system)
     copy.resupplyUnits = nil
-    copy.ammunitions = nil
+    copy.canisterStocks = nil
 
     for name, descriptor in pairs(copy.firingUnits) do
       ---@cast descriptor SBJ__FiringUnitWithWeaponRangeDescriptor

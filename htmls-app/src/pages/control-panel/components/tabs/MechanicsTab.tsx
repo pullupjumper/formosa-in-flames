@@ -77,7 +77,7 @@ const POSITIONS: PositionSpec[] = [
     name: 'Ammunition Transfer Point',
     color: COLOR.violet,
     usage:
-      'Outside the MASK area. Send an empty ammo truck here to take on missiles from the depot, then send it back to a RL.',
+      'Outside the MASK area. Send an empty ammo truck here to take on missiles from the canister stock, then send it back to a RL.',
   },
   {
     code: 'MASK',
@@ -139,10 +139,12 @@ export function MechanicsTab() {
                   The launcher and the ammo truck must be in the <Term>same</Term> RL. Different RLs
                   means nothing happens.
                 </li>
-                <li>Same rule at the ATP -- the truck and the depot must be in the same one.</li>
                 <li>
-                  An empty truck has to go back to the ATP and draw from the depot stock before it
-                  can reload anything.
+                  Same rule at the ATP -- the truck and the canister stock must be in the same one.
+                </li>
+                <li>
+                  An empty truck has to go back to the ATP and draw from the canister stock before
+                  it can reload anything.
                 </li>
                 <li>
                   Reloading takes time. Pull a battery out before it is completely dry, not after.
@@ -203,13 +205,13 @@ export function MechanicsTab() {
                   <Term>MISSILES (AMMO)</Term> -- what the truck is still carrying.
                 </li>
                 <li>
-                  <Term>MISSILES (ATP)</Term> -- remaining stock at the depot.
+                  <Term>MISSILES (ATP)</Term> -- missiles left in the canister stock.
                 </li>
               </List>
             </Callout>
             <Paragraph>
-              Depot feeds truck, truck feeds launcher. A zero anywhere in that chain means a battery
-              goes quiet soon -- this panel is where you spot it early.
+              Canister stock feeds truck, truck feeds launcher. A zero anywhere in that chain means
+              a battery goes quiet soon -- this panel is where you spot it early.
             </Paragraph>
           </Section>
         </main>

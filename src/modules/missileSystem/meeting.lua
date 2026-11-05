@@ -67,18 +67,18 @@ function Meeting.resolveReloadPair(systemState, unit)
   }
 end
 
----Whether a resupply unit and its ammo depot stand in one ATP zone
+---Whether a resupply unit and its canister stock stand in one ATP zone
 ---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param resupplyUnit CMO__Unit
----@return boolean # False also when the ammo depot is not in the game
-function Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit)
-  local ammoDepot = GameApi.ScenEdit_GetUnit(resupplyUnitState.ammunition, resupplyUnit.side)
-  if not ammoDepot then
+---@return boolean # False also when the canister stock is not in the game
+function Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit)
+  local canisterStock = GameApi.ScenEdit_GetUnit(resupplyUnitState.canisterStock, resupplyUnit.side)
+  if not canisterStock then
     return false
   end
 
   for _, pos in ipairs(resupplyUnitState.operationalArea.ATP) do
-    if resupplyUnit:inArea(pos.area) and ammoDepot:inArea(pos.area) then
+    if resupplyUnit:inArea(pos.area) and canisterStock:inArea(pos.area) then
       return true
     end
   end

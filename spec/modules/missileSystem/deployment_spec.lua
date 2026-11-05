@@ -35,20 +35,20 @@ describe("MissileSystem Deployment", function()
     }
   end
 
-  ---One system with one battery per suffix, linked firing -> resupply -> depot
+  ---One system with one battery per suffix, linked firing -> resupply -> canister stock
   ---@param suffixes string[]
   ---@param unitCount? integer
   local function buildSystemConfig(suffixes, unitCount)
-    local systemConfig = { firingUnits = {}, resupplyUnits = {}, ammunitions = {} }
+    local systemConfig = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} }
     for _, suffix in ipairs(suffixes) do
       local area = buildArea("OPAREA-" .. suffix)
       local firingName = suffix .. " Bn, 1st Bde"
       systemConfig.firingUnits[firingName] = { name = firingName, dbid = 1234, weaponDBID = 5678,
         resupplyUnit = "Ammo Sec, " .. firingName, operationalArea = area }
       systemConfig.resupplyUnits["Ammo Sec, " .. firingName] = { name = "Ammo Sec, " .. firingName,
-        unitCount = unitCount or 1, ammunition = "Ammo Revetment, " .. firingName, firingUnit = firingName,
+        unitCount = unitCount or 1, canisterStock = "Ammo Revetment, " .. firingName, firingUnit = firingName,
         operationalArea = area }
-      systemConfig.ammunitions["Ammo Revetment, " .. firingName] = { name = "Ammo Revetment, " .. firingName }
+      systemConfig.canisterStocks["Ammo Revetment, " .. firingName] = { name = "Ammo Revetment, " .. firingName }
     end
     return systemConfig
   end
@@ -111,7 +111,7 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(string.find(message, "unit=\"A Bn, 1st Bde\"", 1, true))
       assert.is_not_nil(string.find(message, "firing=0/1", 1, true))
       assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
-      assert.is_not_nil(string.find(message, "ammo=1/1", 1, true))
+      assert.is_not_nil(string.find(message, "canisterStock=1/1", 1, true))
     end)
 
     -- Positive: a SAM firing unit spawns at a firing point, other systems at their hide area
@@ -124,8 +124,8 @@ describe("MissileSystem Deployment", function()
       assert.are.equal(1, added["SRBM Bn, 1st Bde"].latitude)
     end)
 
-    -- Positive: the resupply unit spawns at the reload point and the hidden depot at the ammunition transfer point
-    it("should spawn the resupply unit at the reload point and the depot at the ammunition transfer point", function()
+    -- Positive: the resupply unit spawns at the reload point and the hidden canister stock at the ammunition transfer point
+    it("should spawn the resupply unit at the reload point and the canister stock at the ammunition transfer point", function()
       local added = stubEmptyMap()
 
       deployAll({ srbm = buildSystemConfig({ "A" }) }, constants.SIDES.RED)
@@ -218,8 +218,8 @@ describe("MissileSystem Deployment", function()
   -- ============================================================================
 
   describe("resolveBattery", function()
-    -- Positive: follows config links firing -> resupply -> depot and keeps the layout's area
-    it("should join the firing unit to its resupply unit and depot by config links", function()
+    -- Positive: follows config links firing -> resupply -> canister stock and keeps the layout's area
+    it("should join the firing unit to its resupply unit and canister stock by config links", function()
       local systemConfig = buildSystemConfig({ "A", "B" }, 3)
       local newArea = buildArea("OPAREA-NEW")
 
@@ -228,7 +228,7 @@ describe("MissileSystem Deployment", function()
 
       assert.are.equal(systemConfig.firingUnits["B Bn, 1st Bde"], battery.firing)
       assert.are.equal(systemConfig.resupplyUnits["Ammo Sec, B Bn, 1st Bde"], battery.resupply)
-      assert.are.equal(systemConfig.ammunitions["Ammo Revetment, B Bn, 1st Bde"], battery.depot)
+      assert.are.equal(systemConfig.canisterStocks["Ammo Revetment, B Bn, 1st Bde"], battery.canisterStock)
       assert.are.equal(3, battery.unitCount)
       assert.are.equal(newArea, battery.operationalArea)
     end)

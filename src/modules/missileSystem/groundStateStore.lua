@@ -2,13 +2,13 @@ local Utils = require("src.utils.utils")
 
 local GroundStateStore = {}
 
----Find the firing unit, resupply unit and ammo depot states paired with either end's unit name
+---Find the firing unit, resupply unit and canister stock states paired with either end's unit name
 ---Any link can be missing when config names a partner that does not exist; it and everything past it is nil.
 ---@param systemState SBJ__MissileSystemState
 ---@param unitName string Firing or resupply unit name
 ---@return SBJ__FiringUnitState|nil firingUnitState Firing unit state of the pair
 ---@return SBJ__ResupplyUnitState|nil resupplyUnitState Resupply unit state of the pair
----@return SBJ__AmmunitionState|nil ammoDepotState Ammo depot state of the resupply unit
+---@return SBJ__CanisterStockState|nil canisterStockState canister stock state of the resupply unit
 function GroundStateStore.resolvePair(systemState, unitName)
   local firingUnitState = systemState.firingUnits[unitName]
   local resupplyUnitState
@@ -19,8 +19,8 @@ function GroundStateStore.resolvePair(systemState, unitName)
     firingUnitState = resupplyUnitState and systemState.firingUnits[resupplyUnitState.firingUnit]
   end
 
-  local ammoDepotState = resupplyUnitState and systemState.ammunitions[resupplyUnitState.ammunition]
-  return firingUnitState, resupplyUnitState, ammoDepotState
+  local canisterStockState = resupplyUnitState and systemState.canisterStocks[resupplyUnitState.canisterStock]
+  return firingUnitState, resupplyUnitState, canisterStockState
 end
 
 ---Call back once for every enabled missile system
@@ -40,20 +40,20 @@ end
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
 function GroundStateStore.processSupplyAssetDestruction(unit, systemState)
-  local ammoDepotState = systemState.ammunitions[unit.name]
+  local canisterStockState = systemState.canisterStocks[unit.name]
 
-  if ammoDepotState and unit.group == nil and ammoDepotState.weaponCountCurrent > 0 then
-    local ammoBefore = ammoDepotState.weaponCountCurrent
-    ammoDepotState.weaponCountCurrent = 0
+  if canisterStockState and unit.group == nil and canisterStockState.weaponCountCurrent > 0 then
+    local ammoBefore = canisterStockState.weaponCountCurrent
+    canisterStockState.weaponCountCurrent = 0
     return true, {
       tag = "OK",
       system = systemState.name or "unknown",
       unitName = unit.name,
-      contextName = ammoDepotState.name,
-      role = "ammo_depot",
+      contextName = canisterStockState.name,
+      role = "canister_stock",
       ammoBefore = ammoBefore,
-      ammoAfter = ammoDepotState.weaponCountCurrent,
-      delta = ammoDepotState.weaponCountCurrent - ammoBefore
+      ammoAfter = canisterStockState.weaponCountCurrent,
+      delta = canisterStockState.weaponCountCurrent - ammoBefore
     }
   end
 
@@ -100,7 +100,7 @@ function GroundStateStore.ensureGroundState(missileSystemConfigMap, groundState)
     if systemState.enabled == nil then
       systemState.enabled = true
     end
-    systemState.ammunitions = systemState.ammunitions or {}
+    systemState.canisterStocks = systemState.canisterStocks or {}
     systemState.resupplyUnits = systemState.resupplyUnits or {}
     systemState.firingUnits = systemState.firingUnits or {}
     groundState.missileSystemTypes[system] = systemState
@@ -122,7 +122,7 @@ function GroundStateStore.setBatteryStates(groundState, batteries)
 
     systemState.firingUnits[firingUnitState.name] = firingUnitState
     systemState.resupplyUnits[resupplyUnitState.name] = resupplyUnitState
-    systemState.ammunitions[battery.depot.name] = Utils.deepCopy(battery.depot)
+    systemState.canisterStocks[battery.canisterStock.name] = Utils.deepCopy(battery.canisterStock)
   end
 end
 

@@ -11,7 +11,7 @@ describe("ConfigCodeGenerator", function()
       mlrs = {
         weaponCountDefault = 4,
         ammoThreshold = 2,
-        ammunitions = {
+        canisterStocks = {
           ["ATP-1"] = { name = "ATP-1", weaponCountCurrent = 8, weaponCountDefault = 8 },
         },
         resupplyUnits = {
@@ -43,10 +43,10 @@ describe("ConfigCodeGenerator", function()
     end)
 
     -- Positive: emits one block per section under the config path
-    it("should emit ammunitions, resupplyUnits and firingUnits blocks for a system", function()
+    it("should emit canisterStocks, resupplyUnits and firingUnits blocks for a system", function()
       local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())
 
-      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.ammunitions = {", 1, true))
+      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.canisterStocks = {", 1, true))
       assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {", 1, true))
       assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
     end)
@@ -119,7 +119,7 @@ describe("ConfigCodeGenerator", function()
       assert.is_truthy(printed[1]:find("^@@GEN_BEGIN CHINA_AREAS_BLOCK\n"))
       assert.is_truthy(printed[1]:find("\n@@GEN_END CHINA_AREAS_BLOCK$"))
       assert.is_truthy(printed[2]:find("^@@GEN_BEGIN CHINA_OPERATIONAL_AREAS_BLOCK\n"))
-      assert.is_truthy(printed[3]:find("^@@GEN_BEGIN CONFIG_red\nconfig.red.ground.missileSystemTypes.mlrs.ammunitions = {"))
+      assert.is_truthy(printed[3]:find("^@@GEN_BEGIN CONFIG_red\nconfig.red.ground.missileSystemTypes.mlrs.canisterStocks = {"))
     end)
 
     -- Positive: a moved battery is printed at its saved area and config is untouched

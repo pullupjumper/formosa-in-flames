@@ -620,7 +620,7 @@ describe("MissileSystem", function()
       local systemState = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
       saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
-      trackStub(Meeting, "isAtAmmoDepot").returns(false)
+      trackStub(Meeting, "isAtCanisterStock").returns(false)
       local settleStub = trackStub(Transitions, "settle")
 
       MissileSystem.processUnitEntersArea(config, saveData, unit, event)
@@ -724,44 +724,44 @@ describe("MissileSystem", function()
 
   describe("processSupplyAssetDestruction", function()
     -- Positive: finds the owning system on the unit's side and logs the ammunition delta
-    it("should zero the depot of whichever system on the unit's side owns it and log the delta", function()
+    it("should zero the canister stock of whichever system on the unit's side owns it and log the delta", function()
       local srbmState = {
         name = "srbm",
         resupplyUnits = {},
-        ammunitions = {
-          ["Ammo Depot Alpha"] = { name = "Ammo Depot Alpha", weaponCountCurrent = 100 }
+        canisterStocks = {
+          ["Canister Stock Alpha"] = { name = "Canister Stock Alpha", weaponCountCurrent = 100 }
         }
       }
       local saveData = {
-        red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } },
+        red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, canisterStocks = {} } } } },
         blue = {
           ground = {
             missileSystemTypes = {
-              mlrs = { name = "mlrs", resupplyUnits = {}, ammunitions = {} },
+              mlrs = { name = "mlrs", resupplyUnits = {}, canisterStocks = {} },
               srbm = srbmState,
             },
           },
         },
       }
-      local unit = { name = "Ammo Depot Alpha", side = constants.SIDES.BLUE }
+      local unit = { name = "Canister Stock Alpha", side = constants.SIDES.BLUE }
 
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
 
       assert.is_true(processed)
-      assert.are.equal(0, srbmState.ammunitions["Ammo Depot Alpha"].weaponCountCurrent)
+      assert.are.equal(0, srbmState.canisterStocks["Canister Stock Alpha"].weaponCountCurrent)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]
       local message = logStub.calls[1].vals[2]
       assert.are.equal(constants.TAGS.MISSILE_SYSTEM, tag)
       assert.is_truthy(string.find(message, "system=srbm", 1, true))
-      assert.is_truthy(string.find(message, "role=ammo_depot", 1, true))
+      assert.is_truthy(string.find(message, "role=canister_stock", 1, true))
       assert.is_truthy(string.find(message, "delta=-100", 1, true))
     end)
 
     -- Negative: a unit no system tracks is ignored without logging
     it("should return false and stay silent for an untracked unit", function()
-      local saveData = { red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, ammunitions = {} } } } } }
+      local saveData = { red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, canisterStocks = {} } } } } }
       local unit = { name = "Random Truck", side = constants.SIDES.RED }
 
       local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
@@ -818,9 +818,9 @@ describe("MissileSystem", function()
       local config = {
         blue = { ground = { missileSystemTypes = { srbm = {
           firingUnits = { ["FU-A"] = { name = "FU-A", dbid = 1, weaponDBID = 2, resupplyUnit = "RU-A", operationalArea = configArea } },
-          resupplyUnits = { ["RU-A"] = { name = "RU-A", unitCount = 1, ammunition = "AMMO-A", firingUnit = "FU-A",
+          resupplyUnits = { ["RU-A"] = { name = "RU-A", unitCount = 1, canisterStock = "AMMO-A", firingUnit = "FU-A",
             operationalArea = configArea } },
-          ammunitions = { ["AMMO-A"] = { name = "AMMO-A" } }
+          canisterStocks = { ["AMMO-A"] = { name = "AMMO-A" } }
         } } } }
       }
       local saveData = { blue = { ground = {} } }
@@ -829,7 +829,7 @@ describe("MissileSystem", function()
       local systemState = saveData.blue.ground.missileSystemTypes.srbm
       systemState.firingUnits["FU-A"] = { name = "FU-A", operationalArea = { name = "OPAREA-SAVED" } }
       systemState.resupplyUnits["RU-A"] = { name = "RU-A", operationalArea = { name = "OPAREA-SAVED" } }
-      systemState.ammunitions["AMMO-A"] = { name = "AMMO-A" }
+      systemState.canisterStocks["AMMO-A"] = { name = "AMMO-A" }
       return config, saveData
     end
 
@@ -857,7 +857,7 @@ describe("MissileSystem", function()
       local srbmConfig = config.blue.ground.missileSystemTypes.srbm
       local firingDescriptor = srbmConfig.firingUnits["FU-A"]
       local resupplyDescriptor = srbmConfig.resupplyUnits["RU-A"]
-      local depotDescriptor = srbmConfig.ammunitions["AMMO-A"]
+      local canisterStockDescriptor = srbmConfig.canisterStocks["AMMO-A"]
       local configArea = firingDescriptor.operationalArea
       trackStub(ControlPanelLayout, "buildLayouts").returns({
         { missileSystemType = "srbm", unitname = "FU-A", operationalArea = { name = "OPAREA-NEW" } }
@@ -869,7 +869,7 @@ describe("MissileSystem", function()
 
       assert.are.equal(firingDescriptor, srbmConfig.firingUnits["FU-A"])
       assert.are.equal(resupplyDescriptor, srbmConfig.resupplyUnits["RU-A"])
-      assert.are.equal(depotDescriptor, srbmConfig.ammunitions["AMMO-A"])
+      assert.are.equal(canisterStockDescriptor, srbmConfig.canisterStocks["AMMO-A"])
       assert.are.equal(configArea, firingDescriptor.operationalArea)
       assert.are.equal("OPAREA-CONFIG", configArea.name)
       assert.are.equal("OPAREA-NEW", saveData.blue.ground.missileSystemTypes.srbm.firingUnits["FU-A"].operationalArea.name)
@@ -918,7 +918,7 @@ describe("MissileSystem", function()
       local function makeBattery(suffix)
         return { name = "FU-" .. suffix, state = constants.MISSILE_SYSTEM_STATE.HIDE, resupplyUnit = "RU-" .. suffix,
             operationalArea = { name = "OPAREA-" .. suffix } },
-          { name = "RU-" .. suffix, weaponCountCurrent = 8, unitCount = 1, ammunition = "AMMO-" .. suffix,
+          { name = "RU-" .. suffix, weaponCountCurrent = 8, unitCount = 1, canisterStock = "AMMO-" .. suffix,
             operationalArea = { name = "OPAREA-" .. suffix } },
           { name = "AMMO-" .. suffix, weaponCountCurrent = 40 }
       end
@@ -928,7 +928,7 @@ describe("MissileSystem", function()
         blue = { ground = { missileSystemTypes = { srbm = {
           firingUnits = { ["FU-A"] = firingA, ["FU-B"] = firingB },
           resupplyUnits = { ["RU-A"] = resupplyA, ["RU-B"] = resupplyB },
-          ammunitions = { ["AMMO-A"] = ammoA, ["AMMO-B"] = ammoB }
+          canisterStocks = { ["AMMO-A"] = ammoA, ["AMMO-B"] = ammoB }
         } } } }
       }
       local saveData = { blue = { ground = {} } }
@@ -941,7 +941,7 @@ describe("MissileSystem", function()
       systemState.firingUnits["FU-B"].state = constants.MISSILE_SYSTEM_STATE.RELOAD
       systemState.firingUnits["FU-B"].reloadStartTime = 123
       systemState.resupplyUnits["RU-B"].weaponCountCurrent = 2
-      systemState.ammunitions["AMMO-B"].weaponCountCurrent = 5
+      systemState.canisterStocks["AMMO-B"].weaponCountCurrent = 5
 
       local newArea = { name = "#NEW" }
       trackStub(ControlPanelLayout, "buildLayouts").returns({
@@ -958,7 +958,7 @@ describe("MissileSystem", function()
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemState.firingUnits["FU-B"].state)
       assert.are.equal(123, systemState.firingUnits["FU-B"].reloadStartTime)
       assert.are.equal(2, systemState.resupplyUnits["RU-B"].weaponCountCurrent)
-      assert.are.equal(5, systemState.ammunitions["AMMO-B"].weaponCountCurrent)
+      assert.are.equal(5, systemState.canisterStocks["AMMO-B"].weaponCountCurrent)
     end)
   end)
 end)

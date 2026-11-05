@@ -35,7 +35,7 @@ Rules.STEP = {
   -- Resupply unit transload cycle
   MOVE_TO_AMMUNITION_TRANSFER_POINT = "moveToAmmunitionTransferPoint",
   COMPLETE_TRANSLOAD = "completeTransload",
-  FAIL_AMMO_DEPOT_STATE_NOT_FOUND = "failAmmoDepotStateNotFound",
+  FAIL_CANISTER_STOCK_STATE_NOT_FOUND = "failCanisterStockStateNotFound",
   RECALL_TO_RELOAD_POINT = "recallToReloadPoint",
   -- Fire support plan dispatch
   UNHIDE = "unhide",
@@ -156,15 +156,15 @@ local function hasMetResupplyUnit(pair, isAuto)
       and pair.isInSameReloadArea()
 end
 
----Whether an empty resupply unit met its ammo depot at ATP
+---Whether an empty resupply unit met its canister stock at ATP
 ---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param isAuto boolean
----@param isAtAmmoDepot fun(): boolean
+---@param isAtCanisterStock fun(): boolean
 ---@return boolean # True if the transload may start or finish
-local function hasMetAmmoDepot(resupplyUnitState, isAuto, isAtAmmoDepot)
+local function hasMetCanisterStock(resupplyUnitState, isAuto, isAtCanisterStock)
   return canMeet(resupplyUnitState.state, isAuto)
       and resupplyUnitState.weaponCountCurrent == 0
-      and isAtAmmoDepot()
+      and isAtCanisterStock()
 end
 
 ---Evaluate the steps for a unit entering its firing point
@@ -220,7 +220,7 @@ end
 ---@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is not a resupply unit of this system
 ---@return string[] steps
 function Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
-  if observation and hasMetAmmoDepot(observation.resupplyUnitState, moveCtx.isAuto, observation.isAtAmmoDepot) then
+  if observation and hasMetCanisterStock(observation.resupplyUnitState, moveCtx.isAuto, observation.isAtCanisterStock) then
     return { STEP.BEGIN_TRANSLOAD }
   end
 
@@ -311,11 +311,11 @@ end
 
 ---Evaluate the steps for one resupply unit in a reload cycle
 ---An empty auto-mode resupply unit standing in an RL zone goes to the ammunition transfer point;
----a transloading one finishes once the reload time passed and it still meets its ammo depot.
+---a transloading one finishes once the reload time passed and it still meets its canister stock.
 ---@param tick SBJ__ResupplyUnitTick
----@param ammoDepotState SBJ__AmmunitionState|nil Nil when its ammo depot is not tracked
+---@param canisterStockState SBJ__CanisterStockState|nil Nil when its canister stock is not tracked
 ---@return string[] steps
-function Rules.evaluateResupplyUnitTick(tick, ammoDepotState)
+function Rules.evaluateResupplyUnitTick(tick, canisterStockState)
   local resupplyUnitState = tick.resupplyUnitState
 
   if resupplyUnitState.state == STATE.STATIC then
@@ -332,12 +332,12 @@ function Rules.evaluateResupplyUnitTick(tick, ammoDepotState)
 
   local steps = { STEP.ENSURE_RELOAD_CLOCK }
   local reloadElapsedSec = calculateElapsedSec(resupplyUnitState.reloadStartTime, tick.now) or 0
-  if reloadElapsedSec < tick.reloadTimeSec or not hasMetAmmoDepot(resupplyUnitState, tick.isAuto, tick.isAtAmmoDepot) then
+  if reloadElapsedSec < tick.reloadTimeSec or not hasMetCanisterStock(resupplyUnitState, tick.isAuto, tick.isAtCanisterStock) then
     return steps
   end
 
-  if not ammoDepotState then
-    table.insert(steps, STEP.FAIL_AMMO_DEPOT_STATE_NOT_FOUND)
+  if not canisterStockState then
+    table.insert(steps, STEP.FAIL_CANISTER_STOCK_STATE_NOT_FOUND)
     return steps
   end
 

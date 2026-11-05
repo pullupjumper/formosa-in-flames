@@ -4,15 +4,15 @@ local Shared = require("src.modules.missileSystem.shared")
 
 local Ammo = {}
 
----Transfer ammunition from ammunition depot to resupply unit
+---Transfer ammunition from canister stock to resupply unit
 ---@param resupplyUnitState SBJ__ResupplyUnitState
----@param ammoDepotState SBJ__AmmunitionState
-function Ammo.transferAmmunition(resupplyUnitState, ammoDepotState)
-  if ammoDepotState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < resupplyUnitState.weaponCountDefault then
+---@param canisterStockState SBJ__CanisterStockState
+function Ammo.transferCanisters(resupplyUnitState, canisterStockState)
+  if canisterStockState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < resupplyUnitState.weaponCountDefault then
     local deficit = resupplyUnitState.weaponCountDefault - resupplyUnitState.weaponCountCurrent
-    local ammoToTransfer = math.min(deficit, ammoDepotState.weaponCountCurrent)
+    local ammoToTransfer = math.min(deficit, canisterStockState.weaponCountCurrent)
     resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + ammoToTransfer
-    ammoDepotState.weaponCountCurrent = ammoDepotState.weaponCountCurrent - ammoToTransfer
+    canisterStockState.weaponCountCurrent = canisterStockState.weaponCountCurrent - ammoToTransfer
   end
 end
 
@@ -128,8 +128,8 @@ local function countFiringUnits(firingUnitMap, sideName)
   return subtotal
 end
 
----Sum ammunition across state-tracked units (resupply trucks or ammo depots)
----@param stateMap table<string, SBJ__ResupplyUnitState|SBJ__AmmunitionState>
+---Sum ammunition across state-tracked units (resupply trucks or canister stocks)
+---@param stateMap table<string, SBJ__ResupplyUnitState|SBJ__CanisterStockState>
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countStateUnits(stateMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
@@ -143,18 +143,18 @@ local function countStateUnits(stateMap)
   return subtotal
 end
 
----Calculate ammunition inventory across firing units, resupply units, and ammo depots
+---Calculate ammunition inventory across firing units, resupply units, and canister stocks
 ---@param systemState SBJ__MissileSystemState
 ---@param sideName string
 ---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
 function Ammo.getInventory(systemState, sideName)
   local firing = countFiringUnits(systemState.firingUnits, sideName)
   local resupply = countStateUnits(systemState.resupplyUnits)
-  local ammo = countStateUnits(systemState.ammunitions)
+  local canisterStock = countStateUnits(systemState.canisterStocks)
 
   local total = {
-    current = firing.current + resupply.current + ammo.current,
-    max = firing.max + resupply.max + ammo.max,
+    current = firing.current + resupply.current + canisterStock.current,
+    max = firing.max + resupply.max + canisterStock.max,
     percentage = 0,
   }
   total.percentage = calculatePercentage(total.current, total.max)
@@ -162,7 +162,7 @@ function Ammo.getInventory(systemState, sideName)
   return {
     firing = firing,
     resupply = resupply,
-    ammo = ammo,
+    canisterStock = canisterStock,
     total = total,
   }
 end
