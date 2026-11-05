@@ -160,8 +160,8 @@ flowchart TB
 
 **主要依據**
 
-- `saveData.*.ground.*` 當前狀態
-- `config.*.ground.*` 的機動車組與區域配置
+- `saveData.*.ground.*` 當前狀態：每個單位只存名字、`state`、`operationalArea`、reload / stow 開始時間、目前彈數
+- `config.*.ground.*` 的機動車組與區域配置：武器、彈藥門檻、彈量上限、車數、配對連結、訊息都在這裡，執行期以系統類型加單位名字查，改 config 後讀舊存檔也吃新值
 - 想定事件：`UnitEntersArea`、定時腳本觸發
 
 **主要結果**

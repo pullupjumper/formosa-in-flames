@@ -32,7 +32,7 @@
 
 ### Firing Unit Deployment
 
-`processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 以 `MissileSystem.sendToFiringPoint(saveData.red.ground, task.missileSystemType, firingUnit.name)` 交給 missileSystem：
+`processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 firing unit 以 `MissileSystem.sendToFiringPoint(config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, firingUnit.name)` 交給 missileSystem：
 
 1. missileSystem 自己取得 CMO 實體單位與 runtime context。任一不存在就回報單位不見，本模組視同陣亡、從 FST 移除。
 2. 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。
@@ -97,7 +97,7 @@ MissileSystem.completeFireTask(saveData.red.ground, task.missileSystemType, task
 
 ```mermaid
 flowchart TD
-    START["FireSupportPlan.process(saveData)"]
+    START["FireSupportPlan.process(config, plannerState)"]
     LOOP["遍歷 saveData.red.ground.fireSupportPlan"]
     ACTIVE{"FSEM isActivated<br/>且未 isFinished?"}
     PROCESS["processActiveMatrix()"]
@@ -173,8 +173,6 @@ saveData.red.ground
 │   └── firingUnits: table<string, SBJ__FiringUnitState>
 │       └── <firingUnitName>
 │           ├── state: constants.MISSILE_SYSTEM_STATE
-│           ├── ammoThreshold: number
-│           ├── weaponDBID: number|number[]
 │           └── stowStartTime?: number
 ```
 
@@ -200,8 +198,8 @@ saveData.red.ground
 | `config.logging.modules[constants.TAGS.GROUND]` | 控制 `constants.TAGS.GROUND` 日誌是否 verbose。 |
 | `config.red.ground.missileSystemTypes.<system>.reloadTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.reloadTime`，供 missileSystem 後續流程使用。 |
 | `config.red.ground.missileSystemTypes.<system>.stowTime` | 初始化 `saveData.red.ground.missileSystemTypes.<system>.stowTime`，供打擊後 stow 視窗使用。 |
-| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | 進入 `SBJ__FiringUnitState` 後由 `MissileSystem.sendToFiringPoint()` 內部的低彈量判斷使用。 |
-| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 進入 `SBJ__FiringUnitState` 後用於彈量檢查與發射單元武器設定。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].ammoThreshold` | `MissileSystem.sendToFiringPoint()` 內部的低彈量判斷直接從 config 讀。 |
+| `config.red.ground.missileSystemTypes.<system>.firingUnits[*].weaponDBID` | 直接從 config 讀，用於彈量檢查與發射單元武器設定。 |
 | `config.red.fireSupportTaskTemplates.*.target.minTargetCount` | 上游 `fsemBuilder` 建立 FSEM 前用來過濾目標數不足的 FST；本模組執行時不直接讀取。 |
 | `config.red.fireSupportTaskTemplates.*.target.ammoPerTarget` | 進入 executable FST 後成為 `task.target.ammoPerTarget`，本模組傳給 `AttackManager.attackContacts()` 的 `qty`。 |
 
@@ -221,7 +219,7 @@ saveData.red.ground
 
 | 函式 | 參數 | 回傳 | 副作用 |
 |---|---|---|---|
-| `FireSupportPlan.process(saveData)` | `SBJ__SaveData` | 無 | 部署 firing units、呼叫 `AttackManager.attackContacts()`、更新 FST/FSEM 狀態、寫入非 SAM firing unit 的 `stowStartTime`、輸出 fire support plan report。 |
+| `FireSupportPlan.process(config, plannerState)` | `SBJ__Config`, `SBJ__StrikePlannerState` | 無 | 部署 firing units、呼叫 `AttackManager.attackContacts()`、更新 FST/FSEM 狀態、寫入非 SAM firing unit 的 `stowStartTime`、輸出 fire support plan report。 |
 
 ### 上游呼叫
 

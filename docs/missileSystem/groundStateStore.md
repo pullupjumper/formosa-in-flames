@@ -4,13 +4,13 @@
 
 > Source: `src/modules/missileSystem/groundStateStore.lua`
 
-責任摘要：把 config 描述複製成 `saveData.*.ground.*` 形式，並在補給資產被擊毀時更新庫存。
+責任摘要：從 config descriptor 的起始值建 `saveData.*.ground.*` 的 runtime state，並在補給資產被擊毀時更新庫存。
 
 ---
 
 ## 概觀
 
-`setBatteryStates` 只改傳進來的那幾連：深拷貝該連 firing、resupply、canister stock 的 config descriptor，firing 與 resupply 的 `operationalArea` 設成該連的陣地。其他連的 state 不動。state 是陣地唯一的家，`resolveOperationalArea` 讀它，還沒部署過才退回 config。
+`setBatteryStates` 只改傳進來的那幾連：從該連 firing、resupply、canister stock 的 config descriptor 取起始值，只寫 runtime 會改的欄位（名字、`state`、`operationalArea`、`weaponCountCurrent`），firing 與 resupply 的 `operationalArea` 設成該連陣地的拷貝。武器、彈量上限、車數、連結、訊息都不進 state，執行期以系統類型加單位名字回 config 查。其他連的 state 不動。state 是陣地唯一的家，`resolveOperationalArea` 讀它，還沒部署過才退回 config。
 
 `processSupplyAssetDestruction` 會在分數腳本觸發時被呼叫：
 
@@ -37,8 +37,8 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `resolvePair` | `systemState, unitName` | `firingUnitState?, resupplyUnitState?, canisterStockState?` | 用任一端名稱找出整組配對，缺的一端為 nil |
-| `processSupplyAssetDestruction` | `unit, systemState` | `boolean` | 補給資產戰損後同步修正庫存 |
+| `resolvePair` | `systemConfig, systemState, unitName` | `firingUnitState?, resupplyUnitState?, canisterStockState?` | 用任一端名稱照 config 連結找出整組配對；沒有 state 的一端為 nil |
+| `processSupplyAssetDestruction` | `unit, systemConfig, systemState` | `boolean` | 補給資產戰損後同步修正庫存；每台車的份量用 config 的 `weaponCountDefault / unitCount` |
 | `setBatteryStates` | `groundState, batteries` | `nil` | 把這幾連的 runtime state 重設成 config 初值，放在該連的陣地 |
 | `resolveOperationalArea` | `groundState, missileSystemType, firingUnitDescriptor` | `SBJ__OperationalArea` | 這一連現在的陣地：state 的，沒有 state 時用 config 的 |
 

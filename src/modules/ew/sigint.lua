@@ -2,9 +2,9 @@ local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
 local LogFormat = require("src.utils.logFormat")
-local Utils = require("src.utils.utils")
 local constants = require("src.core.constants")
 local PersistentState = require("src.core.persistentState")
+local MissileSystem = require("src.modules.missileSystem.init")
 
 local Sigint = {}
 
@@ -12,6 +12,22 @@ local Sigint = {}
 -- ============================================================================
 -- Enumerations & Constants
 -- ============================================================================
+
+local SYSTEMS = constants.MISSILE_SYSTEM_TYPES
+
+---Enemy units each SIGINT collector listens to, in collection order
+local SIGINT_TARGETS = {
+  [constants.SIDES.RED] = {
+    side = constants.SIDES.BLUE,
+    systems = { SYSTEMS.SRBM, SYSTEMS.GLCM, SYSTEMS.MLRS, SYSTEMS.ASCM },
+    iadsNodes = { "rocc", "taaoc" },
+  },
+  [constants.SIDES.ALLY] = {
+    side = constants.SIDES.RED,
+    systems = { SYSTEMS.MLRS, SYSTEMS.SRBM, SYSTEMS.GLCM },
+    iadsNodes = { "c2" },
+  },
+}
 
 local UNIT_TYPE = {
   C2     = "C2",
@@ -108,11 +124,11 @@ end
 ---Check if unit is emitting signal with enhanced logic
 ---@param config SBJ__Config
 ---@param unit CMO__Unit
----@param unitState SBJ__FiringUnitState|SBJ__C2State Unit data (Battery units check movement, C2 units always emit)
+---@param emitter SBJ__SigintEmitter Battery units check movement, C2 units always emit
 ---@param enemySide string
 ---@return boolean isEmitting Whether unit is emitting signal
 ---@return string reason Reason for emission status
-local function isUnitEmitting(config, unit, unitState, enemySide)
+local function isUnitEmitting(config, unit, emitter, enemySide)
   -- Check for specific platform types that always emit
   if unit.dbid == constants.PLATFORMS.C2 then
     return true, "C2 (always emitting)"
@@ -141,12 +157,12 @@ local function isUnitEmitting(config, unit, unitState, enemySide)
   end
 
   -- Check if leaving restricted launch area (only for Battery units)
-  if not unitState.operationalArea.RL[1].area or #unitState.operationalArea.RL[1].area == 0 then
+  if not emitter.operationalArea.RL[1].area or #emitter.operationalArea.RL[1].area == 0 then
     return false, "No RL area defined"
   end
 
   local lastCoursePoint = unit.course[courseCount]
-  local isLeavingRL = not GameUtils.isInArea(enemySide, lastCoursePoint, unitState.operationalArea.RL[1].area) and
+  local isLeavingRL = not GameUtils.isInArea(enemySide, lastCoursePoint, emitter.operationalArea.RL[1].area) and
       unit.speed > 0
   return isLeavingRL, isLeavingRL and "Leaving real point" or "Within reload point"
 end
@@ -157,14 +173,14 @@ end
 -- ============================================================================
 
 ---Resolve actual unit from unit state
----@param unitState SBJ__FiringUnitState|SBJ__C2State
+---@param emitter SBJ__SigintEmitter
 ---@param enemySide string
 ---@return CMO__Unit|nil # Resolved unit or nil if not found
-local function resolveUnit(unitState, enemySide)
-  if unitState.weaponDBID then
-    return GameApi.ScenEdit_GetUnit(unitState.name, enemySide)
+local function resolveUnit(emitter, enemySide)
+  if emitter.guid then
+    return GameApi.ScenEdit_GetUnit(emitter.guid)
   end
-  return GameApi.ScenEdit_GetUnit(unitState.guid)
+  return GameApi.ScenEdit_GetUnit(emitter.name, enemySide)
 end
 
 ---Build undetected result object
@@ -285,20 +301,20 @@ end
 ---Creates new transmission record if first detection, otherwise updates existing record
 ---Increments currentDetectionLevel and checks autodetectable threshold
 ---@param sigintState SBJ__SIGINTState
----@param unitState SBJ__FiringUnitState|SBJ__C2State
+---@param emitter SBJ__SigintEmitter
 ---@param hit SBJ__SIGINTHit Detected unit paired with its detection result
 ---@param maxCount integer Detection level above which the unit becomes autodetectable
 ---@return string # DETECTION_STATUS enum value
-local function updateTransmissionData(sigintState, unitState, hit, maxCount)
+local function updateTransmissionData(sigintState, emitter, hit, maxCount)
   local unit, result = hit.unit, hit.result
   local transmission = sigintState.transmissions[unit.guid]
 
   if not transmission then
-    local unitType = resolveUnitType(unitState.name)
+    local unitType = resolveUnitType(emitter.name)
     transmission = {
-      name = unitState.name,
+      name = emitter.name,
       guid = unit.guid,
-      msg = unitState.msg,
+      msg = emitter.msg,
       type = unitType,
       latitude = result.latitude,
       longitude = result.longitude,
@@ -362,12 +378,32 @@ local function processUndetected(sigintState, unit, maxCount)
 end
 
 
+---Enemy firing units and C2 nodes a SIGINT collector listens to, in collection order
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param collectorSide string
+---@return SBJ__SigintEmitter[]
+local function collectEmitters(config, saveData, collectorSide)
+  local targets = SIGINT_TARGETS[collectorSide]
+  local emitters = MissileSystem.listSigintEmitters(config, saveData, targets.side, targets.systems)
+  local iadsState = PersistentState.iads(saveData, targets.side)
+
+  for _, node in ipairs(targets.iadsNodes) do
+    for _, c2State in pairs(iadsState[node]) do
+      table.insert(emitters, c2State)
+    end
+  end
+
+  return emitters
+end
+
+
 -- ============================================================================
 -- Public API
 -- ============================================================================
 
 ---Enhanced SIGINT detection handler
----Monitors several unit state groups, consolidating results and log output
+---Monitors the enemy emitters, consolidating results and log output
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param sideName string
@@ -377,7 +413,7 @@ local function collectSigint(config, saveData, sideName, isShown)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local sigintState = PersistentState.sigint(saveData, sideName)
   local sigintConfig = config[sideConfig.field].sigint
-  local emitterGroups = PersistentState.sigintEmitters(saveData, sideName)
+  local emitters = collectEmitters(config, saveData, sideName)
   local enemySide = sideConfig.enemySide
 
   local maxCount = sigintConfig.maxCount
@@ -387,54 +423,50 @@ local function collectSigint(config, saveData, sideName, isShown)
   local report = LogFormat.report(constants.TAGS.SIGINT, "side=" .. sideName, "Collect SIGINT")
   local totalProcessed = 0
   local totalDetected = 0
-  local totalUnits = 0
+  local totalUnits = #emitters
 
-  for _, unitStateMap in ipairs(emitterGroups) do
-    totalUnits = totalUnits + Utils.getCount(unitStateMap)
+  for _, emitter in ipairs(emitters) do
+    local ctxName = emitter.name or emitter.guid or "?"
 
-    for _, unitState in pairs(unitStateMap) do
-      local ctxName = unitState.name or unitState.guid or "?"
-
-      -- Resolve actual unit
-      local actualUnit = resolveUnit(unitState, enemySide)
-      if not actualUnit then
-        report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND], { unit = ctxName, reason = "unit_not_found" })
-        goto continue
-      end
-
-      -- Skip some units randomly for performance
-      if math.random() <= detectionSkipProbability then
-        report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED], { unit = ctxName, reason = "random_skip" })
-        goto continue
-      end
-
-      totalProcessed = totalProcessed + 1
-
-      local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, unitState, enemySide)
-
-      -- Perform SIGINT detection
-      local result = rollDetection(sigintState, actualUnit.guid, isEmitting, sigintConfig)
-      resultMap[actualUnit.guid] = result
-
-      if result.isDetected then
-        totalDetected = totalDetected + 1
-        local status = updateTransmissionData(sigintState, unitState, { unit = actualUnit, result = result }, maxCount)
-        report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
-
-        if isShown then
-          createDetectionNotification(result, unitState.msg, sigintConfig)
-        end
-      else
-        local status = processUndetected(sigintState, actualUnit, maxCount)
-        report.add(SIGINT_RESULT_TAGS[status], {
-          unit = ctxName,
-          result = status,
-          reason = emissionReason or "unknown"
-        })
-      end
-
-      ::continue::
+    -- Resolve actual unit
+    local actualUnit = resolveUnit(emitter, enemySide)
+    if not actualUnit then
+      report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.NOT_FOUND], { unit = ctxName, reason = "unit_not_found" })
+      goto continue
     end
+
+    -- Skip some units randomly for performance
+    if math.random() <= detectionSkipProbability then
+      report.add(SIGINT_RESULT_TAGS[DETECTION_STATUS.SKIPPED], { unit = ctxName, reason = "random_skip" })
+      goto continue
+    end
+
+    totalProcessed = totalProcessed + 1
+
+    local isEmitting, emissionReason = isUnitEmitting(config, actualUnit, emitter, enemySide)
+
+    -- Perform SIGINT detection
+    local result = rollDetection(sigintState, actualUnit.guid, isEmitting, sigintConfig)
+    resultMap[actualUnit.guid] = result
+
+    if result.isDetected then
+      totalDetected = totalDetected + 1
+      local status = updateTransmissionData(sigintState, emitter, { unit = actualUnit, result = result }, maxCount)
+      report.add(SIGINT_RESULT_TAGS[status], { unit = ctxName, result = status })
+
+      if isShown then
+        createDetectionNotification(result, emitter.msg, sigintConfig)
+      end
+    else
+      local status = processUndetected(sigintState, actualUnit, maxCount)
+      report.add(SIGINT_RESULT_TAGS[status], {
+        unit = ctxName,
+        result = status,
+        reason = emissionReason or "unknown"
+      })
+    end
+
+    ::continue::
   end
 
   report.emit({ processed = totalProcessed, units = totalUnits, detections = totalDetected })

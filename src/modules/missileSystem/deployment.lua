@@ -146,7 +146,7 @@ end
 ---What differs between the three units of a battery. Everything else is the one path in deployRole.
 ---@class SBJ__BatteryRole
 ---@field role "firing"|"resupply"|"canister_stock" Log `role` field and summary column
----@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__UnitBase
+---@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__FiringUnitDescriptor|SBJ__ResupplyUnitDescriptor|SBJ__CanisterStockDescriptor
 ---@field dbid? number Fixed platform; nil uses the firing unit's dbid
 ---@field isGroup boolean Builds battery.unitCount vehicles grouped under the descriptor name; otherwise one
 ---@field findRejection fun(area: SBJ__OperationalArea, isDeployed: boolean): string|nil Reason the area cannot hold this role

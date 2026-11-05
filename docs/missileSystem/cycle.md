@@ -14,7 +14,7 @@
 
 每個單位走同一個模式：
 
-1. **觀察**：`processFiringUnit` 建 `SBJ__FiringUnitTick`（state、計時、`isLowAmmo` 函式），配對用 `Meeting.resolveReloadPair`；`processResupplyUnit` 建 `SBJ__ResupplyUnitTick`（`isInReloadArea`、`isAtCanisterStock` 函式），觀察是彈箱庫存 state。讀 CMO 的部分都是函式，HIDE / REPOSITIONING 的單位不會讀。
+1. **觀察**：`process` 依 state 名字找 config descriptor，找不到就記一列 `WARN reason=descriptor_not_found` 並略過該單位。`processFiringUnit` 建 `SBJ__FiringUnitTick`（state、descriptor、計時、`isLowAmmo` 函式），配對用 `Meeting.resolveReloadPair`；`processResupplyUnit` 建 `SBJ__ResupplyUnitTick`（`isInReloadArea`、`isAtCanisterStock` 函式），觀察是彈箱庫存 state。讀 CMO 的部分都是函式，HIDE / REPOSITIONING 的單位不會讀。
 2. **判斷**：交給 [rules](rules.md) 的 `evaluateFiringUnitTick(tick, pair)` / `evaluateResupplyUnitTick(tick, canisterStockState)`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、裝填後藏補給車、SAM 回 FP、補給車去 ATP）都寫在 rules。
 3. **執行**：`Shared.processSteps` 依步驟呼叫 `FIRING_UNIT_STEPS` / `RESUPPLY_UNIT_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，回傳一列 log 或 nil。
 
@@ -77,8 +77,8 @@ flowchart TD
 |---|---|
 | `systemState.reloadTime`（對應 `config.*.ground.missileSystemTypes.<type>.reloadTime`） | reload 倒數時長 |
 | `systemState.stowTime`（對應 `config.*.ground.missileSystemTypes.<type>.stowTime`） | 射擊／低彈量後的 stow 等待時長 |
-| `firingUnitState.ammoThreshold` | 低彈量觸發門檻，傳給 `Ammo.isLowAmmo` |
-| `firingUnitState.weaponDBID` | 用來鎖定要回補的武器類別 |
+| `firingUnitDescriptor.ammoThreshold` | 低彈量觸發門檻，傳給 `Ammo.isLowAmmo`；從 config 讀，改 config 後舊存檔也用新值 |
+| `firingUnitDescriptor.weaponDBID` | 用來鎖定要回補的武器類別 |
 | `firingUnitState.stowStartTime` / `reloadStartTime` | 倒數時間錨點，存在 `saveData.*.ground.missileSystemTypes.<system>.firingUnits[*]` |
 | `resupplyUnitState.weaponCountCurrent` | 二級補給觸發條件 |
 

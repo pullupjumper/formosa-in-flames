@@ -100,9 +100,10 @@ end
 ---with the unit it was acting on.
 ---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param unit CMO__Unit
+---@param weaponDBID number|number[]|nil Firing unit weapons kept in the cargo proxy; nil for a resupply unit
 ---@return boolean success Whether hide was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
-function Concealment.hideUnit(unitState, unit)
+function Concealment.hideUnit(unitState, unit, weaponDBID)
   local buildings = findBuildingsInMaskArea(unitState.operationalArea, unit.side)
 
   if not buildings then
@@ -115,7 +116,7 @@ function Concealment.hideUnit(unitState, unit)
     return false, { reason = "no_available_building", area = unitState.operationalArea.name }
   end
 
-  CargoProxy.loadCargo(building, unitState, unit.side)
+  CargoProxy.loadCargo(building, unitState.name, weaponDBID, unit.side)
   return true, nil
 end
 

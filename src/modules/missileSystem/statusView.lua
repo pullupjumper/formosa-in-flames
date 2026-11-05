@@ -1,5 +1,4 @@
 local constants = require("src.core.constants")
-local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
 local StatusView = {}
 
@@ -44,28 +43,34 @@ function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, cu
   local statuses = {}
 
   for missileSystemType, missileSystemState in pairs(groundState.missileSystemTypes) do
+    local systemConfig = missileSystemConfigMap[missileSystemType]
     local firingUnitStates = missileSystemState.firingUnits
 
     if firingUnitStates then
-      for _, firingUnitState in pairs(firingUnitStates) do
-        local _, resupplyUnitState, canisterStockState = GroundStateStore.resolvePair(missileSystemState, firingUnitState.name)
-        -- Config pairs every firing unit with a resupply unit and its canister stock
-        ---@cast resupplyUnitState SBJ__ResupplyUnitState
-        ---@cast canisterStockState SBJ__CanisterStockState
+      for name, firingUnitState in pairs(firingUnitStates) do
+        local firingUnitDescriptor = systemConfig.firingUnits[name]
+        if firingUnitDescriptor then
+          -- Config pairs every firing unit with a resupply unit and its canister stock, and every
+          -- deploy sets the states of all three
+          local resupplyUnitDescriptor = systemConfig.resupplyUnits[firingUnitDescriptor.resupplyUnit]
+          local canisterStockDescriptor = systemConfig.canisterStocks[resupplyUnitDescriptor.canisterStock]
+          local resupplyUnitState = missileSystemState.resupplyUnits[resupplyUnitDescriptor.name]
+          local canisterStockState = missileSystemState.canisterStocks[canisterStockDescriptor.name]
 
-        table.insert(statuses, {
-          name = firingUnitState.name,
-          missileSystemType = missileSystemType,
-          firingUnitState = formatState(firingUnitState.state),
-          resupplyUnitState = formatState(resupplyUnitState.state),
-          missilesInAmmoVehicles = resupplyUnitState.weaponCountCurrent,
-          missilesInTransloaderDefault = resupplyUnitState.weaponCountDefault,
-          missilesInCanisterStock = canisterStockState.weaponCountCurrent,
-          missilesInCanisterStockDefault = canisterStockState.weaponCountDefault,
-          firingUnitReloadTime = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
-          resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
-          defaultReloadTime = missileSystemConfigMap[missileSystemType].reloadTime / 60
-        })
+          table.insert(statuses, {
+            name = firingUnitState.name,
+            missileSystemType = missileSystemType,
+            firingUnitState = formatState(firingUnitState.state),
+            resupplyUnitState = formatState(resupplyUnitState.state),
+            missilesInAmmoVehicles = resupplyUnitState.weaponCountCurrent,
+            missilesInTransloaderDefault = resupplyUnitDescriptor.weaponCountDefault,
+            missilesInCanisterStock = canisterStockState.weaponCountCurrent,
+            missilesInCanisterStockDefault = canisterStockDescriptor.weaponCountDefault,
+            firingUnitReloadTime = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
+            resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
+            defaultReloadTime = systemConfig.reloadTime / 60
+          })
+        end
       end
     end
   end

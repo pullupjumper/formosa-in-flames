@@ -35,8 +35,6 @@ describe("FsemBuilder", function()
     local context = {
       name = "Battery-1",
       state = constants.MISSILE_SYSTEM_STATE.HIDE,
-      ammoThreshold = 40,
-      weaponDBID = 3104
     }
     if overrides then
       for k, v in pairs(overrides) do context[k] = v end
@@ -168,7 +166,13 @@ describe("FsemBuilder", function()
   ---Create full typed config for FsemBuilder tests
   ---@return SBJ__Config
   local function makeConfig()
-    return Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
+    local config = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
+    local firingUnits = {}
+    for _, name in ipairs({ "Battery-1", "Battery-2", "Battery-3" }) do
+      firingUnits[name] = { name = name, ammoThreshold = 40, weaponDBID = 3104 }
+    end
+    config.red.ground.missileSystemTypes.srbm.firingUnits = firingUnits
+    return config
   end
 
   ---Find a Logger.log call matching the given message pattern

@@ -113,65 +113,16 @@ describe("PersistentState", function()
   end)
 
   -- ============================================================================
-  -- sigint / sigintEmitters
+  -- sigint
   -- ============================================================================
 
   describe("sigint", function()
-    -- Shared builder: one distinct table per emitter group so identity checks are meaningful
-    local function makeSigintState()
-      local function ground(...)
-        local g = {}
-        for _, system in ipairs({ ... }) do
-          g[system] = { firingUnits = { name = system } }
-        end
-        return { missileSystemTypes = g }
-      end
-      return {
-        red = {
-          sigint = { name = "china sigint" },
-          ground = ground("mlrs", "srbm", "glcm", "mrbm", "ascm", "sam"),
-          iads = { c2 = {} },
-        },
-        blue = {
-          ground = ground("mlrs", "srbm", "glcm", "ascm", "sam"),
-          iads = { rocc = {}, taaoc = {} },
-        },
-        ally = { sigint = { name = "us sigint" } },
-      }
-    end
-
     -- Positive: China and US collectors resolve to their own SIGINT slices
     it("should return the SIGINT slice of the collecting side", function()
-      local state = makeSigintState()
+      local state = { red = { sigint = { name = "china sigint" } }, ally = { sigint = { name = "us sigint" } } }
 
       assert.are.equal(state.red.sigint, PersistentState.sigint(state, constants.SIDES.RED))
       assert.are.equal(state.ally.sigint, PersistentState.sigint(state, "US"))
-    end)
-
-    -- Positive: China listens to Taiwan's four TEL systems plus ROCC and TAAOC, in collection order
-    it("should list Taiwan emitters for the China collector", function()
-      local state = makeSigintState()
-
-      assert.are.same({
-        state.blue.ground.missileSystemTypes.srbm.firingUnits,
-        state.blue.ground.missileSystemTypes.glcm.firingUnits,
-        state.blue.ground.missileSystemTypes.mlrs.firingUnits,
-        state.blue.ground.missileSystemTypes.ascm.firingUnits,
-        state.blue.iads.rocc,
-        state.blue.iads.taaoc,
-      }, PersistentState.sigintEmitters(state, constants.SIDES.RED))
-    end)
-
-    -- Positive: US listens to China's MLRS/SRBM/GLCM and C2 only
-    it("should list China emitters for the US collector", function()
-      local state = makeSigintState()
-
-      assert.are.same({
-        state.red.ground.missileSystemTypes.mlrs.firingUnits,
-        state.red.ground.missileSystemTypes.srbm.firingUnits,
-        state.red.ground.missileSystemTypes.glcm.firingUnits,
-        state.red.iads.c2,
-      }, PersistentState.sigintEmitters(state, "US"))
     end)
   end)
 

@@ -20,7 +20,7 @@ function Meeting.findReloadArea(unit, operationalArea)
 end
 
 ---Resolve the CMO unit for a state, reusing the triggering unit when names match
----@param unitState SBJ__UnitBase
+---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param triggeringUnit CMO__Unit
 ---@return CMO__Unit|nil # CMO unit or nil if lookup fails
 local function resolveCmoUnit(unitState, triggeringUnit)
@@ -31,14 +31,16 @@ local function resolveCmoUnit(unitState, triggeringUnit)
 end
 
 ---Resolve the firing unit and resupply unit paired with a unit, both states and both CMO units
+---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
 ---@param unit CMO__Unit Firing or resupply unit; reused for its own end, the other end is looked up on its side
 ---@return SBJ__ReloadPair|nil # Nil when either state or either CMO unit is missing
-function Meeting.resolveReloadPair(systemState, unit)
-  local firingUnitState, resupplyUnitState = GroundStateStore.resolvePair(systemState, unit.name)
+function Meeting.resolveReloadPair(systemConfig, systemState, unit)
+  local firingUnitState, resupplyUnitState = GroundStateStore.resolvePair(systemConfig, systemState, unit.name)
   if not firingUnitState or not resupplyUnitState then
     return nil
   end
+  local firingUnitDescriptor = systemConfig.firingUnits[firingUnitState.name]
 
   local firingUnit = resolveCmoUnit(firingUnitState, unit)
   local resupplyUnit = resolveCmoUnit(resupplyUnitState, unit)
@@ -54,25 +56,26 @@ function Meeting.resolveReloadPair(systemState, unit)
     resupplyUnit = resupplyUnit,
     isTriggeredByFiringUnit = unit.name == firingUnitState.name,
     isFiringUnitLowAmmo = function()
-      return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+      return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
     end,
     isInSameReloadArea = function()
       local area = Meeting.findReloadArea(firingUnit, firingUnitState.operationalArea)
       return area ~= nil and resupplyUnit:inArea(area)
     end,
     buildReload = function()
-      reload = reload or Ammo.buildReload(firingUnit, firingUnitState.weaponDBID, resupplyUnitState.weaponCountCurrent)
+      reload = reload or Ammo.buildReload(firingUnit, firingUnitDescriptor.weaponDBID, resupplyUnitState.weaponCountCurrent)
       return reload
     end,
   }
 end
 
 ---Whether a resupply unit and its canister stock stand in one ATP zone
+---@param resupplyUnitDescriptor SBJ__ResupplyUnitDescriptor
 ---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param resupplyUnit CMO__Unit
 ---@return boolean # False also when the canister stock is not in the game
-function Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit)
-  local canisterStock = GameApi.ScenEdit_GetUnit(resupplyUnitState.canisterStock, resupplyUnit.side)
+function Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit)
+  local canisterStock = GameApi.ScenEdit_GetUnit(resupplyUnitDescriptor.canisterStock, resupplyUnit.side)
   if not canisterStock then
     return false
   end

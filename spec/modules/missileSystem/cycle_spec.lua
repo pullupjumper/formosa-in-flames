@@ -21,11 +21,33 @@ describe("MissileSystem Cycle", function()
     return s
   end
 
-  ---Create missile system config carrying the reload/stow timers
+  ---Create missile system config: the reload/stow timers and the Alpha battery's descriptors
   ---@param overrides? table
   ---@return table
   local function makeSystemConfig(overrides)
-    local cfg = { reloadTime = 60, stowTime = 10 }
+    local cfg = {
+      reloadTime = 60,
+      stowTime = 10,
+      firingUnits = {
+        ["Firing Unit Alpha"] = {
+          name = "Firing Unit Alpha",
+          resupplyUnit = "Ammo Sec, Alpha",
+          weaponDBID = 1234,
+          ammoThreshold = 60,
+        }
+      },
+      resupplyUnits = {
+        ["Ammo Sec, Alpha"] = {
+          name = "Ammo Sec, Alpha",
+          firingUnit = "Firing Unit Alpha",
+          canisterStock = "Canister Stock",
+          weaponCountDefault = 20,
+        }
+      },
+      canisterStocks = {
+        ["Canister Stock"] = { name = "Canister Stock", weaponCountDefault = 200 }
+      },
+    }
     if overrides then
       for k, v in pairs(overrides) do cfg[k] = v end
     end
@@ -39,13 +61,10 @@ describe("MissileSystem Cycle", function()
         ["Firing Unit Alpha"] = {
           name = "Firing Unit Alpha",
           state = constants.MISSILE_SYSTEM_STATE.RELOAD,
-          resupplyUnit = "Ammo Sec, Alpha",
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
           },
-          weaponDBID = 1234,
-          ammoThreshold = 60,
         }
       },
       resupplyUnits = {
@@ -53,7 +72,6 @@ describe("MissileSystem Cycle", function()
           name = "Ammo Sec, Alpha",
           state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
           weaponCountCurrent = 10,
-          weaponCountDefault = 20,
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -98,9 +116,6 @@ describe("MissileSystem Cycle", function()
             name = "Firing Unit Alpha",
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -112,7 +127,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
             weaponCountCurrent = 10,
-            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -162,9 +176,7 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
-            canisterStock = "Canister Stock",
             weaponCountCurrent = 0,
-            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -216,9 +228,6 @@ describe("MissileSystem Cycle", function()
             name = "Firing Unit Alpha",
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60
           }
         },
         resupplyUnits = {}
@@ -253,9 +262,6 @@ describe("MissileSystem Cycle", function()
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { course = { { latitude = 25.0, longitude = 121.0 } }, area = { "RP-001" } } }
@@ -267,7 +273,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponCountCurrent = 10,
-            weaponCountDefault = 20
           }
         }
       })
@@ -305,9 +310,6 @@ describe("MissileSystem Cycle", function()
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             reloadStartTime = nil,
             stowStartTime = nil,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { course = { { latitude = 25.0, longitude = 121.0 } }, area = { "RP-001" } } }
@@ -319,7 +321,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponCountCurrent = 10,
-            weaponCountDefault = 20
           }
         }
       })
@@ -359,9 +360,6 @@ describe("MissileSystem Cycle", function()
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1"
             }
@@ -372,7 +370,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponCountCurrent = 20,
-            weaponCountDefault = 20
           }
         }
       })
@@ -413,7 +410,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponCountCurrent = 0,
-            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001" } } },
@@ -445,9 +441,6 @@ describe("MissileSystem Cycle", function()
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               HA = { { course = hideCourse, area = { "HA-001" } } }
@@ -459,7 +452,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponCountCurrent = 20,
-            weaponCountDefault = 20
           }
         }
       })
@@ -498,9 +490,6 @@ describe("MissileSystem Cycle", function()
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { course = { { latitude = 25.0, longitude = 121.0 } }, area = { "RP-001" } } },
@@ -513,7 +502,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.STATIC,
             weaponCountCurrent = 20,
-            weaponCountDefault = 20
           }
         }
       })
@@ -554,9 +542,6 @@ describe("MissileSystem Cycle", function()
             name = "Firing Unit Alpha",
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -569,7 +554,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
             weaponCountCurrent = 10,
-            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -625,9 +609,6 @@ describe("MissileSystem Cycle", function()
             name = "Firing Unit Alpha",
             state = constants.MISSILE_SYSTEM_STATE.RELOAD,
             reloadStartTime = 1000,
-            resupplyUnit = "Ammo Sec, Alpha",
-            weaponDBID = 1234,
-            ammoThreshold = 60,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -641,7 +622,6 @@ describe("MissileSystem Cycle", function()
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
             weaponCountCurrent = 10,
-            weaponCountDefault = 20,
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
@@ -683,6 +663,49 @@ describe("MissileSystem Cycle", function()
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
       assert.are.same(fpCourse, stubSetUnit.calls[1].vals[1].course)
+    end)
+
+    -- Positive: an old save still carries copied config values; the threshold comes from config, not the save
+    it("should judge low ammo by the config threshold when the saved state carries an old one", function()
+      local systemConfig = makeSystemConfig()
+      systemConfig.firingUnits["Firing Unit Alpha"].ammoThreshold = 30
+      local systemState = makeSystemState()
+      local firingUnitState = systemState.firingUnits["Firing Unit Alpha"]
+      firingUnitState.state = constants.MISSILE_SYSTEM_STATE.STATIC
+      firingUnitState.ammoThreshold = 60
+      firingUnitState.weaponDBID = 9999
+      systemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_SYSTEM_STATE.STATIC
+      local firingUnit = { guid = "F1", name = "Firing Unit Alpha", side = "Taiwan", group = { unitlist = { "F1" } } }
+
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
+      trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
+        if guidOrName == "Firing Unit Alpha" or guidOrName == "F1" then return firingUnit end
+        return nil
+      end)
+      local getWeaponInfoStub = trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 5, maxWeapons = 10 })
+
+      local results = Cycle.process(systemState, { systemConfig = systemConfig, isAuto = true }, "Taiwan")
+
+      assert.are.same({}, results)
+      assert.is_nil(firingUnitState.stowStartTime)
+      assert.stub(getWeaponInfoStub).was.called_with(firingUnit, 1234)
+    end)
+
+    -- Negative: a state whose battery config dropped is skipped with a warning, the rest of the cycle runs
+    it("should skip and warn about a unit with no config descriptor", function()
+      local systemConfig = makeSystemConfig({ firingUnits = {}, resupplyUnits = {} })
+      local systemState = makeSystemState()
+      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit")
+      trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
+
+      local results = Cycle.process(systemState, { systemConfig = systemConfig, isAuto = true }, "Taiwan")
+
+      assert.are.same({
+        { tag = "WARN", fields = { unit = "Firing Unit Alpha", action = "reload_cycle", reason = "descriptor_not_found" } },
+        { tag = "WARN", fields = { unit = "Ammo Sec, Alpha", action = "reload_cycle", reason = "descriptor_not_found" } },
+      }, results)
+      assert.stub(getUnitStub).was_not.called()
+      assert.are.equal(constants.MISSILE_SYSTEM_STATE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
     end)
   end)
 end)

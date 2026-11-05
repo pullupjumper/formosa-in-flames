@@ -75,7 +75,7 @@ PersistentState.update(function(saveData)
         GnssJamming.processJammerDestruction(config, unit)
       elseif unit.dbid == constants.PLATFORMS.AMMO or unit.dbid == constants.PLATFORMS.AMMO_TRUCK then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-        MissileSystem.processSupplyAssetDestruction(saveData, unit)
+        MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
         GameApi.ScenEdit_SetScore(
           constants.SIDES.BLUE,
           (score + config.score.destroyingAmmo),

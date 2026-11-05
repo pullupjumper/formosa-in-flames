@@ -9,22 +9,6 @@ local PersistentState = {}
 
 local SAVE_KEY = "SaveData"
 
-local SYSTEMS = constants.MISSILE_SYSTEM_TYPES
-
----Enemy unit groups each SIGINT collector listens to, in collection order
-local SIGINT_TARGETS = {
-  [constants.SIDES.RED] = {
-    side = constants.SIDES.BLUE,
-    systems = { SYSTEMS.SRBM, SYSTEMS.GLCM, SYSTEMS.MLRS, SYSTEMS.ASCM },
-    iadsNodes = { "rocc", "taaoc" },
-  },
-  [constants.SIDES.ALLY] = {
-    side = constants.SIDES.RED,
-    systems = { SYSTEMS.MLRS, SYSTEMS.SRBM, SYSTEMS.GLCM },
-    iadsNodes = { "c2" },
-  },
-}
-
 ---@return SBJ__SaveData|nil
 local function load()
   local state = gKH.State.LoadTableFromKey(SAVE_KEY)
@@ -120,25 +104,6 @@ end
 ---@return SBJ__SIGINTState
 function PersistentState.sigint(state, sideName)
   return state[GameUtils.getCachedSideConfig(sideName).field].sigint
-end
-
----Enemy unit state groups a SIGINT collector monitors
----@param state SBJ__SaveData
----@param collectorSide string
----@return table<string, SBJ__FiringUnitState|SBJ__C2State>[]
-function PersistentState.sigintEmitters(state, collectorSide)
-  local targets = SIGINT_TARGETS[collectorSide]
-  local enemy = state[GameUtils.getCachedSideConfig(targets.side).field]
-  local groups = {}
-
-  for _, system in ipairs(targets.systems) do
-    table.insert(groups, enemy.ground.missileSystemTypes[system].firingUnits)
-  end
-  for _, node in ipairs(targets.iadsNodes) do
-    table.insert(groups, enemy.iads[node])
-  end
-
-  return groups
 end
 
 ---IADS slice for a side

@@ -40,6 +40,12 @@ describe("FireSupportPlan", function()
   -- Shared mock data builders
   -- ============================================================================
 
+  ---China SRBM config for the batteries the tests task
+  local CONFIG = { red = { ground = { missileSystemTypes = { srbm = { firingUnits = {
+    ["Battery-1"] = { name = "Battery-1", ammoThreshold = 40, weaponDBID = 3104 },
+    ["Battery-2"] = { name = "Battery-2", ammoThreshold = 40, weaponDBID = 3104 },
+  } } } } } }
+
   ---@param overrides? table
   ---@return table plannerState
   local function makePlannerState(overrides)
@@ -74,9 +80,8 @@ describe("FireSupportPlan", function()
           srbm = {
             firingUnits = {
               ["Battery-1"] = {
+                name = "Battery-1",
                 state = overrides.firingUnitState or constants.MISSILE_SYSTEM_STATE.HIDE,
-                ammoThreshold = 40,
-                weaponDBID = 3104
               }
             }
           }
@@ -96,7 +101,7 @@ describe("FireSupportPlan", function()
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -108,7 +113,7 @@ describe("FireSupportPlan", function()
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -118,7 +123,7 @@ describe("FireSupportPlan", function()
     it("should handle empty fireSupportPlan without errors", function()
       local plannerState = { ground = { fireSupportPlan = {} } }
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.are.same({}, plannerState.ground.fireSupportPlan)
     end)
@@ -135,7 +140,7 @@ describe("FireSupportPlan", function()
       local stubIsAfter = trackStub(stub(GameUtils, "isAfterStartTime"))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubIsAfter).was_not.called()
       assert.stub(stubGetUnit).was_not.called()
@@ -147,7 +152,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(false))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubGetUnit).was_not.called()
     end)
@@ -165,10 +170,10 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       local stubSend = trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubSend).was.called(1)
-      assert.stub(stubSend).was.called_with(plannerState.ground, "SRBM", "Battery-1")
+      assert.stub(stubSend).was.called_with(CONFIG, plannerState.ground, constants.SIDES.RED, "SRBM", "Battery-1")
     end)
 
     -- Positive: all units at firing point
@@ -180,7 +185,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.allFiringUnitsInPosition)
@@ -193,7 +198,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
@@ -211,7 +216,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "UNIT-1", name = "Battery-1" }))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.are.equal(0, #task.firingUnits)
@@ -226,7 +231,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
@@ -238,9 +243,7 @@ describe("FireSupportPlan", function()
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING
       }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -251,7 +254,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.allFiringUnitsInPosition)
@@ -269,9 +272,7 @@ describe("FireSupportPlan", function()
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.STATIC,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.STATIC
       }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -281,7 +282,7 @@ describe("FireSupportPlan", function()
       end))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
@@ -310,9 +311,7 @@ describe("FireSupportPlan", function()
         }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.STATIC,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.STATIC
       }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -322,7 +321,7 @@ describe("FireSupportPlan", function()
       end))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(1))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.fireSupportTasks[1].isFinished)
@@ -346,7 +345,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubAttack).was.called(1)
       assert.are.same({ "TGT-1", "TGT-2" }, stubAttack.calls[1].vals[1].contacts)
@@ -364,16 +363,14 @@ describe("FireSupportPlan", function()
         firingUnits = firingUnits
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.STATIC,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.STATIC
       }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubAttack).was.called(1)
       assert.are.same(firingUnits, stubAttack.calls[1].vals[1].firingUnits)
@@ -387,7 +384,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
       assert.is_false(task.isFinished)
@@ -405,7 +402,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubAttack).was.called_with({
         contacts = {},
@@ -424,7 +421,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
       local stubAttack = trackStub(stub(AttackManager, "attackContacts"))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubAttack).was_not.called()
     end)
@@ -444,7 +441,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.are.equal(5000, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -458,9 +455,7 @@ describe("FireSupportPlan", function()
       plannerState.ground.missileSystemTypes.sam = {
         firingUnits = {
           ["Battery-1"] = {
-            state = constants.MISSILE_SYSTEM_STATE.STATIC,
-            ammoThreshold = 40,
-            weaponDBID = 3104
+            state = constants.MISSILE_SYSTEM_STATE.STATIC
           }
         }
       }
@@ -470,7 +465,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.is_nil(plannerState.ground.missileSystemTypes.sam.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -484,7 +479,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.is_nil(plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -499,7 +494,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.are.equal(1000, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
     end)
@@ -511,9 +506,7 @@ describe("FireSupportPlan", function()
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.STATIC,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.STATIC
       }
       currentTimeStub.returns(7777)
 
@@ -525,7 +518,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.are.equal(7777, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
       assert.are.equal(7777, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"].stowStartTime)
@@ -547,7 +540,7 @@ describe("FireSupportPlan", function()
         return #opts.contacts > 0 and 2 or 0
       end))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.isFinished)
@@ -557,7 +550,7 @@ describe("FireSupportPlan", function()
     it("should mark matrix finished when tasks were already finished before strike", function()
       local plannerState = makePlannerState({ taskFinished = true })
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_true(matrix.isFinished)
@@ -587,7 +580,7 @@ describe("FireSupportPlan", function()
         return #opts.contacts > 0 and 2 or 0
       end))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       assert.is_false(matrix.isFinished)
@@ -629,7 +622,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(2))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.is_true(plannerState.ground.fireSupportPlan["FSEM-1"].isFinished)
       assert.is_false(plannerState.ground.fireSupportPlan["FSEM-2"].isFinished)
@@ -649,7 +642,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(4))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was.called(1)
       assert.are.equal("ground", logStub.calls[1].vals[1])
@@ -668,7 +661,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(mockUnit))
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -683,7 +676,7 @@ describe("FireSupportPlan", function()
     it("should log completion without strike info when tasks were pre-finished", function()
       local plannerState = makePlannerState({ taskFinished = true })
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -696,7 +689,7 @@ describe("FireSupportPlan", function()
     it("should not log when no active matrices exist", function()
       local plannerState = { ground = { fireSupportPlan = {} } }
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was_not.called()
     end)
@@ -709,7 +702,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns({ guid = "U1", name = "Battery-1" }))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was_not.called()
     end)
@@ -721,7 +714,7 @@ describe("FireSupportPlan", function()
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(nil))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -737,9 +730,7 @@ describe("FireSupportPlan", function()
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.STATIC,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.STATIC
       }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -749,7 +740,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(AttackManager, "attackContacts").returns(0))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]
@@ -764,9 +755,7 @@ describe("FireSupportPlan", function()
         firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
-        state = constants.MISSILE_SYSTEM_STATE.HIDE,
-        ammoThreshold = 40,
-        weaponDBID = 3104
+        state = constants.MISSILE_SYSTEM_STATE.HIDE
       }
 
       trackStub(stub(GameUtils, "isAfterStartTime").returns(true))
@@ -775,7 +764,7 @@ describe("FireSupportPlan", function()
       end))
       trackStub(stub(MissileSystem, "sendToFiringPoint").returns(false, false))
 
-      FireSupportPlan.process(plannerState)
+      FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(logStub).was.called(1)
       local logMessage = logStub.calls[1].vals[2]

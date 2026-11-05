@@ -44,7 +44,7 @@ flowchart TD
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `moveFromHideArea` | `unitState, unit` | `boolean, table?` | 卸載離開建築 |
-| `hideUnit` | `unitState, unit` | `boolean, table?` | 挑選未占用建築並經 `CargoProxy.loadCargo` 載入隱蔽 |
+| `hideUnit` | `unitState, unit, weaponDBID?` | `boolean, table?` | 挑選未占用建築並經 `CargoProxy.loadCargo` 載入隱蔽；`weaponDBID` 只有發射車傳（來自 config descriptor） |
 | `addBunkers` | `operationalArea, sideName` | `boolean` | 在每個 `shelterPoints` 放一棟 `BUNKER/<oparea>/<idx>` |
 | `removeBunkers` | `operationalAreas, sideName` | `integer, boolean` | 刪掉這些作戰區 mask 內的所有建築，回傳刪除數與是否全部成功 |
 

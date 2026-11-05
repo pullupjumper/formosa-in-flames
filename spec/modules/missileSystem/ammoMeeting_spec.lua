@@ -21,19 +21,12 @@ describe("MissileSystem Ammo And Meeting", function()
     return s
   end
 
-  local function makeSystemState(overrides)
-    local ctx = {
-      name = "srbm",
-      reloadTime = 60,
+  local function makeSystemConfig()
+    return {
       firingUnits = {
         ["Firing Unit Alpha"] = {
           name = "Firing Unit Alpha",
-          state = constants.MISSILE_SYSTEM_STATE.RELOAD,
           resupplyUnit = "Ammo Sec, Alpha",
-          operationalArea = {
-            name = "OPAREA-1",
-            RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
-          },
           weaponDBID = 1234,
           ammoThreshold = 60,
         }
@@ -41,10 +34,33 @@ describe("MissileSystem Ammo And Meeting", function()
       resupplyUnits = {
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
-          state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
-          weaponCountCurrent = 10,
           weaponCountDefault = 20,
           firingUnit = "Firing Unit Alpha",
+          canisterStock = "Ammo Revetment, Alpha",
+        }
+      },
+      canisterStocks = {},
+    }
+  end
+
+  local function makeSystemState()
+    return {
+      name = "srbm",
+      firingUnits = {
+        ["Firing Unit Alpha"] = {
+          name = "Firing Unit Alpha",
+          state = constants.MISSILE_SYSTEM_STATE.RELOAD,
+          operationalArea = {
+            name = "OPAREA-1",
+            RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
+          },
+        }
+      },
+      resupplyUnits = {
+        ["Ammo Sec, Alpha"] = {
+          name = "Ammo Sec, Alpha",
+          state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING,
+          weaponCountCurrent = 10,
           operationalArea = {
             name = "OPAREA-1",
             RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } }
@@ -53,14 +69,6 @@ describe("MissileSystem Ammo And Meeting", function()
       },
       canisterStocks = {}
     }
-
-    if overrides then
-      for k, v in pairs(overrides) do
-        ctx[k] = v
-      end
-    end
-
-    return ctx
   end
 
   before_each(function()
@@ -255,13 +263,9 @@ describe("MissileSystem Ammo And Meeting", function()
   describe("getInventory", function()
     -- Boundary: empty system returns zero subtotals and zero percentages
     it("should return zeros when system has no firing/resupply/ammo entries", function()
-      local systemState = {
-        firingUnits = {},
-        resupplyUnits = {},
-        canisterStocks = {},
-      }
+      local emptySystem = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} }
 
-      local report = Ammo.getInventory(systemState, "Taiwan")
+      local report = Ammo.getInventory(emptySystem, emptySystem, "Taiwan")
 
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.resupply)
@@ -271,25 +275,39 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: aggregates subtotals from firing/resupply/ammo and computes overall total
     it("should aggregate subtotals across firing units, resupply units, and canister stocks", function()
-      local systemState = {
+      local systemConfig = {
         firingUnits = {
           ["FU-Alpha"] = { name = "FU-Alpha", weaponDBID = 1234 },
         },
         resupplyUnits = {
-          ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 6, weaponCountDefault = 10 },
-          ["RU-Bravo"] = { name = "RU-Bravo", weaponCountCurrent = 4, weaponCountDefault = 10 },
+          ["RU-Alpha"] = { name = "RU-Alpha", weaponCountDefault = 10 },
+          ["RU-Bravo"] = { name = "RU-Bravo", weaponCountDefault = 10 },
         },
         canisterStocks = {
-          ["Canister stock-1"] = { name = "Canister stock-1", weaponCountCurrent = 50, weaponCountDefault = 100 },
+          ["Canister stock-1"] = { name = "Canister stock-1", weaponCountDefault = 100 },
+        },
+      }
+      local systemState = {
+        firingUnits = {
+          ["FU-Alpha"] = { name = "FU-Alpha" },
+        },
+        resupplyUnits = {
+          ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 6 },
+          ["RU-Bravo"] = { name = "RU-Bravo", weaponCountCurrent = 4 },
+        },
+        canisterStocks = {
+          ["Canister stock-1"] = { name = "Canister stock-1", weaponCountCurrent = 50 },
         },
       }
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(nameOrGuid)
         if nameOrGuid == "FU-Alpha" then return { guid = "FU-Alpha" } end
         return { guid = nameOrGuid }
       end)
-      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 8, maxWeapons = 20 })
+      local getWeaponInfoStub = trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 8, maxWeapons = 20 })
 
-      local report = Ammo.getInventory(systemState, "Taiwan")
+      local report = Ammo.getInventory(systemConfig, systemState, "Taiwan")
+
+      assert.stub(getWeaponInfoStub).was.called_with({ guid = "FU-Alpha" }, 1234)
 
       assert.are.same({ current = 8, max = 20, percentage = 40 }, report.firing)
       assert.are.same({ current = 10, max = 20, percentage = 50 }, report.resupply)
@@ -301,19 +319,20 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Boundary: missing firing unit (game lookup returns nil) does not break aggregation
     it("should skip firing units that cannot be resolved in game state", function()
+      local systemConfig = {
+        firingUnits = { ["FU-Ghost"] = { name = "FU-Ghost", weaponDBID = 1234 } },
+        resupplyUnits = { ["RU-Alpha"] = { name = "RU-Alpha", weaponCountDefault = 10 } },
+        canisterStocks = {},
+      }
       local systemState = {
-        firingUnits = {
-          ["FU-Ghost"] = { name = "FU-Ghost", weaponDBID = 1234 },
-        },
-        resupplyUnits = {
-          ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 5, weaponCountDefault = 10 },
-        },
+        firingUnits = { ["FU-Ghost"] = { name = "FU-Ghost" } },
+        resupplyUnits = { ["RU-Alpha"] = { name = "RU-Alpha", weaponCountCurrent = 5 } },
         canisterStocks = {},
       }
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 99, maxWeapons = 99 })
 
-      local report = Ammo.getInventory(systemState, "Taiwan")
+      local report = Ammo.getInventory(systemConfig, systemState, "Taiwan")
 
       assert.are.same({ current = 0, max = 0, percentage = 0 }, report.firing)
       assert.are.same({ current = 5, max = 10, percentage = 50 }, report.resupply)
@@ -324,15 +343,18 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Boundary: percentage stays at 0 when max is 0 (no divide-by-zero)
     it("should return percentage 0 when subtotal max is zero", function()
+      local systemConfig = {
+        firingUnits = {},
+        resupplyUnits = { ["RU-Empty"] = { name = "RU-Empty", weaponCountDefault = 0 } },
+        canisterStocks = {},
+      }
       local systemState = {
         firingUnits = {},
-        resupplyUnits = {
-          ["RU-Empty"] = { name = "RU-Empty", weaponCountCurrent = 0, weaponCountDefault = 0 },
-        },
+        resupplyUnits = { ["RU-Empty"] = { name = "RU-Empty", weaponCountCurrent = 0 } },
         canisterStocks = {},
       }
 
-      local report = Ammo.getInventory(systemState, "Taiwan")
+      local report = Ammo.getInventory(systemConfig, systemState, "Taiwan")
 
       assert.are.equal(0, report.resupply.percentage)
       assert.are.equal(0, report.total.percentage)
@@ -340,10 +362,13 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: aggregates ammo across multiple weapon DBIDs and group units for firing
     it("should expand groups and multi-weaponDBID for firing units", function()
+      local systemConfig = {
+        firingUnits = { ["FU-Group"] = { name = "FU-Group", weaponDBID = { 1111, 2222 } } },
+        resupplyUnits = {},
+        canisterStocks = {},
+      }
       local systemState = {
-        firingUnits = {
-          ["FU-Group"] = { name = "FU-Group", weaponDBID = { 1111, 2222 } },
-        },
+        firingUnits = { ["FU-Group"] = { name = "FU-Group" } },
         resupplyUnits = {},
         canisterStocks = {},
       }
@@ -363,11 +388,27 @@ describe("MissileSystem Ammo And Meeting", function()
         return { availableWeapons = 0, maxWeapons = 0 }
       end)
 
-      local report = Ammo.getInventory(systemState, "Taiwan")
+      local report = Ammo.getInventory(systemConfig, systemState, "Taiwan")
 
       assert.are.equal(10, report.firing.current)
       assert.are.equal(40, report.firing.max)
       assert.are.equal(25, report.firing.percentage)
+    end)
+
+    -- Negative: a state whose battery config dropped is left out of every subtotal
+    it("should skip units that have no config descriptor", function()
+      local systemConfig = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} }
+      local systemState = {
+        firingUnits = { ["FU-Gone"] = { name = "FU-Gone" } },
+        resupplyUnits = { ["RU-Gone"] = { name = "RU-Gone", weaponCountCurrent = 5 } },
+        canisterStocks = { ["CS-Gone"] = { name = "CS-Gone", weaponCountCurrent = 50 } },
+      }
+      local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit").returns({ guid = "X" })
+
+      local report = Ammo.getInventory(systemConfig, systemState, "Taiwan")
+
+      assert.are.same({ current = 0, max = 0, percentage = 0 }, report.total)
+      assert.stub(getUnitStub).was_not.called()
     end)
   end)
 
@@ -376,11 +417,13 @@ describe("MissileSystem Ammo And Meeting", function()
   -- ============================================================================
 
   describe("resolveReloadPair", function()
+    local mockSystemConfig
     local mockSystemState
     local firingUnit
     local resupplyUnit
 
     before_each(function()
+      mockSystemConfig = makeSystemConfig()
       mockSystemState = makeSystemState()
       firingUnit = {
         guid = "FIRING-001",
@@ -405,25 +448,25 @@ describe("MissileSystem Ammo And Meeting", function()
     -- Boundary: a unit outside the system has no pair
     it("should return nil when unit name not in firingUnits or resupplyUnits", function()
       local unit = { guid = "UNIT-001", name = "Unknown Unit", side = "Taiwan" }
-      assert.is_nil(Meeting.resolveReloadPair(mockSystemState, unit))
+      assert.is_nil(Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, unit))
     end)
 
     -- Negative: a partner missing from the game leaves no pair
     it("should return nil when the partner unit is not in the game", function()
       resupplyUnit = nil
-      assert.is_nil(Meeting.resolveReloadPair(mockSystemState, firingUnit))
+      assert.is_nil(Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit))
     end)
 
     -- Negative: a partner without state leaves no pair, and nothing is looked up
     it("should return nil without a lookup when the partner has no state", function()
       mockSystemState.resupplyUnits = {}
-      assert.is_nil(Meeting.resolveReloadPair(mockSystemState, firingUnit))
+      assert.is_nil(Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit))
       assert.stub(GameApi.ScenEdit_GetUnit).was_not.called()
     end)
 
     -- Positive: resolved from the firing unit, the firing unit is reused and its partner looked up on its side
     it("should resolve both ends from the firing unit", function()
-      local pair = Meeting.resolveReloadPair(mockSystemState, firingUnit)
+      local pair = Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit)
 
       assert.are.equal(firingUnit, pair.firingUnit)
       assert.are.equal(resupplyUnit, pair.resupplyUnit)
@@ -435,7 +478,7 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: resolved from the resupply unit, the pair says so
     it("should resolve both ends from the resupply unit", function()
-      local pair = Meeting.resolveReloadPair(mockSystemState, resupplyUnit)
+      local pair = Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, resupplyUnit)
 
       assert.are.equal(firingUnit, pair.firingUnit)
       assert.are.equal(resupplyUnit, pair.resupplyUnit)
@@ -444,31 +487,36 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: both in the firing unit's RL zone
     it("should report both units in one RL zone", function()
-      assert.is_true(Meeting.resolveReloadPair(mockSystemState, firingUnit).isInSameReloadArea())
+      assert.is_true(Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit).isInSameReloadArea())
     end)
 
     -- Negative: the resupply unit outside that zone
     it("should report different zones when the resupply unit is elsewhere", function()
       resupplyUnit.inArea = function() return false end
-      assert.is_false(Meeting.resolveReloadPair(mockSystemState, firingUnit).isInSameReloadArea())
+      assert.is_false(Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit).isInSameReloadArea())
     end)
 
     -- Negative: the firing unit in no RL zone
     it("should report different zones when the firing unit is in no RL zone", function()
       firingUnit.inArea = function() return false end
-      assert.is_false(Meeting.resolveReloadPair(mockSystemState, firingUnit).isInSameReloadArea())
+      assert.is_false(Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit).isInSameReloadArea())
     end)
 
-    -- Positive: low ammo reads the firing unit's threshold and weapon
-    it("should read the firing unit's ammo against its threshold", function()
-      trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
-      assert.is_true(Meeting.resolveReloadPair(mockSystemState, firingUnit).isFiringUnitLowAmmo())
+    -- Positive: low ammo reads the firing unit's threshold and weapon from config
+    it("should read the firing unit's ammo against its config threshold", function()
+      local getWeaponInfoStub = trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 5, maxWeapons = 10 })
+      local pair = Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit)
+
+      assert.is_true(pair.isFiringUnitLowAmmo())
+      assert.stub(getWeaponInfoStub).was.called_with(firingUnit, 1234)
+      mockSystemConfig.firingUnits["Firing Unit Alpha"].ammoThreshold = 40
+      assert.is_false(pair.isFiringUnitLowAmmo())
     end)
 
     -- Positive: the reload is built once from the resupply unit's stock, so the rule and the step see one value
     it("should build the reload once from the resupply unit's stock", function()
       local getWeaponInfoStub = trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
-      local pair = Meeting.resolveReloadPair(mockSystemState, firingUnit)
+      local pair = Meeting.resolveReloadPair(mockSystemConfig, mockSystemState, firingUnit)
 
       local reload = pair.buildReload()
 
@@ -483,6 +531,7 @@ describe("MissileSystem Ammo And Meeting", function()
   -- ============================================================================
 
   describe("isAtCanisterStock", function()
+    local resupplyUnitDescriptor = { name = "Ammo Sec, Alpha", canisterStock = "Ammo Revetment, Alpha" }
     local resupplyUnitState
     local resupplyUnit
     local canisterStock
@@ -490,7 +539,6 @@ describe("MissileSystem Ammo And Meeting", function()
     before_each(function()
       resupplyUnitState = {
         name = "Ammo Sec, Alpha",
-        canisterStock = "Ammo Revetment, Alpha",
         operationalArea = {
           name = "OPAREA-1",
           ATP = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }
@@ -515,26 +563,26 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: both in one ATP zone
     it("should return true when resupply unit meets canister stock in same ATP", function()
-      assert.is_true(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
+      assert.is_true(Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit))
       assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("Ammo Revetment, Alpha", "China")
     end)
 
     -- Boundary: the resupply unit in no ATP zone
     it("should return false when the resupply unit is in no ATP zone", function()
       resupplyUnit.inArea = function() return false end
-      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
+      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit))
     end)
 
     -- Negative: the canister stock elsewhere
     it("should return false when resupply unit and canister stock are in different areas", function()
       canisterStock.inArea = function() return false end
-      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
+      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit))
     end)
 
     -- Negative: the canister stock gone
     it("should return false when canister stock does not exist", function()
       canisterStock = nil
-      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit))
+      assert.is_false(Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit))
     end)
   end)
 end)

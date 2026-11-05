@@ -43,6 +43,11 @@ describe("MissileSystem Arrival", function()
 
   describe("processMoveToPositionEvent", function()
     local SYSTEM_KEY = constants.MISSILE_SYSTEM_TYPES.SRBM
+    local SYSTEM_CONFIG = {
+      firingUnits = { FU1 = { name = "FU1", resupplyUnit = "RS1", weaponDBID = 1234, ammoThreshold = 60 } },
+      resupplyUnits = { RS1 = { name = "RS1", firingUnit = "FU1", canisterStock = "CS1", weaponCountDefault = 8 } },
+      canisterStocks = { CS1 = { name = "CS1", weaponCountDefault = 40 } },
+    }
 
     ---@param overrides? table Fields to override on the default firing unit
     local function makeUnit(overrides)
@@ -84,6 +89,7 @@ describe("MissileSystem Arrival", function()
     ---@param params {groundState: table, unit: table, event: table, contacts?: table, policy?: table}
     local function enterArea(params)
       Arrival.processMoveToPositionEvent({
+        missileSystemConfigMap = { [SYSTEM_KEY] = SYSTEM_CONFIG },
         groundState = params.groundState,
         unit = params.unit,
         event = params.event,
@@ -197,7 +203,7 @@ describe("MissileSystem Arrival", function()
       assert.stub(hideStub).was.called_with(firingUnitState, unit,
         makeMoveCtx({ hideOnEnterHA = true }).isAuto)
       assert.stub(hideUnitStub).was.called(1)
-      assert.stub(hideUnitStub).was.called_with(firingUnitState, unit)
+      assert.stub(hideUnitStub).was.called_with(firingUnitState, unit, 1234)
       assert.stub(logStub).was.called(1)
 
       local message = logStub.calls[1].vals[2]
@@ -231,6 +237,19 @@ describe("MissileSystem Arrival", function()
       local message = logStub.calls[1].vals[2]
       assert.is_truthy(string.find(message, "[WARN]", 1, true))
       assert.is_truthy(string.find(message, "action=concealment_failed", 1, true))
+    end)
+
+    -- Negative: a unit whose battery config dropped is not hidden
+    it("should leave a unit with no config descriptor alone on HA", function()
+      local unit = makeUnit({ name = "FU-GONE" })
+      local systemState = makeSystemState({ firingUnits = { [unit.name] = { name = "FU-GONE" } } })
+      local hideStub = trackStub(Transitions, "hide")
+      local hideUnitStub = trackStub(Concealment, "hideUnit")
+
+      enterArea({ groundState = groundStateWith(systemState), unit = unit, event = enterEvent("HA"), policy = { hideOnEnterHA = true } })
+
+      assert.stub(hideStub).was_not.called()
+      assert.stub(hideUnitStub).was_not.called()
     end)
 
     -- --- RL --------------------------------------------------------------
@@ -269,7 +288,7 @@ describe("MissileSystem Arrival", function()
         event = enterEvent("RL"),
       })
 
-      assert.stub(resolvePairStub).was.called_with(systemState, unit)
+      assert.stub(resolvePairStub).was.called_with(SYSTEM_CONFIG, systemState, unit)
       assert.stub(beginReloadStub).was.called(1)
       assert.stub(beginReloadStub).was.called_with(pair.firingUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(settleStub).was_not.called()
@@ -434,7 +453,7 @@ describe("MissileSystem Arrival", function()
         event = enterEvent("ATP"),
       })
 
-      assert.stub(isAtCanisterStockStub).was.called_with(resupplyUnitState, unit)
+      assert.stub(isAtCanisterStockStub).was.called_with(SYSTEM_CONFIG.resupplyUnits.RS1, resupplyUnitState, unit)
       assert.stub(beginReloadStub).was.called(1)
       assert.stub(beginReloadStub).was.called_with(resupplyUnitState, unit, makeMoveCtx().isAuto)
       assert.stub(settleStub).was_not.called()

@@ -22,7 +22,7 @@ PersistentState.update(function(saveData)
         )
       elseif unit.dbid == constants.PLATFORMS.AMMO_TRUCK or unit.dbid == constants.PLATFORMS.AMMO then
         local text = unit.dbid == constants.PLATFORMS.AMMO and "ammo revetment." or "ammunition truck."
-        MissileSystem.processSupplyAssetDestruction(saveData, unit)
+        MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
         Logger.log(constants.TAGS.SCORE, "An " .. text .. " has been destoryed.")
       elseif unit.dbid == constants.PLATFORMS.C2 or unit.dbid == constants.PLATFORMS.BUNKER_SECTOR_CONTROL_STATION then
         IntegratedAirDefenseSystem.processC2Disruption(saveData, unit)

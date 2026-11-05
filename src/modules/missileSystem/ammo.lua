@@ -4,12 +4,13 @@ local Shared = require("src.modules.missileSystem.shared")
 
 local Ammo = {}
 
----Transfer canisters from the canister stock to its resupply unit
+---Transfer canisters from the canister stock to its resupply unit, up to the resupply unit's capacity
 ---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param canisterStockState SBJ__CanisterStockState
-function Ammo.transferCanisters(resupplyUnitState, canisterStockState)
-  if canisterStockState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < resupplyUnitState.weaponCountDefault then
-    local deficit = resupplyUnitState.weaponCountDefault - resupplyUnitState.weaponCountCurrent
+---@param capacity number Missiles a full resupply unit carries
+function Ammo.transferCanisters(resupplyUnitState, canisterStockState, capacity)
+  if canisterStockState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < capacity then
+    local deficit = capacity - resupplyUnitState.weaponCountCurrent
     local canistersToTransfer = math.min(deficit, canisterStockState.weaponCountCurrent)
     resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + canistersToTransfer
     canisterStockState.weaponCountCurrent = canisterStockState.weaponCountCurrent - canistersToTransfer
@@ -110,15 +111,17 @@ end
 
 ---Sum ammunition across all firing units of a missile system by querying live game state
 ---@param firingUnitMap table<string, SBJ__FiringUnitState>
+---@param descriptorMap table<string, SBJ__FiringUnitDescriptor>
 ---@param sideName string
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
-local function countFiringUnits(firingUnitMap, sideName)
+local function countFiringUnits(firingUnitMap, descriptorMap, sideName)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for _, firingState in pairs(firingUnitMap) do
-    local firingUnit = GameApi.ScenEdit_GetUnit(firingState.name, sideName)
+  for name in pairs(firingUnitMap) do
+    local descriptor = descriptorMap[name]
+    local firingUnit = descriptor and GameApi.ScenEdit_GetUnit(name, sideName)
     if firingUnit then
-      local current, max = tallyWeapons(firingUnit, firingState.weaponDBID)
+      local current, max = tallyWeapons(firingUnit, descriptor.weaponDBID)
       subtotal.current = subtotal.current + current
       subtotal.max = subtotal.max + max
     end
@@ -130,13 +133,17 @@ end
 
 ---Sum ammunition across state-tracked units (resupply trucks or canister stocks)
 ---@param stateMap table<string, SBJ__ResupplyUnitState|SBJ__CanisterStockState>
+---@param descriptorMap table<string, SBJ__ResupplyUnitDescriptor|SBJ__CanisterStockDescriptor>
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
-local function countStateUnits(stateMap)
+local function countStateUnits(stateMap, descriptorMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for _, ctx in pairs(stateMap) do
-    subtotal.current = subtotal.current + ctx.weaponCountCurrent
-    subtotal.max = subtotal.max + ctx.weaponCountDefault
+  for name, unitState in pairs(stateMap) do
+    local descriptor = descriptorMap[name]
+    if descriptor then
+      subtotal.current = subtotal.current + unitState.weaponCountCurrent
+      subtotal.max = subtotal.max + descriptor.weaponCountDefault
+    end
   end
 
   subtotal.percentage = calculatePercentage(subtotal.current, subtotal.max)
@@ -144,13 +151,14 @@ local function countStateUnits(stateMap)
 end
 
 ---Calculate ammunition inventory across firing units, resupply units, and canister stocks
+---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
 ---@param sideName string
 ---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
-function Ammo.getInventory(systemState, sideName)
-  local firing = countFiringUnits(systemState.firingUnits, sideName)
-  local resupply = countStateUnits(systemState.resupplyUnits)
-  local canisterStock = countStateUnits(systemState.canisterStocks)
+function Ammo.getInventory(systemConfig, systemState, sideName)
+  local firing = countFiringUnits(systemState.firingUnits, systemConfig.firingUnits, sideName)
+  local resupply = countStateUnits(systemState.resupplyUnits, systemConfig.resupplyUnits)
+  local canisterStock = countStateUnits(systemState.canisterStocks, systemConfig.canisterStocks)
 
   local total = {
     current = firing.current + resupply.current + canisterStock.current,

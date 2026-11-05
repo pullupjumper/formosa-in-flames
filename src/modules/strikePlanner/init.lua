@@ -133,7 +133,7 @@ end
 ---@param plannerState SBJ__StrikePlannerState
 local function processActivePlans(config, plannerState)
   if plannerState.ground.enabled then
-    FireSupportPlan.process(plannerState)
+    FireSupportPlan.process(config, plannerState)
   end
 
   if plannerState.air.enabled then

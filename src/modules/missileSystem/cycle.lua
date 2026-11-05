@@ -5,7 +5,6 @@ local Ammo = require("src.modules.missileSystem.ammo")
 local Meeting = require("src.modules.missileSystem.meeting")
 local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
-local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local Rules = require("src.modules.missileSystem.rules")
 local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
@@ -68,7 +67,7 @@ local FIRING_UNIT_STEPS = {
     return {
       tag = "WARN",
       fields = {
-        unit = tick.firingUnitState.resupplyUnit,
+        unit = tick.firingUnitDescriptor.resupplyUnit,
         action = ORDER.RESUPPLY_VIA_SHRL.action,
         reason = "unit_not_found"
       }
@@ -79,7 +78,7 @@ local FIRING_UNIT_STEPS = {
     return {
       tag = "WARN",
       fields = {
-        unit = tick.firingUnitState.resupplyUnit or "unknown",
+        unit = tick.firingUnitDescriptor.resupplyUnit,
         action = ORDER.RESUPPLY_VIA_SHRL.action,
         reason = "context_not_found"
       }
@@ -147,7 +146,7 @@ local RESUPPLY_UNIT_STEPS = {
     local resupplyUnitState = tick.resupplyUnitState
     local beforeResupply = resupplyUnitState.weaponCountCurrent
     local beforeCanisterStock = canisterStockState.weaponCountCurrent
-    Ammo.transferCanisters(resupplyUnitState, canisterStockState)
+    Ammo.transferCanisters(resupplyUnitState, canisterStockState, tick.resupplyUnitDescriptor.weaponCountDefault)
     Transitions.finishReload(resupplyUnitState)
     return {
       tag = "OK",
@@ -170,24 +169,26 @@ local RESUPPLY_UNIT_STEPS = {
 ---@param systemState SBJ__MissileSystemState
 ---@param runCtx SBJ__CycleRunContext
 ---@param firingUnitState SBJ__FiringUnitState
+---@param firingUnitDescriptor SBJ__FiringUnitDescriptor
 ---@param firingUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
-local function processFiringUnit(systemState, runCtx, firingUnitState, firingUnit)
+local function processFiringUnit(systemState, runCtx, firingUnitState, firingUnitDescriptor, firingUnit)
   ---@type SBJ__FiringUnitTick
   local tick = {
     firingUnitState = firingUnitState,
+    firingUnitDescriptor = firingUnitDescriptor,
     firingUnit = firingUnit,
     isAuto = runCtx.isAuto,
     now = GameApi.ScenEdit_CurrentTime(),
     stowTimeSec = runCtx.systemConfig.stowTime,
     reloadTimeSec = runCtx.systemConfig.reloadTime,
     staysDeployed = Rules.staysDeployed(systemState.name),
-    hasResupplyUnitState = systemState.resupplyUnits[firingUnitState.resupplyUnit] ~= nil,
+    hasResupplyUnitState = systemState.resupplyUnits[firingUnitDescriptor.resupplyUnit] ~= nil,
     isLowAmmo = function()
-      return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+      return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
     end,
   }
-  local pair = Meeting.resolveReloadPair(systemState, firingUnit)
+  local pair = Meeting.resolveReloadPair(runCtx.systemConfig, systemState, firingUnit)
 
   return Shared.processSteps(Rules.evaluateFiringUnitTick(tick, pair), FIRING_UNIT_STEPS, tick, pair)
 end
@@ -196,12 +197,14 @@ end
 ---@param systemState SBJ__MissileSystemState
 ---@param runCtx SBJ__CycleRunContext
 ---@param resupplyUnitState SBJ__ResupplyUnitState
+---@param resupplyUnitDescriptor SBJ__ResupplyUnitDescriptor
 ---@param resupplyUnit CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
-local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnit)
+local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnitDescriptor, resupplyUnit)
   ---@type SBJ__ResupplyUnitTick
   local tick = {
     resupplyUnitState = resupplyUnitState,
+    resupplyUnitDescriptor = resupplyUnitDescriptor,
     resupplyUnit = resupplyUnit,
     isAuto = runCtx.isAuto,
     now = GameApi.ScenEdit_CurrentTime(),
@@ -210,13 +213,20 @@ local function processResupplyUnit(systemState, runCtx, resupplyUnitState, resup
       return Meeting.findReloadArea(resupplyUnit, resupplyUnitState.operationalArea) ~= nil
     end,
     isAtCanisterStock = function()
-      return Meeting.isAtCanisterStock(resupplyUnitState, resupplyUnit)
+      return Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit)
     end,
   }
-  local _, _, canisterStockState = GroundStateStore.resolvePair(systemState, resupplyUnitState.name)
+  local canisterStockState = systemState.canisterStocks[resupplyUnitDescriptor.canisterStock]
 
   return Shared.processSteps(Rules.evaluateResupplyUnitTick(tick, canisterStockState), RESUPPLY_UNIT_STEPS, tick,
     canisterStockState)
+end
+
+---Log row for a unit whose state has no config descriptor, e.g. config dropped its battery after a save
+---@param unitName string
+---@return SBJ__LogResult
+local function buildDescriptorNotFound(unitName)
+  return { tag = "WARN", fields = { unit = unitName, action = "reload_cycle", reason = "descriptor_not_found" } }
 end
 
 ---Process missile-system reload cycles and return structured results
@@ -227,17 +237,23 @@ end
 ---@return SBJ__LogResult[] results Collected structured results
 function Cycle.process(systemState, runCtx, sideName)
   local results = {}
-  for _, firingUnitState in pairs(systemState.firingUnits) do
-    local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitState.name, sideName)
-    if firingUnit then
-      Utils.addAll(results, processFiringUnit(systemState, runCtx, firingUnitState, firingUnit))
+  for name, firingUnitState in pairs(systemState.firingUnits) do
+    local descriptor = runCtx.systemConfig.firingUnits[name]
+    local firingUnit = descriptor and GameApi.ScenEdit_GetUnit(name, sideName)
+    if not descriptor then
+      table.insert(results, buildDescriptorNotFound(name))
+    elseif firingUnit then
+      Utils.addAll(results, processFiringUnit(systemState, runCtx, firingUnitState, descriptor, firingUnit))
     end
   end
 
-  for _, resupplyUnitState in pairs(systemState.resupplyUnits) do
-    local resupplyUnit = GameApi.ScenEdit_GetUnit(resupplyUnitState.name, sideName)
-    if resupplyUnit then
-      Utils.addAll(results, processResupplyUnit(systemState, runCtx, resupplyUnitState, resupplyUnit))
+  for name, resupplyUnitState in pairs(systemState.resupplyUnits) do
+    local descriptor = runCtx.systemConfig.resupplyUnits[name]
+    local resupplyUnit = descriptor and GameApi.ScenEdit_GetUnit(name, sideName)
+    if not descriptor then
+      table.insert(results, buildDescriptorNotFound(name))
+    elseif resupplyUnit then
+      Utils.addAll(results, processResupplyUnit(systemState, runCtx, resupplyUnitState, descriptor, resupplyUnit))
     end
   end
 

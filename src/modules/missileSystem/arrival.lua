@@ -66,7 +66,9 @@ local HIDE_AREA_STEPS = {
   [STEP.HIDE_FIRING_UNIT] = function(ctx, observation)
     local unit = ctx.unit
     Transitions.hide(observation.firingUnitState, unit, ctx.moveCtx.isAuto)
-    local success, errorFields = Concealment.hideUnit(observation.firingUnitState, unit)
+    local success, errorFields = Concealment.hideUnit(
+      observation.firingUnitState, unit, observation.firingUnitDescriptor.weaponDBID
+    )
     if success == false then
       return {
         tag = "WARN",
@@ -156,14 +158,16 @@ local AMMUNITION_TRANSFER_POINT_STEPS = {
 local function observeHideArea(ctx)
   local unit = ctx.unit
   local firingUnitState = ctx.systemState.firingUnits[unit.name]
-  if not firingUnitState then
+  local firingUnitDescriptor = ctx.systemConfig.firingUnits[unit.name]
+  if not firingUnitState or not firingUnitDescriptor then
     return nil
   end
 
   return {
     firingUnitState = firingUnitState,
+    firingUnitDescriptor = firingUnitDescriptor,
     isLowAmmo = function()
-      return Ammo.isLowAmmo(unit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+      return Ammo.isLowAmmo(unit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
     end,
   }
 end
@@ -174,14 +178,15 @@ end
 local function observeAmmunitionTransferPoint(ctx)
   local unit = ctx.unit
   local resupplyUnitState = ctx.systemState.resupplyUnits[unit.name]
-  if not resupplyUnitState then
+  local resupplyUnitDescriptor = ctx.systemConfig.resupplyUnits[unit.name]
+  if not resupplyUnitState or not resupplyUnitDescriptor then
     return nil
   end
 
   return {
     resupplyUnitState = resupplyUnitState,
     isAtCanisterStock = function()
-      return Meeting.isAtCanisterStock(resupplyUnitState, unit)
+      return Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, unit)
     end,
   }
 end
@@ -200,7 +205,7 @@ local POSITIONS = {
     steps = HIDE_AREA_STEPS,
   },
   [constants.POSITION_TYPES.RELOAD_POINT] = {
-    observe = function(ctx) return Meeting.resolveReloadPair(ctx.systemState, ctx.unit) end,
+    observe = function(ctx) return Meeting.resolveReloadPair(ctx.systemConfig, ctx.systemState, ctx.unit) end,
     evaluate = Rules.evaluateReloadPointArrival,
     steps = RELOAD_POINT_STEPS,
   },
@@ -230,7 +235,12 @@ function Arrival.processMoveToPositionEvent(params)
 
   GroundStateStore.forEachEnabledSystem(params.groundState, function(systemState, missileSystemType)
     ---@type SBJ__ArrivalContext
-    local ctx = { systemState = systemState, unit = unit, moveCtx = moveCtx }
+    local ctx = {
+      systemConfig = params.missileSystemConfigMap[missileSystemType],
+      systemState = systemState,
+      unit = unit,
+      moveCtx = moveCtx
+    }
     local observation = position.observe(ctx)
     local steps = position.evaluate(moveCtx, observation)
     for _, row in ipairs(Shared.processSteps(steps, position.steps, ctx, observation)) do

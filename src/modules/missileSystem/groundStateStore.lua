@@ -3,24 +3,29 @@ local Utils = require("src.utils.utils")
 local GroundStateStore = {}
 
 ---Find the firing unit, resupply unit and canister stock states paired with either end's unit name
----Any link can be missing when config names a partner that does not exist; it and everything past it is nil.
+---The pairing comes from config links. Each state is nil when it is not tracked; all are nil when config
+---has no firing or resupply unit of that name.
+---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
 ---@param unitName string Firing or resupply unit name
 ---@return SBJ__FiringUnitState|nil firingUnitState Firing unit state of the pair
 ---@return SBJ__ResupplyUnitState|nil resupplyUnitState Resupply unit state of the pair
 ---@return SBJ__CanisterStockState|nil canisterStockState canister stock state of the resupply unit
-function GroundStateStore.resolvePair(systemState, unitName)
-  local firingUnitState = systemState.firingUnits[unitName]
-  local resupplyUnitState
-  if firingUnitState then
-    resupplyUnitState = systemState.resupplyUnits[firingUnitState.resupplyUnit]
-  else
-    resupplyUnitState = systemState.resupplyUnits[unitName]
-    firingUnitState = resupplyUnitState and systemState.firingUnits[resupplyUnitState.firingUnit]
+function GroundStateStore.resolvePair(systemConfig, systemState, unitName)
+  local resupplyUnitName = unitName
+  local firingUnitDescriptor = systemConfig.firingUnits[unitName]
+  if firingUnitDescriptor then
+    resupplyUnitName = firingUnitDescriptor.resupplyUnit
   end
 
-  local canisterStockState = resupplyUnitState and systemState.canisterStocks[resupplyUnitState.canisterStock]
-  return firingUnitState, resupplyUnitState, canisterStockState
+  local resupplyUnitDescriptor = systemConfig.resupplyUnits[resupplyUnitName]
+  if not resupplyUnitDescriptor then
+    return nil, nil, nil
+  end
+
+  return systemState.firingUnits[resupplyUnitDescriptor.firingUnit],
+      systemState.resupplyUnits[resupplyUnitDescriptor.name],
+      systemState.canisterStocks[resupplyUnitDescriptor.canisterStock]
 end
 
 ---Call back once for every enabled missile system
@@ -36,10 +41,11 @@ end
 
 ---Handle logic when resupply unit is destroyed
 ---@param unit CMO__Unit
+---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
-function GroundStateStore.processSupplyAssetDestruction(unit, systemState)
+function GroundStateStore.processSupplyAssetDestruction(unit, systemConfig, systemState)
   local canisterStockState = systemState.canisterStocks[unit.name]
 
   if canisterStockState and unit.group == nil and canisterStockState.weaponCountCurrent > 0 then
@@ -63,10 +69,11 @@ function GroundStateStore.processSupplyAssetDestruction(unit, systemState)
 
   -- The destroyed unit is one vehicle; resupply state is keyed by its group's name
   local resupplyUnitState = systemState.resupplyUnits[unit.group.name]
+  local resupplyUnitDescriptor = systemConfig.resupplyUnits[unit.group.name]
 
-  if resupplyUnitState and resupplyUnitState.weaponCountCurrent > 0 then
+  if resupplyUnitState and resupplyUnitDescriptor and resupplyUnitState.weaponCountCurrent > 0 then
     local ammoBefore = resupplyUnitState.weaponCountCurrent
-    local ammoPerUnit = resupplyUnitState.weaponCountDefault / resupplyUnitState.unitCount
+    local ammoPerUnit = resupplyUnitDescriptor.weaponCountDefault / resupplyUnitDescriptor.unitCount
 
     if (resupplyUnitState.weaponCountCurrent - ammoPerUnit) < 0 then
       resupplyUnitState.weaponCountCurrent = 0
@@ -107,7 +114,7 @@ function GroundStateStore.ensureGroundState(missileSystemConfigMap, groundState)
   end
 end
 
----Set each battery's runtime state fresh from its config descriptors, at the battery's operational area
+---Set each battery's runtime state fresh from its config descriptors' starting values, at the battery's operational area
 ---Only the given batteries change; every other battery keeps its runtime state. Copies the area, so run it
 ---after PositionZones.rebuild has written the mask onto a new area.
 ---@param groundState SBJ__GroundState
@@ -115,14 +122,23 @@ end
 function GroundStateStore.setBatteryStates(groundState, batteries)
   for _, battery in ipairs(batteries) do
     local systemState = groundState.missileSystemTypes[battery.missileSystemType]
-    local firingUnitState = Utils.deepCopy(battery.firing)
-    local resupplyUnitState = Utils.deepCopy(battery.resupply)
-    firingUnitState.operationalArea = Utils.deepCopy(battery.operationalArea)
-    resupplyUnitState.operationalArea = Utils.deepCopy(battery.operationalArea)
+    local firing, resupply, canisterStock = battery.firing, battery.resupply, battery.canisterStock
 
-    systemState.firingUnits[firingUnitState.name] = firingUnitState
-    systemState.resupplyUnits[resupplyUnitState.name] = resupplyUnitState
-    systemState.canisterStocks[battery.canisterStock.name] = Utils.deepCopy(battery.canisterStock)
+    systemState.firingUnits[firing.name] = {
+      name = firing.name,
+      state = firing.state,
+      operationalArea = Utils.deepCopy(battery.operationalArea),
+    }
+    systemState.resupplyUnits[resupply.name] = {
+      name = resupply.name,
+      state = resupply.state,
+      operationalArea = Utils.deepCopy(battery.operationalArea),
+      weaponCountCurrent = resupply.weaponCountCurrent,
+    }
+    systemState.canisterStocks[canisterStock.name] = {
+      name = canisterStock.name,
+      weaponCountCurrent = canisterStock.weaponCountCurrent,
+    }
   end
 end
 

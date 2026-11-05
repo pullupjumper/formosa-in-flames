@@ -109,14 +109,11 @@ describe("MissileSystem Concealment", function()
       trackStub(math, "random").returns(1)
       local stubLoadCargo = trackStub(CargoProxy, "loadCargo")
 
-      local success, errorMsg = Concealment.hideUnit(unitState, unit)
+      local success, errorMsg = Concealment.hideUnit(unitState, unit, 1234)
 
       assert.is_true(success)
       assert.is_nil(errorMsg)
-      assert.stub(stubLoadCargo).was.called(1)
-      assert.are.same(mockBuilding, stubLoadCargo.calls[1].vals[1])
-      assert.are.same(unitState, stubLoadCargo.calls[1].vals[2])
-      assert.are.equal("China", stubLoadCargo.calls[1].vals[3])
+      assert.stub(stubLoadCargo).was.called_with(mockBuilding, unitState.name, 1234, "China")
     end)
 
     -- Positive: selects a random building from the list

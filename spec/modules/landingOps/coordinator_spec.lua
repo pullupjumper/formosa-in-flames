@@ -647,12 +647,15 @@ describe("LandingOps Coordinator", function()
         local config = buildGateConfig()
         local landingState = buildGateLandingState()
         landingState.amphibOps.zoneStates.Taoyuan = buildZoneState({ phase = constants.AMPHIBIOUS_PHASES.MOVING })
-        trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(40)))
+        local inventoryStub = trackStub(stub(MissileSystem, "getAmmoInventory").returns(buildReport(40)))
 
         Coordinator.process(config, landingState,
           { contacts = buildContacts(), currentTime = 1000, filteredShips = buildFilteredShips() })
 
         assert.is_true(landingState.amphibOps.fireSupportOnHold)
+        assert.stub(inventoryStub).was.called_with(
+          config, landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.RED
+        )
       end)
     end)
   end)

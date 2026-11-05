@@ -39,6 +39,24 @@ local SEND_TO_FIRING_POINT_STEPS = {
   end,
 }
 
+---@param config SBJ__Config
+---@param sideName string
+---@return table<string, SBJ__MissileSystemConfig>
+local function getMissileSystemTypes(config, sideName)
+  return config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
+end
+
+---Find a firing unit config descriptor by missile system and unit name
+---@param config SBJ__Config
+---@param sideName string
+---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnitName string
+---@return SBJ__FiringUnitDescriptor|nil # Nil when config has no such system or firing unit
+local function findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
+  local systemConfig = getMissileSystemTypes(config, sideName)[string.lower(missileSystemType)]
+  return systemConfig and systemConfig.firingUnits[firingUnitName]
+end
+
 ---Find a firing unit runtime state by missile system and unit name
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
@@ -51,20 +69,23 @@ end
 
 ---Send a firing unit from its hide area to its firing point when it is ready
 ---A unit is ready when it is hiding with enough ammunition; units already out are left alone.
+---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
+---@param sideName string Side that owns the firing unit
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnitName string
 ---@return boolean inPosition Whether the unit is at its firing point
----@return boolean isMissing Whether the unit no longer exists in game or has no runtime state
-function MissileSystem.sendToFiringPoint(groundState, missileSystemType, firingUnitName)
+---@return boolean isMissing Whether the unit no longer exists in game, in config or in runtime state
+function MissileSystem.sendToFiringPoint(config, groundState, sideName, missileSystemType, firingUnitName)
   local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
   local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
-  if not firingUnit or not firingUnitState then
+  local firingUnitDescriptor = findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
+  if not firingUnit or not firingUnitState or not firingUnitDescriptor then
     return false, true
   end
 
   local function isLowAmmo()
-    return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+    return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
   end
 
   local steps = Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)
@@ -79,29 +100,34 @@ function MissileSystem.sendToFiringPoint(groundState, missileSystemType, firingU
 end
 
 ---Calculate ammunition inventory across firing/resupply/canister stock for a missile system
+---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string
 ---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
-function MissileSystem.getAmmoInventory(groundState, missileSystemType, sideName)
+function MissileSystem.getAmmoInventory(config, groundState, missileSystemType, sideName)
   local systemState = groundState.missileSystemTypes[missileSystemType]
-  if not systemState then
+  local systemConfig = getMissileSystemTypes(config, sideName)[missileSystemType]
+  if not systemState or not systemConfig then
     return nil
   end
 
-  return Ammo.getInventory(systemState, sideName)
+  return Ammo.getInventory(systemConfig, systemState, sideName)
 end
 
 ---Evaluate whether a firing unit can take a fire support task, and why not
+---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
+---@param sideName string Side that owns the firing unit
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
 ---@param firingUnitName string
----@param getUnit fun(name: string): CMO__Unit|nil Called only when the unit has a runtime state
+---@param getUnit fun(name: string): CMO__Unit|nil Called only when the unit has a runtime state and a config descriptor
 ---@return missileSystemReadiness
-function MissileSystem.evaluateReadiness(groundState, missileSystemType, firingUnitName, getUnit)
+function MissileSystem.evaluateReadiness(config, groundState, sideName, missileSystemType, firingUnitName, getUnit)
   local readiness = constants.MISSILE_SYSTEM_READINESS
   local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
-  if not firingUnitState then
+  local firingUnitDescriptor = findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
+  if not firingUnitState or not firingUnitDescriptor then
     return readiness.NO_STATE
   end
 
@@ -111,7 +137,7 @@ function MissileSystem.evaluateReadiness(groundState, missileSystemType, firingU
   end
 
   return Rules.evaluateReadiness(firingUnitState, function()
-    return Ammo.isLowAmmo(firingUnit, firingUnitState.ammoThreshold, firingUnitState.weaponDBID)
+    return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
   end)
 end
 
@@ -180,13 +206,6 @@ local function process(groundState, missileSystemConfigMap, isAuto, sideName)
   report.emit({ mode = isAuto and "auto" or "manual" })
 end
 
----@param config SBJ__Config
----@param sideName string
----@return table<string, SBJ__MissileSystemConfig>
-local function getMissileSystemTypes(config, sideName)
-  return config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
-end
-
 ---Run one reload/hide cycle for a side, with its policy taken from config
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
@@ -202,14 +221,18 @@ function MissileSystem.processSide(config, saveData, sideName)
 end
 
 ---Deduct ammunition when a canister stock or resupply vehicle of any missile system is destroyed
+---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
 ---@return boolean processed Whether the unit belonged to a missile system and ammo was adjusted
-function MissileSystem.processSupplyAssetDestruction(saveData, unit)
+function MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
   local groundState = PersistentState.ground(saveData, unit.side)
+  local missileSystemConfigMap = getMissileSystemTypes(config, unit.side)
 
-  for _, systemState in pairs(groundState.missileSystemTypes) do
-    local success, result = GroundStateStore.processSupplyAssetDestruction(unit, systemState)
+  for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
+    local success, result = GroundStateStore.processSupplyAssetDestruction(
+      unit, missileSystemConfigMap[missileSystemType], systemState
+    )
 
     -- A destroyed unit belongs to at most one system, so the first match ends the search.
     if success and result then
@@ -308,6 +331,31 @@ function MissileSystem.buildBatteryStatuses(config, saveData, sideName)
   )
 end
 
+---List the firing units of some missile systems as SIGINT emitters, in the order the systems are given
+---A firing unit without a runtime state or a config descriptor is left out.
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
+---@param sideName string Side that owns the firing units
+---@param missileSystemTypes string[] Missile system type keys (constants.MISSILE_SYSTEM_TYPES)
+---@return SBJ__SigintEmitter[]
+function MissileSystem.listSigintEmitters(config, saveData, sideName, missileSystemTypes)
+  local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
+  local groundState = PersistentState.ground(saveData, sideName)
+  local emitters = {}
+
+  for _, missileSystemType in ipairs(missileSystemTypes) do
+    local descriptorMap = missileSystemConfigMap[missileSystemType].firingUnits
+    for name, firingUnitState in pairs(groundState.missileSystemTypes[missileSystemType].firingUnits) do
+      local descriptor = descriptorMap[name]
+      if descriptor then
+        table.insert(emitters, { name = name, msg = descriptor.msg, operationalArea = firingUnitState.operationalArea })
+      end
+    end
+  end
+
+  return emitters
+end
+
 ---Seed a side's default per-system state (name, enabled, empty unit maps) from configuration
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
@@ -341,6 +389,7 @@ function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
   local policy = config[GameUtils.getCachedSideConfig(unit.side).field].ground.policy
 
   Arrival.processMoveToPositionEvent({
+    missileSystemConfigMap = getMissileSystemTypes(config, unit.side),
     groundState = PersistentState.ground(saveData, unit.side),
     unit = unit,
     event = event,

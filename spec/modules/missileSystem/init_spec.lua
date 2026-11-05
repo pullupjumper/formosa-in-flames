@@ -67,15 +67,18 @@ describe("MissileSystem", function()
       moveFromHideAreaStub = trackStub(Concealment, "moveFromHideArea").returns(true)
     end)
 
-    ---Send FU1 of an SRBM battery whose state and game unit are given
+    ---Send FU1 of a China SRBM battery whose state, game unit and config descriptors are given
     ---@param firingUnitState table|nil
     ---@param firingUnit table|nil
+    ---@param descriptorMap? table Config firing units; defaults to FU1 with a 40% threshold on weapon 1
     ---@return boolean inPosition
     ---@return boolean isMissing
-    local function sendToFiringPoint(firingUnitState, firingUnit)
+    local function sendToFiringPoint(firingUnitState, firingUnit, descriptorMap)
       trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      local firingUnits = descriptorMap or { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } }
+      local config = { red = { ground = { missileSystemTypes = { srbm = { firingUnits = firingUnits } } } } }
       local groundState = { missileSystemTypes = { srbm = { firingUnits = { FU1 = firingUnitState } } } }
-      return MissileSystem.sendToFiringPoint(groundState, "SRBM", "FU1")
+      return MissileSystem.sendToFiringPoint(config, groundState, constants.SIDES.RED, "SRBM", "FU1")
     end
 
     -- Negative: a tracked unit that no longer exists in game is reported missing
@@ -97,6 +100,17 @@ describe("MissileSystem", function()
       assert.is_true(isMissing)
     end)
 
+    -- Negative: a unit whose battery config dropped is reported missing, so the task lets it go
+    it("should report a missing unit when it has no config descriptor", function()
+      local moveStub = trackStub(Movement, "moveTo")
+
+      local inPosition, isMissing = sendToFiringPoint({ name = "FU1", state = STATE.HIDE }, { name = "FU1" }, {})
+
+      assert.is_false(inPosition)
+      assert.is_true(isMissing)
+      assert.stub(moveStub).was_not.called()
+    end)
+
     -- Positive: a unit with both state and game unit is not missing
     it("should report a present unit as not missing", function()
       local _, isMissing = sendToFiringPoint({ name = "FU1", state = STATE.STATIC }, { name = "FU1" })
@@ -106,7 +120,7 @@ describe("MissileSystem", function()
 
     -- Positive: a hiding unit with ammo leaves its hide area and heads to FP
     it("should unload and move a hiding unit with enough ammo", function()
-      local firingUnitState = { name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 }
+      local firingUnitState = { name = "FU1", state = STATE.HIDE }
       local firingUnit = { name = "FU1" }
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local moveStub = trackStub(Movement, "moveTo").returns({ tag = "OK", fields = {} })
@@ -194,6 +208,19 @@ describe("MissileSystem", function()
       return { missileSystemTypes = { srbm = { firingUnits = { FU1 = firingUnitState } } } }
     end
 
+    ---China config whose SRBM FU1 is low on ammo at or below 40% of weapon 1
+    local function buildConfig()
+      return { red = { ground = { missileSystemTypes = {
+        srbm = { firingUnits = { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } } },
+      } } } }
+    end
+
+    local function evaluateReadiness(groundState, missileSystemType, getUnit, config)
+      return MissileSystem.evaluateReadiness(
+        config or buildConfig(), groundState, constants.SIDES.RED, missileSystemType, "FU1", getUnit
+      )
+    end
+
     ---@param current integer
     ---@param max integer
     ---@return table
@@ -217,7 +244,7 @@ describe("MissileSystem", function()
     it("should report context_not_found without looking up the unit when it has no state", function()
       local getUnit = trackGetUnit(buildUnit(6, 6))
 
-      local readiness = MissileSystem.evaluateReadiness(buildGroundState(nil), "SRBM", "FU1", getUnit)
+      local readiness = evaluateReadiness(buildGroundState(nil), "SRBM", getUnit)
 
       assert.are.equal("context_not_found", readiness)
       assert.spy(getUnit).was_not.called()
@@ -226,19 +253,31 @@ describe("MissileSystem", function()
     -- Negative: a system the side does not field has no state for any unit
     it("should report context_not_found for a missile system the side does not field", function()
       local getUnit = trackGetUnit(buildUnit(6, 6))
-      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE })
 
-      local readiness = MissileSystem.evaluateReadiness(groundState, "GLCM", "FU1", getUnit)
+      local readiness = evaluateReadiness(groundState, "GLCM", getUnit)
 
       assert.are.equal("context_not_found", readiness)
+    end)
+
+    -- Negative: a unit whose battery config dropped is never looked up in game
+    it("should report context_not_found without looking up the unit when it has no config descriptor", function()
+      local getUnit = trackGetUnit(buildUnit(6, 6))
+      local config = buildConfig()
+      config.red.ground.missileSystemTypes.srbm.firingUnits.FU1 = nil
+
+      local readiness = evaluateReadiness(buildGroundState({ name = "FU1", state = STATE.HIDE }), "SRBM", getUnit, config)
+
+      assert.are.equal("context_not_found", readiness)
+      assert.spy(getUnit).was_not.called()
     end)
 
     -- Negative: a tracked unit that no longer exists in game
     it("should report unit_not_found when the tracked unit is gone from the game", function()
       local getUnit = trackGetUnit(nil)
-      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE })
 
-      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+      local readiness = evaluateReadiness(groundState, "SRBM", getUnit)
 
       assert.are.equal("unit_not_found", readiness)
       assert.spy(getUnit).was.called_with("FU1")
@@ -247,9 +286,9 @@ describe("MissileSystem", function()
     -- Negative: only a hiding unit can be tasked, even with full ammo
     it("should report bad_state for a unit that is not hiding", function()
       local getUnit = trackGetUnit(buildUnit(6, 6))
-      local groundState = buildGroundState({ name = "FU1", state = STATE.STATIC, ammoThreshold = 40, weaponDBID = 1 })
+      local groundState = buildGroundState({ name = "FU1", state = STATE.STATIC })
 
-      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+      local readiness = evaluateReadiness(groundState, "SRBM", getUnit)
 
       assert.are.equal("bad_state", readiness)
     end)
@@ -257,9 +296,9 @@ describe("MissileSystem", function()
     -- Negative: 2 of 6 missiles left is 33%, at or below the 40% threshold
     it("should report low_ammo for a hiding unit at or below its ammo threshold", function()
       local getUnit = trackGetUnit(buildUnit(2, 6))
-      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE })
 
-      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+      local readiness = evaluateReadiness(groundState, "SRBM", getUnit)
 
       assert.are.equal("low_ammo", readiness)
     end)
@@ -267,9 +306,9 @@ describe("MissileSystem", function()
     -- Positive: a hiding unit with 3 of 6 missiles (50%) is above the 40% threshold
     it("should report available for a hiding unit above its ammo threshold", function()
       local getUnit = trackGetUnit(buildUnit(3, 6))
-      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE, ammoThreshold = 40, weaponDBID = 1 })
+      local groundState = buildGroundState({ name = "FU1", state = STATE.HIDE })
 
-      local readiness = MissileSystem.evaluateReadiness(groundState, "SRBM", "FU1", getUnit)
+      local readiness = evaluateReadiness(groundState, "SRBM", getUnit)
 
       assert.are.equal("available", readiness)
     end)
@@ -593,6 +632,9 @@ describe("MissileSystem", function()
       local unit = { name = "FU1", guid = "guid-fu1", side = constants.SIDES.RED }
       local event = { triggers = { { UnitEntersArea = { Description = "(China) Arrive in HA - 1 - AreaA" } } } }
       local firingUnitState = { name = "FU1" }
+      config.red.ground.missileSystemTypes = {
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { firingUnits = { FU1 = { name = "FU1", weaponDBID = 1, ammoThreshold = 40 } } }
+      }
       saveData.red.ground = {
         missileSystemTypes = {
           [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitState }, resupplyUnits = {} }
@@ -618,6 +660,9 @@ describe("MissileSystem", function()
       local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in ATP - 1 - AreaA" } } } }
 
       local systemState = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
+      config.blue.ground.missileSystemTypes = {
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { resupplyUnits = { RS1 = { name = "RS1", canisterStock = "CS1" } } }
+      }
       saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
       trackStub(Meeting, "isAtCanisterStock").returns(false)
@@ -744,8 +789,9 @@ describe("MissileSystem", function()
         },
       }
       local unit = { name = "Canister Stock Alpha", side = constants.SIDES.BLUE }
+      local config = { blue = { ground = { missileSystemTypes = { mlrs = { resupplyUnits = {} }, srbm = { resupplyUnits = {} } } } } }
 
-      local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
+      local processed = MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
 
       assert.is_true(processed)
       assert.are.equal(0, srbmState.canisterStocks["Canister Stock Alpha"].weaponCountCurrent)
@@ -763,8 +809,9 @@ describe("MissileSystem", function()
     it("should return false and stay silent for an untracked unit", function()
       local saveData = { red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, canisterStocks = {} } } } } }
       local unit = { name = "Random Truck", side = constants.SIDES.RED }
+      local config = { red = { ground = { missileSystemTypes = { srbm = { resupplyUnits = {} } } } } }
 
-      local processed = MissileSystem.processSupplyAssetDestruction(saveData, unit)
+      local processed = MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
 
       assert.is_false(processed)
       assert.stub(logStub).was_not.called()
@@ -779,20 +826,59 @@ describe("MissileSystem", function()
     -- Positive: delegates with the system state picked from groundState
     it("should report inventory for the requested system", function()
       local srbmState = { name = "srbm" }
+      local srbmConfig = { reloadTime = 60 }
       local groundState = { missileSystemTypes = { srbm = srbmState } }
+      local config = { red = { ground = { missileSystemTypes = { srbm = srbmConfig } } } }
 
       local inventoryStub = trackStub(Ammo, "getInventory").returns({ total = { percentage = 80 } })
 
-      local report = MissileSystem.getAmmoInventory(groundState, "srbm", "China")
+      local report = MissileSystem.getAmmoInventory(config, groundState, "srbm", constants.SIDES.RED)
 
       assert.are.equal(80, report.total.percentage)
-      assert.stub(inventoryStub).was.called_with(srbmState, "China")
+      assert.stub(inventoryStub).was.called_with(match.is_ref(srbmConfig), match.is_ref(srbmState), constants.SIDES.RED)
     end)
 
     -- Negative: absent system yields nil
     it("should return nil when the system is absent", function()
       local groundState = { missileSystemTypes = {} }
-      assert.is_nil(MissileSystem.getAmmoInventory(groundState, "srbm", "China"))
+      local config = { red = { ground = { missileSystemTypes = {} } } }
+      assert.is_nil(MissileSystem.getAmmoInventory(config, groundState, "srbm", constants.SIDES.RED))
+    end)
+  end)
+
+  -- ============================================================================
+  -- listSigintEmitters
+  -- ============================================================================
+
+  describe("listSigintEmitters", function()
+    -- Positive: message comes from config, area from state, systems in the order asked
+    it("should list each tracked firing unit with its config message and saved area", function()
+      local srbmArea, glcmArea = { name = "#SRBM" }, { name = "#GLCM" }
+      local config = { blue = { ground = { missileSystemTypes = {
+        srbm = { firingUnits = { FU1 = { name = "FU1", msg = "SRBM radio" } } },
+        glcm = { firingUnits = { FU2 = { name = "FU2", msg = "GLCM radio" } } },
+      } } } }
+      local saveData = { blue = { ground = { missileSystemTypes = {
+        srbm = { firingUnits = { FU1 = { name = "FU1", msg = "old copy", operationalArea = srbmArea } } },
+        glcm = { firingUnits = { FU2 = { name = "FU2", operationalArea = glcmArea } } },
+      } } } }
+
+      local emitters = MissileSystem.listSigintEmitters(config, saveData, constants.SIDES.BLUE, { "glcm", "srbm" })
+
+      assert.are.same({
+        { name = "FU2", msg = "GLCM radio", operationalArea = glcmArea },
+        { name = "FU1", msg = "SRBM radio", operationalArea = srbmArea },
+      }, emitters)
+    end)
+
+    -- Negative: a firing unit whose battery config dropped is not listed
+    it("should leave out a firing unit with no config descriptor", function()
+      local config = { blue = { ground = { missileSystemTypes = { srbm = { firingUnits = {} } } } } }
+      local saveData = { blue = { ground = { missileSystemTypes = {
+        srbm = { firingUnits = { FU1 = { name = "FU1", operationalArea = {} } } },
+      } } } }
+
+      assert.are.same({}, MissileSystem.listSigintEmitters(config, saveData, constants.SIDES.BLUE, { "srbm" }))
     end)
   end)
 

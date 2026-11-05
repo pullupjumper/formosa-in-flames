@@ -34,7 +34,7 @@ end
 ---so the hold stays released.
 ---@param config SBJ__Config
 ---@param landingState SBJ__LandingOpsState
----@param getAmmoInventory fun(ground: table, missileType: string, sideName: string): SBJ__AmmoInventoryResult|nil # Only called while the gate can still change
+---@param getAmmoInventory fun(config: SBJ__Config, ground: SBJ__GroundState, missileType: string, sideName: string): SBJ__AmmoInventoryResult|nil # Only called while the gate can still change
 ---@return SBJ__LogResult|nil # Set when the gate switched between hold and resume
 function FireSupportGate.evaluate(config, landingState, getAmmoInventory)
   local amphib = landingState.amphibOps
@@ -50,6 +50,7 @@ function FireSupportGate.evaluate(config, landingState, getAmmoInventory)
   end
 
   local report = landingState.ground and getAmmoInventory(
+    config,
     landingState.ground,
     constants.MISSILE_SYSTEM_TYPES.SRBM,
     constants.SIDES.RED

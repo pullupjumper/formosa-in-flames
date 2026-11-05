@@ -17,7 +17,6 @@ describe("MissileSystem StatusView", function()
     local ctx = {
       name = "FU-1",
       state = STATE.RELOAD,
-      resupplyUnit = "RS-1",
       reloadStartTime = 1000
     }
     if overrides then
@@ -30,7 +29,7 @@ describe("MissileSystem StatusView", function()
   ---@param overrides? table
   ---@return table
   local function makeResupplyUnitState(overrides)
-    local ctx = { name = "RS-1", state = STATE.HIDE, weaponCountCurrent = 4, canisterStock = "ATP-1" }
+    local ctx = { name = "RS-1", state = STATE.HIDE, weaponCountCurrent = 4 }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
     end
@@ -50,13 +49,30 @@ describe("MissileSystem StatusView", function()
             ["RS-1"] = resupplyUnitState or makeResupplyUnitState(),
             ["RS-2"] = makeResupplyUnitState({ name = "RS-2" })
           },
-          canisterStocks = { ["ATP-1"] = { weaponCountCurrent = 12 } }
+          canisterStocks = { ["ATP-1"] = { name = "ATP-1", weaponCountCurrent = 12 } }
         }
       }
     }
   end
 
-  local missileSystemConfigMap = { srbm = { reloadTime = 1800 }, mlrs = { reloadTime = 600 } }
+  ---SRBM config pairing FU-1 with RS-1 and its canister stock ATP-1; RS-2 has no firing unit
+  ---@return table
+  local function makeConfigMap()
+    return {
+      srbm = {
+        reloadTime = 1800,
+        firingUnits = { ["FU-1"] = { name = "FU-1", resupplyUnit = "RS-1" } },
+        resupplyUnits = {
+          ["RS-1"] = { name = "RS-1", firingUnit = "FU-1", canisterStock = "ATP-1", weaponCountDefault = 8 },
+          ["RS-2"] = { name = "RS-2", firingUnit = "FU-2", canisterStock = "ATP-1", weaponCountDefault = 8 },
+        },
+        canisterStocks = { ["ATP-1"] = { name = "ATP-1", weaponCountDefault = 24 } },
+      },
+      mlrs = { reloadTime = 600 },
+    }
+  end
+
+  local missileSystemConfigMap = makeConfigMap()
 
   ---Build statuses for SRBM and return the FU-1 status
   ---@param groundState table
@@ -82,7 +98,9 @@ describe("MissileSystem StatusView", function()
           firingUnitState = "RELOAD",
           resupplyUnitState = "HIDE",
           missilesInAmmoVehicles = 4,
+          missilesInTransloaderDefault = 8,
           missilesInCanisterStock = 12,
+          missilesInCanisterStockDefault = 24,
           firingUnitReloadTime = 2,
           resupplyUnitReloadTime = 0,
           defaultReloadTime = 30
@@ -90,14 +108,25 @@ describe("MissileSystem StatusView", function()
       }, rows)
     end)
 
-    it("should report the default ammo counts of the resupply unit and its canister stock", function()
+    -- Positive: default counts come from config, so a config change reaches an old save
+    it("should report the config default ammo counts of the resupply unit and its canister stock", function()
+      local configMap = makeConfigMap()
+      configMap.srbm.resupplyUnits["RS-1"].weaponCountDefault = 10
+      configMap.srbm.canisterStocks["ATP-1"].weaponCountDefault = 30
       local groundState = makeGroundState(nil, makeResupplyUnitState({ weaponCountDefault = 8 }))
-      groundState.missileSystemTypes.srbm.canisterStocks["ATP-1"].weaponCountDefault = 24
 
-      local row = buildRow(groundState, 1120)
+      local row = StatusView.buildBatteryStatuses(groundState, configMap, 1120)[1]
 
-      assert.are.equal(8, row.missilesInTransloaderDefault)
-      assert.are.equal(24, row.missilesInCanisterStockDefault)
+      assert.are.equal(10, row.missilesInTransloaderDefault)
+      assert.are.equal(30, row.missilesInCanisterStockDefault)
+    end)
+
+    -- Negative: a firing unit whose battery config dropped gets no row
+    it("should skip a firing unit with no config descriptor", function()
+      local configMap = makeConfigMap()
+      configMap.srbm.firingUnits["FU-1"] = nil
+
+      assert.are.same({}, StatusView.buildBatteryStatuses(makeGroundState(), configMap, 1120))
     end)
 
     -- Positive: idle resupply units have no firing unit, so they produce no status

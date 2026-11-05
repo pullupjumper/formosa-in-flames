@@ -152,9 +152,12 @@ local function evaluateFiringUnitStatus(plannerState, missileSystemType, firingU
     return ASSIGNED_STATUS
   end
 
-  return MissileSystem.evaluateReadiness(plannerState.ground, missileSystemType, firingUnitName, function(name)
-    return getCachedFiringUnit(passCtx.firingUnitCache, name)
-  end)
+  return MissileSystem.evaluateReadiness(
+    passCtx.config, plannerState.ground, constants.SIDES.RED, missileSystemType, firingUnitName,
+    function(name)
+      return getCachedFiringUnit(passCtx.firingUnitCache, name)
+    end
+  )
 end
 
 ---Select the firing units of a task template that are free and ready to fire
@@ -417,6 +420,7 @@ function FsemBuilder.build(config, plannerState, contacts)
   -- Seeded after retirement so units released by a retired matrix are assignable now.
   ---@type SBJ__FsemPassContext
   local passCtx = {
+    config = config,
     contacts = contacts,
     currentTime = currentTime,
     firingUnitCache = {},

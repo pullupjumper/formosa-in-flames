@@ -30,8 +30,8 @@
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `findReloadArea` | `unit, operationalArea` | `string[]|nil` | 單位所在的 RL 區 |
-| `resolveReloadPair` | `systemState, unit` | `SBJ__ReloadPair|nil` | 任一端單位解析出完整配對；缺 state 或缺單位回 nil |
-| `isAtCanisterStock` | `resupplyUnitState, resupplyUnit` | `boolean` | 補給車與彈箱庫存在同一 ATP 區 |
+| `resolveReloadPair` | `systemConfig, systemState, unit` | `SBJ__ReloadPair|nil` | 任一端單位解析出完整配對；缺 state 或缺單位回 nil |
+| `isAtCanisterStock` | `resupplyUnitDescriptor, resupplyUnitState, resupplyUnit` | `boolean` | 補給車與彈箱庫存在同一 ATP 區 |
 
 ---
 

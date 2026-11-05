@@ -6,7 +6,7 @@ local GameUtils = require("src.utils.gameUtils")
 local config = require("src.core.config")
 local Logger = require("src.utils.logger")
 local constants = require("src.core.constants")
-local PersistentState = require("src.core.persistentState")
+local MissileSystem = require("src.modules.missileSystem.init")
 
 describe("Sigint", function()
   ---@type luassert.spy[]
@@ -64,16 +64,13 @@ describe("Sigint", function()
     return unit
   end
 
-  ---Create a firing unit state with sensible defaults
+  ---Create a firing unit emitter, as MissileSystem.listSigintEmitters lists it, with sensible defaults
   ---@param overrides? table
   ---@return table
-  local function makeFiringUnitState(overrides)
+  local function makeFiringUnitEmitter(overrides)
     local ctx = {
-      guid = "FU-001",
       name = "TEL Battery Alpha",
       msg = "TEL Alpha detected",
-      weaponDBID = 3177,
-      dbid = 1000,
       operationalArea = {
         RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
         FP = {},
@@ -249,11 +246,20 @@ describe("Sigint", function()
       return trackStub(stub(GameApi, "ScenEdit_CreateBarkNotification_Geo"))
     end
 
-    ---Run China's SIGINT collection over one emitter group
-    ---@param unitStates table
+    ---Run China's SIGINT collection: firing unit emitters come from missileSystem, C2 states sit in Taiwan's ROCC slice
+    ---@param emitterMap table<string, table> C2 states carry a guid; firing unit emitters do not
     ---@return luassert.spy emittersStub
-    local function runRed(unitStates)
-      local emittersStub = trackStub(stub(PersistentState, "sigintEmitters")).returns({ unitStates })
+    local function runRed(emitterMap)
+      local firingUnitEmitters, roccStates = {}, {}
+      for key, emitter in pairs(emitterMap) do
+        if emitter.guid then
+          roccStates[key] = emitter
+        else
+          table.insert(firingUnitEmitters, emitter)
+        end
+      end
+      saveData.blue = { iads = { rocc = roccStates, taaoc = {} } }
+      local emittersStub = trackStub(stub(MissileSystem, "listSigintEmitters")).returns(firingUnitEmitters)
       Sigint.processSide(cfg, saveData, "China")
       return emittersStub
     end
@@ -264,10 +270,14 @@ describe("Sigint", function()
       sigintState = makeSigintState()
       saveData = { red = { sigint = sigintState } }
 
-      trackStub(stub(GameUtils, "getCachedSideConfig")).returns({
-        field = "red",
-        enemySide = "Taiwan",
-      })
+      local sideConfigs = {
+        China = { field = "red", enemySide = "Taiwan" },
+        Taiwan = { field = "blue", enemySide = "China" },
+        US = { field = "ally", enemySide = "China" },
+      }
+      trackStub(stub(GameUtils, "getCachedSideConfig")).invokes(function(sideName)
+        return sideConfigs[sideName]
+      end)
     end)
 
     -- ------------------------------------------------------------------------
@@ -275,13 +285,35 @@ describe("Sigint", function()
     -- ------------------------------------------------------------------------
 
     describe("side gating", function()
-      -- Positive: an enabled side collects the emitters of its own save data
-      it("should collect the side's emitters when SIGINT is enabled", function()
-        stubUnits({})
+      -- Positive: China listens to Taiwan's SRBM/GLCM/MLRS/ASCM firing units, then ROCC and TAAOC
+      it("should collect Taiwan's firing units and C2 nodes for the China collector", function()
+        local getUnitStub = stubUnits({})
+        saveData.blue = { iads = { rocc = { R = makeC2State({ guid = "R" }) }, taaoc = { T = makeC2State({ guid = "T" }) } } }
+        local emittersStub = trackStub(stub(MissileSystem, "listSigintEmitters")).returns({ makeFiringUnitEmitter() })
 
-        local emittersStub = runRed({})
+        Sigint.processSide(cfg, saveData, "China")
 
-        assert.stub(emittersStub).was.called_with(saveData, "China")
+        assert.stub(emittersStub).was.called_with(cfg, saveData, "Taiwan", { "srbm", "glcm", "mlrs", "ascm" })
+        local lookups = {}
+        for _, call in ipairs(getUnitStub.calls) do
+          table.insert(lookups, call.vals[1])
+        end
+        assert.are.same({ "TEL Battery Alpha", "R", "T" }, lookups)
+      end)
+
+      -- Positive: the US listens to China's MLRS/SRBM/GLCM firing units and C2 only
+      it("should collect China's firing units and C2 nodes for the US collector", function()
+        local usSigint = makeSigintState()
+        cfg.ally = { sigint = makeSigintConfig() }
+        saveData.ally = { sigint = usSigint }
+        saveData.red.iads = { c2 = { C = makeC2State({ guid = "C" }) } }
+        local getUnitStub = stubUnits({})
+        local emittersStub = trackStub(stub(MissileSystem, "listSigintEmitters")).returns({})
+
+        Sigint.processSide(cfg, saveData, "US")
+
+        assert.stub(emittersStub).was.called_with(cfg, saveData, "China", { "mlrs", "srbm", "glcm" })
+        assert.stub(getUnitStub).was.called_with("C")
       end)
 
       -- Negative: a disabled side does nothing
@@ -345,20 +377,20 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runRed({ ["TEL-001"] = makeFiringUnitState({ guid = "TEL-001", name = "TEL Battery Alpha" }) })
+        runRed({ ["TEL-001"] = makeFiringUnitEmitter({ name = "TEL Battery Alpha" }) })
 
         assert.is_not_nil(sigintState.transmissions["TEL-001"])
       end)
 
-      -- Positive: firing units are resolved by name on the enemy side
-      it("should look up firing unit by name and enemy side when weaponDBID is present", function()
+      -- Positive: firing units carry no GUID, so they are resolved by name on the enemy side
+      it("should look up firing unit by name and enemy side", function()
         local getUnitStub = stubUnits({ makeUnit({ guid = "FU-LOOKUP-001", name = "TEL Lookup" }) })
         trackStub(stub(GameUtils, "isInArea")).returns(false)
         stubRange(50)
         stubFix()
         stubLowRandom()
 
-        runRed({ ["FU-LOOKUP-001"] = makeFiringUnitState({ guid = "FU-LOOKUP-001", name = "TEL Lookup" }) })
+        runRed({ ["FU-LOOKUP-001"] = makeFiringUnitEmitter({ name = "TEL Lookup" }) })
 
         assert.stub(getUnitStub).was.called_with("TEL Lookup", "Taiwan")
       end)
@@ -381,7 +413,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runRed({ ["TEL-002"] = makeFiringUnitState({ guid = "TEL-002", name = "TEL Battery Bravo" }) })
+        runRed({ ["TEL-002"] = makeFiringUnitEmitter({ name = "TEL Battery Bravo" }) })
 
         assert.is_nil(sigintState.transmissions["TEL-002"])
       end)
@@ -392,7 +424,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runRed({ ["TEL-STOP-001"] = makeFiringUnitState({ guid = "TEL-STOP-001", name = "TEL Stopped" }) })
+        runRed({ ["TEL-STOP-001"] = makeFiringUnitEmitter({ name = "TEL Stopped" }) })
 
         assert.is_nil(sigintState.transmissions["TEL-STOP-001"])
       end)
@@ -404,8 +436,7 @@ describe("Sigint", function()
         stubLowRandom()
 
         runRed({
-          ["TEL-NORL-001"] = makeFiringUnitState({
-            guid = "TEL-NORL-001",
+          ["TEL-NORL-001"] = makeFiringUnitEmitter({
             name = "TEL NoRL",
             operationalArea = { RL = { { area = {} } }, FP = {}, HA = {}, ATP = {} },
           }),
@@ -421,7 +452,7 @@ describe("Sigint", function()
         stubRange(50)
         stubLowRandom()
 
-        runRed({ ["TEL-003"] = makeFiringUnitState({ guid = "TEL-003", name = "TEL Battery Charlie" }) })
+        runRed({ ["TEL-003"] = makeFiringUnitEmitter({ name = "TEL Battery Charlie" }) })
 
         assert.is_nil(sigintState.transmissions["TEL-003"])
       end)
@@ -432,7 +463,7 @@ describe("Sigint", function()
         local rangeStub = trackStub(stub(GameApi, "Tool_Range"))
         stubLowRandom()
 
-        runRed({ ["MISSING-001"] = makeFiringUnitState({ guid = "MISSING-001", name = "Missing Unit" }) })
+        runRed({ ["MISSING-001"] = makeFiringUnitEmitter({ name = "Missing Unit" }) })
 
         assert.stub(rangeStub).was_not.called()
         assert.are.same({}, sigintState.transmissions)
@@ -624,7 +655,7 @@ describe("Sigint", function()
         stubFix()
         stubLowRandom()
 
-        runRed({ ["MOB-TYPE-001"] = makeFiringUnitState({ guid = "MOB-TYPE-001", name = "TEL Mobile Type" }) })
+        runRed({ ["MOB-TYPE-001"] = makeFiringUnitEmitter({ name = "TEL Mobile Type" }) })
 
         assert.are.equal("mobile", sigintState.transmissions["MOB-TYPE-001"].type)
       end)

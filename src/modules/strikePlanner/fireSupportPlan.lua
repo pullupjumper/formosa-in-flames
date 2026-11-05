@@ -13,12 +13,13 @@ local FireSupportPlan = {}
 ---Deploy all firing units in a task and check if all are in position
 ---Destroyed units are removed from the task; a task emptied this way is closed
 ---so it never blocks the rest of the matrix waiting for a unit that cannot arrive.
+---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 ---@param task SBJ__FireSupportTask
 ---@return boolean allInPosition Whether all surviving firing units are at firing point
 ---@return string[] notReadyNames Unit names not yet at firing point
 ---@return string[] removedNames Destroyed unit names removed from the task
-local function deployTaskFiringUnits(plannerState, task)
+local function deployTaskFiringUnits(config, plannerState, task)
   local allInPosition = true
   local notReadyNames = {}
   local removedNames = {}
@@ -27,7 +28,9 @@ local function deployTaskFiringUnits(plannerState, task)
   -- inserted at the head to preserve the original firing unit order in logs.
   for i = #task.firingUnits, 1, -1 do
     local firingUnit = task.firingUnits[i]
-    local inPosition, unitMissing = MissileSystem.sendToFiringPoint(plannerState.ground, task.missileSystemType, firingUnit.name)
+    local inPosition, unitMissing = MissileSystem.sendToFiringPoint(
+      config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, firingUnit.name
+    )
 
     if unitMissing then
       table.remove(task.firingUnits, i)
@@ -102,19 +105,20 @@ end
 ---Process active matrix deployment phase
 ---Deploys firing units to firing points, tracks position status,
 ---and aggregates destroyed units removed from tasks for logging
+---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 ---@param matrix SBJ__FireSupportExecutionMatrix
 ---@return boolean allInPosition Whether all firing units across all tasks are in position
 ---@return {taskName: string, notReadyNames: string[]}[] pendingTasks Tasks with not-ready unit names
 ---@return {taskName: string, removedNames: string[], taskClosed: boolean}[] cleanedTasks Tasks that lost destroyed units
-local function processActiveMatrix(plannerState, matrix)
+local function processActiveMatrix(config, plannerState, matrix)
   local allInPosition = true
   local pendingTasks = {}
   local cleanedTasks = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
     if not task.isFinished and GameUtils.isAfterStartTime(task.startTime) then
-      local taskReady, notReadyNames, removedNames = deployTaskFiringUnits(plannerState, task)
+      local taskReady, notReadyNames, removedNames = deployTaskFiringUnits(config, plannerState, task)
 
       if #removedNames > 0 then
         table.insert(cleanedTasks, {
@@ -146,13 +150,14 @@ end
 
 ---Execute Fire Support Plan strikes for all active FSEMs
 ---Deploys firing units, removes destroyed ones, executes strikes when ready, marks FSEMs finished
+---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
-function FireSupportPlan.process(plannerState)
+function FireSupportPlan.process(config, plannerState)
   local report = LogFormat.report(constants.TAGS.GROUND, "fireSupportPlan", "Execute fire support plan")
 
   for _, matrix in pairs(plannerState.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
-      local allInPosition, pendingTasks, cleanedTasks = processActiveMatrix(plannerState, matrix)
+      local allInPosition, pendingTasks, cleanedTasks = processActiveMatrix(config, plannerState, matrix)
 
       local strikeResults = {}
       if allInPosition then

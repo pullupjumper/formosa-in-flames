@@ -1334,34 +1334,30 @@ function ScenEdit_DeleteMine(params) end
 ---@field resupplyUnitReloadTime number Minutes elapsed in the resupply unit's reload, 0 when not reloading
 ---@field defaultReloadTime number Configured reload time in minutes
 
----Weapon status tracking for ammunition count
----@class SBJ__WeaponStatus: table
----@field weaponCountCurrent number Current available ammunition count
----@field weaponCountDefault number Default/maximum ammunition count
-
----Base unit information with GUID and name
----@class SBJ__UnitBase: table
----@field guid? string Unit GUID (runtime only, absent in config)
+---What config builds for one canister stock
+---@class SBJ__CanisterStockDescriptor: table
 ---@field name string Unit name
+---@field weaponCountCurrent number Starting missile count
+---@field weaponCountDefault number Full missile count
 
----Unit operational status information
----@class SBJ__UnitStatus: table
----@field state missileSystemState Current unit state (STATIC/HIDE, etc.)
----@field operationalArea SBJ__OperationalArea Operational area definition for this resupply unit
-
----Canister stock descriptor combining base unit info and weapon status
----@class SBJ__CanisterStockDescriptor: SBJ__UnitBase, SBJ__WeaponStatus
-
----Resupply unit descriptor with operational status and ammunition tracking
----@class SBJ__ResupplyUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus, SBJ__WeaponStatus
+---What config builds for one resupply unit
+---@class SBJ__ResupplyUnitDescriptor: table
+---@field name string Group name
+---@field state missileSystemState Starting state
+---@field operationalArea SBJ__OperationalArea Starting operational area
+---@field weaponCountCurrent number Starting missile count
+---@field weaponCountDefault number Full missile count
 ---@field unitCount number Number of resupply vehicles in this unit
 ---@field canisterStock string Associated canister stock unit name for this resupply unit
 ---@field firingUnit string Associated firing unit name for this resupply unit
 
----Firing unit descriptor with weapon configuration and status
----@class SBJ__FiringUnitDescriptor: SBJ__UnitBase, SBJ__UnitStatus
+---What config builds for one firing unit
+---@class SBJ__FiringUnitDescriptor: table
+---@field name string Group name
+---@field state missileSystemState Starting state
+---@field operationalArea SBJ__OperationalArea Starting operational area
 ---@field weaponDBID number|number[] The weapon database ID(s) to use for the firing unit
----@field ammoThreshold number The ammunition threshold for the firing unit, if not specified, the default value will be used
+---@field ammoThreshold number Ammo percentage at or below which the firing unit counts as low on ammo
 ---@field resupplyUnit string The resupply unit name associated with this firing unit
 ---@field msg string The status message to display for the firing unit
 ---@field dbid number The firing unit database ID
@@ -1371,18 +1367,24 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__FiringUnitWithWeaponRangeDescriptor: SBJ__FiringUnitDescriptor
 ---@field weaponRange number
 
----Canister stock state data structure
----Tracks canister stock unit status and remaining ammunition counts
----@class SBJ__CanisterStockState: SBJ__CanisterStockDescriptor
+---What changes at runtime for one canister stock; everything else is read from its descriptor by name
+---@class SBJ__CanisterStockState: table
+---@field name string Unit name, the key of its descriptor
+---@field weaponCountCurrent number Missiles left
 
----Resupply unit state data structure
----Extends ammunition state with operational area and resupply management
----@class SBJ__ResupplyUnitState: SBJ__ResupplyUnitDescriptor
+---What changes at runtime for one resupply unit; everything else is read from its descriptor by name
+---@class SBJ__ResupplyUnitState: table
+---@field name string Group name, the key of its descriptor
+---@field state missileSystemState Current state
+---@field operationalArea SBJ__OperationalArea Where the battery is deployed now
+---@field weaponCountCurrent number Missiles carried
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 
----Firing unit state data structure
----Extends resupply unit state with weapon system configuration
----@class SBJ__FiringUnitState: SBJ__FiringUnitDescriptor
+---What changes at runtime for one firing unit; everything else is read from its descriptor by name
+---@class SBJ__FiringUnitState: table
+---@field name string Group name, the key of its descriptor
+---@field state missileSystemState Current state
+---@field operationalArea SBJ__OperationalArea Where the battery is deployed now
 ---@field reloadStartTime number|nil Reload operation start timestamp, nil if not currently reloading
 ---@field stowStartTime number|nil Stowing start timestamp, nil if not currently stowing
 
@@ -1533,7 +1535,8 @@ function ScenEdit_DeleteMine(params) end
 
 ---Input parameters for missileSystem UnitEntersArea event handling
 ---@class SBJ__MoveToPositionEventParams: table
----@field groundState table<string, SBJ__MissileSystemState> Missile system runtime states by type
+---@field missileSystemConfigMap table<string, SBJ__MissileSystemConfig> The unit's side config by system type
+---@field groundState SBJ__GroundState The unit's side ground state
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
@@ -1553,6 +1556,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---What every step of one missile system in a missileSystem UnitEntersArea event may read; steps never write it
 ---@class SBJ__ArrivalContext: table
+---@field systemConfig SBJ__MissileSystemConfig Config of the missile system being processed
 ---@field systemState SBJ__MissileSystemState Missile system being processed
 ---@field unit CMO__Unit Unit that entered the zone
 ---@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
@@ -1560,6 +1564,7 @@ function ScenEdit_DeleteMine(params) end
 ---A firing unit entering its hide area
 ---@class SBJ__HideAreaObservation: table
 ---@field firingUnitState SBJ__FiringUnitState
+---@field firingUnitDescriptor SBJ__FiringUnitDescriptor
 ---@field isLowAmmo fun(): boolean Reads CMO: whether it is at or below its ammo threshold
 
 ---A resupply unit entering its ammunition transfer point
@@ -1576,6 +1581,7 @@ function ScenEdit_DeleteMine(params) end
 ---What every step of one firing unit in a missileSystem reload cycle may read; steps never write it
 ---@class SBJ__FiringUnitTick: table
 ---@field firingUnitState SBJ__FiringUnitState
+---@field firingUnitDescriptor SBJ__FiringUnitDescriptor
 ---@field firingUnit CMO__Unit
 ---@field isAuto boolean Whether the side runs in auto mode
 ---@field now number Scenario time of this cycle
@@ -1588,6 +1594,7 @@ function ScenEdit_DeleteMine(params) end
 ---What every step of one resupply unit in a missileSystem reload cycle may read; steps never write it
 ---@class SBJ__ResupplyUnitTick: table
 ---@field resupplyUnitState SBJ__ResupplyUnitState
+---@field resupplyUnitDescriptor SBJ__ResupplyUnitDescriptor
 ---@field resupplyUnit CMO__Unit
 ---@field isAuto boolean Whether the side runs in auto mode
 ---@field now number Scenario time of this cycle
@@ -2115,6 +2122,13 @@ function ScenEdit_DeleteMine(params) end
 
 ---@class SBJ__C2TypeKey: table
 
+---A unit SIGINT listens to: a battery's firing unit or a C2 node
+---@class SBJ__SigintEmitter: table
+---@field name string Unit name; a firing unit is looked up by it
+---@field msg string Message shown when the unit is detected
+---@field guid? string C2 nodes only; a C2 node is looked up by it
+---@field operationalArea? SBJ__OperationalArea Firing units only; its RL zone decides whether it emits
+
 ---Command and Control (C2) state data structure
 ---@class SBJ__C2State: table
 ---@field name string C2 node name
@@ -2306,6 +2320,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__FsemPassContext: table
 ---@field contacts CMO__Contact[] Sensor contacts for this pass
 ---@field currentTime integer Game time captured at the start of this pass
+---@field config SBJ__Config Scenario config, for firing unit readiness
 ---@field firingUnitCache table<string, CMO__Unit|false> Firing unit lookups resolved in this pass; false means "looked up and missing"
 ---@field assignedFiringUnitNames table<string, boolean> Firing unit names already committed, seeded from the FSP and grown as tasks are built
 

@@ -478,11 +478,12 @@ describe("StrikePlanner", function()
 
       -- Positive: ground enabled advances fire support plans.
       it("should advance fire support plans when ground is enabled", function()
+        local config = makeConfig()
         local plannerState = makePlannerState({ ground = true })
 
-        runProcess(makeConfig(), plannerState, {})
+        runProcess(config, plannerState, {})
 
-        assert.stub(fireSupportProcessStub).was.called_with(plannerState)
+        assert.stub(fireSupportProcessStub).was.called_with(config, plannerState)
       end)
 
       -- Positive: air enabled advances ATO waves.

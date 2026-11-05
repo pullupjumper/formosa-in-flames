@@ -14,7 +14,7 @@
 
 `POSITIONS` 是唯一依陣地分的表，每個陣地有 `observe`、`evaluate`、`steps` 三項。對每個啟用中的飛彈系統（`GroundStateStore.forEachEnabledSystem`）走同一個模式：
 
-1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；ATP：`SBJ__AmmunitionTransferPointObservation`）。`ctx`（`systemState`、`unit`、`moveCtx`）建好後沒人寫。
+1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；ATP：`SBJ__AmmunitionTransferPointObservation`）。`ctx`（`systemConfig`、`systemState`、`unit`、`moveCtx`）建好後沒人寫。HA / ATP 的單位沒有 config descriptor 時觀察回 nil，不做事。
 2. **判斷**：`evaluate(moveCtx, observation)` 是 Rules 對應陣地的函式，條件見 [rules](rules.md)。
 3. **執行**：`Shared.processSteps` 依步驟呼叫該陣地的 handler，每個 handler 經 [transitions](transitions.md) 記錄狀態、需要時呼叫 `Concealment.hideUnit`，回傳一列 log。`system=` 由迴圈補上。
 
