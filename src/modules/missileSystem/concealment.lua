@@ -30,7 +30,7 @@ end
 ---Find buildings within the mask area for TEL concealment
 ---@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
 ---@param sideName string
----@return CMO__Unit[]|nil # Array of building units or nil
+---@return CMO__SideUnit[]|nil # Array of building units or nil
 local function findBuildingsInMaskArea(unitState, sideName)
   local side = GameApi.VP_GetSide({ name = sideName })
   if not side or not side.unitsInArea or not unitState.operationalArea.mask or not unitState.operationalArea.mask.area then
@@ -80,8 +80,8 @@ function Concealment.moveFromHideArea(unitState, unit)
     return false, { reason = "no_buildings_in_mask", area = unitState.operationalArea.name }
   end
 
-  for _, u in ipairs(buildings) do
-    local building = GameApi.ScenEdit_GetUnit(u.guid)
+  for _, sideUnit in ipairs(buildings) do
+    local building = GameApi.ScenEdit_GetUnit(sideUnit.guid)
 
     if building then
       for _, firingUnitGUID in ipairs(group) do

@@ -1,6 +1,7 @@
 local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Utils = require("src.utils.utils")
+local GameUtils = require("src.utils.gameUtils")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
 local ControlPanelLayout = {}
@@ -69,23 +70,6 @@ function ControlPanelLayout.buildLayouts(entries)
   return layouts
 end
 
----Resolve a zone's reference point names to their vertices
----@param sideName string
----@param area string[]
----@return CMO__Location[] # Vertices, empty when none are found
-local function resolveVertices(sideName, area)
-  local vertices = {}
-  local points = GameApi.ScenEdit_GetReferencePoints({ side = sideName, area = area })
-
-  if points then
-    for _, point in ipairs(points) do
-      table.insert(vertices, { latitude = tonumber(point.latitude), longitude = tonumber(point.longitude) })
-    end
-  end
-
-  return vertices
-end
-
 ---@param weaponDBID number | number[]
 ---@return number|nil # Max land range in nautical miles; nil if the weapon has no land range
 local function findWeaponRange(weaponDBID)
@@ -129,7 +113,7 @@ function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groun
         if positions then
           for _, position in ipairs(positions) do
             if position.area then
-              local vertices = resolveVertices(sideName, position.area)
+              local vertices = GameUtils.findAreaLocations(sideName, position.area)
 
               if #vertices > 0 then
                 position.area = vertices
@@ -139,7 +123,7 @@ function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groun
         end
       end
 
-      local uShapeVertices = resolveVertices(sideName, operationalArea.mask.area)
+      local uShapeVertices = GameUtils.findAreaLocations(sideName, operationalArea.mask.area)
 
       if #uShapeVertices > 0 then
         operationalArea.uShapeVertices = uShapeVertices
