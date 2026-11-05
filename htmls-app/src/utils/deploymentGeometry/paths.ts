@@ -15,7 +15,7 @@ export function createEmptyMovementPaths(): MovementPaths {
     FP: [],
     HA: { waypoints: [] },
     RL: [],
-    AHA: { waypoints: [] },
+    ATP: { waypoints: [] },
     SHRL: { waypoints: [] },
   };
 }
@@ -142,34 +142,34 @@ export function generatePathWithAvoidance(
 /**
  * Every route for one deployment. Without gateways the FP path falls back to
  * starting at the hide area and the SHRL path is left empty. Empty when any of
- * AHA/HA/RL is missing.
+ * ATP/HA/RL is missing.
  */
 export function buildMovementPaths(
   tacticalAreas: TacticalAreas,
   gateways: Gateways | null
 ): MovementPaths {
-  const { ammoArea, hideArea, reloadArea, firePoints } = tacticalAreas;
-  if (!ammoArea || !hideArea || !reloadArea) {
+  const { atpArea, hideArea, reloadArea, firePoints } = tacticalAreas;
+  if (!atpArea || !hideArea || !reloadArea) {
     return createEmptyMovementPaths();
   }
 
   const paths = createEmptyMovementPaths();
 
-  const ammoCenter = calculateSquareCenter(ammoArea);
+  const atpCenter = calculateSquareCenter(atpArea);
   const hideCenter = calculateSquareCenter(hideArea);
   const reloadCenter = calculateSquareCenter(reloadArea);
 
   // HA: reload -> hide, avoid ammo
-  paths.HA.waypoints = generatePathWithAvoidance(reloadCenter, hideCenter, [ammoArea]);
+  paths.HA.waypoints = generatePathWithAvoidance(reloadCenter, hideCenter, [atpArea]);
 
-  // AHA: reload -> ammo, avoid hide
-  paths.AHA.waypoints = generatePathWithAvoidance(reloadCenter, ammoCenter, [hideArea]);
+  // ATP: reload -> ammo, avoid hide
+  paths.ATP.waypoints = generatePathWithAvoidance(reloadCenter, atpCenter, [hideArea]);
 
   if (firePoints) {
     // FP: gateway (or hide center fallback) -> fire points. Shelter vehicles
     // prepend their own position, so the shared path must avoid HA and RL.
     const fpOrigin = gateways?.fpGateway ?? hideCenter;
-    const fpAvoid = gateways ? [hideArea, reloadArea] : [ammoArea, reloadArea];
+    const fpAvoid = gateways ? [hideArea, reloadArea] : [atpArea, reloadArea];
 
     firePoints.forEach((firePoint, index) => {
       const firePointCenter = calculateSquareCenter(firePoint);
@@ -178,7 +178,7 @@ export function buildMovementPaths(
       };
       // RL: fire points -> reload, avoid ammo & hide
       paths.RL[index] = {
-        waypoints: generatePathWithAvoidance(firePointCenter, reloadCenter, [ammoArea, hideArea]),
+        waypoints: generatePathWithAvoidance(firePointCenter, reloadCenter, [atpArea, hideArea]),
       };
     });
   }

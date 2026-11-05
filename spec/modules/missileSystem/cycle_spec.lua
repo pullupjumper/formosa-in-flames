@@ -168,7 +168,7 @@ describe("MissileSystem Cycle", function()
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
-              AHA = { { area = { "AHA-001", "AHA-002", "AHA-003", "AHA-004" } } }
+              ATP = { { area = { "ATP-001", "ATP-002", "ATP-003", "ATP-004" } } }
             }
           }
         },
@@ -184,12 +184,12 @@ describe("MissileSystem Cycle", function()
         guid = "R1",
         name = "Ammo Sec, Alpha",
         side = "Taiwan",
-        inArea = function(_, area) return area[1] == "AHA-001" end
+        inArea = function(_, area) return area[1] == "ATP-001" end
       }
       local ammoDepotUnit = {
         guid = "AD1",
         side = "Taiwan",
-        inArea = function(_, area) return area[1] == "AHA-001" end
+        inArea = function(_, area) return area[1] == "ATP-001" end
       }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
@@ -404,8 +404,8 @@ describe("MissileSystem Cycle", function()
       assert.is_nil(systemState.firingUnits["Firing Unit Alpha"].stowStartTime)
     end)
 
-    -- Negative: a resupply unit that cannot reach AHA stays STATIC so the next cycle can retry
-    it("should keep an empty resupply unit STATIC when its AHA move fails", function()
+    -- Negative: a resupply unit that cannot reach ATP stays STATIC so the next cycle can retry
+    it("should keep an empty resupply unit STATIC when its ATP move fails", function()
       local systemState = makeSystemState({
         firingUnits = {},
         resupplyUnits = {
@@ -417,7 +417,7 @@ describe("MissileSystem Cycle", function()
             operationalArea = {
               name = "OPAREA-1",
               RL = { { area = { "RP-001" } } },
-              AHA = {}
+              ATP = {}
             }
           }
         }
@@ -429,7 +429,7 @@ describe("MissileSystem Cycle", function()
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
       assert.are.equal("FAIL", results[1].tag)
-      assert.are.equal("move_to_ammo_holding_area", results[1].fields.action)
+      assert.are.equal("move_to_ammunition_transfer_point", results[1].fields.action)
       assert.are.equal(constants.MISSILE_SYSTEM_STATE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
     end)
 

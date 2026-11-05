@@ -9,7 +9,7 @@ local ARRIVAL_POSITION_TYPES = {
   [constants.POSITION_TYPES.FIRING_POINT] = true,
   [constants.POSITION_TYPES.HIDE_AREA] = true,
   [constants.POSITION_TYPES.RELOAD_POINT] = true,
-  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = true,
+  [constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT] = true,
 }
 
 ---Build the CMO event name that collects a side's arrival triggers for one position type.
@@ -49,7 +49,7 @@ end
 
 ---Read the position type back from a trigger description built by formatTriggerName
 ---@param description string|nil
----@return string|nil # Position type token (FP/HA/RL/AHA), nil when not an arrival trigger
+---@return string|nil # Position type token (FP/HA/RL/ATP), nil when not an arrival trigger
 function Triggers.parsePositionType(description)
   local positionType = description and string.match(description, "Arrive in (%u+) ")
   if positionType and ARRIVAL_POSITION_TYPES[positionType] then

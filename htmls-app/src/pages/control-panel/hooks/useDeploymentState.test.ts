@@ -122,7 +122,7 @@ function pressEscape() {
 // PURE HELPERS
 // ============================================================================
 describe('formatAreaLabel', () => {
-  it.each(['ushape', 'aha', 'hide', 'reload'] as const)('uses the plain label for %s', (type) => {
+  it.each(['ushape', 'atp', 'hide', 'reload'] as const)('uses the plain label for %s', (type) => {
     expect(formatAreaLabel({ unitKey: UNIT_KEY, type })).toBe(getAreaLabel(type));
   });
 

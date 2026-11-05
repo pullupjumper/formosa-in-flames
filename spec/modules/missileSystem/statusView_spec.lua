@@ -30,7 +30,7 @@ describe("MissileSystem StatusView", function()
   ---@param overrides? table
   ---@return table
   local function makeResupplyUnitState(overrides)
-    local ctx = { name = "RS-1", state = STATE.HIDE, weaponCountCurrent = 4, ammunition = "AHA-1" }
+    local ctx = { name = "RS-1", state = STATE.HIDE, weaponCountCurrent = 4, ammunition = "ATP-1" }
     if overrides then
       for k, v in pairs(overrides) do ctx[k] = v end
     end
@@ -50,7 +50,7 @@ describe("MissileSystem StatusView", function()
             ["RS-1"] = resupplyUnitState or makeResupplyUnitState(),
             ["RS-2"] = makeResupplyUnitState({ name = "RS-2" })
           },
-          ammunitions = { ["AHA-1"] = { weaponCountCurrent = 12 } }
+          ammunitions = { ["ATP-1"] = { weaponCountCurrent = 12 } }
         }
       }
     }
@@ -82,7 +82,7 @@ describe("MissileSystem StatusView", function()
           firingUnitState = "RELOAD",
           resupplyUnitState = "HIDE",
           missilesInAmmoVehicles = 4,
-          missilesInAHA = 12,
+          missilesInATP = 12,
           firingUnitReloadTime = 2,
           resupplyUnitReloadTime = 0,
           defaultReloadTime = 30
@@ -92,12 +92,12 @@ describe("MissileSystem StatusView", function()
 
     it("should report the default ammo counts of the resupply unit and its depot", function()
       local groundState = makeGroundState(nil, makeResupplyUnitState({ weaponCountDefault = 8 }))
-      groundState.missileSystemTypes.srbm.ammunitions["AHA-1"].weaponCountDefault = 24
+      groundState.missileSystemTypes.srbm.ammunitions["ATP-1"].weaponCountDefault = 24
 
       local row = buildRow(groundState, 1120)
 
       assert.are.equal(8, row.missilesInTransloaderDefault)
-      assert.are.equal(24, row.missilesInAHADefault)
+      assert.are.equal(24, row.missilesInATPDefault)
     end)
 
     -- Positive: idle resupply units have no firing unit, so they produce no status

@@ -15,7 +15,7 @@
 | 陣地 zone | `<type>/<idx>/<oparea>` | `formatZoneName` |
 | Mask zone | `MASK/<oparea>` | `formatMaskZoneName` |
 
-`parsePositionType` 從 trigger 名稱讀回 FP/HA/RL/AHA，`arrival.lua` 用它分派到達事件。
+`parsePositionType` 從 trigger 名稱讀回 FP/HA/RL/ATP，`arrival.lua` 用它分派到達事件。
 
 redeploy 用這些名字找出要刪的 zone 與 trigger（見 [positionZones](positionZones.md)），所以 `.scen` 內建的 zone 與 trigger 也必須照這個格式命名。2026-11-05 驗證過：目前 `.scen` 的 264 個陣地 zone、44 個 mask zone、264 個 trigger 全部符合。
 

@@ -124,8 +124,8 @@ local FIRING_UNIT_STEPS = {
 ---Resupply unit steps keyed by Rules.STEP
 ---@type table<string, fun(tick: SBJ__ResupplyUnitTick, ammoDepotState: SBJ__AmmunitionState): SBJ__LogResult|nil>
 local RESUPPLY_UNIT_STEPS = {
-  [STEP.MOVE_TO_AMMO_HOLDING_AREA] = function(tick)
-    return Transitions.depart(tick.resupplyUnitState, tick.resupplyUnit, ORDER.AMMO_HOLDING_AREA)
+  [STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT] = function(tick)
+    return Transitions.depart(tick.resupplyUnitState, tick.resupplyUnit, ORDER.AMMUNITION_TRANSFER_POINT)
   end,
 
   [STEP.ENSURE_RELOAD_CLOCK] = function(tick)

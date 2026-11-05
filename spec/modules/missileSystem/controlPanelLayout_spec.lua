@@ -59,14 +59,14 @@ describe("MissileSystem ControlPanelLayout", function()
         uShapeVertices = { "U" },
         shelterPoints = { "S" },
         reloadArea = { "RL" },
-        ammoArea = { "AHA" },
+        atpArea = { "ATP" },
         hideArea = { "HA" },
         firePoints = { { "FP1" }, { "FP2" } }
       },
       paths = {
         FP = { makePath(1), makePath(2) },
         RL = { makePath(3), makePath(99) },
-        AHA = makePath(4),
+        ATP = makePath(4),
         HA = makePath(5),
         SHRL = makePath(6)
       }
@@ -93,7 +93,7 @@ describe("MissileSystem ControlPanelLayout", function()
       srbm = {
         reloadTime = 60,
         resupplyUnits = { rs = {} },
-        ammunitions = { aha = {} },
+        ammunitions = { atp = {} },
         firingUnits = { fu = { name = "FU-1", operationalArea = operationalArea } }
       }
     }
@@ -120,7 +120,7 @@ describe("MissileSystem ControlPanelLayout", function()
               { course = fastCourse(2), area = { "FP2" } }
             },
             RL = { { course = fastCourse(3), area = { "RL" } } },
-            AHA = { { course = fastCourse(4), area = { "AHA" } } },
+            ATP = { { course = fastCourse(4), area = { "ATP" } } },
             HA = { { course = fastCourse(5), area = { "HA" } } },
             SHRL = { { course = fastCourse(6), area = { "RL" } } },
             uShapeVertices = { "U" },

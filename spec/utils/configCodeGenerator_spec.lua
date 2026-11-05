@@ -12,7 +12,7 @@ describe("ConfigCodeGenerator", function()
         weaponCountDefault = 4,
         ammoThreshold = 2,
         ammunitions = {
-          ["AHA-1"] = { name = "AHA-1", weaponCountCurrent = 8, weaponCountDefault = 8 },
+          ["ATP-1"] = { name = "ATP-1", weaponCountCurrent = 8, weaponCountDefault = 8 },
         },
         resupplyUnits = {
           ["RES-1"] = { name = "RES-1", weaponCountCurrent = 4, weaponCountDefault = 2, unitCount = 3 },

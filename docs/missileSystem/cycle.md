@@ -15,7 +15,7 @@
 每個單位走同一個模式：
 
 1. **觀察**：`processFiringUnit` 建 `SBJ__FiringUnitTick`（state、計時、`isLowAmmo` 函式），配對用 `Meeting.resolveReloadPair`；`processResupplyUnit` 建 `SBJ__ResupplyUnitTick`（`isInReloadArea`、`isAtAmmoDepot` 函式），觀察是彈藥庫 state。讀 CMO 的部分都是函式，HIDE / REPOSITIONING 的單位不會讀。
-2. **判斷**：交給 [rules](rules.md) 的 `evaluateFiringUnitTick(tick, pair)` / `evaluateResupplyUnitTick(tick, ammoDepotState)`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、裝填後藏補給車、SAM 回 FP、補給車去 AHA）都寫在 rules。
+2. **判斷**：交給 [rules](rules.md) 的 `evaluateFiringUnitTick(tick, pair)` / `evaluateResupplyUnitTick(tick, ammoDepotState)`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、裝填後藏補給車、SAM 回 FP、補給車去 ATP）都寫在 rules。
 3. **執行**：`Shared.processSteps` 依步驟呼叫 `FIRING_UNIT_STEPS` / `RESUPPLY_UNIT_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，回傳一列 log 或 nil。
 
 `isAuto` 只影響判斷：自動模式才會啟動 stow 倒數與後續機動，「完成再裝填」在兩種模式都會執行。
@@ -62,7 +62,7 @@ flowchart TD
 | `action` | 觸發時機 |
 |---|---|
 | `stow_countdown_started` | 首次偵測到需要轉移，開始 stow 倒數 |
-| `move_to_hide_area` / `move_to_firing_point` / `move_to_ammo_holding_area` | stow 完成後的移動指令 |
+| `move_to_hide_area` / `move_to_firing_point` / `move_to_ammunition_transfer_point` | stow 完成後的移動指令 |
 | `move_resupply_to_reload_point` / `move_firing_unit_to_reload_point` | 補給車與射擊單元前往 RL |
 | `unload_from_hide_area` / `hide_resupply_unit` | 補給車進出遮蔽建築 |
 | `missile_reload_finished` / `ammo_transload_finished` | 補給完成，帶 `loaded=` / `transferred=` 數量 |

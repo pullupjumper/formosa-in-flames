@@ -25,7 +25,7 @@ local REDEPLOY_POSITION_TYPES = {
   constants.POSITION_TYPES.RELOAD_POINT,
   constants.POSITION_TYPES.FIRING_POINT,
   constants.POSITION_TYPES.HIDE_AREA,
-  constants.POSITION_TYPES.AMMO_HOLDING_AREA
+  constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT
 }
 
 ---Steps of a fire support plan dispatch keyed by Rules.STEP

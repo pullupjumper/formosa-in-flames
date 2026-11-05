@@ -20,7 +20,7 @@ export const AREA_CONFIG = {
     angleRange: 90,
     margin: 0.2,
   },
-  ahaPoint: {
+  atpPoint: {
     radius: 7,
     squareSize: 0.3,
   },
@@ -44,7 +44,7 @@ export const DEPLOYMENT_MAX_ATTEMPTS = 50;
 export const REF_CENTER: Coordinate = { latitude: 23.8, longitude: 121.0 };
 
 export const AREA_SQUARE_SIZE: Record<SquareAreaType, number> = {
-  aha: AREA_CONFIG.ahaPoint.squareSize,
+  atp: AREA_CONFIG.atpPoint.squareSize,
   hide: AREA_CONFIG.internalSquares.size,
   reload: AREA_CONFIG.internalSquares.size,
   fp: AREA_CONFIG.firePoints.squareSize,

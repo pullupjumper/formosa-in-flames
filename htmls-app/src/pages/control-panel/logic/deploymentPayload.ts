@@ -29,9 +29,9 @@ import { calculateCentroid } from '@/utils/geo';
  * renders and rotates exactly like a player-placed one.
  *
  * The Lua side stores one course per area that already includes the reload leg,
- * so HA/AHA paths are stitched back from RL + area course. `ahaCenter` is the
- * centroid of the stored AHA square; without it a later rotate would regenerate
- * the AHA from `AREA_CONFIG` and move it.
+ * so HA/ATP paths are stitched back from RL + area course. `atpCenter` is the
+ * centroid of the stored ATP square; without it a later rotate would regenerate
+ * the ATP from `AREA_CONFIG` and move it.
  */
 export function fromOperationalArea(
   missileSystemType: string,
@@ -39,17 +39,17 @@ export function fromOperationalArea(
   operationalArea: OperationalArea
 ): MissileDeployment {
   const reloadCourse = operationalArea.RL[0].course;
-  const ammoArea = operationalArea.AHA[0].area;
+  const atpArea = operationalArea.ATP[0].area;
 
   return {
     unitname,
     missileSystemType,
     center: calculateCentroid(operationalArea.uShapeVertices),
     openingAngle: 0,
-    ahaCenter: calculateCentroid(ammoArea),
+    atpCenter: calculateCentroid(atpArea),
     tacticalAreas: {
       uShapeVertices: operationalArea.uShapeVertices,
-      ammoArea,
+      atpArea,
       hideArea: operationalArea.HA[0].area,
       reloadArea: operationalArea.RL[0].area,
       firePoints: operationalArea.FP.map((position) => position.area),
@@ -58,7 +58,7 @@ export function fromOperationalArea(
     paths: {
       FP: operationalArea.FP.map((position) => ({ waypoints: position.course })),
       HA: { waypoints: reloadCourse.concat(operationalArea.HA[0].course) },
-      AHA: { waypoints: reloadCourse.concat(operationalArea.AHA[0].course) },
+      ATP: { waypoints: reloadCourse.concat(operationalArea.ATP[0].course) },
       RL: operationalArea.FP.map((position) => ({
         waypoints: [position.course[position.course.length - 1]].concat(reloadCourse),
       })),
@@ -93,7 +93,7 @@ function trimLeadingWaypoint(waypoints: Coordinate[]): Coordinate[] {
 }
 
 /**
- * The Lua side prepends the reload point itself, so HA/RL/AHA paths drop their
+ * The Lua side prepends the reload point itself, so HA/RL/ATP paths drop their
  * first waypoint. FP and SHRL start at a shared gateway that every shelter must
  * pass through, so those stay intact.
  */
@@ -102,7 +102,7 @@ export function toExportPaths(paths: MovementPaths): MovementPaths {
     FP: paths.FP.map((path) => ({ ...path })),
     HA: { ...paths.HA, waypoints: trimLeadingWaypoint(paths.HA.waypoints) },
     RL: paths.RL.map((path) => ({ ...path, waypoints: trimLeadingWaypoint(path.waypoints) })),
-    AHA: { ...paths.AHA, waypoints: trimLeadingWaypoint(paths.AHA.waypoints) },
+    ATP: { ...paths.ATP, waypoints: trimLeadingWaypoint(paths.ATP.waypoints) },
     SHRL: { ...paths.SHRL },
   };
 }

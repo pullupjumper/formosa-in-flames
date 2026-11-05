@@ -57,8 +57,8 @@ describe('generateDeploymentData', () => {
     expect(data!.missileSystemType).toBe('ascm');
     expect(data!.center).toEqual(INLAND);
     expect(data!.openingAngle).toBe(90);
-    expect(data!.ahaRadius).toBe(AREA_CONFIG.ahaPoint.radius);
-    expect(data!.ahaCenter).toBeUndefined();
+    expect(data!.atpRadius).toBe(AREA_CONFIG.atpPoint.radius);
+    expect(data!.atpCenter).toBeUndefined();
     expect(data!.tacticalAreas.uShapeVertices).toHaveLength(4);
     expect(data!.tacticalAreas.firePoints).toHaveLength(AREA_CONFIG.firePoints.count);
     expect(data!.tacticalAreas.shelterPoints).toHaveLength(AREA_CONFIG.shelter.count);
@@ -98,21 +98,21 @@ describe('generateDeploymentData', () => {
     expect(data).not.toBeNull();
   });
 
-  it('honours the AHA radius and center overrides', () => {
-    const ahaCenterOverride = shifted(INLAND, 0.05, 0.05);
+  it('honours the ATP radius and center overrides', () => {
+    const atpCenterOverride = shifted(INLAND, 0.05, 0.05);
     const data = generateDeploymentData({
       ...baseParams,
       center: INLAND,
-      ahaRadiusOverride: 4,
-      ahaCenterOverride,
+      atpRadiusOverride: 4,
+      atpCenterOverride,
       rng: createSeededRandom(42),
     })!;
 
-    expect(data.ahaRadius).toBe(4);
-    expect(data.ahaCenter).toEqual(ahaCenterOverride);
+    expect(data.atpRadius).toBe(4);
+    expect(data.atpCenter).toEqual(atpCenterOverride);
 
-    const ammoCenter = calculateCentroid(data.tacticalAreas.ammoArea!);
-    expect(calculateDistance(ammoCenter, ahaCenterOverride)).toBeLessThan(1e-4);
+    const atpCenter = calculateCentroid(data.tacticalAreas.atpArea!);
+    expect(calculateDistance(atpCenter, atpCenterOverride)).toBeLessThan(1e-4);
   });
 
   it('is reproducible for a given seed', () => {
@@ -175,11 +175,11 @@ describe('rotateDeployment', () => {
     });
   });
 
-  it('keeps a hand-placed AHA in place', () => {
+  it('keeps a hand-placed ATP in place', () => {
     const { deployment, rng } = place(5);
     const moved = relocateArea({
       deployment,
-      target: { type: 'aha' },
+      target: { type: 'atp' },
       position: shifted(INLAND, 0.05, 0.05),
       validateTaiwanBoundary: false,
       rng,
@@ -194,8 +194,8 @@ describe('rotateDeployment', () => {
       rng,
     });
     expect(rotated).not.toBeNull();
-    expect(calculateCentroid(rotated!.tacticalAreas.ammoArea!)).toEqual(
-      calculateCentroid(moved.data.tacticalAreas.ammoArea!)
+    expect(calculateCentroid(rotated!.tacticalAreas.atpArea!)).toEqual(
+      calculateCentroid(moved.data.tacticalAreas.atpArea!)
     );
   });
 

@@ -247,7 +247,7 @@ describe("MissileSystem Movement", function()
         HA = { { course = course("HA") } },
         RL = { { course = course("RL") } },
         SHRL = { { course = course("SHRL") } },
-        AHA = { { course = course("AHA") } }
+        ATP = { { course = course("ATP") } }
       }
       for key, value in pairs(overrides or {}) do
         operationalArea[key] = value or nil
@@ -278,7 +278,7 @@ describe("MissileSystem Movement", function()
       { "RELOAD_POINT", "move_firing_unit_to_reload_point", course("RL"), hold },
       { "RESUPPLY_VIA_SHRL", "move_resupply_to_reload_point", course("SHRL"), hold },
       { "RESUPPLY_RECALL", "move_resupply_to_reload_point", { course("RL")[2] }, nil },
-      { "AMMO_HOLDING_AREA", "move_to_ammo_holding_area", course("AHA"), nil },
+      { "AMMUNITION_TRANSFER_POINT", "move_to_ammunition_transfer_point", course("ATP"), nil },
     }) do
       it("should send " .. case[1] .. " along its own course with its own weapon control", function()
         local result, sentCourse, doctrine = send(Movement.ORDER[case[1]])

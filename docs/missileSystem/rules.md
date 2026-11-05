@@ -30,12 +30,12 @@ missileSystem 的流程分成三層：
 
 ### 抵達陣地（`evaluate*Arrival`）
 
-每個陣地一個函式：`evaluateFiringPointArrival`、`evaluateHideAreaArrival`、`evaluateReloadPointArrival`、`evaluateAmmoHoldingAreaArrival`。
+每個陣地一個函式：`evaluateFiringPointArrival`、`evaluateHideAreaArrival`、`evaluateReloadPointArrival`、`evaluateAmmunitionTransferPointArrival`。
 
 會合條件（module-local）：
 
 - `hasMetResupplyUnit(pair, isAuto)`：觸發端狀態可會合（自動模式要 REPOSITIONING / RELOAD）→ 發射車低彈 → 補給車有彈 → 兩車在同一 RL 區。
-- `hasMetAmmoDepot(resupplyUnitState, isAuto, isAtAmmoDepot)`：狀態可會合 → 補給車彈量 0 → 和彈藥庫在同一 AHA 區。
+- `hasMetAmmoDepot(resupplyUnitState, isAuto, isAtAmmoDepot)`：狀態可會合 → 補給車彈量 0 → 和彈藥庫在同一 ATP 區。
 
 | 陣地 | 條件 | 步驟 |
 |---|---|---|
@@ -44,7 +44,7 @@ missileSystem 的流程分成三層：
 | RL | 配對不完整 | `STOP_IN_MANUAL_MODE` |
 | RL | 有會合 | `BEGIN_RELOAD` |
 | RL | 沒會合 | `STOP_IN_MANUAL_MODE`，若 `hideResupplyOnRLNoMeeting` + 抵達的是補給車 + 配對發射車彈量足，再加 `HIDE_UNMET_RESUPPLY_UNIT` |
-| AHA | 有會合 | `BEGIN_TRANSLOAD`，否則 `STOP` |
+| ATP | 有會合 | `BEGIN_TRANSLOAD`，否則 `STOP` |
 
 ### 發射車定時循環（`evaluateFiringUnitTick`）
 
@@ -55,7 +55,7 @@ missileSystem 的流程分成三層：
 
 ### 補給車定時循環（`evaluateResupplyUnitTick`）
 
-- **STATIC**：自動模式 + 彈量 0 + 在某個 RL 區 → `MOVE_TO_AMMO_HOLDING_AREA`。
+- **STATIC**：自動模式 + 彈量 0 + 在某個 RL 區 → `MOVE_TO_AMMUNITION_TRANSFER_POINT`。
 - **RELOAD**：先 `ENSURE_RELOAD_CLOCK`。`reloadTime` 已過 + 彈量 0 + 有會合 → 彈藥儲備點沒有狀態就 `FAIL_AMMO_DEPOT_STATE_NOT_FOUND`，否則 `COMPLETE_TRANSLOAD`，自動模式再 `RECALL_TO_RELOAD_POINT`。
 
 ### Facade 用的判斷

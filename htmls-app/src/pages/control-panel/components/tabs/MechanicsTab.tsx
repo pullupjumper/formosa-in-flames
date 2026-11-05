@@ -73,8 +73,8 @@ const POSITIONS: PositionSpec[] = [
       'Inside the MASK area. Send a launcher AND an ammo truck to the same RL. Reloading starts once both arrive.',
   },
   {
-    code: 'AHA',
-    name: 'Ammo Holding Area',
+    code: 'ATP',
+    name: 'Ammunition Transfer Point',
     color: COLOR.violet,
     usage:
       'Outside the MASK area. Send an empty ammo truck here to take on missiles from the depot, then send it back to a RL.',
@@ -114,7 +114,7 @@ export function MechanicsTab() {
                 <li>
                   When ammo runs low, send the launcher to a RL -- and send an ammo truck too.
                 </li>
-                <li>When a truck runs empty, send it to the AHA to take on more missiles.</li>
+                <li>When a truck runs empty, send it to the ATP to take on more missiles.</li>
                 <li>Hide idle vehicles in MASK buildings so they survive.</li>
               </List>
             </Callout>
@@ -126,7 +126,7 @@ export function MechanicsTab() {
               Each missile unit has its own operational area with these positions marked as
               reference points on the map. Move your vehicles between them.
             </Paragraph>
-            <Figure caption="Fig 1. The MASK area (red box) covers the HA and RL positions and the shelter buildings. The FP and AHA positions sit outside it.">
+            <Figure caption="Fig 1. The MASK area (red box) covers the HA and RL positions and the shelter buildings. The FP and ATP positions sit outside it.">
               <Screenshot
                 src={SCREENSHOT.positionLayout}
                 alt="Operational area layout on the map"
@@ -139,9 +139,9 @@ export function MechanicsTab() {
                   The launcher and the ammo truck must be in the <Term>same</Term> RL. Different RLs
                   means nothing happens.
                 </li>
-                <li>Same rule at the AHA -- the truck and the depot must be in the same one.</li>
+                <li>Same rule at the ATP -- the truck and the depot must be in the same one.</li>
                 <li>
-                  An empty truck has to go back to the AHA and draw from the depot stock before it
+                  An empty truck has to go back to the ATP and draw from the depot stock before it
                   can reload anything.
                 </li>
                 <li>
@@ -203,7 +203,7 @@ export function MechanicsTab() {
                   <Term>MISSILES (AMMO)</Term> -- what the truck is still carrying.
                 </li>
                 <li>
-                  <Term>MISSILES (AHA)</Term> -- remaining stock at the depot.
+                  <Term>MISSILES (ATP)</Term> -- remaining stock at the depot.
                 </li>
               </List>
             </Callout>

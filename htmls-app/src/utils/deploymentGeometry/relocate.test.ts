@@ -44,21 +44,21 @@ function move(
 }
 
 describe('relocateArea', () => {
-  it('moves the AHA square and records its new center', () => {
+  it('moves the ATP square and records its new center', () => {
     const deployment = deployed();
     const target = shifted(INLAND, 0.05, 0.05);
-    const result = move(deployment, { type: 'aha' }, target);
+    const result = move(deployment, { type: 'atp' }, target);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.ahaCenter).toEqual(target);
-    expect(result.data.tacticalAreas.ammoArea).toHaveLength(4);
-    expect(result.data.tacticalAreas.ammoArea).not.toEqual(deployment.tacticalAreas.ammoArea);
+    expect(result.data.atpCenter).toEqual(target);
+    expect(result.data.tacticalAreas.atpArea).toHaveLength(4);
+    expect(result.data.tacticalAreas.atpArea).not.toEqual(deployment.tacticalAreas.atpArea);
   });
 
   it('leaves every other tactical area untouched', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0.05));
+    const result = move(deployment, { type: 'atp' }, shifted(INLAND, 0.05, 0.05));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -68,13 +68,13 @@ describe('relocateArea', () => {
     expect(after.hideArea).toEqual(before.hideArea);
     expect(after.reloadArea).toEqual(before.reloadArea);
     expect(after.firePoints).toEqual(before.firePoints);
-    // AHA does not affect shelter placement, so those stay put too
+    // ATP does not affect shelter placement, so those stay put too
     expect(after.shelterPoints).toEqual(before.shelterPoints);
   });
 
-  it('keeps the gateway-based paths after an AHA move', () => {
+  it('keeps the gateway-based paths after an ATP move', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0.05));
+    const result = move(deployment, { type: 'atp' }, shifted(INLAND, 0.05, 0.05));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -154,8 +154,8 @@ describe('relocateArea', () => {
     expect(result.data.tacticalAreas.uShapeVertices).not.toEqual(
       deployment.tacticalAreas.uShapeVertices
     );
-    // AHA and fire points are user-placed, so the move leaves them alone
-    expect(result.data.tacticalAreas.ammoArea).toEqual(deployment.tacticalAreas.ammoArea);
+    // ATP and fire points are user-placed, so the move leaves them alone
+    expect(result.data.tacticalAreas.atpArea).toEqual(deployment.tacticalAreas.atpArea);
     expect(result.data.tacticalAreas.firePoints).toEqual(deployment.tacticalAreas.firePoints);
   });
 
@@ -173,19 +173,19 @@ describe('relocateArea', () => {
 
   it('recomputes the movement paths against the updated areas', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0.05));
+    const result = move(deployment, { type: 'atp' }, shifted(INLAND, 0.05, 0.05));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.paths).not.toEqual(deployment.paths);
-    expect(result.data.paths.AHA.waypoints.length).toBeGreaterThan(0);
+    expect(result.data.paths.ATP.waypoints.length).toBeGreaterThan(0);
   });
 
   it('never mutates the deployment it was given', () => {
     const deployment = deployed();
     const snapshot = structuredClone(deployment);
     move(deployment, { type: 'hide' }, shifted(INLAND, 1, 1));
-    move(deployment, { type: 'aha' }, shifted(INLAND, 0.05, 0));
+    move(deployment, { type: 'atp' }, shifted(INLAND, 0.05, 0));
     move(deployment, { type: 'ushape' }, shifted(INLAND, 0.05, 0));
 
     expect(deployment).toEqual(snapshot);

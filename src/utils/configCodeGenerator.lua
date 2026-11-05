@@ -22,11 +22,11 @@ local AREA_NAME_PREFIXES = {
   RL = "RELOAD_POINT",
   HA = "HIDE_AREA",
   FP = "FIRE_POINT",
-  AHA = "AMMO_HOLDING_AREA",
+  ATP = "AMMUNITION_TRANSFER_POINT",
 }
 -- Phase 2 only. SHRL is intentionally excluded: it reuses RL's area constant
 -- rather than defining its own (see POSITION_EMITTERS for Phase 3 emission).
-local POSITION_TYPE_ORDER = { "RL", "HA", "FP", "AHA" }
+local POSITION_TYPE_ORDER = { "RL", "HA", "FP", "ATP" }
 
 ---Serialize coordinate value (string or number) to Lua code
 ---@param val string|number
@@ -238,7 +238,7 @@ local POSITION_EMITTERS = {
   { field = "RL",   keyPrefix = "RL",   indexed = true },
   { field = "HA",   keyPrefix = "HA",   indexed = true },
   { field = "FP",   keyPrefix = "FP",   indexed = true },
-  { field = "AHA",  keyPrefix = "AHA",  indexed = true },
+  { field = "ATP",  keyPrefix = "ATP",  indexed = true },
   { field = "SHRL", keyPrefix = "RL_1", indexed = false },
 }
 

@@ -10,7 +10,7 @@ local PositionZones = {}
 local ZONE_COLORS = {
   [constants.POSITION_TYPES.RELOAD_POINT] = "4dd9822b",
   [constants.POSITION_TYPES.HIDE_AREA] = "4d137cbd",
-  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = "4d0f9960",
+  [constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT] = "4d0f9960",
   [constants.POSITION_TYPES.MASK] = "4dff6b6b",
 }
 local DEFAULT_ZONE_COLOR = "4d8b5cf6"

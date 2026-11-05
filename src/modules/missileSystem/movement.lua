@@ -100,8 +100,8 @@ Movement.ORDER = {
     positionKeys = { "RL" },
     useLastCourse = true
   },
-  AMMO_HOLDING_AREA = {
-    action = "move_to_ammo_holding_area", positionType = POSITION_TYPES.AMMO_HOLDING_AREA, positionKeys = { "AHA" }
+  AMMUNITION_TRANSFER_POINT = {
+    action = "move_to_ammunition_transfer_point", positionType = POSITION_TYPES.AMMUNITION_TRANSFER_POINT, positionKeys = { "ATP" }
   },
 }
 

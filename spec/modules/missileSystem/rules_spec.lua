@@ -193,7 +193,7 @@ describe("MissileSystem Rules", function()
       end)
     end)
 
-    describe("AHA", function()
+    describe("ATP", function()
       runRows({
         { name = "should begin the transload after meeting its depot", params = { isAtDepot = true }, steps = { STEP.BEGIN_TRANSLOAD } },
         { name = "should stop when not at its depot", params = { isAtDepot = false }, steps = { STEP.STOP } },
@@ -206,7 +206,7 @@ describe("MissileSystem Rules", function()
           resupplyUnitState = { state = o.state, weaponCountCurrent = o.stock },
           isAtAmmoDepot = answer(o.isAtDepot),
         } or nil
-        return Rules.evaluateAmmoHoldingAreaArrival(moveCtx, observation)
+        return Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
       end)
     end)
   end)
@@ -297,7 +297,7 @@ describe("MissileSystem Rules", function()
 
     describe("STATIC", function()
       runRows({
-        { name = "should move an empty unit in an RL zone to AHA", params = { isInReloadArea = true }, steps = { STEP.MOVE_TO_AMMO_HOLDING_AREA } },
+        { name = "should move an empty unit in an RL zone to ATP", params = { isInReloadArea = true }, steps = { STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT } },
         { name = "should keep a unit that still carries missiles", params = { stock = 4 }, steps = {} },
         { name = "should keep a unit outside its RL zones", params = { isInReloadArea = false }, steps = {} },
         { name = "should do nothing in manual mode", params = { isAuto = false }, steps = {} },

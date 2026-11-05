@@ -416,10 +416,10 @@ describe("MissileSystem Arrival", function()
       assert.stub(hideUnitStub).was_not.called()
     end)
 
-    -- --- AHA -------------------------------------------------------------
+    -- --- ATP -------------------------------------------------------------
 
-    -- Positive: AHA + meeting confirmed starts reload
-    it("should set reload start time on AHA when ammo depot meeting is confirmed", function()
+    -- Positive: ATP + meeting confirmed starts reload
+    it("should set reload start time on ATP when ammo depot meeting is confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
       local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
@@ -431,7 +431,7 @@ describe("MissileSystem Arrival", function()
       enterArea({
         groundState = groundStateWith(systemState),
         unit = unit,
-        event = enterEvent("AHA"),
+        event = enterEvent("ATP"),
       })
 
       assert.stub(isAtAmmoDepotStub).was.called_with(resupplyUnitState, unit)
@@ -444,8 +444,8 @@ describe("MissileSystem Arrival", function()
       assert.is_truthy(string.find(message, "action=transload_started", 1, true))
     end)
 
-    -- Negative: AHA fallback resets state when meeting fails
-    it("should set state to static on AHA when ammo depot meeting is not confirmed", function()
+    -- Negative: ATP fallback resets state when meeting fails
+    it("should set state to static on ATP when ammo depot meeting is not confirmed", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
       local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
@@ -457,7 +457,7 @@ describe("MissileSystem Arrival", function()
       enterArea({
         groundState = groundStateWith(systemState),
         unit = unit,
-        event = enterEvent("AHA"),
+        event = enterEvent("ATP"),
       })
 
       assert.stub(beginReloadStub).was_not.called()
@@ -467,7 +467,7 @@ describe("MissileSystem Arrival", function()
     end)
 
     -- Negative: a resupply unit that still carries missiles does not meet its depot
-    it("should not begin a transload on AHA when the resupply unit still carries missiles", function()
+    it("should not begin a transload on ATP when the resupply unit still carries missiles", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
       local resupplyUnitState = { name = "RS1", state = constants.MISSILE_SYSTEM_STATE.REPOSITIONING, weaponCountCurrent = 3 }
       local systemState = makeSystemState({ resupplyUnits = { [unit.name] = resupplyUnitState } })
@@ -476,7 +476,7 @@ describe("MissileSystem Arrival", function()
       local beginReloadStub = trackStub(Transitions, "beginReload")
       trackStub(Transitions, "settle")
 
-      enterArea({ groundState = groundStateWith(systemState), unit = unit, event = enterEvent("AHA") })
+      enterArea({ groundState = groundStateWith(systemState), unit = unit, event = enterEvent("ATP") })
 
       assert.stub(beginReloadStub).was_not.called()
       assert.stub(isAtAmmoDepotStub).was_not.called()

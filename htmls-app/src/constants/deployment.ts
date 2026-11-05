@@ -6,7 +6,7 @@ import type { AreaType } from '@/types/deployment';
  */
 export const AREA_INFO: Record<AreaType, { label: string; color: string }> = {
   ushape: { label: 'U-Shape', color: '#ff6b6b' },
-  aha: { label: 'AHA', color: '#ffd93d' },
+  atp: { label: 'ATP', color: '#ffd93d' },
   hide: { label: 'Hide Area', color: '#6bcb77' },
   reload: { label: 'Reload Area', color: '#4d96ff' },
   fp: { label: 'Fire Point', color: '#ff922b' },

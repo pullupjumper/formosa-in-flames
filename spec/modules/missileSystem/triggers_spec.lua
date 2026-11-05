@@ -7,7 +7,7 @@ describe("MissileSystem Triggers", function()
     local POS = constants.POSITION_TYPES
 
     it("should parse back the position type of every trigger name it formats", function()
-      for _, positionType in ipairs({ POS.FIRING_POINT, POS.HIDE_AREA, POS.RELOAD_POINT, POS.AMMO_HOLDING_AREA }) do
+      for _, positionType in ipairs({ POS.FIRING_POINT, POS.HIDE_AREA, POS.RELOAD_POINT, POS.AMMUNITION_TRANSFER_POINT }) do
         local name = Triggers.formatTriggerName(constants.SIDES.RED, positionType, 3, "AreaA")
         assert.are.equal(positionType, Triggers.parsePositionType(name))
       end

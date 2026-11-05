@@ -1294,7 +1294,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__OperationalArea: table
 ---@field FP SBJ__Position[] Fire Points
 ---@field HA SBJ__Position[] Hide Areas
----@field AHA SBJ__Position[] Ammo Holding Areas
+---@field ATP SBJ__Position[] Ammunition Transfer Points
 ---@field RL SBJ__Position[] Reload Points
 ---@field mask {area: string[]} Mask area reference points
 ---@field name? string Area name
@@ -1328,8 +1328,8 @@ function ScenEdit_DeleteMine(params) end
 ---@field resupplyUnitState string Paired resupply unit state label
 ---@field missilesInAmmoVehicles number Missiles carried by the resupply unit
 ---@field missilesInTransloaderDefault number
----@field missilesInAHA number Missiles left in the paired ammo holding area
----@field missilesInAHADefault number
+---@field missilesInATP number Missiles left in the paired ammunition transfer point
+---@field missilesInATPDefault number
 ---@field firingUnitReloadTime number Minutes elapsed in the firing unit's reload, 0 when not reloading
 ---@field resupplyUnitReloadTime number Minutes elapsed in the resupply unit's reload, 0 when not reloading
 ---@field defaultReloadTime number Configured reload time in minutes
@@ -1562,10 +1562,10 @@ function ScenEdit_DeleteMine(params) end
 ---@field firingUnitState SBJ__FiringUnitState
 ---@field isLowAmmo fun(): boolean Reads CMO: whether it is at or below its ammo threshold
 
----A resupply unit entering its ammo holding area
----@class SBJ__AmmoHoldingAreaObservation: table
+---A resupply unit entering its ammunition transfer point
+---@class SBJ__AmmunitionTransferPointObservation: table
 ---@field resupplyUnitState SBJ__ResupplyUnitState
----@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one AHA zone
+---@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one ATP zone
 
 ---How arrival observes, decides and carries out one position type
 ---@class SBJ__ArrivalPosition: table
@@ -1593,7 +1593,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field now number Scenario time of this cycle
 ---@field reloadTimeSec number Transload length in seconds
 ---@field isInReloadArea fun(): boolean Reads CMO: whether the resupply unit stands in an RL zone of its operational area
----@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one AHA zone
+---@field isAtAmmoDepot fun(): boolean Reads CMO: whether it and its ammo depot stand in one ATP zone
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
@@ -2205,7 +2205,7 @@ function ScenEdit_DeleteMine(params) end
 ---Contains all generated vertices for U-shape, internal zones, and fire points
 ---@class SBJ__TacticalAreaLayout: table
 ---@field uShapeVertices CMO__Location[] Array of 8 vertices forming U-shape polygon
----@field ammoArea? CMO__Location[] Ammo holding area vertices (4 points) if internal squares configured
+---@field atpArea? CMO__Location[] ammunition transfer point vertices (4 points) if internal squares configured
 ---@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
 ---@field reloadArea? CMO__Location[] Reload area vertices (4 points) if internal squares configured
 ---@field firePoints? table<integer, CMO__Location[]> Array of fire point areas, each with 4 vertices, if fire points configured
@@ -2226,7 +2226,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field FP table<integer, SBJ__MovementPath> Fire Point paths: hide area -> each fire point
 ---@field HA SBJ__MovementPath Hide Area path: reload point -> hide area
 ---@field RL table<integer, SBJ__MovementPath> Reload paths: each fire point -> reload point
----@field AHA SBJ__MovementPath Ammo Holding Area path: reload point -> ammo holding area
+---@field ATP SBJ__MovementPath Ammunition Transfer Point path: reload point -> ammunition transfer point
 ---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
 ---Battery placement submitted by the control panel
@@ -2365,7 +2365,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Position emitter describing one opArea field and where to find its AREAS const
 ---@class SBJ__OpAreaPositionEmitter
----@field field string opArea field name (RL/HA/FP/AHA/SHRL)
+---@field field string opArea field name (RL/HA/FP/ATP/SHRL)
 ---@field keyPrefix string areaRefMap subkey; combined with position index as `keyPrefix .. "_" .. i` when indexed
 ---@field indexed boolean When true, subkey varies per position; when false, keyPrefix is the full subkey
 

@@ -615,7 +615,7 @@ describe("MissileSystem", function()
     it("should use the Taiwan slice and manual policy for a Taiwan unit", function()
       local config, saveData = makeSides()
       local unit = { name = "RS1", guid = "guid-rs1", side = constants.SIDES.BLUE }
-      local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in AHA - 1 - AreaA" } } } }
+      local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in ATP - 1 - AreaA" } } } }
 
       local systemState = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
       saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
@@ -814,7 +814,7 @@ describe("MissileSystem", function()
     ---One battery whose config area is OPAREA-CONFIG, already moved to OPAREA-SAVED in saved state
     local function makeMovedBattery()
       local configArea = { name = "OPAREA-CONFIG", HA = { { course = { { latitude = 1, longitude = 1 } } } },
-        RL = { { course = { { latitude = 2, longitude = 2 } } } }, AHA = { { course = { { latitude = 3, longitude = 3 } } } } }
+        RL = { { course = { { latitude = 2, longitude = 2 } } } }, ATP = { { course = { { latitude = 3, longitude = 3 } } } } }
       local config = {
         blue = { ground = { missileSystemTypes = { srbm = {
           firingUnits = { ["FU-A"] = { name = "FU-A", dbid = 1, weaponDBID = 2, resupplyUnit = "RU-A", operationalArea = configArea } },
@@ -837,7 +837,7 @@ describe("MissileSystem", function()
     it("should remove the zones of the battery's saved area, not its config area", function()
       local config, saveData = makeMovedBattery()
       local newArea = { name = "OPAREA-NEW", HA = { { course = { { latitude = 4, longitude = 4 } } } },
-        RL = { { course = { { latitude = 5, longitude = 5 } } } }, AHA = { { course = { { latitude = 6, longitude = 6 } } } } }
+        RL = { { course = { { latitude = 5, longitude = 5 } } } }, ATP = { { course = { { latitude = 6, longitude = 6 } } } } }
       trackStub(ControlPanelLayout, "buildLayouts").returns({
         { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea }
       })
@@ -903,7 +903,7 @@ describe("MissileSystem", function()
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,
         constants.POSITION_TYPES.HIDE_AREA,
-        constants.POSITION_TYPES.AMMO_HOLDING_AREA
+        constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT
       }, "Taiwan")
       local batteries = deployStub.calls[1].vals[2]
       assert.are.equal(1, #batteries)

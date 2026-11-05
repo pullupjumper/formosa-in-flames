@@ -21,7 +21,7 @@ flowchart TD
     B --> D[removeEventTriggers]
     B --> E[removeZones]
     A --> F[for each 新作戰區]
-    F --> G[addPositionTriggers FP/HA/RL/AHA]
+    F --> G[addPositionTriggers FP/HA/RL/ATP]
     F --> H[addMaskZone]
     F --> I[Concealment.addBunkers]
     A --> J[LogFormat.report]

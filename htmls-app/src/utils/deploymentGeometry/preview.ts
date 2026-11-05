@@ -17,7 +17,7 @@ import { generateSquareFacing } from './squares';
 /** A layout as degree deltas from REF_CENTER, so hover can translate it per frame */
 export interface PreviewOffsets {
   uShapeVertices: CoordinateOffset[];
-  ammoArea: CoordinateOffset[];
+  atpArea: CoordinateOffset[];
   hideArea: CoordinateOffset[];
   reloadArea: CoordinateOffset[];
   firePoints: CoordinateOffset[][];
@@ -30,7 +30,7 @@ export interface DeploymentPreview extends Layout {
 function isLayoutInTaiwan(layout: Layout): boolean {
   return (
     areAllPointsInTaiwan(layout.uShapeVertices) &&
-    areAllPointsInTaiwan(layout.ammoArea) &&
+    areAllPointsInTaiwan(layout.atpArea) &&
     layout.firePoints.every(areAllPointsInTaiwan)
   );
 }
@@ -44,18 +44,18 @@ function isLayoutInTaiwan(layout: Layout): boolean {
  */
 export function generateOffsetsForAngle(
   angle: number,
-  ahaRadiusOverride?: number,
+  atpRadiusOverride?: number,
   rng: RandomSource = Math.random
 ): PreviewOffsets | null {
   try {
-    const layout = generateLayout(REF_CENTER, angle, { ahaRadius: ahaRadiusOverride }, rng);
+    const layout = generateLayout(REF_CENTER, angle, { atpRadius: atpRadiusOverride }, rng);
     const toOffset = (coordinate: Coordinate): CoordinateOffset => ({
       latitudeDelta: coordinate.latitude - REF_CENTER.latitude,
       longitudeDelta: coordinate.longitude - REF_CENTER.longitude,
     });
     return {
       uShapeVertices: layout.uShapeVertices.map(toOffset),
-      ammoArea: layout.ammoArea.map(toOffset),
+      atpArea: layout.atpArea.map(toOffset),
       hideArea: layout.hideArea.map(toOffset),
       reloadArea: layout.reloadArea.map(toOffset),
       firePoints: layout.firePoints.map((firePoint) => firePoint.map(toOffset)),
@@ -76,7 +76,7 @@ export function previewDeployment(
 
   const layout: Layout = {
     uShapeVertices: offsets.uShapeVertices.map(translate),
-    ammoArea: offsets.ammoArea.map(translate),
+    atpArea: offsets.atpArea.map(translate),
     hideArea: offsets.hideArea.map(translate),
     reloadArea: offsets.reloadArea.map(translate),
     firePoints: offsets.firePoints.map((firePoint) => firePoint.map(translate)),
@@ -122,7 +122,7 @@ export function previewRotation(
     layout = generateLayout(
       deployment.center,
       angle,
-      { ahaRadius: deployment.ahaRadius, ahaCenter: deployment.ahaCenter },
+      { atpRadius: deployment.atpRadius, atpCenter: deployment.atpCenter },
       rng
     );
   } catch {
@@ -131,7 +131,7 @@ export function previewRotation(
 
   const isValid =
     !validateTaiwanBoundary ||
-    (areAllPointsInTaiwan(layout.uShapeVertices) && areAllPointsInTaiwan(layout.ammoArea));
+    (areAllPointsInTaiwan(layout.uShapeVertices) && areAllPointsInTaiwan(layout.atpArea));
 
   return { ...layout, firePoints: deployment.tacticalAreas.firePoints ?? [], isValid };
 }

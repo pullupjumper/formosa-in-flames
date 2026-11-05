@@ -9,7 +9,7 @@ local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
 local Triggers = require("src.modules.missileSystem.triggers")
 
----Reacts to a unit entering one of its battery's FP / HA / RL / AHA zones:
+---Reacts to a unit entering one of its battery's FP / HA / RL / ATP zones:
 ---observes the unit, asks Rules for the steps and carries them out.
 local Arrival = {}
 
@@ -17,7 +17,7 @@ local STEP = Rules.STEP
 
 ---Extract position type token from UnitEntersArea trigger description
 ---@param event CMO__Event|nil
----@return string|nil # Position type token (FP/AHA/HA/RL)
+---@return string|nil # Position type token (FP/ATP/HA/RL)
 local function resolvePositionType(event)
   if not event or not event.triggers then
     return nil
@@ -128,9 +128,9 @@ local RELOAD_POINT_STEPS = {
   end,
 }
 
----Ammo holding area steps keyed by Rules.STEP
----@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__AmmoHoldingAreaObservation): SBJ__LogResult|nil>
-local AMMO_HOLDING_AREA_STEPS = {
+---ammunition transfer point steps keyed by Rules.STEP
+---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__AmmunitionTransferPointObservation): SBJ__LogResult|nil>
+local AMMUNITION_TRANSFER_POINT_STEPS = {
   [STEP.BEGIN_TRANSLOAD] = function(ctx, observation)
     local resupplyUnitState = observation.resupplyUnitState
     Transitions.beginReload(resupplyUnitState, ctx.unit, ctx.moveCtx.isAuto)
@@ -168,10 +168,10 @@ local function observeHideArea(ctx)
   }
 end
 
----Observe a unit entering its ammo holding area
+---Observe a unit entering its ammunition transfer point
 ---@param ctx SBJ__ArrivalContext
----@return SBJ__AmmoHoldingAreaObservation|nil # Nil when the unit is not a resupply unit of this system
-local function observeAmmoHoldingArea(ctx)
+---@return SBJ__AmmunitionTransferPointObservation|nil # Nil when the unit is not a resupply unit of this system
+local function observeAmmunitionTransferPoint(ctx)
   local unit = ctx.unit
   local resupplyUnitState = ctx.systemState.resupplyUnits[unit.name]
   if not resupplyUnitState then
@@ -204,14 +204,14 @@ local POSITIONS = {
     evaluate = Rules.evaluateReloadPointArrival,
     steps = RELOAD_POINT_STEPS,
   },
-  [constants.POSITION_TYPES.AMMO_HOLDING_AREA] = {
-    observe = observeAmmoHoldingArea,
-    evaluate = Rules.evaluateAmmoHoldingAreaArrival,
-    steps = AMMO_HOLDING_AREA_STEPS,
+  [constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT] = {
+    observe = observeAmmunitionTransferPoint,
+    evaluate = Rules.evaluateAmmunitionTransferPointArrival,
+    steps = AMMUNITION_TRANSFER_POINT_STEPS,
   },
 }
 
----Handle missile system UnitEntersArea flow for FP/HA/RL/AHA positions
+---Handle missile system UnitEntersArea flow for FP/HA/RL/ATP positions
 ---@param params SBJ__MoveToPositionEventParams
 function Arrival.processMoveToPositionEvent(params)
   local unit = params.unit

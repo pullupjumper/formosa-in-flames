@@ -1,6 +1,6 @@
 # arrival.lua
 
-機動車組進入 FP / HA / RL / AHA 陣地時的反應。
+機動車組進入 FP / HA / RL / ATP 陣地時的反應。
 
 > Source: `src/modules/missileSystem/arrival.lua`
 
@@ -14,7 +14,7 @@
 
 `POSITIONS` 是唯一依陣地分的表，每個陣地有 `observe`、`evaluate`、`steps` 三項。對每個啟用中的飛彈系統（`GroundStateStore.forEachEnabledSystem`）走同一個模式：
 
-1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；AHA：`SBJ__AmmoHoldingAreaObservation`）。`ctx`（`systemState`、`unit`、`moveCtx`）建好後沒人寫。
+1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；ATP：`SBJ__AmmunitionTransferPointObservation`）。`ctx`（`systemState`、`unit`、`moveCtx`）建好後沒人寫。
 2. **判斷**：`evaluate(moveCtx, observation)` 是 Rules 對應陣地的函式，條件見 [rules](rules.md)。
 3. **執行**：`Shared.processSteps` 依步驟呼叫該陣地的 handler，每個 handler 經 [transitions](transitions.md) 記錄狀態、需要時呼叫 `Concealment.hideUnit`，回傳一列 log。`system=` 由迴圈補上。
 
@@ -22,14 +22,14 @@
 
 ## 主要機制
 
-1. 由 `resolvePositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|AHA) ` 前綴）解析位置代碼；不認得的代碼直接結束，不丟接觸、不輸出 log。
+1. 由 `resolvePositionType(event)` 從 trigger description（`Arrive in (FP|HA|RL|ATP) ` 前綴）解析位置代碼；不認得的代碼直接結束，不丟接觸、不輸出 log。
 2. 非 FP 事件會先 `dropUnitContact`，降低非必要接觸資訊。
 3. RL 沒會合時 `STOP_IN_MANUAL_MODE` 一律以手動模式（`isAuto=false`）呼叫 `Transitions.settle`，避免短暫經過 RL 的機動發射車（例如重定位中途）被卡停。
 
 ```mermaid
 flowchart TD
     A[processMoveToPositionEvent] --> B{resolvePositionType}
-    B -->|FP/HA/RL/AHA| C[forEachEnabledSystem]
+    B -->|FP/HA/RL/ATP| C[forEachEnabledSystem]
     B -->|其他| Z([結束])
     C --> D[POSITIONS.observe]
     D --> E[POSITIONS.evaluate<br/>Rules.evaluate*Arrival]

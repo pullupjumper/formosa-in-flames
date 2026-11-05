@@ -349,7 +349,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
               ],
             },
           ],
-          AHA: [
+          ATP: [
             {
               course: [{ latitude: 23.95416361550089, longitude: 120.66407514630362 }],
               area: [
@@ -443,7 +443,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
               ],
             },
           ],
-          AHA: [
+          ATP: [
             {
               course: [{ latitude: 23.798277652191537, longitude: 120.54307198810082 }],
               area: [
@@ -537,7 +537,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
               ],
             },
           ],
-          AHA: [
+          ATP: [
             {
               course: [{ latitude: 23.677463081689957, longitude: 120.49900857387644 }],
               area: [
@@ -594,7 +594,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
       //   ammoThreshold: 25,
       //   weaponDBID: 1133,
       //   name: '2nd Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], AHA: [], HA: [] },
+      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
       //   state: 3,
       //   msg: 'Radio source, Bty',
       // },
@@ -605,7 +605,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
       //   ammoThreshold: 25,
       //   weaponDBID: 1133,
       //   name: '3rd Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], AHA: [], HA: [] },
+      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
       //   state: 3,
       //   msg: 'Radio source, Bty',
       // },
@@ -616,7 +616,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
       //   ammoThreshold: 25,
       //   weaponDBID: 1133,
       //   name: '4th Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], AHA: [], HA: [] },
+      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
       //   state: 3,
       //   msg: 'Radio source, Bty',
       // },
@@ -627,7 +627,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
       //   ammoThreshold: 25,
       //   weaponDBID: 1133,
       //   name: '5th Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], AHA: [], HA: [] },
+      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
       //   state: 3,
       //   msg: 'Radio source, Bty',
       // },
@@ -638,7 +638,7 @@ export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
       //   ammoThreshold: 25,
       //   weaponDBID: 1133,
       //   name: '6th Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], AHA: [], HA: [] },
+      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
       //   state: 3,
       //   msg: 'Radio source, Bty',
       // },

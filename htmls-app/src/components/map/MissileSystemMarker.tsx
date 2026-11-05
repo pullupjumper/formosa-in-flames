@@ -52,7 +52,7 @@ const SHELTER_COLOR = '#c084fc';
 // Static pathOptions (never re-created)
 // ============================================================================
 const PATH_OPTIONS_HA = { color: getAreaColor('hide'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
-const PATH_OPTIONS_AHA = { color: getAreaColor('aha'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
+const PATH_OPTIONS_ATP = { color: getAreaColor('atp'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
 const PATH_OPTIONS_FP = { color: getAreaColor('fp'), weight: 2, opacity: 0.7, dashArray: '5, 5' };
 const PATH_OPTIONS_RL = {
   color: getAreaColor('reload'),
@@ -85,13 +85,13 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
 // ============================================================================
 interface SingleArea {
   type: Exclude<AreaType, 'fp'>;
-  field: keyof Pick<TacticalAreas, 'uShapeVertices' | 'ammoArea' | 'hideArea' | 'reloadArea'>;
+  field: keyof Pick<TacticalAreas, 'uShapeVertices' | 'atpArea' | 'hideArea' | 'reloadArea'>;
   label: string;
 }
 
 const SINGLE_AREAS: readonly SingleArea[] = [
   { type: 'ushape', field: 'uShapeVertices', label: 'U-Shape Area' },
-  { type: 'aha', field: 'ammoArea', label: 'Ammo Holding Area (AHA)' },
+  { type: 'atp', field: 'atpArea', label: 'Ammunition Transfer Point (ATP)' },
   { type: 'hide', field: 'hideArea', label: 'Hide Area (HA)' },
   { type: 'reload', field: 'reloadArea', label: 'Reload Area (RL)' },
 ];
@@ -162,7 +162,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 
   // Path positions (null when the path has fewer than two waypoints)
   const haPathPositions = useMemo(() => toPathPositions(paths.HA?.waypoints), [paths.HA]);
-  const ahaPathPositions = useMemo(() => toPathPositions(paths.AHA?.waypoints), [paths.AHA]);
+  const atpPathPositions = useMemo(() => toPathPositions(paths.ATP?.waypoints), [paths.ATP]);
   const firePointPathPositions = useMemo(
     () => (paths.FP ?? []).map((path) => toPathPositions(path?.waypoints)),
     [paths.FP]
@@ -179,9 +179,9 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
     [tacticalAreas.hideArea]
   );
 
-  const ahaCenter = useMemo<Coordinate | null>(
-    () => (tacticalAreas.ammoArea?.length ? calculateCentroid(tacticalAreas.ammoArea) : null),
-    [tacticalAreas.ammoArea]
+  const atpCenter = useMemo<Coordinate | null>(
+    () => (tacticalAreas.atpArea?.length ? calculateCentroid(tacticalAreas.atpArea) : null),
+    [tacticalAreas.atpArea]
   );
 
   const icon = useMemo(
@@ -251,9 +251,9 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         </>
       )}
 
-      {ahaCenter && (
+      {atpCenter && (
         <>
-          <Marker position={toLeafletLatLng(ahaCenter)} icon={createImageIcon(ICON_IMAGES.atp)} />
+          <Marker position={toLeafletLatLng(atpCenter)} icon={createImageIcon(ICON_IMAGES.atp)} />
         </>
       )}
 
@@ -294,10 +294,10 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
             </Tooltip>
           </Polyline>
         )}
-        {ahaPathPositions && (
-          <Polyline positions={ahaPathPositions} pathOptions={PATH_OPTIONS_AHA}>
+        {atpPathPositions && (
+          <Polyline positions={atpPathPositions} pathOptions={PATH_OPTIONS_ATP}>
             <Tooltip direction="top">
-              <strong>RL → AHA</strong>
+              <strong>RL → ATP</strong>
             </Tooltip>
           </Polyline>
         )}
@@ -388,7 +388,7 @@ export function DeployedMissileSystems({
 // ============================================================================
 export function MissileSystemPreview({
   uShapeVertices,
-  ammoArea,
+  atpArea,
   hideArea,
   reloadArea,
   firePoints,
@@ -402,7 +402,7 @@ export function MissileSystemPreview({
         vertices={uShapeVertices}
         isValid={isValid}
       />
-      <TacticalPolygon type="aha" variant="preview" vertices={ammoArea} isValid={isValid} />
+      <TacticalPolygon type="atp" variant="preview" vertices={atpArea} isValid={isValid} />
       <TacticalPolygon type="hide" variant="preview" vertices={hideArea} isValid={isValid} />
       <TacticalPolygon type="reload" variant="preview" vertices={reloadArea} isValid={isValid} />
       {firePoints.map((firePoint, index) => (

@@ -59,7 +59,7 @@ describe('selectors', () => {
 describe('formatAreaLabel', () => {
   it('numbers fire points from 1 and labels the rest by type', () => {
     expect(formatAreaLabel({ unitKey: 'k', type: 'fp', fpIndex: 1 })).toBe('Fire Point 2');
-    expect(formatAreaLabel({ unitKey: 'k', type: 'aha' })).toBe('AHA');
+    expect(formatAreaLabel({ unitKey: 'k', type: 'atp' })).toBe('ATP');
   });
 });
 

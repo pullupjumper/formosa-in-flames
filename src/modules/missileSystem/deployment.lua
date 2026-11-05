@@ -200,12 +200,12 @@ local BATTERY_ROLES = {
     dbid = constants.PLATFORMS.AMMO,
     isGroup = false,
     findRejection = function(area)
-      if not area.AHA or #area.AHA == 0 then
-        return "no_aha_defined"
+      if not area.ATP or #area.ATP == 0 then
+        return "no_atp_defined"
       end
       return nil
     end,
-    buildSpawnPosition = function(area) return buildCourseEnd(area.AHA[1]) end,
+    buildSpawnPosition = function(area) return buildCourseEnd(area.ATP[1]) end,
     setUp = function(_, addedUnit)
       addedUnit.autodetectable = false
       return {}

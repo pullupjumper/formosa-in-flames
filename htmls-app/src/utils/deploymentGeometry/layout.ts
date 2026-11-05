@@ -11,23 +11,23 @@ import { doSquaresOverlap, generateRandomPointInBox, generateSquareVertices } fr
 
 /**
  * The random part of a deployment: boundary rectangle, HA/RL inside it, fire
- * points on the FP arc and the AHA square. Shelters and paths build on top of
+ * points on the FP arc and the ATP square. Shelters and paths build on top of
  * this in `shelter.ts` and `paths.ts`.
  */
 
 export interface Layout {
   uShapeVertices: Coordinate[];
-  ammoArea: Coordinate[];
+  atpArea: Coordinate[];
   hideArea: Coordinate[];
   reloadArea: Coordinate[];
   firePoints: Coordinate[][];
 }
 
 export interface LayoutParams {
-  /** Scenario-placed units may sit at a non-default AHA distance */
-  ahaRadius?: number;
-  /** A hand-placed AHA stays where the user put it */
-  ahaCenter?: Coordinate;
+  /** Scenario-placed units may sit at a non-default ATP distance */
+  atpRadius?: number;
+  /** A hand-placed ATP stays where the user put it */
+  atpCenter?: Coordinate;
 }
 
 // ============================================================================
@@ -107,19 +107,19 @@ function generateInternalSquares(
 }
 
 // ============================================================================
-// AHA
+// ATP
 // ============================================================================
-function generateAhaArea(
+function generateAtpArea(
   center: Coordinate,
   openingAngle: number,
-  { ahaRadius, ahaCenter }: LayoutParams
+  { atpRadius, atpCenter }: LayoutParams
 ): Coordinate[] {
-  const { squareSize, radius } = AREA_CONFIG.ahaPoint;
-  if (ahaCenter) {
-    const bearingToCenter = calculateBearing(ahaCenter, center);
-    return generateSquareVertices(ahaCenter, squareSize, bearingToCenter);
+  const { squareSize, radius } = AREA_CONFIG.atpPoint;
+  if (atpCenter) {
+    const bearingToCenter = calculateBearing(atpCenter, center);
+    return generateSquareVertices(atpCenter, squareSize, bearingToCenter);
   }
-  const position = getPointFromBearing(center, openingAngle, ahaRadius ?? radius);
+  const position = getPointFromBearing(center, openingAngle, atpRadius ?? radius);
   return generateSquareVertices(position, squareSize, openingAngle);
 }
 
@@ -201,7 +201,7 @@ export function generateLayout(
     uShapeVertices,
     hideArea,
     reloadArea,
-    ammoArea: generateAhaArea(center, openingAngle, options),
+    atpArea: generateAtpArea(center, openingAngle, options),
     firePoints: generateFirePoints(center, openingAngle, rng),
   };
 }

@@ -493,7 +493,7 @@ describe("MissileSystem Ammo And Meeting", function()
         ammunition = "Ammo Revetment, Alpha",
         operationalArea = {
           name = "OPAREA-1",
-          AHA = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }
+          ATP = { { area = { "RP-101", "RP-102", "RP-103", "RP-104" } } }
         }
       }
       resupplyUnit = {
@@ -513,14 +513,14 @@ describe("MissileSystem Ammo And Meeting", function()
       end)
     end)
 
-    -- Positive: both in one AHA zone
-    it("should return true when resupply unit meets ammo depot in same AHA", function()
+    -- Positive: both in one ATP zone
+    it("should return true when resupply unit meets ammo depot in same ATP", function()
       assert.is_true(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
       assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("Ammo Revetment, Alpha", "China")
     end)
 
-    -- Boundary: the resupply unit in no AHA zone
-    it("should return false when the resupply unit is in no AHA zone", function()
+    -- Boundary: the resupply unit in no ATP zone
+    it("should return false when the resupply unit is in no ATP zone", function()
       resupplyUnit.inArea = function() return false end
       assert.is_false(Meeting.isAtAmmoDepot(resupplyUnitState, resupplyUnit))
     end)

@@ -16,7 +16,7 @@
 
 - firing：SAM 從隨機一個 FP 生成，其餘從 HA[1]；建好後加 mount、`removeAndRedistributeWeapons`。
 - resupply：從 RL[1] 生成。
-- ammo（depot）：從 AHA[1] 生成，設成不可自動偵測。
+- ammo（depot）：從 ATP[1] 生成，設成不可自動偵測。
 
 firing 和 resupply 的車數都是 `battery.unitCount`（config 放在 resupply 上）。多台時以 descriptor 名為 group，成員名把序數放在 firing unit 名前面：`Ammo Sec, 1st Bn, X` → `Ammo Sec, 2nd Coy, 1st Bn, X`。`spec/core/missileSystemConfig_spec.lua` 保證每個名字都以 firing unit 名結尾、連結一對一。
 

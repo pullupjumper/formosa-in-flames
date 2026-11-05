@@ -155,25 +155,25 @@ describe('generateLayout', () => {
         }
       });
 
-      it('puts the ammo area on the AHA radius', () => {
-        expect(layout.ammoArea).toHaveLength(4);
-        const range = calculateDistance(CENTER, calculateCentroid(layout.ammoArea));
-        expect(range).toBeCloseTo(AREA_CONFIG.ahaPoint.radius, 3);
+      it('puts the ammo area on the ATP radius', () => {
+        expect(layout.atpArea).toHaveLength(4);
+        const range = calculateDistance(CENTER, calculateCentroid(layout.atpArea));
+        expect(range).toBeCloseTo(AREA_CONFIG.atpPoint.radius, 3);
       });
     });
   });
 
-  it('honours an explicit AHA radius', () => {
-    const layout = generateLayout(CENTER, 90, { ahaRadius: 4 }, createSeededRandom(3));
-    const range = calculateDistance(CENTER, calculateCentroid(layout.ammoArea));
+  it('honours an explicit ATP radius', () => {
+    const layout = generateLayout(CENTER, 90, { atpRadius: 4 }, createSeededRandom(3));
+    const range = calculateDistance(CENTER, calculateCentroid(layout.atpArea));
     expect(range).toBeCloseTo(4, 3);
   });
 
-  it('honours an explicit AHA center', () => {
-    const ahaCenter: Coordinate = { latitude: 24.2, longitude: 121.3 };
-    const layout = generateLayout(CENTER, 90, { ahaCenter }, createSeededRandom(3));
-    const center = calculateCentroid(layout.ammoArea);
-    expect(center.latitude).toBeCloseTo(ahaCenter.latitude, 5);
-    expect(center.longitude).toBeCloseTo(ahaCenter.longitude, 5);
+  it('honours an explicit ATP center', () => {
+    const atpCenter: Coordinate = { latitude: 24.2, longitude: 121.3 };
+    const layout = generateLayout(CENTER, 90, { atpCenter }, createSeededRandom(3));
+    const center = calculateCentroid(layout.atpArea);
+    expect(center.latitude).toBeCloseTo(atpCenter.latitude, 5);
+    expect(center.longitude).toBeCloseTo(atpCenter.longitude, 5);
   });
 });

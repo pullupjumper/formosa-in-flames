@@ -7,7 +7,7 @@
 import type { Coordinate, MovementPath } from '@/types/geo';
 
 /** Every tactical area a deployed unit can relocate by clicking it */
-export type AreaType = 'ushape' | 'aha' | 'hide' | 'reload' | 'fp';
+export type AreaType = 'ushape' | 'atp' | 'hide' | 'reload' | 'fp';
 
 /** The single-square areas; the U-shape moves the whole layout instead */
 export type SquareAreaType = Exclude<AreaType, 'ushape'>;
@@ -29,7 +29,7 @@ export interface SelectedUnit {
 
 export interface TacticalAreas {
   uShapeVertices: Coordinate[];
-  ammoArea?: Coordinate[];
+  atpArea?: Coordinate[];
   hideArea?: Coordinate[];
   reloadArea?: Coordinate[];
   firePoints?: Coordinate[][];
@@ -41,7 +41,7 @@ export interface MovementPaths {
   FP: MovementPath[];
   HA: MovementPath;
   RL: MovementPath[];
-  AHA: MovementPath;
+  ATP: MovementPath;
   SHRL: MovementPath;
 }
 
@@ -52,9 +52,9 @@ export interface MissileDeployment {
   center: Coordinate;
   openingAngle: number;
   /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
-  ahaRadius?: number;
-  /** Where the AHA square sits; set by hand-relocation or scenario placement. */
-  ahaCenter?: Coordinate;
+  atpRadius?: number;
+  /** Where the ATP square sits; set by hand-relocation or scenario placement. */
+  atpCenter?: Coordinate;
   tacticalAreas: TacticalAreas;
   paths: MovementPaths;
 }

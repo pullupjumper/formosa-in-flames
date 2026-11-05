@@ -15,7 +15,7 @@ describe('createEmptyMovementPaths', () => {
       FP: [],
       HA: { waypoints: [] },
       RL: [],
-      AHA: { waypoints: [] },
+      ATP: { waypoints: [] },
       SHRL: { waypoints: [] },
     });
   });
@@ -47,10 +47,10 @@ describe('buildMovementPaths', () => {
     });
   });
 
-  it('emits HA and AHA paths with at least a start and an end', () => {
+  it('emits HA and ATP paths with at least a start and an end', () => {
     const paths = buildMovementPaths(layout, null);
     expect(paths.HA.waypoints.length).toBeGreaterThanOrEqual(2);
-    expect(paths.AHA.waypoints.length).toBeGreaterThanOrEqual(2);
+    expect(paths.ATP.waypoints.length).toBeGreaterThanOrEqual(2);
   });
 
   it('starts FP and SHRL paths at the gateways when given', () => {

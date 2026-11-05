@@ -31,7 +31,7 @@ describe("MissileSystem Deployment", function()
       HA = { { course = { { latitude = 1, longitude = 1 } } } },
       FP = { { course = { { latitude = 2, longitude = 2 } } } },
       RL = { { course = { { latitude = 3, longitude = 3 } } } },
-      AHA = { { course = { { latitude = 4, longitude = 4 } } } }
+      ATP = { { course = { { latitude = 4, longitude = 4 } } } }
     }
   end
 
@@ -124,8 +124,8 @@ describe("MissileSystem Deployment", function()
       assert.are.equal(1, added["SRBM Bn, 1st Bde"].latitude)
     end)
 
-    -- Positive: the resupply unit spawns at the reload point and the hidden depot at the ammo holding area
-    it("should spawn the resupply unit at the reload point and the depot at the ammo holding area", function()
+    -- Positive: the resupply unit spawns at the reload point and the hidden depot at the ammunition transfer point
+    it("should spawn the resupply unit at the reload point and the depot at the ammunition transfer point", function()
       local added = stubEmptyMap()
 
       deployAll({ srbm = buildSystemConfig({ "A" }) }, constants.SIDES.RED)

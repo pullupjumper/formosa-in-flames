@@ -78,7 +78,7 @@ describe("Sigint", function()
         RL = { { area = { "RP-001", "RP-002", "RP-003", "RP-004" } } },
         FP = {},
         HA = {},
-        AHA = {},
+        ATP = {},
       },
     }
     if overrides then
@@ -407,7 +407,7 @@ describe("Sigint", function()
           ["TEL-NORL-001"] = makeFiringUnitState({
             guid = "TEL-NORL-001",
             name = "TEL NoRL",
-            operationalArea = { RL = { { area = {} } }, FP = {}, HA = {}, AHA = {} },
+            operationalArea = { RL = { { area = {} } }, FP = {}, HA = {}, ATP = {} },
           }),
         })
 

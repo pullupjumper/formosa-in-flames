@@ -23,19 +23,19 @@ describe('fromOperationalArea', () => {
     expect(deployment.unitname).toBe(UNIT_NAME);
     expect(deployment.missileSystemType).toBe(CATEGORY);
     expect(deployment.tacticalAreas.uShapeVertices).toBe(AREA.uShapeVertices);
-    expect(deployment.tacticalAreas.ammoArea).toBe(AREA.AHA[0].area);
+    expect(deployment.tacticalAreas.atpArea).toBe(AREA.ATP[0].area);
     expect(deployment.tacticalAreas.firePoints).toHaveLength(AREA.FP.length);
   });
 
-  it('pins the AHA to its stored square so rotate cannot move it', () => {
-    expect(deployment.ahaRadius).toBeUndefined();
-    expect(deployment.ahaCenter).toEqual(calculateCentroid(AREA.AHA[0].area));
+  it('pins the ATP to its stored square so rotate cannot move it', () => {
+    expect(deployment.atpRadius).toBeUndefined();
+    expect(deployment.atpCenter).toEqual(calculateCentroid(AREA.ATP[0].area));
   });
 
-  it('stitches HA/AHA paths back onto the reload leg', () => {
+  it('stitches HA/ATP paths back onto the reload leg', () => {
     const reloadCourse = AREA.RL[0].course;
     expect(deployment.paths.HA.waypoints.slice(0, reloadCourse.length)).toEqual(reloadCourse);
-    expect(deployment.paths.AHA.waypoints.slice(0, reloadCourse.length)).toEqual(reloadCourse);
+    expect(deployment.paths.ATP.waypoints.slice(0, reloadCourse.length)).toEqual(reloadCourse);
   });
 });
 
@@ -50,11 +50,11 @@ describe('buildInjectedDeployments', () => {
 });
 
 describe('toExportPaths', () => {
-  it('drops the leading waypoint only on HA/RL/AHA', () => {
+  it('drops the leading waypoint only on HA/RL/ATP', () => {
     const paths = fromOperationalArea(CATEGORY, UNIT_NAME, AREA).paths;
     const exported = toExportPaths(paths);
     expect(exported.HA.waypoints).toEqual(paths.HA.waypoints.slice(1));
-    expect(exported.AHA.waypoints).toEqual(paths.AHA.waypoints.slice(1));
+    expect(exported.ATP.waypoints).toEqual(paths.ATP.waypoints.slice(1));
     exported.RL.forEach((path, index) =>
       expect(path.waypoints).toEqual(paths.RL[index].waypoints.slice(1))
     );
@@ -139,7 +139,7 @@ describe('toControlPanelResult', () => {
     expect(system.key).toBe('k');
     expect(system.unitname).toBe(UNIT_NAME);
     expect(system.paths).toEqual(toExportPaths(generated!.paths));
-    expect(system).not.toHaveProperty('ahaRadius');
+    expect(system).not.toHaveProperty('atpRadius');
   });
 
   it('round-trips a generated deployment through the Lua area shape', () => {
@@ -171,7 +171,7 @@ describe('toControlPanelResult', () => {
         area: exported.tacticalAreas.firePoints![index],
       })),
       RL: [{ course: [reloadPoint], area: exported.tacticalAreas.reloadArea! }],
-      AHA: [{ course: exported.paths.AHA.waypoints, area: exported.tacticalAreas.ammoArea! }],
+      ATP: [{ course: exported.paths.ATP.waypoints, area: exported.tacticalAreas.atpArea! }],
       HA: [{ course: exported.paths.HA.waypoints, area: exported.tacticalAreas.hideArea! }],
       SHRL: [{ course: exported.paths.SHRL.waypoints, area: [] }],
     };
@@ -180,6 +180,6 @@ describe('toControlPanelResult', () => {
     expect(restored.tacticalAreas).toEqual(generated.tacticalAreas);
     expect(restored.paths.FP).toEqual(generated.paths.FP);
     expect(restored.paths.SHRL).toEqual(generated.paths.SHRL);
-    expect(restored.ahaCenter).toEqual(calculateCentroid(generated.tacticalAreas.ammoArea!));
+    expect(restored.atpCenter).toEqual(calculateCentroid(generated.tacticalAreas.atpArea!));
   });
 });

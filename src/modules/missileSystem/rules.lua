@@ -33,7 +33,7 @@ Rules.STEP = {
   HIDE_RESUPPLY_UNIT_AFTER_RELOAD = "hideResupplyUnitAfterReload",
   MOVE_TO_FIRING_POINT = "moveToFiringPoint",
   -- Resupply unit transload cycle
-  MOVE_TO_AMMO_HOLDING_AREA = "moveToAmmoHoldingArea",
+  MOVE_TO_AMMUNITION_TRANSFER_POINT = "moveToAmmunitionTransferPoint",
   COMPLETE_TRANSLOAD = "completeTransload",
   FAIL_AMMO_DEPOT_STATE_NOT_FOUND = "failAmmoDepotStateNotFound",
   RECALL_TO_RELOAD_POINT = "recallToReloadPoint",
@@ -156,7 +156,7 @@ local function hasMetResupplyUnit(pair, isAuto)
       and pair.isInSameReloadArea()
 end
 
----Whether an empty resupply unit met its ammo depot at AHA
+---Whether an empty resupply unit met its ammo depot at ATP
 ---@param resupplyUnitState SBJ__ResupplyUnitState
 ---@param isAuto boolean
 ---@param isAtAmmoDepot fun(): boolean
@@ -215,11 +215,11 @@ function Rules.evaluateReloadPointArrival(moveCtx, pair)
   return steps
 end
 
----Evaluate the steps for a unit entering its ammo holding area
+---Evaluate the steps for a unit entering its ammunition transfer point
 ---@param moveCtx SBJ__MoveToPositionContext
----@param observation SBJ__AmmoHoldingAreaObservation|nil Nil when the unit is not a resupply unit of this system
+---@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is not a resupply unit of this system
 ---@return string[] steps
-function Rules.evaluateAmmoHoldingAreaArrival(moveCtx, observation)
+function Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
   if observation and hasMetAmmoDepot(observation.resupplyUnitState, moveCtx.isAuto, observation.isAtAmmoDepot) then
     return { STEP.BEGIN_TRANSLOAD }
   end
@@ -310,7 +310,7 @@ function Rules.evaluateFiringUnitTick(tick, pair)
 end
 
 ---Evaluate the steps for one resupply unit in a reload cycle
----An empty auto-mode resupply unit standing in an RL zone goes to the ammo holding area;
+---An empty auto-mode resupply unit standing in an RL zone goes to the ammunition transfer point;
 ---a transloading one finishes once the reload time passed and it still meets its ammo depot.
 ---@param tick SBJ__ResupplyUnitTick
 ---@param ammoDepotState SBJ__AmmunitionState|nil Nil when its ammo depot is not tracked
@@ -320,7 +320,7 @@ function Rules.evaluateResupplyUnitTick(tick, ammoDepotState)
 
   if resupplyUnitState.state == STATE.STATIC then
     if tick.isAuto and resupplyUnitState.weaponCountCurrent == 0 and tick.isInReloadArea() then
-      return { STEP.MOVE_TO_AMMO_HOLDING_AREA }
+      return { STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT }
     end
 
     return {}

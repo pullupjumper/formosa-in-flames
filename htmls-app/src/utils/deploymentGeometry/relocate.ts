@@ -53,7 +53,7 @@ type AreaUpdateResult = { ok: true; update: AreaUpdate } | { ok: false; failure:
 // ============================================================================
 /**
  * Moving the boundary moves everything with it, so the layout is regenerated at
- * the new center. AHA and fire points are user-placed and stay where they are.
+ * the new center. ATP and fire points are user-placed and stay where they are.
  */
 function buildUShapeUpdate(
   deployment: MissileDeployment,
@@ -67,8 +67,8 @@ function buildUShapeUpdate(
     center: position,
     angle: deployment.openingAngle,
     validateTaiwanBoundary,
-    ahaRadiusOverride: deployment.ahaRadius,
-    ahaCenterOverride: deployment.ahaCenter,
+    atpRadiusOverride: deployment.atpRadius,
+    atpCenterOverride: deployment.atpCenter,
     firePointsOverride: deployment.tacticalAreas.firePoints,
     rng,
   });
@@ -145,9 +145,9 @@ function buildSquareUpdate(
   const extraFields: Partial<MissileDeployment> = {};
 
   switch (type) {
-    case 'aha':
-      next.ammoArea = vertices;
-      extraFields.ahaCenter = position;
+    case 'atp':
+      next.atpArea = vertices;
+      extraFields.atpCenter = position;
       break;
     case 'hide':
       next.hideArea = vertices;

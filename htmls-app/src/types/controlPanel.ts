@@ -51,7 +51,7 @@ export interface AreaDefinition {
 export interface OperationalArea {
   RL: AreaDefinition[];
   FP: AreaDefinition[];
-  AHA: AreaDefinition[];
+  ATP: AreaDefinition[];
   HA: AreaDefinition[];
   SHRL: AreaDefinition[];
   uShapeVertices: Coordinate[];
@@ -109,8 +109,8 @@ export interface BatteryStatus {
   resupplyUnitReloadTime: number;
   missilesInAmmoVehicles: number;
   missilesInTransloaderDefault: number;
-  missilesInAHA: number;
-  missilesInAHADefault: number;
+  missilesInATP: number;
+  missilesInATPDefault: number;
 }
 
 export interface C2Unit {

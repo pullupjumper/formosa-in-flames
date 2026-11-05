@@ -26,8 +26,8 @@
 stateDiagram-v2
     HIDE --> REPOSITIONING: depart（FSP 派往 FP）
     REPOSITIONING --> STATIC: arriveAtFiringPoint / settle
-    STATIC --> REPOSITIONING: depart（收車、補給車去 AHA）
-    REPOSITIONING --> RELOAD: beginReload（RL / AHA 會合）
+    STATIC --> REPOSITIONING: depart（收車、補給車去 ATP）
+    REPOSITIONING --> RELOAD: beginReload（RL / ATP 會合）
     RELOAD --> STATIC: finishReload
     STATIC --> REPOSITIONING: depart（裝填後回 HA / FP / RL）
     REPOSITIONING --> HIDE: hide

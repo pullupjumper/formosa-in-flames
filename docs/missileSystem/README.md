@@ -25,7 +25,7 @@
 - 進入 `stowTime` 等待視窗，模擬射擊／撤收時間，期間不立即機動
 - stow 結束後若仍低於 `ammoThreshold`，機動發射車前往 RL（Reload Point，再裝填陣地）；若彈量已充足（FSP 收車情境），則直接回 HA
 - 彈藥補給車從 MASK 建築拉出後與機動發射車在 RL 交會，進入再裝填計時
-- 彈藥補給車彈量耗盡時，再前往 AHA（Ammo Holding Area，彈藥集結陣地）與彈藥儲備點交會
+- 彈藥補給車彈量耗盡時，再前往 ATP（Ammunition Transfer Point，彈藥轉運點）與彈藥儲備點交會
 - 轉運完成後彈藥補給車回 RL 待命
 
 **再裝填後的機動與存活流程**
@@ -35,7 +35,7 @@
 
 **區域觸發的即時更新機制**
 
-當機動車組進入 FP/HA/RL/AHA 各陣地區域時，模組會立即更新狀態與武器管制。
+當機動車組進入 FP/HA/RL/ATP 各陣地區域時，模組會立即更新狀態與武器管制。
 
 **HA 與 RL 的掩蔽判定差異**
 
@@ -78,10 +78,10 @@ flowchart TB
     CN_HA --> CN_MASK[進入 MASK 建築掩蔽]
 
     CN_RELOAD --> CN_RU0{彈藥補給車彈量=0?}
-    CN_RU0 -->|Yes| CN_AHA[自動前往 AHA]
+    CN_RU0 -->|Yes| CN_ATP[自動前往 ATP]
     CN_RU0 -->|No| CN_RLREADY[彈藥補給車回 RL 待命]
-    CN_AHA --> CN_AHAMEET{AHA 交會成功?}
-    CN_AHAMEET -->|Yes| CN_TRANSFER[彈藥儲備點轉運完成]
+    CN_ATP --> CN_ATPMEET{ATP 交會成功?}
+    CN_ATPMEET -->|Yes| CN_TRANSFER[彈藥儲備點轉運完成]
     CN_TRANSFER --> CN_RLREADY
 ```
 
@@ -89,7 +89,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    TW_CTRL[玩家或外部流程下達移動] --> TW_RL[機動車組進入 RL/AHA 陣地]
+    TW_CTRL[玩家或外部流程下達移動] --> TW_RL[機動車組進入 RL/ATP 陣地]
     TW_RL --> TW_MEET{交會成功?}
     TW_MEET -->|Yes| TW_RELOAD[開始 reload 計時並完成再裝填]
     TW_MEET -->|No| TW_WAIT[維持待命 / 重新部署]
@@ -105,7 +105,7 @@ flowchart TB
 - `scheduledReloadHideCheck.lua` 週期呼叫 `processSide(config, saveData, constants.SIDES.RED)`；auto / manual 由 `config.red.ground.policy.isAuto` 決定
 - 機動發射車低彈量或剛完成 FSP 射擊時，先進入 `stowTime` 等待視窗（由 `firingUnitState.stowStartTime` 記錄起點），倒數結束才實際機動，避免射擊後立即撤收
 - stow 結束時若彈量已充足（典型 FSP 收車情境），直接回 HA；若仍低彈量，則自動觸發「機動發射車 + 彈藥補給車」同步前往 RL
-- 彈藥補給車彈量歸零時，會自動觸發彈藥補給車前往 AHA 補給
+- 彈藥補給車彈量歸零時，會自動觸發彈藥補給車前往 ATP 補給
 - 機動發射車裝填完畢後，防空飛彈車自動回 FP；TEL 類自動回 HA
 - 電腦控制陣營 `moveToPosition` 呼叫 `processUnitEntersArea`，依 `config.red.ground.policy` 開啟 `hideOnEnterHA=true`，抵達 HA 陣地且彈藥充足時自動執行建築掩蔽（低彈量單位不掩蔽，避免阻斷後續前往 RL 的補給流程）
 - 電腦控制陣營亦可在 RL 未交會時，依 `hideResupplyOnRLNoMeeting=true` 讓彈藥補給車回到掩蔽狀態（不是機動發射車）
@@ -117,7 +117,7 @@ flowchart TB
 | 設計機制 | 遊戲中的效果 |
 |---|---|
 | RL 交會 + 再裝填時間 | 形成射擊節奏與火力間隙，避免連續無限火力投射 |
-| AHA 二級補給 | 補給流程可被中斷，摧毀彈藥儲存可成為有效戰術 |
+| ATP 二級補給 | 補給流程可被中斷，摧毀彈藥儲存可成為有效戰術 |
 | TEL 回 HA + 建築掩蔽 | 降低被持續偵蒐與反制打擊的機率 |
 | SAM 補完回 FP | 防空火網覆蓋恢復較快，空域威脅起伏更明顯 |
 | 狀態機（STATIC/REPOSITIONING/RELOAD/HIDE） | 流程可預期、可調校、可在 UI/事件中解讀 |
@@ -139,7 +139,7 @@ flowchart TB
 **情境 C：未在同一陣地交會**
 
 - 機動發射車與彈藥補給車若未在同一 RL 陣地交會，無法進入有效 `RELOAD` 完成狀態
-- 彈藥補給車若未在同一 AHA 陣地與彈藥儲備點交會，將無法完成再裝填
+- 彈藥補給車若未在同一 ATP 陣地與彈藥儲備點交會，將無法完成再裝填
 
 ---
 
@@ -152,7 +152,7 @@ flowchart TB
 | `config.*.ground.missileSystemTypes.<type>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
 | `config.*.ground.missileSystemTypes.<type>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
 | `config.*.ground.missileSystemTypes.<type>.ammunitions[*].weaponCountDefault` | 彈藥儲備點初始庫存 |
-| `operationalArea` 的 FP/HA/RL/AHA 陣地位置 | 補給路徑與交會條件 |
+| `operationalArea` 的 FP/HA/RL/ATP 陣地位置 | 補給路徑與交會條件 |
 
 ---
 

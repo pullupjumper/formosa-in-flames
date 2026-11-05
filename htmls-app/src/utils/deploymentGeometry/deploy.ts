@@ -19,8 +19,8 @@ export interface GenerateDeploymentParams {
   center: Coordinate;
   angle: number;
   validateTaiwanBoundary: boolean;
-  ahaRadiusOverride?: number;
-  ahaCenterOverride?: Coordinate;
+  atpRadiusOverride?: number;
+  atpCenterOverride?: Coordinate;
   /** Keep these fire points instead of generating new ones (rotation) */
   firePointsOverride?: Coordinate[][];
   /** Defaults to `Math.random`; pass a seeded source for reproducible output. */
@@ -57,13 +57,13 @@ export function generateDeploymentData({
   center,
   angle,
   validateTaiwanBoundary,
-  ahaRadiusOverride,
-  ahaCenterOverride,
+  atpRadiusOverride,
+  atpCenterOverride,
   firePointsOverride,
   rng = Math.random,
 }: GenerateDeploymentParams): MissileDeployment | null {
   try {
-    const layoutOptions = { ahaRadius: ahaRadiusOverride, ahaCenter: ahaCenterOverride };
+    const layoutOptions = { atpRadius: atpRadiusOverride, atpCenter: atpCenterOverride };
 
     // Outer retry: if the shelter plan can't converge on both gateways with
     // this HA/RL layout, regenerate the layout (which re-randomizes HA/RL/FP)
@@ -90,8 +90,8 @@ export function generateDeploymentData({
         missileSystemType,
         center,
         openingAngle: angle,
-        ahaRadius: ahaRadiusOverride ?? AREA_CONFIG.ahaPoint.radius,
-        ...(ahaCenterOverride ? { ahaCenter: ahaCenterOverride } : {}),
+        atpRadius: atpRadiusOverride ?? AREA_CONFIG.atpPoint.radius,
+        ...(atpCenterOverride ? { atpCenter: atpCenterOverride } : {}),
         tacticalAreas,
         paths: buildMovementPaths(tacticalAreas, plan.gateways),
       };
@@ -115,7 +115,7 @@ export interface RotateDeploymentParams {
 }
 
 /**
- * Re-generate a deployed unit at a new opening angle. Fire points and the AHA
+ * Re-generate a deployed unit at a new opening angle. Fire points and the ATP
  * are user-placed, so they stay where they are; paths are rebuilt once against
  * the kept fire points. Null when the angle is unusable (out of range, the
  * rotated boundary leaves Taiwan, or no gateway fits).
@@ -133,8 +133,8 @@ export function rotateDeployment({
     center: deployment.center,
     angle,
     validateTaiwanBoundary,
-    ahaRadiusOverride: deployment.ahaRadius,
-    ahaCenterOverride: deployment.ahaCenter,
+    atpRadiusOverride: deployment.atpRadius,
+    atpCenterOverride: deployment.atpCenter,
     firePointsOverride: deployment.tacticalAreas.firePoints,
     rng,
   });

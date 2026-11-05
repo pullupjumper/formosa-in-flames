@@ -7,7 +7,7 @@ local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 local ControlPanelLayout = {}
 
 ---Position types whose zones are resolved to vertices for the control panel
-local SETUP_POSITION_TYPES = { "HA", "FP", "RL", "AHA", "SHRL" }
+local SETUP_POSITION_TYPES = { "HA", "FP", "RL", "ATP", "SHRL" }
 ---@cast SETUP_POSITION_TYPES SBJ__PositionType[]
 
 ---Turn a control panel path into a fast-moving course
@@ -38,7 +38,7 @@ local function buildLayout(entry, areaName)
   local operationalArea = {
     RL = { { course = buildCourse(paths.RL[1]), area = tacticalAreas.reloadArea } },
     FP = {},
-    AHA = { { course = buildCourse(paths.AHA), area = tacticalAreas.ammoArea } },
+    ATP = { { course = buildCourse(paths.ATP), area = tacticalAreas.atpArea } },
     HA = { { course = buildCourse(paths.HA), area = tacticalAreas.hideArea } },
     SHRL = { { course = buildCourse(paths.SHRL), area = tacticalAreas.reloadArea } },
     uShapeVertices = tacticalAreas.uShapeVertices,
