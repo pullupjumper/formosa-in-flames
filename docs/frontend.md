@@ -136,5 +136,5 @@ Forbidden: `ctr`, `idx`, `cb`, `lo`, `e`, `evt`, `coords`, `pos`. Single-letter 
 | path points | `waypoints` |
 | polygon used for containment | `polygon` |
 | angle in degrees | `angle` / `openingAngle` / `bearing` |
-| unit identity | `unitKey` / `unitName` / `category` / `index` |
+| unit identity | `batteryName` / `unitName` / `category` / `index` |
 | event object | `event` |

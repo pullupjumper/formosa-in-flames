@@ -70,7 +70,7 @@ function buildUShapeUpdate(
     validateTaiwanBoundary,
     atpRadiusOverride: deployment.atpRadius,
     atpCenterOverride: deployment.atpCenter,
-    firePointsOverride: deployment.tacticalAreas.firePoints,
+    firePointsOverride: deployment.tacticalAreas.FP,
     rng,
   });
   if (!regenerated) return { ok: false, failure: { code: 'ushape-generation-failed' } };
@@ -81,8 +81,8 @@ function buildUShapeUpdate(
       tacticalAreas: {
         ...deployment.tacticalAreas,
         uShapeVertices: regenerated.tacticalAreas.uShapeVertices,
-        hideArea: regenerated.tacticalAreas.hideArea,
-        reloadArea: regenerated.tacticalAreas.reloadArea,
+        HA: regenerated.tacticalAreas.HA,
+        RL: regenerated.tacticalAreas.RL,
         shelterPoints: regenerated.tacticalAreas.shelterPoints,
       },
       extraFields: { center: position },
@@ -109,7 +109,7 @@ function validateInternalSquare(
     return { code: 'outside-boundary' };
   }
 
-  const other = type === 'hide' ? tacticalAreas.reloadArea : tacticalAreas.hideArea;
+  const other = type === 'hide' ? tacticalAreas.RL[0] : tacticalAreas.HA[0];
   if (isSquare(other)) {
     const overlaps = doSquaresOverlap(
       position,
@@ -125,11 +125,17 @@ function validateInternalSquare(
   return null;
 }
 
+function replaceAt<T>(items: T[], index: number, item: T): T[] {
+  const next = [...items];
+  next[index] = item;
+  return next;
+}
+
 /** Move one square, leaving every other tactical area untouched */
 function buildSquareUpdate(
   deployment: DeployedBattery,
   type: SquareAreaType,
-  fpIndex: number,
+  index: number,
   position: Coordinate,
   rng: RandomSource
 ): AreaUpdateResult {
@@ -147,21 +153,17 @@ function buildSquareUpdate(
 
   switch (type) {
     case 'atp':
-      next.atpArea = vertices;
+      next.ATP = replaceAt(tacticalAreas.ATP, index, vertices);
       extraFields.atpCenter = position;
       break;
     case 'hide':
-      next.hideArea = vertices;
+      next.HA = replaceAt(tacticalAreas.HA, index, vertices);
       break;
     case 'reload':
-      next.reloadArea = vertices;
+      next.RL = replaceAt(tacticalAreas.RL, index, vertices);
       break;
     case 'fp':
-      if (tacticalAreas.firePoints) {
-        const firePoints = [...tacticalAreas.firePoints];
-        firePoints[fpIndex] = vertices;
-        next.firePoints = firePoints;
-      }
+      next.FP = replaceAt(tacticalAreas.FP, index, vertices);
       break;
   }
 
@@ -172,8 +174,8 @@ function buildSquareUpdate(
     const plan = buildShelterPlan(
       deployment.center,
       deployment.openingAngle,
-      next.hideArea,
-      next.reloadArea,
+      next.HA[0],
+      next.RL[0],
       rng
     );
     next.shelterPoints = plan.shelterPoints;
@@ -201,7 +203,7 @@ export function relocateArea({
   const result =
     target.type === 'ushape'
       ? buildUShapeUpdate(deployment, position, validateTaiwanBoundary, rng)
-      : buildSquareUpdate(deployment, target.type, target.fpIndex ?? 0, position, rng);
+      : buildSquareUpdate(deployment, target.type, target.index ?? 0, position, rng);
 
   if (!result.ok) return result;
 
@@ -212,8 +214,8 @@ export function relocateArea({
     resolveGateways(
       center,
       deployment.openingAngle,
-      tacticalAreas.hideArea,
-      tacticalAreas.reloadArea,
+      tacticalAreas.HA[0],
+      tacticalAreas.RL[0],
       tacticalAreas.shelterPoints
     );
 
@@ -223,7 +225,7 @@ export function relocateArea({
       ...deployment,
       ...extraFields,
       tacticalAreas,
-      paths: buildMovementPaths(tacticalAreas, gateways),
+      ...buildMovementPaths(tacticalAreas, gateways),
     },
   };
 }

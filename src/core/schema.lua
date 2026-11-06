@@ -2278,28 +2278,26 @@ function ScenEdit_DeleteMine(params) end
 ---@field id string Stable id sent back by the page
 ---@field label string Text shown next to the checkbox
 
----Tactical area generation result
----Contains all generated vertices for U-shape, internal zones, and fire points
+---Where a battery's zones sit; like SBJ__OperationalArea, each position type holds one polygon per position
 ---@class SBJ__TacticalAreaLayout: table
----@field uShapeVertices CMO__Location[] Array of 8 vertices forming U-shape polygon
----@field atpArea? CMO__Location[] Ammunition transfer point vertices (4 points) if internal squares configured
----@field hideArea? CMO__Location[] Hide area vertices (4 points) if internal squares configured
----@field reloadArea? CMO__Location[] Reload area vertices (4 points) if internal squares configured
----@field firePoints? table<integer, CMO__Location[]> Array of fire point areas, each with 4 vertices, if fire points configured
+---@field uShapeVertices CMO__Location[] U-shape boundary vertices
+---@field FP CMO__Location[][] Fire point areas
+---@field HA CMO__Location[][] Hide areas
+---@field ATP CMO__Location[][] Ammunition transfer point areas
+---@field RL CMO__Location[][] Reload areas
 ---@field shelterPoints? CMO__Location[] Shelter points
 
 ---Movement path between two tactical positions
 ---@class SBJ__MovementPath: table
 ---@field waypoints CMO__Location[] Array of waypoints forming the path
 
----Movement paths configuration for tactical area
----Maps path types to their waypoint arrays
+---Movement paths, one per position like SBJ__OperationalArea courses
 ---@class SBJ__MovementPathSet: table
----@field FP table<integer, SBJ__MovementPath> Fire Point paths: hide area -> each fire point
----@field HA SBJ__MovementPath Hide Area path: reload point -> hide area
----@field RL table<integer, SBJ__MovementPath> Reload paths: each fire point -> reload point
----@field ATP SBJ__MovementPath Ammunition Transfer Point path: reload point -> ammunition transfer point
----@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
+---@field FP SBJ__MovementPath[] Fire point paths: hide area or shelter gateway -> each fire point
+---@field HA SBJ__MovementPath[] Hide area paths: reload point -> each hide area
+---@field ATP SBJ__MovementPath[] Ammunition transfer point paths: reload point -> each ATP
+---@field RL SBJ__MovementPath[] Reload paths: route into each reload area
+---@field SHRL SBJ__MovementPath[] Shelter loop paths: shelter -> reload point
 
 ---Point budget the player spent in the control panel
 ---@class SBJ__BudgetResult: table

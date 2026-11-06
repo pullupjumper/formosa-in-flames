@@ -1,3 +1,4 @@
+import type { TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
 import type { RandomSource } from '@/utils/random';
 import {
@@ -21,6 +22,22 @@ export interface Layout {
   hideArea: Coordinate[];
   reloadArea: Coordinate[];
   firePoints: Coordinate[][];
+}
+
+/** The layout as the battery stores it: one polygon per position of each type */
+export function toTacticalAreas(
+  layout: Layout,
+  shelterPoints?: Coordinate[],
+  firePoints: Coordinate[][] = layout.firePoints
+): TacticalAreaLayout {
+  return {
+    uShapeVertices: layout.uShapeVertices,
+    FP: firePoints,
+    HA: [layout.hideArea],
+    ATP: [layout.atpArea],
+    RL: [layout.reloadArea],
+    shelterPoints,
+  };
 }
 
 export interface LayoutParams {

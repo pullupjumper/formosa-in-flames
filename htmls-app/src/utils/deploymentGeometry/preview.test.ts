@@ -102,7 +102,7 @@ describe('previewRotation', () => {
     const preview = previewRotation(deployment, 270, false, createSeededRandom(8))!;
     expect(preview.uShapeVertices).toHaveLength(4);
     expect(preview.hideArea).toHaveLength(4);
-    expect(preview.firePoints).toBe(deployment.tacticalAreas.firePoints);
+    expect(preview.firePoints).toBe(deployment.tacticalAreas.FP);
     expect(preview.uShapeVertices).not.toEqual(deployment.tacticalAreas.uShapeVertices);
   });
 

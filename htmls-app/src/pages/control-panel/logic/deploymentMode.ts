@@ -100,7 +100,7 @@ export function isPlacementMode(mode: DeploymentMode): boolean {
 }
 
 export function isSameArea(a: RelocatingArea, b: RelocatingArea): boolean {
-  return a.batteryName === b.batteryName && a.type === b.type && a.fpIndex === b.fpIndex;
+  return a.batteryName === b.batteryName && a.type === b.type && a.index === b.index;
 }
 
 // ============================================================================
@@ -141,7 +141,7 @@ export const OUT_OF_BOUNDS_MISSILE =
 /** Fire points are numbered in the UI, every other area has a fixed label */
 export function formatAreaLabel(area: RelocatingArea): string {
   if (area.type !== 'fp') return getAreaLabel(area.type);
-  return `${getAreaLabel('fp')} ${(area.fpIndex ?? 0) + 1}`;
+  return `${getAreaLabel('fp')} ${(area.index ?? 0) + 1}`;
 }
 
 /** Turn a rejection from `relocateArea` into the status line */

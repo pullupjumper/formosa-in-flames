@@ -1,4 +1,4 @@
-import type { TacticalAreaLayout } from '@/types/generated';
+import type { MovementPath, TacticalAreaLayout } from '@/types/generated';
 import { memo, useMemo, useCallback } from 'react';
 import { CircleMarker, Polyline, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
@@ -77,24 +77,28 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
 };
 
 // ============================================================================
-// AREA TABLE — the four single polygons; fire points are indexed separately
+// AREA TABLE — the squares of each position type; fire points are labelled by number
 // ============================================================================
-interface SingleArea {
-  type: Exclude<AreaType, 'fp'>;
-  field: keyof Pick<TacticalAreaLayout, 'uShapeVertices' | 'atpArea' | 'hideArea' | 'reloadArea'>;
+interface SquareArea {
+  type: Exclude<AreaType, 'ushape' | 'fp'>;
+  field: keyof Pick<TacticalAreaLayout, 'ATP' | 'HA' | 'RL'>;
   label: string;
 }
 
-const SINGLE_AREAS: readonly SingleArea[] = [
-  { type: 'ushape', field: 'uShapeVertices', label: 'U-Shape Area' },
-  { type: 'atp', field: 'atpArea', label: 'Ammunition Transfer Point (ATP)' },
-  { type: 'hide', field: 'hideArea', label: 'Hide Area (HA)' },
-  { type: 'reload', field: 'reloadArea', label: 'Reload Area (RL)' },
+const SQUARE_AREAS: readonly SquareArea[] = [
+  { type: 'atp', field: 'ATP', label: 'Ammunition Transfer Point (ATP)' },
+  { type: 'hide', field: 'HA', label: 'Hide Area (HA)' },
+  { type: 'reload', field: 'RL', label: 'Reload Area (RL)' },
 ];
 
 /** Leaflet positions for a path, or null when it has fewer than two waypoints */
 function toPathPositions(waypoints: Coordinate[] | undefined): LatLngExpression[] | null {
   return waypoints && waypoints.length > 1 ? toLeafletPositions(waypoints) : null;
+}
+
+/** Leaflet positions for each path of a list, null for the ones too short to draw */
+function toPathPositionsList(paths: MovementPath[] | undefined): (LatLngExpression[] | null)[] {
+  return (paths ?? []).map((path) => toPathPositions(path?.waypoints));
 }
 
 // ============================================================================
@@ -127,21 +131,21 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
   const { name, missileSystemType, tacticalAreas, paths } = data;
 
   const isAreaRelocating = useCallback(
-    (type: AreaType, fpIndex?: number) =>
+    (type: AreaType, index = 0) =>
       relocatingArea?.batteryName === batteryName &&
       relocatingArea.type === type &&
-      (type !== 'fp' || relocatingArea.fpIndex === fpIndex),
+      (relocatingArea.index ?? 0) === index,
     [relocatingArea, batteryName]
   );
 
   const areaClickHandler = useCallback(
-    (type: AreaType, fpIndex?: number) =>
+    (type: AreaType, index = 0) =>
       canInteractArea({
         hasHandler: Boolean(onAreaClick),
         isAnyRelocating,
-        isThisRelocating: isAreaRelocating(type, fpIndex),
+        isThisRelocating: isAreaRelocating(type, index),
       })
-        ? () => onAreaClick?.({ batteryName, type, fpIndex })
+        ? () => onAreaClick?.({ batteryName, type, index })
         : undefined,
     [onAreaClick, isAnyRelocating, isAreaRelocating, batteryName]
   );
@@ -157,27 +161,24 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
   const rotateEventHandlers = useMemo(() => ({ click: handleRotateClick }), [handleRotateClick]);
 
   // Path positions (null when the path has fewer than two waypoints)
-  const haPathPositions = useMemo(() => toPathPositions(paths.HA?.waypoints), [paths.HA]);
-  const atpPathPositions = useMemo(() => toPathPositions(paths.ATP?.waypoints), [paths.ATP]);
-  const firePointPathPositions = useMemo(
-    () => (paths.FP ?? []).map((path) => toPathPositions(path?.waypoints)),
-    [paths.FP]
-  );
+  const haPathPositions = useMemo(() => toPathPositionsList(paths.HA), [paths.HA]);
+  const atpPathPositions = useMemo(() => toPathPositionsList(paths.ATP), [paths.ATP]);
+  const firePointPathPositions = useMemo(() => toPathPositionsList(paths.FP), [paths.FP]);
   const reloadPathPositions = useMemo(
-    () => (paths.RL ?? []).map((path) => toPathPositions(path?.waypoints)),
-    [paths.RL]
+    () => toPathPositionsList(data.reloadReturnPaths),
+    [data.reloadReturnPaths]
   );
-  const shrlPathPositions = useMemo(() => toPathPositions(paths.SHRL?.waypoints), [paths.SHRL]);
+  const shrlPathPositions = useMemo(() => toPathPositionsList(paths.SHRL), [paths.SHRL]);
 
   // Hide area center anchors the unit marker and its weapon range circle
   const hideCenter = useMemo<Coordinate | null>(
-    () => (tacticalAreas.hideArea?.length ? calculateCentroid(tacticalAreas.hideArea) : null),
-    [tacticalAreas.hideArea]
+    () => (tacticalAreas.HA[0]?.length ? calculateCentroid(tacticalAreas.HA[0]) : null),
+    [tacticalAreas.HA]
   );
 
   const atpCenter = useMemo<Coordinate | null>(
-    () => (tacticalAreas.atpArea?.length ? calculateCentroid(tacticalAreas.atpArea) : null),
-    [tacticalAreas.atpArea]
+    () => (tacticalAreas.ATP[0]?.length ? calculateCentroid(tacticalAreas.ATP[0]) : null),
+    [tacticalAreas.ATP]
   );
 
   const icon = useMemo(
@@ -212,16 +213,25 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 
   return (
     <>
-      {SINGLE_AREAS.map(({ type, field, label }) => (
-        <TacticalPolygon
-          key={type}
-          type={type}
-          vertices={tacticalAreas[field]}
-          isRelocating={isAreaRelocating(type)}
-          tooltip={<strong>{label}</strong>}
-          onClick={areaClickHandler(type)}
-        />
-      ))}
+      <TacticalPolygon
+        type="ushape"
+        vertices={tacticalAreas.uShapeVertices}
+        isRelocating={isAreaRelocating('ushape')}
+        tooltip={<strong>U-Shape Area</strong>}
+        onClick={areaClickHandler('ushape')}
+      />
+      {SQUARE_AREAS.flatMap(({ type, field, label }) =>
+        tacticalAreas[field].map((vertices, index) => (
+          <TacticalPolygon
+            key={`${type}-${index}`}
+            type={type}
+            vertices={vertices}
+            isRelocating={isAreaRelocating(type, index)}
+            tooltip={<strong>{label}</strong>}
+            onClick={areaClickHandler(type, index)}
+          />
+        ))
+      )}
 
       {/* Rotation Handle */}
       {onRotateClick && !isAnyRelocating && !isRotating && (
@@ -254,7 +264,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
       )}
 
       {/* Fire Points */}
-      {(tacticalAreas.firePoints ?? []).map((firePoint, index) => (
+      {tacticalAreas.FP.map((firePoint, index) => (
         <TacticalPolygon
           key={`fp-${index}`}
           type="fp"
@@ -283,19 +293,33 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
         ))}
 
         {/* Movement Paths */}
-        {haPathPositions && (
-          <Polyline positions={haPathPositions} pathOptions={PATH_OPTIONS_HA}>
-            <Tooltip direction="top">
-              <strong>RL → HA</strong>
-            </Tooltip>
-          </Polyline>
+        {haPathPositions.map(
+          (positions, index) =>
+            positions && (
+              <Polyline
+                key={`path-ha-${index}`}
+                positions={positions}
+                pathOptions={PATH_OPTIONS_HA}
+              >
+                <Tooltip direction="top">
+                  <strong>RL → HA</strong>
+                </Tooltip>
+              </Polyline>
+            )
         )}
-        {atpPathPositions && (
-          <Polyline positions={atpPathPositions} pathOptions={PATH_OPTIONS_ATP}>
-            <Tooltip direction="top">
-              <strong>RL → ATP</strong>
-            </Tooltip>
-          </Polyline>
+        {atpPathPositions.map(
+          (positions, index) =>
+            positions && (
+              <Polyline
+                key={`path-atp-${index}`}
+                positions={positions}
+                pathOptions={PATH_OPTIONS_ATP}
+              >
+                <Tooltip direction="top">
+                  <strong>RL → ATP</strong>
+                </Tooltip>
+              </Polyline>
+            )
         )}
         {firePointPathPositions.map(
           (positions, index) =>
@@ -325,12 +349,19 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
               </Polyline>
             )
         )}
-        {shrlPathPositions && (
-          <Polyline positions={shrlPathPositions} pathOptions={PATH_OPTIONS_SHRL}>
-            <Tooltip direction="top">
-              <strong>Shelter → RL (SHRL)</strong>
-            </Tooltip>
-          </Polyline>
+        {shrlPathPositions.map(
+          (positions, index) =>
+            positions && (
+              <Polyline
+                key={`path-shrl-${index}`}
+                positions={positions}
+                pathOptions={PATH_OPTIONS_SHRL}
+              >
+                <Tooltip direction="top">
+                  <strong>Shelter → RL (SHRL)</strong>
+                </Tooltip>
+              </Polyline>
+            )
         )}
       </ZoomGate>
     </>

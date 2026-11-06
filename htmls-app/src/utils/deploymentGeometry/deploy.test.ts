@@ -60,10 +60,10 @@ describe('generateDeploymentData', () => {
     expect(data!.atpRadius).toBe(AREA_CONFIG.atp.radius);
     expect(data!.atpCenter).toBeUndefined();
     expect(data!.tacticalAreas.uShapeVertices).toHaveLength(4);
-    expect(data!.tacticalAreas.firePoints).toHaveLength(AREA_CONFIG.firePoints.count);
+    expect(data!.tacticalAreas.FP).toHaveLength(AREA_CONFIG.firePoints.count);
     expect(data!.tacticalAreas.shelterPoints).toHaveLength(AREA_CONFIG.shelter.count);
     expect(data!.paths.FP).toHaveLength(AREA_CONFIG.firePoints.count);
-    expect(data!.paths.SHRL.waypoints.length).toBeGreaterThanOrEqual(2);
+    expect(data!.paths.SHRL[0].waypoints.length).toBeGreaterThanOrEqual(2);
   });
 
   it('keeps HA, RL and shelters inside the generated boundary', () => {
@@ -72,10 +72,10 @@ describe('generateDeploymentData', () => {
       center: INLAND,
       rng: createSeededRandom(11),
     })!;
-    const { uShapeVertices, hideArea, reloadArea, shelterPoints } = data.tacticalAreas;
+    const { uShapeVertices, HA, RL, shelterPoints } = data.tacticalAreas;
 
-    expect(areAllPointsInPolygon(hideArea!, uShapeVertices)).toBe(true);
-    expect(areAllPointsInPolygon(reloadArea!, uShapeVertices)).toBe(true);
+    expect(areAllPointsInPolygon(HA[0], uShapeVertices)).toBe(true);
+    expect(areAllPointsInPolygon(RL[0], uShapeVertices)).toBe(true);
     expect(areAllPointsInPolygon(shelterPoints!, uShapeVertices)).toBe(true);
   });
 
@@ -111,7 +111,7 @@ describe('generateDeploymentData', () => {
     expect(data.atpRadius).toBe(4);
     expect(data.atpCenter).toEqual(atpCenterOverride);
 
-    const atpCenter = calculateCentroid(data.tacticalAreas.atpArea!);
+    const atpCenter = calculateCentroid(data.tacticalAreas.ATP[0]);
     expect(calculateDistance(atpCenter, atpCenterOverride)).toBeLessThan(1e-4);
   });
 
@@ -166,11 +166,11 @@ describe('rotateDeployment', () => {
     });
     expect(rotated).not.toBeNull();
     expect(rotated!.openingAngle).toBe(270);
-    expect(rotated!.tacticalAreas.firePoints).toBe(deployment.tacticalAreas.firePoints);
+    expect(rotated!.tacticalAreas.FP).toBe(deployment.tacticalAreas.FP);
 
     rotated!.paths.FP.forEach((path, index) => {
       const end = path.waypoints[path.waypoints.length - 1];
-      const firePoint = rotated!.tacticalAreas.firePoints![index];
+      const firePoint = rotated!.tacticalAreas.FP[index];
       expect(areAllPointsInPolygon([end], firePoint)).toBe(true);
     });
   });
@@ -194,8 +194,8 @@ describe('rotateDeployment', () => {
       rng,
     });
     expect(rotated).not.toBeNull();
-    expect(calculateCentroid(rotated!.tacticalAreas.atpArea!)).toEqual(
-      calculateCentroid(moved.data.tacticalAreas.atpArea!)
+    expect(calculateCentroid(rotated!.tacticalAreas.ATP[0])).toEqual(
+      calculateCentroid(moved.data.tacticalAreas.ATP[0])
     );
   });
 

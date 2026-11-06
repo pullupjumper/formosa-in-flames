@@ -125,12 +125,8 @@ describe('formatAreaLabel', () => {
   });
 
   it('numbers fire points from 1', () => {
-    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp', fpIndex: 0 })).toBe(
-      'Fire Point 1'
-    );
-    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp', fpIndex: 1 })).toBe(
-      'Fire Point 2'
-    );
+    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp', index: 0 })).toBe('Fire Point 1');
+    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp', index: 1 })).toBe('Fire Point 2');
   });
 
   it('defaults a missing fire point index to the first', () => {
@@ -228,8 +224,8 @@ describe('deploymentModeReducer', () => {
   it('compares areas by unit, type and fire point index', () => {
     expect(isSameArea(AREA, { ...AREA })).toBe(true);
     expect(isSameArea(AREA, { ...AREA, type: 'reload' })).toBe(false);
-    const fp = { batteryName: UNIT_NAME, type: 'fp' as const, fpIndex: 0 };
-    expect(isSameArea(fp, { ...fp, fpIndex: 1 })).toBe(false);
+    const fp = { batteryName: UNIT_NAME, type: 'fp' as const, index: 0 };
+    expect(isSameArea(fp, { ...fp, index: 1 })).toBe(false);
   });
 
   it('words the ESC message per mode', () => {
@@ -360,7 +356,7 @@ describe('mode arbitration', () => {
   it('toggles area relocation off when the same area is clicked again', () => {
     const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
     const { result } = setup({ deployedBatteries });
-    const area = { batteryName: UNIT_NAME, type: 'fp' as const, fpIndex: 1 };
+    const area = { batteryName: UNIT_NAME, type: 'fp' as const, index: 1 };
 
     act(() => result.current.handleAreaClick(area));
     expect(expectMode(result.current.mode, 'relocateArea').area).toEqual(area);
@@ -587,7 +583,7 @@ describe('handleMapClick', () => {
     const deployment = makeDeployment();
     const deployedBatteries = new Map([[UNIT_NAME, deployment]]);
     const { result } = setup({ deployedBatteries });
-    const target = deployment.tacticalAreas.hideArea![0];
+    const target = deployment.tacticalAreas.HA[0][0];
 
     act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
     act(() => result.current.handleMapClick(target));
@@ -625,7 +621,7 @@ describe('handleMapClick', () => {
     const { result } = setup({ deployedBatteries, validateMissilePosition });
 
     act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
-    act(() => result.current.handleMapClick(deployment.tacticalAreas.hideArea![0]));
+    act(() => result.current.handleMapClick(deployment.tacticalAreas.HA[0][0]));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expectMode(result.current.mode, 'relocateArea');

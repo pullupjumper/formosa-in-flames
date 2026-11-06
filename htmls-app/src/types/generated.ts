@@ -212,21 +212,18 @@ export interface AddUnitOption {
   label: string;
 }
 
-/**
- * Tactical area generation result
- * Contains all generated vertices for U-shape, internal zones, and fire points
- */
+/** Where a battery's zones sit; like SBJ__OperationalArea, each position type holds one polygon per position */
 export interface TacticalAreaLayout {
-  /** Array of 8 vertices forming U-shape polygon */
+  /** U-shape boundary vertices */
   uShapeVertices: Coordinate[];
-  /** Ammunition transfer point vertices (4 points) if internal squares configured */
-  atpArea?: Coordinate[];
-  /** Hide area vertices (4 points) if internal squares configured */
-  hideArea?: Coordinate[];
-  /** Reload area vertices (4 points) if internal squares configured */
-  reloadArea?: Coordinate[];
-  /** Array of fire point areas, each with 4 vertices, if fire points configured */
-  firePoints?: Coordinate[][];
+  /** Fire point areas */
+  FP: Coordinate[][];
+  /** Hide areas */
+  HA: Coordinate[][];
+  /** Ammunition transfer point areas */
+  ATP: Coordinate[][];
+  /** Reload areas */
+  RL: Coordinate[][];
   /** Shelter points */
   shelterPoints?: Coordinate[];
 }
@@ -237,21 +234,18 @@ export interface MovementPath {
   waypoints: Coordinate[];
 }
 
-/**
- * Movement paths configuration for tactical area
- * Maps path types to their waypoint arrays
- */
+/** Movement paths, one per position like SBJ__OperationalArea courses */
 export interface MovementPathSet {
-  /** Fire Point paths: hide area -> each fire point */
+  /** Fire point paths: hide area or shelter gateway -> each fire point */
   FP: MovementPath[];
-  /** Hide Area path: reload point -> hide area */
-  HA: MovementPath;
-  /** Reload paths: each fire point -> reload point */
+  /** Hide area paths: reload point -> each hide area */
+  HA: MovementPath[];
+  /** Ammunition transfer point paths: reload point -> each ATP */
+  ATP: MovementPath[];
+  /** Reload paths: route into each reload area */
   RL: MovementPath[];
-  /** Ammunition Transfer Point path: reload point -> ammunition transfer point */
-  ATP: MovementPath;
-  /** Shelter Hide Reload Loop path: shelter -> reload point */
-  SHRL: MovementPath;
+  /** Shelter loop paths: shelter -> reload point */
+  SHRL: MovementPath[];
 }
 
 /** Point budget the player spent in the control panel */

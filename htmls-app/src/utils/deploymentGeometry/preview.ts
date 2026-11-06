@@ -133,5 +133,5 @@ export function previewRotation(
     !validateTaiwanBoundary ||
     (areAllPointsInTaiwan(layout.uShapeVertices) && areAllPointsInTaiwan(layout.atpArea));
 
-  return { ...layout, firePoints: deployment.tacticalAreas.firePoints ?? [], isValid };
+  return { ...layout, firePoints: deployment.tacticalAreas.FP, isValid };
 }

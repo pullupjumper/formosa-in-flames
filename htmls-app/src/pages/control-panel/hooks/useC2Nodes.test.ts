@@ -57,7 +57,7 @@ function buildBattery(deployedAt?: { latitude: number; longitude: number }): Bat
     missileSystemType: 'sam',
     deployment: deployedAt
       ? ({
-          tacticalAreas: { hideArea: zone(deployedAt.latitude, deployedAt.longitude) },
+          tacticalAreas: { HA: [zone(deployedAt.latitude, deployedAt.longitude)] },
         } as Battery['deployment'])
       : null,
     status: undefined,

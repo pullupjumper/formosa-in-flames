@@ -111,7 +111,7 @@ describe('buildC2NodeViews', () => {
     const deployedAt = (latitude: number, longitude: number): Battery => ({
       ...battery('SAM'),
       deployment: {
-        tacticalAreas: { hideArea: zone(latitude, longitude).map((p) => ({ ...p })) },
+        tacticalAreas: { HA: [zone(latitude, longitude).map((p) => ({ ...p }))] },
       } as Battery['deployment'],
     });
     const twoNodes = (): C2NodeSet => ({
@@ -272,7 +272,7 @@ describe('buildC2MapLayers', () => {
       const deployed = {
         ...battery('SAM'),
         deployment: {
-          tacticalAreas: { hideArea: square(hideCenter.latitude, hideCenter.longitude) },
+          tacticalAreas: { HA: [square(hideCenter.latitude, hideCenter.longitude)] },
         } as Battery['deployment'],
       };
       return buildC2MapLayers(buildC2NodeViews(nodes, [deployed]));
@@ -304,7 +304,7 @@ describe('buildC2MapLayers', () => {
       const deployed = {
         ...battery('SAM'),
         deployment: {
-          tacticalAreas: { hideArea: square(23, 120) },
+          tacticalAreas: { HA: [square(23, 120)] },
         } as Battery['deployment'],
       };
 
@@ -389,7 +389,7 @@ describe('collectC2ContextUpdates', () => {
   const deployedAt = (latitude: number, longitude: number): Battery => ({
     ...battery('SAM'),
     deployment: {
-      tacticalAreas: { hideArea: zone(latitude, longitude) },
+      tacticalAreas: { HA: [zone(latitude, longitude)] },
     } as Battery['deployment'],
   });
 

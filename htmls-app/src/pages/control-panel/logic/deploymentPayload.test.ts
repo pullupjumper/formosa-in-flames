@@ -26,19 +26,28 @@ describe('buildInjectedDeployments', () => {
 
   it('pins the ATP to its stored square so rotate cannot move it', () => {
     expect(INJECTED.atpRadius).toBeUndefined();
-    expect(INJECTED.atpCenter).toEqual(calculateCentroid(BATTERY.placement.tacticalAreas.atpArea!));
+    expect(INJECTED.atpCenter).toEqual(calculateCentroid(BATTERY.placement.tacticalAreas.ATP[0]));
   });
 
-  it('reads an empty shelter loop sent as a Lua empty table as no waypoints', () => {
+  it('reads an empty shelter loop sent as a Lua empty table as no paths', () => {
     const noLoop = {
       ...BATTERY,
       placement: {
         ...BATTERY.placement,
-        paths: { ...BATTERY.placement.paths, SHRL: JSON.parse('{"waypoints":{}}') },
+        paths: { ...BATTERY.placement.paths, SHRL: JSON.parse('{}') },
       },
     };
 
-    expect(buildInjectedDeployments([noLoop]).get(UNIT_NAME)!.paths.SHRL.waypoints).toEqual([]);
+    expect(buildInjectedDeployments([noLoop]).get(UNIT_NAME)!.paths.SHRL).toEqual([]);
+  });
+
+  it('rebuilds each fire point way back from its own route and the reload route', () => {
+    const { FP, RL } = BATTERY.placement.paths;
+
+    expect(INJECTED.reloadReturnPaths).toHaveLength(FP.length);
+    INJECTED.reloadReturnPaths.forEach((path, index) => {
+      expect(path.waypoints).toEqual([...FP[index].waypoints.slice(-1), ...RL[0].waypoints]);
+    });
   });
 
   it('creates one entry per battery', () => {
@@ -46,12 +55,21 @@ describe('buildInjectedDeployments', () => {
   });
 });
 
+const GENERATED = generateDeploymentData({
+  name: UNIT_NAME,
+  missileSystemType: CATEGORY,
+  center: { latitude: 23.9, longitude: 120.75 },
+  angle: 90,
+  validateTaiwanBoundary: false,
+  rng: createSeededRandom(7),
+})!;
+
 describe('toExportPaths', () => {
   it('drops the leading waypoint only on HA/RL/ATP', () => {
-    const paths = INJECTED.paths;
+    const paths = GENERATED.paths;
     const exported = toExportPaths(paths);
-    expect(exported.HA.waypoints).toEqual(paths.HA.waypoints.slice(1));
-    expect(exported.ATP.waypoints).toEqual(paths.ATP.waypoints.slice(1));
+    expect(exported.HA[0].waypoints).toEqual(paths.HA[0].waypoints.slice(1));
+    expect(exported.ATP[0].waypoints).toEqual(paths.ATP[0].waypoints.slice(1));
     exported.RL.forEach((path, index) =>
       expect(path.waypoints).toEqual(paths.RL[index].waypoints.slice(1))
     );
@@ -61,8 +79,8 @@ describe('toExportPaths', () => {
 
   it('never trims a single-point path to nothing', () => {
     const paths = INJECTED.paths;
-    const single = { ...paths, HA: { waypoints: [paths.HA.waypoints[0]] } };
-    expect(toExportPaths(single).HA.waypoints).toHaveLength(1);
+    const single = { ...paths, HA: [{ waypoints: [paths.HA[0].waypoints[0]] }] };
+    expect(toExportPaths(single).HA[0].waypoints).toHaveLength(1);
   });
 });
 
@@ -135,6 +153,10 @@ describe('toControlPanelResult', () => {
     const battery = result.batteries[0];
     expect(battery.name).toBe(UNIT_NAME);
     expect(battery.placement.paths).toEqual(toExportPaths(generated!.paths));
+    expect(battery.placement.paths.RL[0].waypoints).toEqual(
+      generated!.reloadReturnPaths[0].waypoints.slice(1)
+    );
+    expect(battery.placement).not.toHaveProperty('reloadReturnPaths');
     expect(battery.placement).not.toHaveProperty('atpRadius');
   });
 });

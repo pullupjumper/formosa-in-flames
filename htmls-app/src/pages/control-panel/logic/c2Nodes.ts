@@ -145,7 +145,7 @@ function regroupDeployedChildren(
 
   for (const view of views) {
     for (const child of view.children) {
-      const hideArea = child.battery?.deployment?.tacticalAreas.hideArea;
+      const hideArea = child.battery?.deployment?.tacticalAreas.HA[0];
       const position = hideArea?.length ? calculateCentroid(hideArea) : null;
       const commander = position ? findCommandingNode(position, child.unit.type, views) : null;
       const home =
@@ -311,7 +311,7 @@ export function buildC2MapLayers(
       // linked by where the player put it, not by where the unit was before
       const deployment = child.battery?.deployment;
       if (deployment) {
-        const hideArea = deployment.tacticalAreas.hideArea;
+        const hideArea = deployment.tacticalAreas.HA[0];
         const position = hideArea?.length ? calculateCentroid(hideArea) : null;
         const commander = position ? findCommandingNode(position, child.unit.type, views) : null;
         if (position && commander?.position) {

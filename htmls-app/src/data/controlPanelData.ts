@@ -337,61 +337,7 @@ export const BATTERIES_DATA: PanelBattery[] = [
             longitude: 120.52282882514166,
           },
         ],
-        atpArea: [
-          {
-            latitude: 23.95166530022992,
-            longitude: 120.6668088670367,
-          },
-          {
-            latitude: 23.95166530022992,
-            longitude: 120.66134142557051,
-          },
-          {
-            latitude: 23.956661930771855,
-            longitude: 120.66134131965377,
-          },
-          {
-            latitude: 23.956661930771855,
-            longitude: 120.66680897295345,
-          },
-        ],
-        hideArea: [
-          {
-            latitude: 23.949486956453104,
-            longitude: 120.54124742835427,
-          },
-          {
-            latitude: 23.949486956453104,
-            longitude: 120.5376025289318,
-          },
-          {
-            latitude: 23.95281804348199,
-            longitude: 120.53760248186548,
-          },
-          {
-            latitude: 23.95281804348199,
-            longitude: 120.54124747542058,
-          },
-        ],
-        reloadArea: [
-          {
-            latitude: 23.961356812968535,
-            longitude: 120.54040605885487,
-          },
-          {
-            latitude: 23.961356812968535,
-            longitude: 120.53676082392549,
-          },
-          {
-            latitude: 23.96468789999743,
-            longitude: 120.53676077682854,
-          },
-          {
-            latitude: 23.96468789999743,
-            longitude: 120.54040610595182,
-          },
-        ],
-        firePoints: [
+        FP: [
           [
             {
               latitude: 23.925176455038955,
@@ -426,6 +372,66 @@ export const BATTERIES_DATA: PanelBattery[] = [
             {
               latitude: 23.938628641856866,
               longitude: 120.48736461652692,
+            },
+          ],
+        ],
+        HA: [
+          [
+            {
+              latitude: 23.949486956453104,
+              longitude: 120.54124742835427,
+            },
+            {
+              latitude: 23.949486956453104,
+              longitude: 120.5376025289318,
+            },
+            {
+              latitude: 23.95281804348199,
+              longitude: 120.53760248186548,
+            },
+            {
+              latitude: 23.95281804348199,
+              longitude: 120.54124747542058,
+            },
+          ],
+        ],
+        ATP: [
+          [
+            {
+              latitude: 23.95166530022992,
+              longitude: 120.6668088670367,
+            },
+            {
+              latitude: 23.95166530022992,
+              longitude: 120.66134142557051,
+            },
+            {
+              latitude: 23.956661930771855,
+              longitude: 120.66134131965377,
+            },
+            {
+              latitude: 23.956661930771855,
+              longitude: 120.66680897295345,
+            },
+          ],
+        ],
+        RL: [
+          [
+            {
+              latitude: 23.961356812968535,
+              longitude: 120.54040605885487,
+            },
+            {
+              latitude: 23.961356812968535,
+              longitude: 120.53676082392549,
+            },
+            {
+              latitude: 23.96468789999743,
+              longitude: 120.53676077682854,
+            },
+            {
+              latitude: 23.96468789999743,
+              longitude: 120.54040610595182,
             },
           ],
         ],
@@ -467,48 +473,50 @@ export const BATTERIES_DATA: PanelBattery[] = [
             ],
           },
         ],
-        HA: {
-          waypoints: [
-            {
-              latitude: 23.963022356482984,
-              longitude: 120.53858344139019,
-            },
-            {
-              latitude: 23.95115249996755,
-              longitude: 120.53942497864303,
-            },
-          ],
-        },
-        ATP: {
-          waypoints: [
-            {
-              latitude: 23.963022356482984,
-              longitude: 120.53858344139019,
-            },
-            {
-              latitude: 23.95416361550089,
-              longitude: 120.66407514630362,
-            },
-          ],
-        },
-        RL: [
+        HA: [
           {
             waypoints: [
               {
-                latitude: 23.925810998868357,
-                longitude: 120.49152295884694,
+                latitude: 23.963022356482984,
+                longitude: 120.53858344139019,
               },
+              {
+                latitude: 23.95115249996755,
+                longitude: 120.53942497864303,
+              },
+            ],
+          },
+        ],
+        ATP: [
+          {
+            waypoints: [
+              {
+                latitude: 23.963022356482984,
+                longitude: 120.53858344139019,
+              },
+              {
+                latitude: 23.95416361550089,
+                longitude: 120.66407514630362,
+              },
+            ],
+          },
+        ],
+        RL: [
+          {
+            waypoints: [
               {
                 latitude: 23.963022356482984,
                 longitude: 120.53858344139019,
               },
             ],
           },
+        ],
+        SHRL: [
           {
             waypoints: [
               {
-                latitude: 23.935372343642182,
-                longitude: 120.48586452509319,
+                latitude: 23.963022191638004,
+                longitude: 120.53144924355222,
               },
               {
                 latitude: 23.963022356482984,
@@ -517,18 +525,6 @@ export const BATTERIES_DATA: PanelBattery[] = [
             ],
           },
         ],
-        SHRL: {
-          waypoints: [
-            {
-              latitude: 23.963022191638004,
-              longitude: 120.53144924355222,
-            },
-            {
-              latitude: 23.963022356482984,
-              longitude: 120.53858344139019,
-            },
-          ],
-        },
       },
     },
     status: {
@@ -573,61 +569,7 @@ export const BATTERIES_DATA: PanelBattery[] = [
             longitude: 120.40199567876557,
           },
         ],
-        atpArea: [
-          {
-            latitude: 23.79577933692056,
-            longitude: 120.5458024189589,
-          },
-          {
-            latitude: 23.79577933692056,
-            longitude: 120.54034155724275,
-          },
-          {
-            latitude: 23.80077596746251,
-            longitude: 120.54034145222829,
-          },
-          {
-            latitude: 23.80077596746251,
-            longitude: 120.54580252397335,
-          },
-        ],
-        hideArea: [
-          {
-            latitude: 23.804893819061395,
-            longitude: 120.42485962479697,
-          },
-          {
-            latitude: 23.804893819061395,
-            longitude: 120.42121879487733,
-          },
-          {
-            latitude: 23.80822490609029,
-            longitude: 120.42121874818297,
-          },
-          {
-            latitude: 23.80822490609029,
-            longitude: 120.4248596714913,
-          },
-        ],
-        reloadArea: [
-          {
-            latitude: 23.80493801011028,
-            longitude: 120.40779870061961,
-          },
-          {
-            latitude: 23.80493801011028,
-            longitude: 120.4041578694612,
-          },
-          {
-            latitude: 23.80826909713918,
-            longitude: 120.40415782276673,
-          },
-          {
-            latitude: 23.80826909713918,
-            longitude: 120.40779874731409,
-          },
-        ],
-        firePoints: [
+        FP: [
           [
             {
               latitude: 23.799876684564097,
@@ -662,6 +604,66 @@ export const BATTERIES_DATA: PanelBattery[] = [
             {
               latitude: 23.795734700652314,
               longitude: 120.36377641385002,
+            },
+          ],
+        ],
+        HA: [
+          [
+            {
+              latitude: 23.804893819061395,
+              longitude: 120.42485962479697,
+            },
+            {
+              latitude: 23.804893819061395,
+              longitude: 120.42121879487733,
+            },
+            {
+              latitude: 23.80822490609029,
+              longitude: 120.42121874818297,
+            },
+            {
+              latitude: 23.80822490609029,
+              longitude: 120.4248596714913,
+            },
+          ],
+        ],
+        ATP: [
+          [
+            {
+              latitude: 23.79577933692056,
+              longitude: 120.5458024189589,
+            },
+            {
+              latitude: 23.79577933692056,
+              longitude: 120.54034155724275,
+            },
+            {
+              latitude: 23.80077596746251,
+              longitude: 120.54034145222829,
+            },
+            {
+              latitude: 23.80077596746251,
+              longitude: 120.54580252397335,
+            },
+          ],
+        ],
+        RL: [
+          [
+            {
+              latitude: 23.80493801011028,
+              longitude: 120.40779870061961,
+            },
+            {
+              latitude: 23.80493801011028,
+              longitude: 120.4041578694612,
+            },
+            {
+              latitude: 23.80826909713918,
+              longitude: 120.40415782276673,
+            },
+            {
+              latitude: 23.80826909713918,
+              longitude: 120.40779874731409,
             },
           ],
         ],
@@ -703,48 +705,50 @@ export const BATTERIES_DATA: PanelBattery[] = [
             ],
           },
         ],
-        HA: {
-          waypoints: [
-            {
-              latitude: 23.806603553624733,
-              longitude: 120.4059782850404,
-            },
-            {
-              latitude: 23.806559362575843,
-              longitude: 120.42303920983716,
-            },
-          ],
-        },
-        ATP: {
-          waypoints: [
-            {
-              latitude: 23.806603553624733,
-              longitude: 120.4059782850404,
-            },
-            {
-              latitude: 23.798277652191537,
-              longitude: 120.54307198810082,
-            },
-          ],
-        },
-        RL: [
+        HA: [
           {
             waypoints: [
               {
-                latitude: 23.802577911741974,
-                longitude: 120.3612365455408,
+                latitude: 23.806603553624733,
+                longitude: 120.4059782850404,
               },
+              {
+                latitude: 23.806559362575843,
+                longitude: 120.42303920983716,
+              },
+            ],
+          },
+        ],
+        ATP: [
+          {
+            waypoints: [
+              {
+                latitude: 23.806603553624733,
+                longitude: 120.4059782850404,
+              },
+              {
+                latitude: 23.798277652191537,
+                longitude: 120.54307198810082,
+              },
+            ],
+          },
+        ],
+        RL: [
+          {
+            waypoints: [
               {
                 latitude: 23.806603553624733,
                 longitude: 120.4059782850404,
               },
             ],
           },
+        ],
+        SHRL: [
           {
             waypoints: [
               {
-                latitude: 23.79298295201252,
-                longitude: 120.36135442758274,
+                latitude: 23.80944677778654,
+                longitude: 120.40908603088032,
               },
               {
                 latitude: 23.806603553624733,
@@ -753,18 +757,6 @@ export const BATTERIES_DATA: PanelBattery[] = [
             ],
           },
         ],
-        SHRL: {
-          waypoints: [
-            {
-              latitude: 23.80944677778654,
-              longitude: 120.40908603088032,
-            },
-            {
-              latitude: 23.806603553624733,
-              longitude: 120.4059782850404,
-            },
-          ],
-        },
       },
     },
     status: {
@@ -809,61 +801,7 @@ export const BATTERIES_DATA: PanelBattery[] = [
             longitude: 120.35806302876783,
           },
         ],
-        atpArea: [
-          {
-            latitude: 23.674964766418974,
-            longitude: 120.50173647433576,
-          },
-          {
-            latitude: 23.674964766418974,
-            longitude: 120.49628067341712,
-          },
-          {
-            latitude: 23.67996139696094,
-            longitude: 120.49628056909866,
-          },
-          {
-            latitude: 23.67996139696094,
-            longitude: 120.50173657865425,
-          },
-        ],
-        hideArea: [
-          {
-            latitude: 23.667374011898666,
-            longitude: 120.38322773571016,
-          },
-          {
-            latitude: 23.667374011898666,
-            longitude: 120.37959074632792,
-          },
-          {
-            latitude: 23.670705098927566,
-            longitude: 120.37959069998568,
-          },
-          {
-            latitude: 23.670705098927566,
-            longitude: 120.3832277820524,
-          },
-        ],
-        reloadArea: [
-          {
-            latitude: 23.678252375377525,
-            longitude: 120.37024332748199,
-          },
-          {
-            latitude: 23.678252375377525,
-            longitude: 120.36660603535613,
-          },
-          {
-            latitude: 23.68158346240643,
-            longitude: 120.36660598898607,
-          },
-          {
-            latitude: 23.68158346240643,
-            longitude: 120.37024337385202,
-          },
-        ],
-        firePoints: [
+        FP: [
           [
             {
               latitude: 23.657515300922565,
@@ -898,6 +836,66 @@ export const BATTERIES_DATA: PanelBattery[] = [
             {
               latitude: 23.703766931207454,
               longitude: 120.3284304145406,
+            },
+          ],
+        ],
+        HA: [
+          [
+            {
+              latitude: 23.667374011898666,
+              longitude: 120.38322773571016,
+            },
+            {
+              latitude: 23.667374011898666,
+              longitude: 120.37959074632792,
+            },
+            {
+              latitude: 23.670705098927566,
+              longitude: 120.37959069998568,
+            },
+            {
+              latitude: 23.670705098927566,
+              longitude: 120.3832277820524,
+            },
+          ],
+        ],
+        ATP: [
+          [
+            {
+              latitude: 23.674964766418974,
+              longitude: 120.50173647433576,
+            },
+            {
+              latitude: 23.674964766418974,
+              longitude: 120.49628067341712,
+            },
+            {
+              latitude: 23.67996139696094,
+              longitude: 120.49628056909866,
+            },
+            {
+              latitude: 23.67996139696094,
+              longitude: 120.50173657865425,
+            },
+          ],
+        ],
+        RL: [
+          [
+            {
+              latitude: 23.678252375377525,
+              longitude: 120.37024332748199,
+            },
+            {
+              latitude: 23.678252375377525,
+              longitude: 120.36660603535613,
+            },
+            {
+              latitude: 23.68158346240643,
+              longitude: 120.36660598898607,
+            },
+            {
+              latitude: 23.68158346240643,
+              longitude: 120.37024337385202,
             },
           ],
         ],
@@ -939,48 +937,50 @@ export const BATTERIES_DATA: PanelBattery[] = [
             ],
           },
         ],
-        HA: {
-          waypoints: [
-            {
-              latitude: 23.679917918891974,
-              longitude: 120.36842468141906,
-            },
-            {
-              latitude: 23.669039555413118,
-              longitude: 120.38140924101904,
-            },
-          ],
-        },
-        ATP: {
-          waypoints: [
-            {
-              latitude: 23.679917918891974,
-              longitude: 120.36842468141906,
-            },
-            {
-              latitude: 23.677463081689957,
-              longitude: 120.49900857387644,
-            },
-          ],
-        },
-        RL: [
+        HA: [
           {
             waypoints: [
               {
-                latitude: 23.65890263488067,
-                longitude: 120.32107513473466,
+                latitude: 23.679917918891974,
+                longitude: 120.36842468141906,
               },
+              {
+                latitude: 23.669039555413118,
+                longitude: 120.38140924101904,
+              },
+            ],
+          },
+        ],
+        ATP: [
+          {
+            waypoints: [
+              {
+                latitude: 23.679917918891974,
+                longitude: 120.36842468141906,
+              },
+              {
+                latitude: 23.677463081689957,
+                longitude: 120.49900857387644,
+              },
+            ],
+          },
+        ],
+        RL: [
+          {
+            waypoints: [
               {
                 latitude: 23.679917918891974,
                 longitude: 120.36842468141906,
               },
             ],
           },
+        ],
+        SHRL: [
           {
             waypoints: [
               {
-                latitude: 23.702882348519097,
-                longitude: 120.32469463038714,
+                latitude: 23.683938889127205,
+                longitude: 120.36842468141904,
               },
               {
                 latitude: 23.679917918891974,
@@ -989,18 +989,6 @@ export const BATTERIES_DATA: PanelBattery[] = [
             ],
           },
         ],
-        SHRL: {
-          waypoints: [
-            {
-              latitude: 23.683938889127205,
-              longitude: 120.36842468141904,
-            },
-            {
-              latitude: 23.679917918891974,
-              longitude: 120.36842468141906,
-            },
-          ],
-        },
       },
     },
     status: {

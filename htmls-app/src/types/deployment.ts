@@ -4,7 +4,7 @@
  * `constants/deployment.ts`.
  */
 
-import type { BatteryPlacement } from '@/types/generated';
+import type { BatteryPlacement, MovementPath } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
 
 /** Every tactical area a deployed unit can relocate by clicking it */
@@ -17,8 +17,8 @@ export type SquareAreaType = Exclude<AreaType, 'ushape'>;
 export interface RelocatingArea {
   batteryName: string;
   type: AreaType;
-  /** Which fire point, only meaningful when `type` is `'fp'` */
-  fpIndex?: number;
+  /** Which position of its type; 0 for the single squares, absent for the U-shape */
+  index?: number;
 }
 
 /** Unit armed from the sidebar, waiting for a map click */
@@ -31,6 +31,8 @@ export interface SelectedUnit {
 export interface DeployedBattery extends BatteryPlacement {
   name: string;
   missileSystemType: string;
+  /** Each fire point's way back to the reload area; drawn on the map, never sent to Lua */
+  reloadReturnPaths: MovementPath[];
   /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
   atpRadius?: number;
   /** Where the ATP square sits; set by hand-relocation or scenario placement. */

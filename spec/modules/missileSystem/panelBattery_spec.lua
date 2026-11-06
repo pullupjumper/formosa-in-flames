@@ -57,17 +57,17 @@ describe("MissileSystem PanelBattery", function()
       tacticalAreas = {
         uShapeVertices = { "U" },
         shelterPoints = { "S" },
-        reloadArea = { "RL" },
-        atpArea = { "ATP" },
-        hideArea = { "HA" },
-        firePoints = { { "FP1" }, { "FP2" } }
+        RL = { { "RL" } },
+        ATP = { { "ATP" } },
+        HA = { { "HA" } },
+        FP = { { "FP1" }, { "FP2" } }
       },
       paths = {
         FP = { makePath(1), makePath(2) },
-        RL = { makePath(3), makePath(99) },
-        ATP = makePath(4),
-        HA = makePath(5),
-        SHRL = makePath(6)
+        RL = { makePath(3) },
+        ATP = { makePath(4) },
+        HA = { makePath(5) },
+        SHRL = { makePath(6) }
       }
     }
     if overrides then
@@ -144,7 +144,7 @@ describe("MissileSystem PanelBattery", function()
   -- ============================================================================
 
   describe("buildOperationalArea", function()
-    -- Positive: only the first RL path is used, and SHRL shares the reload zone
+    -- Positive: every position takes the zone at its own index, and a shelter loop ends in the reload zone
     it("should turn every path into a fast course paired with its zone", function()
       trackStub(stub(Utils, "buildRandomText").returns("ABC"))
 
@@ -165,6 +165,34 @@ describe("MissileSystem PanelBattery", function()
       }, operationalArea)
     end)
 
+    -- Positive: each position type holds as many positions as the placement has paths
+    it("should build one position per path of every type", function()
+      trackStub(stub(Utils, "buildRandomText").returns("ABC"))
+      local placement = makePlacement()
+      placement.tacticalAreas.RL = { { "RL1" }, { "RL2" } }
+      placement.paths.RL = { makePath(3), makePath(7) }
+      placement.paths.SHRL = { makePath(6), makePath(8) }
+
+      local operationalArea = PanelBattery.buildOperationalArea(placement)
+
+      assert.are.same({
+        { course = fastCourse(3), area = { "RL1" } },
+        { course = fastCourse(7), area = { "RL2" } }
+      }, operationalArea.RL)
+      assert.are.same({
+        { course = fastCourse(6), area = { "RL1" } },
+        { course = fastCourse(8), area = { "RL2" } }
+      }, operationalArea.SHRL)
+    end)
+
+    -- Boundary: no shelter loop leaves SHRL out, so resupply units leave their shelter along RL
+    it("should leave SHRL out when the placement has no shelter loop", function()
+      local placement = makePlacement()
+      placement.paths.SHRL = {}
+
+      assert.is_nil(PanelBattery.buildOperationalArea(placement).SHRL)
+    end)
+
     -- Positive: each call gets its own random 3-letter area name
     it("should name each area with a fresh random 3-letter suffix", function()
       local buildRandomTextStub = trackStub(stub(Utils, "buildRandomText").returns("AAA"))
@@ -183,15 +211,15 @@ describe("MissileSystem PanelBattery", function()
 
   describe("buildPlacement", function()
     -- Positive: each stored course is drawn as the map path it came from
-    it("should stitch the HA and ATP paths onto the reload course and start each RL path at its fire point", function()
+    it("should stitch the HA and ATP paths onto the reload course and keep the RL course as it is", function()
       local placement = PanelBattery.buildPlacement(makeOperationalArea(), "Taiwan")
 
       assert.are.same({
         FP = { { waypoints = course(1) }, { waypoints = course(2) } },
-        HA = { waypoints = { course(3)[1], course(5)[1] } },
-        ATP = { waypoints = { course(3)[1], course(4)[1] } },
-        RL = { { waypoints = { course(1)[1], course(3)[1] } }, { waypoints = { course(2)[1], course(3)[1] } } },
-        SHRL = { waypoints = {} }
+        HA = { { waypoints = { course(3)[1], course(5)[1] } } },
+        ATP = { { waypoints = { course(3)[1], course(4)[1] } } },
+        RL = { { waypoints = course(3) } },
+        SHRL = {}
       }, placement.paths)
     end)
 
@@ -201,10 +229,10 @@ describe("MissileSystem PanelBattery", function()
 
       assert.are.same({
         uShapeVertices = { VERTICES["rp-mask"] },
-        atpArea = { VERTICES["rp-atp"] },
-        hideArea = { VERTICES["rp-1"] },
-        reloadArea = { VERTICES["rp-rl"] },
-        firePoints = { { VERTICES["rp-fp"] }, {} },
+        FP = { { VERTICES["rp-fp"] }, {} },
+        HA = { { VERTICES["rp-1"] } },
+        ATP = { { VERTICES["rp-atp"] } },
+        RL = { { VERTICES["rp-rl"] } },
         shelterPoints = { { latitude = 9, longitude = 9 } }
       }, placement.tacticalAreas)
       assert.are.same(VERTICES["rp-mask"], placement.center)
@@ -216,7 +244,7 @@ describe("MissileSystem PanelBattery", function()
       local placement = PanelBattery.buildPlacement(
         makeOperationalArea({ SHRL = { { course = course(6), area = { "rp-rl" } } } }), "Taiwan")
 
-      assert.are.same({ waypoints = course(6) }, placement.paths.SHRL)
+      assert.are.same({ { waypoints = course(6) } }, placement.paths.SHRL)
     end)
 
     -- Boundary: a mask whose reference points are gone falls back to the stored U-shape
@@ -236,10 +264,10 @@ describe("MissileSystem PanelBattery", function()
       local tacticalAreas = {
         uShapeVertices = { point(10), point(12) },
         shelterPoints = { point(13) },
-        reloadArea = { point(14) },
-        atpArea = { point(15) },
-        hideArea = { point(16) },
-        firePoints = { { point(17) } }
+        RL = { { point(14) } },
+        ATP = { { point(15) } },
+        HA = { { point(16) } },
+        FP = { { point(17) } }
       }
       -- What the panel sends: HA, ATP and RL with their leading reload waypoint trimmed
       local submitted = makePlacement({
@@ -247,9 +275,9 @@ describe("MissileSystem PanelBattery", function()
         paths = {
           FP = { { waypoints = { point(1), point(2) } } },
           RL = { { waypoints = { point(3) } } },
-          ATP = { waypoints = { point(4) } },
-          HA = { waypoints = { point(5) } },
-          SHRL = { waypoints = { point(6) } }
+          ATP = { { waypoints = { point(4) } } },
+          HA = { { waypoints = { point(5) } } },
+          SHRL = { { waypoints = { point(6) } } }
         }
       })
       local operationalArea = PanelBattery.buildOperationalArea(submitted)
@@ -266,10 +294,10 @@ describe("MissileSystem PanelBattery", function()
       end
       assert.are.same(tacticalAreas, placement.tacticalAreas)
       assert.are.same({ 1, 2 }, latitudes(placement.paths.FP[1].waypoints))
-      assert.are.same({ 3, 5 }, latitudes(placement.paths.HA.waypoints))
-      assert.are.same({ 3, 4 }, latitudes(placement.paths.ATP.waypoints))
-      assert.are.same({ 2, 3 }, latitudes(placement.paths.RL[1].waypoints))
-      assert.are.same({ 6 }, latitudes(placement.paths.SHRL.waypoints))
+      assert.are.same({ 3, 5 }, latitudes(placement.paths.HA[1].waypoints))
+      assert.are.same({ 3, 4 }, latitudes(placement.paths.ATP[1].waypoints))
+      assert.are.same({ 3 }, latitudes(placement.paths.RL[1].waypoints))
+      assert.are.same({ 6 }, latitudes(placement.paths.SHRL[1].waypoints))
       assert.are.same(point(11), placement.center)
     end)
   end)
@@ -335,7 +363,7 @@ describe("MissileSystem PanelBattery", function()
       assert.are.equal("HF-3", batteries[1].missileSystem)
       assert.are.equal("srbm", batteries[1].missileSystemType)
       assert.are.equal(150, batteries[1].weaponRange)
-      assert.are.same({ VERTICES["rp-1"] }, batteries[1].placement.tacticalAreas.hideArea)
+      assert.are.same({ VERTICES["rp-1"] }, batteries[1].placement.tacticalAreas.HA[1])
     end)
 
     -- Negative: a battery never deployed has no status to show
@@ -360,7 +388,7 @@ describe("MissileSystem PanelBattery", function()
       local batteries = PanelBattery.buildPanelBatteries(makeMissileSystemConfigMap(), deployedGroundState(),
         "Taiwan", 0)
 
-      assert.are.same({ VERTICES["rp-2"] }, batteries[1].placement.tacticalAreas.hideArea)
+      assert.are.same({ VERTICES["rp-2"] }, batteries[1].placement.tacticalAreas.HA[1])
     end)
 
     -- Positive: the firing unit, its paired resupply unit and canister stock in one status

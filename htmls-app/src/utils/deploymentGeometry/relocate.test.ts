@@ -52,8 +52,8 @@ describe('relocateArea', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.atpCenter).toEqual(target);
-    expect(result.data.tacticalAreas.atpArea).toHaveLength(4);
-    expect(result.data.tacticalAreas.atpArea).not.toEqual(deployment.tacticalAreas.atpArea);
+    expect(result.data.tacticalAreas.ATP[0]).toHaveLength(4);
+    expect(result.data.tacticalAreas.ATP[0]).not.toEqual(deployment.tacticalAreas.ATP[0]);
   });
 
   it('leaves every other tactical area untouched', () => {
@@ -65,9 +65,9 @@ describe('relocateArea', () => {
     const { tacticalAreas: before } = deployment;
     const { tacticalAreas: after } = result.data;
     expect(after.uShapeVertices).toEqual(before.uShapeVertices);
-    expect(after.hideArea).toEqual(before.hideArea);
-    expect(after.reloadArea).toEqual(before.reloadArea);
-    expect(after.firePoints).toEqual(before.firePoints);
+    expect(after.HA).toEqual(before.HA);
+    expect(after.RL).toEqual(before.RL);
+    expect(after.FP).toEqual(before.FP);
     // ATP does not affect shelter placement, so those stay put too
     expect(after.shelterPoints).toEqual(before.shelterPoints);
   });
@@ -80,17 +80,17 @@ describe('relocateArea', () => {
     if (!result.ok) return;
     // Shelters did not change, so the shared FP origin must not either.
     expect(result.data.paths.FP[0].waypoints[0]).toEqual(deployment.paths.FP[0].waypoints[0]);
-    expect(result.data.paths.SHRL.waypoints[0]).toEqual(deployment.paths.SHRL.waypoints[0]);
+    expect(result.data.paths.SHRL[0].waypoints[0]).toEqual(deployment.paths.SHRL[0].waypoints[0]);
   });
 
   it('replaces only the addressed fire point', () => {
     const deployment = deployed();
-    const result = move(deployment, { type: 'fp', fpIndex: 1 }, shifted(INLAND, 0.02, 0));
+    const result = move(deployment, { type: 'fp', index: 1 }, shifted(INLAND, 0.02, 0));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const before = deployment.tacticalAreas.firePoints!;
-    const after = result.data.tacticalAreas.firePoints!;
+    const before = deployment.tacticalAreas.FP;
+    const after = result.data.tacticalAreas.FP;
     expect(after[0]).toEqual(before[0]);
     expect(after[1]).not.toEqual(before[1]);
   });
@@ -101,9 +101,9 @@ describe('relocateArea', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const after = result.data.tacticalAreas.firePoints!;
-    expect(after).toHaveLength(deployment.tacticalAreas.firePoints!.length);
-    expect(after[0]).not.toEqual(deployment.tacticalAreas.firePoints![0]);
+    const after = result.data.tacticalAreas.FP;
+    expect(after).toHaveLength(deployment.tacticalAreas.FP.length);
+    expect(after[0]).not.toEqual(deployment.tacticalAreas.FP[0]);
   });
 
   it('rejects a hide area pushed outside the boundary', () => {
@@ -114,7 +114,7 @@ describe('relocateArea', () => {
 
   it('rejects a hide area dropped on top of the reload area', () => {
     const deployment = deployed();
-    const onReload = calculateCentroid(deployment.tacticalAreas.reloadArea!);
+    const onReload = calculateCentroid(deployment.tacticalAreas.RL[0]);
     const result = move(deployment, { type: 'hide' }, onReload);
 
     expect(result).toEqual({
@@ -125,7 +125,7 @@ describe('relocateArea', () => {
 
   it('names the hide area when the reload area is the one being moved', () => {
     const deployment = deployed();
-    const onHide = calculateCentroid(deployment.tacticalAreas.hideArea!);
+    const onHide = calculateCentroid(deployment.tacticalAreas.HA[0]);
     const result = move(deployment, { type: 'reload' }, onHide);
 
     expect(result).toEqual({ ok: false, failure: { code: 'overlaps-other-area', other: 'hide' } });
@@ -134,13 +134,13 @@ describe('relocateArea', () => {
   it('replans shelters when the hide area moves', () => {
     const deployment = deployed();
     // Nudge just far enough to change the layout without leaving the boundary
-    const from = calculateCentroid(deployment.tacticalAreas.hideArea!);
+    const from = calculateCentroid(deployment.tacticalAreas.HA[0]);
     const result = move(deployment, { type: 'hide' }, shifted(from, 0.001, 0));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.tacticalAreas.shelterPoints).toBeDefined();
-    expect(result.data.tacticalAreas.hideArea).not.toEqual(deployment.tacticalAreas.hideArea);
+    expect(result.data.tacticalAreas.HA[0]).not.toEqual(deployment.tacticalAreas.HA[0]);
   });
 
   it('regenerates the whole layout when the boundary moves', () => {
@@ -155,8 +155,8 @@ describe('relocateArea', () => {
       deployment.tacticalAreas.uShapeVertices
     );
     // ATP and fire points are user-placed, so the move leaves them alone
-    expect(result.data.tacticalAreas.atpArea).toEqual(deployment.tacticalAreas.atpArea);
-    expect(result.data.tacticalAreas.firePoints).toEqual(deployment.tacticalAreas.firePoints);
+    expect(result.data.tacticalAreas.ATP[0]).toEqual(deployment.tacticalAreas.ATP[0]);
+    expect(result.data.tacticalAreas.FP).toEqual(deployment.tacticalAreas.FP);
   });
 
   it('reports a boundary move that leaves the coast', () => {
@@ -178,7 +178,7 @@ describe('relocateArea', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.paths).not.toEqual(deployment.paths);
-    expect(result.data.paths.ATP.waypoints.length).toBeGreaterThan(0);
+    expect(result.data.paths.ATP[0].waypoints.length).toBeGreaterThan(0);
   });
 
   it('never mutates the deployment it was given', () => {

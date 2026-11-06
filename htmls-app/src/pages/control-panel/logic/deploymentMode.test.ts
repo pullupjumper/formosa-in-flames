@@ -17,7 +17,7 @@ const CENTER = { latitude: 24, longitude: 121 };
 const MODES: Record<string, DeploymentMode> = {
   idle: { kind: 'idle' },
   deploy: { kind: 'deploy', unit: UNIT, offsets: {} },
-  relocateArea: { kind: 'relocateArea', area: { batteryName: UNIT.name, type: 'fp', fpIndex: 1 } },
+  relocateArea: { kind: 'relocateArea', area: { batteryName: UNIT.name, type: 'fp', index: 1 } },
   rotate: { kind: 'rotate', batteryName: UNIT.name, center: CENTER, previewAngle: null },
   placeJammer: { kind: 'placeJammer', index: 2, isRelocate: false },
   relocateJammer: { kind: 'placeJammer', index: 3, isRelocate: true },
@@ -38,7 +38,7 @@ describe('selectors', () => {
     expect(selectRelocatingArea(MODES.relocateArea)).toEqual({
       batteryName: UNIT.name,
       type: 'fp',
-      fpIndex: 1,
+      index: 1,
     });
     expect(selectRelocatingArea(MODES.rotate)).toBeNull();
 
@@ -58,7 +58,7 @@ describe('selectors', () => {
 
 describe('formatAreaLabel', () => {
   it('numbers fire points from 1 and labels the rest by type', () => {
-    expect(formatAreaLabel({ batteryName: 'k', type: 'fp', fpIndex: 1 })).toBe('Fire Point 2');
+    expect(formatAreaLabel({ batteryName: 'k', type: 'fp', index: 1 })).toBe('Fire Point 2');
     expect(formatAreaLabel({ batteryName: 'k', type: 'atp' })).toBe('ATP');
   });
 });

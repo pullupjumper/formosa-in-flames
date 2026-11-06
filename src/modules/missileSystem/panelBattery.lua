@@ -23,26 +23,40 @@ local function buildCourse(path)
   return course
 end
 
+---Pair each control panel path with the zone at the same position
+---@param paths SBJ__MovementPath[]
+---@param areas CMO__Location[][]
+---@return SBJ__Position[]
+local function buildPositions(paths, areas)
+  local positions = {}
+
+  for index, path in ipairs(paths) do
+    positions[index] = { course = buildCourse(path), area = areas[index] }
+  end
+
+  return positions
+end
+
 ---Build the operational area a control panel placement draws, under a random 3-letter name
----Only the first RL path is used; SHRL shares the reload zone. The inverse of buildPlacement.
+---A shelter loop ends in the reload area at its own position; without one the area has no SHRL, so
+---resupply units leave their shelter along RL. The inverse of buildPlacement.
 ---@param placement SBJ__BatteryPlacement
 ---@return SBJ__OperationalArea
 function PanelBattery.buildOperationalArea(placement)
   local tacticalAreas = placement.tacticalAreas
   local paths = placement.paths
   local operationalArea = {
-    RL = { { course = buildCourse(paths.RL[1]), area = tacticalAreas.reloadArea } },
-    FP = {},
-    ATP = { { course = buildCourse(paths.ATP), area = tacticalAreas.atpArea } },
-    HA = { { course = buildCourse(paths.HA), area = tacticalAreas.hideArea } },
-    SHRL = { { course = buildCourse(paths.SHRL), area = tacticalAreas.reloadArea } },
+    RL = buildPositions(paths.RL, tacticalAreas.RL),
+    FP = buildPositions(paths.FP, tacticalAreas.FP),
+    ATP = buildPositions(paths.ATP, tacticalAreas.ATP),
+    HA = buildPositions(paths.HA, tacticalAreas.HA),
     uShapeVertices = tacticalAreas.uShapeVertices,
     shelterPoints = tacticalAreas.shelterPoints,
     name = "#" .. Utils.buildRandomText(3)
   }
 
-  for index, firePoint in ipairs(paths.FP) do
-    table.insert(operationalArea.FP, { course = buildCourse(firePoint), area = tacticalAreas.firePoints[index] })
+  if #paths.SHRL > 0 then
+    operationalArea.SHRL = buildPositions(paths.SHRL, tacticalAreas.RL)
   end
 
   return operationalArea
@@ -75,10 +89,23 @@ local function joinWaypoints(...)
   return waypoints
 end
 
+---Resolve each position's zone to the vertices the map draws
+---@param sideName string
+---@param positions SBJ__Position[]
+---@return CMO__Location[][]
+local function findPositionAreas(sideName, positions)
+  local areas = {}
+
+  for index, position in ipairs(positions) do
+    areas[index] = GameUtils.findAreaLocations(sideName, position.area)
+  end
+
+  return areas
+end
+
 ---Draw an operational area the way the control panel map draws a placement
 ---An area stores one course per zone that already includes the reload leg, so the HA and ATP paths are
----stitched back from the RL course, and each RL path starts where its fire point course ends. The inverse
----of buildOperationalArea.
+---stitched back from the first RL course. The inverse of buildOperationalArea.
 ---@param operationalArea SBJ__OperationalArea
 ---@param sideName string
 ---@return SBJ__BatteryPlacement
@@ -89,34 +116,35 @@ function PanelBattery.buildPlacement(operationalArea, sideName)
     uShapeVertices = operationalArea.uShapeVertices or {}
   end
 
-  local firePoints, firePaths, reloadPaths = {}, {}, {}
+  local paths = { FP = {}, HA = {}, ATP = {}, RL = {}, SHRL = {} }
   for index, position in ipairs(operationalArea.FP) do
-    local course = position.course or {}
-    firePoints[index] = GameUtils.findAreaLocations(sideName, position.area)
-    firePaths[index] = { waypoints = course }
-    reloadPaths[index] = { waypoints = joinWaypoints({ course[#course] }, reloadCourse) }
+    paths.FP[index] = { waypoints = position.course or {} }
   end
-
-  local shelterLoop = operationalArea.SHRL and operationalArea.SHRL[1]
+  for index, position in ipairs(operationalArea.HA) do
+    paths.HA[index] = { waypoints = joinWaypoints(reloadCourse, position.course) }
+  end
+  for index, position in ipairs(operationalArea.ATP) do
+    paths.ATP[index] = { waypoints = joinWaypoints(reloadCourse, position.course) }
+  end
+  for index, position in ipairs(operationalArea.RL) do
+    paths.RL[index] = { waypoints = position.course }
+  end
+  for index, position in ipairs(operationalArea.SHRL or {}) do
+    paths.SHRL[index] = { waypoints = position.course }
+  end
 
   return {
     center = calculateCentroid(uShapeVertices),
     openingAngle = 0,
     tacticalAreas = {
       uShapeVertices = uShapeVertices,
-      atpArea = GameUtils.findAreaLocations(sideName, operationalArea.ATP[1].area),
-      hideArea = GameUtils.findAreaLocations(sideName, operationalArea.HA[1].area),
-      reloadArea = GameUtils.findAreaLocations(sideName, operationalArea.RL[1].area),
-      firePoints = firePoints,
+      FP = findPositionAreas(sideName, operationalArea.FP),
+      HA = findPositionAreas(sideName, operationalArea.HA),
+      ATP = findPositionAreas(sideName, operationalArea.ATP),
+      RL = findPositionAreas(sideName, operationalArea.RL),
       shelterPoints = operationalArea.shelterPoints
     },
-    paths = {
-      FP = firePaths,
-      HA = { waypoints = joinWaypoints(reloadCourse, operationalArea.HA[1].course) },
-      ATP = { waypoints = joinWaypoints(reloadCourse, operationalArea.ATP[1].course) },
-      RL = reloadPaths,
-      SHRL = { waypoints = shelterLoop and shelterLoop.course or {} }
-    }
+    paths = paths
   }
 end
 

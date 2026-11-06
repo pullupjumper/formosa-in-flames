@@ -1,9 +1,8 @@
-import type { TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
 import type { DeployedBattery } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { AREA_CONFIG, DEPLOYMENT_MAX_ATTEMPTS } from './config';
-import { generateLayout } from './layout';
+import { generateLayout, toTacticalAreas } from './layout';
 import { buildMovementPaths } from './paths';
 import { buildShelterPlan } from './shelter';
 import { areAllPointsInTaiwan } from './taiwanBoundary';
@@ -80,11 +79,7 @@ export function generateDeploymentData({
       const plan = buildShelterPlan(center, angle, layout.hideArea, layout.reloadArea, rng);
       if (!plan.gateways) continue;
 
-      const tacticalAreas: TacticalAreaLayout = {
-        ...layout,
-        firePoints: firePointsOverride ?? layout.firePoints,
-        shelterPoints: plan.shelterPoints,
-      };
+      const tacticalAreas = toTacticalAreas(layout, plan.shelterPoints, firePointsOverride);
 
       return {
         name,
@@ -94,7 +89,7 @@ export function generateDeploymentData({
         atpRadius: atpRadiusOverride ?? AREA_CONFIG.atp.radius,
         ...(atpCenterOverride ? { atpCenter: atpCenterOverride } : {}),
         tacticalAreas,
-        paths: buildMovementPaths(tacticalAreas, plan.gateways),
+        ...buildMovementPaths(tacticalAreas, plan.gateways),
       };
     }
 
@@ -136,7 +131,7 @@ export function rotateDeployment({
     validateTaiwanBoundary,
     atpRadiusOverride: deployment.atpRadius,
     atpCenterOverride: deployment.atpCenter,
-    firePointsOverride: deployment.tacticalAreas.firePoints,
+    firePointsOverride: deployment.tacticalAreas.FP,
     rng,
   });
 }

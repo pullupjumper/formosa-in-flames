@@ -151,7 +151,7 @@ export function useDeploymentState({
   /** Warning when the hide area of `deployment` sits where `batteryName` may not go */
   const rejectHideAreaPosition = useCallback(
     (batteryName: string, deployment: DeployedBattery): string | null => {
-      const hideArea = deployment.tacticalAreas.hideArea;
+      const hideArea = deployment.tacticalAreas.HA[0];
       if (!validateMissilePosition || !hideArea?.length) return null;
       return validateMissilePosition(batteryName, calculateCentroid(hideArea));
     },

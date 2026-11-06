@@ -2,6 +2,7 @@ import type {
   AirbaseDeploymentDescriptor,
   ControlPanelResult,
   GNSSJammerDescriptor,
+  MovementPath,
   MovementPathSet,
   PanelBattery,
 } from '@/types/generated';
@@ -27,28 +28,33 @@ import { calculateCentroid } from '@/utils/geo';
  * Every scenario-placed battery as a map-side deployment, keyed the same way as
  * player placements. `atpCenter` pins the ATP to its stored square; without it
  * a later rotate would regenerate the ATP from `AREA_CONFIG` and move it.
+ * Lua stores one reload route, so each fire point's way back is that route
+ * from where the fire point's own route ends.
  */
 export function buildInjectedDeployments(batteries: PanelBattery[]): Map<string, DeployedBattery> {
   return new Map(
-    batteries.map(({ name, missileSystemType, placement }) => [
-      name,
-      {
-        ...placement,
+    batteries.map(({ name, missileSystemType, placement }) => {
+      const { tacticalAreas, paths } = placement;
+      const reloadWaypoints = paths.RL[0]?.waypoints ?? [];
+
+      return [
         name,
-        missileSystemType,
-        atpCenter:
-          placement.tacticalAreas.atpArea && calculateCentroid(placement.tacticalAreas.atpArea),
-        paths: {
-          ...placement.paths,
-          // Lua encodes an empty table as `{}`; areas without a shelter loop send one
-          SHRL: {
-            waypoints: Array.isArray(placement.paths.SHRL.waypoints)
-              ? placement.paths.SHRL.waypoints
-              : [],
+        {
+          ...placement,
+          name,
+          missileSystemType,
+          atpCenter: tacticalAreas.ATP[0] && calculateCentroid(tacticalAreas.ATP[0]),
+          paths: {
+            ...paths,
+            // Lua encodes an empty table as `{}`; areas without a shelter loop send one
+            SHRL: Array.isArray(paths.SHRL) ? paths.SHRL : [],
           },
+          reloadReturnPaths: paths.FP.map((path) => ({
+            waypoints: [...path.waypoints.slice(-1), ...reloadWaypoints],
+          })),
         },
-      },
-    ])
+      ];
+    })
   );
 }
 
@@ -59,6 +65,10 @@ function trimLeadingWaypoint(waypoints: Coordinate[]): Coordinate[] {
   return waypoints.length > 1 ? waypoints.slice(1) : waypoints;
 }
 
+function trimPath(path: MovementPath): MovementPath {
+  return { ...path, waypoints: trimLeadingWaypoint(path.waypoints) };
+}
+
 /**
  * The Lua side prepends the reload point itself, so HA/RL/ATP paths drop their
  * first waypoint. FP and SHRL start at a shared gateway that every shelter must
@@ -67,10 +77,10 @@ function trimLeadingWaypoint(waypoints: Coordinate[]): Coordinate[] {
 export function toExportPaths(paths: MovementPathSet): MovementPathSet {
   return {
     FP: paths.FP.map((path) => ({ ...path })),
-    HA: { ...paths.HA, waypoints: trimLeadingWaypoint(paths.HA.waypoints) },
-    RL: paths.RL.map((path) => ({ ...path, waypoints: trimLeadingWaypoint(path.waypoints) })),
-    ATP: { ...paths.ATP, waypoints: trimLeadingWaypoint(paths.ATP.waypoints) },
-    SHRL: { ...paths.SHRL },
+    HA: paths.HA.map(trimPath),
+    RL: paths.RL.map(trimPath),
+    ATP: paths.ATP.map(trimPath),
+    SHRL: paths.SHRL.map((path) => ({ ...path })),
   };
 }
 

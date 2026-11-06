@@ -1,4 +1,5 @@
-import type { MovementPathSet, TacticalAreaLayout } from '@/types/generated';
+import type { TacticalAreaLayout } from '@/types/generated';
+import type { DeployedBattery } from '@/types/deployment';
 import type { Coordinate } from '@/types/geo';
 import { calculateBearing, calculateDistance, getPointFromBearing } from '@/utils/geo';
 import { MOVEMENT_PATH_AVOIDANCE_MARGIN } from './config';
@@ -10,13 +11,10 @@ import type { Gateways } from './shelter';
  * square they would otherwise drive through.
  */
 
-export function createEmptyMovementPaths(): MovementPathSet {
+export function createEmptyMovementPaths(): Pick<DeployedBattery, 'paths' | 'reloadReturnPaths'> {
   return {
-    FP: [],
-    HA: { waypoints: [] },
-    RL: [],
-    ATP: { waypoints: [] },
-    SHRL: { waypoints: [] },
+    paths: { FP: [], HA: [], ATP: [], RL: [], SHRL: [] },
+    reloadReturnPaths: [],
   };
 }
 
@@ -141,55 +139,58 @@ export function generatePathWithAvoidance(
 // ============================================================================
 /**
  * Every route for one deployment. Without gateways the FP path falls back to
- * starting at the hide area and the SHRL path is left empty. Empty when any of
- * ATP/HA/RL is missing.
+ * starting at the hide area and the SHRL list stays empty. Empty when any of
+ * ATP/HA/RL is missing. The RL route is the first fire point's way back; the
+ * way back of every fire point is only drawn, so it sits in `reloadReturnPaths`.
  */
 export function buildMovementPaths(
   tacticalAreas: TacticalAreaLayout,
   gateways: Gateways | null
-): MovementPathSet {
-  const { atpArea, hideArea, reloadArea, firePoints } = tacticalAreas;
+): Pick<DeployedBattery, 'paths' | 'reloadReturnPaths'> {
+  const { FP: firePoints } = tacticalAreas;
+  const atpArea = tacticalAreas.ATP[0];
+  const hideArea = tacticalAreas.HA[0];
+  const reloadArea = tacticalAreas.RL[0];
   if (!atpArea || !hideArea || !reloadArea) {
     return createEmptyMovementPaths();
   }
 
-  const paths = createEmptyMovementPaths();
+  const { paths, reloadReturnPaths } = createEmptyMovementPaths();
 
   const atpCenter = calculateSquareCenter(atpArea);
   const hideCenter = calculateSquareCenter(hideArea);
   const reloadCenter = calculateSquareCenter(reloadArea);
 
   // HA: reload -> hide, avoid ammo
-  paths.HA.waypoints = generatePathWithAvoidance(reloadCenter, hideCenter, [atpArea]);
+  paths.HA.push({ waypoints: generatePathWithAvoidance(reloadCenter, hideCenter, [atpArea]) });
 
   // ATP: reload -> ATP, avoid hide
-  paths.ATP.waypoints = generatePathWithAvoidance(reloadCenter, atpCenter, [hideArea]);
+  paths.ATP.push({ waypoints: generatePathWithAvoidance(reloadCenter, atpCenter, [hideArea]) });
 
-  if (firePoints) {
-    // FP: gateway (or hide center fallback) -> fire points. Shelter vehicles
-    // prepend their own position, so the shared path must avoid HA and RL.
-    const fpOrigin = gateways?.fpGateway ?? hideCenter;
-    const fpAvoid = gateways ? [hideArea, reloadArea] : [atpArea, reloadArea];
+  // FP: gateway (or hide center fallback) -> fire points. Shelter vehicles
+  // prepend their own position, so the shared path must avoid HA and RL.
+  const fpOrigin = gateways?.fpGateway ?? hideCenter;
+  const fpAvoid = gateways ? [hideArea, reloadArea] : [atpArea, reloadArea];
 
-    firePoints.forEach((firePoint, index) => {
-      const firePointCenter = calculateSquareCenter(firePoint);
-      paths.FP[index] = {
-        waypoints: generatePathWithAvoidance(fpOrigin, firePointCenter, fpAvoid),
-      };
-      // RL: fire points -> reload, avoid ammo & hide
-      paths.RL[index] = {
-        waypoints: generatePathWithAvoidance(firePointCenter, reloadCenter, [atpArea, hideArea]),
-      };
-    });
-  }
+  firePoints.forEach((firePoint, index) => {
+    const firePointCenter = calculateSquareCenter(firePoint);
+    paths.FP[index] = {
+      waypoints: generatePathWithAvoidance(fpOrigin, firePointCenter, fpAvoid),
+    };
+    // Back to reload: fire point -> reload, avoid ammo & hide
+    reloadReturnPaths[index] = {
+      waypoints: generatePathWithAvoidance(firePointCenter, reloadCenter, [atpArea, hideArea]),
+    };
+  });
+  if (reloadReturnPaths.length > 0) paths.RL.push(reloadReturnPaths[0]);
 
   // SHRL: shelter-gateway -> reload, avoid HA only. The gateway stays in the
   // waypoint list so the approach stays HA-clear.
   if (gateways) {
-    paths.SHRL.waypoints = generatePathWithAvoidance(gateways.shrlGateway, reloadCenter, [
-      hideArea,
-    ]);
+    paths.SHRL.push({
+      waypoints: generatePathWithAvoidance(gateways.shrlGateway, reloadCenter, [hideArea]),
+    });
   }
 
-  return paths;
+  return { paths, reloadReturnPaths };
 }
