@@ -525,7 +525,7 @@ describe("MissileSystem", function()
       saveData.blue.ground.enabled = true
       local batteries = { { id = "battery" } }
       local resolveStub = trackStub(Deployment, "resolveBatteries").returns(batteries)
-      local stateStub = trackStub(GroundStateStore, "setBatteryStates")
+      local stateStub = trackStub(GroundStateStore, "resetBatteryStates")
 
       MissileSystem.initSide(config, saveData, constants.SIDES.BLUE)
 
@@ -536,7 +536,7 @@ describe("MissileSystem", function()
     -- Negative: a disabled side builds nothing
     it("should skip a side whose ground forces are disabled", function()
       local config, saveData = makeSides()
-      local stateStub = trackStub(GroundStateStore, "setBatteryStates")
+      local stateStub = trackStub(GroundStateStore, "resetBatteryStates")
 
       MissileSystem.initSide(config, saveData, constants.SIDES.RED)
 
@@ -555,7 +555,7 @@ describe("MissileSystem", function()
       local batteries = { { id = "battery" } }
       local resolveStub = trackStub(Deployment, "resolveBatteries").returns(batteries)
       local deployStub = trackStub(Deployment, "deployBatteries")
-      local stateStub = trackStub(GroundStateStore, "setBatteryStates")
+      local stateStub = trackStub(GroundStateStore, "resetBatteryStates")
 
       MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
 
@@ -582,19 +582,19 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- buildDeploymentSystems
+  -- buildPanelMissileSystems
   -- ============================================================================
 
-  describe("buildDeploymentSystems", function()
+  describe("buildPanelMissileSystems", function()
     -- Positive: rows come from the side's ground config and saved ground state
     it("should return the deployment systems built from the side's ground config and saved state", function()
       local config = makeSides()
       local rows = { srbm = { id = "row" } }
-      local rowsStub = trackStub(ControlPanelLayout, "buildDeploymentSystems").returns(rows)
+      local rowsStub = trackStub(ControlPanelLayout, "buildPanelMissileSystems").returns(rows)
 
       local saveData = { blue = { ground = { missileSystemTypes = {} } } }
 
-      local result = MissileSystem.buildDeploymentSystems(config, saveData, constants.SIDES.BLUE)
+      local result = MissileSystem.buildPanelMissileSystems(config, saveData, constants.SIDES.BLUE)
 
       assert.are.equal(rows, result)
       assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
@@ -977,14 +977,14 @@ describe("MissileSystem", function()
       local deployStub = trackStub(Deployment, "deployBatteries").invokes(function()
         table.insert(calls, "deployBatteries")
       end)
-      local stateStub = trackStub(GroundStateStore, "setBatteryStates").invokes(function()
-        table.insert(calls, "setBatteryStates")
+      local stateStub = trackStub(GroundStateStore, "resetBatteryStates").invokes(function()
+        table.insert(calls, "resetBatteryStates")
       end)
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 
       assert.stub(buildLayoutsStub).was.called_with(entries)
-      assert.are.same({ "rebuild", "deployBatteries", "setBatteryStates" }, calls)
+      assert.are.same({ "rebuild", "deployBatteries", "resetBatteryStates" }, calls)
       assert.stub(triggersStub).was.called_with({ newArea }, match._, {
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,
@@ -1020,7 +1020,7 @@ describe("MissileSystem", function()
       local saveData = { blue = { ground = {} } }
       local configMap = config.blue.ground.missileSystemTypes
       GroundStateStore.ensureGroundState(configMap, saveData.blue.ground)
-      GroundStateStore.setBatteryStates(saveData.blue.ground, Deployment.resolveBatteries(configMap))
+      GroundStateStore.resetBatteryStates(saveData.blue.ground, Deployment.resolveBatteries(configMap))
 
       local systemState = saveData.blue.ground.missileSystemTypes.srbm
       systemState.firingUnits["FU-A"].weaponCountCurrent = 1

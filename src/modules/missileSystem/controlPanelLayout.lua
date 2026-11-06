@@ -91,7 +91,7 @@ end
 ---@param groundState SBJ__GroundState
 ---@param sideName string
 ---@return SBJ__PanelMissileSystemSet # Firing units only, keyed by system type
-function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groundState, sideName)
+function ControlPanelLayout.buildPanelMissileSystems(missileSystemConfigMap, groundState, sideName)
   local rows = {}
 
   for key, system in pairs(missileSystemConfigMap) do

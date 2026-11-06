@@ -28,11 +28,11 @@
 | `processSupplyAssetDestruction` | `config, saveData, unit` | `boolean` | 走訪單位所屬陣營的所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
 | `listSigintEmitters` | `config, saveData, sideName, missileSystemTypes` | `SBJ__SigintEmitter[]` | 依給定系統順序列出發射車：名字、config 的 `msg`、state 的 `operationalArea`；SIGINT 只經這裡讀，不碰 state 形狀 |
 | `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 把 control panel 送回的 entries 轉成 layouts（`SBJ__MissileSystemLayout[]`），再由私有的 `deployLayouts` 依序重建 zone／trigger、單位與 state。離開的舊陣地從 state 讀（`GroundStateStore.resolveOperationalArea`），config 只讀不寫 |
-| `buildDeploymentSystems` | `config, saveData, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點）；已在存檔裡的發射單位用存檔的作戰區 |
-| `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.resolveBatteries` 取得每一連，`Deployment.deployBatteries` 建立單位，`GroundStateStore.setBatteryStates` 設定 state；`addMissileSystems.lua` special action 的入口 |
+| `buildPanelMissileSystems` | `config, saveData, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點）；已在存檔裡的發射單位用存檔的作戰區 |
+| `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.resolveBatteries` 取得每一連，`Deployment.deployBatteries` 建立單位，`GroundStateStore.resetBatteryStates` 設定 state；`addMissileSystems.lua` special action 的入口 |
 | `buildBatteryStatuses` | `config, saveData, sideName` | `SBJ__BatteryStatus[]` | 供狀態 UI 使用，每個飛彈連（發射單位加配對的補給單位）一筆的狀態 |
 | `ensureGroundState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `GroundStateStore.ensureGroundState` |
-| `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態，對每一連呼叫 `GroundStateStore.setBatteryStates` |
+| `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態，對每一連呼叫 `GroundStateStore.resetBatteryStates` |
 
 `ensureGroundState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[groundStateStore](groundStateStore.md) 內的同名函式仍維持 `(missileSystemConfigMap, groundState)`。
 

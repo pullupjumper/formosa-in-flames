@@ -119,7 +119,7 @@ end
 ---after PositionZones.rebuild has written the mask onto a new area.
 ---@param groundState SBJ__GroundState
 ---@param batteries SBJ__Battery[]
-function GroundStateStore.setBatteryStates(groundState, batteries)
+function GroundStateStore.resetBatteryStates(groundState, batteries)
   for _, battery in ipairs(batteries) do
     local systemState = groundState.missileSystemTypes[battery.missileSystemType]
     local firing, resupply, canisterStock = battery.firing, battery.resupply, battery.canisterStock

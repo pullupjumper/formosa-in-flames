@@ -274,10 +274,10 @@ local function deployLayouts(missileSystemConfigMap, groundState, sideName, layo
     end
   end
 
-  -- PositionZones writes the mask onto the new areas, which setBatteryStates then copies into state
+  -- PositionZones writes the mask onto the new areas, which resetBatteryStates then copies into state
   PositionZones.rebuild(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
   Deployment.deployBatteries(sideName, batteries)
-  GroundStateStore.setBatteryStates(groundState, batteries)
+  GroundStateStore.resetBatteryStates(groundState, batteries)
 end
 
 ---Redeploy a side's batteries to the placements submitted by the control panel
@@ -299,8 +299,8 @@ end
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 ---@return SBJ__PanelMissileSystemSet # Firing units with zone vertices, keyed by system type
-function MissileSystem.buildDeploymentSystems(config, saveData, sideName)
-  return ControlPanelLayout.buildDeploymentSystems(
+function MissileSystem.buildPanelMissileSystems(config, saveData, sideName)
+  return ControlPanelLayout.buildPanelMissileSystems(
     getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName),
     sideName
@@ -315,7 +315,7 @@ function MissileSystem.deploySide(config, saveData, sideName)
   local batteries = Deployment.resolveBatteries(getMissileSystemTypes(config, sideName))
 
   Deployment.deployBatteries(sideName, batteries)
-  GroundStateStore.setBatteryStates(PersistentState.ground(saveData, sideName), batteries)
+  GroundStateStore.resetBatteryStates(PersistentState.ground(saveData, sideName), batteries)
 end
 
 ---Build a side's battery statuses for the control panel, one per battery (firing unit plus its paired resupply unit)
@@ -377,7 +377,7 @@ function MissileSystem.initSide(config, saveData, sideName)
     return
   end
 
-  GroundStateStore.setBatteryStates(groundState, Deployment.resolveBatteries(getMissileSystemTypes(config, sideName)))
+  GroundStateStore.resetBatteryStates(groundState, Deployment.resolveBatteries(getMissileSystemTypes(config, sideName)))
 end
 
 ---Handle a UnitEntersArea event for the triggering unit's side, with its policy taken from config

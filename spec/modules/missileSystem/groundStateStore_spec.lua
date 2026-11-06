@@ -289,10 +289,10 @@ describe("MissileSystem GroundStateStore", function()
   end)
 
   -- ============================================================================
-  -- setBatteryStates
+  -- resetBatteryStates
   -- ============================================================================
 
-  describe("setBatteryStates", function()
+  describe("resetBatteryStates", function()
     ---One battery whose config descriptors carry the config area
     local function buildBattery(suffix, area)
       local configArea = { name = "OPAREA-CONFIG-" .. suffix }
@@ -321,7 +321,7 @@ describe("MissileSystem GroundStateStore", function()
       local battery = buildBattery("A", { name = "OPAREA-NEW" })
       local groundState = buildGroundState()
 
-      GroundStateStore.setBatteryStates(groundState, { battery })
+      GroundStateStore.resetBatteryStates(groundState, { battery })
 
       local systemState = groundState.missileSystemTypes.srbm
       assert.are.equal("OPAREA-NEW", systemState.firingUnits["FU-A"].operationalArea.name)
@@ -335,7 +335,7 @@ describe("MissileSystem GroundStateStore", function()
       local area = { name = "OPAREA-NEW" }
       local groundState = buildGroundState()
 
-      GroundStateStore.setBatteryStates(groundState, { buildBattery("A", area) })
+      GroundStateStore.resetBatteryStates(groundState, { buildBattery("A", area) })
 
       assert.are.same({
         firingUnits = { ["FU-A"] = { name = "FU-A", state = 0, operationalArea = area } },
@@ -349,7 +349,7 @@ describe("MissileSystem GroundStateStore", function()
       local battery = buildBattery("A")
       local groundState = buildGroundState()
 
-      GroundStateStore.setBatteryStates(groundState, { battery })
+      GroundStateStore.resetBatteryStates(groundState, { battery })
 
       local systemState = groundState.missileSystemTypes.srbm
       systemState.firingUnits["FU-A"].operationalArea.name = "CHANGED"
@@ -364,7 +364,7 @@ describe("MissileSystem GroundStateStore", function()
       local untouched = { name = "FU-B", state = 3, reloadStartTime = 123 }
       groundState.missileSystemTypes.srbm.firingUnits["FU-B"] = untouched
 
-      GroundStateStore.setBatteryStates(groundState, { buildBattery("A") })
+      GroundStateStore.resetBatteryStates(groundState, { buildBattery("A") })
 
       assert.are.equal(untouched, groundState.missileSystemTypes.srbm.firingUnits["FU-B"])
       assert.are.equal(123, untouched.reloadStartTime)
