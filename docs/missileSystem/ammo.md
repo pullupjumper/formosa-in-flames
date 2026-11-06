@@ -49,9 +49,9 @@ flowchart LR
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `transferCanisters` | `transloaderState, canisterStockState, capacity` | `nil` | 從彈箱庫存補到 `capacity`（config 的 `weaponCountDefault`，受庫存限制）；不改狀態，呼叫端接著 `Transitions.finishReload` |
+| `transferCanisters` | `transloaderState, canisterStockState, capacity` | `nil` | 從彈箱庫存補到 `capacity`（config 的 `weaponCountDefault`，受庫存限制）；不改狀態，呼叫端接著 `Transitions.completeReload` |
 | `buildReload` | `launcher, weaponDBID, stock` | `SBJ__ReloadPlan` | 算出 group 要裝的每一筆，總數不超過 `stock`；只讀不寫 |
-| `reloadLauncher` | `transloaderState, plan` | `integer` | 照計畫裝填並扣補給車存量，回傳總裝填量；不改狀態，呼叫端接著 `Transitions.finishReload` |
+| `reloadLauncher` | `transloaderState, plan` | `integer` | 照計畫裝填並扣補給車存量，回傳總裝填量；不改狀態，呼叫端接著 `Transitions.completeReload` |
 | `isLowAmmo` | `launcher, percentage, weaponDBID` | `boolean` | 低彈量判定 |
 | `getInventory` | `systemConfig, systemState, sideName` | `SBJ__AmmoInventoryResult` | 聚合 launcher / transloader / canisterStock 三類子總和並算出整體百分比 |
 

@@ -601,10 +601,10 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- processUnitEntersArea
+  -- processArrival
   -- ============================================================================
 
-  describe("processUnitEntersArea", function()
+  describe("processArrival", function()
     -- Positive: side comes from the triggering unit, switches come from that side's policy
     it("should run a China unit against the China slice, contacts and policy", function()
       local config, saveData = makeSides()
@@ -625,7 +625,7 @@ describe("MissileSystem", function()
       local hideStub = trackStub(Transitions, "hide")
       trackStub(Concealment, "hideUnit").returns(true)
 
-      MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+      MissileSystem.processArrival(config, saveData, unit, event)
 
       assert.stub(getContactsStub).was.called_with(constants.SIDES.RED)
       assert.stub(dropContactStub).was.called(1)
@@ -647,7 +647,7 @@ describe("MissileSystem", function()
       trackStub(Meeting, "isAtCanisterStock").returns(false)
       local settleStub = trackStub(Transitions, "settle")
 
-      MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+      MissileSystem.processArrival(config, saveData, unit, event)
 
       assert.stub(settleStub).was.called_with(systemState, unit, false)
     end)

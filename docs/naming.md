@@ -44,7 +44,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `parse` | 字串轉物件 | `parseDatetimeToTimestamp` |
 | `validate` | 驗證，回 `SBJ__LogResult` | |
 | `ensure` | 沒有就建，有就不動 | `ensureLoadoutStartTime` |
-| `process` | 子系統每輪的主入口或狀態分支 | `processMoveToPositionEvent`、`MissileSystem.processSide` |
+| `process` | 子系統每輪的主入口或狀態分支 | `MissileSystem.processArrival`、`MissileSystem.processSide` |
 | `start` | 立刻啟動一段流程，不等排程 | `startReloadMovement`、`startLaunchPhase` |
 | `init` / `initSide` | 一次性初始化。`init(config, saveData)` 給全域，`initSide(config, saveData, sideName)` 每陣營跑一次；不要寫成 `initXxxContext` | `init`、`initSide`、`initQueue` |
 | `schedule` | 排未來事件 | `schedule` |

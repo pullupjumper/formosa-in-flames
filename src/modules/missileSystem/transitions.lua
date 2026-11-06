@@ -58,7 +58,7 @@ end
 
 ---Reload or transload is done: the unit stands still and its reload clock stops
 ---@param unitState SBJ__LauncherState|SBJ__TransloaderState
-function Transitions.finishReload(unitState)
+function Transitions.completeReload(unitState)
   unitState.state = constants.MISSILE_UNIT_POSTURE.STATIC
   unitState.reloadStartTime = nil
 end
@@ -71,7 +71,7 @@ function Transitions.settle(systemState, unit, isAuto)
   local unitState = systemState.launchers[unit.name] or systemState.transloaders[unit.name]
 
   if unitState then
-    Transitions.finishReload(unitState)
+    Transitions.completeReload(unitState)
     Movement.applyMode(unit, isAuto, constants.WCS.HOLD)
   end
 end

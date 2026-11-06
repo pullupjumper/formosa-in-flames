@@ -10,7 +10,7 @@
 
 ## 概觀
 
-`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `processSide`（內部轉私有的 `process`），場景事件腳本呼叫 `processUnitEntersArea`（組出 `moveCtx` 後轉給 [arrival](arrival.md)），其餘初始化與重建 API 也都由此轉發。
+`init.lua` 是外部腳本唯一需要 `require` 的門面層。定時檢查腳本呼叫 `processSide`（內部轉私有的 `process`），場景事件腳本呼叫 `processArrival`（組出 `runCtx` 後轉給 [arrival](arrival.md)），其餘初始化與重建 API 也都由此轉發。
 
 ---
 
@@ -24,7 +24,7 @@
 | `abortFireTask` | `groundState, missileSystem, launchers` | `nil` | 任務作廢，只對 `STATIC`／`REPOSITIONING` 啟動 stow 倒數（`Rules.isDeployed`）；SAM 留在原地、已有倒數保留 |
 | `getAmmoInventory` | `config, groundState, missileSystem, sideName` | `SBJ__AmmoInventoryResult?` | 轉呼叫 `Ammo.getInventory`，系統不存在回傳 nil；供上層（例如 landingOps 火力閘門）判斷 |
 | `processSide` | `config, saveData, sideName` | `nil` | 依陣營取 ground 設定、狀態與 `ground.policy.isAuto`（包成 `runCtx`）後呼叫私有的 `process`（執行循環並輸出結果日誌）；`scheduledReloadHideCheck.lua` 的入口 |
-| `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `moveCtx`，交給 `Arrival.processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
+| `processArrival` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `runCtx`，交給 `Arrival.process`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `config, saveData, unit` | `boolean` | 走訪單位所屬陣營的所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
 | `listSigintEmitters` | `config, saveData, sideName, missileSystemTypes` | `SBJ__SigintEmitter[]` | 依給定系統順序列出發射車：名字、config 的 `msg`、state 的 `operationalArea`；SIGINT 只經這裡讀，不碰 state 形狀 |
 | `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 每筆 entry 用 `PanelBattery.buildOperationalArea` 轉成新陣地，`Deployment.resolveBattery` 組成一連，再依序重建 zone／trigger、單位與 state。離開的舊陣地從 state 讀（`GroundStateStore.resolveOperationalArea`），config 只讀不寫 |
@@ -35,7 +35,7 @@
 
 `ensureGroundState` / `initSide` 取 `(config, saveData, sideName)` 而非現成的 slice，讓 `src/core/init.lua` 等外部呼叫端不需要知道「哪個 config 欄位、哪個 saveData slice 屬於哪個陣營」；[groundStateStore](groundStateStore.md) 內的同名函式仍維持 `(missileSystemConfigMap, groundState)`。
 
-> 外部建立單位只走 `deploySide`；位置事件的處理已搬到 [arrival](arrival.md)，外部只經 `processUnitEntersArea` 進入。
+> 外部建立單位只走 `deploySide`；位置事件的處理已搬到 [arrival](arrival.md)，外部只經 `processArrival` 進入。
 
 ---
 

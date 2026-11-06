@@ -168,11 +168,11 @@ local function hasMetCanisterStock(transloaderState, isAuto, isAtCanisterStock)
 end
 
 ---Evaluate the steps for a unit entering its firing point
----@param moveCtx SBJ__MoveToPositionContext
+---@param runCtx SBJ__ArrivalRunContext
 ---@param launcherState SBJ__LauncherState|nil Nil when the unit is not a launcher of this system
 ---@return string[] steps
-function Rules.evaluateFiringPointArrival(moveCtx, launcherState)
-  if Rules.isRepositioning(launcherState, moveCtx.isAuto) then
+function Rules.evaluateFiringPointArrival(runCtx, launcherState)
+  if Rules.isRepositioning(launcherState, runCtx.isAuto) then
     return { STEP.ARRIVE_AT_FIRING_POINT }
   end
 
@@ -181,11 +181,11 @@ end
 
 ---Evaluate the steps for a unit entering its hide area
 ---Low-ammo units stay out so the reload cycle can send them on to RL.
----@param moveCtx SBJ__MoveToPositionContext
+---@param runCtx SBJ__ArrivalRunContext
 ---@param observation SBJ__HideAreaObservation|nil Nil when the unit is not a launcher of this system
 ---@return string[] steps
-function Rules.evaluateHideAreaArrival(moveCtx, observation)
-  if observation and moveCtx.hideOnEnterHA and not observation.isLowAmmo() then
+function Rules.evaluateHideAreaArrival(runCtx, observation)
+  if observation and runCtx.hideOnEnterHA and not observation.isLowAmmo() then
     return { STEP.HIDE_LAUNCHER }
   end
 
@@ -195,20 +195,20 @@ end
 ---Evaluate the steps for a unit entering its reload point
 ---Without a meeting the unit stops in manual mode, so a launcher drifting through RL during repositioning is not halted.
 ---A transloader that arrives alone may hide when its launcher does not need it.
----@param moveCtx SBJ__MoveToPositionContext
+---@param runCtx SBJ__ArrivalRunContext
 ---@param pair SBJ__ReloadPair|nil Nil unless both units of the pair are tracked and in the game
 ---@return string[] steps
-function Rules.evaluateReloadPointArrival(moveCtx, pair)
+function Rules.evaluateReloadPointArrival(runCtx, pair)
   if not pair then
     return { STEP.STOP_IN_MANUAL_MODE }
   end
 
-  if hasMetTransloader(pair, moveCtx.isAuto) then
+  if hasMetTransloader(pair, runCtx.isAuto) then
     return { STEP.BEGIN_RELOAD }
   end
 
   local steps = { STEP.STOP_IN_MANUAL_MODE }
-  if moveCtx.hideTransloaderOnRLNoMeeting and not pair.isTriggeredByLauncher and not pair.isLauncherLowAmmo() then
+  if runCtx.hideTransloaderOnRLNoMeeting and not pair.isTriggeredByLauncher and not pair.isLauncherLowAmmo() then
     table.insert(steps, STEP.HIDE_UNMET_TRANSLOADER)
   end
 
@@ -216,11 +216,11 @@ function Rules.evaluateReloadPointArrival(moveCtx, pair)
 end
 
 ---Evaluate the steps for a unit entering its ammunition transfer point
----@param moveCtx SBJ__MoveToPositionContext
+---@param runCtx SBJ__ArrivalRunContext
 ---@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is not a transloader of this system
 ---@return string[] steps
-function Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
-  if observation and hasMetCanisterStock(observation.transloaderState, moveCtx.isAuto, observation.isAtCanisterStock) then
+function Rules.evaluateAmmunitionTransferPointArrival(runCtx, observation)
+  if observation and hasMetCanisterStock(observation.transloaderState, runCtx.isAuto, observation.isAtCanisterStock) then
     return { STEP.BEGIN_TRANSLOAD }
   end
 

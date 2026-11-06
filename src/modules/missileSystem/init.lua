@@ -381,16 +381,16 @@ end
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
 ---@param event CMO__Event
-function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+function MissileSystem.processArrival(config, saveData, unit, event)
   local policy = config[GameUtils.getCachedSideConfig(unit.side).field].ground.policy
 
-  Arrival.processMoveToPositionEvent({
+  Arrival.process({
     missileSystemConfigMap = getMissileSystemTypes(config, unit.side),
     groundState = PersistentState.ground(saveData, unit.side),
     unit = unit,
     event = event,
     contacts = GameApi.ScenEdit_GetContacts(unit.side),
-    moveCtx = {
+    runCtx = {
       isAuto = policy.isAuto,
       hideOnEnterHA = policy.hideOnEnterHA,
       hideTransloaderOnRLNoMeeting = policy.hideTransloaderOnRLNoMeeting

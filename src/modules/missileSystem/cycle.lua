@@ -93,7 +93,7 @@ local LAUNCHER_STEPS = {
 
   [STEP.COMPLETE_RELOAD] = function(tick, pair)
     local loaded = Ammo.reloadLauncher(pair.transloaderState, pair.buildReload())
-    Transitions.finishReload(tick.launcherState)
+    Transitions.completeReload(tick.launcherState)
     return {
       tag = "OK",
       fields = {
@@ -147,7 +147,7 @@ local TRANSLOADER_STEPS = {
     local beforeResupply = transloaderState.weaponCountCurrent
     local beforeCanisterStock = canisterStockState.weaponCountCurrent
     Ammo.transferCanisters(transloaderState, canisterStockState, tick.transloaderDescriptor.weaponCountDefault)
-    Transitions.finishReload(transloaderState)
+    Transitions.completeReload(transloaderState)
     return {
       tag = "OK",
       fields = {

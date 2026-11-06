@@ -17,5 +17,5 @@ if not unit then
 end
 
 PersistentState.update(function(saveData)
-  MissileSystem.processUnitEntersArea(config, saveData, unit, event)
+  MissileSystem.processArrival(config, saveData, unit, event)
 end)

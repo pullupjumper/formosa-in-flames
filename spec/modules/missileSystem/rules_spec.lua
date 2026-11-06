@@ -143,7 +143,7 @@ describe("MissileSystem Rules", function()
   end
 
   describe("arrival", function()
-    local moveCtx = { isAuto = true, hideOnEnterHA = true, hideTransloaderOnRLNoMeeting = true }
+    local runCtx = { isAuto = true, hideOnEnterHA = true, hideTransloaderOnRLNoMeeting = true }
 
     describe("FP", function()
       runRows({
@@ -152,7 +152,7 @@ describe("MissileSystem Rules", function()
         { name = "should arrive in manual mode whatever the state", params = { isAuto = false, launcherState = { state = STATE.STATIC } }, steps = { STEP.ARRIVE_AT_FIRING_POINT } },
         { name = "should do nothing for a unit that is not a launcher", params = {}, steps = {} },
       }, function(params)
-        return Rules.evaluateFiringPointArrival(buildParams(moveCtx, { isAuto = params.isAuto ~= false }), params.launcherState)
+        return Rules.evaluateFiringPointArrival(buildParams(runCtx, { isAuto = params.isAuto ~= false }), params.launcherState)
       end)
     end)
 
@@ -165,7 +165,7 @@ describe("MissileSystem Rules", function()
       }, function(params)
         local observation = params.isLauncher ~= false
             and { launcherState = { state = STATE.REPOSITIONING }, isLowAmmo = answer(params.isLow) } or nil
-        return Rules.evaluateHideAreaArrival(buildParams(moveCtx, { hideOnEnterHA = params.hideOnEnterHA ~= false }), observation)
+        return Rules.evaluateHideAreaArrival(buildParams(runCtx, { hideOnEnterHA = params.hideOnEnterHA ~= false }), observation)
       end)
     end)
 
@@ -185,7 +185,7 @@ describe("MissileSystem Rules", function()
         { name = "should not hide when the paired launcher is low", params = buildParams(alone, { isLow = true, isInSameArea = false }), steps = { STEP.STOP_IN_MANUAL_MODE } },
         { name = "should not hide a transloader when the launcher arrives", params = buildParams(alone, { isTriggeredByLauncher = true }), steps = { STEP.STOP_IN_MANUAL_MODE } },
       }, function(params)
-        local ctx = buildParams(moveCtx, {
+        local ctx = buildParams(runCtx, {
           isAuto = params.isAuto ~= false,
           hideTransloaderOnRLNoMeeting = params.hideTransloaderOnRLNoMeeting ~= false,
         })
@@ -206,7 +206,7 @@ describe("MissileSystem Rules", function()
           transloaderState = { state = o.state, weaponCountCurrent = o.stock },
           isAtCanisterStock = answer(o.isAtCanisterStock),
         } or nil
-        return Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
+        return Rules.evaluateAmmunitionTransferPointArrival(runCtx, observation)
       end)
     end)
   end)

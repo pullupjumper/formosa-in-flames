@@ -127,12 +127,12 @@ describe("MissileSystem Transitions", function()
     end)
   end)
 
-  describe("finishReload", function()
+  describe("completeReload", function()
     -- Positive: the unit stands still and the clock stops
     it("should set STATIC and clear the reload clock", function()
       local unitState = { state = STATE.RELOAD, reloadStartTime = 500 }
 
-      Transitions.finishReload(unitState)
+      Transitions.completeReload(unitState)
 
       assert.are.equal(STATE.STATIC, unitState.state)
       assert.is_nil(unitState.reloadStartTime)

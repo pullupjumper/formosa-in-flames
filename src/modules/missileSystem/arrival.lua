@@ -55,7 +55,7 @@ end
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, launcherState: SBJ__LauncherState): SBJ__LogResult|nil>
 local FIRING_POINT_STEPS = {
   [STEP.ARRIVE_AT_FIRING_POINT] = function(ctx, launcherState)
-    Transitions.arriveAtFiringPoint(launcherState, ctx.unit, ctx.moveCtx.isAuto)
+    Transitions.arriveAtFiringPoint(launcherState, ctx.unit, ctx.runCtx.isAuto)
     return { tag = "OK", fields = { unit = ctx.unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" } }
   end,
 }
@@ -65,7 +65,7 @@ local FIRING_POINT_STEPS = {
 local HIDE_AREA_STEPS = {
   [STEP.HIDE_LAUNCHER] = function(ctx, observation)
     local unit = ctx.unit
-    Transitions.hide(observation.launcherState, unit, ctx.moveCtx.isAuto)
+    Transitions.hide(observation.launcherState, unit, ctx.runCtx.isAuto)
     local success, errorFields = Concealment.hideUnit(
       observation.launcherState, unit, observation.launcherDescriptor.weaponDBID
     )
@@ -85,7 +85,7 @@ local HIDE_AREA_STEPS = {
 local RELOAD_POINT_STEPS = {
   [STEP.BEGIN_RELOAD] = function(ctx, pair)
     local launcherState = pair.launcherState
-    Transitions.beginReload(launcherState, pair.launcher, ctx.moveCtx.isAuto)
+    Transitions.beginReload(launcherState, pair.launcher, ctx.runCtx.isAuto)
     return {
       tag = "OK",
       fields = {
@@ -135,7 +135,7 @@ local RELOAD_POINT_STEPS = {
 local AMMUNITION_TRANSFER_POINT_STEPS = {
   [STEP.BEGIN_TRANSLOAD] = function(ctx, observation)
     local transloaderState = observation.transloaderState
-    Transitions.beginReload(transloaderState, ctx.unit, ctx.moveCtx.isAuto)
+    Transitions.beginReload(transloaderState, ctx.unit, ctx.runCtx.isAuto)
     return {
       tag = "OK",
       fields = {
@@ -148,7 +148,7 @@ local AMMUNITION_TRANSFER_POINT_STEPS = {
   end,
 
   [STEP.STOP] = function(ctx)
-    Transitions.settle(ctx.systemState, ctx.unit, ctx.moveCtx.isAuto)
+    Transitions.settle(ctx.systemState, ctx.unit, ctx.runCtx.isAuto)
   end,
 }
 
@@ -217,10 +217,10 @@ local POSITIONS = {
 }
 
 ---Handle missile system UnitEntersArea flow for FP/HA/RL/ATP positions
----@param params SBJ__MoveToPositionEventParams
-function Arrival.processMoveToPositionEvent(params)
+---@param params SBJ__ArrivalParams
+function Arrival.process(params)
   local unit = params.unit
-  local moveCtx = params.moveCtx
+  local runCtx = params.runCtx
   local positionType = resolvePositionType(params.event)
   local position = positionType and POSITIONS[positionType]
   if not position then
@@ -239,10 +239,10 @@ function Arrival.processMoveToPositionEvent(params)
       systemConfig = params.missileSystemConfigMap[missileSystemType],
       systemState = systemState,
       unit = unit,
-      moveCtx = moveCtx
+      runCtx = runCtx
     }
     local observation = position.observe(ctx)
-    local steps = position.evaluate(moveCtx, observation)
+    local steps = position.evaluate(runCtx, observation)
     for _, row in ipairs(Shared.processSteps(steps, position.steps, ctx, observation)) do
       row.fields.system = missileSystemType
       report.add(row.tag, row.fields)
@@ -251,7 +251,7 @@ function Arrival.processMoveToPositionEvent(params)
 
   -- position is derived from the event trigger, so it describes the whole batch
   -- rather than any single row.
-  report.emit({ mode = moveCtx.isAuto and "auto" or "manual", position = positionType })
+  report.emit({ mode = runCtx.isAuto and "auto" or "manual", position = positionType })
 end
 
 return Arrival

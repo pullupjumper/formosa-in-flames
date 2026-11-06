@@ -28,7 +28,7 @@ stateDiagram-v2
     REPOSITIONING --> STATIC: arriveAtFiringPoint / settle
     STATIC --> REPOSITIONING: depart（收車、補給車去 ATP）
     REPOSITIONING --> RELOAD: beginReload（RL / ATP 會合）
-    RELOAD --> STATIC: finishReload
+    RELOAD --> STATIC: completeReload
     STATIC --> REPOSITIONING: depart（裝填後回 HA / FP / RL）
     REPOSITIONING --> HIDE: hide
 ```
@@ -44,7 +44,7 @@ stateDiagram-v2
 | `hide` | `launcherState, launcher, isAuto` | `nil` | `HIDE` + `WCS.HOLD` |
 | `beginReload` | `unitState, unit, isAuto` | `nil` | `RELOAD`、起始時間 + `WCS.HOLD` |
 | `ensureReloadClock` | `unitState` | `nil` | `RELOAD` 卻沒有起始時間時補上 |
-| `finishReload` | `unitState` | `nil` | `STATIC` 並清空裝填計時 |
+| `completeReload` | `unitState` | `nil` | `STATIC` 並清空裝填計時 |
 | `settle` | `systemState, unit, isAuto` | `nil` | 依名稱找發射車（優先）或補給車，`STATIC`、清計時 + `WCS.HOLD` |
 | `beginStow` | `launcherState` | `boolean` | 開始收車倒數；已有倒數回傳 false |
 | `endStow` | `launcherState` | `nil` | 清空收車倒數 |

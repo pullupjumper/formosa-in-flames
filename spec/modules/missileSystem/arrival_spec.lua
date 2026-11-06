@@ -41,7 +41,7 @@ describe("MissileSystem Arrival", function()
     activeStubs = {}
   end)
 
-  describe("processMoveToPositionEvent", function()
+  describe("process", function()
     local SYSTEM_KEY = constants.MISSILE_SYSTEM_TYPES.SRBM
     local SYSTEM_CONFIG = {
       launchers = { FU1 = { name = "FU1", transloader = "RS1", weaponDBID = 1234, ammoThreshold = 60 } },
@@ -69,16 +69,16 @@ describe("MissileSystem Arrival", function()
 
     ---Move state the handlers receive when the policy overrides nothing
     ---@param overrides? table Fields to override on the default policy-derived state
-    local function makeMoveCtx(overrides)
-      local moveCtx = {
+    local function buildRunCtx(overrides)
+      local runCtx = {
         isAuto = true,
         hideOnEnterHA = false,
         hideTransloaderOnRLNoMeeting = false
       }
       for k, v in pairs(overrides or {}) do
-        moveCtx[k] = v
+        runCtx[k] = v
       end
-      return moveCtx
+      return runCtx
     end
 
     local function groundStateWith(systemState)
@@ -88,13 +88,13 @@ describe("MissileSystem Arrival", function()
     ---Fire UnitEntersArea against the given slice, with move switches built from params.policy
     ---@param params {groundState: table, unit: table, event: table, contacts?: table, policy?: table}
     local function enterArea(params)
-      Arrival.processMoveToPositionEvent({
+      Arrival.process({
         missileSystemConfigMap = { [SYSTEM_KEY] = SYSTEM_CONFIG },
         groundState = params.groundState,
         unit = params.unit,
         event = params.event,
         contacts = params.contacts,
-        moveCtx = makeMoveCtx(params.policy)
+        runCtx = buildRunCtx(params.policy)
       })
     end
 
@@ -124,7 +124,7 @@ describe("MissileSystem Arrival", function()
       })
 
       assert.stub(arriveAtFiringPointStub).was.called(1)
-      assert.stub(arriveAtFiringPointStub).was.called_with(launcherState, unit, makeMoveCtx().isAuto)
+      assert.stub(arriveAtFiringPointStub).was.called_with(launcherState, unit, buildRunCtx().isAuto)
       assert.stub(logStub).was.called(1)
 
       local tag = logStub.calls[1].vals[1]
@@ -201,7 +201,7 @@ describe("MissileSystem Arrival", function()
 
       assert.stub(hideStub).was.called(1)
       assert.stub(hideStub).was.called_with(launcherState, unit,
-        makeMoveCtx({ hideOnEnterHA = true }).isAuto)
+        buildRunCtx({ hideOnEnterHA = true }).isAuto)
       assert.stub(hideUnitStub).was.called(1)
       assert.stub(hideUnitStub).was.called_with(launcherState, unit, 1234)
       assert.stub(logStub).was.called(1)
@@ -290,7 +290,7 @@ describe("MissileSystem Arrival", function()
 
       assert.stub(resolvePairStub).was.called_with(SYSTEM_CONFIG, systemState, unit)
       assert.stub(beginReloadStub).was.called(1)
-      assert.stub(beginReloadStub).was.called_with(pair.launcherState, unit, makeMoveCtx().isAuto)
+      assert.stub(beginReloadStub).was.called_with(pair.launcherState, unit, buildRunCtx().isAuto)
       assert.stub(settleStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
@@ -455,7 +455,7 @@ describe("MissileSystem Arrival", function()
 
       assert.stub(isAtCanisterStockStub).was.called_with(SYSTEM_CONFIG.transloaders.RS1, transloaderState, unit)
       assert.stub(beginReloadStub).was.called(1)
-      assert.stub(beginReloadStub).was.called_with(transloaderState, unit, makeMoveCtx().isAuto)
+      assert.stub(beginReloadStub).was.called_with(transloaderState, unit, buildRunCtx().isAuto)
       assert.stub(settleStub).was_not.called()
       assert.stub(logStub).was.called(1)
 
@@ -481,7 +481,7 @@ describe("MissileSystem Arrival", function()
 
       assert.stub(beginReloadStub).was_not.called()
       assert.stub(settleStub).was.called(1)
-      assert.stub(settleStub).was.called_with(systemState, unit, makeMoveCtx().isAuto)
+      assert.stub(settleStub).was.called_with(systemState, unit, buildRunCtx().isAuto)
       assert.stub(logStub).was_not.called()
     end)
 
@@ -577,7 +577,7 @@ describe("MissileSystem Arrival", function()
       })
 
       assert.stub(arriveAtFiringPointStub).was.called(1)
-      assert.stub(arriveAtFiringPointStub).was.called_with(launcherState, unit, makeMoveCtx().isAuto)
+      assert.stub(arriveAtFiringPointStub).was.called_with(launcherState, unit, buildRunCtx().isAuto)
       assert.stub(hideStub).was_not.called()
     end)
 

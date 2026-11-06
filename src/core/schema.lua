@@ -1477,18 +1477,18 @@ function ScenEdit_DeleteMine(params) end
 ---@field systemConfig SBJ__MissileSystemConfig Missile system configuration (reload/stow timers)
 
 ---Side-specific switches shared by every system in one UnitEntersArea event
----@class SBJ__MoveToPositionContext: SBJ__MissileRunContext
+---@class SBJ__ArrivalRunContext: SBJ__MissileRunContext
 ---@field hideOnEnterHA boolean Whether entering HA should force hide flow
 ---@field hideTransloaderOnRLNoMeeting boolean Whether RL no-meeting fallback may hide transloader
 
 ---Input parameters for missileSystem UnitEntersArea event handling
----@class SBJ__MoveToPositionEventParams: table
+---@class SBJ__ArrivalParams: table
 ---@field missileSystemConfigMap table<string, SBJ__MissileSystemConfig> The unit's side config by system type
 ---@field groundState SBJ__GroundState The unit's side ground state
 ---@field unit CMO__Unit Unit that triggered UnitEntersArea
 ---@field event CMO__Event Event payload from CMO
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
----@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
+---@field runCtx SBJ__ArrivalRunContext Side-specific switches for this event
 
 ---A launcher and its transloader, both tracked and both in the game
 ---Meeting.resolveReloadPair returns nil rather than a pair with a missing member, so no field is optional.
@@ -1507,7 +1507,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field systemConfig SBJ__MissileSystemConfig Config of the missile system being processed
 ---@field systemState SBJ__MissileSystemState Missile system being processed
 ---@field unit CMO__Unit Unit that entered the zone
----@field moveCtx SBJ__MoveToPositionContext Side-specific switches for this event
+---@field runCtx SBJ__ArrivalRunContext Side-specific switches for this event
 
 ---A launcher entering its hide area
 ---@class SBJ__HideAreaObservation: table
@@ -1523,7 +1523,7 @@ function ScenEdit_DeleteMine(params) end
 ---How arrival observes, decides and carries out one position type
 ---@class SBJ__ArrivalPosition: table
 ---@field observe fun(ctx: SBJ__ArrivalContext): any Observation for the position's evaluate and steps; nil when the unit has none here
----@field evaluate fun(moveCtx: SBJ__MoveToPositionContext, observation: any): string[] One of Rules.evaluate*Arrival
+---@field evaluate fun(runCtx: SBJ__ArrivalRunContext, observation: any): string[] One of Rules.evaluate*Arrival
 ---@field steps table<string, fun(ctx: SBJ__ArrivalContext, observation: any): SBJ__LogResult|nil> Handlers keyed by Rules.STEP
 
 ---What every step of one launcher in a missileSystem reload cycle may read; steps never write it

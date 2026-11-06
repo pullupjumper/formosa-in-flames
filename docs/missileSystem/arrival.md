@@ -10,12 +10,12 @@
 
 ## 概觀
 
-外部只經 [init](init.md) 的 `processUnitEntersArea` 進來；它依觸發單位陣營組出 `moveCtx`（`isAuto`、`hideOnEnterHA`、`hideTransloaderOnRLNoMeeting`），再呼叫 `Arrival.processMoveToPositionEvent`。
+外部只經 [init](init.md) 的 `processArrival` 進來；它依觸發單位陣營組出 `runCtx`（`isAuto`、`hideOnEnterHA`、`hideTransloaderOnRLNoMeeting`），再呼叫 `Arrival.process`。
 
 `POSITIONS` 是唯一依陣地分的表，每個陣地有 `observe`、`evaluate`、`steps` 三項。對每個啟用中的飛彈系統（`GroundStateStore.forEachEnabledSystem`）走同一個模式：
 
-1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；ATP：`SBJ__AmmunitionTransferPointObservation`）。`ctx`（`systemConfig`、`systemState`、`unit`、`moveCtx`）建好後沒人寫。HA / ATP 的單位沒有 config descriptor 時觀察回 nil，不做事。
-2. **判斷**：`evaluate(moveCtx, observation)` 是 Rules 對應陣地的函式，條件見 [rules](rules.md)。
+1. **觀察**：`observe(ctx)` 回傳完整觀察或 nil（FP：發射車 state；HA：`SBJ__HideAreaObservation`；RL：`Meeting.resolveReloadPair`；ATP：`SBJ__AmmunitionTransferPointObservation`）。`ctx`（`systemConfig`、`systemState`、`unit`、`runCtx`）建好後沒人寫。HA / ATP 的單位沒有 config descriptor 時觀察回 nil，不做事。
+2. **判斷**：`evaluate(runCtx, observation)` 是 Rules 對應陣地的函式，條件見 [rules](rules.md)。
 3. **執行**：`Shared.processSteps` 依步驟呼叫該陣地的 handler，每個 handler 經 [transitions](transitions.md) 記錄狀態、需要時呼叫 `Concealment.hideUnit`，回傳一列 log。`system=` 由迴圈補上。
 
 ---
@@ -28,7 +28,7 @@
 
 ```mermaid
 flowchart TD
-    A[processMoveToPositionEvent] --> B{resolvePositionType}
+    A[process] --> B{resolvePositionType}
     B -->|FP/HA/RL/ATP| C[forEachEnabledSystem]
     B -->|其他| Z([結束])
     C --> D[POSITIONS.observe]
@@ -43,7 +43,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `processMoveToPositionEvent` | `params: SBJ__MoveToPositionEventParams` | `nil` | 解析位置、分派 handler、輸出日誌；只由 `init.lua` 的 `processUnitEntersArea` 呼叫 |
+| `process` | `params: SBJ__ArrivalParams` | `nil` | 解析位置、分派 handler、輸出日誌；只由 `init.lua` 的 `processArrival` 呼叫 |
 
 ---
 
