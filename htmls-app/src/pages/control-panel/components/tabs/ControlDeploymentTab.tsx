@@ -27,7 +27,7 @@ interface ControlDeploymentTabProps {
   /** What the player has deployed and spent so far; lives above the tabs */
   session: DeploymentSession;
   shouldShowLandingUnits: boolean;
-  /** Deployment was already submitted once: jammers, batteries and aircraft are read-only */
+  /** Jammers, batteries and aircraft can be inspected but not changed; EMCON stays editable */
   isDeploymentLocked: boolean;
 }
 
@@ -170,6 +170,7 @@ export function ControlDeploymentTab({
             onBudgetChange={onBudgetChange}
             onUpdateAirbase={onUpdateAirbase}
             onError={deployment.handleAircraftError}
+            isReadOnly={isDeploymentLocked}
           />
         </Panel>
 

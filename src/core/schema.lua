@@ -156,6 +156,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---Trigger timing configuration
 ---@class SBJ__TriggerConfig: table
+---@field scenBegin { startTime: string }
 ---@field amphibiousOps { startTime: string } Amphibious operations start time
 ---@field launchLACM { startTime: string } LACM launch start time
 ---@field launchSLCM { startTime: string } SLCM launch start time

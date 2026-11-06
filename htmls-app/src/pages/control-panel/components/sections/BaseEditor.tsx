@@ -18,6 +18,8 @@ interface BaseEditorProps {
     updater: (base: AirbaseDeploymentDescriptor) => AirbaseDeploymentDescriptor
   ) => void;
   onError: (message: string) => void;
+  /** Quantities show but can no longer be changed */
+  isReadOnly?: boolean;
 }
 
 export function BaseEditor({
@@ -28,6 +30,7 @@ export function BaseEditor({
   onBudgetChange,
   onUpdateAirbase,
   onError,
+  isReadOnly = false,
 }: BaseEditorProps) {
   /** Apply the ledger rule; false when the player cannot afford the increment. */
   const settleBudget = (newNum: number, baselineNum: number, delta: number): boolean => {
@@ -102,6 +105,7 @@ export function BaseEditor({
                 name={unit.platformName}
                 subtitle={unit.name}
                 quantity={total}
+                isReadOnly={isReadOnly}
                 onDecrease={() => adjustAircraft(unitIndex, -1)}
                 onIncrease={() => adjustAircraft(unitIndex, 1)}
               />
@@ -120,6 +124,7 @@ export function BaseEditor({
               name={loadout.name || `Loadout ${loadout.loadoutId}`}
               subtitle={`Cost: ${CONFIG.LOADOUT_COST}`}
               quantity={loadout.num}
+              isReadOnly={isReadOnly}
               onDecrease={() => adjustLoadout(loadoutIndex, -1)}
               onIncrease={() => adjustLoadout(loadoutIndex, 1)}
             />
@@ -137,6 +142,8 @@ interface LoadoutControlProps {
   name: string;
   subtitle?: string;
   quantity: number;
+  /** Hides the step buttons, leaving the quantity */
+  isReadOnly: boolean;
   onDecrease: () => void;
   onIncrease: () => void;
 }
@@ -144,7 +151,14 @@ interface LoadoutControlProps {
 const STEP_BUTTON_CLASSES =
   'border-aip-card-border bg-aip-panel hover:border-aip-link hover:bg-aip-link';
 
-function LoadoutControl({ name, subtitle, quantity, onDecrease, onIncrease }: LoadoutControlProps) {
+function LoadoutControl({
+  name,
+  subtitle,
+  quantity,
+  isReadOnly,
+  onDecrease,
+  onIncrease,
+}: LoadoutControlProps) {
   const stepButton = `flex h-6 w-6 items-center justify-center border font-bold ${STEP_BUTTON_CLASSES}`;
   return (
     <div className="mb-2 flex items-center justify-between border-b border-aip-card-border/50 py-1">
@@ -153,13 +167,17 @@ function LoadoutControl({ name, subtitle, quantity, onDecrease, onIncrease }: Lo
         <div className="text-[10px] text-text-secondary">{subtitle}</div>
       </div>
       <div className="flex items-center gap-1.5">
-        <button className={stepButton} onClick={onDecrease}>
-          -
-        </button>
+        {!isReadOnly && (
+          <button className={stepButton} onClick={onDecrease}>
+            -
+          </button>
+        )}
         <div className="min-w-5 text-center text-xs font-semibold">{quantity}</div>
-        <button className={stepButton} onClick={onIncrease}>
-          +
-        </button>
+        {!isReadOnly && (
+          <button className={stepButton} onClick={onIncrease}>
+            +
+          </button>
+        )}
       </div>
     </div>
   );

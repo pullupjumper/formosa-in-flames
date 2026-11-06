@@ -449,7 +449,8 @@ end
 
 ---Show the control panel and apply what the player submitted.
 ---In play mode (`config.isEditMode` false) the deployment is accepted once: the first
----submission locks it, and later ones are ignored. Add-units is edit mode only.
+---submission locks it, and later ones are ignored. Edit mode locks only once the scenario
+---has begun. A locked deployment still accepts SAM doctrine (EMCON). Add-units is edit mode only.
 ---@param config SBJ__Config
 ---@param sideName string
 function UnitStatusUI.createControlPanel(config, sideName)
@@ -458,7 +459,7 @@ function UnitStatusUI.createControlPanel(config, sideName)
   local msg
 
   local isLoaded = PersistentState.read(function(saveData)
-    local isLocked = not isEditMode and PersistentState.isDeploymentLocked(saveData, sideName)
+    local isLocked = PersistentState.isDeploymentLocked(saveData, sideName)
     local landingUnitsString = view.showsLandedUnits
         and gKH.json.stringify(LandingOps.countUnitsInEachArea(config))
         or "{}"
@@ -478,26 +479,33 @@ function UnitStatusUI.createControlPanel(config, sideName)
       tostring(isLocked)
     )
   end)
+
   if not isLoaded then
     return
   end
 
+  local elapsed = GameApi.ScenEdit_CurrentTime() -
+      Utils.parseDatetimeToTimestamp(config.red.triggers.scenBegin.startTime)
   local form = GameApi.UI_CallAdvancedHTMLDialog("Title", msg, { "Done" })
+
   if form["pressed"] ~= "Done" then
     return
   end
+
   ---@type SBJ__ControlPanelResult|nil
   local controlPanelResult = parseFormJson(form["summaryData"])
   local emconResult = parseFormJson(form["emconData"])
   if controlPanelResult then
     PersistentState.update(function(saveData)
-      if not isEditMode and PersistentState.isDeploymentLocked(saveData, sideName) then
+      if PersistentState.isDeploymentLocked(saveData, sideName) then
         return
       end
+
       -- Node assignments name units by their current GUIDs, so they go before a redeploy replaces them
       applyC2Assignments(saveData, sideName, emconResult)
       updateFromControlPanelResult(config, saveData, sideName, controlPanelResult)
-      if not isEditMode then
+
+      if not isEditMode or elapsed > 0 then
         PersistentState.setDeploymentLocked(saveData, sideName)
       end
     end)

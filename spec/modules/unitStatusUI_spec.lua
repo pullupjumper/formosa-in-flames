@@ -11,6 +11,7 @@ local IntegratedAirDefenseSystem = require("src.modules.integratedAirDefenseSyst
 local gKH = require("src.core.gKH_State_Standalone")
 local PersistentState = require("src.core.persistentState")
 local constants = require("src.core.constants")
+local Utils = require("src.utils.utils")
 
 describe("UnitStatusUI", function()
   ---@type luassert.spy[]
@@ -51,6 +52,7 @@ describe("UnitStatusUI", function()
     end
     local config = { red = makeSideConfig(), blue = makeSideConfig() }
     config.red.amphibOps = { zones = {} }
+    config.red.triggers = { scenBegin = { startTime = "2027-06-09 01:00:00" } }
     if overrides then
       for k, v in pairs(overrides) do config[k] = v end
     end
@@ -80,6 +82,8 @@ describe("UnitStatusUI", function()
     local countUnitsStub
     local sigintSpy
     local saveData
+    local currentTimeStub
+    local scenBeginTimestamp = Utils.parseDatetimeToTimestamp("2027-06-09 01:00:00")
 
     ---@param isEditMode boolean
     ---@return table
@@ -108,6 +112,7 @@ describe("UnitStatusUI", function()
       sigintSpy = trackStub(spy.on(PersistentState, "sigint"))
       dialogStub.returns({})
       trackStub(stub(CommsJamming, "updateTargetAircraft"))
+      currentTimeStub = trackStub(stub(GameApi, "ScenEdit_CurrentTime").returns(scenBeginTimestamp - 60))
     end)
 
     -- Positive: China's page adds landed units
@@ -131,8 +136,8 @@ describe("UnitStatusUI", function()
       assert.stub(countUnitsStub).was_not.called()
     end)
 
-    -- Positive: edit mode never locks, so the deployment can be redone
-    it("should apply every submission in edit mode", function()
+    -- Positive: edit mode before the scenario begins never locks, so the deployment can be redone
+    it("should apply every submission in edit mode before the scenario begins", function()
       submit(AIRCRAFT_FORM)
 
       UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
@@ -160,6 +165,43 @@ describe("UnitStatusUI", function()
       UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
 
       assert.stub(addAircraftStub).was_not.called()
+    end)
+
+    -- Positive: edit mode locks once the scenario has begun
+    it("should lock the deployment in edit mode once the scenario has begun", function()
+      currentTimeStub.returns(scenBeginTimestamp + 60)
+      submit(AIRCRAFT_FORM)
+
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+      assert.stub(addAircraftStub).was.called(1)
+      assert.is_true(saveData.blue.isDeploymentLocked)
+    end)
+
+    -- Negative: edit mode honours an existing lock
+    it("should ignore an edit mode submission once locked", function()
+      saveData.blue.isDeploymentLocked = true
+      submit(AIRCRAFT_FORM)
+
+      UnitStatusUI.createControlPanel(configFor(true), constants.SIDES.BLUE)
+
+      assert.stub(addAircraftStub).was_not.called()
+    end)
+
+    -- Positive: EMCON stays adjustable after the deployment is locked
+    it("should still apply SAM doctrine once locked", function()
+      local doctrineStub = trackStub(stub(IntegratedAirDefenseSystem, "setSamDoctrine"))
+      saveData.blue.isDeploymentLocked = true
+      submit({
+        summaryData = AIRCRAFT_FORM.summaryData,
+        emconData = "'{\"sams\":[{\"name\":\"SAM-1\",\"weaponFree\":true}]}'",
+      })
+
+      UnitStatusUI.createControlPanel(configFor(false), constants.SIDES.BLUE)
+
+      assert.stub(addAircraftStub).was_not.called()
+      assert.stub(doctrineStub).was.called(1)
     end)
 
     -- Negative: the other side's lock is independent

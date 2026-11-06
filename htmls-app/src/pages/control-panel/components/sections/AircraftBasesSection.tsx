@@ -17,6 +17,8 @@ interface AircraftBasesSectionProps {
     updater: (base: AirbaseDeploymentDescriptor) => AirbaseDeploymentDescriptor
   ) => void;
   onError: (message: string) => void;
+  /** Quantities show but can no longer be changed */
+  isReadOnly?: boolean;
 }
 
 export function AircraftBasesSection({
@@ -26,6 +28,7 @@ export function AircraftBasesSection({
   onBudgetChange,
   onUpdateAirbase,
   onError,
+  isReadOnly = false,
 }: AircraftBasesSectionProps) {
   return (
     <div>
@@ -58,6 +61,7 @@ export function AircraftBasesSection({
                 onBudgetChange={onBudgetChange}
                 onUpdateAirbase={onUpdateAirbase}
                 onError={onError}
+                isReadOnly={isReadOnly}
               />
             </div>
           ))}

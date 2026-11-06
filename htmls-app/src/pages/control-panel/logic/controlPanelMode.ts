@@ -2,9 +2,9 @@
 // Control panel mode — what the page shows and what it lets the player change
 // ============================================================================
 export interface ControlPanelMode {
-  /** Edit build: nothing hidden, nothing locked */
+  /** Edit build: nothing hidden */
   isEditMode: boolean;
-  /** Play build only: the one allowed deployment has already been submitted */
+  /** The deployment can no longer be changed (play: submitted once; edit: scenario begun) */
   isDeployLocked: boolean;
 }
 
@@ -22,6 +22,6 @@ export function resolveControlPanelView({
   return {
     shouldShowLandingUnits: isEditMode,
     shouldShowAddUnits: isEditMode,
-    isDeploymentLocked: !isEditMode && isDeployLocked,
+    isDeploymentLocked: isDeployLocked,
   };
 }
