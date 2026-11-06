@@ -64,60 +64,36 @@ export interface GNSSJammerDescriptor {
   radiusNm: number;
 }
 
-/** The missile systems the control panel can place, keyed by system type */
-export type PanelMissileSystemSet = Record<string, PanelMissileSystem>;
-
-/** One missile system's firing units for the control panel */
-export interface PanelMissileSystem {
-  /** Firing units indexed by unit name */
-  firingUnits: Record<string, PanelFiringUnit>;
+/** Where a battery's zones and paths sit, in the shape the control panel map draws */
+export interface BatteryPlacement {
+  /** Center of the U-shape */
+  center: Coordinate;
+  /** U-shape opening angle in degrees */
+  openingAngle: number;
+  /** Zones */
+  tacticalAreas: TacticalAreaLayout;
+  /** Movement paths */
+  paths: MovementPathSet;
 }
 
-/** A firing unit drawn where its battery is now, with zone names resolved to vertices */
-export interface PanelFiringUnit {
+/** One battery the control panel lists: where it is placed and, once deployed, how it is doing */
+export interface PanelBattery {
   /** Firing unit name */
   name: string;
   /** Missile system designation (e.g. "HF-3") */
   missileSystem: string;
-  /** Weapon range in NM, drives the range circle on the map; 0 without a land range */
-  weaponRange: number;
-  operationalArea: PanelOperationalArea;
-}
-
-/** An operational area whose zones are vertices instead of reference point names */
-export interface PanelOperationalArea {
-  /** Area name */
-  name?: string;
-  /** Fire Points */
-  FP: PanelPosition[];
-  /** Hide Areas */
-  HA: PanelPosition[];
-  /** Ammunition Transfer Points */
-  ATP: PanelPosition[];
-  /** Reload Points */
-  RL: PanelPosition[];
-  /** Shelter-hide-reload loop path */
-  SHRL?: PanelPosition[];
-  /** U shape vertices */
-  uShapeVertices?: Coordinate[];
-  /** Shelter points */
-  shelterPoints?: Coordinate[];
-}
-
-/** A position whose area is vertices instead of reference point names */
-export interface PanelPosition {
-  /** Waypoints to area */
-  course: Coordinate[];
-  /** Area vertices */
-  area: Coordinate[];
-}
-
-/** One battery's status in the control panel (a firing unit plus its paired resupply unit), built by MissileSystem.buildBatteryStatuses */
-export interface BatteryStatus {
-  /** Firing unit name */
-  name: string;
   /** Missile system type key (constants.MISSILE_SYSTEM_TYPES) */
   missileSystemType: string;
+  /** Weapon range in NM, drives the range circle on the map; 0 without a land range */
+  weaponRange: number;
+  /** Where the battery is now */
+  placement: BatteryPlacement;
+  /** Absent before the battery's first deploy */
+  status?: BatteryStatus;
+}
+
+/** A battery's firing unit, resupply unit and canister stock as the control panel shows them */
+export interface BatteryStatus {
   /** Firing unit posture label (constants.MISSILE_UNIT_POSTURE key) */
   firingPosture: string;
   /** Paired resupply unit posture label */
@@ -269,21 +245,13 @@ export interface MovementPathSet {
 }
 
 /** Battery placement submitted by the control panel */
-export interface MissileSystemResult {
+export interface MissileSystemResult extends BatteryPlacement {
   /** Control panel row key */
   key: string;
   /** Firing unit name in the side's ground force config */
   unitname: string;
   /** Missile system type key (constants.MISSILE_SYSTEM_TYPES) */
   missileSystemType: string;
-  /** Center of the drawn layout */
-  center: Coordinate;
-  /** U-shape opening angle in degrees */
-  openingAngle: number;
-  /** Drawn zones */
-  tacticalAreas: TacticalAreaLayout;
-  /** Drawn movement paths */
-  paths: MovementPathSet;
 }
 
 /** Point budget the player spent in the control panel */

@@ -27,10 +27,9 @@
 | `processUnitEntersArea` | `config, saveData, unit, event` | `nil` | 依觸發單位陣營的 `ground.policy` 組出 `moveCtx`，交給 `Arrival.processMoveToPositionEvent`；`moveToPosition.lua` 的入口 |
 | `processSupplyAssetDestruction` | `config, saveData, unit` | `boolean` | 走訪單位所屬陣營的所有系統，找到擁有該補給資產的系統後扣彈並記錄 |
 | `listSigintEmitters` | `config, saveData, sideName, missileSystemTypes` | `SBJ__SigintEmitter[]` | 依給定系統順序列出發射車：名字、config 的 `msg`、state 的 `operationalArea`；SIGINT 只經這裡讀，不碰 state 形狀 |
-| `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 每筆 entry 用 `ControlPanelLayout.buildOperationalArea` 轉成新陣地，`Deployment.resolveBattery` 組成一連，再依序重建 zone／trigger、單位與 state。離開的舊陣地從 state 讀（`GroundStateStore.resolveOperationalArea`），config 只讀不寫 |
-| `buildPanelMissileSystems` | `config, saveData, sideName` | `table<string, SBJ__MissileSystemConfig>` | 產生 control panel 所需的系統設定副本（含 zone 頂點）；已在存檔裡的發射單位用存檔的作戰區 |
+| `redeployFromControlPanel` | `config, saveData, sideName, entries` | `nil` | 每筆 entry 用 `PanelBattery.buildOperationalArea` 轉成新陣地，`Deployment.resolveBattery` 組成一連，再依序重建 zone／trigger、單位與 state。離開的舊陣地從 state 讀（`GroundStateStore.resolveOperationalArea`），config 只讀不寫 |
+| `buildPanelBatteries` | `config, saveData, sideName` | `SBJ__PanelBattery[]` | 每個飛彈連一筆：名字、系統、射程、地圖形狀的陣地（`placement`），部署過的再帶狀態（`status`）。已在存檔裡的用存檔的作戰區 |
 | `deploySide` | `config, saveData, sideName` | `nil` | 以 `Deployment.resolveBatteries` 取得每一連，`Deployment.deployBatteries` 建立單位，`GroundStateStore.resetBatteryStates` 設定 state；`addMissileSystems.lua` special action 的入口 |
-| `buildBatteryStatuses` | `config, saveData, sideName` | `SBJ__BatteryStatus[]` | 供狀態 UI 使用，每個飛彈連（發射單位加配對的補給單位）一筆的狀態 |
 | `ensureGroundState` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態後轉呼叫 `GroundStateStore.ensureGroundState` |
 | `initSide` | `config, saveData, sideName` | `nil` | 自行解析該陣營的 ground 設定與狀態，對每一連呼叫 `GroundStateStore.resetBatteryStates` |
 

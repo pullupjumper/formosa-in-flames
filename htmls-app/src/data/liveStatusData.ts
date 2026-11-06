@@ -1,4 +1,4 @@
-import type { BatteryStatus, C2NodeSet, LandingUnitCountSet, Signal } from '@/types/generated';
+import type { C2NodeSet, LandingUnitCountSet, Signal } from '@/types/generated';
 import type { LiveStatusData } from '@/types/controlPanel';
 
 // ===========================================================================
@@ -28,78 +28,6 @@ export const SIGNALS_DATA: Signal[] = [
     detectionCount: 3,
     confidence: 0.7,
     currentDetectionLevel: 2,
-  },
-];
-
-// ===========================================================================
-// BATTERY STATUS DATA
-// ===========================================================================
-export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
-  // Names match the control panel mock so the control panel cards show their status
-  {
-    name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
-    missileSystemType: 'sam',
-    firingPosture: 'STATIC',
-    resupplyPosture: 'RELOAD',
-    firingReloadMinutes: 0,
-    reloadMinutesDefault: 10,
-    resupplyReloadMinutes: 4,
-    resupplyMissiles: 12,
-    resupplyMissilesDefault: 20,
-    canisterMissiles: 40,
-    canisterMissilesDefault: 49,
-  },
-  {
-    name: 'Rocket Arty Coy, 58th Arty Command',
-    missileSystemType: 'srbm',
-    firingPosture: 'HIDE',
-    resupplyPosture: 'STATIC',
-    firingReloadMinutes: 6,
-    reloadMinutesDefault: 10,
-    resupplyReloadMinutes: 0,
-    resupplyMissiles: 6,
-    resupplyMissilesDefault: 20,
-    canisterMissiles: 40,
-    canisterMissilesDefault: 49,
-  },
-  {
-    name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
-    missileSystemType: 'sam',
-    firingPosture: 'STATIC',
-    resupplyPosture: 'STATIC',
-    firingReloadMinutes: 10,
-    reloadMinutesDefault: 100,
-    resupplyReloadMinutes: 20,
-    resupplyMissiles: 5,
-    resupplyMissilesDefault: 20,
-    canisterMissiles: 40,
-    canisterMissilesDefault: 49,
-  },
-  {
-    name: 'Rocket Arty Coy, 58th Arty Command',
-    missileSystemType: 'srbm',
-    firingPosture: 'STATIC',
-    resupplyPosture: 'STATIC',
-    firingReloadMinutes: 10,
-    reloadMinutesDefault: 100,
-    resupplyReloadMinutes: 20,
-    resupplyMissiles: 5,
-    resupplyMissilesDefault: 20,
-    canisterMissiles: 40,
-    canisterMissilesDefault: 49,
-  },
-  {
-    name: '1st Hai Feng Shore-based ASM MOB Sqn',
-    missileSystemType: 'ascm',
-    firingPosture: 'STATIC',
-    resupplyPosture: 'STATIC',
-    firingReloadMinutes: 10,
-    reloadMinutesDefault: 100,
-    resupplyReloadMinutes: 20,
-    resupplyMissiles: 5,
-    resupplyMissilesDefault: 20,
-    canisterMissiles: 40,
-    canisterMissilesDefault: 49,
   },
 ];
 
@@ -245,7 +173,6 @@ export const LANDING_UNITS_DATA: LandingUnitCountSet = {
 // ===========================================================================
 export const LIVE_STATUS_DATA: LiveStatusData = {
   signals: SIGNALS_DATA,
-  batteryStatuses: BATTERY_STATUSES_DATA,
   c2: C2_DATA,
   landingUnits: LANDING_UNITS_DATA,
 };

@@ -12,8 +12,7 @@ local Ammo = require("src.modules.missileSystem.ammo")
 local Deployment = require("src.modules.missileSystem.deployment")
 local PositionZones = require("src.modules.missileSystem.positionZones")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
-local StatusView = require("src.modules.missileSystem.statusView")
-local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
+local PanelBattery = require("src.modules.missileSystem.panelBattery")
 local GameApi = require("src.utils.gameApi")
 local GameUtils = require("src.utils.gameUtils")
 local Logger = require("src.utils.logger")
@@ -582,42 +581,22 @@ describe("MissileSystem", function()
   end)
 
   -- ============================================================================
-  -- buildPanelMissileSystems
+  -- buildPanelBatteries
   -- ============================================================================
 
-  describe("buildPanelMissileSystems", function()
-    -- Positive: rows come from the side's ground config and saved ground state
-    it("should return the deployment systems built from the side's ground config and saved state", function()
-      local config = makeSides()
-      local rows = { srbm = { id = "row" } }
-      local rowsStub = trackStub(ControlPanelLayout, "buildPanelMissileSystems").returns(rows)
-
-      local saveData = { blue = { ground = { missileSystemTypes = {} } } }
-
-      local result = MissileSystem.buildPanelMissileSystems(config, saveData, constants.SIDES.BLUE)
-
-      assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
-        constants.SIDES.BLUE)
-    end)
-  end)
-
-  -- ============================================================================
-  -- buildBatteryStatuses
-  -- ============================================================================
-
-  describe("buildBatteryStatuses", function()
-    -- Positive: the side's slice and config are read at the current game time
-    it("should build battery statuses from the side's slice and config at the current time", function()
+  describe("buildPanelBatteries", function()
+    -- Positive: batteries come from the side's ground config and saved state at the current game time
+    it("should build the batteries from the side's ground config and saved state at the current time", function()
       local config, saveData = makeSides()
-      local rows = { { name = "FU-1" } }
+      local batteries = { { name = "FU-1" } }
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(4200)
-      local rowsStub = trackStub(StatusView, "buildBatteryStatuses").returns(rows)
+      local batteriesStub = trackStub(PanelBattery, "buildPanelBatteries").returns(batteries)
 
-      local result = MissileSystem.buildBatteryStatuses(config, saveData, constants.SIDES.BLUE)
+      local result = MissileSystem.buildPanelBatteries(config, saveData, constants.SIDES.BLUE)
 
-      assert.are.equal(rows, result)
-      assert.stub(rowsStub).was.called_with(saveData.blue.ground, config.blue.ground.missileSystemTypes, 4200)
+      assert.are.equal(batteries, result)
+      assert.stub(batteriesStub).was.called_with(config.blue.ground.missileSystemTypes, saveData.blue.ground,
+        constants.SIDES.BLUE, 4200)
     end)
   end)
 
@@ -924,7 +903,7 @@ describe("MissileSystem", function()
       local config, saveData = makeMovedBattery()
       local newArea = { name = "OPAREA-NEW", HA = { { course = { { latitude = 4, longitude = 4 } } } },
         RL = { { course = { { latitude = 5, longitude = 5 } } } }, ATP = { { course = { { latitude = 6, longitude = 6 } } } } }
-      trackStub(ControlPanelLayout, "buildOperationalArea").returns(newArea)
+      trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
       local triggersStub = trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
 
@@ -944,7 +923,7 @@ describe("MissileSystem", function()
       local resupplyDescriptor = srbmConfig.resupplyUnits["RU-A"]
       local canisterStockDescriptor = srbmConfig.canisterStocks["AMMO-A"]
       local configArea = firingDescriptor.operationalArea
-      trackStub(ControlPanelLayout, "buildOperationalArea").returns({ name = "OPAREA-NEW" })
+      trackStub(PanelBattery, "buildOperationalArea").returns({ name = "OPAREA-NEW" })
       trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
 
@@ -964,7 +943,7 @@ describe("MissileSystem", function()
       local config, saveData = makeMovedBattery()
       local entries = { { missileSystemType = "srbm", unitname = "FU-A" }, { missileSystemType = "srbm", unitname = "Ghost" } }
       local newArea = { name = "#NEW" }
-      local buildAreaStub = trackStub(ControlPanelLayout, "buildOperationalArea").returns(newArea)
+      local buildAreaStub = trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
       local calls = {}
       local triggersStub = trackStub(PositionZones, "rebuild").invokes(function()
         table.insert(calls, "rebuild")
@@ -1025,7 +1004,7 @@ describe("MissileSystem", function()
       systemState.canisterStocks["AMMO-B"].weaponCountCurrent = 5
 
       local newArea = { name = "#NEW" }
-      trackStub(ControlPanelLayout, "buildOperationalArea").returns(newArea)
+      trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
       trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
       local entries = { { missileSystemType = "srbm", unitname = "FU-A" } }

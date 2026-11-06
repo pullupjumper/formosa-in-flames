@@ -2203,40 +2203,24 @@ function ScenEdit_DeleteMine(params) end
 ---@field randomRadiusNm number Position randomization radius (nautical miles)
 ---@field radiusNm number GNSS jamming effectiveness radius (nautical miles)
 
----The missile systems the control panel can place, keyed by system type
----@alias SBJ__PanelMissileSystemSet table<string, SBJ__PanelMissileSystem>
+---Where a battery's zones and paths sit, in the shape the control panel map draws
+---@class SBJ__BatteryPlacement: table
+---@field center CMO__Location Center of the U-shape
+---@field openingAngle number U-shape opening angle in degrees
+---@field tacticalAreas SBJ__TacticalAreaLayout Zones
+---@field paths SBJ__MovementPathSet Movement paths
 
----One missile system's firing units for the control panel
----@class SBJ__PanelMissileSystem: table
----@field firingUnits table<string, SBJ__PanelFiringUnit> Firing units indexed by unit name
-
----A firing unit drawn where its battery is now, with zone names resolved to vertices
----@class SBJ__PanelFiringUnit: table
+---One battery the control panel lists: where it is placed and, once deployed, how it is doing
+---@class SBJ__PanelBattery: table
 ---@field name string Firing unit name
 ---@field missileSystem string Missile system designation (e.g. "HF-3")
----@field weaponRange number Weapon range in NM, drives the range circle on the map; 0 without a land range
----@field operationalArea SBJ__PanelOperationalArea
-
----An operational area whose zones are vertices instead of reference point names
----@class SBJ__PanelOperationalArea: table
----@field name? string Area name
----@field FP SBJ__PanelPosition[] Fire Points
----@field HA SBJ__PanelPosition[] Hide Areas
----@field ATP SBJ__PanelPosition[] Ammunition Transfer Points
----@field RL SBJ__PanelPosition[] Reload Points
----@field SHRL? SBJ__PanelPosition[] Shelter-hide-reload loop path
----@field uShapeVertices? CMO__Location[] U shape vertices
----@field shelterPoints? CMO__Location[] Shelter points
-
----A position whose area is vertices instead of reference point names
----@class SBJ__PanelPosition: table
----@field course CMO__Waypoint[] Waypoints to area
----@field area CMO__Location[] Area vertices
-
----One battery's status in the control panel (a firing unit plus its paired resupply unit), built by MissileSystem.buildBatteryStatuses
----@class SBJ__BatteryStatus: table
----@field name string Firing unit name
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field weaponRange number Weapon range in NM, drives the range circle on the map; 0 without a land range
+---@field placement SBJ__BatteryPlacement Where the battery is now
+---@field status? SBJ__BatteryStatus Absent before the battery's first deploy
+
+---A battery's firing unit, resupply unit and canister stock as the control panel shows them
+---@class SBJ__BatteryStatus: table
 ---@field firingPosture string Firing unit posture label (constants.MISSILE_UNIT_POSTURE key)
 ---@field resupplyPosture string Paired resupply unit posture label
 ---@field resupplyMissiles number Missiles carried by the resupply unit
@@ -2324,14 +2308,10 @@ function ScenEdit_DeleteMine(params) end
 ---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
 ---Battery placement submitted by the control panel
----@class SBJ__MissileSystemResult: table
+---@class SBJ__MissileSystemResult: SBJ__BatteryPlacement
 ---@field key string Control panel row key
 ---@field unitname string Firing unit name in the side's ground force config
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
----@field center CMO__Location Center of the drawn layout
----@field openingAngle number U-shape opening angle in degrees
----@field tacticalAreas SBJ__TacticalAreaLayout Drawn zones
----@field paths SBJ__MovementPathSet Drawn movement paths
 
 ---Point budget the player spent in the control panel
 ---@class SBJ__BudgetResult: table

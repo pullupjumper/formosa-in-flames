@@ -3,7 +3,7 @@ import type {
   Airbase,
   AmphibiousLocation,
   GNSSJammerDescriptor,
-  PanelMissileSystemSet,
+  PanelBattery,
 } from '@/types/generated';
 
 // ============================================================================
@@ -304,347 +304,718 @@ export const AIRBASES_DATA: Airbase[] = [
 ];
 
 // ============================================================================
-// MISSILE SYSTEMS DATA (Simplified - only firingUnits for UI)
+// BATTERIES DATA
 // ============================================================================
-export const MISSILE_SYSTEMS_DATA: PanelMissileSystemSet = {
-  sam: {
-    firingUnits: {
-      '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde': {
-        name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
-        operationalArea: {
-          RL: [
+export const BATTERIES_DATA: PanelBattery[] = [
+  {
+    name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
+    missileSystem: 'PAC-3',
+    missileSystemType: 'sam',
+    weaponRange: 65,
+    placement: {
+      center: {
+        latitude: 23.954215733893214,
+        longitude: 120.53649902343753,
+      },
+      openingAngle: 0,
+      tacticalAreas: {
+        uShapeVertices: [
+          {
+            latitude: 23.966707310096808,
+            longitude: 120.55016922173337,
+          },
+          {
+            latitude: 23.941724157689617,
+            longitude: 120.55016657380727,
+          },
+          {
+            latitude: 23.941724157689617,
+            longitude: 120.52283147306775,
+          },
+          {
+            latitude: 23.966707310096808,
+            longitude: 120.52282882514166,
+          },
+        ],
+        atpArea: [
+          {
+            latitude: 23.95166530022992,
+            longitude: 120.6668088670367,
+          },
+          {
+            latitude: 23.95166530022992,
+            longitude: 120.66134142557051,
+          },
+          {
+            latitude: 23.956661930771855,
+            longitude: 120.66134131965377,
+          },
+          {
+            latitude: 23.956661930771855,
+            longitude: 120.66680897295345,
+          },
+        ],
+        hideArea: [
+          {
+            latitude: 23.949486956453104,
+            longitude: 120.54124742835427,
+          },
+          {
+            latitude: 23.949486956453104,
+            longitude: 120.5376025289318,
+          },
+          {
+            latitude: 23.95281804348199,
+            longitude: 120.53760248186548,
+          },
+          {
+            latitude: 23.95281804348199,
+            longitude: 120.54124747542058,
+          },
+        ],
+        reloadArea: [
+          {
+            latitude: 23.961356812968535,
+            longitude: 120.54040605885487,
+          },
+          {
+            latitude: 23.961356812968535,
+            longitude: 120.53676082392549,
+          },
+          {
+            latitude: 23.96468789999743,
+            longitude: 120.53676077682854,
+          },
+          {
+            latitude: 23.96468789999743,
+            longitude: 120.54040610595182,
+          },
+        ],
+        firePoints: [
+          [
             {
-              course: [{ latitude: 23.963022356482984, longitude: 120.53858344139019 }],
-              area: [
-                { latitude: 23.961356812968535, longitude: 120.54040605885487 },
-                { latitude: 23.961356812968535, longitude: 120.53676082392549 },
-                { latitude: 23.96468789999743, longitude: 120.53676077682854 },
-                { latitude: 23.96468789999743, longitude: 120.54040610595182 },
-              ],
+              latitude: 23.925176455038955,
+              longitude: 120.49532538653906,
+            },
+            {
+              latitude: 23.92233531417852,
+              longitude: 120.49082880718687,
+            },
+            {
+              latitude: 23.926445497482927,
+              longitude: 120.4877204937881,
+            },
+            {
+              latitude: 23.92928672877303,
+              longitude: 120.49221714787369,
             },
           ],
-          FP: [
+          [
             {
-              course: [
-                { latitude: 23.946720847060654, longitude: 120.52351359314495 },
-                { latitude: 23.925810998868357, longitude: 120.49152295884694 },
-              ],
-              area: [
-                { latitude: 23.925176455038955, longitude: 120.49532538653906 },
-                { latitude: 23.92233531417852, longitude: 120.49082880718687 },
-                { latitude: 23.926445497482927, longitude: 120.4877204937881 },
-                { latitude: 23.92928672877303, longitude: 120.49221714787369 },
-              ],
+              latitude: 23.934001272274976,
+              longitude: 120.48942714400938,
             },
             {
-              course: [
-                { latitude: 23.946720847060654, longitude: 120.52351359314495 },
-                { latitude: 23.935372343642182, longitude: 120.48586452509319 },
-              ],
-              area: [
-                { latitude: 23.934001272274976, longitude: 120.48942714400938 },
-                { latitude: 23.93211607921884, longitude: 120.48436450934267 },
-                { latitude: 23.936743381218047, longitude: 120.48230183049377 },
-                { latitude: 23.938628641856866, longitude: 120.48736461652692 },
-              ],
+              latitude: 23.93211607921884,
+              longitude: 120.48436450934267,
             },
-          ],
-          ATP: [
             {
-              course: [{ latitude: 23.95416361550089, longitude: 120.66407514630362 }],
-              area: [
-                { latitude: 23.95166530022992, longitude: 120.6668088670367 },
-                { latitude: 23.95166530022992, longitude: 120.66134142557051 },
-                { latitude: 23.956661930771855, longitude: 120.66134131965377 },
-                { latitude: 23.956661930771855, longitude: 120.66680897295345 },
-              ],
+              latitude: 23.936743381218047,
+              longitude: 120.48230183049377,
             },
-          ],
-          HA: [
             {
-              course: [{ latitude: 23.95115249996755, longitude: 120.53942497864303 }],
-              area: [
-                { latitude: 23.949486956453104, longitude: 120.54124742835427 },
-                { latitude: 23.949486956453104, longitude: 120.5376025289318 },
-                { latitude: 23.95281804348199, longitude: 120.53760248186548 },
-                { latitude: 23.95281804348199, longitude: 120.54124747542058 },
-              ],
+              latitude: 23.938628641856866,
+              longitude: 120.48736461652692,
             },
           ],
-          SHRL: [
+        ],
+        shelterPoints: [
+          {
+            latitude: 23.948770249240464,
+            longitude: 120.54668912131177,
+          },
+          {
+            latitude: 23.943869164377904,
+            longitude: 120.53845933003232,
+          },
+        ],
+      },
+      paths: {
+        FP: [
+          {
+            waypoints: [
+              {
+                latitude: 23.946720847060654,
+                longitude: 120.52351359314495,
+              },
+              {
+                latitude: 23.925810998868357,
+                longitude: 120.49152295884694,
+              },
+            ],
+          },
+          {
+            waypoints: [
+              {
+                latitude: 23.946720847060654,
+                longitude: 120.52351359314495,
+              },
+              {
+                latitude: 23.935372343642182,
+                longitude: 120.48586452509319,
+              },
+            ],
+          },
+        ],
+        HA: {
+          waypoints: [
             {
-              course: [
-                { latitude: 23.963022191638004, longitude: 120.53144924355222 },
-                { latitude: 23.963022356482984, longitude: 120.53858344139019 },
-              ],
-              area: [
-                { latitude: 23.961356812968535, longitude: 120.54040605885487 },
-                { latitude: 23.961356812968535, longitude: 120.53676082392549 },
-                { latitude: 23.96468789999743, longitude: 120.53676077682854 },
-                { latitude: 23.96468789999743, longitude: 120.54040610595182 },
-              ],
+              latitude: 23.963022356482984,
+              longitude: 120.53858344139019,
             },
-          ],
-          uShapeVertices: [
-            { latitude: 23.966707310096808, longitude: 120.55016922173337 },
-            { latitude: 23.941724157689617, longitude: 120.55016657380727 },
-            { latitude: 23.941724157689617, longitude: 120.52283147306775 },
-            { latitude: 23.966707310096808, longitude: 120.52282882514166 },
-          ],
-          shelterPoints: [
-            { latitude: 23.948770249240464, longitude: 120.54668912131177 },
-            { latitude: 23.943869164377904, longitude: 120.53845933003232 },
+            {
+              latitude: 23.95115249996755,
+              longitude: 120.53942497864303,
+            },
           ],
         },
-        missileSystem: 'PAC-3',
-        weaponRange: 65,
-      },
-    },
-  },
-  srbm: {
-    firingUnits: {
-      'Rocket Arty Coy, 58th Arty Command': {
-        name: 'Rocket Arty Coy, 58th Arty Command',
-        operationalArea: {
-          RL: [
+        ATP: {
+          waypoints: [
             {
-              course: [{ latitude: 23.806603553624733, longitude: 120.4059782850404 }],
-              area: [
-                { latitude: 23.80493801011028, longitude: 120.40779870061961 },
-                { latitude: 23.80493801011028, longitude: 120.4041578694612 },
-                { latitude: 23.80826909713918, longitude: 120.40415782276673 },
-                { latitude: 23.80826909713918, longitude: 120.40779874731409 },
-              ],
-            },
-          ],
-          FP: [
-            {
-              course: [
-                { latitude: 23.79832944742452, longitude: 120.4026796129023 },
-                { latitude: 23.802577911741974, longitude: 120.3612365455408 },
-              ],
-              area: [
-                { latitude: 23.799876684564097, longitude: 120.36372560442521 },
-                { latitude: 23.800300517029257, longitude: 120.35828424328788 },
-                { latitude: 23.80527914704259, longitude: 120.3587473831287 },
-                { latitude: 23.804855298331958, longitude: 120.36418895132145 },
-              ],
+              latitude: 23.963022356482984,
+              longitude: 120.53858344139019,
             },
             {
-              course: [
-                { latitude: 23.79832944742452, longitude: 120.4026796129023 },
-                { latitude: 23.79298295201252, longitude: 120.36135442758274 },
-              ],
-              area: [
-                { latitude: 23.790766854389595, longitude: 120.36436171641414 },
-                { latitude: 23.790231213611374, longitude: 120.35893254388633 },
-                { latitude: 23.795199039396785, longitude: 120.35834703618046 },
-                { latitude: 23.795734700652314, longitude: 120.36377641385002 },
-              ],
+              latitude: 23.95416361550089,
+              longitude: 120.66407514630362,
             },
-          ],
-          ATP: [
-            {
-              course: [{ latitude: 23.798277652191537, longitude: 120.54307198810082 }],
-              area: [
-                { latitude: 23.79577933692056, longitude: 120.5458024189589 },
-                { latitude: 23.79577933692056, longitude: 120.54034155724275 },
-                { latitude: 23.80077596746251, longitude: 120.54034145222829 },
-                { latitude: 23.80077596746251, longitude: 120.54580252397335 },
-              ],
-            },
-          ],
-          HA: [
-            {
-              course: [{ latitude: 23.806559362575843, longitude: 120.42303920983716 }],
-              area: [
-                { latitude: 23.804893819061395, longitude: 120.42485962479697 },
-                { latitude: 23.804893819061395, longitude: 120.42121879487733 },
-                { latitude: 23.80822490609029, longitude: 120.42121874818297 },
-                { latitude: 23.80822490609029, longitude: 120.4248596714913 },
-              ],
-            },
-          ],
-          SHRL: [
-            {
-              course: [
-                { latitude: 23.80944677778654, longitude: 120.40908603088032 },
-                { latitude: 23.806603553624733, longitude: 120.4059782850404 },
-              ],
-              area: [
-                { latitude: 23.80493801011028, longitude: 120.40779870061961 },
-                { latitude: 23.80493801011028, longitude: 120.4041578694612 },
-                { latitude: 23.80826909713918, longitude: 120.40415782276673 },
-                { latitude: 23.80826909713918, longitude: 120.40779874731409 },
-              ],
-            },
-          ],
-          uShapeVertices: [
-            { latitude: 23.810820965076836, longitude: 120.42930314935944 },
-            { latitude: 23.78583781266794, longitude: 120.42930052399022 },
-            { latitude: 23.78583781266794, longitude: 120.40199830413479 },
-            { latitude: 23.810820965076836, longitude: 120.40199567876557 },
-          ],
-          shelterPoints: [
-            { latitude: 23.801503300471502, longitude: 120.41353863214489 },
-            { latitude: 23.801672159940395, longitude: 120.41768774016136 },
           ],
         },
-        missileSystem: 'HIMARS',
-        weaponRange: 150,
-      },
-    },
-  },
-  ascm: {
-    firingUnits: {
-      '1st Hai Feng Shore-based ASM MOB Sqn': {
-        name: '1st Hai Feng Shore-based ASM MOB Sqn',
-        operationalArea: {
-          RL: [
+        RL: [
+          {
+            waypoints: [
+              {
+                latitude: 23.925810998868357,
+                longitude: 120.49152295884694,
+              },
+              {
+                latitude: 23.963022356482984,
+                longitude: 120.53858344139019,
+              },
+            ],
+          },
+          {
+            waypoints: [
+              {
+                latitude: 23.935372343642182,
+                longitude: 120.48586452509319,
+              },
+              {
+                latitude: 23.963022356482984,
+                longitude: 120.53858344139019,
+              },
+            ],
+          },
+        ],
+        SHRL: {
+          waypoints: [
             {
-              course: [{ latitude: 23.679917918891974, longitude: 120.36842468141906 }],
-              area: [
-                { latitude: 23.678252375377525, longitude: 120.37024332748199 },
-                { latitude: 23.678252375377525, longitude: 120.36660603535613 },
-                { latitude: 23.68158346240643, longitude: 120.36660598898607 },
-                { latitude: 23.68158346240643, longitude: 120.37024337385202 },
-              ],
-            },
-          ],
-          FP: [
-            {
-              course: [
-                { latitude: 23.67251795084056, longitude: 120.35874632151304 },
-                { latitude: 23.65890263488067, longitude: 120.32107513473466 },
-              ],
-              area: [
-                { latitude: 23.657515300922565, longitude: 120.32462265266865 },
-                { latitude: 23.655653265493285, longitude: 120.31956055208894 },
-                { latitude: 23.660289935829223, longitude: 120.3175275415345 },
-                { latitude: 23.662152037277586, longitude: 120.32258979264651 },
-              ],
+              latitude: 23.963022191638004,
+              longitude: 120.53144924355222,
             },
             {
-              course: [
-                { latitude: 23.67251795084056, longitude: 120.35874632151304 },
-                { latitude: 23.702882348519097, longitude: 120.32469463038714 },
-              ],
-              area: [
-                { latitude: 23.69946175035845, longitude: 120.32566070671511 },
-                { latitude: 23.701997724000687, longitude: 120.32095889687774 },
-                { latitude: 23.706302988509798, longitude: 120.32372850341513 },
-                { latitude: 23.703766931207454, longitude: 120.3284304145406 },
-              ],
+              latitude: 23.963022356482984,
+              longitude: 120.53858344139019,
             },
-          ],
-          ATP: [
-            {
-              course: [{ latitude: 23.677463081689957, longitude: 120.49900857387644 }],
-              area: [
-                { latitude: 23.674964766418974, longitude: 120.50173647433576 },
-                { latitude: 23.674964766418974, longitude: 120.49628067341712 },
-                { latitude: 23.67996139696094, longitude: 120.49628056909866 },
-                { latitude: 23.67996139696094, longitude: 120.50173657865425 },
-              ],
-            },
-          ],
-          HA: [
-            {
-              course: [{ latitude: 23.669039555413118, longitude: 120.38140924101904 }],
-              area: [
-                { latitude: 23.667374011898666, longitude: 120.38322773571016 },
-                { latitude: 23.667374011898666, longitude: 120.37959074632792 },
-                { latitude: 23.670705098927566, longitude: 120.37959069998568 },
-                { latitude: 23.670705098927566, longitude: 120.3832277820524 },
-              ],
-            },
-          ],
-          SHRL: [
-            {
-              course: [
-                { latitude: 23.683938889127205, longitude: 120.36842468141904 },
-                { latitude: 23.679917918891974, longitude: 120.36842468141906 },
-              ],
-              area: [
-                { latitude: 23.678252375377525, longitude: 120.37024332748199 },
-                { latitude: 23.678252375377525, longitude: 120.36660603535613 },
-                { latitude: 23.68158346240643, longitude: 120.36660598898607 },
-                { latitude: 23.68158346240643, longitude: 120.37024337385202 },
-              ],
-            },
-          ],
-          uShapeVertices: [
-            { latitude: 23.690006099372084, longitude: 120.38534517435718 },
-            { latitude: 23.66502294696188, longitude: 120.3853425663875 },
-            { latitude: 23.66502294696188, longitude: 120.35806563673752 },
-            { latitude: 23.690006099372084, longitude: 120.35806302876783 },
-          ],
-          shelterPoints: [
-            { latitude: 23.681035548170605, longitude: 120.3820677948902 },
-            { latitude: 23.685636542906167, longitude: 120.36564943890005 },
           ],
         },
-        missileSystem: 'HF-3',
-        weaponRange: 100,
       },
-      // '2nd Hai Feng Shore-based ASM MOB Sqn': {
-      //   dbid: 3531,
-      //   resupplyUnit: 'Hai Feng Shore-based ASM SUPP Sqn, Luzhu',
-      //   guid: 'IC8B0X-0HN87MOIE9C4U',
-      //   ammoThreshold: 25,
-      //   weaponDBID: 1133,
-      //   name: '2nd Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
-      //   state: 3,
-      //   msg: 'Radio source, Bty',
-      // },
-      // '3rd Hai Feng Shore-based ASM MOB Sqn': {
-      //   dbid: 3531,
-      //   resupplyUnit: 'Hai Feng Shore-based ASM SUPP Sqn, Dong',
-      //   guid: 'X58F5H-0HMVEU1FUVO6J',
-      //   ammoThreshold: 25,
-      //   weaponDBID: 1133,
-      //   name: '3rd Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
-      //   state: 3,
-      //   msg: 'Radio source, Bty',
-      // },
-      // '4th Hai Feng Shore-based ASM MOB Sqn': {
-      //   dbid: 3531,
-      //   resupplyUnit: 'Hai Feng Shore-based ASM SUPP Sqn, Luzhu',
-      //   guid: 'X58F5H-0HMVEU1FUVOLC',
-      //   ammoThreshold: 25,
-      //   weaponDBID: 1133,
-      //   name: '4th Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
-      //   state: 3,
-      //   msg: 'Radio source, Bty',
-      // },
-      // '5th Hai Feng Shore-based ASM MOB Sqn': {
-      //   dbid: 3531,
-      //   resupplyUnit: 'Hai Feng Shore-based ASM SUPP Sqn, Luzhu',
-      //   guid: 'IC8B0X-0HN8CEO4EUE8B',
-      //   ammoThreshold: 25,
-      //   weaponDBID: 1133,
-      //   name: '5th Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
-      //   state: 3,
-      //   msg: 'Radio source, Bty',
-      // },
-      // '6th Hai Feng Shore-based ASM MOB Sqn': {
-      //   dbid: 3531,
-      //   resupplyUnit: 'Hai Feng Shore-based ASM SUPP Sqn, Dong',
-      //   guid: 'IC8B0X-0HNHAETCJHDEA',
-      //   ammoThreshold: 25,
-      //   weaponDBID: 1133,
-      //   name: '6th Hai Feng Shore-based ASM MOB Sqn',
-      //   operationalArea: { RL: [], FP: [], ATP: [], HA: [] },
-      //   state: 3,
-      //   msg: 'Radio source, Bty',
-      // },
+    },
+    status: {
+      firingPosture: 'STATIC',
+      resupplyPosture: 'STATIC',
+      firingReloadMinutes: 10,
+      reloadMinutesDefault: 100,
+      resupplyReloadMinutes: 20,
+      resupplyMissiles: 5,
+      resupplyMissilesDefault: 20,
+      canisterMissiles: 40,
+      canisterMissilesDefault: 49,
     },
   },
-};
+  {
+    name: 'Rocket Arty Coy, 58th Arty Command',
+    missileSystem: 'HIMARS',
+    missileSystemType: 'srbm',
+    weaponRange: 150,
+    placement: {
+      center: {
+        latitude: 23.79832938887239,
+        longitude: 120.4156494140625,
+      },
+      openingAngle: 0,
+      tacticalAreas: {
+        uShapeVertices: [
+          {
+            latitude: 23.810820965076836,
+            longitude: 120.42930314935944,
+          },
+          {
+            latitude: 23.78583781266794,
+            longitude: 120.42930052399022,
+          },
+          {
+            latitude: 23.78583781266794,
+            longitude: 120.40199830413479,
+          },
+          {
+            latitude: 23.810820965076836,
+            longitude: 120.40199567876557,
+          },
+        ],
+        atpArea: [
+          {
+            latitude: 23.79577933692056,
+            longitude: 120.5458024189589,
+          },
+          {
+            latitude: 23.79577933692056,
+            longitude: 120.54034155724275,
+          },
+          {
+            latitude: 23.80077596746251,
+            longitude: 120.54034145222829,
+          },
+          {
+            latitude: 23.80077596746251,
+            longitude: 120.54580252397335,
+          },
+        ],
+        hideArea: [
+          {
+            latitude: 23.804893819061395,
+            longitude: 120.42485962479697,
+          },
+          {
+            latitude: 23.804893819061395,
+            longitude: 120.42121879487733,
+          },
+          {
+            latitude: 23.80822490609029,
+            longitude: 120.42121874818297,
+          },
+          {
+            latitude: 23.80822490609029,
+            longitude: 120.4248596714913,
+          },
+        ],
+        reloadArea: [
+          {
+            latitude: 23.80493801011028,
+            longitude: 120.40779870061961,
+          },
+          {
+            latitude: 23.80493801011028,
+            longitude: 120.4041578694612,
+          },
+          {
+            latitude: 23.80826909713918,
+            longitude: 120.40415782276673,
+          },
+          {
+            latitude: 23.80826909713918,
+            longitude: 120.40779874731409,
+          },
+        ],
+        firePoints: [
+          [
+            {
+              latitude: 23.799876684564097,
+              longitude: 120.36372560442521,
+            },
+            {
+              latitude: 23.800300517029257,
+              longitude: 120.35828424328788,
+            },
+            {
+              latitude: 23.80527914704259,
+              longitude: 120.3587473831287,
+            },
+            {
+              latitude: 23.804855298331958,
+              longitude: 120.36418895132145,
+            },
+          ],
+          [
+            {
+              latitude: 23.790766854389595,
+              longitude: 120.36436171641414,
+            },
+            {
+              latitude: 23.790231213611374,
+              longitude: 120.35893254388633,
+            },
+            {
+              latitude: 23.795199039396785,
+              longitude: 120.35834703618046,
+            },
+            {
+              latitude: 23.795734700652314,
+              longitude: 120.36377641385002,
+            },
+          ],
+        ],
+        shelterPoints: [
+          {
+            latitude: 23.801503300471502,
+            longitude: 120.41353863214489,
+          },
+          {
+            latitude: 23.801672159940395,
+            longitude: 120.41768774016136,
+          },
+        ],
+      },
+      paths: {
+        FP: [
+          {
+            waypoints: [
+              {
+                latitude: 23.79832944742452,
+                longitude: 120.4026796129023,
+              },
+              {
+                latitude: 23.802577911741974,
+                longitude: 120.3612365455408,
+              },
+            ],
+          },
+          {
+            waypoints: [
+              {
+                latitude: 23.79832944742452,
+                longitude: 120.4026796129023,
+              },
+              {
+                latitude: 23.79298295201252,
+                longitude: 120.36135442758274,
+              },
+            ],
+          },
+        ],
+        HA: {
+          waypoints: [
+            {
+              latitude: 23.806603553624733,
+              longitude: 120.4059782850404,
+            },
+            {
+              latitude: 23.806559362575843,
+              longitude: 120.42303920983716,
+            },
+          ],
+        },
+        ATP: {
+          waypoints: [
+            {
+              latitude: 23.806603553624733,
+              longitude: 120.4059782850404,
+            },
+            {
+              latitude: 23.798277652191537,
+              longitude: 120.54307198810082,
+            },
+          ],
+        },
+        RL: [
+          {
+            waypoints: [
+              {
+                latitude: 23.802577911741974,
+                longitude: 120.3612365455408,
+              },
+              {
+                latitude: 23.806603553624733,
+                longitude: 120.4059782850404,
+              },
+            ],
+          },
+          {
+            waypoints: [
+              {
+                latitude: 23.79298295201252,
+                longitude: 120.36135442758274,
+              },
+              {
+                latitude: 23.806603553624733,
+                longitude: 120.4059782850404,
+              },
+            ],
+          },
+        ],
+        SHRL: {
+          waypoints: [
+            {
+              latitude: 23.80944677778654,
+              longitude: 120.40908603088032,
+            },
+            {
+              latitude: 23.806603553624733,
+              longitude: 120.4059782850404,
+            },
+          ],
+        },
+      },
+    },
+    status: {
+      firingPosture: 'STATIC',
+      resupplyPosture: 'STATIC',
+      firingReloadMinutes: 10,
+      reloadMinutesDefault: 100,
+      resupplyReloadMinutes: 20,
+      resupplyMissiles: 5,
+      resupplyMissilesDefault: 20,
+      canisterMissiles: 40,
+      canisterMissilesDefault: 49,
+    },
+  },
+  {
+    name: '1st Hai Feng Shore-based ASM MOB Sqn',
+    missileSystem: 'HF-3',
+    missileSystemType: 'ascm',
+    weaponRange: 100,
+    placement: {
+      center: {
+        latitude: 23.677514523166984,
+        longitude: 120.37170410156251,
+      },
+      openingAngle: 0,
+      tacticalAreas: {
+        uShapeVertices: [
+          {
+            latitude: 23.690006099372084,
+            longitude: 120.38534517435718,
+          },
+          {
+            latitude: 23.66502294696188,
+            longitude: 120.3853425663875,
+          },
+          {
+            latitude: 23.66502294696188,
+            longitude: 120.35806563673752,
+          },
+          {
+            latitude: 23.690006099372084,
+            longitude: 120.35806302876783,
+          },
+        ],
+        atpArea: [
+          {
+            latitude: 23.674964766418974,
+            longitude: 120.50173647433576,
+          },
+          {
+            latitude: 23.674964766418974,
+            longitude: 120.49628067341712,
+          },
+          {
+            latitude: 23.67996139696094,
+            longitude: 120.49628056909866,
+          },
+          {
+            latitude: 23.67996139696094,
+            longitude: 120.50173657865425,
+          },
+        ],
+        hideArea: [
+          {
+            latitude: 23.667374011898666,
+            longitude: 120.38322773571016,
+          },
+          {
+            latitude: 23.667374011898666,
+            longitude: 120.37959074632792,
+          },
+          {
+            latitude: 23.670705098927566,
+            longitude: 120.37959069998568,
+          },
+          {
+            latitude: 23.670705098927566,
+            longitude: 120.3832277820524,
+          },
+        ],
+        reloadArea: [
+          {
+            latitude: 23.678252375377525,
+            longitude: 120.37024332748199,
+          },
+          {
+            latitude: 23.678252375377525,
+            longitude: 120.36660603535613,
+          },
+          {
+            latitude: 23.68158346240643,
+            longitude: 120.36660598898607,
+          },
+          {
+            latitude: 23.68158346240643,
+            longitude: 120.37024337385202,
+          },
+        ],
+        firePoints: [
+          [
+            {
+              latitude: 23.657515300922565,
+              longitude: 120.32462265266865,
+            },
+            {
+              latitude: 23.655653265493285,
+              longitude: 120.31956055208894,
+            },
+            {
+              latitude: 23.660289935829223,
+              longitude: 120.3175275415345,
+            },
+            {
+              latitude: 23.662152037277586,
+              longitude: 120.32258979264651,
+            },
+          ],
+          [
+            {
+              latitude: 23.69946175035845,
+              longitude: 120.32566070671511,
+            },
+            {
+              latitude: 23.701997724000687,
+              longitude: 120.32095889687774,
+            },
+            {
+              latitude: 23.706302988509798,
+              longitude: 120.32372850341513,
+            },
+            {
+              latitude: 23.703766931207454,
+              longitude: 120.3284304145406,
+            },
+          ],
+        ],
+        shelterPoints: [
+          {
+            latitude: 23.681035548170605,
+            longitude: 120.3820677948902,
+          },
+          {
+            latitude: 23.685636542906167,
+            longitude: 120.36564943890005,
+          },
+        ],
+      },
+      paths: {
+        FP: [
+          {
+            waypoints: [
+              {
+                latitude: 23.67251795084056,
+                longitude: 120.35874632151304,
+              },
+              {
+                latitude: 23.65890263488067,
+                longitude: 120.32107513473466,
+              },
+            ],
+          },
+          {
+            waypoints: [
+              {
+                latitude: 23.67251795084056,
+                longitude: 120.35874632151304,
+              },
+              {
+                latitude: 23.702882348519097,
+                longitude: 120.32469463038714,
+              },
+            ],
+          },
+        ],
+        HA: {
+          waypoints: [
+            {
+              latitude: 23.679917918891974,
+              longitude: 120.36842468141906,
+            },
+            {
+              latitude: 23.669039555413118,
+              longitude: 120.38140924101904,
+            },
+          ],
+        },
+        ATP: {
+          waypoints: [
+            {
+              latitude: 23.679917918891974,
+              longitude: 120.36842468141906,
+            },
+            {
+              latitude: 23.677463081689957,
+              longitude: 120.49900857387644,
+            },
+          ],
+        },
+        RL: [
+          {
+            waypoints: [
+              {
+                latitude: 23.65890263488067,
+                longitude: 120.32107513473466,
+              },
+              {
+                latitude: 23.679917918891974,
+                longitude: 120.36842468141906,
+              },
+            ],
+          },
+          {
+            waypoints: [
+              {
+                latitude: 23.702882348519097,
+                longitude: 120.32469463038714,
+              },
+              {
+                latitude: 23.679917918891974,
+                longitude: 120.36842468141906,
+              },
+            ],
+          },
+        ],
+        SHRL: {
+          waypoints: [
+            {
+              latitude: 23.683938889127205,
+              longitude: 120.36842468141904,
+            },
+            {
+              latitude: 23.679917918891974,
+              longitude: 120.36842468141906,
+            },
+          ],
+        },
+      },
+    },
+    status: {
+      firingPosture: 'STATIC',
+      resupplyPosture: 'STATIC',
+      firingReloadMinutes: 10,
+      reloadMinutesDefault: 100,
+      resupplyReloadMinutes: 20,
+      resupplyMissiles: 5,
+      resupplyMissilesDefault: 20,
+      canisterMissiles: 40,
+      canisterMissilesDefault: 49,
+    },
+  },
+];
 
 // ============================================================================
 // AMPHIBIOUS LOCATION DATA

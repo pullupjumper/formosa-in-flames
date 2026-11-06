@@ -1,4 +1,4 @@
-import type { BatteryStatus, PanelMissileSystemSet } from '@/types/generated';
+import type { BatteryStatus, PanelBattery } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import type { MissileDeployment } from '@/types/deployment';
 import {
@@ -10,107 +10,87 @@ import {
 // ============================================================================
 // FIXTURES
 // ============================================================================
-const MISSILE_SYSTEM_TYPES = {
-  ascm: {
-    firingUnits: {
-      HF3_01: { name: 'HF3 Battery 1', missileSystem: 'HF-3' },
-      HF3_02: { name: 'HF3 Battery 2', missileSystem: 'HF-3' },
-    },
-  },
-  // Types without firing units are injected for their ammunition data only
-  empty: {},
-} as unknown as PanelMissileSystemSet;
+const STATUS: BatteryStatus = {
+  firingPosture: 'STATIC',
+  resupplyPosture: 'STATIC',
+  firingReloadMinutes: 0,
+  reloadMinutesDefault: 10,
+  resupplyReloadMinutes: 0,
+  resupplyMissiles: 4,
+  resupplyMissilesDefault: 8,
+  canisterMissiles: 8,
+  canisterMissilesDefault: 16,
+};
+
+function battery(
+  name: string,
+  missileSystemType: string,
+  overrides: Partial<PanelBattery> = {}
+): PanelBattery {
+  return {
+    name,
+    missileSystem: 'HF-3',
+    missileSystemType,
+    weaponRange: 0,
+    placement: {} as PanelBattery['placement'],
+    ...overrides,
+  };
+}
+
+const BATTERIES = [
+  battery('HF3 Battery 1', 'ascm'),
+  battery('TK Battery', 'sam'),
+  battery('HF3 Battery 2', 'ascm', { status: STATUS }),
+];
 
 function deployedAt(angle: number): MissileDeployment {
   return { openingAngle: angle } as MissileDeployment;
-}
-
-function status(name: string, missileSystemType: string): BatteryStatus {
-  return {
-    name,
-    missileSystemType,
-    firingPosture: 'STATIC',
-    resupplyPosture: 'STATIC',
-    firingReloadMinutes: 0,
-    reloadMinutesDefault: 10,
-    resupplyReloadMinutes: 0,
-    resupplyMissiles: 4,
-    resupplyMissilesDefault: 8,
-    canisterMissiles: 8,
-    canisterMissilesDefault: 16,
-  };
 }
 
 // ============================================================================
 // TESTS
 // ============================================================================
 describe('buildBatteryGroups', () => {
-  it('flattens firing units into unit keys and display names', () => {
-    const [group] = buildBatteryGroups(MISSILE_SYSTEM_TYPES, new Map(), []);
+  it('groups batteries by type in the order each type first appears', () => {
+    const groups = buildBatteryGroups(BATTERIES, new Map());
 
-    expect(group.missileSystemType).toBe('ascm');
-    expect(group.batteries.map((battery) => battery.missileSystemType)).toEqual(['ascm', 'ascm']);
-    expect(group.batteries.map((battery) => battery.unitKey)).toEqual([
-      'ascm_HF3_01',
-      'ascm_HF3_02',
+    expect(groups.map((group) => group.missileSystemType)).toEqual(['ascm', 'sam']);
+    expect(groups[0].batteries.map((item) => item.unitKey)).toEqual([
+      'ascm_HF3 Battery 1',
+      'ascm_HF3 Battery 2',
     ]);
-    expect(group.batteries.map((battery) => battery.name)).toEqual([
-      'HF3 Battery 1',
-      'HF3 Battery 2',
-    ]);
-    expect(group.batteries.map((battery) => battery.missileSystem)).toEqual(['HF-3', 'HF-3']);
+    expect(groups[0].batteries.map((item) => item.missileSystem)).toEqual(['HF-3', 'HF-3']);
   });
 
-  it('skips types that carry no firing units', () => {
-    expect(buildBatteryGroups(MISSILE_SYSTEM_TYPES, new Map(), [])).toHaveLength(1);
+  it('returns no groups when there are no batteries', () => {
+    expect(buildBatteryGroups([], new Map())).toEqual([]);
   });
 
   it('attaches the deployment and counts deployed batteries per type', () => {
-    const deployed = new Map([['ascm_HF3_02', deployedAt(270)]]);
-    const [group] = buildBatteryGroups(MISSILE_SYSTEM_TYPES, deployed, []);
+    const deployed = new Map([['ascm_HF3 Battery 2', deployedAt(270)]]);
+    const [group] = buildBatteryGroups(BATTERIES, deployed);
 
     expect(group.deployedCount).toBe(1);
     expect(group.batteries[0].deployment).toBeNull();
     expect(group.batteries[1].deployment?.openingAngle).toBe(270);
   });
 
-  it('pairs each battery with the status of its own type and name', () => {
-    const statuses = [status('HF3 Battery 2', 'ascm'), status('HF3 Battery 1', 'srbm')];
-    const [group] = buildBatteryGroups(MISSILE_SYSTEM_TYPES, new Map(), statuses);
+  it("keeps each battery's own status, absent before its first deploy", () => {
+    const [group] = buildBatteryGroups(BATTERIES, new Map());
 
     expect(group.batteries[0].status).toBeUndefined();
-    expect(group.batteries[1].status).toBe(statuses[0]);
-  });
-
-  it('tolerates a missing or malformed status payload', () => {
-    const bad = { A: 'oops' } as unknown as BatteryStatus[];
-
-    expect(
-      buildBatteryGroups(MISSILE_SYSTEM_TYPES, new Map(), undefined)[0].batteries[0].status
-    ).toBeUndefined();
-    expect(
-      buildBatteryGroups(MISSILE_SYSTEM_TYPES, new Map(), bad)[0].batteries[0].status
-    ).toBeUndefined();
-  });
-
-  it('keeps the type key when the weapon is unnamed', () => {
-    const unknown = {
-      xyz: { firingUnits: { u: { name: 'U' } } },
-    } as unknown as PanelMissileSystemSet;
-    expect(buildBatteryGroups(unknown, new Map(), [])[0].batteries[0].missileSystemType).toBe(
-      'xyz'
-    );
+    expect(group.batteries[1].status).toBe(STATUS);
   });
 });
 
 describe('buildWeaponRanges', () => {
-  it('keys each firing unit range by its unit key', () => {
-    const types = {
-      ascm: { firingUnits: { HF3_01: { weaponRange: 150 }, HF3_02: { weaponRange: 120 } } },
-      empty: {},
-    } as unknown as PanelMissileSystemSet;
+  it('keys each battery range by its unit key', () => {
+    const batteries = [
+      battery('HF3_01', 'ascm', { weaponRange: 150 }),
+      battery('HF3_02', 'ascm', { weaponRange: 120 }),
+    ];
 
-    expect(buildWeaponRanges(types)).toEqual(
+    expect(buildWeaponRanges(batteries)).toEqual(
       new Map([
         ['ascm_HF3_01', 150],
         ['ascm_HF3_02', 120],

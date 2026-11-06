@@ -3,8 +3,7 @@ import type {
   ControlPanelResult,
   GNSSJammerDescriptor,
   MovementPathSet,
-  PanelMissileSystemSet,
-  PanelOperationalArea,
+  PanelBattery,
 } from '@/types/generated';
 import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import type { Coordinate } from '@/types/geo';
@@ -16,7 +15,7 @@ import { calculateCentroid } from '@/utils/geo';
  * Shape conversion between the Lua payload and the map-side deployment
  * (`controlPanelPayload.ts` owns the `window` reads and host writes).
  *
- * Import side: `fromOperationalArea` + `buildInjectedDeployments`.
+ * Import side: `buildInjectedDeployments`.
  * Export side: `toControlPanelResult`.
  * Both are pure, so a round-trip test can pin the payload convention without
  * a browser.
@@ -26,65 +25,34 @@ import { calculateCentroid } from '@/utils/geo';
 // IMPORT
 // ============================================================================
 /**
- * Rebuild the map-side deployment for a unit the scenario already placed, so it
- * renders and rotates exactly like a player-placed one.
- *
- * The Lua side stores one course per area that already includes the reload leg,
- * so HA/ATP paths are stitched back from RL + area course. `atpCenter` is the
- * centroid of the stored ATP square; without it a later rotate would regenerate
- * the ATP from `AREA_CONFIG` and move it.
+ * Every scenario-placed battery as a map-side deployment, keyed the same way as
+ * player placements. `atpCenter` pins the ATP to its stored square; without it
+ * a later rotate would regenerate the ATP from `AREA_CONFIG` and move it.
  */
-export function fromOperationalArea(
-  missileSystemType: string,
-  unitname: string,
-  operationalArea: PanelOperationalArea
-): MissileDeployment {
-  const reloadCourse = operationalArea.RL[0].course;
-  const atpArea = operationalArea.ATP[0].area;
-  const uShapeVertices = operationalArea.uShapeVertices ?? [];
-
-  return {
-    unitname,
-    missileSystemType,
-    center: calculateCentroid(uShapeVertices),
-    openingAngle: 0,
-    atpCenter: calculateCentroid(atpArea),
-    tacticalAreas: {
-      uShapeVertices,
-      atpArea,
-      hideArea: operationalArea.HA[0].area,
-      reloadArea: operationalArea.RL[0].area,
-      firePoints: operationalArea.FP.map((position) => position.area),
-      shelterPoints: operationalArea.shelterPoints,
-    },
-    paths: {
-      FP: operationalArea.FP.map((position) => ({ waypoints: position.course })),
-      HA: { waypoints: reloadCourse.concat(operationalArea.HA[0].course) },
-      ATP: { waypoints: reloadCourse.concat(operationalArea.ATP[0].course) },
-      RL: operationalArea.FP.map((position) => ({
-        waypoints: [position.course[position.course.length - 1]].concat(reloadCourse),
-      })),
-      SHRL: { waypoints: operationalArea.SHRL?.[0]?.course ?? [] },
-    },
-  };
-}
-
-/** Every scenario-placed firing unit, keyed the same way as player placements. */
 export function buildInjectedDeployments(
-  missileSystems: PanelMissileSystemSet
+  batteries: PanelBattery[]
 ): Map<string, MissileDeployment> {
-  const deployments = new Map<string, MissileDeployment>();
-
-  for (const [missileSystemType, system] of Object.entries(missileSystems)) {
-    for (const [unitname, unit] of Object.entries(system.firingUnits ?? {})) {
-      deployments.set(
-        buildUnitKey(missileSystemType, unitname),
-        fromOperationalArea(missileSystemType, unitname, unit.operationalArea)
-      );
-    }
-  }
-
-  return deployments;
+  return new Map(
+    batteries.map(({ name, missileSystemType, placement }) => [
+      buildUnitKey(missileSystemType, name),
+      {
+        ...placement,
+        unitname: name,
+        missileSystemType,
+        atpCenter:
+          placement.tacticalAreas.atpArea && calculateCentroid(placement.tacticalAreas.atpArea),
+        paths: {
+          ...placement.paths,
+          // Lua encodes an empty table as `{}`; areas without a shelter loop send one
+          SHRL: {
+            waypoints: Array.isArray(placement.paths.SHRL.waypoints)
+              ? placement.paths.SHRL.waypoints
+              : [],
+          },
+        },
+      },
+    ])
+  );
 }
 
 // ============================================================================

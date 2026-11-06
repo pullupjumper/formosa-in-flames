@@ -15,8 +15,7 @@ local Transitions = require("src.modules.missileSystem.transitions")
 local PositionZones = require("src.modules.missileSystem.positionZones")
 local Deployment = require("src.modules.missileSystem.deployment")
 local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
-local StatusView = require("src.modules.missileSystem.statusView")
-local ControlPanelLayout = require("src.modules.missileSystem.controlPanelLayout")
+local PanelBattery = require("src.modules.missileSystem.panelBattery")
 
 local MissileSystem = {}
 
@@ -268,7 +267,7 @@ function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entr
 
   for _, entry in ipairs(entries) do
     local battery = Deployment.resolveBattery(missileSystemConfigMap, entry.missileSystemType, entry.unitname,
-      ControlPanelLayout.buildOperationalArea(entry))
+      PanelBattery.buildOperationalArea(entry))
     if battery then
       table.insert(batteries, battery)
       table.insert(operationalAreas, battery.operationalArea)
@@ -283,16 +282,17 @@ function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entr
   GroundStateStore.resetBatteryStates(groundState, batteries)
 end
 
----Build a side's missile system rows for the control panel, placed where the save says they are
+---Build a side's batteries for the control panel, placed where the save says they are
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param sideName string
----@return SBJ__PanelMissileSystemSet # Firing units with zone vertices, keyed by system type
-function MissileSystem.buildPanelMissileSystems(config, saveData, sideName)
-  return ControlPanelLayout.buildPanelMissileSystems(
+---@return SBJ__PanelBattery[]
+function MissileSystem.buildPanelBatteries(config, saveData, sideName)
+  return PanelBattery.buildPanelBatteries(
     getMissileSystemTypes(config, sideName),
     PersistentState.ground(saveData, sideName),
-    sideName
+    sideName,
+    GameApi.ScenEdit_CurrentTime()
   )
 end
 
@@ -305,19 +305,6 @@ function MissileSystem.deploySide(config, saveData, sideName)
 
   Deployment.deployBatteries(sideName, batteries)
   GroundStateStore.resetBatteryStates(PersistentState.ground(saveData, sideName), batteries)
-end
-
----Build a side's battery statuses for the control panel, one per battery (firing unit plus its paired resupply unit)
----@param config SBJ__Config
----@param saveData SBJ__SaveData
----@param sideName string
----@return SBJ__BatteryStatus[] # One status per battery
-function MissileSystem.buildBatteryStatuses(config, saveData, sideName)
-  return StatusView.buildBatteryStatuses(
-    PersistentState.ground(saveData, sideName),
-    getMissileSystemTypes(config, sideName),
-    GameApi.ScenEdit_CurrentTime()
-  )
 end
 
 ---List the firing units of some missile systems as SIGINT emitters, in the order the systems are given

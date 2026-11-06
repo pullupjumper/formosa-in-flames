@@ -38,7 +38,7 @@ describe('useDeploymentSession', () => {
     const { result } = renderHook(() => useDeploymentSession(payload));
 
     expect(result.current.deployedMissileSystems).toEqual(
-      buildInjectedDeployments(payload.missileSystems)
+      buildInjectedDeployments(payload.batteries)
     );
     expect(result.current.deployedJammers.size).toBe(0);
   });

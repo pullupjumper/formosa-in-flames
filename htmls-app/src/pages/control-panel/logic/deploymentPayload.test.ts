@@ -1,57 +1,56 @@
-import type { PanelOperationalArea } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import {
   buildInjectedDeployments,
-  fromOperationalArea,
   toExportPaths,
   toControlPanelResult,
 } from '@/pages/control-panel/logic/deploymentPayload';
+import { buildUnitKey } from '@/pages/control-panel/logic/batteryGroups';
 import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
-import { MISSILE_SYSTEMS_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
+import { BATTERIES_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
 
-const [CATEGORY, SYSTEM] = Object.entries(MISSILE_SYSTEMS_DATA)[0];
-const [UNIT_NAME, UNIT] = Object.entries(SYSTEM.firingUnits)[0];
-const AREA: PanelOperationalArea = UNIT.operationalArea;
+const BATTERY = BATTERIES_DATA[0];
+const CATEGORY = BATTERY.missileSystemType;
+const UNIT_NAME = BATTERY.name;
+const UNIT_KEY = buildUnitKey(CATEGORY, UNIT_NAME);
+const INJECTED = buildInjectedDeployments([BATTERY]).get(UNIT_KEY)!;
 
-describe('fromOperationalArea', () => {
-  const deployment = fromOperationalArea(CATEGORY, UNIT_NAME, AREA);
-
-  it('keeps identity and stored areas verbatim', () => {
-    expect(deployment.unitname).toBe(UNIT_NAME);
-    expect(deployment.missileSystemType).toBe(CATEGORY);
-    expect(deployment.tacticalAreas.uShapeVertices).toBe(AREA.uShapeVertices);
-    expect(deployment.tacticalAreas.atpArea).toBe(AREA.ATP[0].area);
-    expect(deployment.tacticalAreas.firePoints).toHaveLength(AREA.FP.length);
+describe('buildInjectedDeployments', () => {
+  it('keeps identity and the placement verbatim', () => {
+    expect(INJECTED.unitname).toBe(UNIT_NAME);
+    expect(INJECTED.missileSystemType).toBe(CATEGORY);
+    expect(INJECTED.center).toBe(BATTERY.placement.center);
+    expect(INJECTED.tacticalAreas).toBe(BATTERY.placement.tacticalAreas);
+    expect(INJECTED.paths).toEqual(BATTERY.placement.paths);
   });
 
   it('pins the ATP to its stored square so rotate cannot move it', () => {
-    expect(deployment.atpRadius).toBeUndefined();
-    expect(deployment.atpCenter).toEqual(calculateCentroid(AREA.ATP[0].area));
+    expect(INJECTED.atpRadius).toBeUndefined();
+    expect(INJECTED.atpCenter).toEqual(calculateCentroid(BATTERY.placement.tacticalAreas.atpArea!));
   });
 
-  it('stitches HA/ATP paths back onto the reload leg', () => {
-    const reloadCourse = AREA.RL[0].course;
-    expect(deployment.paths.HA.waypoints.slice(0, reloadCourse.length)).toEqual(reloadCourse);
-    expect(deployment.paths.ATP.waypoints.slice(0, reloadCourse.length)).toEqual(reloadCourse);
-  });
-});
+  it('reads an empty shelter loop sent as a Lua empty table as no waypoints', () => {
+    const noLoop = {
+      ...BATTERY,
+      placement: {
+        ...BATTERY.placement,
+        paths: { ...BATTERY.placement.paths, SHRL: JSON.parse('{"waypoints":{}}') },
+      },
+    };
 
-describe('buildInjectedDeployments', () => {
-  it('creates one entry per firing unit across categories', () => {
-    const expected = Object.values(MISSILE_SYSTEMS_DATA).reduce(
-      (sum, system) => sum + Object.keys(system.firingUnits ?? {}).length,
-      0
-    );
-    expect(buildInjectedDeployments(MISSILE_SYSTEMS_DATA).size).toBe(expected);
+    expect(buildInjectedDeployments([noLoop]).get(UNIT_KEY)!.paths.SHRL.waypoints).toEqual([]);
+  });
+
+  it('creates one entry per battery', () => {
+    expect(buildInjectedDeployments(BATTERIES_DATA).size).toBe(BATTERIES_DATA.length);
   });
 });
 
 describe('toExportPaths', () => {
   it('drops the leading waypoint only on HA/RL/ATP', () => {
-    const paths = fromOperationalArea(CATEGORY, UNIT_NAME, AREA).paths;
+    const paths = INJECTED.paths;
     const exported = toExportPaths(paths);
     expect(exported.HA.waypoints).toEqual(paths.HA.waypoints.slice(1));
     expect(exported.ATP.waypoints).toEqual(paths.ATP.waypoints.slice(1));
@@ -63,7 +62,7 @@ describe('toExportPaths', () => {
   });
 
   it('never trims a single-point path to nothing', () => {
-    const paths = fromOperationalArea(CATEGORY, UNIT_NAME, AREA).paths;
+    const paths = INJECTED.paths;
     const single = { ...paths, HA: { waypoints: [paths.HA.waypoints[0]] } };
     expect(toExportPaths(single).HA.waypoints).toHaveLength(1);
   });
@@ -78,7 +77,7 @@ describe('toControlPanelResult', () => {
   };
 
   it('leaves out scenario-placed units the player did not move', () => {
-    const injected = new Map([['k', fromOperationalArea(CATEGORY, UNIT_NAME, AREA)]]);
+    const injected = new Map([['k', INJECTED]]);
 
     const result = toControlPanelResult({
       ...baseParams,
@@ -90,7 +89,7 @@ describe('toControlPanelResult', () => {
   });
 
   it('keeps a unit the player redeployed', () => {
-    const injected = new Map([['k', fromOperationalArea(CATEGORY, UNIT_NAME, AREA)]]);
+    const injected = new Map([['k', INJECTED]]);
     const moved = generateDeploymentData({
       unitname: UNIT_NAME,
       missileSystemType: CATEGORY,
@@ -140,46 +139,5 @@ describe('toControlPanelResult', () => {
     expect(system.unitname).toBe(UNIT_NAME);
     expect(system.paths).toEqual(toExportPaths(generated!.paths));
     expect(system).not.toHaveProperty('atpRadius');
-  });
-
-  it('round-trips a generated deployment through the Lua area shape', () => {
-    const rng = createSeededRandom(11);
-    const generated = generateDeploymentData({
-      unitname: UNIT_NAME,
-      missileSystemType: CATEGORY,
-      center: { latitude: 23.9, longitude: 120.75 },
-      angle: 45,
-      validateTaiwanBoundary: false,
-      rng,
-    })!;
-    const exported = toControlPanelResult({
-      budget: createBudgetState(0),
-      airbases: [],
-      jammers: [],
-      deployedJammers: new Map(),
-      deployedMissileSystems: new Map([['k', generated]]),
-      injectedDeployments: new Map(),
-    }).missileSystems[0];
-
-    // Mirror what unitStatusUI.lua's transformData stores per area.
-    const reloadPoint = exported.paths.RL[0].waypoints[0];
-    const area: PanelOperationalArea = {
-      uShapeVertices: exported.tacticalAreas.uShapeVertices,
-      shelterPoints: exported.tacticalAreas.shelterPoints ?? [],
-      FP: exported.paths.FP.map((path, index) => ({
-        course: path.waypoints,
-        area: exported.tacticalAreas.firePoints![index],
-      })),
-      RL: [{ course: [reloadPoint], area: exported.tacticalAreas.reloadArea! }],
-      ATP: [{ course: exported.paths.ATP.waypoints, area: exported.tacticalAreas.atpArea! }],
-      HA: [{ course: exported.paths.HA.waypoints, area: exported.tacticalAreas.hideArea! }],
-      SHRL: [{ course: exported.paths.SHRL.waypoints, area: [] }],
-    };
-
-    const restored = fromOperationalArea(CATEGORY, UNIT_NAME, area);
-    expect(restored.tacticalAreas).toEqual(generated.tacticalAreas);
-    expect(restored.paths.FP).toEqual(generated.paths.FP);
-    expect(restored.paths.SHRL).toEqual(generated.paths.SHRL);
-    expect(restored.atpCenter).toEqual(calculateCentroid(generated.tacticalAreas.atpArea!));
   });
 });

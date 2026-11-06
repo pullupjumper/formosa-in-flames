@@ -4,7 +4,7 @@
  * `constants/deployment.ts`.
  */
 
-import type { MovementPathSet, TacticalAreaLayout } from '@/types/generated';
+import type { BatteryPlacement } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
 
 /** Every tactical area a deployed unit can relocate by clicking it */
@@ -29,15 +29,11 @@ export interface SelectedUnit {
 }
 
 /** One missile unit placed on the map, with everything the export needs. */
-export interface MissileDeployment {
+export interface MissileDeployment extends BatteryPlacement {
   unitname: string;
   missileSystemType: string;
-  center: Coordinate;
-  openingAngle: number;
   /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
   atpRadius?: number;
   /** Where the ATP square sits; set by hand-relocation or scenario placement. */
   atpCenter?: Coordinate;
-  tacticalAreas: TacticalAreaLayout;
-  paths: MovementPathSet;
 }

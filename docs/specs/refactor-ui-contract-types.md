@@ -44,3 +44,37 @@
 - 打開控制面板：部署、訊號、C2、砲連狀態、登陸數量顯示都跟改之前一樣。送出部署後，遊戲的結果也跟改之前一樣。
 - Lua：`busted --lua=luajit spec`、`bash bin/build.sh -c -n -l -i` 沒有新增警告。
 - 前端：在 `htmls-app/` 跑 `npm test`、`npm run lint`。
+
+## 第二步：飛彈連合併成一包
+
+### 目標
+
+飛彈連的資料原本用兩包注入頁面，型別有 6 個：`PanelMissileSystemSet` → `PanelMissileSystem` → `PanelFiringUnit` → `PanelOperationalArea` → `PanelPosition`，另外還有 `BatteryStatus`。前端再用名字把兩包對起來（`buildStatusLookup`），也要把 Lua 的作戰區轉成地圖形狀（`fromOperationalArea`）。Lua 先拆開，前端再拼回來。
+
+### 要做到的行為
+
+- 注入頁面的飛彈資料只有一包：`SBJ__PanelBattery[]`。每一連帶名字、飛彈系統、系統類型、射程、`placement`（地圖形狀的陣地）。部署過的再帶 `status`。
+- `SBJ__BatteryPlacement`（`center`、`openingAngle`、`tacticalAreas`、`paths`）進出共用：Lua 送出的陣地、前端地圖上的部署、玩家送回的 `SBJ__MissileSystemResult` 都是這個形狀。
+- 作戰區轉地圖形狀的工作改由 Lua 的 `PanelBattery.buildPlacement` 做，它是 `buildOperationalArea` 的反向。來回兩個方向放在同一個檔案裡。
+- 控制面板看到的內容、送回的 JSON、遊戲行為都不變。
+
+### 不做
+
+- 回程不送整個 battery。`status` 是唯讀的，descriptor 由 Lua 用名字查 config（`Deployment.resolveBattery`）。
+- Lua 內部的 `SBJ__Battery`、descriptor、state 型別不動。
+
+### 決定
+
+- `controlPanelLayout.lua` 和 `statusView.lua` 合成 `panelBattery.lua`（模組 `PanelBattery`）。狀態只有這裡用到，分開只會多一個檔案。
+- `__INJECT_MISSILE_SYSTEMS__` 改名為 `__INJECT_BATTERIES__`，`__INJECT_BATTERY_STATUSES__` 刪掉。
+- `SBJ__BatteryStatus` 拿掉 `name` 和 `missileSystemType`，因為它已經放在所屬的 battery 裡。
+- `SBJ__MissileSystemResult` 繼承 `SBJ__BatteryPlacement`，送回的 JSON 欄位不變。
+- 前端的 `MissileDeployment` 繼承 `BatteryPlacement`，只多出身分和 ATP 的欄位。
+- Lua 的 JSON 會把空 table 寫成 `{}`。44 個作戰區裡有 25 個沒有 SHRL，所以前端在 `buildInjectedDeployments` 把 SHRL 的 `{}` 讀成 `[]`。
+- zone 名字找不到參考點時，以前會把名字原樣送給前端，現在送空的頂點列表。只有壞掉的資料會碰到這個情況，以前的版本在地圖上一樣畫不出來。
+
+### 驗收
+
+- 舊的前端 `fromOperationalArea` 對 mock 的 3 個連算出的結果，跟新的 Lua `buildPlacement` 算出的完全一樣。
+- 真的 config（台灣 25 連、中國 19 連）經 Lua JSON 進前端後，每條路徑都是陣列，中心點都是有限數字。
+- `busted --lua=luajit spec`、`bash bin/build.sh -c -n -l -i`、`npm test`、`npm run lint` 都通過。

@@ -3,19 +3,18 @@ import type {
   AddUnitsMenuResult,
   Airbase,
   AmphibiousLocation,
-  BatteryStatus,
   C2NodeSet,
   ControlPanelResult,
   EmconResult,
   GNSSJammerDescriptor,
   LandingUnitCountSet,
-  PanelMissileSystemSet,
+  PanelBattery,
   Signal,
 } from '@/types/generated';
 import {
   AIRBASES_DATA,
   JAMMERS_DATA,
-  MISSILE_SYSTEMS_DATA,
+  BATTERIES_DATA,
   AMPHIBIOUS_LOCATION_DATA,
   MOCK_ADD_UNIT_ACTIONS,
 } from '@/data/controlPanelData';
@@ -42,13 +41,12 @@ declare global {
   interface Window {
     __INJECT_JAMMERS__?: string;
     __INJECT_AIRBASES__?: string;
-    __INJECT_MISSILE_SYSTEMS__?: string;
+    __INJECT_BATTERIES__?: string;
     __INJECT_SIDE_NAME__?: string;
     __INJECT_ADD_UNIT_ACTIONS__?: string;
     __INJECT_AMPHIBIOUS_LOCATIONS__?: string;
     __INJECT_C2__?: string;
     __INJECT_SIGNALS__?: string;
-    __INJECT_BATTERY_STATUSES__?: string;
     __INJECT_LANDING_UNITS__?: string;
     __INJECT_IS_EDIT_MODE__?: string;
     __INJECT_IS_DEPLOY_LOCKED__?: string;
@@ -63,11 +61,10 @@ export interface ControlPanelPayload {
   mode: ControlPanelMode;
   airbases: Airbase[];
   jammers: GNSSJammerDescriptor[];
-  missileSystems: PanelMissileSystemSet;
+  batteries: PanelBattery[];
   amphibiousLocations: AmphibiousLocation[];
   c2Data: C2NodeSet;
   signals: Signal[];
-  batteryStatuses: BatteryStatus[];
   landingUnits: LandingUnitCountSet;
   addUnitActions: AddUnitOption[];
 }
@@ -86,10 +83,10 @@ export function readControlPanelPayload(): ControlPanelPayload {
       JAMMERS_DATA,
       'JAMMERS'
     ),
-    missileSystems: parseInjectedJSON<PanelMissileSystemSet>(
-      window.__INJECT_MISSILE_SYSTEMS__,
-      MISSILE_SYSTEMS_DATA,
-      'MISSILE_SYSTEMS'
+    batteries: parseInjectedJSON<PanelBattery[]>(
+      window.__INJECT_BATTERIES__,
+      BATTERIES_DATA,
+      'BATTERIES'
     ),
     amphibiousLocations: parseInjectedJSON<AmphibiousLocation[]>(
       window.__INJECT_AMPHIBIOUS_LOCATIONS__,
@@ -101,11 +98,6 @@ export function readControlPanelPayload(): ControlPanelPayload {
       window.__INJECT_SIGNALS__,
       LIVE_STATUS_DATA.signals,
       'SIGNALS'
-    ),
-    batteryStatuses: parseInjectedJSON<BatteryStatus[]>(
-      window.__INJECT_BATTERY_STATUSES__,
-      LIVE_STATUS_DATA.batteryStatuses,
-      'BATTERY_STATUSES'
     ),
     landingUnits: parseInjectedJSON<LandingUnitCountSet>(
       window.__INJECT_LANDING_UNITS__,

@@ -15,11 +15,11 @@ export function useBatteryGroups(
   payload: ControlPanelPayload,
   deployedMissileSystems: Map<string, MissileDeployment>
 ) {
-  const { missileSystems, batteryStatuses } = payload;
+  const { batteries } = payload;
 
   const allGroups = useMemo(
-    () => buildBatteryGroups(missileSystems, deployedMissileSystems, batteryStatuses),
-    [missileSystems, deployedMissileSystems, batteryStatuses]
+    () => buildBatteryGroups(batteries, deployedMissileSystems),
+    [batteries, deployedMissileSystems]
   );
   const samBatteries = useMemo(
     () => allGroups.find((group) => group.missileSystemType === SAM_TYPE)?.batteries ?? [],
@@ -29,7 +29,7 @@ export function useBatteryGroups(
     () => allGroups.filter((group) => group.missileSystemType !== SAM_TYPE),
     [allGroups]
   );
-  const weaponRanges = useMemo(() => buildWeaponRanges(missileSystems), [missileSystems]);
+  const weaponRanges = useMemo(() => buildWeaponRanges(batteries), [batteries]);
 
   return {
     samBatteries,

@@ -1,10 +1,10 @@
-import type { BatteryStatus, PanelMissileSystemSet } from '@/types/generated';
+import type { PanelBattery } from '@/types/generated';
 import type { MissileDeployment } from '@/types/deployment';
 
 /**
- * Flattens the injected `PanelMissileSystemSet` payload into the batteries the sidebar
- * renders, each carrying its deployment and live status. Pure, so grouping,
- * deployed counters and status pairing can be tested without mounting the map.
+ * Groups the injected batteries the sidebar renders, each carrying its
+ * deployment. Pure, so grouping and deployed counters can be tested without
+ * mounting the map.
  */
 
 /**
@@ -18,19 +18,14 @@ export function buildUnitKey(missileSystemType: string, unitname: string): strin
 // ============================================================================
 // TYPES
 // ============================================================================
-export interface Battery {
-  /** Key shared by the deployment map and the status lookup: type plus name */
+export interface Battery extends Pick<
+  PanelBattery,
+  'name' | 'missileSystem' | 'missileSystemType' | 'status'
+> {
+  /** Key shared by the deployment map and the weapon ranges: type plus name */
   unitKey: string;
-  /** Display name from the game database */
-  name: string;
-  /** Missile system designation, e.g. `HF-3` */
-  missileSystem: string;
-  /** Missile system type key the battery is grouped under, e.g. `sam`, `ascm` */
-  missileSystemType: string;
   /** Placement on the map, null until the battery is deployed */
   deployment: MissileDeployment | null;
-  /** Live status from the live status payload, absent when the game has none */
-  status: BatteryStatus | undefined;
 }
 
 export interface BatteryGroup {
@@ -42,59 +37,43 @@ export interface BatteryGroup {
 // ============================================================================
 // BUILDER
 // ============================================================================
-function buildStatusLookup(statuses: BatteryStatus[] | undefined): Map<string, BatteryStatus> {
-  const lookup = new Map<string, BatteryStatus>();
-
-  if (!Array.isArray(statuses)) return lookup;
-  for (const status of statuses) {
-    lookup.set(buildUnitKey(status.missileSystemType, status.name), status);
-  }
-
-  return lookup;
-}
-
+/** Groups batteries by type, in the order each type first appears. */
 export function buildBatteryGroups(
-  missileSystemTypes: PanelMissileSystemSet,
-  deployments: Map<string, MissileDeployment>,
-  statuses: BatteryStatus[] | undefined
+  batteries: PanelBattery[],
+  deployments: Map<string, MissileDeployment>
 ): BatteryGroup[] {
-  const statusLookup = buildStatusLookup(statuses);
-  const groups: BatteryGroup[] = [];
+  const groups = new Map<string, BatteryGroup>();
 
-  for (const [missileSystemType, config] of Object.entries(missileSystemTypes)) {
-    if (!config?.firingUnits) continue;
-
-    const batteries = Object.entries(config.firingUnits).map(([unitname, unit]): Battery => {
-      const unitKey = buildUnitKey(missileSystemType, unitname);
-      return {
-        unitKey,
-        name: unit.name,
-        missileSystem: unit.missileSystem,
-        missileSystemType,
-        deployment: deployments.get(unitKey) ?? null,
-        status: statusLookup.get(buildUnitKey(missileSystemType, unit.name)),
-      };
-    });
-
-    groups.push({
+  for (const { name, missileSystem, missileSystemType, status } of batteries) {
+    const unitKey = buildUnitKey(missileSystemType, name);
+    const battery: Battery = {
+      unitKey,
+      name,
+      missileSystem,
       missileSystemType,
-      deployedCount: batteries.filter((battery) => battery.deployment !== null).length,
-      batteries,
-    });
+      deployment: deployments.get(unitKey) ?? null,
+      status,
+    };
+    const group = groups.get(battery.missileSystemType) ?? {
+      missileSystemType: battery.missileSystemType,
+      deployedCount: 0,
+      batteries: [],
+    };
+
+    group.batteries.push(battery);
+    if (battery.deployment) group.deployedCount += 1;
+    groups.set(battery.missileSystemType, group);
   }
 
-  return groups;
+  return Array.from(groups.values());
 }
 
 /** Weapon range in NM per unit key, for the map's range circles. */
-export function buildWeaponRanges(missileSystemTypes: PanelMissileSystemSet): Map<string, number> {
-  const ranges = new Map<string, number>();
-
-  for (const [missileSystemType, config] of Object.entries(missileSystemTypes)) {
-    for (const [unitname, unit] of Object.entries(config?.firingUnits ?? {})) {
-      ranges.set(buildUnitKey(missileSystemType, unitname), unit.weaponRange);
-    }
-  }
-
-  return ranges;
+export function buildWeaponRanges(batteries: PanelBattery[]): Map<string, number> {
+  return new Map(
+    batteries.map((battery) => [
+      buildUnitKey(battery.missileSystemType, battery.name),
+      battery.weaponRange,
+    ])
+  );
 }
