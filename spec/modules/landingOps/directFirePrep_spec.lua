@@ -93,7 +93,7 @@ describe("DirectFirePrep", function()
       assert.stub(stubAttackContacts).was.called_with({
         contacts = { "C-1", "C-2" },
         qty = 220,
-        firingUnits = { ship },
+        attackingUnits = { ship },
         weaponDBID = constants.WEAPONS.HPJ_38,
       })
     end)

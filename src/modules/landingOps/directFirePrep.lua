@@ -78,7 +78,7 @@ function DirectFirePrep.attackAirlandingZone(amphibOps, zoneStates, ship)
   AttackManager.attackContacts({
     contacts = contactGUIDs,
     qty = math.floor(amphibOps.fireSupport.airlandingShotQty / #contactGUIDs),
-    firingUnits = { ship },
+    attackingUnits = { ship },
     weaponDBID = constants.WEAPONS.HPJ_38,
   })
 

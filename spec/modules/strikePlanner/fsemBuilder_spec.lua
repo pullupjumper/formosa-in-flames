@@ -96,7 +96,7 @@ describe("FsemBuilder", function()
           {
             name = "FST-TEST",
             missileSystemType = "SRBM",
-            firingUnits = { { name = "Battery-1" } },
+            firingUnitNames = { "Battery-1" },
             target = { minTargetCount = 1, ammoPerTarget = 2 }
           }
         }
@@ -115,8 +115,8 @@ describe("FsemBuilder", function()
       if overrides.fireSupportTasks then
         operation.template.fireSupportTasks = overrides.fireSupportTasks
       end
-      if overrides.firingUnits then
-        operation.template.fireSupportTasks[1].firingUnits = overrides.firingUnits
+      if overrides.firingUnitNames then
+        operation.template.fireSupportTasks[1].firingUnitNames = overrides.firingUnitNames
       end
       if overrides.minTargetCount then
         operation.template.fireSupportTasks[1].target.minTargetCount = overrides.minTargetCount
@@ -345,17 +345,6 @@ describe("FsemBuilder", function()
       -- Firing Unit Validation
       -- ============================================================================
 
-      -- Negative: nameless template entry resolves no state and is never assigned
-      it("should not create FSEM when firing unit name is missing", function()
-        local reconEntry = makeReconEntry()
-        local operation = makeOperation({ firingUnits = { {} } })
-        local plannerState = makePlannerState({ reconTriggeredOperationBatches = { reconEntry } })
-
-        reconEntry.operations = { operation }
-
-        assert.is_false(FsemBuilder.build(makeConfig(), plannerState, {}))
-        assert.is_nil(next(plannerState.dynamicOperations.generatedOperations.ground))
-      end)
 
       -- Negative: firing unit already assigned to active FSEM
       it("should not create FSEM when firing unit is already assigned to active FSEM", function()
@@ -367,7 +356,7 @@ describe("FsemBuilder", function()
               isFinished = false,
               isActivated = true,
               fireSupportTasks = {
-                { isFinished = false, firingUnits = { { name = "Battery-1" } } }
+                { isFinished = false, firingUnitNames = { "Battery-1" } }
               }
             }
           },
@@ -450,14 +439,14 @@ describe("FsemBuilder", function()
               isFinished = true,
               isActivated = true,
               fireSupportTasks = {
-                { isFinished = true, firingUnits = { { name = "Battery-1" } } }
+                { isFinished = true, firingUnitNames = { "Battery-1" } }
               }
             },
             ["INACTIVE-FSEM"] = {
               isFinished = false,
               isActivated = false,
               fireSupportTasks = {
-                { isFinished = false, firingUnits = { { name = "Battery-1" } } }
+                { isFinished = false, firingUnitNames = { "Battery-1" } }
               }
             }
           },
@@ -480,11 +469,7 @@ describe("FsemBuilder", function()
       it("should create FSEM with only available firing units when some are unavailable", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({
-          firingUnits = {
-            { name = "Battery-1" },
-            { name = "Battery-2" },
-            { name = "Battery-3" }
-          }
+          firingUnitNames = { "Battery-1", "Battery-2", "Battery-3" }
         })
         local plannerState = makePlannerState({
           srbmFiringUnits = {
@@ -505,10 +490,7 @@ describe("FsemBuilder", function()
         assert.is_true(result)
         local fsem = plannerState.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-01"]
         assert.is_table(fsem)
-        local firingUnits = fsem.fireSupportTasks[1].firingUnits
-        assert.are.equal(2, #firingUnits)
-        assert.are.equal("Battery-1", firingUnits[1].name)
-        assert.are.equal("Battery-3", firingUnits[2].name)
+        assert.are.same({ "Battery-1", "Battery-3" }, fsem.fireSupportTasks[1].firingUnitNames)
       end)
 
       -- Boundary: same firing unit referenced by multiple FSTs
@@ -519,13 +501,13 @@ describe("FsemBuilder", function()
             {
               name = "FST-1",
               missileSystemType = "SRBM",
-              firingUnits = { { name = "Battery-1" } },
+              firingUnitNames = { "Battery-1" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
               missileSystemType = "SRBM",
-              firingUnits = { { name = "Battery-1" } },
+              firingUnitNames = { "Battery-1" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
           }
@@ -551,13 +533,13 @@ describe("FsemBuilder", function()
             {
               name = "FST-1",
               missileSystemType = "SRBM",
-              firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } },
+              firingUnitNames = { "Battery-1", "Battery-2" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
               missileSystemType = "SRBM",
-              firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } },
+              firingUnitNames = { "Battery-1", "Battery-2" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
           }
@@ -585,9 +567,9 @@ describe("FsemBuilder", function()
       -- Pass-scoped cache: assignment map is seeded once and shared across operations
       it("should share the firing unit cache and assignment map across operations in one pass", function()
         local reconEntry = makeReconEntry()
-        local firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
-        local firstOperation = makeOperation({ templateName = "TEST-OP/1", firingUnits = firingUnits })
-        local secondOperation = makeOperation({ templateName = "TEST-OP/2", firingUnits = firingUnits })
+        local firingUnitNames = { "Battery-1", "Battery-2" }
+        local firstOperation = makeOperation({ templateName = "TEST-OP/1", firingUnitNames = firingUnitNames })
+        local secondOperation = makeOperation({ templateName = "TEST-OP/2", firingUnitNames = firingUnitNames })
         -- Battery-1 becomes assigned after the first operation; Battery-2 never does,
         -- so only the shared cache keeps the second operation from re-querying it.
         local plannerState = makePlannerState({
@@ -621,13 +603,13 @@ describe("FsemBuilder", function()
             {
               name = "FST-1",
               missileSystemType = "SRBM",
-              firingUnits = { { name = "Battery-1" } },
+              firingUnitNames = { "Battery-1" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
               missileSystemType = "SRBM",
-              firingUnits = { { name = "Battery-2" } },
+              firingUnitNames = { "Battery-2" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
           }
@@ -863,7 +845,7 @@ describe("FsemBuilder", function()
               name = "FST-HELD",
               missileSystemType = "SRBM",
               isFinished = false,
-              firingUnits = { { name = "Battery-1" } }
+              firingUnitNames = { "Battery-1" }
             }
           }
         }
@@ -951,7 +933,7 @@ describe("FsemBuilder", function()
         assert.is_true(operation2.executed)
         local secondFsem = plannerState.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"]
         assert.is_table(secondFsem)
-        assert.are.equal("Battery-1", secondFsem.fireSupportTasks[1].firingUnits[1].name)
+        assert.are.equal("Battery-1", secondFsem.fireSupportTasks[1].firingUnitNames[1])
 
         assert.is_true(hasLogCall("%[WARN%]"))
         assert.is_true(hasLogCall("reason=fsem_stale_timeout"))
@@ -1025,24 +1007,19 @@ describe("FsemBuilder", function()
               name = "FST-SRBM",
               missileSystemType = "SRBM",
               isFinished = false,
-              firingUnits = {
-                { name = "Battery-S" },
-                { name = "Battery-R" },
-                { name = "Battery-H" },
-                { name = "Battery-P" }
-              }
+              firingUnitNames = { "Battery-S", "Battery-R", "Battery-H", "Battery-P" }
             },
             {
               name = "FST-SAM",
               missileSystemType = "SAM",
               isFinished = false,
-              firingUnits = { { name = "Sam-1" } }
+              firingUnitNames = { "Sam-1" }
             },
             {
               name = "FST-DONE",
               missileSystemType = "SRBM",
               isFinished = true,
-              firingUnits = { { name = "Battery-F" } }
+              firingUnitNames = { "Battery-F" }
             }
           }
         })

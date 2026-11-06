@@ -89,7 +89,7 @@ local function launchLACMSalvo(config, plannerState)
   AttackManager.attackContacts({
     contacts = config.red.surface.lacm.targetlist,
     qty = LACM_SALVO_QTY,
-    firingUnits = ships,
+    attackingUnits = ships,
     weaponDBID = config.red.surface.lacm.weaponDBID
   })
   lacmState.hasLaunched = true
@@ -125,7 +125,7 @@ local function launchSLCMSalvo(config, plannerState)
   AttackManager.attackContacts({
     contacts = config.red.subSurface.slcm.targetlist,
     qty = SLCM_SALVO_QTY,
-    firingUnits = submarines,
+    attackingUnits = submarines,
     weaponDBID = config.red.subSurface.slcm.weaponDBID
   })
 

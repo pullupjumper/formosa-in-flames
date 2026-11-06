@@ -1678,18 +1678,16 @@ function ScenEdit_DeleteMine(params) end
 ---@field platformDBID number UAV platform database ID to send
 ---@field target CMO__Contact Resolved target contact to shadow
 
----Firing unit definition for fire support operations
----Invariant: name is always present. FsemBuilder rejects an entry whose name does not
----resolve to a runtime state, so downstream code indexes name without a nil guard.
----@class SBJ__FiringUnit: table
----@field name string Firing unit name
----@field weaponDBID number Firing unit weapon database ID
+---A unit ordered to attack, by name, with the weapon it fires
+---@class SBJ__AttackingUnit: table
+---@field name string Unit or group name
+---@field weaponDBID? number Weapon to fire when the attack names none; nil uses the unit's default weapon
 
 ---Fire Support Task template extending task with firing units
 ---@class SBJ__FireSupportTaskTemplate: SBJ__Task
 ---@field name string FST name
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
----@field firingUnits SBJ__FiringUnit[] Firing unit array
+---@field firingUnitNames string[] Firing units that may take the task, by name
 
 ---Fire Support Task execution state
 ---@class SBJ__FireSupportTask: SBJ__FireSupportTaskTemplate
@@ -1715,19 +1713,19 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__AttackContactsParams: table
 ---@field contacts table<integer, string> A table of contact GUIDs to attack
 ---@field qty? integer The number of salvos to launch (default: 1)
----@field firingUnits SBJ__FiringUnit[] A table of firing units to use for the attack
----@field weaponDBID? number The weapon DBID to use for the attack; nil uses the firing unit's default weapon
+---@field attackingUnits SBJ__AttackingUnit[] Units that fire, in rotation order
+---@field weaponDBID? number Weapon for every attacking unit, overriding their own; nil uses each unit's weaponDBID
 ---@field sideName? string The side to use for the attack (default: constants.SIDES.RED)
 
 ---Inputs for attacking one contact
 ---@class SBJ__AttackContactParams: table
 ---@field ammoToAllocate integer Total ammunition to allocate for this contact
----@field firingUnits SBJ__FiringUnit[] Firing units to use for the attack
----@field weaponDBID? number Weapon DBID to use; nil uses the firing unit's default weapon
+---@field attackingUnits SBJ__AttackingUnit[] Units that fire, in rotation order
+---@field weaponDBID? number Weapon for every attacking unit, overriding their own; nil uses each unit's weaponDBID
 
----Firing unit / shooter rotation carried across contacts
+---Attacking unit / shooter rotation carried across contacts
 ---@class SBJ__AttackRotationState: table
----@field firingUnitIdx integer Current firing unit index
+---@field attackingUnitIdx integer Current attacking unit index
 ---@field shooterIdx integer Current shooter index within a group
 
 ---One receiver role's inputs for tanker arrival timing
@@ -2391,7 +2389,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__GroupAttackRequest: table
 ---@field totalAmmoRequested integer Total amount of ammunition requested for this attack
 ---@field ammoAlreadyAllocated integer Amount of ammunition already allocated in this attack
----@field weaponDBID number Specific weapon DBID to use
+---@field weaponDBID? number Specific weapon DBID to use; nil uses the unit's default weapon
 
 ---A detected SIGINT emitter paired with its detection result
 ---@class SBJ__SIGINTHit: table

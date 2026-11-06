@@ -113,8 +113,8 @@ local function collectAssignedFiringUnitNames(plannerState)
     if not matrix.isFinished and matrix.isActivated then
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
-          for _, firingUnit in ipairs(task.firingUnits) do
-            assignedFiringUnitNameSet[firingUnit.name] = true
+          for _, firingUnitName in ipairs(task.firingUnitNames) do
+            assignedFiringUnitNameSet[firingUnitName] = true
           end
         end
       end
@@ -165,18 +165,16 @@ end
 ---@param taskTemplate SBJ__FireSupportTaskTemplate
 ---@param readinessCount SBJ__FiringUnitReadinessCount
 ---@param passCtx SBJ__FsemPassContext
----@return SBJ__FiringUnit[] # Firing units ready for assignment
+---@return string[] # Names of the firing units ready for assignment
 local function filterAvailableFiringUnits(plannerState, taskTemplate, readinessCount, passCtx)
   local availableFiringUnits = {}
 
-  for _, firingUnit in ipairs(taskTemplate.firingUnits) do
-    -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil state and
-    -- is rejected as NO_STATE, so it never reaches an assignment map.
-    local status = evaluateFiringUnitReadiness(plannerState, taskTemplate.missileSystemType, firingUnit.name, passCtx)
+  for _, firingUnitName in ipairs(taskTemplate.firingUnitNames) do
+    local status = evaluateFiringUnitReadiness(plannerState, taskTemplate.missileSystemType, firingUnitName, passCtx)
 
     updateReadinessCount(readinessCount, status)
     if status == READINESS.READY then
-      table.insert(availableFiringUnits, firingUnit)
+      table.insert(availableFiringUnits, firingUnitName)
     end
   end
 
@@ -198,10 +196,10 @@ end
 
 ---Mark newly assigned firing units so a later task in the same pass cannot reuse them
 ---@param assignedFiringUnitNameSet table<string, boolean>
----@param availableFiringUnits SBJ__FiringUnit[]
+---@param availableFiringUnits string[]
 local function setFiringUnitsAssigned(assignedFiringUnitNameSet, availableFiringUnits)
-  for _, firingUnit in ipairs(availableFiringUnits) do
-    assignedFiringUnitNameSet[firingUnit.name] = true
+  for _, firingUnitName in ipairs(availableFiringUnits) do
+    assignedFiringUnitNameSet[firingUnitName] = true
   end
 end
 
@@ -235,7 +233,7 @@ local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskI
         firingUnitBlockedTaskCount = firingUnitBlockedTaskCount + 1
       else
         local task = Utils.deepCopy(taskTemplate) --[[@as SBJ__FireSupportTask]]
-        task.firingUnits = availableFiringUnits
+        task.firingUnitNames = availableFiringUnits
         task.startTime = buildTaskStartTime(passCtx.currentTime, matrixTemplate.strikeInterval, slotIndex)
         task.isFinished = false
         task.target.list = targets
@@ -376,7 +374,7 @@ local function retireStaleMatrices(plannerState, currentTime, staleAfterSec, opR
 
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
-          MissileSystem.abortFireTask(plannerState.ground, task.missileSystemType, task.firingUnits)
+          MissileSystem.abortFireTask(plannerState.ground, task.missileSystemType, task.firingUnitNames)
         end
       end
 

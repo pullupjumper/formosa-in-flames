@@ -140,20 +140,40 @@ function MissileSystem.evaluateReadiness(config, groundState, sideName, missileS
   end)
 end
 
+---Pair each named firing unit with the weapon its config fires
+---A name with no config entry is left out.
+---@param config SBJ__Config
+---@param sideName string
+---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
+---@param firingUnitNames string[]
+---@return SBJ__AttackingUnit[]
+function MissileSystem.buildAttackingUnits(config, sideName, missileSystemType, firingUnitNames)
+  local attackingUnits = {}
+
+  for _, firingUnitName in ipairs(firingUnitNames) do
+    local descriptor = findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
+    if descriptor then
+      table.insert(attackingUnits, { name = firingUnitName, weaponDBID = descriptor.weaponDBID --[[@as number]] })
+    end
+  end
+
+  return attackingUnits
+end
+
 ---Find the states of a fire task's firing units that leave their position once the task ends
 ---SAM stays on station to guard the airspace, so it has none.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnits SBJ__FiringUnit[]|nil
+---@param firingUnitNames string[]|nil
 ---@return SBJ__FiringUnitState[]
-local function findLeavingFiringUnitStates(groundState, missileSystemType, firingUnits)
+local function findLeavingFiringUnitStates(groundState, missileSystemType, firingUnitNames)
   local firingUnitStates = {}
-  if not missileSystemType or not firingUnits or Rules.staysDeployed(missileSystemType) then
+  if not missileSystemType or not firingUnitNames or Rules.staysDeployed(missileSystemType) then
     return firingUnitStates
   end
 
-  for _, firingUnit in ipairs(firingUnits) do
-    local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnit.name)
+  for _, firingUnitName in ipairs(firingUnitNames) do
+    local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
     if firingUnitState then
       table.insert(firingUnitStates, firingUnitState)
     end
@@ -166,9 +186,9 @@ end
 ---A countdown already running is kept.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnits SBJ__FiringUnit[]|nil
-function MissileSystem.completeFireTask(groundState, missileSystemType, firingUnits)
-  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnits)) do
+---@param firingUnitNames string[]|nil
+function MissileSystem.completeFireTask(groundState, missileSystemType, firingUnitNames)
+  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnitNames)) do
     Transitions.beginStow(firingUnitState)
   end
 end
@@ -177,9 +197,9 @@ end
 ---A countdown already running is kept.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnits SBJ__FiringUnit[]|nil
-function MissileSystem.abortFireTask(groundState, missileSystemType, firingUnits)
-  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnits)) do
+---@param firingUnitNames string[]|nil
+function MissileSystem.abortFireTask(groundState, missileSystemType, firingUnitNames)
+  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnitNames)) do
     if Rules.isDeployed(firingUnitState) then
       Transitions.beginStow(firingUnitState)
     end

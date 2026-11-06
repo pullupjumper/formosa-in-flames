@@ -168,7 +168,7 @@ describe("Recon", function()
     cfg.red.fireSupportTaskTemplates = {
       STRIKE_C2_2 = { {
         name = "FST-C2-2",
-        firingUnits = {},
+        firingUnitNames = {},
         missileSystemType = '',
         target = { list = {}, contactAge = 0, minTargetCount = 1 },
       } },

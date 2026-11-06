@@ -2592,9 +2592,9 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RADAR",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "614th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A },
-        { name = "613rd Bde, PLARF", weaponDBID = constants.WEAPONS.DF15B }
+      firingUnitNames = {
+        "614th Bde, PLARF",
+        "613rd Bde, PLARF"
       },
       target = {
         list = {},
@@ -2611,9 +2611,9 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RUNWAY",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "636th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A },
-        { name = "617th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A }
+      firingUnitNames = {
+        "636th Bde, PLARF",
+        "617th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2638,8 +2638,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "PORT",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "615th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A }
+      firingUnitNames = {
+        "615th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2660,8 +2660,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "SHELTER",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "616th Bde, PLARF", weaponDBID = constants.WEAPONS.DF15C }
+      firingUnitNames = {
+        "616th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2683,9 +2683,9 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RADAR",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "614th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A },
-        { name = "613rd Bde, PLARF", weaponDBID = constants.WEAPONS.DF15B }
+      firingUnitNames = {
+        "614th Bde, PLARF",
+        "613rd Bde, PLARF"
       },
       target = {
         list = {},
@@ -2702,9 +2702,9 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RUNWAY",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "636th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A },
-        { name = "617th Bde, PLARF", weaponDBID = constants.WEAPONS.DF16A }
+      firingUnitNames = {
+        "636th Bde, PLARF",
+        "617th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2734,8 +2734,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "PORT",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "615th Bde, PLARF", weaponDBID = constants.WEAPONS.DF11A }
+      firingUnitNames = {
+        "615th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2758,8 +2758,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "SHELTER",
       missileSystemType = "SRBM",
-      firingUnits = {
-        { name = "616th Bde, PLARF", weaponDBID = constants.WEAPONS.DF15C }
+      firingUnitNames = {
+        "616th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2785,8 +2785,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "ANTISHIP",
       missileSystemType = "MRBM",
-      firingUnits = {
-        { name = "624th Bde, PLARF", weaponDBID = constants.WEAPONS.DF21D }
+      firingUnitNames = {
+        "624th Bde, PLARF"
       },
       target = {
         list = {},
@@ -2803,8 +2803,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "ANTISHIP",
       missileSystemType = "ASCM",
-      firingUnits = {
-        { name = "1st Pili Reg", weaponDBID = constants.WEAPONS.YJ12 }
+      firingUnitNames = {
+        "1st Pili Reg"
       },
       target = {
         list = {},
@@ -2821,8 +2821,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "PINGTAN",
       missileSystemType = "MLRS",
-      firingUnits = {
-        { name = "1st Bn, 1st Rockets Arty Bde", weaponDBID = constants.WEAPONS.FD280 }
+      firingUnitNames = {
+        "1st Bn, 1st Rockets Arty Bde"
       },
       target = {
         list = {},
@@ -2839,8 +2839,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "CHINCHEW",
       missileSystemType = "MLRS",
-      firingUnits = {
-        { name = "6th Bn, 73rd Arty Bde", weaponDBID = constants.WEAPONS.FD280 }
+      firingUnitNames = {
+        "6th Bn, 73rd Arty Bde"
       },
       target = {
         list = {},
@@ -2857,8 +2857,8 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "HELIPAD",
       missileSystemType = "GLCM",
-      firingUnits = {
-        { name = "635th Bde, PLARF", weaponDBID = constants.WEAPONS.CJ10A }
+      firingUnitNames = {
+        "635th Bde, PLARF"
       },
       target = {
         list = {},

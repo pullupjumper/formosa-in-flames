@@ -109,7 +109,7 @@ describe("AttackManager", function()
     it("should attack contact with single unit and allocate requested ammo", function()
       local contact = makeContact()
       local unit = makeUnit({ name = "Shooter A", guid = "UNIT-A", side = constants.SIDES.BLUE })
-      local firingUnits = { { name = "Shooter A", weaponDBID = 1001 } }
+      local attackingUnits = { { name = "Shooter A", weaponDBID = 1001 } }
 
       local stubGetContact = trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").invokes(function(id)
@@ -124,7 +124,7 @@ describe("AttackManager", function()
       local result = AttackManager.attackContacts({
         contacts = { contact.guid },
         qty = 3,
-        firingUnits = firingUnits,
+        attackingUnits = attackingUnits,
         sideName = constants.SIDES.BLUE,
       })
 
@@ -142,7 +142,7 @@ describe("AttackManager", function()
     it("should sum ammo across contacts and rotate to the next firing unit per contact", function()
       local unitA = makeUnit({ name = "Shooter A", guid = "UNIT-A" })
       local unitB = makeUnit({ name = "Shooter B", guid = "UNIT-B" })
-      local firingUnits = {
+      local attackingUnits = {
         { name = "Shooter A", weaponDBID = 1001 },
         { name = "Shooter B", weaponDBID = 1001 },
       }
@@ -163,7 +163,7 @@ describe("AttackManager", function()
       local result = AttackManager.attackContacts({
         contacts = { "C-1", "C-2" },
         qty = 2,
-        firingUnits = firingUnits,
+        attackingUnits = attackingUnits,
       })
 
       assert.are.equal(4, result)
@@ -176,7 +176,7 @@ describe("AttackManager", function()
     it("should not attack when doctrine weapon control is hold", function()
       local contact = makeContact()
       local unit = makeUnit({ name = "Shooter B", guid = "UNIT-B" })
-      local firingUnits = { { name = "Shooter B", weaponDBID = 1001 } }
+      local attackingUnits = { { name = "Shooter B", weaponDBID = 1001 } }
 
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
@@ -187,7 +187,7 @@ describe("AttackManager", function()
       local result = AttackManager.attackContacts({
         contacts = { contact.guid },
         qty = 2,
-        firingUnits = firingUnits,
+        attackingUnits = attackingUnits,
       })
 
       assert.are.equal(0, result)
@@ -198,7 +198,7 @@ describe("AttackManager", function()
     it("should cap each attack salvo to available weapons", function()
       local contact = makeContact()
       local unit = makeUnit({ name = "Shooter C", guid = "UNIT-C" })
-      local firingUnits = { { name = "Shooter C", weaponDBID = 1001 } }
+      local attackingUnits = { { name = "Shooter C", weaponDBID = 1001 } }
 
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(contact))
       trackStub(stub(GameApi, "ScenEdit_GetUnit").returns(unit))
@@ -210,7 +210,7 @@ describe("AttackManager", function()
       local result = AttackManager.attackContacts({
         contacts = { contact.guid },
         qty = 5,
-        firingUnits = firingUnits,
+        attackingUnits = attackingUnits,
       })
 
       assert.are.equal(6, result)
@@ -225,14 +225,14 @@ describe("AttackManager", function()
 
     -- Negative: exits when contact is missing
     it("should return zero allocation when contact does not exist", function()
-      local firingUnits = { { name = "Shooter D", weaponDBID = 1001 } }
+      local attackingUnits = { { name = "Shooter D", weaponDBID = 1001 } }
       trackStub(stub(GameApi, "ScenEdit_GetContact").returns(nil))
       local stubGetUnit = trackStub(stub(GameApi, "ScenEdit_GetUnit"))
 
       local result = AttackManager.attackContacts({
         contacts = { "CONTACT-MISSING" },
         qty = 3,
-        firingUnits = firingUnits,
+        attackingUnits = attackingUnits,
       })
 
       assert.are.equal(0, result)
@@ -249,7 +249,7 @@ describe("AttackManager", function()
       local groupMember1 = makeUnit({ guid = "G-1" })
       local groupMember2 = makeUnit({ guid = "G-2" })
       local singleB = makeUnit({ name = "Shooter B", guid = "UNIT-B" })
-      local firingUnits = {
+      local attackingUnits = {
         { name = "Battery A", weaponDBID = 1001 },
         { name = "Shooter B", weaponDBID = 1001 },
       }
@@ -272,7 +272,7 @@ describe("AttackManager", function()
       local result = AttackManager.attackContacts({
         contacts = { "C-1", "C-2", "C-3" },
         qty = 2,
-        firingUnits = firingUnits,
+        attackingUnits = attackingUnits,
       })
 
       assert.are.equal(6, result)
@@ -293,7 +293,7 @@ describe("AttackManager", function()
       AttackManager.attackContacts({
         contacts = { "C-3" },
         qty = 1,
-        firingUnits = { { name = "U1", weaponDBID = 1001 } },
+        attackingUnits = { { name = "U1", weaponDBID = 1001 } },
       })
 
       assert.stub(stubGetContact).was.called_with(constants.SIDES.RED, "C-3")
@@ -306,7 +306,7 @@ describe("AttackManager", function()
       local result = AttackManager.attackContacts({
         contacts = {},
         qty = 2,
-        firingUnits = { { name = "U1", weaponDBID = 1001 } },
+        attackingUnits = { { name = "U1", weaponDBID = 1001 } },
       })
 
       assert.are.equal(0, result)

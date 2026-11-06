@@ -43,7 +43,7 @@ describe("FireSupportPlan", function()
   ---China SRBM config for the batteries the tests task
   local CONFIG = { red = { ground = { missileSystemTypes = { srbm = { firingUnits = {
     ["Battery-1"] = { name = "Battery-1", ammoThreshold = 40, weaponDBID = 3104 },
-    ["Battery-2"] = { name = "Battery-2", ammoThreshold = 40, weaponDBID = 3104 },
+    ["Battery-2"] = { name = "Battery-2", ammoThreshold = 40, weaponDBID = 3105 },
   } } } } } }
 
   ---@param overrides? table
@@ -55,7 +55,7 @@ describe("FireSupportPlan", function()
       missileSystemType = overrides.missileSystemType or "SRBM",
       isFinished = overrides.taskFinished or false,
       startTime = overrides.startTime or "2026-02-14 00:00:00",
-      firingUnits = overrides.firingUnits or { { name = "Battery-1" } },
+      firingUnitNames = overrides.firingUnitNames or { "Battery-1" },
       target = {
         list = overrides.targetList or { "TGT-1", "TGT-2" },
         objs = {},
@@ -202,7 +202,7 @@ describe("FireSupportPlan", function()
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
-      assert.are.equal(0, #task.firingUnits)
+      assert.are.equal(0, #task.firingUnitNames)
       assert.is_true(task.isFinished)
       assert.is_true(matrix.allFiringUnitsInPosition)
       assert.is_true(matrix.isFinished)
@@ -219,7 +219,7 @@ describe("FireSupportPlan", function()
       FireSupportPlan.process(CONFIG, plannerState)
 
       local task = plannerState.ground.fireSupportPlan["FSEM-1"].fireSupportTasks[1]
-      assert.are.equal(0, #task.firingUnits)
+      assert.are.equal(0, #task.firingUnitNames)
       assert.is_true(task.isFinished)
     end)
 
@@ -240,7 +240,7 @@ describe("FireSupportPlan", function()
     -- Boundary: mixed states across multiple units
     it("should set allFiringUnitsInPosition to false when any unit is not at STATIC state", function()
       local plannerState = makePlannerState({
-        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+        firingUnitNames = { "Battery-1", "Battery-2" }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING
@@ -269,7 +269,7 @@ describe("FireSupportPlan", function()
     -- Positive: destroyed unit removed while the survivor fires
     it("should remove destroyed unit and let surviving unit fire", function()
       local plannerState = makePlannerState({
-        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+        firingUnitNames = { "Battery-1", "Battery-2" }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_UNIT_POSTURE.STATIC
@@ -286,10 +286,10 @@ describe("FireSupportPlan", function()
 
       local matrix = plannerState.ground.fireSupportPlan["FSEM-1"]
       local task = matrix.fireSupportTasks[1]
-      assert.are.same({ { name = "Battery-2" } }, task.firingUnits)
+      assert.are.same({ "Battery-2" }, task.firingUnitNames)
       assert.is_true(matrix.allFiringUnitsInPosition)
       assert.stub(stubAttack).was.called(1)
-      assert.are.same({ { name = "Battery-2" } }, stubAttack.calls[1].vals[1].firingUnits)
+      assert.are.same({ { name = "Battery-2", weaponDBID = 3105 } }, stubAttack.calls[1].vals[1].attackingUnits)
       assert.is_true(task.isFinished)
     end)
 
@@ -301,7 +301,7 @@ describe("FireSupportPlan", function()
         missileSystemType = "SRBM",
         isFinished = false,
         startTime = "2026-02-14 00:00:00",
-        firingUnits = { { name = "Battery-2" } },
+        firingUnitNames = { "Battery-2" },
         target = {
           list = { "TGT-9" },
           objs = {},
@@ -327,7 +327,7 @@ describe("FireSupportPlan", function()
       assert.is_true(matrix.fireSupportTasks[1].isFinished)
       assert.is_true(matrix.fireSupportTasks[2].isFinished)
       assert.stub(stubAttack).was.called(1)
-      assert.are.same({ { name = "Battery-2" } }, stubAttack.calls[1].vals[1].firingUnits)
+      assert.are.same({ { name = "Battery-2", weaponDBID = 3105 } }, stubAttack.calls[1].vals[1].attackingUnits)
       assert.is_true(matrix.isFinished)
     end)
   end)
@@ -355,12 +355,11 @@ describe("FireSupportPlan", function()
       assert.is_true(task.isFinished)
     end)
 
-    -- Positive: firingUnits forwarded to attackContacts
-    it("should pass firingUnits to attackContacts", function()
-      local firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+    -- Positive: each firing unit attacks with the weapon its config names
+    it("should pair each firing unit with its configured weapon for attackContacts", function()
       local plannerState = makePlannerState({
         firingUnitState = constants.MISSILE_UNIT_POSTURE.STATIC,
-        firingUnits = firingUnits
+        firingUnitNames = { "Battery-1", "Battery-2" }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_UNIT_POSTURE.STATIC
@@ -373,7 +372,10 @@ describe("FireSupportPlan", function()
       FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubAttack).was.called(1)
-      assert.are.same(firingUnits, stubAttack.calls[1].vals[1].firingUnits)
+      assert.are.same({
+        { name = "Battery-1", weaponDBID = 3104 },
+        { name = "Battery-2", weaponDBID = 3105 },
+      }, stubAttack.calls[1].vals[1].attackingUnits)
     end)
 
     -- Negative: attack returns 0
@@ -407,7 +409,7 @@ describe("FireSupportPlan", function()
       assert.stub(stubAttack).was.called_with({
         contacts = {},
         qty = 2,
-        firingUnits = { { name = "Battery-1" } },
+        attackingUnits = { { name = "Battery-1", weaponDBID = 3104 } },
       })
     end)
 
@@ -503,7 +505,7 @@ describe("FireSupportPlan", function()
     it("should set stowStartTime on every firing unit in a multi-unit task", function()
       local plannerState = makePlannerState({
         firingUnitState = constants.MISSILE_UNIT_POSTURE.STATIC,
-        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+        firingUnitNames = { "Battery-1", "Battery-2" }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_UNIT_POSTURE.STATIC
@@ -564,7 +566,7 @@ describe("FireSupportPlan", function()
         missileSystemType = "SRBM",
         isFinished = false,
         startTime = "2026-02-14 00:00:00",
-        firingUnits = { { name = "Battery-1" } },
+        firingUnitNames = { "Battery-1" },
         target = {
           list = {},
           objs = {},
@@ -606,7 +608,7 @@ describe("FireSupportPlan", function()
             missileSystemType = "SRBM",
             isFinished = false,
             startTime = "2026-02-14 00:00:00",
-            firingUnits = { { name = "Battery-1" } },
+            firingUnitNames = { "Battery-1" },
             target = {
               list = { "TGT-3" },
               objs = {},
@@ -727,7 +729,7 @@ describe("FireSupportPlan", function()
     -- Positive: taskClosed=false when survivors keep the task open after cleanup
     it("should log taskClosed=false when surviving units remain after cleanup", function()
       local plannerState = makePlannerState({
-        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+        firingUnitNames = { "Battery-1", "Battery-2" }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_UNIT_POSTURE.STATIC
@@ -752,7 +754,7 @@ describe("FireSupportPlan", function()
     -- Regression: surviving multi-unit not-ready names keep the original order
     it("should keep notReadyNames in original unit order for surviving units", function()
       local plannerState = makePlannerState({
-        firingUnits = { { name = "Battery-1" }, { name = "Battery-2" } }
+        firingUnitNames = { "Battery-1", "Battery-2" }
       })
       plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-2"] = {
         state = constants.MISSILE_UNIT_POSTURE.HIDE

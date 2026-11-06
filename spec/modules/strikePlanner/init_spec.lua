@@ -336,7 +336,7 @@ describe("StrikePlanner", function()
         assert.stub(attackContactsStub).was.called_with({
           contacts = config.red.surface.lacm.targetlist,
           qty = 5,
-          firingUnits = { { name = "Nanchang" } },
+          attackingUnits = { { name = "Nanchang" } },
           weaponDBID = 101,
         })
       end)
@@ -383,8 +383,7 @@ describe("StrikePlanner", function()
 
         runProcess(makeConfig(), makePlannerState({ lacm = true }), {})
 
-        local firingUnits = attackContactsStub.calls[1].vals[1].firingUnits
-        assert.are.same({ { name = "Nanchang" } }, firingUnits)
+        assert.are.same({ { name = "Nanchang" } }, attackContactsStub.calls[1].vals[1].attackingUnits)
       end)
     end)
 
@@ -425,7 +424,7 @@ describe("StrikePlanner", function()
         assert.stub(attackContactsStub).was.called_with({
           contacts = config.red.subSurface.slcm.targetlist,
           qty = 8,
-          firingUnits = { { name = "SUB-1" } },
+          attackingUnits = { { name = "SUB-1" } },
           weaponDBID = 202,
         })
       end)
@@ -459,7 +458,7 @@ describe("StrikePlanner", function()
 
         runProcess(config, makePlannerState({ slcm = true }), {})
 
-        assert.are.same({ { name = "SUB-1" } }, attackContactsStub.calls[1].vals[1].firingUnits)
+        assert.are.same({ { name = "SUB-1" } }, attackContactsStub.calls[1].vals[1].attackingUnits)
       end)
     end)
 

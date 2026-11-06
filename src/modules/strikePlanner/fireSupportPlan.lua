@@ -26,24 +26,24 @@ local function deployTaskFiringUnits(config, plannerState, task)
 
   -- Reverse iteration so table.remove never skips the next entry; names are
   -- inserted at the head to preserve the original firing unit order in logs.
-  for i = #task.firingUnits, 1, -1 do
-    local firingUnit = task.firingUnits[i]
+  for i = #task.firingUnitNames, 1, -1 do
+    local firingUnitName = task.firingUnitNames[i]
     local inPosition, unitMissing = MissileSystem.sendToFiringPoint(
-      config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, firingUnit.name
+      config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, firingUnitName
     )
 
     if unitMissing then
-      table.remove(task.firingUnits, i)
-      table.insert(removedNames, 1, firingUnit.name)
+      table.remove(task.firingUnitNames, i)
+      table.insert(removedNames, 1, firingUnitName)
     elseif not inPosition then
       allInPosition = false
-      table.insert(notReadyNames, 1, firingUnit.name)
+      table.insert(notReadyNames, 1, firingUnitName)
     end
   end
 
   -- An emptied task is closed without counting as not-ready, so sibling tasks
   -- in the same matrix can still reach allFiringUnitsInPosition and fire.
-  if #task.firingUnits == 0 then
+  if #task.firingUnitNames == 0 then
     task.isFinished = true
   end
 
@@ -56,10 +56,11 @@ end
 
 ---Execute all Fire Support Tasks within a FSEM
 ---Launches attacks when start time reached and minimum target count met, marks tasks as finished
+---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 ---@param matrix SBJ__FireSupportExecutionMatrix
 ---@return {taskName: string, fired: integer}[] # Strike result records per task
-local function startFireSupportTasks(plannerState, matrix)
+local function startFireSupportTasks(config, plannerState, matrix)
   local strikeResults = {}
 
   for _, task in ipairs(matrix.fireSupportTasks) do
@@ -67,11 +68,13 @@ local function startFireSupportTasks(plannerState, matrix)
       local fired = AttackManager.attackContacts({
         contacts = task.target.list,
         qty = task.target.ammoPerTarget,
-        firingUnits = task.firingUnits,
+        attackingUnits = MissileSystem.buildAttackingUnits(
+          config, constants.SIDES.RED, task.missileSystemType, task.firingUnitNames
+        ),
       })
 
       if fired > 0 then
-        MissileSystem.completeFireTask(plannerState.ground, task.missileSystemType, task.firingUnits)
+        MissileSystem.completeFireTask(plannerState.ground, task.missileSystemType, task.firingUnitNames)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,
@@ -161,7 +164,7 @@ function FireSupportPlan.process(config, plannerState)
 
       local strikeResults = {}
       if allInPosition then
-        strikeResults = startFireSupportTasks(plannerState, matrix)
+        strikeResults = startFireSupportTasks(config, plannerState, matrix)
       end
 
       if isMatrixFinished(matrix) then
