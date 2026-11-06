@@ -18,7 +18,7 @@
 - resupply：從 RL[1] 生成。
 - canisterStock：從 ATP[1] 生成，設成不可自動偵測。
 
-firing 和 resupply 的車數都是 `battery.unitCount`（config 放在 resupply 上）。多台時以 descriptor 名為 group，成員名把序數放在 firing unit 名前面：`Ammo Sec, 1st Bn, X` → `Ammo Sec, 2nd Coy, 1st Bn, X`。`spec/core/missileSystemConfig_spec.lua` 保證每個名字都以 firing unit 名結尾、連結一對一。
+firing 和 resupply 的車數都是 `battery.resupply.unitCount`（config 放在 resupply 上）。多台時以 descriptor 名為 group，成員名把序數放在 firing unit 名前面：`Ammo Sec, 1st Bn, X` → `Ammo Sec, 2nd Coy, 1st Bn, X`。`spec/core/missileSystemConfig_spec.lua` 保證每個名字都以 firing unit 名結尾、連結一對一。
 
 ```mermaid
 flowchart TD
@@ -37,7 +37,7 @@ summary row 是 `firing=a/b resupply=a/b canister_stock=a/b`；只要該 system 
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `resolveBattery` | `missileSystemConfigMap, layout` | `SBJ__Battery\|nil` | 照 config 連結組出 layout 指名的那一連，放在 layout 的陣地；未知 system 或 firing unit 回 `nil` |
+| `resolveBattery` | `missileSystemConfigMap, missileSystemType, firingName, operationalArea` | `SBJ__Battery\|nil` | 照 config 連結組出這個 firing unit 的那一連，放在給定的陣地；未知 system 或 firing unit 回 `nil` |
 | `resolveBatteries` | `missileSystemConfigMap` | `SBJ__Battery[]` | config 的每一連，放在 config 的陣地 |
 | `deployBatteries` | `sideName, batteries` | `nil` | 刪掉並重建這幾連的單位，輸出一份 report |
 

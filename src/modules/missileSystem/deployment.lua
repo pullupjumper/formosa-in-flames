@@ -148,7 +148,7 @@ end
 ---@field role "firing"|"resupply"|"canister_stock" Log `role` field and summary column
 ---@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__FiringUnitDescriptor|SBJ__ResupplyUnitDescriptor|SBJ__CanisterStockDescriptor
 ---@field dbid? number Fixed platform; nil uses the firing unit's dbid
----@field isGroup boolean Builds battery.unitCount vehicles grouped under the descriptor name; otherwise one
+---@field isGroup boolean Builds battery.resupply.unitCount vehicles grouped under the descriptor name; otherwise one
 ---@field findRejection fun(area: SBJ__OperationalArea, isDeployed: boolean): string|nil Reason the area cannot hold this role
 ---@field buildSpawnPosition fun(area: SBJ__OperationalArea, isDeployed: boolean): CMO__Location Called per vehicle
 ---@field setUp? fun(battery: SBJ__Battery, addedUnit: CMO__Unit, sideName: string, context: table): SBJ__LogResult[]
@@ -238,7 +238,7 @@ local function deployRole(battery, batteryRole, sideName)
   local descriptor = batteryRole.resolveDescriptor(battery)
   local area = battery.operationalArea
   local isDeployed = Rules.staysDeployed(battery.missileSystemType)
-  local expected = batteryRole.isGroup and battery.unitCount or 1
+  local expected = batteryRole.isGroup and battery.resupply.unitCount or 1
   local context = {
     system = battery.missileSystemType,
     role = batteryRole.role,
@@ -286,25 +286,26 @@ local function deployRole(battery, batteryRole, sideName)
   return created, expected, entries
 end
 
----Join a layout's firing unit to its resupply unit and canister stock by config links
+---Join a firing unit to its resupply unit and canister stock by config links
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
----@param layout SBJ__MissileSystemLayout
----@return SBJ__Battery|nil # nil when the layout names an unknown system or firing unit
-function Deployment.resolveBattery(missileSystemConfigMap, layout)
-  local systemConfig = missileSystemConfigMap[layout.missileSystemType]
-  local firing = systemConfig and systemConfig.firingUnits[layout.unitname]
+---@param missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@param firingName string Firing unit name in the side's ground force config
+---@param operationalArea SBJ__OperationalArea Area to build the battery in
+---@return SBJ__Battery|nil # nil for an unknown system or firing unit
+function Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, firingName, operationalArea)
+  local systemConfig = missileSystemConfigMap[missileSystemType]
+  local firing = systemConfig and systemConfig.firingUnits[firingName]
   if not firing then
     return nil
   end
 
   local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
   return {
-    missileSystemType = layout.missileSystemType,
+    missileSystemType = missileSystemType,
     firing = firing,
     resupply = resupply,
     canisterStock = systemConfig.canisterStocks[resupply.canisterStock],
-    unitCount = resupply.unitCount,
-    operationalArea = layout.operationalArea
+    operationalArea = operationalArea
   }
 end
 
@@ -316,11 +317,8 @@ function Deployment.resolveBatteries(missileSystemConfigMap)
 
   for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
     for _, firing in pairs(systemConfig.firingUnits) do
-      table.insert(batteries, Deployment.resolveBattery(missileSystemConfigMap, {
-        missileSystemType = missileSystemType,
-        unitname = firing.name,
-        operationalArea = firing.operationalArea
-      }))
+      table.insert(batteries,
+        Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, firing.name, firing.operationalArea))
     end
   end
 

@@ -100,51 +100,40 @@ describe("MissileSystem ControlPanelLayout", function()
   end
 
   -- ============================================================================
-  -- buildLayouts
+  -- buildOperationalArea
   -- ============================================================================
 
-  describe("buildLayouts", function()
+  describe("buildOperationalArea", function()
     -- Positive: only the first RL path is used, and SHRL shares the reload zone
     it("should turn every path into a fast course paired with its zone", function()
       trackStub(stub(Utils, "buildRandomText").returns("ABC"))
 
-      local layouts = ControlPanelLayout.buildLayouts({ makeEntry() })
+      local operationalArea = ControlPanelLayout.buildOperationalArea(makeEntry())
 
       assert.are.same({
-        {
-          missileSystemType = "srbm",
-          unitname = "FU-1",
-          operationalArea = {
-            FP = {
-              { course = fastCourse(1), area = { "FP1" } },
-              { course = fastCourse(2), area = { "FP2" } }
-            },
-            RL = { { course = fastCourse(3), area = { "RL" } } },
-            ATP = { { course = fastCourse(4), area = { "ATP" } } },
-            HA = { { course = fastCourse(5), area = { "HA" } } },
-            SHRL = { { course = fastCourse(6), area = { "RL" } } },
-            uShapeVertices = { "U" },
-            shelterPoints = { "S" },
-            name = "#ABC"
-          }
-        }
-      }, layouts)
+        FP = {
+          { course = fastCourse(1), area = { "FP1" } },
+          { course = fastCourse(2), area = { "FP2" } }
+        },
+        RL = { { course = fastCourse(3), area = { "RL" } } },
+        ATP = { { course = fastCourse(4), area = { "ATP" } } },
+        HA = { { course = fastCourse(5), area = { "HA" } } },
+        SHRL = { { course = fastCourse(6), area = { "RL" } } },
+        uShapeVertices = { "U" },
+        shelterPoints = { "S" },
+        name = "#ABC"
+      }, operationalArea)
     end)
 
-    -- Positive: each entry gets its own random 3-letter area name
-    it("should build one named layout per entry", function()
+    -- Positive: each call gets its own random 3-letter area name
+    it("should name each area with a fresh random 3-letter suffix", function()
       local buildRandomTextStub = trackStub(stub(Utils, "buildRandomText").returns("AAA"))
 
-      local layouts = ControlPanelLayout.buildLayouts({ makeEntry(), makeEntry({ unitname = "FU-2" }) })
+      ControlPanelLayout.buildOperationalArea(makeEntry())
+      ControlPanelLayout.buildOperationalArea(makeEntry({ unitname = "FU-2" }))
 
-      assert.are.equal(2, #layouts)
-      assert.are.equal("FU-2", layouts[2].unitname)
+      assert.stub(buildRandomTextStub).was.called(2)
       assert.stub(buildRandomTextStub).was.called_with(3)
-    end)
-
-    -- Boundary: nothing submitted means nothing to redeploy
-    it("should return no layouts for no entries", function()
-      assert.are.same({}, ControlPanelLayout.buildLayouts({}))
     end)
   end)
 

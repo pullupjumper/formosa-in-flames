@@ -27,11 +27,11 @@ local function buildCourse(path)
   return course
 end
 
----Build a battery layout from one control panel entry
+---Build the operational area one control panel entry draws, under a random 3-letter name
+---Only the first RL path is used; SHRL shares the reload zone.
 ---@param entry SBJ__MissileSystemResult
----@param areaName string
----@return SBJ__MissileSystemLayout # Layout accepted by MissileSystem.redeployFromControlPanel
-local function buildLayout(entry, areaName)
+---@return SBJ__OperationalArea
+function ControlPanelLayout.buildOperationalArea(entry)
   local tacticalAreas = entry.tacticalAreas
   local paths = entry.paths
   local operationalArea = {
@@ -42,31 +42,14 @@ local function buildLayout(entry, areaName)
     SHRL = { { course = buildCourse(paths.SHRL), area = tacticalAreas.reloadArea } },
     uShapeVertices = tacticalAreas.uShapeVertices,
     shelterPoints = tacticalAreas.shelterPoints,
-    name = areaName
+    name = "#" .. Utils.buildRandomText(3)
   }
 
   for index, firePoint in ipairs(paths.FP) do
     table.insert(operationalArea.FP, { course = buildCourse(firePoint), area = tacticalAreas.firePoints[index] })
   end
 
-  return {
-    missileSystemType = entry.missileSystemType,
-    unitname = entry.unitname,
-    operationalArea = operationalArea
-  }
-end
-
----Build battery layouts from control panel entries, giving each a random operational area name
----@param entries SBJ__MissileSystemResult[]
----@return SBJ__MissileSystemLayout[] # Layouts accepted by MissileSystem.redeployFromControlPanel
-function ControlPanelLayout.buildLayouts(entries)
-  local layouts = {}
-
-  for _, entry in ipairs(entries) do
-    table.insert(layouts, buildLayout(entry, "#" .. Utils.buildRandomText(3)))
-  end
-
-  return layouts
+  return operationalArea
 end
 
 ---Build the control panel's missile system rows, with zone names resolved to vertices

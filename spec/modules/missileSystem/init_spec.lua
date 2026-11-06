@@ -924,13 +924,12 @@ describe("MissileSystem", function()
       local config, saveData = makeMovedBattery()
       local newArea = { name = "OPAREA-NEW", HA = { { course = { { latitude = 4, longitude = 4 } } } },
         RL = { { course = { { latitude = 5, longitude = 5 } } } }, ATP = { { course = { { latitude = 6, longitude = 6 } } } } }
-      trackStub(ControlPanelLayout, "buildLayouts").returns({
-        { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea }
-      })
+      trackStub(ControlPanelLayout, "buildOperationalArea").returns(newArea)
       local triggersStub = trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, { { unitname = "FU-A" } })
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
+        { { missileSystemType = "srbm", unitname = "FU-A" } })
 
       local newAreas, removedAreas = triggersStub.calls[1].vals[1], triggersStub.calls[1].vals[2]
       assert.are.same({ "OPAREA-NEW" }, { newAreas[1].name })
@@ -945,13 +944,12 @@ describe("MissileSystem", function()
       local resupplyDescriptor = srbmConfig.resupplyUnits["RU-A"]
       local canisterStockDescriptor = srbmConfig.canisterStocks["AMMO-A"]
       local configArea = firingDescriptor.operationalArea
-      trackStub(ControlPanelLayout, "buildLayouts").returns({
-        { missileSystemType = "srbm", unitname = "FU-A", operationalArea = { name = "OPAREA-NEW" } }
-      })
+      trackStub(ControlPanelLayout, "buildOperationalArea").returns({ name = "OPAREA-NEW" })
       trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, { { unitname = "FU-A" } })
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
+        { { missileSystemType = "srbm", unitname = "FU-A" } })
 
       assert.are.equal(firingDescriptor, srbmConfig.firingUnits["FU-A"])
       assert.are.equal(resupplyDescriptor, srbmConfig.resupplyUnits["RU-A"])
@@ -964,12 +962,9 @@ describe("MissileSystem", function()
     -- Positive: zones go first so their mask lands on the new area before state copies it
     it("should rebuild triggers, then units, then state, for the batteries the entries name", function()
       local config, saveData = makeMovedBattery()
-      local entries = { { unitname = "FU-A" } }
+      local entries = { { missileSystemType = "srbm", unitname = "FU-A" }, { missileSystemType = "srbm", unitname = "Ghost" } }
       local newArea = { name = "#NEW" }
-      local buildLayoutsStub = trackStub(ControlPanelLayout, "buildLayouts").returns({
-        { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea },
-        { missileSystemType = "srbm", unitname = "Ghost", operationalArea = { name = "#GHOST" } }
-      })
+      local buildAreaStub = trackStub(ControlPanelLayout, "buildOperationalArea").returns(newArea)
       local calls = {}
       local triggersStub = trackStub(PositionZones, "rebuild").invokes(function()
         table.insert(calls, "rebuild")
@@ -983,7 +978,7 @@ describe("MissileSystem", function()
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 
-      assert.stub(buildLayoutsStub).was.called_with(entries)
+      assert.stub(buildAreaStub).was.called_with(entries[1])
       assert.are.same({ "rebuild", "deployBatteries", "resetBatteryStates" }, calls)
       assert.stub(triggersStub).was.called_with({ newArea }, match._, {
         constants.POSITION_TYPES.RELOAD_POINT,
@@ -1030,12 +1025,10 @@ describe("MissileSystem", function()
       systemState.canisterStocks["AMMO-B"].weaponCountCurrent = 5
 
       local newArea = { name = "#NEW" }
-      trackStub(ControlPanelLayout, "buildLayouts").returns({
-        { missileSystemType = "srbm", unitname = "FU-A", operationalArea = newArea }
-      })
+      trackStub(ControlPanelLayout, "buildOperationalArea").returns(newArea)
       trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
-      local entries = { { unitname = "FU-A" } }
+      local entries = { { missileSystemType = "srbm", unitname = "FU-A" } }
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
 

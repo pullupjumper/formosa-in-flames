@@ -202,8 +202,7 @@ describe("MissileSystem Deployment", function()
       local newArea = buildArea("OPAREA-NEW")
       newArea.HA[1].course[1].latitude = 9
 
-      local battery = Deployment.resolveBattery(missileSystemConfigMap,
-        { missileSystemType = "srbm", unitname = "A Bn, 1st Bde", operationalArea = newArea })
+      local battery = Deployment.resolveBattery(missileSystemConfigMap, "srbm", "A Bn, 1st Bde", newArea)
       Deployment.deployBatteries(constants.SIDES.RED, { battery })
 
       assert.are.equal(9, added["A Bn, 1st Bde"].latitude)
@@ -218,18 +217,16 @@ describe("MissileSystem Deployment", function()
   -- ============================================================================
 
   describe("resolveBattery", function()
-    -- Positive: follows config links firing -> resupply -> canister stock and keeps the layout's area
+    -- Positive: follows config links firing -> resupply -> canister stock and keeps the given area
     it("should join the firing unit to its resupply unit and canister stock by config links", function()
       local systemConfig = buildSystemConfig({ "A", "B" }, 3)
       local newArea = buildArea("OPAREA-NEW")
 
-      local battery = Deployment.resolveBattery({ srbm = systemConfig },
-        { missileSystemType = "srbm", unitname = "B Bn, 1st Bde", operationalArea = newArea })
+      local battery = Deployment.resolveBattery({ srbm = systemConfig }, "srbm", "B Bn, 1st Bde", newArea)
 
       assert.are.equal(systemConfig.firingUnits["B Bn, 1st Bde"], battery.firing)
       assert.are.equal(systemConfig.resupplyUnits["Ammo Sec, B Bn, 1st Bde"], battery.resupply)
       assert.are.equal(systemConfig.canisterStocks["Ammo Revetment, B Bn, 1st Bde"], battery.canisterStock)
-      assert.are.equal(3, battery.unitCount)
       assert.are.equal(newArea, battery.operationalArea)
     end)
 
@@ -237,10 +234,8 @@ describe("MissileSystem Deployment", function()
     it("should return nil for an unknown system or firing unit", function()
       local missileSystemConfigMap = { srbm = buildSystemConfig({ "A" }) }
 
-      assert.is_nil(Deployment.resolveBattery(missileSystemConfigMap,
-        { missileSystemType = "glcm", unitname = "A Bn, 1st Bde", operationalArea = {} }))
-      assert.is_nil(Deployment.resolveBattery(missileSystemConfigMap,
-        { missileSystemType = "srbm", unitname = "Ghost", operationalArea = {} }))
+      assert.is_nil(Deployment.resolveBattery(missileSystemConfigMap, "glcm", "A Bn, 1st Bde", {}))
+      assert.is_nil(Deployment.resolveBattery(missileSystemConfigMap, "srbm", "Ghost", {}))
     end)
   end)
 end)

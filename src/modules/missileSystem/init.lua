@@ -253,19 +253,22 @@ function MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
   return false
 end
 
----Move batteries to player-chosen operational areas, then rebuild their zones, units and state
+---Move batteries to the operational areas submitted by the control panel, then rebuild their zones, units and state
 ---Only the moved batteries are rebuilt; every other battery keeps its units and runtime state. Config is
 ---only read. The area a battery leaves comes from its state, so a move after a save/load removes the
 ---zones the battery really has.
----@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
----@param groundState SBJ__GroundState
+---@param config SBJ__Config
+---@param saveData SBJ__SaveData
 ---@param sideName string
----@param layouts SBJ__MissileSystemLayout[]
-local function deployLayouts(missileSystemConfigMap, groundState, sideName, layouts)
+---@param entries SBJ__MissileSystemResult[]
+function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
+  local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
+  local groundState = PersistentState.ground(saveData, sideName)
   local batteries, operationalAreas, operationalAreasToRemove = {}, {}, {}
 
-  for _, layout in ipairs(layouts) do
-    local battery = Deployment.resolveBattery(missileSystemConfigMap, layout)
+  for _, entry in ipairs(entries) do
+    local battery = Deployment.resolveBattery(missileSystemConfigMap, entry.missileSystemType, entry.unitname,
+      ControlPanelLayout.buildOperationalArea(entry))
     if battery then
       table.insert(batteries, battery)
       table.insert(operationalAreas, battery.operationalArea)
@@ -278,20 +281,6 @@ local function deployLayouts(missileSystemConfigMap, groundState, sideName, layo
   PositionZones.rebuild(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
   Deployment.deployBatteries(sideName, batteries)
   GroundStateStore.resetBatteryStates(groundState, batteries)
-end
-
----Redeploy a side's batteries to the placements submitted by the control panel
----@param config SBJ__Config
----@param saveData SBJ__SaveData
----@param sideName string
----@param entries SBJ__MissileSystemResult[]
-function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
-  deployLayouts(
-    getMissileSystemTypes(config, sideName),
-    PersistentState.ground(saveData, sideName),
-    sideName,
-    ControlPanelLayout.buildLayouts(entries)
-  )
 end
 
 ---Build a side's missile system rows for the control panel, placed where the save says they are
