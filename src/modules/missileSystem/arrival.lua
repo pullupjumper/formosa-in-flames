@@ -52,10 +52,10 @@ local function dropUnitContact(unit, contacts)
 end
 
 ---Firing point steps keyed by Rules.STEP; each one acts on CMO, records the transition and returns its log row
----@type table<string, fun(ctx: SBJ__ArrivalContext, firingUnitState: SBJ__FiringUnitState): SBJ__LogResult|nil>
+---@type table<string, fun(ctx: SBJ__ArrivalContext, launcherState: SBJ__LauncherState): SBJ__LogResult|nil>
 local FIRING_POINT_STEPS = {
-  [STEP.ARRIVE_AT_FIRING_POINT] = function(ctx, firingUnitState)
-    Transitions.arriveAtFiringPoint(firingUnitState, ctx.unit, ctx.moveCtx.isAuto)
+  [STEP.ARRIVE_AT_FIRING_POINT] = function(ctx, launcherState)
+    Transitions.arriveAtFiringPoint(launcherState, ctx.unit, ctx.moveCtx.isAuto)
     return { tag = "OK", fields = { unit = ctx.unit.name, action = "firing_ready", state = "STATIC", wcs = "FREE" } }
   end,
 }
@@ -63,11 +63,11 @@ local FIRING_POINT_STEPS = {
 ---Hide area steps keyed by Rules.STEP
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__HideAreaObservation): SBJ__LogResult|nil>
 local HIDE_AREA_STEPS = {
-  [STEP.HIDE_FIRING_UNIT] = function(ctx, observation)
+  [STEP.HIDE_LAUNCHER] = function(ctx, observation)
     local unit = ctx.unit
-    Transitions.hide(observation.firingUnitState, unit, ctx.moveCtx.isAuto)
+    Transitions.hide(observation.launcherState, unit, ctx.moveCtx.isAuto)
     local success, errorFields = Concealment.hideUnit(
-      observation.firingUnitState, unit, observation.firingUnitDescriptor.weaponDBID
+      observation.launcherState, unit, observation.launcherDescriptor.weaponDBID
     )
     if success == false then
       return {
@@ -84,36 +84,36 @@ local HIDE_AREA_STEPS = {
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, pair: SBJ__ReloadPair): SBJ__LogResult|nil>
 local RELOAD_POINT_STEPS = {
   [STEP.BEGIN_RELOAD] = function(ctx, pair)
-    local firingUnitState = pair.firingUnitState
-    Transitions.beginReload(firingUnitState, pair.firingUnit, ctx.moveCtx.isAuto)
+    local launcherState = pair.launcherState
+    Transitions.beginReload(launcherState, pair.launcher, ctx.moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
-        unit = firingUnitState.name,
+        unit = launcherState.name,
         action = "reload_started",
         triggerUnit = ctx.unit.name,
         state = "RELOAD",
-        startedAt = os.date(constants.DATE_FORMAT, firingUnitState.reloadStartTime)
+        startedAt = os.date(constants.DATE_FORMAT, launcherState.reloadStartTime)
       }
     }
   end,
 
-  -- Manual mode keeps a firing unit drifting through RL during repositioning from being halted.
+  -- Manual mode keeps a launcher drifting through RL during repositioning from being halted.
   [STEP.STOP_IN_MANUAL_MODE] = function(ctx)
     Transitions.settle(ctx.systemState, ctx.unit, false)
   end,
 
-  [STEP.HIDE_UNMET_RESUPPLY_UNIT] = function(ctx, pair)
+  [STEP.HIDE_UNMET_TRANSLOADER] = function(ctx, pair)
     local unit = ctx.unit
-    local pairedFiringUnitName = pair.firingUnitState.name
-    local success, errorFields = Concealment.hideUnit(pair.resupplyUnitState, unit)
+    local pairedLauncherName = pair.launcherState.name
+    local success, errorFields = Concealment.hideUnit(pair.transloaderState, unit)
     if success == false then
       return {
         tag = "WARN",
         fields = LogFormat.merge({
           unit = unit.name,
-          action = "resupply_concealment_failed",
-          pairedFiringUnit = pairedFiringUnitName
+          action = "transloader_concealment_failed",
+          pairedLauncher = pairedLauncherName
         }, errorFields)
       }
     end
@@ -122,8 +122,8 @@ local RELOAD_POINT_STEPS = {
       tag = "OK",
       fields = {
         unit = unit.name,
-        action = "resupply_concealed",
-        pairedFiringUnit = pairedFiringUnitName,
+        action = "transloader_concealed",
+        pairedLauncher = pairedLauncherName,
         ammoStatus = "sufficient"
       }
     }
@@ -134,15 +134,15 @@ local RELOAD_POINT_STEPS = {
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__AmmunitionTransferPointObservation): SBJ__LogResult|nil>
 local AMMUNITION_TRANSFER_POINT_STEPS = {
   [STEP.BEGIN_TRANSLOAD] = function(ctx, observation)
-    local resupplyUnitState = observation.resupplyUnitState
-    Transitions.beginReload(resupplyUnitState, ctx.unit, ctx.moveCtx.isAuto)
+    local transloaderState = observation.transloaderState
+    Transitions.beginReload(transloaderState, ctx.unit, ctx.moveCtx.isAuto)
     return {
       tag = "OK",
       fields = {
-        unit = resupplyUnitState.name,
+        unit = transloaderState.name,
         action = "transload_started",
         state = "RELOAD",
-        startedAt = os.date(constants.DATE_FORMAT, resupplyUnitState.reloadStartTime)
+        startedAt = os.date(constants.DATE_FORMAT, transloaderState.reloadStartTime)
       }
     }
   end,
@@ -154,39 +154,39 @@ local AMMUNITION_TRANSFER_POINT_STEPS = {
 
 ---Observe a unit entering its hide area
 ---@param ctx SBJ__ArrivalContext
----@return SBJ__HideAreaObservation|nil # Nil when the unit is not a firing unit of this system
+---@return SBJ__HideAreaObservation|nil # Nil when the unit is not a launcher of this system
 local function observeHideArea(ctx)
   local unit = ctx.unit
-  local firingUnitState = ctx.systemState.firingUnits[unit.name]
-  local firingUnitDescriptor = ctx.systemConfig.firingUnits[unit.name]
-  if not firingUnitState or not firingUnitDescriptor then
+  local launcherState = ctx.systemState.launchers[unit.name]
+  local launcherDescriptor = ctx.systemConfig.launchers[unit.name]
+  if not launcherState or not launcherDescriptor then
     return nil
   end
 
   return {
-    firingUnitState = firingUnitState,
-    firingUnitDescriptor = firingUnitDescriptor,
+    launcherState = launcherState,
+    launcherDescriptor = launcherDescriptor,
     isLowAmmo = function()
-      return Ammo.isLowAmmo(unit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
+      return Ammo.isLowAmmo(unit, launcherDescriptor.ammoThreshold, launcherDescriptor.weaponDBID)
     end,
   }
 end
 
 ---Observe a unit entering its ammunition transfer point
 ---@param ctx SBJ__ArrivalContext
----@return SBJ__AmmunitionTransferPointObservation|nil # Nil when the unit is not a resupply unit of this system
+---@return SBJ__AmmunitionTransferPointObservation|nil # Nil when the unit is not a transloader of this system
 local function observeAmmunitionTransferPoint(ctx)
   local unit = ctx.unit
-  local resupplyUnitState = ctx.systemState.resupplyUnits[unit.name]
-  local resupplyUnitDescriptor = ctx.systemConfig.resupplyUnits[unit.name]
-  if not resupplyUnitState or not resupplyUnitDescriptor then
+  local transloaderState = ctx.systemState.transloaders[unit.name]
+  local transloaderDescriptor = ctx.systemConfig.transloaders[unit.name]
+  if not transloaderState or not transloaderDescriptor then
     return nil
   end
 
   return {
-    resupplyUnitState = resupplyUnitState,
+    transloaderState = transloaderState,
     isAtCanisterStock = function()
-      return Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, unit)
+      return Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, unit)
     end,
   }
 end
@@ -195,7 +195,7 @@ end
 ---@type table<string, SBJ__ArrivalPosition>
 local POSITIONS = {
   [constants.POSITION_TYPES.FIRING_POINT] = {
-    observe = function(ctx) return ctx.systemState.firingUnits[ctx.unit.name] end,
+    observe = function(ctx) return ctx.systemState.launchers[ctx.unit.name] end,
     evaluate = Rules.evaluateFiringPointArrival,
     steps = FIRING_POINT_STEPS,
   },

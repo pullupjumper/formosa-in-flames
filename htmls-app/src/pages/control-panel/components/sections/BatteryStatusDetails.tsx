@@ -11,22 +11,22 @@ interface BatteryStatusDetailsProps {
 export function BatteryStatusDetails({ status }: BatteryStatusDetailsProps) {
   return (
     <>
-      <TextRow label="Firing Unit" value={status.firingPosture} />
-      <TextRow label="Resupply Unit" value={status.resupplyPosture} />
+      <TextRow label="Launcher" value={status.launcherPosture} />
+      <TextRow label="Transloader" value={status.transloaderPosture} />
       <BarRow
-        label="Firing Reload (min)"
-        current={status.firingReloadMinutes}
+        label="Launcher Reload (min)"
+        current={status.launcherReloadMinutes}
         total={status.reloadMinutesDefault}
       />
       <BarRow
-        label="Resupply Reload (min)"
-        current={status.resupplyReloadMinutes}
+        label="Transloader Reload (min)"
+        current={status.transloaderReloadMinutes}
         total={status.reloadMinutesDefault}
       />
       <BarRow
         label="Transloader Missiles"
-        current={status.resupplyMissiles}
-        total={status.resupplyMissilesDefault}
+        current={status.transloaderMissiles}
+        total={status.transloaderMissilesDefault}
       />
       <BarRow
         label="ATP Missiles"

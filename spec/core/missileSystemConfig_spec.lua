@@ -21,31 +21,31 @@ describe("config ground.missileSystemTypes batteries", function()
     return name:sub(-#suffix) == suffix
   end
 
-  it("should link every firing unit to its own resupply unit and canister stock, and back", function()
+  it("should link every launcher to its own transloader and canister stock, and back", function()
     local problems = {}
 
     forEachSystem(function(label, systemConfig)
-      local resupplyLinks, canisterStockLinks = {}, {}
+      local transloaderLinks, canisterStockLinks = {}, {}
 
-      for _, firing in pairs(systemConfig.firingUnits) do
-        local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
-        if not resupply then
-          table.insert(problems, label .. " no resupply unit: " .. firing.name)
+      for _, launcher in pairs(systemConfig.launchers) do
+        local transloader = systemConfig.transloaders[launcher.transloader]
+        if not transloader then
+          table.insert(problems, label .. " no transloader: " .. launcher.name)
         else
-          resupplyLinks[resupply.name] = (resupplyLinks[resupply.name] or 0) + 1
-          canisterStockLinks[resupply.canisterStock] = (canisterStockLinks[resupply.canisterStock] or 0) + 1
-          if resupply.firingUnit ~= firing.name then
-            table.insert(problems, label .. " resupply links back elsewhere: " .. resupply.name)
+          transloaderLinks[transloader.name] = (transloaderLinks[transloader.name] or 0) + 1
+          canisterStockLinks[transloader.canisterStock] = (canisterStockLinks[transloader.canisterStock] or 0) + 1
+          if transloader.launcher ~= launcher.name then
+            table.insert(problems, label .. " transloader links back elsewhere: " .. transloader.name)
           end
-          if not systemConfig.canisterStocks[resupply.canisterStock] then
-            table.insert(problems, label .. " no canister stock: " .. resupply.name)
+          if not systemConfig.canisterStocks[transloader.canisterStock] then
+            table.insert(problems, label .. " no canister stock: " .. transloader.name)
           end
         end
       end
 
-      for name in pairs(systemConfig.resupplyUnits) do
-        if resupplyLinks[name] ~= 1 then
-          table.insert(problems, label .. " resupply unit linked " .. (resupplyLinks[name] or 0) .. " times: " .. name)
+      for name in pairs(systemConfig.transloaders) do
+        if transloaderLinks[name] ~= 1 then
+          table.insert(problems, label .. " transloader linked " .. (transloaderLinks[name] or 0) .. " times: " .. name)
         end
       end
       for name in pairs(systemConfig.canisterStocks) do
@@ -58,16 +58,16 @@ describe("config ground.missileSystemTypes batteries", function()
     assert.are.same({}, problems)
   end)
 
-  -- Group members are named "<prefix><ordinal>, <firing unit name>", so every name must end with the firing unit name
-  it("should end every resupply unit and canister stock name with its firing unit name", function()
+  -- Group members are named "<prefix><ordinal>, <launcher name>", so every name must end with the launcher name
+  it("should end every transloader and canister stock name with its launcher name", function()
     local problems = {}
 
     forEachSystem(function(label, systemConfig)
-      for _, firing in pairs(systemConfig.firingUnits) do
-        local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
-        local canisterStock = resupply and systemConfig.canisterStocks[resupply.canisterStock]
-        for _, descriptor in ipairs({ resupply, canisterStock }) do
-          if not endsWith(descriptor.name, ", " .. firing.name) then
+      for _, launcher in pairs(systemConfig.launchers) do
+        local transloader = systemConfig.transloaders[launcher.transloader]
+        local canisterStock = transloader and systemConfig.canisterStocks[transloader.canisterStock]
+        for _, descriptor in ipairs({ transloader, canisterStock }) do
+          if not endsWith(descriptor.name, ", " .. launcher.name) then
             table.insert(problems, label .. " " .. descriptor.name)
           end
         end
@@ -77,16 +77,16 @@ describe("config ground.missileSystemTypes batteries", function()
     assert.are.same({}, problems)
   end)
 
-  -- The reload cycle hides a resupply unit after a reload on the strength of its meeting in the
-  -- firing unit's RL zone, which holds only while both units share one operational area.
-  it("should place every firing unit and its resupply unit in the same operational area", function()
+  -- The reload cycle hides a transloader after a reload on the strength of its meeting in the
+  -- launcher's RL zone, which holds only while both units share one operational area.
+  it("should place every launcher and its transloader in the same operational area", function()
     local problems = {}
 
     forEachSystem(function(label, systemConfig)
-      for _, firing in pairs(systemConfig.firingUnits) do
-        local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
-        if resupply and resupply.operationalArea ~= firing.operationalArea then
-          table.insert(problems, label .. " " .. firing.name)
+      for _, launcher in pairs(systemConfig.launchers) do
+        local transloader = systemConfig.transloaders[launcher.transloader]
+        if transloader and transloader.operationalArea ~= launcher.operationalArea then
+          table.insert(problems, label .. " " .. launcher.name)
         end
       end
     end)
@@ -94,7 +94,7 @@ describe("config ground.missileSystemTypes batteries", function()
     assert.are.same({}, problems)
   end)
 
-  it("should name every firing unit once per side, whatever its missile system type", function()
+  it("should name every launcher once per side, whatever its missile system type", function()
     local problems = {}
 
     for _, sideKey in ipairs({ "red", "blue", "ally" }) do
@@ -102,11 +102,30 @@ describe("config ground.missileSystemTypes batteries", function()
       local owners = {}
 
       for systemType, systemConfig in pairs(ground and ground.missileSystemTypes or {}) do
-        for _, firing in pairs(systemConfig.firingUnits) do
-          if owners[firing.name] then
-            table.insert(problems, sideKey .. " " .. firing.name .. " in " .. owners[firing.name] .. " and " .. systemType)
+        for _, launcher in pairs(systemConfig.launchers) do
+          if owners[launcher.name] then
+            table.insert(problems, sideKey .. " " .. launcher.name .. " in " .. owners[launcher.name] .. " and " .. systemType)
           end
-          owners[firing.name] = systemType
+          owners[launcher.name] = systemType
+        end
+      end
+    end
+
+    assert.are.same({}, problems)
+  end)
+
+  -- Fire support looks each launcher's weapon up by system and name, so a stray name would be skipped silently.
+  it("should list only launchers of the task's own missile system in fire support task templates", function()
+    local problems = {}
+    local missileSystemTypes = config.red.ground.missileSystemTypes
+
+    for templateName, taskTemplates in pairs(config.red.fireSupportTaskTemplates) do
+      for _, taskTemplate in ipairs(taskTemplates) do
+        local systemConfig = missileSystemTypes[string.lower(taskTemplate.missileSystemType)]
+        for _, launcherName in ipairs(taskTemplate.launcherNames) do
+          if not (systemConfig and systemConfig.launchers[launcherName]) then
+            table.insert(problems, templateName .. "/" .. taskTemplate.name .. " " .. launcherName)
+          end
         end
       end
     end

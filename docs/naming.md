@@ -26,8 +26,8 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 | `is` / `has` / `can` / `should` | 回布林，無副作用 | `isInArea`、`hasFailure` |
 | `get` | 讀已存在的值，找不到視為錯誤 | `getBaseFreeAircraft` |
 | `find` | 搜尋，可能回 `nil` 或空陣列 | `findTargets`、`findAirfieldTarget` |
-| `filter` | 從集合挑出子集合 | `filterAvailableFiringUnits` |
-| `count` | 數個數或加總 | `countFiringUnits` |
+| `filter` | 從集合挑出子集合 | `filterAvailableLaunchers` |
+| `count` | 數個數或加總 | `countLaunchers` |
 | `calculate` | 算數值 | `calculateDistance`、`calculateStrikerFlightTime` |
 | `evaluate` | 看狀況算出結論或狀態 | `evaluateTarget`、`evaluateObservationWindow` |
 | `roll` | 機率擲骰 | `rollDetection`、`rollJammingResistance` |
@@ -124,7 +124,7 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 
 - 只准四種包裝名：`params`（必填）、`opts`（選填）、`ctx`（一輪共用）、`state`（會被改寫）。不准 `xxxSpec`、`xxxRef`、`xxxFields`、`xxxCfg`。
 - 一個函式最多一個 `params`。第二包要換成有意義的名詞（`unit`、`target`、`pos`）。
-- 只有 `ctx` 和 `state` 可以加前綴表示屬於誰（`passCtx`、`firingUnitState`）。`params`、`opts` 不加前綴。
+- 只有 `ctx` 和 `state` 可以加前綴表示屬於誰（`passCtx`、`launcherState`）。`params`、`opts` 不加前綴。
 - 不縮寫：`Cfg` 寫成 `config` 或 `systemConfig`。
 - 型別名跟函式走：`SBJ__<函式名>Params`。多個函式共用才用領域名。
 - `---@param` 不寫 inline `{a: x, b: y}`，超過 2 欄位就開 `---@class`。
@@ -162,9 +162,9 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 ## 7. `config.lua` 與 `constants.lua` 的 key
 
 - `config.lua`：camelCase。UPPER_SNAKE 只用在人為指定的代號：`AIR_STRIKE_AB_W_1`、`WZ8_RECON_ISLAND`。陣營命名空間 `.red`、`.blue`、`.ally`（紅軍為腳本控制方，藍軍為玩家，友軍支援藍軍；是角色，不是國名）；計分用 `config.score`。
-- 裝很多個的 key 用複數（`missileSystemTypes`、`firingUnits`、`canisterStocks`），單一設定區塊用單數（`policy`）；型別名一律單數。
+- 裝很多個的 key 用複數（`missileSystemTypes`、`launchers`、`canisterStocks`），單一設定區塊用單數（`policy`）；型別名一律單數。
 - 層級：第一層陣營，第二層一個功能（對應 `src/modules/` 一個模組或一個發射領域），第三層只在同功能底下有多個欄位一致的變體時才開。例：`config.red.ground.missileSystemTypes.srbm`。
-- 詞義：領域 `ground`、類別 `missileSystemType`（`mlrs`、`srbm`…）、具體系統 `missileSystem`（`firingUnit` 的字串欄位，如 `"DF-17"`）、部隊 `firingUnit`。
+- 詞義：領域 `ground`、類別 `missileSystemType`（`mlrs`、`srbm`…）、具體系統 `missileSystem`（`launcher` 的字串欄位，如 `"DF-17"`）、部隊 `launcher`。一個 `launcher` 是 CMO 裡一整組發射車（一個 group），補給車 `transloader` 同理；連 (battery) 是一組 launcher + transloader + canister stock。
 - `constants.lua`：頂層與識別碼 UPPER_SNAKE（`constants.SIDES.RED`），描述物件內欄位 camelCase（`shelterPoints`）。
 
 ## 8. Log tag 與字串常值

@@ -4,30 +4,30 @@ local Shared = require("src.modules.missileSystem.shared")
 
 local Ammo = {}
 
----Transfer canisters from the canister stock to its resupply unit, up to the resupply unit's capacity
----@param resupplyUnitState SBJ__ResupplyUnitState
+---Transfer canisters from the canister stock to its transloader, up to the transloader's capacity
+---@param transloaderState SBJ__TransloaderState
 ---@param canisterStockState SBJ__CanisterStockState
----@param capacity number Missiles a full resupply unit carries
-function Ammo.transferCanisters(resupplyUnitState, canisterStockState, capacity)
-  if canisterStockState.weaponCountCurrent > 0 and resupplyUnitState.weaponCountCurrent < capacity then
-    local deficit = capacity - resupplyUnitState.weaponCountCurrent
+---@param capacity number Missiles a full transloader carries
+function Ammo.transferCanisters(transloaderState, canisterStockState, capacity)
+  if canisterStockState.weaponCountCurrent > 0 and transloaderState.weaponCountCurrent < capacity then
+    local deficit = capacity - transloaderState.weaponCountCurrent
     local canistersToTransfer = math.min(deficit, canisterStockState.weaponCountCurrent)
-    resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent + canistersToTransfer
+    transloaderState.weaponCountCurrent = transloaderState.weaponCountCurrent + canistersToTransfer
     canisterStockState.weaponCountCurrent = canisterStockState.weaponCountCurrent - canistersToTransfer
   end
 end
 
----Build the reloads a firing unit's group needs, filling each unit and weapon in order until the stock runs out
+---Build the reloads a launcher's group needs, filling each unit and weapon in order until the stock runs out
 ---Reads CMO only, so the plan can be decided on before any reload is written.
----@param firingUnit CMO__Unit
+---@param launcher CMO__Unit
 ---@param weaponDBID number|number[]
----@param stock integer Missiles the resupply unit carries
+---@param stock integer Missiles the transloader carries
 ---@return SBJ__ReloadPlan
-function Ammo.buildReload(firingUnit, weaponDBID, stock)
+function Ammo.buildReload(launcher, weaponDBID, stock)
   local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
   local plan = { entries = {}, count = 0 }
 
-  for _, guid in ipairs(Shared.getGroupUnits(firingUnit)) do
+  for _, guid in ipairs(Shared.getGroupUnits(launcher)) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit then
@@ -48,29 +48,29 @@ function Ammo.buildReload(firingUnit, weaponDBID, stock)
   return plan
 end
 
----Load a reload plan into the firing unit's group and take the missiles from the resupply unit
----@param resupplyUnitState SBJ__ResupplyUnitState
----@param plan SBJ__ReloadPlan From Ammo.buildReload with this resupply unit's stock
+---Load a reload plan into the launcher's group and take the missiles from the transloader
+---@param transloaderState SBJ__TransloaderState
+---@param plan SBJ__ReloadPlan From Ammo.buildReload with this transloader's stock
 ---@return integer # Total ammunition loaded
-function Ammo.reloadFiringUnit(resupplyUnitState, plan)
+function Ammo.reloadLauncher(transloaderState, plan)
   for _, entry in ipairs(plan.entries) do
     GameApi.ScenEdit_AddReloadsToUnit({ guid = entry.guid, side = entry.side, wpn_dbid = entry.weaponDBID, number = entry.number })
   end
 
-  resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent - plan.count
+  transloaderState.weaponCountCurrent = transloaderState.weaponCountCurrent - plan.count
   return plan.count
 end
 
----Sum loaded and maximum weapons across every unit of a firing unit's group
----@param firingUnit CMO__Unit
+---Sum loaded and maximum weapons across every unit of a launcher's group
+---@param launcher CMO__Unit
 ---@param weaponDBID number|number[]
 ---@return integer current Weapons loaded
 ---@return integer max Weapon capacity
-local function tallyWeapons(firingUnit, weaponDBID)
+local function tallyWeapons(launcher, weaponDBID)
   local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
   local current, max = 0, 0
 
-  for _, guid in ipairs(Shared.getGroupUnits(firingUnit)) do
+  for _, guid in ipairs(Shared.getGroupUnits(launcher)) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
 
     if unit then
@@ -86,16 +86,16 @@ local function tallyWeapons(firingUnit, weaponDBID)
 end
 
 ---Check if unit/group ammunition is below specified percentage
----@param firingUnit CMO__Unit
+---@param launcher CMO__Unit
 ---@param percentage number|nil
 ---@param weaponDBID number|number[]|nil
 ---@return boolean # Whether it is low ammunition
-function Ammo.isLowAmmo(firingUnit, percentage, weaponDBID)
+function Ammo.isLowAmmo(launcher, percentage, weaponDBID)
   if not percentage or not weaponDBID then
     return false
   end
 
-  local totalCurrent, totalMax = tallyWeapons(firingUnit, weaponDBID)
+  local totalCurrent, totalMax = tallyWeapons(launcher, weaponDBID)
   if totalMax == 0 then return false end
   return (totalCurrent / totalMax * 100) <= percentage
 end
@@ -109,19 +109,19 @@ local function calculatePercentage(current, max)
   return math.floor(current / max * 100 + 0.5)
 end
 
----Sum ammunition across all firing units of a missile system by querying live game state
----@param firingUnitMap table<string, SBJ__FiringUnitState>
----@param descriptorMap table<string, SBJ__FiringUnitDescriptor>
+---Sum ammunition across all launchers of a missile system by querying live game state
+---@param launcherMap table<string, SBJ__LauncherState>
+---@param descriptorMap table<string, SBJ__LauncherDescriptor>
 ---@param sideName string
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
-local function countFiringUnits(firingUnitMap, descriptorMap, sideName)
+local function countLaunchers(launcherMap, descriptorMap, sideName)
   local subtotal = { current = 0, max = 0, percentage = 0 }
 
-  for name in pairs(firingUnitMap) do
+  for name in pairs(launcherMap) do
     local descriptor = descriptorMap[name]
-    local firingUnit = descriptor and GameApi.ScenEdit_GetUnit(name, sideName)
-    if firingUnit then
-      local current, max = tallyWeapons(firingUnit, descriptor.weaponDBID)
+    local launcher = descriptor and GameApi.ScenEdit_GetUnit(name, sideName)
+    if launcher then
+      local current, max = tallyWeapons(launcher, descriptor.weaponDBID)
       subtotal.current = subtotal.current + current
       subtotal.max = subtotal.max + max
     end
@@ -131,9 +131,9 @@ local function countFiringUnits(firingUnitMap, descriptorMap, sideName)
   return subtotal
 end
 
----Sum ammunition across state-tracked units (resupply trucks or canister stocks)
----@param stateMap table<string, SBJ__ResupplyUnitState|SBJ__CanisterStockState>
----@param descriptorMap table<string, SBJ__ResupplyUnitDescriptor|SBJ__CanisterStockDescriptor>
+---Sum ammunition across state-tracked units (transloaders or canister stocks)
+---@param stateMap table<string, SBJ__TransloaderState|SBJ__CanisterStockState>
+---@param descriptorMap table<string, SBJ__TransloaderDescriptor|SBJ__CanisterStockDescriptor>
 ---@return SBJ__AmmoSubtotalEntry # Subtotal with current/max/percentage
 local function countStateUnits(stateMap, descriptorMap)
   local subtotal = { current = 0, max = 0, percentage = 0 }
@@ -150,26 +150,26 @@ local function countStateUnits(stateMap, descriptorMap)
   return subtotal
 end
 
----Calculate ammunition inventory across firing units, resupply units, and canister stocks
+---Calculate ammunition inventory across launchers, transloaders, and canister stocks
 ---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
 ---@param sideName string
 ---@return SBJ__AmmoInventoryResult # Inventory report with subtotals and percentages
 function Ammo.getInventory(systemConfig, systemState, sideName)
-  local firing = countFiringUnits(systemState.firingUnits, systemConfig.firingUnits, sideName)
-  local resupply = countStateUnits(systemState.resupplyUnits, systemConfig.resupplyUnits)
+  local launcher = countLaunchers(systemState.launchers, systemConfig.launchers, sideName)
+  local transloader = countStateUnits(systemState.transloaders, systemConfig.transloaders)
   local canisterStock = countStateUnits(systemState.canisterStocks, systemConfig.canisterStocks)
 
   local total = {
-    current = firing.current + resupply.current + canisterStock.current,
-    max = firing.max + resupply.max + canisterStock.max,
+    current = launcher.current + transloader.current + canisterStock.current,
+    max = launcher.max + transloader.max + canisterStock.max,
     percentage = 0,
   }
   total.percentage = calculatePercentage(total.current, total.max)
 
   return {
-    firing = firing,
-    resupply = resupply,
+    launcher = launcher,
+    transloader = transloader,
     canisterStock = canisterStock,
     total = total,
   }

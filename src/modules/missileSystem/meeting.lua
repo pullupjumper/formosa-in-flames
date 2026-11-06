@@ -20,7 +20,7 @@ function Meeting.findReloadArea(unit, operationalArea)
 end
 
 ---Resolve the CMO unit for a state, reusing the triggering unit when names match
----@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---@param unitState SBJ__LauncherState|SBJ__TransloaderState
 ---@param triggeringUnit CMO__Unit
 ---@return CMO__Unit|nil # CMO unit or nil if lookup fails
 local function resolveCmoUnit(unitState, triggeringUnit)
@@ -30,58 +30,58 @@ local function resolveCmoUnit(unitState, triggeringUnit)
   return GameApi.ScenEdit_GetUnit(unitState.name, triggeringUnit.side)
 end
 
----Resolve the firing unit and resupply unit paired with a unit, both states and both CMO units
+---Resolve the launcher and transloader paired with a unit, both states and both CMO units
 ---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
----@param unit CMO__Unit Firing or resupply unit; reused for its own end, the other end is looked up on its side
+---@param unit CMO__Unit Launcher or transloader; reused for its own end, the other end is looked up on its side
 ---@return SBJ__ReloadPair|nil # Nil when either state or either CMO unit is missing
 function Meeting.resolveReloadPair(systemConfig, systemState, unit)
-  local firingUnitState, resupplyUnitState = GroundStateStore.resolvePair(systemConfig, systemState, unit.name)
-  if not firingUnitState or not resupplyUnitState then
+  local launcherState, transloaderState = GroundStateStore.resolvePair(systemConfig, systemState, unit.name)
+  if not launcherState or not transloaderState then
     return nil
   end
-  local firingUnitDescriptor = systemConfig.firingUnits[firingUnitState.name]
+  local launcherDescriptor = systemConfig.launchers[launcherState.name]
 
-  local firingUnit = resolveCmoUnit(firingUnitState, unit)
-  local resupplyUnit = resolveCmoUnit(resupplyUnitState, unit)
-  if not firingUnit or not resupplyUnit then
+  local launcher = resolveCmoUnit(launcherState, unit)
+  local transloader = resolveCmoUnit(transloaderState, unit)
+  if not launcher or not transloader then
     return nil
   end
 
   local reload
   return {
-    firingUnitState = firingUnitState,
-    firingUnit = firingUnit,
-    resupplyUnitState = resupplyUnitState,
-    resupplyUnit = resupplyUnit,
-    isTriggeredByFiringUnit = unit.name == firingUnitState.name,
-    isFiringUnitLowAmmo = function()
-      return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
+    launcherState = launcherState,
+    launcher = launcher,
+    transloaderState = transloaderState,
+    transloader = transloader,
+    isTriggeredByLauncher = unit.name == launcherState.name,
+    isLauncherLowAmmo = function()
+      return Ammo.isLowAmmo(launcher, launcherDescriptor.ammoThreshold, launcherDescriptor.weaponDBID)
     end,
     isInSameReloadArea = function()
-      local area = Meeting.findReloadArea(firingUnit, firingUnitState.operationalArea)
-      return area ~= nil and resupplyUnit:inArea(area)
+      local area = Meeting.findReloadArea(launcher, launcherState.operationalArea)
+      return area ~= nil and transloader:inArea(area)
     end,
     buildReload = function()
-      reload = reload or Ammo.buildReload(firingUnit, firingUnitDescriptor.weaponDBID, resupplyUnitState.weaponCountCurrent)
+      reload = reload or Ammo.buildReload(launcher, launcherDescriptor.weaponDBID, transloaderState.weaponCountCurrent)
       return reload
     end,
   }
 end
 
----Whether a resupply unit and its canister stock stand in one ATP zone
----@param resupplyUnitDescriptor SBJ__ResupplyUnitDescriptor
----@param resupplyUnitState SBJ__ResupplyUnitState
----@param resupplyUnit CMO__Unit
+---Whether a transloader and its canister stock stand in one ATP zone
+---@param transloaderDescriptor SBJ__TransloaderDescriptor
+---@param transloaderState SBJ__TransloaderState
+---@param transloader CMO__Unit
 ---@return boolean # False also when the canister stock is not in the game
-function Meeting.isAtCanisterStock(resupplyUnitDescriptor, resupplyUnitState, resupplyUnit)
-  local canisterStock = GameApi.ScenEdit_GetUnit(resupplyUnitDescriptor.canisterStock, resupplyUnit.side)
+function Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader)
+  local canisterStock = GameApi.ScenEdit_GetUnit(transloaderDescriptor.canisterStock, transloader.side)
   if not canisterStock then
     return false
   end
 
-  for _, pos in ipairs(resupplyUnitState.operationalArea.ATP) do
-    if resupplyUnit:inArea(pos.area) and canisterStock:inArea(pos.area) then
+  for _, pos in ipairs(transloaderState.operationalArea.ATP) do
+    if transloader:inArea(pos.area) and canisterStock:inArea(pos.area) then
       return true
     end
   end

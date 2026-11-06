@@ -378,7 +378,7 @@ local function processUndetected(sigintState, unit, maxCount)
 end
 
 
----Enemy firing units and C2 nodes a SIGINT collector listens to, in collection order
+---Enemy launchers and C2 nodes a SIGINT collector listens to, in collection order
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param collectorSide string

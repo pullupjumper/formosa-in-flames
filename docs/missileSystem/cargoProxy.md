@@ -59,7 +59,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `loadCargo` | `base, unitState, sideName` | `nil` | 將地面單位（含 group）轉為 cargo proxy 並載入目標載具或建築物；`unitState` 為 `SBJ__FiringUnitState` 或 `SBJ__ResupplyUnitState` |
+| `loadCargo` | `base, unitState, sideName` | `nil` | 將地面單位（含 group）轉為 cargo proxy 並載入目標載具或建築物；`unitState` 為 `SBJ__LauncherState` 或 `SBJ__TransloaderState` |
 
 ---
 

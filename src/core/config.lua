@@ -293,7 +293,7 @@ config.red.ground = {}
 config.red.ground.policy = {
   isAuto = true,
   hideOnEnterHA = true,
-  hideResupplyOnRLNoMeeting = true
+  hideTransloaderOnRLNoMeeting = true
 }
 config.red.ground.missileSystemTypes = {}
 
@@ -319,7 +319,7 @@ config.red.ground.missileSystemTypes.mlrs.canisterStocks = {
     weaponCountDefault = config.red.ground.missileSystemTypes.mlrs.weaponCountDefault * 2,
   },
 }
-config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {
+config.red.ground.missileSystemTypes.mlrs.transloaders = {
   ["Ammo Sec, 1st Bn, 1st Rockets Arty Bde"] = {
     name = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
     weaponCountCurrent = config.red.ground.missileSystemTypes.mlrs.weaponCountDefault,
@@ -328,7 +328,7 @@ config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.JUK,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Bn, 1st Rockets Arty Bde",
-    firingUnit = "1st Bn, 1st Rockets Arty Bde"
+    launcher = "1st Bn, 1st Rockets Arty Bde"
   },
   ["Ammo Sec, 6th Bn, 73rd Arty Bde"] = {
     name = "Ammo Sec, 6th Bn, 73rd Arty Bde",
@@ -338,10 +338,10 @@ config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.YMC,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 6th Bn, 73rd Arty Bde",
-    firingUnit = "6th Bn, 73rd Arty Bde"
+    launcher = "6th Bn, 73rd Arty Bde"
   },
 }
-config.red.ground.missileSystemTypes.mlrs.firingUnits = {
+config.red.ground.missileSystemTypes.mlrs.launchers = {
   ["1st Bn, 1st Rockets Arty Bde"] = {
     name = "1st Bn, 1st Rockets Arty Bde",
     msg = "Radio source, Bty",
@@ -349,7 +349,7 @@ config.red.ground.missileSystemTypes.mlrs.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.JUK,
     weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.red.ground.missileSystemTypes.mlrs.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
+    transloader = "Ammo Sec, 1st Bn, 1st Rockets Arty Bde",
     dbid = constants.PLATFORMS.PHL16,
     missileSystem = "PHL-16",
   },
@@ -360,7 +360,7 @@ config.red.ground.missileSystemTypes.mlrs.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.YMC,
     weaponDBID = constants.WEAPONS.FD280,
     ammoThreshold = config.red.ground.missileSystemTypes.mlrs.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 6th Bn, 73rd Arty Bde",
+    transloader = "Ammo Sec, 6th Bn, 73rd Arty Bde",
     dbid = constants.PLATFORMS.PHL16,
     missileSystem = "PHL-16",
   },
@@ -384,7 +384,7 @@ config.red.ground.missileSystemTypes.glcm.canisterStocks = {
     weaponCountDefault = config.red.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
   },
 }
-config.red.ground.missileSystemTypes.glcm.resupplyUnits = {
+config.red.ground.missileSystemTypes.glcm.transloaders = {
   ["Ammo Sec, 635th Bde, PLARF"] = {
     name = "Ammo Sec, 635th Bde, PLARF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.glcm.weaponCountDefault / 2,
@@ -393,10 +393,10 @@ config.red.ground.missileSystemTypes.glcm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.TXI,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 635th Bde, PLARF",
-    firingUnit = "635th Bde, PLARF"
+    launcher = "635th Bde, PLARF"
   },
 }
-config.red.ground.missileSystemTypes.glcm.firingUnits = {
+config.red.ground.missileSystemTypes.glcm.launchers = {
   ["635th Bde, PLARF"] = {
     name = "635th Bde, PLARF",
     msg = "Radio source, Bty",
@@ -404,7 +404,7 @@ config.red.ground.missileSystemTypes.glcm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.TXI,
     weaponDBID = constants.WEAPONS.CJ10A,
     ammoThreshold = config.red.ground.missileSystemTypes.glcm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 635th Bde, PLARF",
+    transloader = "Ammo Sec, 635th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "CJ-10A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CH_SSC_9,
@@ -454,7 +454,7 @@ config.red.ground.missileSystemTypes.srbm.canisterStocks = {
     weaponCountDefault = config.red.ground.missileSystemTypes.srbm.weaponCountDefault * 2,
   },
 }
-config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
+config.red.ground.missileSystemTypes.srbm.transloaders = {
   ["Ammo Sec, 613rd Bde, PLARF"] = {
     name = "Ammo Sec, 613rd Bde, PLARF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.srbm.weaponCountDefault,
@@ -463,7 +463,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.XZL,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 613rd Bde, PLARF",
-    firingUnit = "613rd Bde, PLARF"
+    launcher = "613rd Bde, PLARF"
   },
   ["Ammo Sec, 614th Bde, PLARF"] = {
     name = "Ammo Sec, 614th Bde, PLARF",
@@ -473,7 +473,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.GSU,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 614th Bde, PLARF",
-    firingUnit = "614th Bde, PLARF"
+    launcher = "614th Bde, PLARF"
   },
   ["Ammo Sec, 615th Bde, PLARF"] = {
     name = "Ammo Sec, 615th Bde, PLARF",
@@ -483,7 +483,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.HUZ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 615th Bde, PLARF",
-    firingUnit = "615th Bde, PLARF"
+    launcher = "615th Bde, PLARF"
   },
   ["Ammo Sec, 616th Bde, PLARF"] = {
     name = "Ammo Sec, 616th Bde, PLARF",
@@ -493,7 +493,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IDP,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 616th Bde, PLARF",
-    firingUnit = "616th Bde, PLARF"
+    launcher = "616th Bde, PLARF"
   },
   ["Ammo Sec, 617th Bde, PLARF"] = {
     name = "Ammo Sec, 617th Bde, PLARF",
@@ -503,7 +503,7 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.GMJ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 617th Bde, PLARF",
-    firingUnit = "617th Bde, PLARF"
+    launcher = "617th Bde, PLARF"
   },
   ["Ammo Sec, 636th Bde, PLARF"] = {
     name = "Ammo Sec, 636th Bde, PLARF",
@@ -513,10 +513,10 @@ config.red.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.HMJ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 636th Bde, PLARF",
-    firingUnit = "636th Bde, PLARF"
+    launcher = "636th Bde, PLARF"
   },
 }
-config.red.ground.missileSystemTypes.srbm.firingUnits = {
+config.red.ground.missileSystemTypes.srbm.launchers = {
   ["613rd Bde, PLARF"] = {
     name = "613rd Bde, PLARF",
     msg = "Radio source, Bty",
@@ -524,7 +524,7 @@ config.red.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.XZL,
     weaponDBID = constants.WEAPONS.DF15B,
     ammoThreshold = config.red.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 613rd Bde, PLARF",
+    transloader = "Ammo Sec, 613rd Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-15B",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD3,
@@ -536,7 +536,7 @@ config.red.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.GSU,
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.red.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 614th Bde, PLARF",
+    transloader = "Ammo Sec, 614th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-11A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
@@ -548,7 +548,7 @@ config.red.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.HUZ,
     weaponDBID = constants.WEAPONS.DF11A,
     ammoThreshold = config.red.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 615th Bde, PLARF",
+    transloader = "Ammo Sec, 615th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-11A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS7_MOD2,
@@ -560,7 +560,7 @@ config.red.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IDP,
     weaponDBID = constants.WEAPONS.DF15C,
     ammoThreshold = config.red.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 616th Bde, PLARF",
+    transloader = "Ammo Sec, 616th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-15C",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS6_MOD2,
@@ -572,7 +572,7 @@ config.red.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.GMJ,
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.red.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 617th Bde, PLARF",
+    transloader = "Ammo Sec, 617th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-16A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
@@ -584,7 +584,7 @@ config.red.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.HMJ,
     weaponDBID = constants.WEAPONS.DF16A,
     ammoThreshold = config.red.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 636th Bde, PLARF",
+    transloader = "Ammo Sec, 636th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-16A",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS11_MOD1,
@@ -609,7 +609,7 @@ config.red.ground.missileSystemTypes.mrbm.canisterStocks = {
     weaponCountDefault = config.red.ground.missileSystemTypes.mrbm.weaponCountDefault * 2,
   },
 }
-config.red.ground.missileSystemTypes.mrbm.resupplyUnits = {
+config.red.ground.missileSystemTypes.mrbm.transloaders = {
   ["Ammo Sec, 624th Bde, PLARF"] = {
     name = "Ammo Sec, 624th Bde, PLARF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.mrbm.weaponCountDefault,
@@ -618,10 +618,10 @@ config.red.ground.missileSystemTypes.mrbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.ZWQ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 624th Bde, PLARF",
-    firingUnit = "624th Bde, PLARF"
+    launcher = "624th Bde, PLARF"
   },
 }
-config.red.ground.missileSystemTypes.mrbm.firingUnits = {
+config.red.ground.missileSystemTypes.mrbm.launchers = {
   ["624th Bde, PLARF"] = {
     name = "624th Bde, PLARF",
     msg = "Radio source, Bty",
@@ -629,7 +629,7 @@ config.red.ground.missileSystemTypes.mrbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.ZWQ,
     weaponDBID = constants.WEAPONS.DF21D,
     ammoThreshold = config.red.ground.missileSystemTypes.mrbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 624th Bde, PLARF",
+    transloader = "Ammo Sec, 624th Bde, PLARF",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "DF-21D",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CSS5_MOD5,
@@ -654,7 +654,7 @@ config.red.ground.missileSystemTypes.ascm.canisterStocks = {
     weaponCountDefault = config.red.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
 }
-config.red.ground.missileSystemTypes.ascm.resupplyUnits = {
+config.red.ground.missileSystemTypes.ascm.transloaders = {
   ["Ammo Sec, 1st Pili Reg"] = {
     name = "Ammo Sec, 1st Pili Reg",
     weaponCountCurrent = config.red.ground.missileSystemTypes.ascm.weaponCountDefault,
@@ -663,10 +663,10 @@ config.red.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.RCU,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Pili Reg",
-    firingUnit = "1st Pili Reg"
+    launcher = "1st Pili Reg"
   },
 }
-config.red.ground.missileSystemTypes.ascm.firingUnits = {
+config.red.ground.missileSystemTypes.ascm.launchers = {
   ["1st Pili Reg"] = {
     name = "1st Pili Reg",
     msg = "Radio source, Bty",
@@ -674,7 +674,7 @@ config.red.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.RCU,
     weaponDBID = constants.WEAPONS.YJ12,
     ammoThreshold = config.red.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Pili Reg",
+    transloader = "Ammo Sec, 1st Pili Reg",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "YJ-12",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.YJ12,
@@ -734,7 +734,7 @@ config.red.ground.missileSystemTypes.sam.canisterStocks = {
     weaponCountDefault = config.red.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
 }
-config.red.ground.missileSystemTypes.sam.resupplyUnits = {
+config.red.ground.missileSystemTypes.sam.transloaders = {
   ["Ammo Sec, 94695 Unit, PLAAF"] = {
     name = "Ammo Sec, 94695 Unit, PLAAF",
     weaponCountCurrent = config.red.ground.missileSystemTypes.sam.weaponCountDefault,
@@ -743,7 +743,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QXV,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94695 Unit, PLAAF",
-    firingUnit = "94695 Unit, PLAAF"
+    launcher = "94695 Unit, PLAAF"
   },
   ["Ammo Sec, 94759 Unit, PLAAF"] = {
     name = "Ammo Sec, 94759 Unit, PLAAF",
@@ -753,7 +753,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.URF,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94759 Unit, PLAAF",
-    firingUnit = "94759 Unit, PLAAF"
+    launcher = "94759 Unit, PLAAF"
   },
   ["Ammo Sec, 94774 Unit, PLAAF"] = {
     name = "Ammo Sec, 94774 Unit, PLAAF",
@@ -763,7 +763,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.WEP,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94774 Unit, PLAAF",
-    firingUnit = "94774 Unit, PLAAF"
+    launcher = "94774 Unit, PLAAF"
   },
   ["Ammo Sec, 94777 Unit, PLAAF"] = {
     name = "Ammo Sec, 94777 Unit, PLAAF",
@@ -773,7 +773,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.EAJ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94777 Unit, PLAAF",
-    firingUnit = "94777 Unit, PLAAF"
+    launcher = "94777 Unit, PLAAF"
   },
   ["Ammo Sec, 94807 Unit, PLAAF"] = {
     name = "Ammo Sec, 94807 Unit, PLAAF",
@@ -783,7 +783,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IDC,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94807 Unit, PLAAF",
-    firingUnit = "94807 Unit, PLAAF"
+    launcher = "94807 Unit, PLAAF"
   },
   ["Ammo Sec, 94908 Unit, PLAAF"] = {
     name = "Ammo Sec, 94908 Unit, PLAAF",
@@ -793,7 +793,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.OJM,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94908 Unit, PLAAF",
-    firingUnit = "94908 Unit, PLAAF"
+    launcher = "94908 Unit, PLAAF"
   },
   ["Ammo Sec, 94967 Unit, PLAAF"] = {
     name = "Ammo Sec, 94967 Unit, PLAAF",
@@ -803,7 +803,7 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.LPU,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 94967 Unit, PLAAF",
-    firingUnit = "94967 Unit, PLAAF"
+    launcher = "94967 Unit, PLAAF"
   },
   ["Ammo Sec, 95324 Unit, PLAAF"] = {
     name = "Ammo Sec, 95324 Unit, PLAAF",
@@ -813,10 +813,10 @@ config.red.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.KRO,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 95324 Unit, PLAAF",
-    firingUnit = "95324 Unit, PLAAF"
+    launcher = "95324 Unit, PLAAF"
   },
 }
-config.red.ground.missileSystemTypes.sam.firingUnits = {
+config.red.ground.missileSystemTypes.sam.launchers = {
   ["94695 Unit, PLAAF"] = {
     name = "94695 Unit, PLAAF",
     msg = "Radio source, Bty",
@@ -824,7 +824,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QXV,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94695 Unit, PLAAF",
+    transloader = "Ammo Sec, 94695 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -835,7 +835,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.URF,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94759 Unit, PLAAF",
+    transloader = "Ammo Sec, 94759 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -846,7 +846,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.WEP,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94774 Unit, PLAAF",
+    transloader = "Ammo Sec, 94774 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -857,7 +857,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.EAJ,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94777 Unit, PLAAF",
+    transloader = "Ammo Sec, 94777 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -868,7 +868,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IDC,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94807 Unit, PLAAF",
+    transloader = "Ammo Sec, 94807 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -879,7 +879,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.OJM,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94908 Unit, PLAAF",
+    transloader = "Ammo Sec, 94908 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -890,7 +890,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.LPU,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 94967 Unit, PLAAF",
+    transloader = "Ammo Sec, 94967 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -901,7 +901,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.KRO,
     weaponDBID = { constants.WEAPONS.SA20, constants.WEAPONS.SA16 },
     ammoThreshold = config.red.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 95324 Unit, PLAAF",
+    transloader = "Ammo Sec, 95324 Unit, PLAAF",
     dbid = constants.PLATFORMS.S300,
     missileSystem = "S-300",
   },
@@ -914,7 +914,7 @@ config.red.ground.missileSystemTypes.sam.firingUnits = {
 
 config.red.recon = {}
 config.red.recon.observationWindowSec = 30 * 60
--- Active FSEMs older than this are retired by FsemBuilder so their firing units
+-- Active FSEMs older than this are retired by FsemBuilder so their launchers
 -- return to the assignable pool. Aligned with observationWindowSec (competing
 -- operations wait at most 30 min) and c.ground.srbm.contactAge (older targeting
 -- data is stale anyway); production templates deploy well inside this window.
@@ -2592,7 +2592,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RADAR",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "614th Bde, PLARF",
         "613rd Bde, PLARF"
       },
@@ -2611,7 +2611,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RUNWAY",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "636th Bde, PLARF",
         "617th Bde, PLARF"
       },
@@ -2638,7 +2638,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "PORT",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "615th Bde, PLARF"
       },
       target = {
@@ -2660,7 +2660,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "SHELTER",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "616th Bde, PLARF"
       },
       target = {
@@ -2683,7 +2683,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RADAR",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "614th Bde, PLARF",
         "613rd Bde, PLARF"
       },
@@ -2702,7 +2702,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "RUNWAY",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "636th Bde, PLARF",
         "617th Bde, PLARF"
       },
@@ -2734,7 +2734,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "PORT",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "615th Bde, PLARF"
       },
       target = {
@@ -2758,7 +2758,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "SHELTER",
       missileSystemType = "SRBM",
-      firingUnitNames = {
+      launcherNames = {
         "616th Bde, PLARF"
       },
       target = {
@@ -2785,7 +2785,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "ANTISHIP",
       missileSystemType = "MRBM",
-      firingUnitNames = {
+      launcherNames = {
         "624th Bde, PLARF"
       },
       target = {
@@ -2803,7 +2803,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "ANTISHIP",
       missileSystemType = "ASCM",
-      firingUnitNames = {
+      launcherNames = {
         "1st Pili Reg"
       },
       target = {
@@ -2821,7 +2821,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "PINGTAN",
       missileSystemType = "MLRS",
-      firingUnitNames = {
+      launcherNames = {
         "1st Bn, 1st Rockets Arty Bde"
       },
       target = {
@@ -2839,7 +2839,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "CHINCHEW",
       missileSystemType = "MLRS",
-      firingUnitNames = {
+      launcherNames = {
         "6th Bn, 73rd Arty Bde"
       },
       target = {
@@ -2857,7 +2857,7 @@ config.red.fireSupportTaskTemplates = {
     {
       name = "HELIPAD",
       missileSystemType = "GLCM",
-      firingUnitNames = {
+      launcherNames = {
         "635th Bde, PLARF"
       },
       target = {
@@ -4715,7 +4715,7 @@ config.blue.ground = {}
 config.blue.ground.policy = {
   isAuto = false,
   hideOnEnterHA = false,
-  hideResupplyOnRLNoMeeting = false
+  hideTransloaderOnRLNoMeeting = false
 }
 config.blue.ground.missileSystemTypes = {}
 
@@ -4735,7 +4735,7 @@ config.blue.ground.missileSystemTypes.mlrs.canisterStocks = {
     weaponCountDefault = config.blue.ground.missileSystemTypes.mlrs.weaponCountDefault,
   },
 }
-config.blue.ground.missileSystemTypes.mlrs.resupplyUnits = {
+config.blue.ground.missileSystemTypes.mlrs.transloaders = {
   ["Ammo Sec, Rocket Arty Coy, 21st Arty Command"] = {
     name = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.mlrs.weaponCountDefault,
@@ -4744,10 +4744,10 @@ config.blue.ground.missileSystemTypes.mlrs.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.NVD,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, Rocket Arty Coy, 21st Arty Command",
-    firingUnit = "Rocket Arty Coy, 21st Arty Command"
+    launcher = "Rocket Arty Coy, 21st Arty Command"
   },
 }
-config.blue.ground.missileSystemTypes.mlrs.firingUnits = {
+config.blue.ground.missileSystemTypes.mlrs.launchers = {
   ["Rocket Arty Coy, 21st Arty Command"] = {
     name = "Rocket Arty Coy, 21st Arty Command",
     msg = "Radio source, Bty",
@@ -4755,7 +4755,7 @@ config.blue.ground.missileSystemTypes.mlrs.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.NVD,
     weaponDBID = constants.WEAPONS.MK45_AMLRS,
     ammoThreshold = config.blue.ground.missileSystemTypes.mlrs.ammoThreshold,
-    resupplyUnit = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
+    transloader = "Ammo Sec, Rocket Arty Coy, 21st Arty Command",
     dbid = constants.PLATFORMS.LT2000,
     missileSystem = "LT-2000",
   },
@@ -4778,7 +4778,7 @@ config.blue.ground.missileSystemTypes.srbm.canisterStocks = {
     weaponCountDefault = config.blue.ground.missileSystemTypes.srbm.weaponCountDefault,
   },
 }
-config.blue.ground.missileSystemTypes.srbm.resupplyUnits = {
+config.blue.ground.missileSystemTypes.srbm.transloaders = {
   ["Ammo Sec, Rocket Arty Coy, 58th Arty Command"] = {
     name = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.srbm.weaponCountDefault,
@@ -4787,10 +4787,10 @@ config.blue.ground.missileSystemTypes.srbm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.LPK,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, Rocket Arty Coy, 58th Arty Command",
-    firingUnit = "Rocket Arty Coy, 58th Arty Command"
+    launcher = "Rocket Arty Coy, 58th Arty Command"
   },
 }
-config.blue.ground.missileSystemTypes.srbm.firingUnits = {
+config.blue.ground.missileSystemTypes.srbm.launchers = {
   ["Rocket Arty Coy, 58th Arty Command"] = {
     name = "Rocket Arty Coy, 58th Arty Command",
     msg = "Radio source, Bty",
@@ -4798,7 +4798,7 @@ config.blue.ground.missileSystemTypes.srbm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.LPK,
     weaponDBID = constants.WEAPONS.ATACMS,
     ammoThreshold = config.blue.ground.missileSystemTypes.srbm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
+    transloader = "Ammo Sec, Rocket Arty Coy, 58th Arty Command",
     dbid = constants.PLATFORMS.HIMARS,
     missileSystem = "HIMARS",
   },
@@ -4826,7 +4826,7 @@ config.blue.ground.missileSystemTypes.glcm.canisterStocks = {
     weaponCountDefault = config.blue.ground.missileSystemTypes.glcm.weaponCountDefault * 2,
   },
 }
-config.blue.ground.missileSystemTypes.glcm.resupplyUnits = {
+config.blue.ground.missileSystemTypes.glcm.transloaders = {
   ["Ammo Sec, 641st Bn, 791st AFAD & Arty Bde"] = {
     name = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.glcm.weaponCountDefault,
@@ -4835,7 +4835,7 @@ config.blue.ground.missileSystemTypes.glcm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.SET,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 641st Bn, 791st AFAD & Arty Bde",
-    firingUnit = "641st Bn, 791st AFAD & Arty Bde"
+    launcher = "641st Bn, 791st AFAD & Arty Bde"
   },
   ["Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde"] = {
     name = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
@@ -4845,10 +4845,10 @@ config.blue.ground.missileSystemTypes.glcm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.AMG,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 642nd Bn, 791st AFAD & Arty Bde",
-    firingUnit = "642nd Bn, 791st AFAD & Arty Bde"
+    launcher = "642nd Bn, 791st AFAD & Arty Bde"
   },
 }
-config.blue.ground.missileSystemTypes.glcm.firingUnits = {
+config.blue.ground.missileSystemTypes.glcm.launchers = {
   ["641st Bn, 791st AFAD & Arty Bde"] = {
     name = "641st Bn, 791st AFAD & Arty Bde",
     msg = "Radio source, Bty",
@@ -4856,7 +4856,7 @@ config.blue.ground.missileSystemTypes.glcm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.SET,
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.blue.ground.missileSystemTypes.glcm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
+    transloader = "Ammo Sec, 641st Bn, 791st AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "HF-2E",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
@@ -4868,7 +4868,7 @@ config.blue.ground.missileSystemTypes.glcm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.AMG,
     weaponDBID = constants.WEAPONS.HF2E,
     ammoThreshold = config.blue.ground.missileSystemTypes.glcm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
+    transloader = "Ammo Sec, 642nd Bn, 791st AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SSM,
     missileSystem = "HF-2E",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.HF2E,
@@ -4918,7 +4918,7 @@ config.blue.ground.missileSystemTypes.ascm.canisterStocks = {
     weaponCountDefault = config.blue.ground.missileSystemTypes.ascm.weaponCountDefault * 2,
   },
 }
-config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
+config.blue.ground.missileSystemTypes.ascm.transloaders = {
   ["Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
     weaponCountCurrent = config.blue.ground.missileSystemTypes.ascm.weaponCountDefault,
@@ -4927,7 +4927,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.FZM,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Hai Feng Shore-based ASM MOB Sqn",
-    firingUnit = "1st Hai Feng Shore-based ASM MOB Sqn"
+    launcher = "1st Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
@@ -4937,7 +4937,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.DLF,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 2nd Hai Feng Shore-based ASM MOB Sqn",
-    firingUnit = "2nd Hai Feng Shore-based ASM MOB Sqn"
+    launcher = "2nd Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
@@ -4947,7 +4947,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.TGO,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 3rd Hai Feng Shore-based ASM MOB Sqn",
-    firingUnit = "3rd Hai Feng Shore-based ASM MOB Sqn"
+    launcher = "3rd Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
@@ -4957,7 +4957,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BPM,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 4th Hai Feng Shore-based ASM MOB Sqn",
-    firingUnit = "4th Hai Feng Shore-based ASM MOB Sqn"
+    launcher = "4th Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
@@ -4967,7 +4967,7 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PDN,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 5th Hai Feng Shore-based ASM MOB Sqn",
-    firingUnit = "5th Hai Feng Shore-based ASM MOB Sqn"
+    launcher = "5th Hai Feng Shore-based ASM MOB Sqn"
   },
   ["Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
@@ -4977,10 +4977,10 @@ config.blue.ground.missileSystemTypes.ascm.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.SKB,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 6th Hai Feng Shore-based ASM MOB Sqn",
-    firingUnit = "6th Hai Feng Shore-based ASM MOB Sqn"
+    launcher = "6th Hai Feng Shore-based ASM MOB Sqn"
   },
 }
-config.blue.ground.missileSystemTypes.ascm.firingUnits = {
+config.blue.ground.missileSystemTypes.ascm.launchers = {
   ["1st Hai Feng Shore-based ASM MOB Sqn"] = {
     name = "1st Hai Feng Shore-based ASM MOB Sqn",
     msg = "Radio source, Bty",
@@ -4988,7 +4988,7 @@ config.blue.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.FZM,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.blue.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
+    transloader = "Ammo Sec, 1st Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
     missileSystem = "HF-3",
   },
@@ -4999,7 +4999,7 @@ config.blue.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.DLF,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.blue.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
+    transloader = "Ammo Sec, 2nd Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
     missileSystem = "HF-3",
   },
@@ -5010,7 +5010,7 @@ config.blue.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.TGO,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.blue.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
+    transloader = "Ammo Sec, 3rd Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
     missileSystem = "HF-3",
   },
@@ -5021,7 +5021,7 @@ config.blue.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.BPM,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.blue.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
+    transloader = "Ammo Sec, 4th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
     missileSystem = "HF-3",
   },
@@ -5032,7 +5032,7 @@ config.blue.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PDN,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.blue.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
+    transloader = "Ammo Sec, 5th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
     missileSystem = "HF-3",
   },
@@ -5043,7 +5043,7 @@ config.blue.ground.missileSystemTypes.ascm.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.SKB,
     weaponDBID = constants.WEAPONS.HF3,
     ammoThreshold = config.blue.ground.missileSystemTypes.ascm.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
+    transloader = "Ammo Sec, 6th Hai Feng Shore-based ASM MOB Sqn",
     dbid = constants.PLATFORMS.HF3,
     missileSystem = "HF-3",
   },
@@ -5136,7 +5136,7 @@ config.blue.ground.missileSystemTypes.sam.canisterStocks = {
     weaponCountDefault = config.blue.ground.missileSystemTypes.sam.weaponCountDefault * 2,
   },
 }
-config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
+config.blue.ground.missileSystemTypes.sam.transloaders = {
   ["Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     weaponCountCurrent = 48,
@@ -5145,7 +5145,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IKJ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    firingUnit = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"
+    launcher = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
@@ -5155,7 +5155,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.UVY,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    firingUnit = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde"
+    launcher = "1st Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
@@ -5165,7 +5165,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    firingUnit = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde"
+    launcher = "1st Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     name = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
@@ -5175,7 +5175,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    firingUnit = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde"
+    launcher = "1st Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     name = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
@@ -5185,7 +5185,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    firingUnit = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde"
+    launcher = "1st Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
@@ -5195,7 +5195,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.MAK,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    firingUnit = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
+    launcher = "2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
@@ -5205,7 +5205,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.FMK,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    firingUnit = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"
+    launcher = "2nd Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
@@ -5215,7 +5215,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    firingUnit = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"
+    launcher = "2nd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     name = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
@@ -5225,7 +5225,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    firingUnit = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"
+    launcher = "2nd Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     name = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
@@ -5235,7 +5235,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    firingUnit = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"
+    launcher = "2nd Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
@@ -5245,7 +5245,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PXV,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
-    firingUnit = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
+    launcher = "3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
@@ -5255,7 +5255,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IDW,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
-    firingUnit = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"
+    launcher = "3rd Coy, 614th Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"] = {
     name = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
@@ -5265,7 +5265,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
-    firingUnit = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"
+    launcher = "3rd Coy, 631st Bn, 793rd AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"] = {
     name = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
@@ -5275,7 +5275,7 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
-    firingUnit = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"
+    launcher = "3rd Coy, 632nd Bn, 794th AFAD & Arty Bde"
   },
   ["Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"] = {
     name = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
@@ -5285,17 +5285,17 @@ config.blue.ground.missileSystemTypes.sam.resupplyUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     canisterStock = "Ammo Revetment, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
-    firingUnit = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"
+    launcher = "3rd Coy, 633rd Bn, 795th AFAD & Arty Bde"
   },
 }
-config.blue.ground.missileSystemTypes.sam.firingUnits = {
+config.blue.ground.missileSystemTypes.sam.launchers = {
   ["1st Coy, 613rd Bn, 792nd AFAD & Arty Bde"] = {
     name = "1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     state = constants.MISSILE_UNIT_POSTURE.STATIC,
     operationalArea = constants.OPERATIONAL_AREAS.IKJ,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 1st Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5306,7 +5306,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.UVY,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 1st Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5317,7 +5317,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QPF,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 1st Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5327,7 +5327,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.NUJ,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    transloader = "Ammo Sec, 1st Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5337,7 +5337,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.QTZ,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    transloader = "Ammo Sec, 1st Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5347,7 +5347,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.MAK,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 2nd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5358,7 +5358,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.FMK,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 2nd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5369,7 +5369,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.XDY,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 2nd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5379,7 +5379,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.DJA,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    transloader = "Ammo Sec, 2nd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5389,7 +5389,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.GRV,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    transloader = "Ammo Sec, 2nd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5399,7 +5399,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.PXV,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 3rd Coy, 613rd Bn, 792nd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5410,7 +5410,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.IDW,
     weaponDBID = constants.WEAPONS.TK3,
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 3rd Coy, 614th Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.CUSTOMED_SAM,
     missileSystem = "TK-3",
     mountDescriptors = constants.MOUNT_DESCRIPTORS.CUSTOMED_TK3,
@@ -5421,7 +5421,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.CSC,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
+    transloader = "Ammo Sec, 3rd Coy, 631st Bn, 793rd AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5431,7 +5431,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.RHM,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
+    transloader = "Ammo Sec, 3rd Coy, 632nd Bn, 794th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },
@@ -5441,7 +5441,7 @@ config.blue.ground.missileSystemTypes.sam.firingUnits = {
     operationalArea = constants.OPERATIONAL_AREAS.UYO,
     weaponDBID = { constants.WEAPONS.MIM104F_PAC3, constants.WEAPONS.MIM104F_PAC2 },
     ammoThreshold = config.blue.ground.missileSystemTypes.sam.ammoThreshold,
-    resupplyUnit = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
+    transloader = "Ammo Sec, 3rd Coy, 633rd Bn, 795th AFAD & Arty Bde",
     dbid = constants.PLATFORMS.PAC3,
     missileSystem = "PAC-3",
   },

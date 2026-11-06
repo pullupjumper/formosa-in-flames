@@ -15,10 +15,10 @@ describe("LogFormat", function()
         reason = "add_unit_failed",
         unit = "TEL1",
         system = "srbm",
-        role = "firing",
+        role = "launcher",
       })
 
-      assert.are.equal("system=srbm unit=TEL1 role=firing reason=add_unit_failed", result)
+      assert.are.equal("system=srbm unit=TEL1 role=launcher reason=add_unit_failed", result)
     end)
 
     -- Positive: same field set always renders identically
@@ -62,13 +62,13 @@ describe("LogFormat", function()
     -- Positive: values without separators stay unquoted
     it("should leave separator-free values unquoted", function()
       assert.are.equal("reason=add_unit_failed", LogFormat.fields({ reason = "add_unit_failed" }))
-      assert.are.equal("firing=0/1", LogFormat.fields({ firing = "0/1" }))
+      assert.are.equal("launcher=0/1", LogFormat.fields({ launcher = "0/1" }))
       assert.are.equal("dbid=1234", LogFormat.fields({ dbid = 1234 }))
     end)
 
     -- Positive: values containing separators are quoted
     it("should quote values containing whitespace or separators", function()
-      assert.are.equal("unit=\"Firing Unit Alpha\"", LogFormat.fields({ unit = "Firing Unit Alpha" }))
+      assert.are.equal("unit=\"Launcher Alpha\"", LogFormat.fields({ unit = "Launcher Alpha" }))
       assert.are.equal("detail=\"a=b\"", LogFormat.fields({ detail = "a=b" }))
     end)
 
@@ -103,18 +103,18 @@ describe("LogFormat", function()
 
     -- Positive: extraFields merge on top of the shared state table
     it("should merge extra fields over the base table", function()
-      local context = { system = "srbm", role = "firing" }
-      local result = LogFormat.fields(context, { role = "resupply", reason = "add_unit_failed" })
+      local context = { system = "srbm", role = "launcher" }
+      local result = LogFormat.fields(context, { role = "transloader", reason = "add_unit_failed" })
 
-      assert.are.equal("system=srbm role=resupply reason=add_unit_failed", result)
+      assert.are.equal("system=srbm role=transloader reason=add_unit_failed", result)
     end)
 
     -- Negative: merging must not mutate the caller's shared state table
     it("should not mutate the base table when merging", function()
-      local context = { system = "srbm", role = "firing" }
-      LogFormat.fields(context, { role = "resupply" })
+      local context = { system = "srbm", role = "launcher" }
+      LogFormat.fields(context, { role = "transloader" })
 
-      assert.are.equal("firing", context.role)
+      assert.are.equal("launcher", context.role)
       assert.is_nil(context.reason)
     end)
   end)

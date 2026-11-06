@@ -3114,7 +3114,7 @@ constants.MISSILE_UNIT_POSTURE = {
   HIDE = 3,
 }
 
----Why a firing unit can or cannot take a fire support task; values double as FSEM log keys
+---Why a launcher can or cannot take a fire support task; values double as FSEM log keys
 ---@enum missileSystemReadiness
 constants.MISSILE_SYSTEM_READINESS = {
   READY = "available",

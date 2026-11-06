@@ -325,7 +325,7 @@ describe("StrikePlanner", function()
         attackContactsStub = trackStub(stub(AttackManager, "attackContacts"))
       end)
 
-      -- Positive: only Type 055s in the CSG are firing units.
+      -- Positive: only Type 055s in the CSG are launchers.
       it("should fire the salvo from Type 055s only", function()
         stubCsg()
         stubStartTimesPassed({ LACM_START = true })

@@ -39,7 +39,7 @@ end
 
 ---Build the operational area a control panel placement draws, under a random 3-letter name
 ---A shelter loop ends in the reload area at its own position; without one the area has no SHRL, so
----resupply units leave their shelter along RL. The inverse of buildPlacement.
+---transloaders leave their shelter along RL. The inverse of buildPlacement.
 ---@param placement SBJ__BatteryPlacement
 ---@return SBJ__OperationalArea
 function PanelBattery.buildOperationalArea(placement)
@@ -181,33 +181,33 @@ local function calculateReloadMinutes(reloadStartTime, currentTime)
 end
 
 ---Build a battery's status from its saved state
----Config pairs every firing unit with a resupply unit and its canister stock, and every deploy sets the
+---Config pairs every launcher with a transloader and its canister stock, and every deploy sets the
 ---states of all three.
 ---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
----@param firingUnitDescriptor SBJ__FiringUnitDescriptor
+---@param launcherDescriptor SBJ__LauncherDescriptor
 ---@param currentTime number
 ---@return SBJ__BatteryStatus|nil # nil before the battery's first deploy
-local function buildBatteryStatus(systemConfig, systemState, firingUnitDescriptor, currentTime)
-  local firingUnitState = systemState.firingUnits[firingUnitDescriptor.name]
-  if not firingUnitState then
+local function buildBatteryStatus(systemConfig, systemState, launcherDescriptor, currentTime)
+  local launcherState = systemState.launchers[launcherDescriptor.name]
+  if not launcherState then
     return nil
   end
 
-  local resupplyUnitDescriptor = systemConfig.resupplyUnits[firingUnitDescriptor.resupplyUnit]
-  local canisterStockDescriptor = systemConfig.canisterStocks[resupplyUnitDescriptor.canisterStock]
-  local resupplyUnitState = systemState.resupplyUnits[resupplyUnitDescriptor.name]
+  local transloaderDescriptor = systemConfig.transloaders[launcherDescriptor.transloader]
+  local canisterStockDescriptor = systemConfig.canisterStocks[transloaderDescriptor.canisterStock]
+  local transloaderState = systemState.transloaders[transloaderDescriptor.name]
   local canisterStockState = systemState.canisterStocks[canisterStockDescriptor.name]
 
   return {
-    firingPosture = formatState(firingUnitState.state),
-    resupplyPosture = formatState(resupplyUnitState.state),
-    resupplyMissiles = resupplyUnitState.weaponCountCurrent,
-    resupplyMissilesDefault = resupplyUnitDescriptor.weaponCountDefault,
+    launcherPosture = formatState(launcherState.state),
+    transloaderPosture = formatState(transloaderState.state),
+    transloaderMissiles = transloaderState.weaponCountCurrent,
+    transloaderMissilesDefault = transloaderDescriptor.weaponCountDefault,
     canisterMissiles = canisterStockState.weaponCountCurrent,
     canisterMissilesDefault = canisterStockDescriptor.weaponCountDefault,
-    firingReloadMinutes = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
-    resupplyReloadMinutes = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
+    launcherReloadMinutes = calculateReloadMinutes(launcherState.reloadStartTime, currentTime),
+    transloaderReloadMinutes = calculateReloadMinutes(transloaderState.reloadStartTime, currentTime),
     reloadMinutesDefault = systemConfig.reloadTime / 60
   }
 end
@@ -226,7 +226,7 @@ function PanelBattery.buildPanelBatteries(missileSystemConfigMap, groundState, s
   for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
     local systemState = groundState.missileSystemTypes[missileSystemType]
 
-    for _, descriptor in pairs(systemConfig.firingUnits) do
+    for _, descriptor in pairs(systemConfig.launchers) do
       local operationalArea = GroundStateStore.resolveOperationalArea(groundState, missileSystemType, descriptor)
 
       table.insert(batteries, {

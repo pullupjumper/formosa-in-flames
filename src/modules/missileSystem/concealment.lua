@@ -67,8 +67,8 @@ local function getRandomBuilding(buildings)
   return buildingsWithoutOccupied[idx]
 end
 
----Unload firing unit group from hide area buildings
----@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---Unload launcher group from hide area buildings
+---@param unitState SBJ__LauncherState|SBJ__TransloaderState
 ---@param unit CMO__Unit
 ---@return boolean success Whether unload was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
@@ -84,9 +84,9 @@ function Concealment.moveFromHideArea(unitState, unit)
     local building = GameApi.ScenEdit_GetUnit(sideUnit.guid)
 
     if building then
-      for _, firingUnitGUID in ipairs(group) do
-        if isHideSiteOccupied(building, firingUnitGUID) then
-          GameApi.ScenEdit_UnloadCargo(building.guid, { firingUnitGUID })
+      for _, launcherGUID in ipairs(group) do
+        if isHideSiteOccupied(building, launcherGUID) then
+          GameApi.ScenEdit_UnloadCargo(building.guid, { launcherGUID })
         end
       end
     end
@@ -95,12 +95,12 @@ function Concealment.moveFromHideArea(unitState, unit)
   return true, nil
 end
 
----Load firing unit into a random building within mask area
+---Load launcher into a random building within mask area
 ---Failure fields omit the unit name because every caller already labels the row
 ---with the unit it was acting on.
----@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---@param unitState SBJ__LauncherState|SBJ__TransloaderState
 ---@param unit CMO__Unit
----@param weaponDBID number|number[]|nil Firing unit weapons kept in the cargo proxy; nil for a resupply unit
+---@param weaponDBID number|number[]|nil Launcher weapons kept in the cargo proxy; nil for a transloader
 ---@return boolean success Whether hide was performed
 ---@return table<string, any>? errorFields Log fields describing the failure
 function Concealment.hideUnit(unitState, unit, weaponDBID)

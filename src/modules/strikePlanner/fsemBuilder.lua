@@ -24,40 +24,40 @@ local READINESS_COUNT_ORDER = {
 }
 
 local READINESS_COUNT_LOG_FIELD = {
-  [READINESS.READY] = "firingAvailable",
-  [ASSIGNED_STATUS] = "firingAssigned",
-  [READINESS.UNIT_NOT_FOUND] = "firingUnitNotFound",
-  [READINESS.NO_STATE] = "firingContextNotFound",
-  [READINESS.NOT_HIDDEN] = "firingBadState",
-  [READINESS.LOW_AMMO] = "firingLowAmmo"
+  [READINESS.READY] = "launcherAvailable",
+  [ASSIGNED_STATUS] = "launcherAssigned",
+  [READINESS.UNIT_NOT_FOUND] = "launcherNotFound",
+  [READINESS.NO_STATE] = "launcherContextNotFound",
+  [READINESS.NOT_HIDDEN] = "launcherBadState",
+  [READINESS.LOW_AMMO] = "launcherLowAmmo"
 }
 
 -- Failure reasons written straight into reason=<token>. INSUFFICIENT_TARGETS and
--- NO_AVAILABLE_FIRING_UNITS also drive the retry decision OperationBatch makes.
+-- NO_AVAILABLE_LAUNCHERS also drive the retry decision OperationBatch makes.
 local PROCESS_REASON = {
   INSUFFICIENT_TARGETS = "insufficient_targets",
-  NO_AVAILABLE_FIRING_UNITS = "no_available_firing_units",
+  NO_AVAILABLE_LAUNCHERS = "no_available_launchers",
   NO_VALID_TASKS = "no_valid_tasks"
 }
 
 -- Reasons that keep an operation pending for a later tick inside the window.
 local RETRYABLE_REASON = {
   [PROCESS_REASON.INSUFFICIENT_TARGETS] = true,
-  [PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS] = true
+  [PROCESS_REASON.NO_AVAILABLE_LAUNCHERS] = true
 }
 
 local LOG_SCOPE = "dynamicGroundOperations"
 local LOG_ACTION = "Process operations"
 
--- Stand-in counters for an outcome that never reached firing unit evaluation.
-local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
+-- Stand-in counters for an outcome that never reached launcher evaluation.
+local NO_LAUNCHERS_FIELDS = { launchers = "none" }
 
 -- ============================================================================
--- Firing Unit Readiness Count
+-- Launcher Readiness Count
 -- ============================================================================
 
 ---Create a readiness count with every outcome zeroed
----@return SBJ__FiringUnitReadinessCount # Zeroed readiness count
+---@return SBJ__LauncherReadinessCount # Zeroed readiness count
 local function createReadinessCount()
   local readinessCount = {}
 
@@ -69,7 +69,7 @@ local function createReadinessCount()
 end
 
 ---Increment the count for one readiness outcome
----@param readinessCount SBJ__FiringUnitReadinessCount
+---@param readinessCount SBJ__LauncherReadinessCount
 ---@param status string
 local function updateReadinessCount(readinessCount, status)
   if readinessCount[status] ~= nil then
@@ -78,8 +78,8 @@ local function updateReadinessCount(readinessCount, status)
 end
 
 ---Format a readiness count into log fields, dropping zero counts
----@param readinessCount SBJ__FiringUnitReadinessCount
----@return table<string, any> # Status log fields, firingUnits=none when nothing was counted
+---@param readinessCount SBJ__LauncherReadinessCount
+---@return table<string, any> # Status log fields, launchers=none when nothing was counted
 local function formatReadinessCount(readinessCount)
   local statusFields = {}
   local hasAnyCount = false
@@ -93,92 +93,92 @@ local function formatReadinessCount(readinessCount)
   end
 
   if not hasAnyCount then
-    return NO_FIRING_UNITS_FIELDS
+    return NO_LAUNCHERS_FIELDS
   end
 
   return statusFields
 end
 
 -- ============================================================================
--- Firing Unit Availability
+-- Launcher Availability
 -- ============================================================================
 
----Collect firing unit names already committed to active FSEMs
+---Collect launcher names already committed to active FSEMs
 ---@param plannerState SBJ__StrikePlannerState
----@return table<string, boolean> # Map of committed firing unit name to true
-local function collectAssignedFiringUnitNames(plannerState)
-  local assignedFiringUnitNameSet = {}
+---@return table<string, boolean> # Map of committed launcher name to true
+local function collectAssignedLauncherNames(plannerState)
+  local assignedLauncherNameSet = {}
 
   for _, matrix in pairs(plannerState.ground.fireSupportPlan) do
     if not matrix.isFinished and matrix.isActivated then
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
-          for _, firingUnitName in ipairs(task.firingUnitNames) do
-            assignedFiringUnitNameSet[firingUnitName] = true
+          for _, launcherName in ipairs(task.launcherNames) do
+            assignedLauncherNameSet[launcherName] = true
           end
         end
       end
     end
   end
 
-  return assignedFiringUnitNameSet
+  return assignedLauncherNameSet
 end
 
----Resolve a firing unit through the pass-scoped cache
+---Resolve a launcher through the pass-scoped cache
 ---ScenEdit_GetUnit costs two CMO round-trips per name and logs a full stack trace when
 ---the unit is gone, so a miss is cached as false to pay that once per pass.
----@param firingUnitCache table<string, CMO__Unit|false>
----@param firingUnitName string
+---@param launcherCache table<string, CMO__Unit|false>
+---@param launcherName string
 ---@return CMO__Unit|nil # Resolved unit, or nil when it no longer exists
-local function getCachedFiringUnit(firingUnitCache, firingUnitName)
-  local actualUnit = firingUnitCache[firingUnitName]
+local function getCachedLauncher(launcherCache, launcherName)
+  local actualUnit = launcherCache[launcherName]
 
   if actualUnit == nil then
-    actualUnit = GameApi.ScenEdit_GetUnit(firingUnitName) or false
-    firingUnitCache[firingUnitName] = actualUnit
+    actualUnit = GameApi.ScenEdit_GetUnit(launcherName) or false
+    launcherCache[launcherName] = actualUnit
   end
 
   return actualUnit or nil
 end
 
----Evaluate one firing unit against assignment, then missile system readiness
+---Evaluate one launcher against assignment, then missile system readiness
 ---@param plannerState SBJ__StrikePlannerState
 ---@param missileSystemType string
----@param firingUnitName string
+---@param launcherName string
 ---@param passCtx SBJ__FsemPassContext
 ---@return string # ASSIGNED_STATUS or a constants.MISSILE_SYSTEM_READINESS value
-local function evaluateFiringUnitReadiness(plannerState, missileSystemType, firingUnitName, passCtx)
-  if passCtx.assignedFiringUnitNames[firingUnitName] then
+local function evaluateLauncherReadiness(plannerState, missileSystemType, launcherName, passCtx)
+  if passCtx.assignedLauncherNames[launcherName] then
     return ASSIGNED_STATUS
   end
 
   return MissileSystem.evaluateReadiness(
-    passCtx.config, plannerState.ground, constants.SIDES.RED, missileSystemType, firingUnitName,
+    passCtx.config, plannerState.ground, constants.SIDES.RED, missileSystemType, launcherName,
     function(name)
-      return getCachedFiringUnit(passCtx.firingUnitCache, name)
+      return getCachedLauncher(passCtx.launcherCache, name)
     end
   )
 end
 
----Select the firing units of a task template that are free and ready to fire
+---Select the launchers of a task template that are free and ready to fire
 ---@param plannerState SBJ__StrikePlannerState
 ---@param taskTemplate SBJ__FireSupportTaskTemplate
----@param readinessCount SBJ__FiringUnitReadinessCount
+---@param readinessCount SBJ__LauncherReadinessCount
 ---@param passCtx SBJ__FsemPassContext
----@return string[] # Names of the firing units ready for assignment
-local function filterAvailableFiringUnits(plannerState, taskTemplate, readinessCount, passCtx)
-  local availableFiringUnits = {}
+---@return string[] # Names of the launchers ready for assignment
+local function filterAvailableLaunchers(plannerState, taskTemplate, readinessCount, passCtx)
+  local availableLaunchers = {}
 
-  for _, firingUnitName in ipairs(taskTemplate.firingUnitNames) do
-    local status = evaluateFiringUnitReadiness(plannerState, taskTemplate.missileSystemType, firingUnitName, passCtx)
+  for _, launcherName in ipairs(taskTemplate.launcherNames) do
+    local status = evaluateLauncherReadiness(plannerState, taskTemplate.missileSystemType, launcherName, passCtx)
 
     updateReadinessCount(readinessCount, status)
     if status == READINESS.READY then
-      table.insert(availableFiringUnits, firingUnitName)
+      table.insert(availableLaunchers, launcherName)
     end
   end
 
-  return availableFiringUnits
+  return availableLaunchers
 end
 
 -- ============================================================================
@@ -194,27 +194,27 @@ local function buildTaskStartTime(matrixStartTime, strikeInterval, slotIndex)
   return os.date(constants.DATE_FORMAT, matrixStartTime + (slotIndex * strikeInterval)) --[[@as string]]
 end
 
----Mark newly assigned firing units so a later task in the same pass cannot reuse them
----@param assignedFiringUnitNameSet table<string, boolean>
----@param availableFiringUnits string[]
-local function setFiringUnitsAssigned(assignedFiringUnitNameSet, availableFiringUnits)
-  for _, firingUnitName in ipairs(availableFiringUnits) do
-    assignedFiringUnitNameSet[firingUnitName] = true
+---Mark newly assigned launchers so a later task in the same pass cannot reuse them
+---@param assignedLauncherNameSet table<string, boolean>
+---@param availableLaunchers string[]
+local function setLaunchersAssigned(assignedLauncherNameSet, availableLaunchers)
+  for _, launcherName in ipairs(availableLaunchers) do
+    assignedLauncherNameSet[launcherName] = true
   end
 end
 
----Build executable FSTs from evaluated targets and available firing units
+---Build executable FSTs from evaluated targets and available launchers
 ---@param plannerState SBJ__StrikePlannerState
 ---@param matrixTemplate SBJ__FireSupportExecutionMatrixTemplate
 ---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param passCtx SBJ__FsemPassContext
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
----@return SBJ__FiringUnitReadinessCount readinessCount Firing unit count per readiness outcome
----@return number firingUnitBlockedTaskCount Tasks dropped because no firing unit was available
+---@return SBJ__LauncherReadinessCount readinessCount Launcher count per readiness outcome
+---@return number launcherBlockedTaskCount Tasks dropped because no launcher was available
 local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskIndex, passCtx)
   local fireSupportTasks = {}
   local readinessCount = createReadinessCount()
-  local firingUnitBlockedTaskCount = 0
+  local launcherBlockedTaskCount = 0
   local slotIndex = 0
 
   for taskIndex, taskTemplate in ipairs(matrixTemplate.fireSupportTasks) do
@@ -222,28 +222,28 @@ local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskI
 
     if targets then
       slotIndex = slotIndex + 1
-      local availableFiringUnits = filterAvailableFiringUnits(
+      local availableLaunchers = filterAvailableLaunchers(
         plannerState,
         taskTemplate,
         readinessCount,
         passCtx
       )
 
-      if #availableFiringUnits == 0 then
-        firingUnitBlockedTaskCount = firingUnitBlockedTaskCount + 1
+      if #availableLaunchers == 0 then
+        launcherBlockedTaskCount = launcherBlockedTaskCount + 1
       else
         local task = Utils.deepCopy(taskTemplate) --[[@as SBJ__FireSupportTask]]
-        task.firingUnitNames = availableFiringUnits
+        task.launcherNames = availableLaunchers
         task.startTime = buildTaskStartTime(passCtx.currentTime, matrixTemplate.strikeInterval, slotIndex)
         task.isFinished = false
         task.target.list = targets
-        setFiringUnitsAssigned(passCtx.assignedFiringUnitNames, availableFiringUnits)
+        setLaunchersAssigned(passCtx.assignedLauncherNames, availableLaunchers)
         table.insert(fireSupportTasks, task)
       end
     end
   end
 
-  return fireSupportTasks, readinessCount, firingUnitBlockedTaskCount
+  return fireSupportTasks, readinessCount, launcherBlockedTaskCount
 end
 
 -- ============================================================================
@@ -263,7 +263,7 @@ local function buildMatrix(matrixTemplate, matrixName, fireSupportTasks, created
     isActivated = true,
     isFinished = false,
     isFirstWave = matrixTemplate.isFirstWave,
-    allFiringUnitsInPosition = false,
+    allLaunchersInPosition = false,
     fireSupportTasks = fireSupportTasks,
     createdAt = createdAt,
     -- Ground dynamic FSP uses TOT-oriented execution; interval is intentionally disabled after generation.
@@ -281,7 +281,7 @@ end
 local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
   local matrixTemplate, targetsByTaskIndex = params.matrixTemplate, params.targetsByTaskIndex
   local reconType = params.reconType
-  local fireSupportTasks, readinessCount, firingUnitBlockedTaskCount = buildExecutableTasks(
+  local fireSupportTasks, readinessCount, launcherBlockedTaskCount = buildExecutableTasks(
     plannerState,
     matrixTemplate,
     targetsByTaskIndex,
@@ -290,11 +290,11 @@ local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
   local statusFields = formatReadinessCount(readinessCount)
 
   if #fireSupportTasks == 0 then
-    local isRetryable = firingUnitBlockedTaskCount > 0
+    local isRetryable = launcherBlockedTaskCount > 0
     return {
       success = false,
       tag = isRetryable and "SKIP" or "FAIL",
-      reason = isRetryable and PROCESS_REASON.NO_AVAILABLE_FIRING_UNITS or PROCESS_REASON.NO_VALID_TASKS,
+      reason = isRetryable and PROCESS_REASON.NO_AVAILABLE_LAUNCHERS or PROCESS_REASON.NO_VALID_TASKS,
       fields = statusFields
     }
   end
@@ -312,7 +312,7 @@ local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
   return { success = true, tag = "OK", fields = statusFields }
 end
 
----Evaluate one ground operation and insert its FSEM when targets and firing units allow
+---Evaluate one ground operation and insert its FSEM when targets and launchers allow
 ---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 ---@param batchedOp SBJ__BatchedOperation
@@ -329,12 +329,12 @@ local function processGroundOperation(config, plannerState, batchedOp, passCtx)
   })
 
   if targetQualifiedTaskCount == 0 then
-    -- No firing unit was evaluated yet, so there are no counters to report.
+    -- No launcher was evaluated yet, so there are no counters to report.
     return {
       success = false,
       tag = "SKIP",
       reason = PROCESS_REASON.INSUFFICIENT_TARGETS,
-      fields = NO_FIRING_UNITS_FIELDS
+      fields = NO_LAUNCHERS_FIELDS
     }
   end
 
@@ -361,7 +361,7 @@ local function isMatrixStale(matrix, currentTime, staleAfterSec)
 end
 
 ---Retire active matrices that exceeded the stale timeout
----Marking them finished releases their firing units to the assignable pool and stops
+---Marking them finished releases their launchers to the assignable pool and stops
 ---FireSupportPlan.strike from commanding them, avoiding double command.
 ---@param plannerState SBJ__StrikePlannerState
 ---@param currentTime integer
@@ -374,7 +374,7 @@ local function retireStaleMatrices(plannerState, currentTime, staleAfterSec, opR
 
       for _, task in ipairs(matrix.fireSupportTasks) do
         if not task.isFinished then
-          MissileSystem.abortFireTask(plannerState.ground, task.missileSystemType, task.firingUnitNames)
+          MissileSystem.abortFireTask(plannerState.ground, task.missileSystemType, task.launcherNames)
         end
       end
 
@@ -408,7 +408,7 @@ function FsemBuilder.build(config, plannerState, contacts)
 
   -- Retirement deliberately runs before any pending operation is looked at. A matrix whose
   -- targets are already gone never fires, so no task is ever marked finished and nothing
-  -- else releases its firing units; gating retirement on "another operation is waiting"
+  -- else releases its launchers; gating retirement on "another operation is waiting"
   -- would leave those brigades deployed indefinitely on every quiet tick.
   retireStaleMatrices(plannerState, currentTime, config.red.recon.fsemStaleAfterSec, opReport)
 
@@ -421,8 +421,8 @@ function FsemBuilder.build(config, plannerState, contacts)
     config = config,
     contacts = contacts,
     currentTime = currentTime,
-    firingUnitCache = {},
-    assignedFiringUnitNames = collectAssignedFiringUnitNames(plannerState)
+    launcherCache = {},
+    assignedLauncherNames = collectAssignedLauncherNames(plannerState)
   }
 
   local result = OperationBatch.process(plannerState.dynamicOperations.reconTriggeredOperationBatches, "ground", {

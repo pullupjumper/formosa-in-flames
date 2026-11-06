@@ -54,39 +54,39 @@ flowchart TD
 
 ### 為什麼快取只活一次 execute()
 
-`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableFiringUnits()` → `evaluateFiringUnitReadiness()`，內含兩個只活一趟的快取：
+`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableLaunchers()` → `evaluateLauncherReadiness()`，內含兩個只活一趟的快取：
 
 | 欄位 | 取代的行為 |
 |---|---|
-| `firingUnitCache` | 每次驗證都直接呼叫 `GameApi.ScenEdit_GetUnit()`。該 API 對名稱查詢固定是兩次 CMO round-trip（先 `{guid=}` 再 `{unitname=}`），查無單位時還會 `error()` 並輸出一整段 stack trace。`false` 是刻意的 negative sentinel：`nil` 表示尚未查過，`false` 表示這趟查過且不存在，讓已被摧毀的發射旅在同一 tick 只噴一筆 error。 |
-| `assignedFiringUnitNames` | 每個 operation 各自重掃一次整份 `fireSupportPlan`（該表只增不減）。改成整趟只掃一次，後續 `setFiringUnitsAssigned()` 就地增量寫入同一張表，同 tick 內的跨 operation 防重與「先寫 FSP 再登記 generated operation」的既有防護重疊而不衝突。 |
+| `launcherCache` | 每次驗證都直接呼叫 `GameApi.ScenEdit_GetUnit()`。該 API 對名稱查詢固定是兩次 CMO round-trip（先 `{guid=}` 再 `{unitname=}`），查無單位時還會 `error()` 並輸出一整段 stack trace。`false` 是刻意的 negative sentinel：`nil` 表示尚未查過，`false` 表示這趟查過且不存在，讓已被摧毀的發射旅在同一 tick 只噴一筆 error。 |
+| `assignedLauncherNames` | 每個 operation 各自重掃一次整份 `fireSupportPlan`（該表只增不減）。改成整趟只掃一次，後續 `setLaunchersAssigned()` 就地增量寫入同一張表，同 tick 內的跨 operation 防重與「先寫 FSP 再登記 generated operation」的既有防護重疊而不衝突。 |
 
 快取的生命週期**剛好是一次 `execute()`**：本模組執行期間 CMO 模擬時間不前進，單位被摧毀、狀態轉換、彈量變化都發生在兩次 tick 之間，每趟重建剛好涵蓋。
 
-因此兩者**必須是 `execute()` 的區域變數**。打包後模組 table 會變成全域，提到 module scope 會讓快取跨 tick 存活，把早已不存在或已被別的 FSEM 佔用的單位當成可用。`fsemBuilder_spec` 的「should look up each firing unit at most once per pass across FSTs」與「should share the firing unit cache and assignment map across operations in one pass」兩條測試釘住這個行為。
+因此兩者**必須是 `execute()` 的區域變數**。打包後模組 table 會變成全域，提到 module scope 會讓快取跨 tick 存活，把早已不存在或已被別的 FSEM 佔用的單位當成可用。`fsemBuilder_spec` 的「should look up each launcher at most once per pass across FSTs」與「should share the launcher cache and assignment map across operations in one pass」兩條測試釘住這個行為。
 
 ### 為什麼先 GetUnit 再比對 state
 
 `MissileSystem.evaluateReadiness()` 刻意維持「先查 CMO unit，再比對 `state`」的順序，而不是把便宜的 state 比較提前。
 
-把 state 提前雖然省一次查詢，但已被摧毀且狀態非 `HIDE` 的單位會從 `unit_not_found` 變成 `bad_state`——日誌上就丟失了「這個旅已經沒了」的訊號，只剩一個看起來像暫時性問題的狀態碼。重複查詢的成本改由 `firingUnitCache` 消除。
+把 state 提前雖然省一次查詢，但已被摧毀且狀態非 `HIDE` 的單位會從 `unit_not_found` 變成 `bad_state`——日誌上就丟失了「這個旅已經沒了」的訊號，只剩一個看起來像暫時性問題的狀態碼。重複查詢的成本改由 `launcherCache` 消除。
 
-### Firing unit 驗證與日誌欄位
+### Launcher 驗證與日誌欄位
 
-`filterAvailableFiringUnits()` 逐一驗證 `taskTemplate.firingUnits`，把結果累計進 `SBJ__FiringUnitReadinessCount`，`formatReadinessCount()` 再把非零計數展開成 log 欄位。零值不輸出，全零時只輸出 `firingUnits=none`。
+`filterAvailableLaunchers()` 逐一驗證 `taskTemplate.launchers`，把結果累計進 `SBJ__LauncherReadinessCount`，`formatReadinessCount()` 再把非零計數展開成 log 欄位。零值不輸出，全零時只輸出 `launchers=none`。
 
 看到這些欄位時的判讀方向：
 
 | Log 欄位 | 代表的問題 |
 |---|---|
-| `firingAvailable` | 通過驗證、已寫入 FST 的數量。 |
-| `firingAssigned` | 被其他 active FSEM 或本趟先前的 FST 佔用；等前一個 FSEM 完成或退役即可。 |
-| `firingUnitNotFound` | CMO 裡已無此單位，通常是被摧毀。template 的發射單元名單需要檢討。 |
-| `firingContextNotFound` | `saveData.red.ground.missileSystemTypes[<missileSystemType>].firingUnits` 缺這個 key；多半是 template 名稱與 saveData 初始化不一致。 |
-| `firingBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
-| `firingLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
+| `launcherAvailable` | 通過驗證、已寫入 FST 的數量。 |
+| `launcherAssigned` | 被其他 active FSEM 或本趟先前的 FST 佔用；等前一個 FSEM 完成或退役即可。 |
+| `launcherNotFound` | CMO 裡已無此單位，通常是被摧毀。template 的發射單元名單需要檢討。 |
+| `launcherContextNotFound` | `saveData.red.ground.missileSystemTypes[<missileSystemType>].launchers` 缺這個 key；多半是 template 名稱與 saveData 初始化不一致。 |
+| `launcherBadState` | 單位不在 `HIDE`，正在部署、移動或再裝填中。 |
+| `launcherLowAmmo` | 彈量低於該單元 context 的 `ammoThreshold`。 |
 
-`SBJ__FiringUnit.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.evaluateReadiness()` 會以 nil key 讀取 runtime state 而得到 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `firingContextNotFound` 並被排除，不會流入任何分配表。
+`SBJ__Launcher.name` 是 schema 的必填不變條件，因此沒有獨立的 missing name 狀態。萬一 template 破壞這個條件，`MissileSystem.evaluateReadiness()` 會以 nil key 讀取 runtime state 而得到 nil（Lua 只有寫入 nil key 才會拋錯），該筆歸入 `launcherContextNotFound` 並被排除，不會流入任何分配表。
 
 ### 為什麼目標以 FST 索引為 key
 
@@ -94,7 +94,7 @@ flowchart TD
 
 `DynamicPlan.evaluateTargets()` 與 `buildExecutableTasks()` 走同一份 `fireSupportTasks` 陣列，索引因此能穩定對齊（`Utils.deepCopy` 逐 key 複製，整數索引原樣保留）。若以名稱為 key，同名 FST 會互相覆蓋。
 
-只有目標數達到 `taskTemplate.target.minTargetCount` 的 FST 會進入這張表。`targetQualifiedTaskCount` 為零時 `processGroundOperation()` 直接回傳 `insufficient_targets`，不進入發射單元驗證——這也是該分支要帶 `firingUnits=none` 而非完整計數的原因。
+只有目標數達到 `taskTemplate.target.minTargetCount` 的 FST 會進入這張表。`targetQualifiedTaskCount` 為零時 `processGroundOperation()` 直接回傳 `insufficient_targets`，不進入發射單元驗證——這也是該分支要帶 `launchers=none` 而非完整計數的原因。
 
 ### 為什麼生成的 FSEM 把 strikeInterval 歸零
 
@@ -110,7 +110,7 @@ flowchart TD
 
 終止性失敗由 `OperationBatch.process()` 把 operation 從 batch 陣列移除，而不是設 `executed = true`。本模組只透過 `RETRYABLE_REASON` 告訴它哪些 reason 該留下。
 
-`executed` 的語義是「計畫已插入」。若失敗也標記 executed，[operationScheduler](operationScheduler.md) 會認為這一波已經打完並推進波次計數，同一波再也不會被重開；移除則讓 batch 在下次偵察完成時重新產生同一波。`insufficient_targets` 與 `no_available_firing_units` 屬於可重試原因，兩者都不動 batch。
+`executed` 的語義是「計畫已插入」。若失敗也標記 executed，[operationScheduler](operationScheduler.md) 會認為這一波已經打完並推進波次計數，同一波再也不會被重開；移除則讓 batch 在下次偵察完成時重新產生同一波。`insufficient_targets` 與 `no_available_launchers` 屬於可重試原因，兩者都不動 batch。
 
 未列在 `RETRYABLE_REASON` 的 reason（包含未來新增而漏登記的）一律落到移除分支。這是刻意的預設值：漏登記會造成一次多餘的重排，比讓 operation 卡在窗內每 tick 重試到逾時要安全。
 
@@ -136,35 +136,35 @@ SAM 任務依慣例排除在 stow 之外。
 | reason | Tag | operation 去向 | 說明 |
 |---|---|---|---|
 | `nil`（成功） | `[OK]` | 標記 executed | FSEM 已插入 FSP。 |
-| `insufficient_targets` | `[SKIP]` | 保留重試 | 沒有 FST 達到 `minTargetCount`，附 `state=observing`、`firingUnits=none`。 |
-| `no_available_firing_units` | `[SKIP]` | 保留重試 | 有目標但每個達標 FST 都缺發射單元，附 `state=observing` 與完整計數。 |
+| `insufficient_targets` | `[SKIP]` | 保留重試 | 沒有 FST 達到 `minTargetCount`，附 `state=observing`、`launchers=none`。 |
+| `no_available_launchers` | `[SKIP]` | 保留重試 | 有目標但每個達標 FST 都缺發射單元，附 `state=observing` 與完整計數。 |
 | `observation_window_expired` | `[WARN]` | 移除 | 觀察窗逾時，附 `state=abandoned`，不帶計數欄位。 |
 | `no_valid_tasks` | `[FAIL]` | 移除 | 終止性防禦分支，見下。 |
 | `fsem_stale_timeout` | `[WARN]` | 不適用 | 由 `retireStaleMatrices()` 產生，帶 `matrix=` 與 `ageSec=`，與 operation 無關。 |
 
-`no_valid_tasks` 在目前的控制流下不可達：`DynamicPlan.evaluateTargets()` 與 `buildExecutableTasks()` 走同一份 FST 陣列，任何目標達標的 FST 若組不出任務，必然是因為缺發射單元而累加 `firingUnitBlockedTaskCount`，因此會落在 `no_available_firing_units`。它作為終止性 fallback 保留，讓「有目標卻完全組不出任務」這類未來的新失敗模式有一個 FAIL 出口，而不會被誤判成可重試。也因為不可達，它沒有測試覆蓋。
+`no_valid_tasks` 在目前的控制流下不可達：`DynamicPlan.evaluateTargets()` 與 `buildExecutableTasks()` 走同一份 FST 陣列，任何目標達標的 FST 若組不出任務，必然是因為缺發射單元而累加 `launcherBlockedTaskCount`，因此會落在 `no_available_launchers`。它作為終止性 fallback 保留，讓「有目標卻完全組不出任務」這類未來的新失敗模式有一個 FAIL 出口，而不會被誤判成可重試。也因為不可達，它沒有測試覆蓋。
 
-`NO_FIRING_UNITS_FIELDS` 是 `insufficient_targets` 與 `formatReadinessCount()` 共用的同一份唯讀 table。安全的前提是 `LogFormat.merge()` 回傳新 table，`fields.reason = ...` 改的是合併結果而非這份共用常數。
+`NO_LAUNCHERS_FIELDS` 是 `insufficient_targets` 與 `formatReadinessCount()` 共用的同一份唯讀 table。安全的前提是 `LogFormat.merge()` 回傳新 table，`fields.reason = ...` 改的是合併結果而非這份共用常數。
 
 `build()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, "dynamicGroundOperations", "Process operations")`，退役列先進去，`OperationBatch.process()` 回傳的 entries 逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責（`src/utils/logFormat.lua`）。
 
 ```text
 [DYNAMIC_OPERATIONS] dynamicGroundOperations: Process operations | total=2 ok=1 skip=1
-  [OK]   operation=GND/STRIKE/C2/N/1 batch="satellite@2026-02-14 00:00:00" firingAvailable=2
-  [SKIP] operation=GND/STRIKE/INFRA/ALL/1 batch="uav@2026-02-14 00:10:00" state=observing firingUnits=none reason=insufficient_targets
+  [OK]   operation=GND/STRIKE/C2/N/1 batch="satellite@2026-02-14 00:00:00" launcherAvailable=2
+  [SKIP] operation=GND/STRIKE/INFRA/ALL/1 batch="uav@2026-02-14 00:10:00" state=observing launchers=none reason=insufficient_targets
 ```
 
 ---
 
 ## 型別與寫入副作用
 
-本模組操作的型別（`SBJ__FireSupportExecutionMatrixTemplate`、`SBJ__FireSupportExecutionMatrix`、`SBJ__FireSupportTaskTemplate`、`SBJ__FireSupportTask`、`SBJ__FiringUnit`、`SBJ__FiringUnitState`、`SBJ__BatchedOperation`、`SBJ__OperationProcessResult`、`SBJ__FiringUnitReadinessCount`、`SBJ__FsemPassContext`）欄位定義一律以 `src/core/schema.lua` 為準。
+本模組操作的型別（`SBJ__FireSupportExecutionMatrixTemplate`、`SBJ__FireSupportExecutionMatrix`、`SBJ__FireSupportTaskTemplate`、`SBJ__FireSupportTask`、`SBJ__Launcher`、`SBJ__LauncherState`、`SBJ__BatchedOperation`、`SBJ__OperationProcessResult`、`SBJ__LauncherReadinessCount`、`SBJ__FsemPassContext`）欄位定義一律以 `src/core/schema.lua` 為準。
 
 | 路徑或 API | 行為 |
 |---|---|
 | `saveData.red.ground.fireSupportPlan[matrix.name]` | 成功時透過 `DynamicPlan.add()` 寫入新的 `SBJ__FireSupportExecutionMatrix`。 |
 | `saveData.red.ground.fireSupportPlan[*].isFinished` | 過期 FSEM 退役時設為 true。 |
-| `saveData.red.ground.missileSystemTypes[<missileSystemType>].firingUnits[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
+| `saveData.red.ground.missileSystemTypes[<missileSystemType>].launchers[*].stowStartTime` | 退役時為部署中的非 SAM 單元啟動 stow 倒數。 |
 | `saveData.red.dynamicOperations.generatedOperations.ground[matrix.name]` | 同一次 `DynamicPlan.add()` 呼叫內登記。 |
 | `operation.executed`、`operationBatch.operations`、`operationBatch.executed` | 本模組不寫；由 [operationBatch](operationBatch.md) 依 `tryInsert` 的 outcome 更新。 |
 

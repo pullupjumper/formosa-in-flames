@@ -102,19 +102,19 @@ describe("MissileSystem PanelBattery", function()
   end
 
   ---Create a ground force config with one SRBM battery
-  ---@param overrides? table Fields merged into the firing unit's operational area
+  ---@param overrides? table Fields merged into the launcher's operational area
   ---@return table
   local function makeMissileSystemConfigMap(overrides)
     return {
       srbm = {
         reloadTime = 60,
-        resupplyUnits = { ["RS-1"] = { name = "RS-1", canisterStock = "ATP-1", weaponCountDefault = 8 } },
+        transloaders = { ["RS-1"] = { name = "RS-1", canisterStock = "ATP-1", weaponCountDefault = 8 } },
         canisterStocks = { ["ATP-1"] = { name = "ATP-1", weaponCountDefault = 24 } },
-        firingUnits = {
+        launchers = {
           ["FU-1"] = {
             name = "FU-1",
             missileSystem = "HF-3",
-            resupplyUnit = "RS-1",
+            transloader = "RS-1",
             operationalArea = makeOperationalArea(overrides)
           }
         }
@@ -185,7 +185,7 @@ describe("MissileSystem PanelBattery", function()
       }, operationalArea.SHRL)
     end)
 
-    -- Boundary: no shelter loop leaves SHRL out, so resupply units leave their shelter along RL
+    -- Boundary: no shelter loop leaves SHRL out, so transloaders leave their shelter along RL
     it("should leave SHRL out when the placement has no shelter loop", function()
       local placement = makePlacement()
       placement.paths.SHRL = {}
@@ -316,24 +316,24 @@ describe("MissileSystem PanelBattery", function()
     end
 
     ---Ground state holding FU-1's battery, deployed at a redeployed area
-    ---@param firingOverrides? table Fields merged into FU-1's state
-    ---@param resupplyOverrides? table Fields merged into RS-1's state
+    ---@param launcherOverrides? table Fields merged into FU-1's state
+    ---@param transloaderOverrides? table Fields merged into RS-1's state
     ---@return table
-    local function deployedGroundState(firingOverrides, resupplyOverrides)
-      local firingUnitState = {
+    local function deployedGroundState(launcherOverrides, transloaderOverrides)
+      local launcherState = {
         name = "FU-1",
         state = constants.MISSILE_UNIT_POSTURE.HIDE,
         operationalArea = makeOperationalArea({ name = "#ABC", HA = { { course = course(7), area = { "rp-2" } } } })
       }
-      local resupplyUnitState = { name = "RS-1", state = constants.MISSILE_UNIT_POSTURE.STATIC, weaponCountCurrent = 4 }
-      for k, v in pairs(firingOverrides or {}) do firingUnitState[k] = v end
-      for k, v in pairs(resupplyOverrides or {}) do resupplyUnitState[k] = v end
+      local transloaderState = { name = "RS-1", state = constants.MISSILE_UNIT_POSTURE.STATIC, weaponCountCurrent = 4 }
+      for k, v in pairs(launcherOverrides or {}) do launcherState[k] = v end
+      for k, v in pairs(transloaderOverrides or {}) do transloaderState[k] = v end
       return {
         enabled = true,
         missileSystemTypes = {
           srbm = {
-            firingUnits = { ["FU-1"] = firingUnitState },
-            resupplyUnits = { ["RS-1"] = resupplyUnitState },
+            launchers = { ["FU-1"] = launcherState },
+            transloaders = { ["RS-1"] = transloaderState },
             canisterStocks = { ["ATP-1"] = { name = "ATP-1", weaponCountCurrent = 12 } }
           }
         }
@@ -354,8 +354,8 @@ describe("MissileSystem PanelBattery", function()
       queryDbStub = trackStub(stub(GameApi, "ScenEdit_QueryDB").returns({ ranges = { land = { max = 150 } } }))
     end)
 
-    -- Positive: one battery per firing unit, with what the panel lists and draws
-    it("should list each firing unit with its system, range and placement", function()
+    -- Positive: one battery per launcher, with what the panel lists and draws
+    it("should list each launcher with its system, range and placement", function()
       local batteries = PanelBattery.buildPanelBatteries(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan", 0)
 
       assert.are.equal(1, #batteries)
@@ -391,39 +391,39 @@ describe("MissileSystem PanelBattery", function()
       assert.are.same({ VERTICES["rp-2"] }, batteries[1].placement.tacticalAreas.HA[1])
     end)
 
-    -- Positive: the firing unit, its paired resupply unit and canister stock in one status
+    -- Positive: the launcher, its paired transloader and canister stock in one status
     it("should carry a deployed battery's status", function()
       local groundState = deployedGroundState({ state = constants.MISSILE_UNIT_POSTURE.RELOAD, reloadStartTime = 1000 })
 
       assert.are.same({
-        firingPosture = "RELOAD",
-        resupplyPosture = "STATIC",
-        resupplyMissiles = 4,
-        resupplyMissilesDefault = 8,
+        launcherPosture = "RELOAD",
+        transloaderPosture = "STATIC",
+        transloaderMissiles = 4,
+        transloaderMissilesDefault = 8,
         canisterMissiles = 12,
         canisterMissilesDefault = 24,
-        firingReloadMinutes = 2,
-        resupplyReloadMinutes = 0,
+        launcherReloadMinutes = 2,
+        transloaderReloadMinutes = 0,
         reloadMinutesDefault = 1
       }, statusAt(groundState, 1120))
     end)
 
     -- Positive: default counts come from config, so a config change reaches an old save
-    it("should report the config default ammo counts of the resupply unit and its canister stock", function()
+    it("should report the config default ammo counts of the transloader and its canister stock", function()
       local configMap = makeMissileSystemConfigMap()
-      configMap.srbm.resupplyUnits["RS-1"].weaponCountDefault = 10
+      configMap.srbm.transloaders["RS-1"].weaponCountDefault = 10
       configMap.srbm.canisterStocks["ATP-1"].weaponCountDefault = 30
 
       local status = statusAt(deployedGroundState(nil, { weaponCountDefault = 8 }), 0, configMap)
 
-      assert.are.equal(10, status.resupplyMissilesDefault)
+      assert.are.equal(10, status.transloaderMissilesDefault)
       assert.are.equal(30, status.canisterMissilesDefault)
     end)
 
-    -- Negative: a system with saved state but no state for this firing unit has not deployed it yet
-    it("should leave out the status when the firing unit has no saved state", function()
+    -- Negative: a system with saved state but no state for this launcher has not deployed it yet
+    it("should leave out the status when the launcher has no saved state", function()
       local groundState = deployedGroundState()
-      groundState.missileSystemTypes.srbm.firingUnits = {}
+      groundState.missileSystemTypes.srbm.launchers = {}
 
       assert.is_nil(statusAt(groundState, 0))
     end)
@@ -439,27 +439,27 @@ describe("MissileSystem PanelBattery", function()
 
       for state, label in pairs(labels) do
         local status = statusAt(deployedGroundState({ state = state }, { state = state }), 0)
-        assert.are.equal(label, status.firingPosture)
-        assert.are.equal(label, status.resupplyPosture)
+        assert.are.equal(label, status.launcherPosture)
+        assert.are.equal(label, status.transloaderPosture)
       end
     end)
 
     -- Negative: an unexpected posture still renders
     it("should label an unknown posture as UNKNOWN", function()
-      assert.are.equal("UNKNOWN", statusAt(deployedGroundState({ state = -99 }), 0).firingPosture)
+      assert.are.equal("UNKNOWN", statusAt(deployedGroundState({ state = -99 }), 0).launcherPosture)
     end)
 
     -- Boundary: 40 s is 0.666... minutes, which must round up rather than truncate
     it("should round elapsed reload minutes to 2 decimals", function()
-      assert.are.equal(0.67, statusAt(deployedGroundState({ reloadStartTime = 1000 }), 1040).firingReloadMinutes)
+      assert.are.equal(0.67, statusAt(deployedGroundState({ reloadStartTime = 1000 }), 1040).launcherReloadMinutes)
     end)
 
     -- Boundary: a start time after now must not show a negative countdown
     it("should clamp a reload that starts in the future to 0", function()
       local status = statusAt(deployedGroundState({ reloadStartTime = 2000 }, { reloadStartTime = 3000 }), 1000)
 
-      assert.are.equal(0, status.firingReloadMinutes)
-      assert.are.equal(0, status.resupplyReloadMinutes)
+      assert.are.equal(0, status.launcherReloadMinutes)
+      assert.are.equal(0, status.transloaderReloadMinutes)
     end)
 
     -- Negative: the config and saved state must survive for the next redeploy

@@ -67,16 +67,16 @@ describe("MissileSystem", function()
     end)
 
     ---Send FU1 of a China SRBM battery whose state, game unit and config descriptors are given
-    ---@param firingUnitState table|nil
-    ---@param firingUnit table|nil
-    ---@param descriptorMap? table Config firing units; defaults to FU1 with a 40% threshold on weapon 1
+    ---@param launcherState table|nil
+    ---@param launcher table|nil
+    ---@param descriptorMap? table Config launchers; defaults to FU1 with a 40% threshold on weapon 1
     ---@return boolean inPosition
     ---@return boolean isMissing
-    local function sendToFiringPoint(firingUnitState, firingUnit, descriptorMap)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
-      local firingUnits = descriptorMap or { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } }
-      local config = { red = { ground = { missileSystemTypes = { srbm = { firingUnits = firingUnits } } } } }
-      local groundState = { missileSystemTypes = { srbm = { firingUnits = { FU1 = firingUnitState } } } }
+    local function sendToFiringPoint(launcherState, launcher, descriptorMap)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(launcher)
+      local launchers = descriptorMap or { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } }
+      local config = { red = { ground = { missileSystemTypes = { srbm = { launchers = launchers } } } } }
+      local groundState = { missileSystemTypes = { srbm = { launchers = { FU1 = launcherState } } } }
       return MissileSystem.sendToFiringPoint(config, groundState, constants.SIDES.RED, "SRBM", "FU1")
     end
 
@@ -119,28 +119,28 @@ describe("MissileSystem", function()
 
     -- Positive: a hiding unit with ammo leaves its hide area and heads to FP
     it("should unload and move a hiding unit with enough ammo", function()
-      local firingUnitState = { name = "FU1", state = STATE.HIDE }
-      local firingUnit = { name = "FU1" }
+      local launcherState = { name = "FU1", state = STATE.HIDE }
+      local launcher = { name = "FU1" }
       local isLowAmmoStub = trackStub(Ammo, "isLowAmmo").returns(false)
       local moveStub = trackStub(Movement, "moveTo").returns({ tag = "OK", fields = {} })
 
-      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(launcherState, launcher)
 
       assert.is_false(inPosition)
-      assert.stub(isLowAmmoStub).was.called_with(firingUnit, 40, 1)
-      assert.stub(moveFromHideAreaStub).was.called_with(match.is_ref(firingUnitState), firingUnit)
-      assert.stub(moveStub).was.called_with(match.is_ref(firingUnitState), firingUnit, Movement.ORDER.FIRING_POINT)
+      assert.stub(isLowAmmoStub).was.called_with(launcher, 40, 1)
+      assert.stub(moveFromHideAreaStub).was.called_with(match.is_ref(launcherState), launcher)
+      assert.stub(moveStub).was.called_with(match.is_ref(launcherState), launcher, Movement.ORDER.FIRING_POINT)
       assert.stub(errorStub).was_not.called()
-      assert.are.equal(STATE.REPOSITIONING, firingUnitState.state)
+      assert.are.equal(STATE.REPOSITIONING, launcherState.state)
     end)
 
     -- Positive: a unit already at its firing point reports in position without new commands
     it("should report in position for a STATIC unit without moving it", function()
-      local firingUnitState = { name = "FU1", state = STATE.STATIC }
-      local firingUnit = { name = "FU1" }
+      local launcherState = { name = "FU1", state = STATE.STATIC }
+      local launcher = { name = "FU1" }
       local moveStub = trackStub(Movement, "moveTo")
 
-      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(launcherState, launcher)
 
       assert.is_true(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -149,13 +149,13 @@ describe("MissileSystem", function()
 
     -- Negative: low ammo keeps the unit hidden
     it("should keep a hiding unit with low ammo in place", function()
-      local firingUnitState = { name = "FU1", state = STATE.HIDE }
-      local firingUnit = { name = "FU1" }
+      local launcherState = { name = "FU1", state = STATE.HIDE }
+      local launcher = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(true)
       local moveStub = trackStub(Movement, "moveTo")
 
-      local inPosition = sendToFiringPoint(firingUnitState, firingUnit)
+      local inPosition = sendToFiringPoint(launcherState, launcher)
 
       assert.is_false(inPosition)
       assert.stub(moveStub).was_not.called()
@@ -164,15 +164,15 @@ describe("MissileSystem", function()
 
     -- Negative: logs when movement fails with structured fields
     it("should log an error when movement fails", function()
-      local firingUnitState = { name = "FU1", state = STATE.HIDE }
-      local firingUnit = { name = "FU1" }
+      local launcherState = { name = "FU1", state = STATE.HIDE }
+      local launcher = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveTo").returns({ tag = "FAIL", fields = {
         unit = "FU1", action = "move_to_firing_point", reason = "no_positions_available", position = "FP", area = "OPAREA-1"
       } })
 
-      sendToFiringPoint(firingUnitState, firingUnit)
+      sendToFiringPoint(launcherState, launcher)
 
       assert.stub(errorStub).was.called(1)
       assert.stub(errorStub).was.called_with(
@@ -182,15 +182,15 @@ describe("MissileSystem", function()
 
     -- Negative: a failed move leaves the unit HIDE instead of stuck REPOSITIONING
     it("should keep a hiding unit HIDE when movement fails", function()
-      local firingUnitState = { name = "FU1", state = STATE.HIDE }
-      local firingUnit = { name = "FU1" }
+      local launcherState = { name = "FU1", state = STATE.HIDE }
+      local launcher = { name = "FU1" }
 
       trackStub(Ammo, "isLowAmmo").returns(false)
       trackStub(Movement, "moveTo").returns({ tag = "FAIL", fields = { reason = "no_positions_available" } })
 
-      sendToFiringPoint(firingUnitState, firingUnit)
+      sendToFiringPoint(launcherState, launcher)
 
-      assert.are.equal(STATE.HIDE, firingUnitState.state)
+      assert.are.equal(STATE.HIDE, launcherState.state)
     end)
   end)
 
@@ -201,16 +201,16 @@ describe("MissileSystem", function()
   describe("evaluateReadiness", function()
     local STATE = constants.MISSILE_UNIT_POSTURE
 
-    ---@param firingUnitState table|nil
+    ---@param launcherState table|nil
     ---@return SBJ__GroundState
-    local function buildGroundState(firingUnitState)
-      return { missileSystemTypes = { srbm = { firingUnits = { FU1 = firingUnitState } } } }
+    local function buildGroundState(launcherState)
+      return { missileSystemTypes = { srbm = { launchers = { FU1 = launcherState } } } }
     end
 
     ---China config whose SRBM FU1 is low on ammo at or below 40% of weapon 1
     local function buildConfig()
       return { red = { ground = { missileSystemTypes = {
-        srbm = { firingUnits = { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } } },
+        srbm = { launchers = { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } } },
       } } } }
     end
 
@@ -263,7 +263,7 @@ describe("MissileSystem", function()
     it("should report context_not_found without looking up the unit when it has no config descriptor", function()
       local getUnit = trackGetUnit(buildUnit(6, 6))
       local config = buildConfig()
-      config.red.ground.missileSystemTypes.srbm.firingUnits.FU1 = nil
+      config.red.ground.missileSystemTypes.srbm.launchers.FU1 = nil
 
       local readiness = evaluateReadiness(buildGroundState({ name = "FU1", state = STATE.HIDE }), "SRBM", getUnit, config)
 
@@ -470,13 +470,13 @@ describe("MissileSystem", function()
       red = {
         ground = {
           missileSystemTypes = { id = "c-cfg" },
-          policy = { isAuto = true, hideOnEnterHA = true, hideResupplyOnRLNoMeeting = true }
+          policy = { isAuto = true, hideOnEnterHA = true, hideTransloaderOnRLNoMeeting = true }
         }
       },
       blue = {
         ground = {
           missileSystemTypes = { id = "t-cfg" },
-          policy = { isAuto = false, hideOnEnterHA = false, hideResupplyOnRLNoMeeting = false }
+          policy = { isAuto = false, hideOnEnterHA = false, hideTransloaderOnRLNoMeeting = false }
         }
       }
     }
@@ -610,13 +610,13 @@ describe("MissileSystem", function()
       local config, saveData = makeSides()
       local unit = { name = "FU1", guid = "guid-fu1", side = constants.SIDES.RED }
       local event = { triggers = { { UnitEntersArea = { Description = "(China) Arrive in HA - 1 - AreaA" } } } }
-      local firingUnitState = { name = "FU1" }
+      local launcherState = { name = "FU1" }
       config.red.ground.missileSystemTypes = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { firingUnits = { FU1 = { name = "FU1", weaponDBID = 1, ammoThreshold = 40 } } }
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { launchers = { FU1 = { name = "FU1", weaponDBID = 1, ammoThreshold = 40 } } }
       }
       saveData.red.ground = {
         missileSystemTypes = {
-          [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, firingUnits = { FU1 = firingUnitState }, resupplyUnits = {} }
+          [constants.MISSILE_SYSTEM_TYPES.SRBM] = { enabled = true, launchers = { FU1 = launcherState }, transloaders = {} }
         }
       }
       local contact = { actualunitid = unit.guid, DropContact = function() end }
@@ -629,7 +629,7 @@ describe("MissileSystem", function()
 
       assert.stub(getContactsStub).was.called_with(constants.SIDES.RED)
       assert.stub(dropContactStub).was.called(1)
-      assert.stub(hideStub).was.called_with(firingUnitState, unit, true)
+      assert.stub(hideStub).was.called_with(launcherState, unit, true)
     end)
 
     -- Positive: a Taiwan unit gets the manual policy and the Taiwan slice
@@ -638,9 +638,9 @@ describe("MissileSystem", function()
       local unit = { name = "RS1", guid = "guid-rs1", side = constants.SIDES.BLUE }
       local event = { triggers = { { UnitEntersArea = { Description = "(Taiwan) Arrive in ATP - 1 - AreaA" } } } }
 
-      local systemState = { enabled = true, firingUnits = {}, resupplyUnits = { RS1 = { name = "RS1" } } }
+      local systemState = { enabled = true, launchers = {}, transloaders = { RS1 = { name = "RS1" } } }
       config.blue.ground.missileSystemTypes = {
-        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { resupplyUnits = { RS1 = { name = "RS1", canisterStock = "CS1" } } }
+        [constants.MISSILE_SYSTEM_TYPES.SRBM] = { transloaders = { RS1 = { name = "RS1", canisterStock = "CS1" } } }
       }
       saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
@@ -664,14 +664,14 @@ describe("MissileSystem", function()
       return {
         missileSystemTypes = {
           srbm = {
-            firingUnits = {
+            launchers = {
               ["FU-Static"] = { name = "FU-Static", state = STATE.STATIC },
               ["FU-Hide"] = { name = "FU-Hide", state = STATE.HIDE },
               ["FU-Stowing"] = { name = "FU-Stowing", state = STATE.STATIC, stowStartTime = 500 },
             }
           },
           sam = {
-            firingUnits = {
+            launchers = {
               ["SAM-1"] = { name = "SAM-1", state = STATE.STATIC },
             }
           }
@@ -686,44 +686,44 @@ describe("MissileSystem", function()
     -- Positive: upper-case system name resolves and every unit without a countdown is stamped
     it("should stamp stowStartTime on every listed unit regardless of state", function()
       local groundState = makeGroundState()
-      local firingUnitNames = { "FU-Static", "FU-Hide" }
+      local launcherNames = { "FU-Static", "FU-Hide" }
 
-      MissileSystem.completeFireTask(groundState, "SRBM", firingUnitNames)
+      MissileSystem.completeFireTask(groundState, "SRBM", launcherNames)
 
-      assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
-      assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
+      assert.are.equal(9000, groundState.missileSystemTypes.srbm.launchers["FU-Static"].stowStartTime)
+      assert.are.equal(9000, groundState.missileSystemTypes.srbm.launchers["FU-Hide"].stowStartTime)
     end)
 
     -- Boundary: a running countdown is preserved
     it("should keep an existing stowStartTime", function()
       local groundState = makeGroundState()
-      local firingUnitNames = { "FU-Stowing" }
+      local launcherNames = { "FU-Stowing" }
 
-      MissileSystem.completeFireTask(groundState, "srbm", firingUnitNames)
+      MissileSystem.completeFireTask(groundState, "srbm", launcherNames)
 
-      assert.are.equal(500, groundState.missileSystemTypes.srbm.firingUnits["FU-Stowing"].stowStartTime)
+      assert.are.equal(500, groundState.missileSystemTypes.srbm.launchers["FU-Stowing"].stowStartTime)
     end)
 
     -- Boundary: an aborted task leaves units still in their hide area alone
     it("should skip non-deployed units when the task is aborted", function()
       local groundState = makeGroundState()
-      local firingUnitNames = { "FU-Static", "FU-Hide" }
+      local launcherNames = { "FU-Static", "FU-Hide" }
 
-      MissileSystem.abortFireTask(groundState, "SRBM", firingUnitNames)
+      MissileSystem.abortFireTask(groundState, "SRBM", launcherNames)
 
-      assert.are.equal(9000, groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
-      assert.is_nil(groundState.missileSystemTypes.srbm.firingUnits["FU-Hide"].stowStartTime)
+      assert.are.equal(9000, groundState.missileSystemTypes.srbm.launchers["FU-Static"].stowStartTime)
+      assert.is_nil(groundState.missileSystemTypes.srbm.launchers["FU-Hide"].stowStartTime)
     end)
 
     -- Negative: SAM stays on station when its task ends
-    it("should not stamp SAM firing units", function()
+    it("should not stamp SAM launchers", function()
       local groundState = makeGroundState()
-      local firingUnitNames = { "SAM-1" }
+      local launcherNames = { "SAM-1" }
 
-      MissileSystem.completeFireTask(groundState, "SAM", firingUnitNames)
-      MissileSystem.abortFireTask(groundState, "SAM", firingUnitNames)
+      MissileSystem.completeFireTask(groundState, "SAM", launcherNames)
+      MissileSystem.abortFireTask(groundState, "SAM", launcherNames)
 
-      assert.is_nil(groundState.missileSystemTypes.sam.firingUnits["SAM-1"].stowStartTime)
+      assert.is_nil(groundState.missileSystemTypes.sam.launchers["SAM-1"].stowStartTime)
     end)
 
     -- Negative: unknown units, unknown systems and missing inputs are ignored
@@ -738,7 +738,7 @@ describe("MissileSystem", function()
         MissileSystem.completeFireTask(groundState, nil, staticUnits)
         MissileSystem.completeFireTask(groundState, "SRBM", nil)
       end)
-      assert.is_nil(groundState.missileSystemTypes.srbm.firingUnits["FU-Static"].stowStartTime)
+      assert.is_nil(groundState.missileSystemTypes.srbm.launchers["FU-Static"].stowStartTime)
     end)
   end)
 
@@ -751,24 +751,24 @@ describe("MissileSystem", function()
     it("should zero the canister stock of whichever system on the unit's side owns it and log the delta", function()
       local srbmState = {
         name = "srbm",
-        resupplyUnits = {},
+        transloaders = {},
         canisterStocks = {
           ["Canister Stock Alpha"] = { name = "Canister Stock Alpha", weaponCountCurrent = 100 }
         }
       }
       local saveData = {
-        red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, canisterStocks = {} } } } },
+        red = { ground = { missileSystemTypes = { srbm = { name = "srbm", transloaders = {}, canisterStocks = {} } } } },
         blue = {
           ground = {
             missileSystemTypes = {
-              mlrs = { name = "mlrs", resupplyUnits = {}, canisterStocks = {} },
+              mlrs = { name = "mlrs", transloaders = {}, canisterStocks = {} },
               srbm = srbmState,
             },
           },
         },
       }
       local unit = { name = "Canister Stock Alpha", side = constants.SIDES.BLUE }
-      local config = { blue = { ground = { missileSystemTypes = { mlrs = { resupplyUnits = {} }, srbm = { resupplyUnits = {} } } } } }
+      local config = { blue = { ground = { missileSystemTypes = { mlrs = { transloaders = {} }, srbm = { transloaders = {} } } } } }
 
       local processed = MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
 
@@ -786,9 +786,9 @@ describe("MissileSystem", function()
 
     -- Negative: a unit no system tracks is ignored without logging
     it("should return false and stay silent for an untracked unit", function()
-      local saveData = { red = { ground = { missileSystemTypes = { srbm = { name = "srbm", resupplyUnits = {}, canisterStocks = {} } } } } }
+      local saveData = { red = { ground = { missileSystemTypes = { srbm = { name = "srbm", transloaders = {}, canisterStocks = {} } } } } }
       local unit = { name = "Random Truck", side = constants.SIDES.RED }
-      local config = { red = { ground = { missileSystemTypes = { srbm = { resupplyUnits = {} } } } } }
+      local config = { red = { ground = { missileSystemTypes = { srbm = { transloaders = {} } } } } }
 
       local processed = MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
 
@@ -831,15 +831,15 @@ describe("MissileSystem", function()
 
   describe("listSigintEmitters", function()
     -- Positive: message comes from config, area from state, systems in the order asked
-    it("should list each tracked firing unit with its config message and saved area", function()
+    it("should list each tracked launcher with its config message and saved area", function()
       local srbmArea, glcmArea = { name = "#SRBM" }, { name = "#GLCM" }
       local config = { blue = { ground = { missileSystemTypes = {
-        srbm = { firingUnits = { FU1 = { name = "FU1", msg = "SRBM radio" } } },
-        glcm = { firingUnits = { FU2 = { name = "FU2", msg = "GLCM radio" } } },
+        srbm = { launchers = { FU1 = { name = "FU1", msg = "SRBM radio" } } },
+        glcm = { launchers = { FU2 = { name = "FU2", msg = "GLCM radio" } } },
       } } } }
       local saveData = { blue = { ground = { missileSystemTypes = {
-        srbm = { firingUnits = { FU1 = { name = "FU1", msg = "old copy", operationalArea = srbmArea } } },
-        glcm = { firingUnits = { FU2 = { name = "FU2", operationalArea = glcmArea } } },
+        srbm = { launchers = { FU1 = { name = "FU1", msg = "old copy", operationalArea = srbmArea } } },
+        glcm = { launchers = { FU2 = { name = "FU2", operationalArea = glcmArea } } },
       } } } }
 
       local emitters = MissileSystem.listSigintEmitters(config, saveData, constants.SIDES.BLUE, { "glcm", "srbm" })
@@ -850,11 +850,11 @@ describe("MissileSystem", function()
       }, emitters)
     end)
 
-    -- Negative: a firing unit whose battery config dropped is not listed
-    it("should leave out a firing unit with no config descriptor", function()
-      local config = { blue = { ground = { missileSystemTypes = { srbm = { firingUnits = {} } } } } }
+    -- Negative: a launcher whose battery config dropped is not listed
+    it("should leave out a launcher with no config descriptor", function()
+      local config = { blue = { ground = { missileSystemTypes = { srbm = { launchers = {} } } } } }
       local saveData = { blue = { ground = { missileSystemTypes = {
-        srbm = { firingUnits = { FU1 = { name = "FU1", operationalArea = {} } } },
+        srbm = { launchers = { FU1 = { name = "FU1", operationalArea = {} } } },
       } } } }
 
       assert.are.same({}, MissileSystem.listSigintEmitters(config, saveData, constants.SIDES.BLUE, { "srbm" }))
@@ -882,8 +882,8 @@ describe("MissileSystem", function()
         RL = { { course = { { latitude = 2, longitude = 2 } } } }, ATP = { { course = { { latitude = 3, longitude = 3 } } } } }
       local config = {
         blue = { ground = { missileSystemTypes = { srbm = {
-          firingUnits = { ["FU-A"] = { name = "FU-A", dbid = 1, weaponDBID = 2, resupplyUnit = "RU-A", operationalArea = configArea } },
-          resupplyUnits = { ["RU-A"] = { name = "RU-A", unitCount = 1, canisterStock = "AMMO-A", firingUnit = "FU-A",
+          launchers = { ["FU-A"] = { name = "FU-A", dbid = 1, weaponDBID = 2, transloader = "RU-A", operationalArea = configArea } },
+          transloaders = { ["RU-A"] = { name = "RU-A", unitCount = 1, canisterStock = "AMMO-A", launcher = "FU-A",
             operationalArea = configArea } },
           canisterStocks = { ["AMMO-A"] = { name = "AMMO-A" } }
         } } } }
@@ -892,8 +892,8 @@ describe("MissileSystem", function()
       local configMap = config.blue.ground.missileSystemTypes
       GroundStateStore.ensureGroundState(configMap, saveData.blue.ground)
       local systemState = saveData.blue.ground.missileSystemTypes.srbm
-      systemState.firingUnits["FU-A"] = { name = "FU-A", operationalArea = { name = "OPAREA-SAVED" } }
-      systemState.resupplyUnits["RU-A"] = { name = "RU-A", operationalArea = { name = "OPAREA-SAVED" } }
+      systemState.launchers["FU-A"] = { name = "FU-A", operationalArea = { name = "OPAREA-SAVED" } }
+      systemState.transloaders["RU-A"] = { name = "RU-A", operationalArea = { name = "OPAREA-SAVED" } }
       systemState.canisterStocks["AMMO-A"] = { name = "AMMO-A" }
       return config, saveData
     end
@@ -919,10 +919,10 @@ describe("MissileSystem", function()
     it("should leave the side's config unchanged", function()
       local config, saveData = makeMovedBattery()
       local srbmConfig = config.blue.ground.missileSystemTypes.srbm
-      local firingDescriptor = srbmConfig.firingUnits["FU-A"]
-      local resupplyDescriptor = srbmConfig.resupplyUnits["RU-A"]
+      local launcherDescriptor = srbmConfig.launchers["FU-A"]
+      local transloaderDescriptor = srbmConfig.transloaders["RU-A"]
       local canisterStockDescriptor = srbmConfig.canisterStocks["AMMO-A"]
-      local configArea = firingDescriptor.operationalArea
+      local configArea = launcherDescriptor.operationalArea
       trackStub(PanelBattery, "buildOperationalArea").returns({ name = "OPAREA-NEW" })
       trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
@@ -930,12 +930,12 @@ describe("MissileSystem", function()
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
         { { missileSystemType = "srbm", name = "FU-A", placement = {} } })
 
-      assert.are.equal(firingDescriptor, srbmConfig.firingUnits["FU-A"])
-      assert.are.equal(resupplyDescriptor, srbmConfig.resupplyUnits["RU-A"])
+      assert.are.equal(launcherDescriptor, srbmConfig.launchers["FU-A"])
+      assert.are.equal(transloaderDescriptor, srbmConfig.transloaders["RU-A"])
       assert.are.equal(canisterStockDescriptor, srbmConfig.canisterStocks["AMMO-A"])
-      assert.are.equal(configArea, firingDescriptor.operationalArea)
+      assert.are.equal(configArea, launcherDescriptor.operationalArea)
       assert.are.equal("OPAREA-CONFIG", configArea.name)
-      assert.are.equal("OPAREA-NEW", saveData.blue.ground.missileSystemTypes.srbm.firingUnits["FU-A"].operationalArea.name)
+      assert.are.equal("OPAREA-NEW", saveData.blue.ground.missileSystemTypes.srbm.launchers["FU-A"].operationalArea.name)
     end)
 
     -- Positive: zones go first so their mask lands on the new area before state copies it
@@ -970,7 +970,7 @@ describe("MissileSystem", function()
       }, "Taiwan")
       local batteries = deployStub.calls[1].vals[2]
       assert.are.equal(1, #batteries)
-      assert.are.equal("FU-A", batteries[1].firing.name)
+      assert.are.equal("FU-A", batteries[1].launcher.name)
       assert.are.same(newArea, batteries[1].operationalArea)
       assert.stub(deployStub).was.called_with("Taiwan", batteries)
       assert.stub(stateStub).was.called_with(saveData.blue.ground, batteries)
@@ -979,18 +979,18 @@ describe("MissileSystem", function()
     -- Positive: only the redeployed battery is reset; another battery keeps its runtime state and ammo
     it("should reset only the redeployed battery and keep the other batteries' state", function()
       local function makeBattery(suffix)
-        return { name = "FU-" .. suffix, state = constants.MISSILE_UNIT_POSTURE.HIDE, resupplyUnit = "RU-" .. suffix,
+        return { name = "FU-" .. suffix, state = constants.MISSILE_UNIT_POSTURE.HIDE, transloader = "RU-" .. suffix,
             operationalArea = { name = "OPAREA-" .. suffix } },
           { name = "RU-" .. suffix, weaponCountCurrent = 8, unitCount = 1, canisterStock = "AMMO-" .. suffix,
             operationalArea = { name = "OPAREA-" .. suffix } },
           { name = "AMMO-" .. suffix, weaponCountCurrent = 40 }
       end
-      local firingA, resupplyA, ammoA = makeBattery("A")
-      local firingB, resupplyB, ammoB = makeBattery("B")
+      local launcherA, transloaderA, ammoA = makeBattery("A")
+      local launcherB, transloaderB, ammoB = makeBattery("B")
       local config = {
         blue = { ground = { missileSystemTypes = { srbm = {
-          firingUnits = { ["FU-A"] = firingA, ["FU-B"] = firingB },
-          resupplyUnits = { ["RU-A"] = resupplyA, ["RU-B"] = resupplyB },
+          launchers = { ["FU-A"] = launcherA, ["FU-B"] = launcherB },
+          transloaders = { ["RU-A"] = transloaderA, ["RU-B"] = transloaderB },
           canisterStocks = { ["AMMO-A"] = ammoA, ["AMMO-B"] = ammoB }
         } } } }
       }
@@ -1000,10 +1000,10 @@ describe("MissileSystem", function()
       GroundStateStore.resetBatteryStates(saveData.blue.ground, Deployment.resolveBatteries(configMap))
 
       local systemState = saveData.blue.ground.missileSystemTypes.srbm
-      systemState.firingUnits["FU-A"].weaponCountCurrent = 1
-      systemState.firingUnits["FU-B"].state = constants.MISSILE_UNIT_POSTURE.RELOAD
-      systemState.firingUnits["FU-B"].reloadStartTime = 123
-      systemState.resupplyUnits["RU-B"].weaponCountCurrent = 2
+      systemState.launchers["FU-A"].weaponCountCurrent = 1
+      systemState.launchers["FU-B"].state = constants.MISSILE_UNIT_POSTURE.RELOAD
+      systemState.launchers["FU-B"].reloadStartTime = 123
+      systemState.transloaders["RU-B"].weaponCountCurrent = 2
       systemState.canisterStocks["AMMO-B"].weaponCountCurrent = 5
 
       local newArea = { name = "#NEW" }
@@ -1014,11 +1014,11 @@ describe("MissileSystem", function()
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
 
-      assert.are.same(newArea, systemState.firingUnits["FU-A"].operationalArea)
-      assert.is_nil(systemState.firingUnits["FU-A"].weaponCountCurrent)
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.firingUnits["FU-B"].state)
-      assert.are.equal(123, systemState.firingUnits["FU-B"].reloadStartTime)
-      assert.are.equal(2, systemState.resupplyUnits["RU-B"].weaponCountCurrent)
+      assert.are.same(newArea, systemState.launchers["FU-A"].operationalArea)
+      assert.is_nil(systemState.launchers["FU-A"].weaponCountCurrent)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.launchers["FU-B"].state)
+      assert.are.equal(123, systemState.launchers["FU-B"].reloadStartTime)
+      assert.are.equal(2, systemState.transloaders["RU-B"].weaponCountCurrent)
       assert.are.equal(5, systemState.canisterStocks["AMMO-B"].weaponCountCurrent)
     end)
   end)

@@ -84,7 +84,7 @@ export interface BatteryPlacement {
 
 /** A battery and where it is placed; the control panel sends these back for the batteries the player moved */
 export interface PlacedBattery {
-  /** Firing unit name in the side's ground force config */
+  /** Launcher name in the side's ground force config */
   name: string;
   /** Missile system type key (constants.MISSILE_SYSTEM_TYPES) */
   missileSystemType: string;
@@ -102,24 +102,24 @@ export interface PanelBattery extends PlacedBattery {
   status?: BatteryStatus;
 }
 
-/** A battery's firing unit, resupply unit and canister stock as the control panel shows them */
+/** A battery's launcher, transloader and canister stock as the control panel shows them */
 export interface BatteryStatus {
-  /** Firing unit posture label (constants.MISSILE_UNIT_POSTURE key) */
-  firingPosture: string;
-  /** Paired resupply unit posture label */
-  resupplyPosture: string;
-  /** Missiles carried by the resupply unit */
-  resupplyMissiles: number;
-  /** Full missile count of the resupply unit */
-  resupplyMissilesDefault: number;
+  /** Launcher posture label (constants.MISSILE_UNIT_POSTURE key) */
+  launcherPosture: string;
+  /** Paired transloader posture label */
+  transloaderPosture: string;
+  /** Missiles carried by the transloader */
+  transloaderMissiles: number;
+  /** Full missile count of the transloader */
+  transloaderMissilesDefault: number;
   /** Missiles left in the paired canister stock */
   canisterMissiles: number;
   /** Full missile count of the canister stock */
   canisterMissilesDefault: number;
-  /** Minutes elapsed in the firing unit's reload, 0 when not reloading */
-  firingReloadMinutes: number;
-  /** Minutes elapsed in the resupply unit's reload, 0 when not reloading */
-  resupplyReloadMinutes: number;
+  /** Minutes elapsed in the launcher's reload, 0 when not reloading */
+  launcherReloadMinutes: number;
+  /** Minutes elapsed in the transloader's reload, 0 when not reloading */
+  transloaderReloadMinutes: number;
   /** Configured reload time in minutes */
   reloadMinutesDefault: number;
 }

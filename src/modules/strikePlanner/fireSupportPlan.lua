@@ -7,43 +7,43 @@ local constants = require("src.core.constants")
 local FireSupportPlan = {}
 
 -- ============================================================================
--- Firing Unit Deployment
+-- Launcher Deployment
 -- ============================================================================
 
----Deploy all firing units in a task and check if all are in position
+---Deploy all launchers in a task and check if all are in position
 ---Destroyed units are removed from the task; a task emptied this way is closed
 ---so it never blocks the rest of the matrix waiting for a unit that cannot arrive.
 ---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 ---@param task SBJ__FireSupportTask
----@return boolean allInPosition Whether all surviving firing units are at firing point
+---@return boolean allInPosition Whether all surviving launchers are at firing point
 ---@return string[] notReadyNames Unit names not yet at firing point
 ---@return string[] removedNames Destroyed unit names removed from the task
-local function deployTaskFiringUnits(config, plannerState, task)
+local function deployTaskLaunchers(config, plannerState, task)
   local allInPosition = true
   local notReadyNames = {}
   local removedNames = {}
 
   -- Reverse iteration so table.remove never skips the next entry; names are
-  -- inserted at the head to preserve the original firing unit order in logs.
-  for i = #task.firingUnitNames, 1, -1 do
-    local firingUnitName = task.firingUnitNames[i]
+  -- inserted at the head to preserve the original launcher order in logs.
+  for i = #task.launcherNames, 1, -1 do
+    local launcherName = task.launcherNames[i]
     local inPosition, unitMissing = MissileSystem.sendToFiringPoint(
-      config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, firingUnitName
+      config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, launcherName
     )
 
     if unitMissing then
-      table.remove(task.firingUnitNames, i)
-      table.insert(removedNames, 1, firingUnitName)
+      table.remove(task.launcherNames, i)
+      table.insert(removedNames, 1, launcherName)
     elseif not inPosition then
       allInPosition = false
-      table.insert(notReadyNames, 1, firingUnitName)
+      table.insert(notReadyNames, 1, launcherName)
     end
   end
 
   -- An emptied task is closed without counting as not-ready, so sibling tasks
-  -- in the same matrix can still reach allFiringUnitsInPosition and fire.
-  if #task.firingUnitNames == 0 then
+  -- in the same matrix can still reach allLaunchersInPosition and fire.
+  if #task.launcherNames == 0 then
     task.isFinished = true
   end
 
@@ -69,12 +69,12 @@ local function startFireSupportTasks(config, plannerState, matrix)
         contacts = task.target.list,
         qty = task.target.ammoPerTarget,
         attackingUnits = MissileSystem.buildAttackingUnits(
-          config, constants.SIDES.RED, task.missileSystemType, task.firingUnitNames
+          config, constants.SIDES.RED, task.missileSystemType, task.launcherNames
         ),
       })
 
       if fired > 0 then
-        MissileSystem.completeFireTask(plannerState.ground, task.missileSystemType, task.firingUnitNames)
+        MissileSystem.completeFireTask(plannerState.ground, task.missileSystemType, task.launcherNames)
         task.isFinished = true
         table.insert(strikeResults, {
           taskName = task.name,
@@ -106,12 +106,12 @@ local function isMatrixFinished(matrix)
 end
 
 ---Process active matrix deployment phase
----Deploys firing units to firing points, tracks position status,
+---Deploys launchers to firing points, tracks position status,
 ---and aggregates destroyed units removed from tasks for logging
 ---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 ---@param matrix SBJ__FireSupportExecutionMatrix
----@return boolean allInPosition Whether all firing units across all tasks are in position
+---@return boolean allInPosition Whether all launchers across all tasks are in position
 ---@return {taskName: string, notReadyNames: string[]}[] pendingTasks Tasks with not-ready unit names
 ---@return {taskName: string, removedNames: string[], taskClosed: boolean}[] cleanedTasks Tasks that lost destroyed units
 local function processActiveMatrix(config, plannerState, matrix)
@@ -121,13 +121,13 @@ local function processActiveMatrix(config, plannerState, matrix)
 
   for _, task in ipairs(matrix.fireSupportTasks) do
     if not task.isFinished and GameUtils.isAfterStartTime(task.startTime) then
-      local taskReady, notReadyNames, removedNames = deployTaskFiringUnits(config, plannerState, task)
+      local taskReady, notReadyNames, removedNames = deployTaskLaunchers(config, plannerState, task)
 
       if #removedNames > 0 then
         table.insert(cleanedTasks, {
           taskName = task.name,
           removedNames = removedNames,
-          -- deployTaskFiringUnits closes a task it emptied, so isFinished here
+          -- deployTaskLaunchers closes a task it emptied, so isFinished here
           -- means every unit of the task was destroyed.
           taskClosed = task.isFinished
         })
@@ -143,7 +143,7 @@ local function processActiveMatrix(config, plannerState, matrix)
     end
   end
 
-  matrix.allFiringUnitsInPosition = allInPosition
+  matrix.allLaunchersInPosition = allInPosition
   return allInPosition, pendingTasks, cleanedTasks
 end
 
@@ -152,7 +152,7 @@ end
 -- ============================================================================
 
 ---Execute Fire Support Plan strikes for all active FSEMs
----Deploys firing units, removes destroyed ones, executes strikes when ready, marks FSEMs finished
+---Deploys launchers, removes destroyed ones, executes strikes when ready, marks FSEMs finished
 ---@param config SBJ__Config
 ---@param plannerState SBJ__StrikePlannerState
 function FireSupportPlan.process(config, plannerState)
@@ -196,7 +196,7 @@ function FireSupportPlan.process(config, plannerState)
             matrix = matrix.name,
             task = pendingTask.taskName,
             units = table.concat(pendingTask.notReadyNames or {}, ","),
-            reason = "firing_units_not_in_position"
+            reason = "launchers_not_in_position"
           })
         end
       end

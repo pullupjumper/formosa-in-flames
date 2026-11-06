@@ -13,26 +13,26 @@ local STATE = constants.MISSILE_UNIT_POSTURE
 Rules.STEP = {
   -- Arrival at a position zone
   ARRIVE_AT_FIRING_POINT = "arriveAtFiringPoint",
-  HIDE_FIRING_UNIT = "hideFiringUnit",
+  HIDE_LAUNCHER = "hideLauncher",
   BEGIN_RELOAD = "beginReload",
   STOP_IN_MANUAL_MODE = "stopInManualMode",
-  HIDE_UNMET_RESUPPLY_UNIT = "hideUnmetResupplyUnit",
+  HIDE_UNMET_TRANSLOADER = "hideUnmetTransloader",
   BEGIN_TRANSLOAD = "beginTransload",
   STOP = "stop",
-  -- Firing unit reload cycle
+  -- Launcher reload cycle
   BEGIN_STOW = "beginStow",
   END_STOW = "endStow",
   MOVE_TO_HIDE_AREA = "moveToHideArea",
-  UNHIDE_RESUPPLY_UNIT = "unhideResupplyUnit",
-  MOVE_RESUPPLY_UNIT_TO_RELOAD_POINT = "moveResupplyUnitToReloadPoint",
-  WARN_RESUPPLY_UNIT_NOT_FOUND = "warnResupplyUnitNotFound",
-  WARN_RESUPPLY_STATE_NOT_FOUND = "warnResupplyStateNotFound",
+  UNHIDE_TRANSLOADER = "unhideTransloader",
+  MOVE_TRANSLOADER_TO_RELOAD_POINT = "moveTransloaderToReloadPoint",
+  WARN_TRANSLOADER_NOT_FOUND = "warnTransloaderNotFound",
+  WARN_RESUPPLY_STATE_NOT_FOUND = "warnTransloaderStateNotFound",
   MOVE_TO_RELOAD_POINT = "moveToReloadPoint",
   ENSURE_RELOAD_CLOCK = "ensureReloadClock",
   COMPLETE_RELOAD = "completeReload",
-  HIDE_RESUPPLY_UNIT_AFTER_RELOAD = "hideResupplyUnitAfterReload",
+  HIDE_TRANSLOADER_AFTER_RELOAD = "hideTransloaderAfterReload",
   MOVE_TO_FIRING_POINT = "moveToFiringPoint",
-  -- Resupply unit transload cycle
+  -- Transloader transload cycle
   MOVE_TO_AMMUNITION_TRANSFER_POINT = "moveToAmmunitionTransferPoint",
   COMPLETE_TRANSLOAD = "completeTransload",
   FAIL_CANISTER_STOCK_STATE_NOT_FOUND = "failCanisterStockStateNotFound",
@@ -43,13 +43,13 @@ Rules.STEP = {
 
 local STEP = Rules.STEP
 
----Firing unit states in which the unit is out of its hide area and has to be stowed back
+---Launcher states in which the unit is out of its hide area and has to be stowed back
 local DEPLOYED_STATES = {
   [STATE.STATIC] = true,
   [STATE.REPOSITIONING] = true
 }
 
----Whether a missile system keeps its firing units on station after firing
+---Whether a missile system keeps its launchers on station after firing
 ---SAM guards the airspace, so it leaves its position only when low on ammo and returns to its firing point after a reload.
 ---@param missileSystemType string Missile system name in any case (e.g., "SAM", "sam")
 ---@return boolean # Whether the system stays deployed
@@ -57,47 +57,47 @@ function Rules.staysDeployed(missileSystemType)
   return string.lower(missileSystemType) == constants.MISSILE_SYSTEM_TYPES.SAM
 end
 
----Check if firing unit is currently repositioning
+---Check if launcher is currently repositioning
 ---Manual mode has no REPOSITIONING state, so any tracked unit counts as on the move.
----@param firingUnitState SBJ__FiringUnitState|nil
+---@param launcherState SBJ__LauncherState|nil
 ---@param isAuto boolean
 ---@return boolean # Whether the unit is repositioning
-function Rules.isRepositioning(firingUnitState, isAuto)
-  if not firingUnitState then
+function Rules.isRepositioning(launcherState, isAuto)
+  if not launcherState then
     return false
   end
 
   if isAuto then
-    return firingUnitState.state == STATE.REPOSITIONING
+    return launcherState.state == STATE.REPOSITIONING
   end
 
   return true
 end
 
----Whether a firing unit stands still at its position, ready to fire once at FP
----@param firingUnitState SBJ__FiringUnitState
+---Whether a launcher stands still at its position, ready to fire once at FP
+---@param launcherState SBJ__LauncherState
 ---@return boolean # True if the unit is STATIC
-function Rules.isInPosition(firingUnitState)
-  return firingUnitState.state == STATE.STATIC
+function Rules.isInPosition(launcherState)
+  return launcherState.state == STATE.STATIC
 end
 
----Whether a firing unit is out of its hide area, so an aborted fire task has to stow it back
+---Whether a launcher is out of its hide area, so an aborted fire task has to stow it back
 ---HIDE and RELOAD units are left alone; RELOAD already ends in HA.
----@param firingUnitState SBJ__FiringUnitState
+---@param launcherState SBJ__LauncherState
 ---@return boolean # True if the unit is STATIC or REPOSITIONING
-function Rules.isDeployed(firingUnitState)
-  return DEPLOYED_STATES[firingUnitState.state] == true
+function Rules.isDeployed(launcherState)
+  return DEPLOYED_STATES[launcherState.state] == true
 end
 
----Evaluate whether a tracked, present firing unit can take a fire support task
+---Evaluate whether a tracked, present launcher can take a fire support task
 ---The ammo read is a callback because fire support planning asks every tick, and only hiding units need it.
----@param firingUnitState SBJ__FiringUnitState
+---@param launcherState SBJ__LauncherState
 ---@param isLowAmmo fun(): boolean Called only for a hiding unit
 ---@return missileSystemReadiness
-function Rules.evaluateReadiness(firingUnitState, isLowAmmo)
+function Rules.evaluateReadiness(launcherState, isLowAmmo)
   local readiness = constants.MISSILE_SYSTEM_READINESS
 
-  if firingUnitState.state ~= STATE.HIDE then
+  if launcherState.state ~= STATE.HIDE then
     return readiness.NOT_HIDDEN
   end
 
@@ -108,13 +108,13 @@ function Rules.evaluateReadiness(firingUnitState, isLowAmmo)
   return readiness.READY
 end
 
----Evaluate the steps for a fire support plan sending a firing unit to its firing point
+---Evaluate the steps for a fire support plan sending a launcher to its firing point
 ---Only a hiding unit with enough ammunition leaves; units already out are left alone.
----@param firingUnitState SBJ__FiringUnitState
+---@param launcherState SBJ__LauncherState
 ---@param isLowAmmo fun(): boolean Called only for a hiding unit, as in evaluateReadiness
 ---@return string[] steps
-function Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)
-  if firingUnitState.state == STATE.HIDE and not isLowAmmo() then
+function Rules.evaluateSendToFiringPoint(launcherState, isLowAmmo)
+  if launcherState.state == STATE.HIDE and not isLowAmmo() then
     return { STEP.UNHIDE, STEP.MOVE_TO_FIRING_POINT }
   end
 
@@ -142,37 +142,37 @@ local function canMeet(state, isAuto)
   return state == STATE.REPOSITIONING or state == STATE.RELOAD
 end
 
----Whether a firing unit met its resupply unit at RL for a reload: the unit that triggered may meet,
----the firing unit is low, the resupply unit has missiles, and both stand in one RL zone
+---Whether a launcher met its transloader at RL for a reload: the unit that triggered may meet,
+---the launcher is low, the transloader has missiles, and both stand in one RL zone
 ---@param pair SBJ__ReloadPair
 ---@param isAuto boolean
 ---@return boolean # True if the reload may start or finish
-local function hasMetResupplyUnit(pair, isAuto)
-  local triggeringState = pair.isTriggeredByFiringUnit and pair.firingUnitState or pair.resupplyUnitState
+local function hasMetTransloader(pair, isAuto)
+  local triggeringState = pair.isTriggeredByLauncher and pair.launcherState or pair.transloaderState
 
   return canMeet(triggeringState.state, isAuto)
-      and pair.isFiringUnitLowAmmo()
-      and pair.resupplyUnitState.weaponCountCurrent > 0
+      and pair.isLauncherLowAmmo()
+      and pair.transloaderState.weaponCountCurrent > 0
       and pair.isInSameReloadArea()
 end
 
----Whether an empty resupply unit met its canister stock at ATP
----@param resupplyUnitState SBJ__ResupplyUnitState
+---Whether an empty transloader met its canister stock at ATP
+---@param transloaderState SBJ__TransloaderState
 ---@param isAuto boolean
 ---@param isAtCanisterStock fun(): boolean
 ---@return boolean # True if the transload may start or finish
-local function hasMetCanisterStock(resupplyUnitState, isAuto, isAtCanisterStock)
-  return canMeet(resupplyUnitState.state, isAuto)
-      and resupplyUnitState.weaponCountCurrent == 0
+local function hasMetCanisterStock(transloaderState, isAuto, isAtCanisterStock)
+  return canMeet(transloaderState.state, isAuto)
+      and transloaderState.weaponCountCurrent == 0
       and isAtCanisterStock()
 end
 
 ---Evaluate the steps for a unit entering its firing point
 ---@param moveCtx SBJ__MoveToPositionContext
----@param firingUnitState SBJ__FiringUnitState|nil Nil when the unit is not a firing unit of this system
+---@param launcherState SBJ__LauncherState|nil Nil when the unit is not a launcher of this system
 ---@return string[] steps
-function Rules.evaluateFiringPointArrival(moveCtx, firingUnitState)
-  if Rules.isRepositioning(firingUnitState, moveCtx.isAuto) then
+function Rules.evaluateFiringPointArrival(moveCtx, launcherState)
+  if Rules.isRepositioning(launcherState, moveCtx.isAuto) then
     return { STEP.ARRIVE_AT_FIRING_POINT }
   end
 
@@ -182,19 +182,19 @@ end
 ---Evaluate the steps for a unit entering its hide area
 ---Low-ammo units stay out so the reload cycle can send them on to RL.
 ---@param moveCtx SBJ__MoveToPositionContext
----@param observation SBJ__HideAreaObservation|nil Nil when the unit is not a firing unit of this system
+---@param observation SBJ__HideAreaObservation|nil Nil when the unit is not a launcher of this system
 ---@return string[] steps
 function Rules.evaluateHideAreaArrival(moveCtx, observation)
   if observation and moveCtx.hideOnEnterHA and not observation.isLowAmmo() then
-    return { STEP.HIDE_FIRING_UNIT }
+    return { STEP.HIDE_LAUNCHER }
   end
 
   return {}
 end
 
 ---Evaluate the steps for a unit entering its reload point
----Without a meeting the unit stops in manual mode, so a firing unit drifting through RL during repositioning is not halted.
----A resupply unit that arrives alone may hide when its firing unit does not need it.
+---Without a meeting the unit stops in manual mode, so a launcher drifting through RL during repositioning is not halted.
+---A transloader that arrives alone may hide when its launcher does not need it.
 ---@param moveCtx SBJ__MoveToPositionContext
 ---@param pair SBJ__ReloadPair|nil Nil unless both units of the pair are tracked and in the game
 ---@return string[] steps
@@ -203,13 +203,13 @@ function Rules.evaluateReloadPointArrival(moveCtx, pair)
     return { STEP.STOP_IN_MANUAL_MODE }
   end
 
-  if hasMetResupplyUnit(pair, moveCtx.isAuto) then
+  if hasMetTransloader(pair, moveCtx.isAuto) then
     return { STEP.BEGIN_RELOAD }
   end
 
   local steps = { STEP.STOP_IN_MANUAL_MODE }
-  if moveCtx.hideResupplyOnRLNoMeeting and not pair.isTriggeredByFiringUnit and not pair.isFiringUnitLowAmmo() then
-    table.insert(steps, STEP.HIDE_UNMET_RESUPPLY_UNIT)
+  if moveCtx.hideTransloaderOnRLNoMeeting and not pair.isTriggeredByLauncher and not pair.isLauncherLowAmmo() then
+    table.insert(steps, STEP.HIDE_UNMET_TRANSLOADER)
   end
 
   return steps
@@ -217,27 +217,27 @@ end
 
 ---Evaluate the steps for a unit entering its ammunition transfer point
 ---@param moveCtx SBJ__MoveToPositionContext
----@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is not a resupply unit of this system
+---@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is not a transloader of this system
 ---@return string[] steps
 function Rules.evaluateAmmunitionTransferPointArrival(moveCtx, observation)
-  if observation and hasMetCanisterStock(observation.resupplyUnitState, moveCtx.isAuto, observation.isAtCanisterStock) then
+  if observation and hasMetCanisterStock(observation.transloaderState, moveCtx.isAuto, observation.isAtCanisterStock) then
     return { STEP.BEGIN_TRANSLOAD }
   end
 
   return { STEP.STOP }
 end
 
----A static auto-mode firing unit that fired or ran low waits out the stow time, then leaves:
----to its hide area with enough ammo, otherwise to the reload point together with its resupply unit
----@param tick SBJ__FiringUnitTick
+---A static auto-mode launcher that fired or ran low waits out the stow time, then leaves:
+---to its hide area with enough ammo, otherwise to the reload point together with its transloader
+---@param tick SBJ__LauncherTick
 ---@param pair SBJ__ReloadPair|nil
 ---@return string[] steps
-local function evaluateStaticFiringUnit(tick, pair)
+local function evaluateStaticLauncher(tick, pair)
   if not tick.isAuto then
     return {}
   end
 
-  local stowElapsedSec = calculateElapsedSec(tick.firingUnitState.stowStartTime, tick.now)
+  local stowElapsedSec = calculateElapsedSec(tick.launcherState.stowStartTime, tick.now)
   if stowElapsedSec == nil then
     return tick.isLowAmmo() and { STEP.BEGIN_STOW } or {}
   end
@@ -252,10 +252,10 @@ local function evaluateStaticFiringUnit(tick, pair)
 
   local steps = {}
   if pair then
-    table.insert(steps, STEP.UNHIDE_RESUPPLY_UNIT)
-    table.insert(steps, STEP.MOVE_RESUPPLY_UNIT_TO_RELOAD_POINT)
-  elseif tick.hasResupplyUnitState then
-    table.insert(steps, STEP.WARN_RESUPPLY_UNIT_NOT_FOUND)
+    table.insert(steps, STEP.UNHIDE_TRANSLOADER)
+    table.insert(steps, STEP.MOVE_TRANSLOADER_TO_RELOAD_POINT)
+  elseif tick.hasTransloaderState then
+    table.insert(steps, STEP.WARN_TRANSLOADER_NOT_FOUND)
   else
     table.insert(steps, STEP.WARN_RESUPPLY_STATE_NOT_FOUND)
   end
@@ -265,25 +265,25 @@ local function evaluateStaticFiringUnit(tick, pair)
   return steps
 end
 
----A reloading firing unit finishes once the reload time passed and it still meets its resupply unit.
----In auto mode the resupply unit hides when the reload leaves it missiles, and the firing unit leaves:
+---A reloading launcher finishes once the reload time passed and it still meets its transloader.
+---In auto mode the transloader hides when the reload leaves it missiles, and the launcher leaves:
 ---SAM back to its firing point, others to their hide area.
----@param tick SBJ__FiringUnitTick
+---@param tick SBJ__LauncherTick
 ---@param pair SBJ__ReloadPair|nil
 ---@return string[] steps
-local function evaluateReloadingFiringUnit(tick, pair)
+local function evaluateReloadingLauncher(tick, pair)
   local steps = { STEP.ENSURE_RELOAD_CLOCK }
 
   -- A clock that has not started counts as 0 seconds, so a reload time of 0 finishes in the tick that starts it
-  local reloadElapsedSec = calculateElapsedSec(tick.firingUnitState.reloadStartTime, tick.now) or 0
-  if reloadElapsedSec < tick.reloadTimeSec or not pair or not hasMetResupplyUnit(pair, tick.isAuto) then
+  local reloadElapsedSec = calculateElapsedSec(tick.launcherState.reloadStartTime, tick.now) or 0
+  if reloadElapsedSec < tick.reloadTimeSec or not pair or not hasMetTransloader(pair, tick.isAuto) then
     return steps
   end
 
   table.insert(steps, STEP.COMPLETE_RELOAD)
   if tick.isAuto then
-    if pair.resupplyUnitState.weaponCountCurrent > pair.buildReload().count then
-      table.insert(steps, STEP.HIDE_RESUPPLY_UNIT_AFTER_RELOAD)
+    if pair.transloaderState.weaponCountCurrent > pair.buildReload().count then
+      table.insert(steps, STEP.HIDE_TRANSLOADER_AFTER_RELOAD)
     end
     table.insert(steps, tick.staysDeployed and STEP.MOVE_TO_FIRING_POINT or STEP.MOVE_TO_HIDE_AREA)
   end
@@ -291,48 +291,48 @@ local function evaluateReloadingFiringUnit(tick, pair)
   return steps
 end
 
----Evaluate the steps for one firing unit in a reload cycle
----@param tick SBJ__FiringUnitTick
----@param pair SBJ__ReloadPair|nil Nil unless its resupply unit is tracked and in the game
+---Evaluate the steps for one launcher in a reload cycle
+---@param tick SBJ__LauncherTick
+---@param pair SBJ__ReloadPair|nil Nil unless its transloader is tracked and in the game
 ---@return string[] steps
-function Rules.evaluateFiringUnitTick(tick, pair)
-  local state = tick.firingUnitState.state
+function Rules.evaluateLauncherTick(tick, pair)
+  local state = tick.launcherState.state
 
   if state == STATE.STATIC then
-    return evaluateStaticFiringUnit(tick, pair)
+    return evaluateStaticLauncher(tick, pair)
   end
 
   if state == STATE.RELOAD then
-    return evaluateReloadingFiringUnit(tick, pair)
+    return evaluateReloadingLauncher(tick, pair)
   end
 
   return {}
 end
 
----Evaluate the steps for one resupply unit in a reload cycle
----An empty auto-mode resupply unit standing in an RL zone goes to the ammunition transfer point;
+---Evaluate the steps for one transloader in a reload cycle
+---An empty auto-mode transloader standing in an RL zone goes to the ammunition transfer point;
 ---a transloading one finishes once the reload time passed and it still meets its canister stock.
----@param tick SBJ__ResupplyUnitTick
+---@param tick SBJ__TransloaderTick
 ---@param canisterStockState SBJ__CanisterStockState|nil Nil when its canister stock is not tracked
 ---@return string[] steps
-function Rules.evaluateResupplyUnitTick(tick, canisterStockState)
-  local resupplyUnitState = tick.resupplyUnitState
+function Rules.evaluateTransloaderTick(tick, canisterStockState)
+  local transloaderState = tick.transloaderState
 
-  if resupplyUnitState.state == STATE.STATIC then
-    if tick.isAuto and resupplyUnitState.weaponCountCurrent == 0 and tick.isInReloadArea() then
+  if transloaderState.state == STATE.STATIC then
+    if tick.isAuto and transloaderState.weaponCountCurrent == 0 and tick.isInReloadArea() then
       return { STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT }
     end
 
     return {}
   end
 
-  if resupplyUnitState.state ~= STATE.RELOAD then
+  if transloaderState.state ~= STATE.RELOAD then
     return {}
   end
 
   local steps = { STEP.ENSURE_RELOAD_CLOCK }
-  local reloadElapsedSec = calculateElapsedSec(resupplyUnitState.reloadStartTime, tick.now) or 0
-  if reloadElapsedSec < tick.reloadTimeSec or not hasMetCanisterStock(resupplyUnitState, tick.isAuto, tick.isAtCanisterStock) then
+  local reloadElapsedSec = calculateElapsedSec(transloaderState.reloadStartTime, tick.now) or 0
+  if reloadElapsedSec < tick.reloadTimeSec or not hasMetCanisterStock(transloaderState, tick.isAuto, tick.isAtCanisterStock) then
     return steps
   end
 

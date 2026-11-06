@@ -19,9 +19,9 @@ describe("MissileSystem Movement", function()
     return s
   end
 
-  local function makeFiringUnitState(overrides)
+  local function makeLauncherState(overrides)
     local ctx = {
-      name = "Firing Unit Alpha",
+      name = "Launcher Alpha",
       state = constants.MISSILE_UNIT_POSTURE.STATIC,
       operationalArea = {
         name = "OPAREA-1",
@@ -58,43 +58,43 @@ describe("MissileSystem Movement", function()
   describe("moveTo", function()
     -- Positive: the state change is left to Transitions, which records it only after a successful order
     it("should leave the unit state unchanged", function()
-      local firingUnitState = makeFiringUnitState()
-      local firingUnit = { guid = "F1" }
+      local launcherState = makeLauncherState()
+      local launcher = { guid = "F1" }
 
       trackStub(math, "random").returns(1)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(launcher)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, firingUnitState.state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, launcherState.state)
     end)
 
     -- Positive: a move that went out returns an OK row labelled with the unit and action
     it("should return an OK row when move is successful", function()
-      local firingUnitState = makeFiringUnitState()
-      local firingUnit = { guid = "F1" }
+      local launcherState = makeLauncherState()
+      local launcher = { guid = "F1" }
 
       trackStub(math, "random").returns(1)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(launcher)
       trackStub(GameApi, "ScenEdit_SetUnit")
 
-      local result = Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      local result = Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
-      assert.are.same({ tag = "OK", fields = { unit = "Firing Unit Alpha", action = "move_to_firing_point" } }, result)
+      assert.are.same({ tag = "OK", fields = { unit = "Launcher Alpha", action = "move_to_firing_point" } }, result)
     end)
 
     -- Boundary: an empty FP list fails with no_positions_available
     it("should return a FAIL row when FP positions array is empty", function()
-      local firingUnitState = makeFiringUnitState({
+      local launcherState = makeLauncherState({
         operationalArea = {
           name = "OPAREA-1",
           FP = {}
         }
       })
-      local firingUnit = { guid = "F1" }
+      local launcher = { guid = "F1" }
 
-      local result = Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      local result = Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.are.equal("FAIL", result.tag)
       assert.are.equal("no_positions_available", result.fields.reason)
@@ -103,17 +103,17 @@ describe("MissileSystem Movement", function()
 
     -- Boundary: a position without a course fails with invalid_position_data
     it("should return a FAIL row when position has no course", function()
-      local firingUnitState = makeFiringUnitState({
+      local launcherState = makeLauncherState({
         operationalArea = {
           name = "OPAREA-1",
           FP = { { area = { "RP-001" } } }
         }
       })
-      local firingUnit = { guid = "F1" }
+      local launcher = { guid = "F1" }
 
       trackStub(math, "random").returns(1)
 
-      local result = Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      local result = Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.are.equal("FAIL", result.tag)
       assert.are.equal("invalid_position_data", result.fields.reason)
@@ -122,14 +122,14 @@ describe("MissileSystem Movement", function()
 
     -- Positive: sets unit properties for a single unit
     it("should set unit properties for single unit", function()
-      local firingUnitState = makeFiringUnitState()
-      local firingUnit = { guid = "F1", side = "Taiwan" }
+      local launcherState = makeLauncherState()
+      local launcher = { guid = "F1", side = "Taiwan" }
 
       trackStub(math, "random").returns(1)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(launcher)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.are.equal("F1", stubSetUnit.calls[1].vals[1].guid)
@@ -144,27 +144,27 @@ describe("MissileSystem Movement", function()
         { latitude = "N 25.00.00", longitude = "E 121.00.00" },
         { latitude = "N 25.01.00", longitude = "E 121.01.00" }
       }
-      local firingUnitState = makeFiringUnitState({
+      local launcherState = makeLauncherState({
         operationalArea = {
           name = "OPAREA-1",
           FP = { { course = expectedCourse } }
         }
       })
-      local firingUnit = { guid = "F1", side = "Taiwan" }
+      local launcher = { guid = "F1", side = "Taiwan" }
 
       trackStub(math, "random").returns(1)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(launcher)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.are.same(expectedCourse, stubSetUnit.calls[1].vals[1].course)
     end)
 
     -- Positive: iterates through all units in group
     it("should iterate through all units in group", function()
-      local firingUnitState = makeFiringUnitState()
-      local firingUnit = {
+      local launcherState = makeLauncherState()
+      local launcher = {
         guid = "GROUP-001",
         side = "Taiwan",
         group = { unitlist = { "U1", "U2", "U3" } }
@@ -179,7 +179,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.stub(stubSetUnit).was.called(3)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -189,8 +189,8 @@ describe("MissileSystem Movement", function()
 
     -- Boundary: skips nil units in group list
     it("should skip nil units in group list", function()
-      local firingUnitState = makeFiringUnitState()
-      local firingUnit = {
+      local launcherState = makeLauncherState()
+      local launcher = {
         guid = "GROUP-001",
         side = "Taiwan",
         group = { unitlist = { "U1", "U2", "U3" } }
@@ -205,7 +205,7 @@ describe("MissileSystem Movement", function()
       end)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -216,7 +216,7 @@ describe("MissileSystem Movement", function()
     it("should use random position from FP array", function()
       local course1 = { { latitude = "N 25.00.00", longitude = "E 121.00.00" } }
       local course2 = { { latitude = "N 26.00.00", longitude = "E 122.00.00" } }
-      local firingUnitState = makeFiringUnitState({
+      local launcherState = makeLauncherState({
         operationalArea = {
           name = "OPAREA-1",
           FP = {
@@ -225,13 +225,13 @@ describe("MissileSystem Movement", function()
           }
         }
       })
-      local firingUnit = { guid = "F1", side = "Taiwan" }
+      local launcher = { guid = "F1", side = "Taiwan" }
 
       trackStub(math, "random").returns(2)
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(firingUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(launcher)
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
 
-      Movement.moveTo(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+      Movement.moveTo(launcherState, launcher, Movement.ORDER.FIRING_POINT)
 
       assert.are.same(course2, stubSetUnit.calls[1].vals[1].course)
     end)
@@ -275,9 +275,9 @@ describe("MissileSystem Movement", function()
     for _, case in ipairs({
       { "FIRING_POINT", "move_to_firing_point", course("FP"), nil },
       { "HIDE_AREA", "move_to_hide_area", course("HA"), hold },
-      { "RELOAD_POINT", "move_firing_unit_to_reload_point", course("RL"), hold },
-      { "RESUPPLY_VIA_SHRL", "move_resupply_to_reload_point", course("SHRL"), hold },
-      { "RESUPPLY_RECALL", "move_resupply_to_reload_point", { course("RL")[2] }, nil },
+      { "RELOAD_POINT", "move_launcher_to_reload_point", course("RL"), hold },
+      { "RESUPPLY_VIA_SHRL", "move_transloader_to_reload_point", course("SHRL"), hold },
+      { "RESUPPLY_RECALL", "move_transloader_to_reload_point", { course("RL")[2] }, nil },
       { "AMMUNITION_TRANSFER_POINT", "move_to_ammunition_transfer_point", course("ATP"), nil },
     }) do
       it("should send " .. case[1] .. " along its own course with its own weapon control", function()
@@ -299,7 +299,7 @@ describe("MissileSystem Movement", function()
       assert.is_nil(sentCourse)
     end)
 
-    -- Boundary: a resupply unit leaving its shelter takes RL when the area has no SHRL
+    -- Boundary: a transloader leaving its shelter takes RL when the area has no SHRL
     it("should fall back to RL when the area has no SHRL", function()
       local result, sentCourse = send(Movement.ORDER.RESUPPLY_VIA_SHRL, { SHRL = false })
 

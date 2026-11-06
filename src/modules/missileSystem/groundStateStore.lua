@@ -2,30 +2,30 @@ local Utils = require("src.utils.utils")
 
 local GroundStateStore = {}
 
----Find the firing unit, resupply unit and canister stock states paired with either end's unit name
+---Find the launcher, transloader and canister stock states paired with either end's unit name
 ---The pairing comes from config links. Each state is nil when it is not tracked; all are nil when config
----has no firing or resupply unit of that name.
+---has no launcher or transloader of that name.
 ---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
----@param unitName string Firing or resupply unit name
----@return SBJ__FiringUnitState|nil firingUnitState Firing unit state of the pair
----@return SBJ__ResupplyUnitState|nil resupplyUnitState Resupply unit state of the pair
----@return SBJ__CanisterStockState|nil canisterStockState canister stock state of the resupply unit
+---@param unitName string Launcher or transloader name
+---@return SBJ__LauncherState|nil launcherState Launcher state of the pair
+---@return SBJ__TransloaderState|nil transloaderState Transloader state of the pair
+---@return SBJ__CanisterStockState|nil canisterStockState canister stock state of the transloader
 function GroundStateStore.resolvePair(systemConfig, systemState, unitName)
-  local resupplyUnitName = unitName
-  local firingUnitDescriptor = systemConfig.firingUnits[unitName]
-  if firingUnitDescriptor then
-    resupplyUnitName = firingUnitDescriptor.resupplyUnit
+  local transloaderName = unitName
+  local launcherDescriptor = systemConfig.launchers[unitName]
+  if launcherDescriptor then
+    transloaderName = launcherDescriptor.transloader
   end
 
-  local resupplyUnitDescriptor = systemConfig.resupplyUnits[resupplyUnitName]
-  if not resupplyUnitDescriptor then
+  local transloaderDescriptor = systemConfig.transloaders[transloaderName]
+  if not transloaderDescriptor then
     return nil, nil, nil
   end
 
-  return systemState.firingUnits[resupplyUnitDescriptor.firingUnit],
-      systemState.resupplyUnits[resupplyUnitDescriptor.name],
-      systemState.canisterStocks[resupplyUnitDescriptor.canisterStock]
+  return systemState.launchers[transloaderDescriptor.launcher],
+      systemState.transloaders[transloaderDescriptor.name],
+      systemState.canisterStocks[transloaderDescriptor.canisterStock]
 end
 
 ---Call back once for every enabled missile system
@@ -39,7 +39,7 @@ function GroundStateStore.forEachEnabledSystem(groundState, callback)
   end
 end
 
----Handle logic when resupply unit is destroyed
+---Handle logic when transloader is destroyed
 ---@param unit CMO__Unit
 ---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
@@ -67,28 +67,28 @@ function GroundStateStore.processSupplyAssetDestruction(unit, systemConfig, syst
     return false, nil
   end
 
-  -- The destroyed unit is one vehicle; resupply state is keyed by its group's name
-  local resupplyUnitState = systemState.resupplyUnits[unit.group.name]
-  local resupplyUnitDescriptor = systemConfig.resupplyUnits[unit.group.name]
+  -- The destroyed unit is one vehicle; transloader state is keyed by its group's name
+  local transloaderState = systemState.transloaders[unit.group.name]
+  local transloaderDescriptor = systemConfig.transloaders[unit.group.name]
 
-  if resupplyUnitState and resupplyUnitDescriptor and resupplyUnitState.weaponCountCurrent > 0 then
-    local ammoBefore = resupplyUnitState.weaponCountCurrent
-    local ammoPerUnit = resupplyUnitDescriptor.weaponCountDefault / resupplyUnitDescriptor.unitCount
+  if transloaderState and transloaderDescriptor and transloaderState.weaponCountCurrent > 0 then
+    local ammoBefore = transloaderState.weaponCountCurrent
+    local ammoPerUnit = transloaderDescriptor.weaponCountDefault / transloaderDescriptor.unitCount
 
-    if (resupplyUnitState.weaponCountCurrent - ammoPerUnit) < 0 then
-      resupplyUnitState.weaponCountCurrent = 0
+    if (transloaderState.weaponCountCurrent - ammoPerUnit) < 0 then
+      transloaderState.weaponCountCurrent = 0
     else
-      resupplyUnitState.weaponCountCurrent = resupplyUnitState.weaponCountCurrent - ammoPerUnit
+      transloaderState.weaponCountCurrent = transloaderState.weaponCountCurrent - ammoPerUnit
     end
     return true, {
       tag = "OK",
       system = systemState.name or "unknown",
       unitName = unit.name,
-      contextName = resupplyUnitState.name,
-      role = "resupply_unit",
+      contextName = transloaderState.name,
+      role = "transloader",
       ammoBefore = ammoBefore,
-      ammoAfter = resupplyUnitState.weaponCountCurrent,
-      delta = resupplyUnitState.weaponCountCurrent - ammoBefore
+      ammoAfter = transloaderState.weaponCountCurrent,
+      delta = transloaderState.weaponCountCurrent - ammoBefore
     }
   end
 
@@ -108,8 +108,8 @@ function GroundStateStore.ensureGroundState(missileSystemConfigMap, groundState)
       systemState.enabled = true
     end
     systemState.canisterStocks = systemState.canisterStocks or {}
-    systemState.resupplyUnits = systemState.resupplyUnits or {}
-    systemState.firingUnits = systemState.firingUnits or {}
+    systemState.transloaders = systemState.transloaders or {}
+    systemState.launchers = systemState.launchers or {}
     groundState.missileSystemTypes[system] = systemState
   end
 end
@@ -122,18 +122,18 @@ end
 function GroundStateStore.resetBatteryStates(groundState, batteries)
   for _, battery in ipairs(batteries) do
     local systemState = groundState.missileSystemTypes[battery.missileSystemType]
-    local firing, resupply, canisterStock = battery.firing, battery.resupply, battery.canisterStock
+    local launcher, transloader, canisterStock = battery.launcher, battery.transloader, battery.canisterStock
 
-    systemState.firingUnits[firing.name] = {
-      name = firing.name,
-      state = firing.state,
+    systemState.launchers[launcher.name] = {
+      name = launcher.name,
+      state = launcher.state,
       operationalArea = Utils.deepCopy(battery.operationalArea),
     }
-    systemState.resupplyUnits[resupply.name] = {
-      name = resupply.name,
-      state = resupply.state,
+    systemState.transloaders[transloader.name] = {
+      name = transloader.name,
+      state = transloader.state,
       operationalArea = Utils.deepCopy(battery.operationalArea),
-      weaponCountCurrent = resupply.weaponCountCurrent,
+      weaponCountCurrent = transloader.weaponCountCurrent,
     }
     systemState.canisterStocks[canisterStock.name] = {
       name = canisterStock.name,
@@ -147,13 +147,13 @@ end
 ---Returns the stored table; copy it before changing it.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string
----@param firingUnitDescriptor SBJ__FiringUnitDescriptor Config descriptor, the fallback
+---@param launcherDescriptor SBJ__LauncherDescriptor Config descriptor, the fallback
 ---@return SBJ__OperationalArea
-function GroundStateStore.resolveOperationalArea(groundState, missileSystemType, firingUnitDescriptor)
+function GroundStateStore.resolveOperationalArea(groundState, missileSystemType, launcherDescriptor)
   local systemState = groundState.missileSystemTypes and groundState.missileSystemTypes[missileSystemType]
-  local firingUnitState = systemState and systemState.firingUnits[firingUnitDescriptor.name]
-  local stateArea = firingUnitState and firingUnitState.operationalArea
-  return stateArea and stateArea.name and stateArea or firingUnitDescriptor.operationalArea
+  local launcherState = systemState and systemState.launchers[launcherDescriptor.name]
+  local stateArea = launcherState and launcherState.operationalArea
+  return stateArea and stateArea.name and stateArea or launcherDescriptor.operationalArea
 end
 
 return GroundStateStore

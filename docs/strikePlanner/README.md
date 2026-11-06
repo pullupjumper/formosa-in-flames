@@ -188,10 +188,10 @@ saveData.red
 │   └── fireSupportPlan: table<string, SBJ__FireSupportExecutionMatrix>
 │       └── FSEM
 │           ├── fireSupportTasks: SBJ__FireSupportTask[]
-│           │   ├── firingUnits: SBJ__FiringUnit[]
+│           │   ├── launchers: SBJ__Launcher[]
 │           │   ├── target: SBJ__Target
 │           │   └── startTime / isFinished
-│           └── isActivated / isFinished / allFiringUnitsInPosition
+│           └── isActivated / isFinished / allLaunchersInPosition
 └── targetlist: SBJ__TargetEntry[]
 ```
 

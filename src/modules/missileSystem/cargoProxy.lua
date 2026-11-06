@@ -161,8 +161,8 @@ end
 ---Simulate loading ground units onto a ship by creating cargo proxies
 ---Resolves unit group, clones weapon loadouts to cargo proxies, and removes originals
 ---@param base CMO__Unit
----@param unitName string Firing or resupply unit name
----@param weaponDBID number|number[]|nil Weapons whose counts carry over; nil for a resupply unit
+---@param unitName string Launcher or transloader name
+---@param weaponDBID number|number[]|nil Weapons whose counts carry over; nil for a transloader
 ---@param sideName string
 function CargoProxy.loadCargo(base, unitName, weaponDBID, sideName)
   local actualUnit = GameApi.ScenEdit_GetUnit(unitName, sideName)

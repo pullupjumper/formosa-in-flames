@@ -195,11 +195,11 @@ export function MechanicsTab() {
             <Callout>
               <List>
                 <li>
-                  <Term>FIRING</Term> -- whether the battery is hiding, in position, or reloading,
+                  <Term>LAUNCHER</Term> -- whether the battery is hiding, in position, or reloading,
                   with its reload progress.
                 </li>
                 <li>
-                  <Term>RESUPPLY</Term> -- the same for the ammo truck serving it.
+                  <Term>TRANSLOADER</Term> -- the same for the ammo truck serving it.
                 </li>
                 <li>
                   <Term>MISSILES (AMMO)</Term> -- what the truck is still carrying.

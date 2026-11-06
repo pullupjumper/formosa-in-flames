@@ -616,8 +616,8 @@ describe("LandingOps Coordinator", function()
       ---@return SBJ__AmmoInventoryResult
       local function buildReport(totalPercentage)
         return {
-          firing   = { current = 0, max = 0, percentage = 0 },
-          resupply = { current = 0, max = 0, percentage = 0 },
+          launcher   = { current = 0, max = 0, percentage = 0 },
+          transloader = { current = 0, max = 0, percentage = 0 },
           canisterStock = { current = 0, max = 0, percentage = 0 },
           total    = { current = 0, max = 0, percentage = totalPercentage },
         }
@@ -636,7 +636,7 @@ describe("LandingOps Coordinator", function()
       ---@param overrides? table
       local function buildGateLandingState(overrides)
         local landingState = buildLandingState()
-        landingState.ground = { srbm = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} } }
+        landingState.ground = { srbm = { launchers = {}, transloaders = {}, canisterStocks = {} } }
         if overrides then
           for k, v in pairs(overrides) do landingState.amphibOps[k] = v end
         end

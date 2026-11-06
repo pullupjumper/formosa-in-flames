@@ -13,7 +13,7 @@
 
 模組核心流程分為兩層：
 
-1. `attackContacts(opts)`：唯一的公開入口，多目標迭代，維持 `firingUnitIdx / shooterIdx` 跨目標輪轉。
+1. `attackContacts(opts)`：唯一的公開入口，多目標迭代，維持 `launcherIdx / shooterIdx` 跨目標輪轉。
 2. `attackContact(...)`（私有）：單目標分配引擎，針對單位或群組逐次嘗試發射直到滿足條件或達到嘗試上限。
 
 交戰檢核集中於 `canUnitFire`，會依序檢查 Doctrine（Hold Fire）、可用彈量、掛載分配上限與目標既有分配量，避免不必要發射。
@@ -38,7 +38,7 @@
 
 ### 3) 群組與單機處理差異
 
-- 群組路徑：`processUnitGroup(...)` 使用 `group.unitlist[shooterIdx]` 指向本次射手，成功後依群組末端決定是否切到下一 firing unit。
+- 群組路徑：`processUnitGroup(...)` 使用 `group.unitlist[shooterIdx]` 指向本次射手，成功後依群組末端決定是否切到下一 launcher。
 - 單機路徑：`processSingleUnit(...)` 直接對當前單機計算一次發射量並嘗試攻擊。
 
 ### 4) 不確定區目標的 BOL 發射
@@ -53,7 +53,7 @@
 ### 5) 輪轉與防呆
 
 - `attackContact` 以 `maxAttempts = 50` 限制迴圈，避免異常配置造成長時間循環。
-- 每次循環更新 `firingUnitIdx` 與 `shooterIdx`，可在多波次/多目標下平均使用發射資源。
+- 每次循環更新 `launcherIdx` 與 `shooterIdx`，可在多波次/多目標下平均使用發射資源。
 
 ---
 
@@ -73,7 +73,7 @@ flowchart TD
     UNCERTAIN{"contact.areaofuncertainty<br>有資料?"}
     BOL["ScenEdit_AttackContact(guid, 'BOL', lat/lon, ...)"]
     FIRE["ScenEdit_AttackContact(guid, contact.guid, ...)"]
-    NEXT["更新 firingUnitIdx / shooterIdx"]
+    NEXT["更新 launcherIdx / shooterIdx"]
     DONE["回傳 ammoAllocated 與索引狀態"]
     SUM["累加 totalAmmoAllocated"]
     RET["回傳總發射量"]
@@ -106,7 +106,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `attackContacts(opts)` | `opts.contacts`, `opts.qty`, `opts.firingUnits`, `opts.weaponDBID`, `opts.sideName` | `integer` | 迭代多目標（逐一交給私有 `attackContact`，並承接它回傳的下一輪索引），累計總發射量；`sideName` 預設 `constants.SIDES.RED` |
+| `attackContacts(opts)` | `opts.contacts`, `opts.qty`, `opts.launchers`, `opts.weaponDBID`, `opts.sideName` | `integer` | 迭代多目標（逐一交給私有 `attackContact`，並承接它回傳的下一輪索引），累計總發射量；`sideName` 預設 `constants.SIDES.RED` |
 
 ---
 
@@ -142,7 +142,7 @@ flowchart TD
 
 ### saveData
 
-本模組不直接讀寫 `saveData`，由上游模組整理目標與 firing units 後傳入。
+本模組不直接讀寫 `saveData`，由上游模組整理目標與 launchers 後傳入。
 
 ---
 

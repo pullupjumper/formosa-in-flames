@@ -41,7 +41,7 @@
 
 - 主要掩蔽觸發點是 `HA`：若 `hideOnEnterHA=true` **且機動發射車彈藥充足**，抵達 HA 才會執行 `Concealment.hideUnit(...)`；若已低於 `ammoThreshold` 則不自動掩蔽，以便接續前往 RL 補給
 - `RL` 不會直接讓機動發射車進建築掩蔽
-- 只有在 RL 未交會且 `hideResupplyOnRLNoMeeting=true` 時，才可能讓彈藥補給車回到掩蔽狀態
+- 只有在 RL 未交會且 `hideTransloaderOnRLNoMeeting=true` 時，才可能讓彈藥補給車回到掩蔽狀態
 
 ---
 
@@ -103,12 +103,12 @@ flowchart TB
 電腦控制陣營的補給流程不只依賴`UnitEntersArea`事件觸發更新狀態，而是由定時檢查主動驅動：
 
 - `scheduledReloadHideCheck.lua` 週期呼叫 `processSide(config, saveData, constants.SIDES.RED)`；auto / manual 由 `config.red.ground.policy.isAuto` 決定
-- 機動發射車低彈量或剛完成 FSP 射擊時，先進入 `stowTime` 等待視窗（由 `firingUnitState.stowStartTime` 記錄起點），倒數結束才實際機動，避免射擊後立即撤收
+- 機動發射車低彈量或剛完成 FSP 射擊時，先進入 `stowTime` 等待視窗（由 `launcherState.stowStartTime` 記錄起點），倒數結束才實際機動，避免射擊後立即撤收
 - stow 結束時若彈量已充足（典型 FSP 收車情境），直接回 HA；若仍低彈量，則自動觸發「機動發射車 + 彈藥補給車」同步前往 RL
 - 彈藥補給車彈量歸零時，會自動觸發彈藥補給車前往 ATP 補給
 - 機動發射車裝填完畢後，防空飛彈車自動回 FP；TEL 類自動回 HA
 - 電腦控制陣營 `moveToPosition` 呼叫 `processUnitEntersArea`，依 `config.red.ground.policy` 開啟 `hideOnEnterHA=true`，抵達 HA 陣地且彈藥充足時自動執行建築掩蔽（低彈量單位不掩蔽，避免阻斷後續前往 RL 的補給流程）
-- 電腦控制陣營亦可在 RL 未交會時，依 `hideResupplyOnRLNoMeeting=true` 讓彈藥補給車回到掩蔽狀態（不是機動發射車）
+- 電腦控制陣營亦可在 RL 未交會時，依 `hideTransloaderOnRLNoMeeting=true` 讓彈藥補給車回到掩蔽狀態（不是機動發射車）
 
 ---
 
@@ -128,7 +128,7 @@ flowchart TB
 
 **情境 A：彈藥補給車被摧毀**
 
-- 對應資料欄位 `resupplyUnits[*].weaponCountCurrent` 會下降或歸零
+- 對應資料欄位 `transloaders[*].weaponCountCurrent` 會下降或歸零
 - 機動發射車短期仍可作戰，但無法進行再裝填
 
 **情境 B：彈箱庫存被摧毀**
@@ -150,7 +150,7 @@ flowchart TB
 | `config.*.ground.missileSystemTypes.<type>.ammoThreshold` | 再裝填啟動門檻 |
 | `config.*.ground.missileSystemTypes.<type>.reloadTime` | 再裝填所需時間 |
 | `config.*.ground.missileSystemTypes.<type>.stowTime` | 射擊／低彈量觸發後的 stow 等待時間 |
-| `config.*.ground.missileSystemTypes.<type>.resupplyUnits[*].unitCount` | 彈藥補給車數量 |
+| `config.*.ground.missileSystemTypes.<type>.transloaders[*].unitCount` | 彈藥補給車數量 |
 | `config.*.ground.missileSystemTypes.<type>.canisterStocks[*].weaponCountDefault` | 彈箱庫存的初始彈量 |
 | `operationalArea` 的 FP/HA/RL/ATP 陣地位置 | 補給路徑與交會條件 |
 

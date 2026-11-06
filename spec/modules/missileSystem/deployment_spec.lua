@@ -35,20 +35,20 @@ describe("MissileSystem Deployment", function()
     }
   end
 
-  ---One system with one battery per suffix, linked firing -> resupply -> canister stock
+  ---One system with one battery per suffix, linked launcher -> transloader -> canister stock
   ---@param suffixes string[]
   ---@param unitCount? integer
   local function buildSystemConfig(suffixes, unitCount)
-    local systemConfig = { firingUnits = {}, resupplyUnits = {}, canisterStocks = {} }
+    local systemConfig = { launchers = {}, transloaders = {}, canisterStocks = {} }
     for _, suffix in ipairs(suffixes) do
       local area = buildArea("OPAREA-" .. suffix)
-      local firingName = suffix .. " Bn, 1st Bde"
-      systemConfig.firingUnits[firingName] = { name = firingName, dbid = 1234, weaponDBID = 5678,
-        resupplyUnit = "Ammo Sec, " .. firingName, operationalArea = area }
-      systemConfig.resupplyUnits["Ammo Sec, " .. firingName] = { name = "Ammo Sec, " .. firingName,
-        unitCount = unitCount or 1, canisterStock = "Ammo Revetment, " .. firingName, firingUnit = firingName,
+      local launcherName = suffix .. " Bn, 1st Bde"
+      systemConfig.launchers[launcherName] = { name = launcherName, dbid = 1234, weaponDBID = 5678,
+        transloader = "Ammo Sec, " .. launcherName, operationalArea = area }
+      systemConfig.transloaders["Ammo Sec, " .. launcherName] = { name = "Ammo Sec, " .. launcherName,
+        unitCount = unitCount or 1, canisterStock = "Ammo Revetment, " .. launcherName, launcher = launcherName,
         operationalArea = area }
-      systemConfig.canisterStocks["Ammo Revetment, " .. firingName] = { name = "Ammo Revetment, " .. firingName }
+      systemConfig.canisterStocks["Ammo Revetment, " .. launcherName] = { name = "Ammo Revetment, " .. launcherName }
     end
     return systemConfig
   end
@@ -88,8 +88,8 @@ describe("MissileSystem Deployment", function()
   -- ============================================================================
 
   describe("deployBatteries", function()
-    -- Negative: logs AddUnit failure detail for firing units
-    it("should log add unit failure details for firing units", function()
+    -- Negative: logs AddUnit failure detail for launchers
+    it("should log add unit failure details for launchers", function()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
       trackStub(GameApi, "ScenEdit_ClearAllMagazines")
       trackStub(GameApi, "ScenEdit_AddUnit").invokes(function(opts)
@@ -107,15 +107,15 @@ describe("MissileSystem Deployment", function()
       local message = errorStub.calls[1].vals[1]
       assert.is_not_nil(string.find(message, "reason=add_unit_failed", 1, true))
       assert.is_not_nil(string.find(message, "system=srbm", 1, true))
-      assert.is_not_nil(string.find(message, "role=firing", 1, true))
+      assert.is_not_nil(string.find(message, "role=launcher", 1, true))
       assert.is_not_nil(string.find(message, "unit=\"A Bn, 1st Bde\"", 1, true))
-      assert.is_not_nil(string.find(message, "firing=0/1", 1, true))
-      assert.is_not_nil(string.find(message, "resupply=1/1", 1, true))
+      assert.is_not_nil(string.find(message, "launcher=0/1", 1, true))
+      assert.is_not_nil(string.find(message, "transloader=1/1", 1, true))
       assert.is_not_nil(string.find(message, "canister_stock=1/1", 1, true))
     end)
 
-    -- Positive: a SAM firing unit spawns at a firing point, other systems at their hide area
-    it("should spawn SAM firing units at a firing point and others at the hide area", function()
+    -- Positive: a SAM launcher spawns at a firing point, other systems at their hide area
+    it("should spawn SAM launchers at a firing point and others at the hide area", function()
       local added = stubEmptyMap()
 
       deployAll({ sam = buildSystemConfig({ "SAM" }), srbm = buildSystemConfig({ "SRBM" }) }, constants.SIDES.BLUE)
@@ -124,8 +124,8 @@ describe("MissileSystem Deployment", function()
       assert.are.equal(1, added["SRBM Bn, 1st Bde"].latitude)
     end)
 
-    -- Positive: the resupply unit spawns at the reload point and the hidden canister stock at the ammunition transfer point
-    it("should spawn the resupply unit at the reload point and the canister stock at the ammunition transfer point", function()
+    -- Positive: the transloader spawns at the reload point and the hidden canister stock at the ammunition transfer point
+    it("should spawn the transloader at the reload point and the canister stock at the ammunition transfer point", function()
       local added = stubEmptyMap()
 
       deployAll({ srbm = buildSystemConfig({ "A" }) }, constants.SIDES.RED)
@@ -136,8 +136,8 @@ describe("MissileSystem Deployment", function()
       assert.are.equal(constants.PLATFORMS.AMMO, added["Ammo Revetment, A Bn, 1st Bde"].dbid)
     end)
 
-    -- Positive: multi-vehicle units are named with an ordinal in front of the firing unit name
-    it("should name group members after the firing unit for both firing and resupply vehicles", function()
+    -- Positive: multi-vehicle units are named with an ordinal in front of the launcher name
+    it("should name group members after the launcher for both launchers and transloaders", function()
       local added = stubEmptyMap()
 
       deployAll({ srbm = buildSystemConfig({ "A" }, 2) }, constants.SIDES.RED)
@@ -150,18 +150,18 @@ describe("MissileSystem Deployment", function()
       assert.is_not_nil(added["Ammo Revetment, A Bn, 1st Bde"])
     end)
 
-    -- Negative: an area missing the reload point rejects only the resupply unit
-    it("should reject a resupply unit whose area has no reload point and still build the rest", function()
+    -- Negative: an area missing the reload point rejects only the transloader
+    it("should reject a transloader whose area has no reload point and still build the rest", function()
       local added = stubEmptyMap()
       local systemConfig = buildSystemConfig({ "A" }, 2)
-      systemConfig.firingUnits["A Bn, 1st Bde"].operationalArea.RL = nil
+      systemConfig.launchers["A Bn, 1st Bde"].operationalArea.RL = nil
 
       deployAll({ srbm = systemConfig }, constants.SIDES.RED)
 
       local message = errorStub.calls[1].vals[1]
       assert.is_not_nil(string.find(message, "reason=no_rl_defined", 1, true))
-      assert.is_not_nil(string.find(message, "resupply=0/2", 1, true))
-      assert.is_not_nil(string.find(message, "firing=2/2", 1, true))
+      assert.is_not_nil(string.find(message, "transloader=0/2", 1, true))
+      assert.is_not_nil(string.find(message, "launcher=2/2", 1, true))
       assert.is_nil(added["Ammo Sec, 1st Coy, A Bn, 1st Bde"])
     end)
 
@@ -217,21 +217,21 @@ describe("MissileSystem Deployment", function()
   -- ============================================================================
 
   describe("resolveBattery", function()
-    -- Positive: follows config links firing -> resupply -> canister stock and keeps the given area
-    it("should join the firing unit to its resupply unit and canister stock by config links", function()
+    -- Positive: follows config links launcher -> transloader -> canister stock and keeps the given area
+    it("should join the launcher to its transloader and canister stock by config links", function()
       local systemConfig = buildSystemConfig({ "A", "B" }, 3)
       local newArea = buildArea("OPAREA-NEW")
 
       local battery = Deployment.resolveBattery({ srbm = systemConfig }, "srbm", "B Bn, 1st Bde", newArea)
 
-      assert.are.equal(systemConfig.firingUnits["B Bn, 1st Bde"], battery.firing)
-      assert.are.equal(systemConfig.resupplyUnits["Ammo Sec, B Bn, 1st Bde"], battery.resupply)
+      assert.are.equal(systemConfig.launchers["B Bn, 1st Bde"], battery.launcher)
+      assert.are.equal(systemConfig.transloaders["Ammo Sec, B Bn, 1st Bde"], battery.transloader)
       assert.are.equal(systemConfig.canisterStocks["Ammo Revetment, B Bn, 1st Bde"], battery.canisterStock)
       assert.are.equal(newArea, battery.operationalArea)
     end)
 
-    -- Negative: unknown system or firing unit gives nil
-    it("should return nil for an unknown system or firing unit", function()
+    -- Negative: unknown system or launcher gives nil
+    it("should return nil for an unknown system or launcher", function()
       local missileSystemConfigMap = { srbm = buildSystemConfig({ "A" }) }
 
       assert.is_nil(Deployment.resolveBattery(missileSystemConfigMap, "glcm", "A Bn, 1st Bde", {}))

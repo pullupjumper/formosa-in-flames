@@ -28,7 +28,7 @@ describe("FsemBuilder", function()
   -- Shared mock data builders
   -- ============================================================================
 
-  ---Create a mock firing unit battery state
+  ---Create a mock launcher battery state
   ---@param overrides? table
   ---@return table
   local function makeBatteryState(overrides)
@@ -42,7 +42,7 @@ describe("FsemBuilder", function()
     return context
   end
 
-  ---Create a mock CMO firing unit carrying an SRBM mount (weapon 3104, 6 rounds max)
+  ---Create a mock CMO launcher carrying an SRBM mount (weapon 3104, 6 rounds max)
   ---@param name string
   ---@param ammo? integer Rounds loaded, defaults to full
   ---@return table
@@ -54,7 +54,7 @@ describe("FsemBuilder", function()
     }
   end
 
-  ---Count ScenEdit_GetUnit lookups made by firing unit name
+  ---Count ScenEdit_GetUnit lookups made by launcher name
   ---@param getUnitStub luassert.spy
   ---@param name string
   ---@return integer
@@ -81,7 +81,7 @@ describe("FsemBuilder", function()
     return entry
   end
 
-  ---Create a mock strike operation with firing unit and target requirements
+  ---Create a mock strike operation with launcher and target requirements
   ---@param overrides? table
   ---@return table
   local function makeOperation(overrides)
@@ -96,7 +96,7 @@ describe("FsemBuilder", function()
           {
             name = "FST-TEST",
             missileSystemType = "SRBM",
-            firingUnitNames = { "Battery-1" },
+            launcherNames = { "Battery-1" },
             target = { minTargetCount = 1, ammoPerTarget = 2 }
           }
         }
@@ -115,8 +115,8 @@ describe("FsemBuilder", function()
       if overrides.fireSupportTasks then
         operation.template.fireSupportTasks = overrides.fireSupportTasks
       end
-      if overrides.firingUnitNames then
-        operation.template.fireSupportTasks[1].firingUnitNames = overrides.firingUnitNames
+      if overrides.launcherNames then
+        operation.template.fireSupportTasks[1].launcherNames = overrides.launcherNames
       end
       if overrides.minTargetCount then
         operation.template.fireSupportTasks[1].target.minTargetCount = overrides.minTargetCount
@@ -134,7 +134,7 @@ describe("FsemBuilder", function()
         fireSupportPlan = {},
         missileSystemTypes = {
           srbm = {
-            firingUnits = {
+            launchers = {
               ["Battery-1"] = makeBatteryState()
             }
           }
@@ -153,8 +153,8 @@ describe("FsemBuilder", function()
       if overrides.fireSupportPlan then
         plannerState.ground.fireSupportPlan = overrides.fireSupportPlan
       end
-      if overrides.srbmFiringUnits then
-        plannerState.ground.missileSystemTypes.srbm.firingUnits = overrides.srbmFiringUnits
+      if overrides.srbmLaunchers then
+        plannerState.ground.missileSystemTypes.srbm.launchers = overrides.srbmLaunchers
       end
       if overrides.reconTriggeredOperationBatches then
         plannerState.dynamicOperations.reconTriggeredOperationBatches = overrides.reconTriggeredOperationBatches
@@ -167,11 +167,11 @@ describe("FsemBuilder", function()
   ---@return SBJ__Config
   local function makeConfig()
     local config = Utils.deepCopy(BaseConfig) --[[@as SBJ__Config]]
-    local firingUnits = {}
+    local launchers = {}
     for _, name in ipairs({ "Battery-1", "Battery-2", "Battery-3" }) do
-      firingUnits[name] = { name = name, ammoThreshold = 40, weaponDBID = 3104 }
+      launchers[name] = { name = name, ammoThreshold = 40, weaponDBID = 3104 }
     end
-    config.red.ground.missileSystemTypes.srbm.firingUnits = firingUnits
+    config.red.ground.missileSystemTypes.srbm.launchers = launchers
     return config
   end
 
@@ -274,7 +274,7 @@ describe("FsemBuilder", function()
       -- ============================================================================
 
       -- Positive: standard successful creation
-      it("should create and insert FSEM when targets and firing units are available", function()
+      it("should create and insert FSEM when targets and launchers are available", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({ reconTriggeredOperationBatches = { reconEntry } })
@@ -342,12 +342,12 @@ describe("FsemBuilder", function()
       end)
 
       -- ============================================================================
-      -- Firing Unit Validation
+      -- Launcher Validation
       -- ============================================================================
 
 
-      -- Negative: firing unit already assigned to active FSEM
-      it("should not create FSEM when firing unit is already assigned to active FSEM", function()
+      -- Negative: launcher already assigned to active FSEM
+      it("should not create FSEM when launcher is already assigned to active FSEM", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({
@@ -356,7 +356,7 @@ describe("FsemBuilder", function()
               isFinished = false,
               isActivated = true,
               fireSupportTasks = {
-                { isFinished = false, firingUnitNames = { "Battery-1" } }
+                { isFinished = false, launcherNames = { "Battery-1" } }
               }
             }
           },
@@ -370,7 +370,7 @@ describe("FsemBuilder", function()
       end)
 
       -- Negative: unit not found in game
-      it("should not create FSEM when firing unit is not found in game", function()
+      it("should not create FSEM when launcher is not found in game", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({ reconTriggeredOperationBatches = { reconEntry } })
@@ -383,11 +383,11 @@ describe("FsemBuilder", function()
       end)
 
       -- Negative: battery state not found in plannerState
-      it("should not create FSEM when firing unit context is not found in plannerState", function()
+      it("should not create FSEM when launcher context is not found in plannerState", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({
-          srbmFiringUnits = {},
+          srbmLaunchers = {},
           reconTriggeredOperationBatches = { reconEntry }
         })
 
@@ -399,11 +399,11 @@ describe("FsemBuilder", function()
       end)
 
       -- Negative: battery not in HIDE state
-      it("should not create FSEM when firing unit is not in HIDE state", function()
+      it("should not create FSEM when launcher is not in HIDE state", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING })
           },
           reconTriggeredOperationBatches = { reconEntry }
@@ -417,7 +417,7 @@ describe("FsemBuilder", function()
       end)
 
       -- Negative: low ammunition
-      it("should not create FSEM when firing unit has low ammunition", function()
+      it("should not create FSEM when launcher has low ammunition", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({ reconTriggeredOperationBatches = { reconEntry } })
@@ -430,7 +430,7 @@ describe("FsemBuilder", function()
       end)
 
       -- Boundary: finished/inactive FSEM should not block assignment
-      it("should treat firing units in finished or inactive FSEMs as available", function()
+      it("should treat launchers in finished or inactive FSEMs as available", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({
@@ -439,14 +439,14 @@ describe("FsemBuilder", function()
               isFinished = true,
               isActivated = true,
               fireSupportTasks = {
-                { isFinished = true, firingUnitNames = { "Battery-1" } }
+                { isFinished = true, launcherNames = { "Battery-1" } }
               }
             },
             ["INACTIVE-FSEM"] = {
               isFinished = false,
               isActivated = false,
               fireSupportTasks = {
-                { isFinished = false, firingUnitNames = { "Battery-1" } }
+                { isFinished = false, launcherNames = { "Battery-1" } }
               }
             }
           },
@@ -465,14 +465,14 @@ describe("FsemBuilder", function()
       -- FSEM Construction Edge Cases
       -- ============================================================================
 
-      -- Positive: partial firing unit availability
-      it("should create FSEM with only available firing units when some are unavailable", function()
+      -- Positive: partial launcher availability
+      it("should create FSEM with only available launchers when some are unavailable", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({
-          firingUnitNames = { "Battery-1", "Battery-2", "Battery-3" }
+          launcherNames = { "Battery-1", "Battery-2", "Battery-3" }
         })
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({
               name = "Battery-2",
@@ -490,24 +490,24 @@ describe("FsemBuilder", function()
         assert.is_true(result)
         local fsem = plannerState.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-01"]
         assert.is_table(fsem)
-        assert.are.same({ "Battery-1", "Battery-3" }, fsem.fireSupportTasks[1].firingUnitNames)
+        assert.are.same({ "Battery-1", "Battery-3" }, fsem.fireSupportTasks[1].launcherNames)
       end)
 
-      -- Boundary: same firing unit referenced by multiple FSTs
-      it("should prevent same firing unit from being assigned to multiple FSTs in same build cycle", function()
+      -- Boundary: same launcher referenced by multiple FSTs
+      it("should prevent same launcher from being assigned to multiple FSTs in same build cycle", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({
           fireSupportTasks = {
             {
               name = "FST-1",
               missileSystemType = "SRBM",
-              firingUnitNames = { "Battery-1" },
+              launcherNames = { "Battery-1" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
               missileSystemType = "SRBM",
-              firingUnitNames = { "Battery-1" },
+              launcherNames = { "Battery-1" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
           }
@@ -525,28 +525,28 @@ describe("FsemBuilder", function()
         assert.are.equal("FST-1", fsem.fireSupportTasks[1].name)
       end)
 
-      -- Pass-scoped cache: one CMO lookup per firing unit name within a single pass
-      it("should look up each firing unit at most once per pass across FSTs", function()
+      -- Pass-scoped cache: one CMO lookup per launcher name within a single pass
+      it("should look up each launcher at most once per pass across FSTs", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation({
           fireSupportTasks = {
             {
               name = "FST-1",
               missileSystemType = "SRBM",
-              firingUnitNames = { "Battery-1", "Battery-2" },
+              launcherNames = { "Battery-1", "Battery-2" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
               missileSystemType = "SRBM",
-              firingUnitNames = { "Battery-1", "Battery-2" },
+              launcherNames = { "Battery-1", "Battery-2" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
           }
         })
         -- Battery-2 never becomes assigned, so without a cache it is re-queried by every FST.
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({
               name = "Battery-2",
@@ -565,15 +565,15 @@ describe("FsemBuilder", function()
       end)
 
       -- Pass-scoped cache: assignment map is seeded once and shared across operations
-      it("should share the firing unit cache and assignment map across operations in one pass", function()
+      it("should share the launcher cache and assignment map across operations in one pass", function()
         local reconEntry = makeReconEntry()
-        local firingUnitNames = { "Battery-1", "Battery-2" }
-        local firstOperation = makeOperation({ templateName = "TEST-OP/1", firingUnitNames = firingUnitNames })
-        local secondOperation = makeOperation({ templateName = "TEST-OP/2", firingUnitNames = firingUnitNames })
+        local launcherNames = { "Battery-1", "Battery-2" }
+        local firstOperation = makeOperation({ templateName = "TEST-OP/1", launcherNames = launcherNames })
+        local secondOperation = makeOperation({ templateName = "TEST-OP/2", launcherNames = launcherNames })
         -- Battery-1 becomes assigned after the first operation; Battery-2 never does,
         -- so only the shared cache keeps the second operation from re-querying it.
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({
               name = "Battery-2",
@@ -603,19 +603,19 @@ describe("FsemBuilder", function()
             {
               name = "FST-1",
               missileSystemType = "SRBM",
-              firingUnitNames = { "Battery-1" },
+              launcherNames = { "Battery-1" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             },
             {
               name = "FST-2",
               missileSystemType = "SRBM",
-              firingUnitNames = { "Battery-2" },
+              launcherNames = { "Battery-2" },
               target = { minTargetCount = 1, ammoPerTarget = 2 }
             }
           }
         })
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({ name = "Battery-2" })
           },
@@ -647,7 +647,7 @@ describe("FsemBuilder", function()
         local operation1 = makeOperation({ templateName = "GOOD-OP/1" })
         local operation2 = makeOperation({ templateName = "BAD-OP/1", minTargetCount = 10 })
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState(),
             ["Battery-2"] = makeBatteryState({ name = "Battery-2" })
           },
@@ -755,12 +755,12 @@ describe("FsemBuilder", function()
         assert.is_false(operation.executed)
       end)
 
-      -- Negative: no firing units available keeps operation pending
-      it("should keep operation pending when no firing units are available inside window", function()
+      -- Negative: no launchers available keeps operation pending
+      it("should keep operation pending when no launchers are available inside window", function()
         local reconEntry = makeReconEntry()
         local operation = makeOperation()
         local plannerState = makePlannerState({
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING })
           },
           reconTriggeredOperationBatches = { reconEntry }
@@ -838,14 +838,14 @@ describe("FsemBuilder", function()
           name = "STALE-FSEM",
           isActivated = true,
           isFinished = false,
-          allFiringUnitsInPosition = false,
+          allLaunchersInPosition = false,
           createdAt = nil,
           fireSupportTasks = {
             {
               name = "FST-HELD",
               missileSystemType = "SRBM",
               isFinished = false,
-              firingUnitNames = { "Battery-1" }
+              launcherNames = { "Battery-1" }
             }
           }
         }
@@ -893,7 +893,7 @@ describe("FsemBuilder", function()
       end)
 
       -- Positive: stale FSEM retired and its units re-assigned end to end
-      it("should retire stale FSEM and let a new operation reuse its firing units", function()
+      it("should retire stale FSEM and let a new operation reuse its launchers", function()
         local config = makeConfig()
         local staleAfterSec = config.red.recon.fsemStaleAfterSec
 
@@ -933,7 +933,7 @@ describe("FsemBuilder", function()
         assert.is_true(operation2.executed)
         local secondFsem = plannerState.ground.fireSupportPlan["TEST-OP/1/DYN-SAT-02"]
         assert.is_table(secondFsem)
-        assert.are.equal("Battery-1", secondFsem.fireSupportTasks[1].firingUnitNames[1])
+        assert.are.equal("Battery-1", secondFsem.fireSupportTasks[1].launcherNames[1])
 
         assert.is_true(hasLogCall("%[WARN%]"))
         assert.is_true(hasLogCall("reason=fsem_stale_timeout"))
@@ -941,7 +941,7 @@ describe("FsemBuilder", function()
       end)
 
       -- Regression: retirement must survive a tick with nothing pending. A matrix whose
-      -- targets vanished never fires, so no other path releases its firing units.
+      -- targets vanished never fires, so no other path releases its launchers.
       it("should retire stale FSEM even when no ground operation is pending", function()
         local config = makeConfig()
         local currentTime = 1000 + config.red.recon.fsemStaleAfterSec + 1
@@ -949,7 +949,7 @@ describe("FsemBuilder", function()
         local matrix = makeActiveMatrix({ createdAt = 1000 })
         local plannerState = makePlannerState({
           fireSupportPlan = { [matrix.name] = matrix },
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-1"] = makeBatteryState({ state = constants.MISSILE_UNIT_POSTURE.STATIC })
           },
           reconTriggeredOperationBatches = {}
@@ -961,7 +961,7 @@ describe("FsemBuilder", function()
         assert.is_true(matrix.isFinished)
         -- Retired, not deleted: the matrix stays in the FSP for name uniqueness checks
         assert.are.equal(1, countMatrices(plannerState.ground.fireSupportPlan))
-        assert.are.equal(currentTime, plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-1"].stowStartTime)
+        assert.are.equal(currentTime, plannerState.ground.missileSystemTypes.srbm.launchers["Battery-1"].stowStartTime)
 
         assert.is_true(hasLogCall("%[WARN%]"))
         assert.is_true(hasLogCall("matrix=STALE%-FSEM"))
@@ -1007,25 +1007,25 @@ describe("FsemBuilder", function()
               name = "FST-SRBM",
               missileSystemType = "SRBM",
               isFinished = false,
-              firingUnitNames = { "Battery-S", "Battery-R", "Battery-H", "Battery-P" }
+              launcherNames = { "Battery-S", "Battery-R", "Battery-H", "Battery-P" }
             },
             {
               name = "FST-SAM",
               missileSystemType = "SAM",
               isFinished = false,
-              firingUnitNames = { "Sam-1" }
+              launcherNames = { "Sam-1" }
             },
             {
               name = "FST-DONE",
               missileSystemType = "SRBM",
               isFinished = true,
-              firingUnitNames = { "Battery-F" }
+              launcherNames = { "Battery-F" }
             }
           }
         })
         local plannerState = makePlannerState({
           fireSupportPlan = { [matrix.name] = matrix },
-          srbmFiringUnits = {
+          srbmLaunchers = {
             ["Battery-S"] = makeBatteryState({ name = "Battery-S", state = constants.MISSILE_UNIT_POSTURE.STATIC }),
             ["Battery-R"] = makeBatteryState({
               name = "Battery-R",
@@ -1037,9 +1037,9 @@ describe("FsemBuilder", function()
           },
           reconTriggeredOperationBatches = { reconEntry }
         })
-        plannerState.ground.missileSystemTypes.srbm.firingUnits["Battery-P"].stowStartTime = 500
+        plannerState.ground.missileSystemTypes.srbm.launchers["Battery-P"].stowStartTime = 500
         plannerState.ground.missileSystemTypes.sam = {
-          firingUnits = {
+          launchers = {
             ["Sam-1"] = makeBatteryState({ name = "Sam-1", state = constants.MISSILE_UNIT_POSTURE.STATIC })
           }
         }
@@ -1051,13 +1051,13 @@ describe("FsemBuilder", function()
         FsemBuilder.build(config, plannerState, {})
 
         assert.is_true(matrix.isFinished)
-        local srbmUnits = plannerState.ground.missileSystemTypes.srbm.firingUnits
+        local srbmUnits = plannerState.ground.missileSystemTypes.srbm.launchers
         assert.are.equal(currentTime, srbmUnits["Battery-S"].stowStartTime)
         assert.are.equal(currentTime, srbmUnits["Battery-R"].stowStartTime)
         assert.is_nil(srbmUnits["Battery-H"].stowStartTime)
         assert.are.equal(500, srbmUnits["Battery-P"].stowStartTime)
         assert.is_nil(srbmUnits["Battery-F"].stowStartTime)
-        assert.is_nil(plannerState.ground.missileSystemTypes.sam.firingUnits["Sam-1"].stowStartTime)
+        assert.is_nil(plannerState.ground.missileSystemTypes.sam.launchers["Sam-1"].stowStartTime)
 
         assert.is_true(hasLogCall("%[WARN%]"))
         assert.is_true(hasLogCall("matrix=STALE%-FSEM"))
@@ -1087,7 +1087,7 @@ describe("FsemBuilder", function()
         local reconEntry2 = makeReconEntry()
         reconEntry2.operations = { operation2 }
         local plannerStateWithAnotherEmptyFSP = {
-          ground = { fireSupportPlan = {}, missileSystemTypes = { srbm = { firingUnits = {} } } },
+          ground = { fireSupportPlan = {}, missileSystemTypes = { srbm = { launchers = {} } } },
           dynamicOperations = {
             enabled = true,
             reconTriggeredOperationBatches = { reconEntry2 }

@@ -40,14 +40,14 @@ stateDiagram-v2
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
 | `depart` | `unitState, unit, order` | `SBJ__LogResult` | 下移動指令，成功才設 `REPOSITIONING`，回傳 log row |
-| `arriveAtFiringPoint` | `firingUnitState, firingUnit, isAuto` | `nil` | `STATIC` + `WCS.FREE` |
-| `hide` | `firingUnitState, firingUnit, isAuto` | `nil` | `HIDE` + `WCS.HOLD` |
+| `arriveAtFiringPoint` | `launcherState, launcher, isAuto` | `nil` | `STATIC` + `WCS.FREE` |
+| `hide` | `launcherState, launcher, isAuto` | `nil` | `HIDE` + `WCS.HOLD` |
 | `beginReload` | `unitState, unit, isAuto` | `nil` | `RELOAD`、起始時間 + `WCS.HOLD` |
 | `ensureReloadClock` | `unitState` | `nil` | `RELOAD` 卻沒有起始時間時補上 |
 | `finishReload` | `unitState` | `nil` | `STATIC` 並清空裝填計時 |
 | `settle` | `systemState, unit, isAuto` | `nil` | 依名稱找發射車（優先）或補給車，`STATIC`、清計時 + `WCS.HOLD` |
-| `beginStow` | `firingUnitState` | `boolean` | 開始收車倒數；已有倒數回傳 false |
-| `endStow` | `firingUnitState` | `nil` | 清空收車倒數 |
+| `beginStow` | `launcherState` | `boolean` | 開始收車倒數；已有倒數回傳 false |
+| `endStow` | `launcherState` | `nil` | 清空收車倒數 |
 
 ---
 

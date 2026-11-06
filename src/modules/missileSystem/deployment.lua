@@ -108,7 +108,7 @@ local function removeAndRedistributeWeapons(addedUnit, weaponDBIDs, sideName, co
   return entries
 end
 
----Fit a firing vehicle's configured mounts and keep only its configured weapons
+---Fit a launcher's configured mounts and keep only its configured weapons
 ---@param battery SBJ__Battery
 ---@param addedUnit CMO__Unit
 ---@param sideName string
@@ -117,7 +117,7 @@ end
 local function setArmament(battery, addedUnit, sideName, context)
   local entries = {}
 
-  for _, desc in ipairs(battery.firing.mountDescriptors or {}) do
+  for _, desc in ipairs(battery.launcher.mountDescriptors or {}) do
     for _ = 1, desc.mountCount do
       local updated = GameApi.ScenEdit_UpdateUnit({
         guid = addedUnit.guid,
@@ -135,7 +135,7 @@ local function setArmament(battery, addedUnit, sideName, context)
   end
 
   for _, entry in ipairs(removeAndRedistributeWeapons(
-    addedUnit, Shared.normalizeWeaponDBIDs(battery.firing.weaponDBID), sideName, context
+    addedUnit, Shared.normalizeWeaponDBIDs(battery.launcher.weaponDBID), sideName, context
   )) do
     table.insert(entries, entry)
   end
@@ -145,10 +145,10 @@ end
 
 ---What differs between the three units of a battery. Everything else is the one path in deployRole.
 ---@class SBJ__BatteryRole
----@field role "firing"|"resupply"|"canister_stock" Log `role` field and summary column
----@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__FiringUnitDescriptor|SBJ__ResupplyUnitDescriptor|SBJ__CanisterStockDescriptor
----@field dbid? number Fixed platform; nil uses the firing unit's dbid
----@field isGroup boolean Builds battery.resupply.unitCount vehicles grouped under the descriptor name; otherwise one
+---@field role "launcher"|"transloader"|"canister_stock" Log `role` field and summary column
+---@field resolveDescriptor fun(battery: SBJ__Battery): SBJ__LauncherDescriptor|SBJ__TransloaderDescriptor|SBJ__CanisterStockDescriptor
+---@field dbid? number Fixed platform; nil uses the launcher's dbid
+---@field isGroup boolean Builds battery.transloader.unitCount vehicles grouped under the descriptor name; otherwise one
 ---@field findRejection fun(area: SBJ__OperationalArea, isDeployed: boolean): string|nil Reason the area cannot hold this role
 ---@field buildSpawnPosition fun(area: SBJ__OperationalArea, isDeployed: boolean): CMO__Location Called per vehicle
 ---@field setUp? fun(battery: SBJ__Battery, addedUnit: CMO__Unit, sideName: string, context: table): SBJ__LogResult[]
@@ -157,8 +157,8 @@ end
 ---@type SBJ__BatteryRole[]
 local BATTERY_ROLES = {
   {
-    role = "firing",
-    resolveDescriptor = function(battery) return battery.firing end,
+    role = "launcher",
+    resolveDescriptor = function(battery) return battery.launcher end,
     isGroup = true,
     findRejection = function(area, isDeployed)
       if not area.HA or #area.HA == 0 then
@@ -182,8 +182,8 @@ local BATTERY_ROLES = {
     setUp = setArmament,
   },
   {
-    role = "resupply",
-    resolveDescriptor = function(battery) return battery.resupply end,
+    role = "transloader",
+    resolveDescriptor = function(battery) return battery.transloader end,
     dbid = constants.PLATFORMS.AMMO_TRUCK,
     isGroup = true,
     findRejection = function(area)
@@ -214,17 +214,17 @@ local BATTERY_ROLES = {
 }
 
 ---Format the name of one vehicle in a group
----Every descriptor name ends with ", <firing unit name>" (spec/core/missileSystemConfig_spec.lua), so the
----ordinal goes in front of the firing unit name: "Ammo Sec, 1st Bn, X" -> "Ammo Sec, 2nd Coy, 1st Bn, X".
+---Every descriptor name ends with ", <launcher name>" (spec/core/missileSystemConfig_spec.lua), so the
+---ordinal goes in front of the launcher name: "Ammo Sec, 1st Bn, X" -> "Ammo Sec, 2nd Coy, 1st Bn, X".
 ---@param battery SBJ__Battery
 ---@param descriptorName string
 ---@param index integer 1-based vehicle index
 ---@return string
 local function formatMemberName(battery, descriptorName, index)
-  local firingName = battery.firing.name
-  local prefix = descriptorName:sub(1, #descriptorName - #firingName)
-  local unitType = GameUtils.resolveUnitType(firingName) or ""
-  return prefix .. GameUtils.formatOrdinalUnitName(index, unitType, ", " .. firingName)
+  local launcherName = battery.launcher.name
+  local prefix = descriptorName:sub(1, #descriptorName - #launcherName)
+  local unitType = GameUtils.resolveUnitType(launcherName) or ""
+  return prefix .. GameUtils.formatOrdinalUnitName(index, unitType, ", " .. launcherName)
 end
 
 ---Replace one role of one battery in the game: remove its old units, then build every vehicle
@@ -238,7 +238,7 @@ local function deployRole(battery, batteryRole, sideName)
   local descriptor = batteryRole.resolveDescriptor(battery)
   local area = battery.operationalArea
   local isDeployed = Rules.staysDeployed(battery.missileSystemType)
-  local expected = batteryRole.isGroup and battery.resupply.unitCount or 1
+  local expected = batteryRole.isGroup and battery.transloader.unitCount or 1
   local context = {
     system = battery.missileSystemType,
     role = batteryRole.role,
@@ -260,7 +260,7 @@ local function deployRole(battery, batteryRole, sideName)
     local addedUnit = GameApi.ScenEdit_AddUnit({
       side = sideName,
       unitname = name,
-      dbid = batteryRole.dbid or battery.firing.dbid,
+      dbid = batteryRole.dbid or battery.launcher.dbid,
       type = constants.UNIT_TYPES.FACILITY,
       group = expected > 1 and descriptor.name or nil,
       latitude = position.latitude,
@@ -286,25 +286,25 @@ local function deployRole(battery, batteryRole, sideName)
   return created, expected, entries
 end
 
----Join a firing unit to its resupply unit and canister stock by config links
+---Join a launcher to its transloader and canister stock by config links
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
----@param firingName string Firing unit name in the side's ground force config
+---@param launcherName string Launcher name in the side's ground force config
 ---@param operationalArea SBJ__OperationalArea Area to build the battery in
----@return SBJ__Battery|nil # nil for an unknown system or firing unit
-function Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, firingName, operationalArea)
+---@return SBJ__Battery|nil # nil for an unknown system or launcher
+function Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, launcherName, operationalArea)
   local systemConfig = missileSystemConfigMap[missileSystemType]
-  local firing = systemConfig and systemConfig.firingUnits[firingName]
-  if not firing then
+  local launcher = systemConfig and systemConfig.launchers[launcherName]
+  if not launcher then
     return nil
   end
 
-  local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
+  local transloader = systemConfig.transloaders[launcher.transloader]
   return {
     missileSystemType = missileSystemType,
-    firing = firing,
-    resupply = resupply,
-    canisterStock = systemConfig.canisterStocks[resupply.canisterStock],
+    launcher = launcher,
+    transloader = transloader,
+    canisterStock = systemConfig.canisterStocks[transloader.canisterStock],
     operationalArea = operationalArea
   }
 end
@@ -316,9 +316,9 @@ function Deployment.resolveBatteries(missileSystemConfigMap)
   local batteries = {}
 
   for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
-    for _, firing in pairs(systemConfig.firingUnits) do
+    for _, launcher in pairs(systemConfig.launchers) do
       table.insert(batteries,
-        Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, firing.name, firing.operationalArea))
+        Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, launcher.name, launcher.operationalArea))
     end
   end
 

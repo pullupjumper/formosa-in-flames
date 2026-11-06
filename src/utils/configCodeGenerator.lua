@@ -1,6 +1,6 @@
 ---Generates Lua source-code strings from ground-force configuration.
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
----`config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks.
+---`config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,transloaders,launchers}` blocks.
 ---Invoked interactively (console/REPL) via `dump` to print marked sections into the CMO Lua log;
 ---`tools/apply_generated_config.py` then writes them into constants.lua / config.lua.
 
@@ -15,7 +15,7 @@ local ConfigCodeGenerator = {}
 --   Phase 1 (collectUniqueAreas)  : scan config -> dedupe operationalArea tables, build opAreaMap
 --   Phase 2 (formatAreasCode)   : emit `constants.AREAS = { ... }`, build areaRefMap for Phase 3
 --   Phase 3 (formatOpAreasCode) : emit `constants.OPERATIONAL_AREAS = { ... }` via POSITION_EMITTERS
---   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks
+--   Phase 4 (formatConfigCode)  : emit `config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,transloaders,launchers}` blocks
 -- ============================================================================
 
 local AREA_NAME_PREFIXES = {
@@ -175,7 +175,7 @@ local function collectOpAreasFromUnits(unitMap, opAreaMap, seenKeySet, uniqueAre
   end
 end
 
----Phase 1: Collect unique operational areas from all firing/resupply units
+---Phase 1: Collect unique operational areas from all launchers and transloaders
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@return {key: string, opArea: SBJ__OperationalArea}[] uniqueAreas Sorted by key
 ---@return table<table, string> opAreaMap Maps opArea refs to constant key names
@@ -184,10 +184,10 @@ local function collectUniqueAreas(missileSystemConfigMap)
   local seenKeySet = {}
   local opAreaMap = {}
   for _, sysConfig in pairs(missileSystemConfigMap) do
-    if type(sysConfig) == "table" and sysConfig.firingUnits then
-      collectOpAreasFromUnits(sysConfig.firingUnits, opAreaMap, seenKeySet, uniqueAreas)
-      if sysConfig.resupplyUnits then
-        collectOpAreasFromUnits(sysConfig.resupplyUnits, opAreaMap, seenKeySet, uniqueAreas)
+    if type(sysConfig) == "table" and sysConfig.launchers then
+      collectOpAreasFromUnits(sysConfig.launchers, opAreaMap, seenKeySet, uniqueAreas)
+      if sysConfig.transloaders then
+        collectOpAreasFromUnits(sysConfig.transloaders, opAreaMap, seenKeySet, uniqueAreas)
       end
     end
   end
@@ -332,10 +332,10 @@ local function formatOpAreasCode(uniqueAreas, areaRefMap)
   return "constants.OPERATIONAL_AREAS = {\n" .. table.concat(opLines, "\n") .. "\n}"
 end
 
----Firing-unit field output order; extras are appended alphabetically
+---Launcher field output order; extras are appended alphabetically
 local FIELD_ORDER = {
   "name", "msg", "state", "operationalArea",
-  "weaponDBID", "ammoThreshold", "resupplyUnit", "dbid", "missileSystem", "mountDescriptors"
+  "weaponDBID", "ammoThreshold", "transloader", "dbid", "missileSystem", "mountDescriptors"
 }
 
 ---Runtime-only fields that live in saveData states and never belong in generated config
@@ -454,7 +454,7 @@ local function formatDefaultValue(value, ctx)
   return formatValue(value, 2, ctx.opAreaMap)
 end
 
----Resolve a firingUnit field to its serialized Lua expression
+---Resolve a launcher field to its serialized Lua expression
 ---@param field string
 ---@param value any
 ---@param ctx SBJ__FieldSerializerContext
@@ -465,20 +465,20 @@ local function formatField(field, value, ctx)
   return result or formatDefaultValue(value, ctx)
 end
 
----Serialize a firingUnit reference, or nil when it is not a unit name
----@param value string|any Firing unit name, or other
+---Serialize a launcher reference, or nil when it is not a unit name
+---@param value string|any Launcher name, or other
 ---@return string|nil # Quoted string, or nil when value is not a string
-local function formatFiringUnitRef(value)
+local function formatLauncherRef(value)
   if type(value) == "string" then
     return string.format("%q", value)
   end
   return nil
 end
 
----Compute firingUnit field emission order: FIELD_ORDER first, extras alphabetically
----@param unit SBJ__FiringUnitDescriptor FiringUnit descriptor whose fields should be ordered
+---Compute launcher field emission order: FIELD_ORDER first, extras alphabetically
+---@param unit SBJ__LauncherDescriptor Launcher descriptor whose fields should be ordered
 ---@return string[] # Ordered field names for serialization
-local function getOrderedFiringUnitFields(unit)
+local function getOrderedLauncherFields(unit)
   local ordered, seen = {}, {}
   for _, f in ipairs(FIELD_ORDER) do
     if unit[f] ~= nil then
@@ -517,17 +517,17 @@ local function formatCanisterStocksBlock(configPath, canisterStockMap, weaponCou
   return table.concat(lines, "\n")
 end
 
----Emit the `config.{...}.resupplyUnits = { ... }` block, or nil if resupplyUnits absent
+---Emit the `config.{...}.transloaders = { ... }` block, or nil if transloaders absent
 ---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
----@param resupplyUnitMap table<string, SBJ__ResupplyUnitDescriptor>|nil
+---@param transloaderMap table<string, SBJ__TransloaderDescriptor>|nil
 ---@param weaponCountDefault number System's default weapon count for weaponCountRef simplification
 ---@param ctx SBJ__FieldSerializerContext
----@return string|nil # Serialized block, or nil when resupplyUnitMap is nil
-local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCountDefault, ctx)
-  if not resupplyUnitMap then return nil end
-  local lines = { configPath .. ".resupplyUnits = {" }
-  for _, name in ipairs(getSortedStringKeys(resupplyUnitMap)) do
-    local unit = resupplyUnitMap[name]
+---@return string|nil # Serialized block, or nil when transloaderMap is nil
+local function formatTransloadersBlock(configPath, transloaderMap, weaponCountDefault, ctx)
+  if not transloaderMap then return nil end
+  local lines = { configPath .. ".transloaders = {" }
+  for _, name in ipairs(getSortedStringKeys(transloaderMap)) do
+    local unit = transloaderMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
     lines[#lines + 1] = "    name = " .. string.format("%q", unit.name) .. ","
     lines[#lines + 1] = "    weaponCountCurrent = " ..
@@ -539,11 +539,11 @@ local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCount
     lines[#lines + 1] = "    state = " .. formatField("state", unit.state, ctx) .. ","
     lines[#lines + 1] = "    canisterStock = " .. string.format("%q", unit.canisterStock) .. ","
 
-    local firingUnitRef = formatFiringUnitRef(unit.firingUnit)
-    if firingUnitRef then
-      -- Intentionally no trailing comma: firingUnit is the last field emitted and
+    local launcherRef = formatLauncherRef(unit.launcher)
+    if launcherRef then
+      -- Intentionally no trailing comma: launcher is the last field emitted and
       -- the original output shape omitted it here. Lua accepts either form.
-      lines[#lines + 1] = "    firingUnit = " .. firingUnitRef
+      lines[#lines + 1] = "    launcher = " .. launcherRef
     end
 
     lines[#lines + 1] = "  },"
@@ -552,17 +552,17 @@ local function formatResupplyUnitsBlock(configPath, resupplyUnitMap, weaponCount
   return table.concat(lines, "\n")
 end
 
----Emit the `config.{...}.firingUnits = { ... }` block
+---Emit the `config.{...}.launchers = { ... }` block
 ---@param configPath string Config path prefix (e.g. "config.red.ground.missileSystemTypes.mlrs")
----@param firingUnitMap table<string, SBJ__FiringUnitDescriptor>
+---@param launcherMap table<string, SBJ__LauncherDescriptor>
 ---@param ctx SBJ__FieldSerializerContext
----@return string # Serialized `config.{...}.firingUnits = { ... }` block
-local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
-  local lines = { configPath .. ".firingUnits = {" }
-  for _, name in ipairs(getSortedStringKeys(firingUnitMap)) do
-    local unit = firingUnitMap[name]
+---@return string # Serialized `config.{...}.launchers = { ... }` block
+local function formatLaunchersBlock(configPath, launcherMap, ctx)
+  local lines = { configPath .. ".launchers = {" }
+  for _, name in ipairs(getSortedStringKeys(launcherMap)) do
+    local unit = launcherMap[name]
     lines[#lines + 1] = '  ["' .. name .. '"] = {'
-    for _, field in ipairs(getOrderedFiringUnitFields(unit)) do
+    for _, field in ipairs(getOrderedLauncherFields(unit)) do
       lines[#lines + 1] = "    " .. field .. " = " .. formatField(field, unit[field], ctx) .. ","
     end
     lines[#lines + 1] = "  },"
@@ -571,11 +571,11 @@ local function formatFiringUnitsBlock(configPath, firingUnitMap, ctx)
   return table.concat(lines, "\n")
 end
 
----Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks
+---Phase 4: Generate all `config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,transloaders,launchers}` blocks
 ---@param sideField SBJ__SideKey
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param opAreaMap table<table, string> Phase 1's opArea-ref -> constant-key map for cross-references
----@return string # Concatenated canisterStocks/resupplyUnits/firingUnits blocks separated by newlines
+---@return string # Concatenated canisterStocks/transloaders/launchers blocks separated by newlines
 local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   local ctx = {
     configPath = "",
@@ -588,14 +588,14 @@ local function formatConfigCode(sideField, missileSystemConfigMap, opAreaMap)
   local blocks = {}
   for _, sysKey in ipairs(getSortedStringKeys(missileSystemConfigMap)) do
     local sysConfig = missileSystemConfigMap[sysKey]
-    if type(sysConfig) == "table" and sysConfig.firingUnits then
+    if type(sysConfig) == "table" and sysConfig.launchers then
       ctx.configPath = "config." .. sideField .. ".ground.missileSystemTypes." .. sysKey
       local canisterStocksBlock = formatCanisterStocksBlock(ctx.configPath, sysConfig.canisterStocks, sysConfig.weaponCountDefault)
       if canisterStocksBlock then blocks[#blocks + 1] = canisterStocksBlock end
-      local resBlock = formatResupplyUnitsBlock(ctx.configPath, sysConfig.resupplyUnits, sysConfig.weaponCountDefault,
+      local resBlock = formatTransloadersBlock(ctx.configPath, sysConfig.transloaders, sysConfig.weaponCountDefault,
         ctx)
       if resBlock then blocks[#blocks + 1] = resBlock end
-      blocks[#blocks + 1] = formatFiringUnitsBlock(ctx.configPath, sysConfig.firingUnits, ctx)
+      blocks[#blocks + 1] = formatLaunchersBlock(ctx.configPath, sysConfig.launchers, ctx)
     end
   end
 
@@ -604,7 +604,7 @@ end
 
 ---Generate Lua source-code strings from ground-force configuration
 ---Produces `constants.AREAS`, `constants.OPERATIONAL_AREAS`, and per-system
----`config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,resupplyUnits,firingUnits}` blocks
+---`config.{side}.ground.missileSystemTypes.{sys}.{canisterStocks,transloaders,launchers}` blocks
 ---Example: local areasStr, opAreasStr, configStr = ConfigCodeGenerator.format("China", config.red.ground.missileSystemTypes)
 ---@param sideName string
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
@@ -664,15 +664,15 @@ local function buildPlacedConfigMap(missileSystemConfigMap, groundState)
 
   for missileSystemType, systemConfig in pairs(missileSystemConfigMap) do
     local systemState = groundState.missileSystemTypes and groundState.missileSystemTypes[missileSystemType]
-    local placed = buildCopyWith(systemConfig, { firingUnits = {}, resupplyUnits = {} })
+    local placed = buildCopyWith(systemConfig, { launchers = {}, transloaders = {} })
 
-    for name, firing in pairs(systemConfig.firingUnits) do
-      local firingUnitState = systemState and systemState.firingUnits[name]
-      local stateArea = firingUnitState and firingUnitState.operationalArea
-      local area = { operationalArea = stateArea and stateArea.name and stateArea or firing.operationalArea }
-      local resupply = systemConfig.resupplyUnits[firing.resupplyUnit]
-      placed.firingUnits[name] = buildCopyWith(firing, area)
-      placed.resupplyUnits[resupply.name] = buildCopyWith(resupply, area)
+    for name, launcher in pairs(systemConfig.launchers) do
+      local launcherState = systemState and systemState.launchers[name]
+      local stateArea = launcherState and launcherState.operationalArea
+      local area = { operationalArea = stateArea and stateArea.name and stateArea or launcher.operationalArea }
+      local transloader = systemConfig.transloaders[launcher.transloader]
+      placed.launchers[name] = buildCopyWith(launcher, area)
+      placed.transloaders[transloader.name] = buildCopyWith(transloader, area)
     end
 
     placedConfigMap[missileSystemType] = placed

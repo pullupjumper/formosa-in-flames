@@ -14,10 +14,10 @@ describe("ConfigCodeGenerator", function()
         canisterStocks = {
           ["ATP-1"] = { name = "ATP-1", weaponCountCurrent = 8, weaponCountDefault = 8 },
         },
-        resupplyUnits = {
+        transloaders = {
           ["RES-1"] = { name = "RES-1", weaponCountCurrent = 4, weaponCountDefault = 2, unitCount = 3 },
         },
-        firingUnits = {
+        launchers = {
           ["TEL-1"] = {
             name = "TEL-1",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -35,7 +35,7 @@ describe("ConfigCodeGenerator", function()
     -- Positive: the area name comes back, since redeploy finds an area's zones by it
     it("should emit each operational area's name", function()
       local missileSystemConfigMap = buildMlrsConfig()
-      missileSystemConfigMap.mlrs.firingUnits["TEL-1"].operationalArea = { name = "#ABC" }
+      missileSystemConfigMap.mlrs.launchers["TEL-1"].operationalArea = { name = "#ABC" }
 
       local _, opAreasStr = ConfigCodeGenerator.format("China", missileSystemConfigMap)
 
@@ -43,19 +43,19 @@ describe("ConfigCodeGenerator", function()
     end)
 
     -- Positive: emits one block per section under the config path
-    it("should emit canisterStocks, resupplyUnits and firingUnits blocks for a system", function()
+    it("should emit canisterStocks, transloaders and launchers blocks for a system", function()
       local _, _, configStr = ConfigCodeGenerator.format("China", buildMlrsConfig())
 
       assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.canisterStocks = {", 1, true))
-      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.resupplyUnits = {", 1, true))
-      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
+      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.transloaders = {", 1, true))
+      assert.is_truthy(configStr:find("config.red.ground.missileSystemTypes.mlrs.launchers = {", 1, true))
     end)
 
     -- Positive: side name resolves to side field
     it("should use side field blue for Taiwan", function()
       local _, _, configStr = ConfigCodeGenerator.format("Taiwan", buildMlrsConfig())
 
-      assert.is_truthy(configStr:find("config.blue.ground.missileSystemTypes.mlrs.firingUnits = {", 1, true))
+      assert.is_truthy(configStr:find("config.blue.ground.missileSystemTypes.mlrs.launchers = {", 1, true))
     end)
 
     -- Positive: wpn values are rewritten as weaponCountDefault references
@@ -84,8 +84,8 @@ describe("ConfigCodeGenerator", function()
       assert.is_truthy(configStr:find("dbid = constants.PLATFORMS.PHL16,\n    missileSystem = \"PHL-16\",", 1, true))
     end)
 
-    -- Boundary: entries without firingUnits are skipped
-    it("should skip entries that have no firingUnits", function()
+    -- Boundary: entries without launchers are skipped
+    it("should skip entries that have no launchers", function()
       local config = { policy = { isAuto = true } }
       local _, _, configStr = ConfigCodeGenerator.format("China", config)
 
@@ -129,10 +129,10 @@ describe("ConfigCodeGenerator", function()
       local savedArea = { name = "OPAREA-SAVED" }
       local missileSystemConfigMap = buildMlrsConfig()
       local mlrs = missileSystemConfigMap.mlrs
-      mlrs.firingUnits["TEL-1"].resupplyUnit = "RES-1"
-      mlrs.firingUnits["TEL-1"].operationalArea = configArea
-      mlrs.resupplyUnits["RES-1"].operationalArea = configArea
-      local groundState = { missileSystemTypes = { mlrs = { firingUnits = {
+      mlrs.launchers["TEL-1"].transloader = "RES-1"
+      mlrs.launchers["TEL-1"].operationalArea = configArea
+      mlrs.transloaders["RES-1"].operationalArea = configArea
+      local groundState = { missileSystemTypes = { mlrs = { launchers = {
         ["TEL-1"] = { name = "TEL-1", operationalArea = savedArea }
       } } } }
 
@@ -146,11 +146,11 @@ describe("ConfigCodeGenerator", function()
       local placed = formatStub.calls[1].vals[2].mlrs
       formatStub:revert()
 
-      assert.are.same(savedArea, placed.firingUnits["TEL-1"].operationalArea)
-      assert.are.same(savedArea, placed.resupplyUnits["RES-1"].operationalArea)
+      assert.are.same(savedArea, placed.launchers["TEL-1"].operationalArea)
+      assert.are.same(savedArea, placed.transloaders["RES-1"].operationalArea)
       assert.are.equal(4, placed.weaponCountDefault)
-      assert.are.equal(configArea, mlrs.firingUnits["TEL-1"].operationalArea)
-      assert.are.equal(configArea, mlrs.resupplyUnits["RES-1"].operationalArea)
+      assert.are.equal(configArea, mlrs.launchers["TEL-1"].operationalArea)
+      assert.are.equal(configArea, mlrs.transloaders["RES-1"].operationalArea)
     end)
 
     -- Boundary: an unnamed state area is a copy of the config area, which format can only match by identity
@@ -163,10 +163,10 @@ describe("ConfigCodeGenerator", function()
       local configArea = { HA = {} }
       local missileSystemConfigMap = buildMlrsConfig()
       local mlrs = missileSystemConfigMap.mlrs
-      mlrs.firingUnits["TEL-1"].resupplyUnit = "RES-1"
-      mlrs.firingUnits["TEL-1"].operationalArea = configArea
-      mlrs.resupplyUnits["RES-1"].operationalArea = configArea
-      local groundState = { missileSystemTypes = { mlrs = { firingUnits = {
+      mlrs.launchers["TEL-1"].transloader = "RES-1"
+      mlrs.launchers["TEL-1"].operationalArea = configArea
+      mlrs.transloaders["RES-1"].operationalArea = configArea
+      local groundState = { missileSystemTypes = { mlrs = { launchers = {
         ["TEL-1"] = { name = "TEL-1", operationalArea = { HA = {} } }
       } } } }
 
@@ -180,8 +180,8 @@ describe("ConfigCodeGenerator", function()
       local placed = placedConfigMap.mlrs
       formatStub:revert()
 
-      assert.are.equal(configArea, placed.firingUnits["TEL-1"].operationalArea)
-      assert.are.equal(configArea, placed.resupplyUnits["RES-1"].operationalArea)
+      assert.are.equal(configArea, placed.launchers["TEL-1"].operationalArea)
+      assert.are.equal(configArea, placed.transloaders["RES-1"].operationalArea)
     end)
 
     -- Boundary: table wrapper is stripped so the body fits between START/END markers

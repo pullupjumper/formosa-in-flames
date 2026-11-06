@@ -7,13 +7,13 @@ import { buildBatteryGroups, buildWeaponRanges } from '@/pages/control-panel/log
 // FIXTURES
 // ============================================================================
 const STATUS: BatteryStatus = {
-  firingPosture: 'STATIC',
-  resupplyPosture: 'STATIC',
-  firingReloadMinutes: 0,
+  launcherPosture: 'STATIC',
+  transloaderPosture: 'STATIC',
+  launcherReloadMinutes: 0,
   reloadMinutesDefault: 10,
-  resupplyReloadMinutes: 0,
-  resupplyMissiles: 4,
-  resupplyMissilesDefault: 8,
+  transloaderReloadMinutes: 0,
+  transloaderMissiles: 4,
+  transloaderMissilesDefault: 8,
   canisterMissiles: 8,
   canisterMissilesDefault: 16,
 };

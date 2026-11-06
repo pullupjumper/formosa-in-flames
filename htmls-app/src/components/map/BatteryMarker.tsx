@@ -107,7 +107,7 @@ function toPathPositionsList(paths: MovementPath[] | undefined): (LatLngExpressi
 interface BatteryMarkerProps {
   batteryName: string;
   data: DeployedBattery;
-  /** Weapon range of this unit's firing unit, in NM */
+  /** Weapon range of this unit's launcher, in NM */
   rangeNm: number;
   onAreaClick?: (area: RelocatingArea) => void;
   onRotateClick?: (batteryName: string) => void;

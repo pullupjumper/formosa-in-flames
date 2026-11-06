@@ -10,8 +10,8 @@ describe("FireSupportGate", function()
   ---@return SBJ__AmmoInventoryResult
   local function buildReport(totalPercentage)
     return {
-      firing   = { current = 0, max = 0, percentage = 11 },
-      resupply = { current = 0, max = 0, percentage = 22 },
+      launcher   = { current = 0, max = 0, percentage = 11 },
+      transloader = { current = 0, max = 0, percentage = 22 },
       canisterStock = { current = 0, max = 0, percentage = 33 },
       total    = { current = 0, max = 0, percentage = totalPercentage },
     }
@@ -56,7 +56,7 @@ describe("FireSupportGate", function()
       tag = "HOLD",
       fields = {
         scope = "fireSupportGate", reason = "srbm_low",
-        total = 40, threshold = 50, firing = 11, resupply = 22, canisterStock = 33,
+        total = 40, threshold = 50, launcher = 11, transloader = 22, canisterStock = 33,
       },
     }, result)
   end)

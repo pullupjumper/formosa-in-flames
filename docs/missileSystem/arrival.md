@@ -10,7 +10,7 @@
 
 ## 概觀
 
-外部只經 [init](init.md) 的 `processUnitEntersArea` 進來；它依觸發單位陣營組出 `moveCtx`（`isAuto`、`hideOnEnterHA`、`hideResupplyOnRLNoMeeting`），再呼叫 `Arrival.processMoveToPositionEvent`。
+外部只經 [init](init.md) 的 `processUnitEntersArea` 進來；它依觸發單位陣營組出 `moveCtx`（`isAuto`、`hideOnEnterHA`、`hideTransloaderOnRLNoMeeting`），再呼叫 `Arrival.processMoveToPositionEvent`。
 
 `POSITIONS` 是唯一依陣地分的表，每個陣地有 `observe`、`evaluate`、`steps` 三項。對每個啟用中的飛彈系統（`GroundStateStore.forEachEnabledSystem`）走同一個模式：
 
@@ -54,11 +54,11 @@ flowchart TD
 ```
 [missileSystem] side=China: Position event mode=auto position=RL | total=2 ok=1 warn=1
   [OK]   system=SRBM unit=SRBM-FU-1 state=RELOAD action=reload_started startedAt=3600 triggerUnit=SRBM-RU-1
-  [WARN] system=SRBM unit=SRBM-RU-2 action=resupply_concealment_failed pairedFiringUnit=SRBM-FU-2
+  [WARN] system=SRBM unit=SRBM-RU-2 action=transloader_concealment_failed pairedLauncher=SRBM-FU-2
          area=OPAREA-1 reason=no_buildings_in_mask
 ```
 
-**行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後兩個 WARN（`concealment_failed`／`resupply_concealment_failed`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
+**行為變更：**此函式原本只要批次中出現任何 `WARN`／`FAIL`／`ERROR`，就把**整份** summary（含成功行）送 `Logger.warn`。改成 per-row 之後兩個 WARN（`concealment_failed`／`transloader_concealment_failed`）落在 info log，因此受 `config.logging.modules[missileSystem].verbose` 管控（目前為 `true`）。
 
 ---
 

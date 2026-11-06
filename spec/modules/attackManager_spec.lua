@@ -138,8 +138,8 @@ describe("AttackManager", function()
       })
     end)
 
-    -- Positive: the next contact continues from the firing unit after the previous shooter
-    it("should sum ammo across contacts and rotate to the next firing unit per contact", function()
+    -- Positive: the next contact continues from the launcher after the previous shooter
+    it("should sum ammo across contacts and rotate to the next launcher per contact", function()
       local unitA = makeUnit({ name = "Shooter A", guid = "UNIT-A" })
       local unitB = makeUnit({ name = "Shooter B", guid = "UNIT-B" })
       local attackingUnits = {
@@ -239,7 +239,7 @@ describe("AttackManager", function()
       assert.stub(stubGetUnit).was_not.called()
     end)
 
-    -- Positive: grouped units fire by shooter index across contacts, then advance to the next firing unit
+    -- Positive: grouped units fire by shooter index across contacts, then advance to the next launcher
     it("should continue group shooters across contacts and advance after last group member", function()
       local groupHost = makeUnit({
         name = "Battery A",

@@ -28,13 +28,13 @@ local REDEPLOY_POSITION_TYPES = {
 }
 
 ---Steps of a fire support plan dispatch keyed by Rules.STEP
----@type table<string, fun(firingUnitState: SBJ__FiringUnitState, firingUnit: CMO__Unit): SBJ__LogResult|nil>
+---@type table<string, fun(launcherState: SBJ__LauncherState, launcher: CMO__Unit): SBJ__LogResult|nil>
 local SEND_TO_FIRING_POINT_STEPS = {
-  [Rules.STEP.UNHIDE] = function(firingUnitState, firingUnit)
-    Concealment.moveFromHideArea(firingUnitState, firingUnit)
+  [Rules.STEP.UNHIDE] = function(launcherState, launcher)
+    Concealment.moveFromHideArea(launcherState, launcher)
   end,
-  [Rules.STEP.MOVE_TO_FIRING_POINT] = function(firingUnitState, firingUnit)
-    return Transitions.depart(firingUnitState, firingUnit, Movement.ORDER.FIRING_POINT)
+  [Rules.STEP.MOVE_TO_FIRING_POINT] = function(launcherState, launcher)
+    return Transitions.depart(launcherState, launcher, Movement.ORDER.FIRING_POINT)
   end,
 }
 
@@ -45,60 +45,60 @@ local function getMissileSystemTypes(config, sideName)
   return config[GameUtils.getCachedSideConfig(sideName).field].ground.missileSystemTypes
 end
 
----Find a firing unit config descriptor by missile system and unit name
+---Find a launcher config descriptor by missile system and unit name
 ---@param config SBJ__Config
 ---@param sideName string
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitName string
----@return SBJ__FiringUnitDescriptor|nil # Nil when config has no such system or firing unit
-local function findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
+---@param launcherName string
+---@return SBJ__LauncherDescriptor|nil # Nil when config has no such system or launcher
+local function findLauncherDescriptor(config, sideName, missileSystemType, launcherName)
   local systemConfig = getMissileSystemTypes(config, sideName)[string.lower(missileSystemType)]
-  return systemConfig and systemConfig.firingUnits[firingUnitName]
+  return systemConfig and systemConfig.launchers[launcherName]
 end
 
----Find a firing unit runtime state by missile system and unit name
+---Find a launcher runtime state by missile system and unit name
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitName string
----@return SBJ__FiringUnitState|nil # Firing unit runtime state, or nil when missing
-local function findFiringUnitState(groundState, missileSystemType, firingUnitName)
+---@param launcherName string
+---@return SBJ__LauncherState|nil # Launcher runtime state, or nil when missing
+local function findLauncherState(groundState, missileSystemType, launcherName)
   local systemState = groundState.missileSystemTypes[string.lower(missileSystemType)] --[[@as SBJ__MissileSystemState?]]
-  return systemState and systemState.firingUnits and systemState.firingUnits[firingUnitName]
+  return systemState and systemState.launchers and systemState.launchers[launcherName]
 end
 
----Send a firing unit from its hide area to its firing point when it is ready
+---Send a launcher from its hide area to its firing point when it is ready
 ---A unit is ready when it is hiding with enough ammunition; units already out are left alone.
 ---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
----@param sideName string Side that owns the firing unit
+---@param sideName string Side that owns the launcher
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitName string
+---@param launcherName string
 ---@return boolean inPosition Whether the unit is at its firing point
 ---@return boolean isMissing Whether the unit no longer exists in game, in config or in runtime state
-function MissileSystem.sendToFiringPoint(config, groundState, sideName, missileSystemType, firingUnitName)
-  local firingUnit = GameApi.ScenEdit_GetUnit(firingUnitName)
-  local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
-  local firingUnitDescriptor = findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
-  if not firingUnit or not firingUnitState or not firingUnitDescriptor then
+function MissileSystem.sendToFiringPoint(config, groundState, sideName, missileSystemType, launcherName)
+  local launcher = GameApi.ScenEdit_GetUnit(launcherName)
+  local launcherState = findLauncherState(groundState, missileSystemType, launcherName)
+  local launcherDescriptor = findLauncherDescriptor(config, sideName, missileSystemType, launcherName)
+  if not launcher or not launcherState or not launcherDescriptor then
     return false, true
   end
 
   local function isLowAmmo()
-    return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
+    return Ammo.isLowAmmo(launcher, launcherDescriptor.ammoThreshold, launcherDescriptor.weaponDBID)
   end
 
-  local steps = Rules.evaluateSendToFiringPoint(firingUnitState, isLowAmmo)
-  for _, row in ipairs(Shared.processSteps(steps, SEND_TO_FIRING_POINT_STEPS, firingUnitState, firingUnit)) do
+  local steps = Rules.evaluateSendToFiringPoint(launcherState, isLowAmmo)
+  for _, row in ipairs(Shared.processSteps(steps, SEND_TO_FIRING_POINT_STEPS, launcherState, launcher)) do
     -- A single dispatch, not a report, so only a failure is written.
     if row.tag == "FAIL" then
       Logger.error(LogFormat.line("FAIL", LogFormat.merge({ module = constants.TAGS.MISSILE_SYSTEM }, row.fields)))
     end
   end
 
-  return Rules.isInPosition(firingUnitState), false
+  return Rules.isInPosition(launcherState), false
 end
 
----Calculate ammunition inventory across firing/resupply/canister stock for a missile system
+---Calculate ammunition inventory across launcher/transloader/canister stock for a missile system
 ---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
@@ -114,94 +114,94 @@ function MissileSystem.getAmmoInventory(config, groundState, missileSystemType, 
   return Ammo.getInventory(systemConfig, systemState, sideName)
 end
 
----Evaluate whether a firing unit can take a fire support task, and why not
+---Evaluate whether a launcher can take a fire support task, and why not
 ---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
----@param sideName string Side that owns the firing unit
+---@param sideName string Side that owns the launcher
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitName string
+---@param launcherName string
 ---@param getUnit fun(name: string): CMO__Unit|nil Called only when the unit has a runtime state and a config descriptor
 ---@return missileSystemReadiness
-function MissileSystem.evaluateReadiness(config, groundState, sideName, missileSystemType, firingUnitName, getUnit)
+function MissileSystem.evaluateReadiness(config, groundState, sideName, missileSystemType, launcherName, getUnit)
   local readiness = constants.MISSILE_SYSTEM_READINESS
-  local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
-  local firingUnitDescriptor = findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
-  if not firingUnitState or not firingUnitDescriptor then
+  local launcherState = findLauncherState(groundState, missileSystemType, launcherName)
+  local launcherDescriptor = findLauncherDescriptor(config, sideName, missileSystemType, launcherName)
+  if not launcherState or not launcherDescriptor then
     return readiness.NO_STATE
   end
 
-  local firingUnit = getUnit(firingUnitName)
-  if not firingUnit then
+  local launcher = getUnit(launcherName)
+  if not launcher then
     return readiness.UNIT_NOT_FOUND
   end
 
-  return Rules.evaluateReadiness(firingUnitState, function()
-    return Ammo.isLowAmmo(firingUnit, firingUnitDescriptor.ammoThreshold, firingUnitDescriptor.weaponDBID)
+  return Rules.evaluateReadiness(launcherState, function()
+    return Ammo.isLowAmmo(launcher, launcherDescriptor.ammoThreshold, launcherDescriptor.weaponDBID)
   end)
 end
 
----Pair each named firing unit with the weapon its config fires
+---Pair each named launcher with the weapon its config fires
 ---A name with no config entry is left out.
 ---@param config SBJ__Config
 ---@param sideName string
 ---@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitNames string[]
+---@param launcherNames string[]
 ---@return SBJ__AttackingUnit[]
-function MissileSystem.buildAttackingUnits(config, sideName, missileSystemType, firingUnitNames)
+function MissileSystem.buildAttackingUnits(config, sideName, missileSystemType, launcherNames)
   local attackingUnits = {}
 
-  for _, firingUnitName in ipairs(firingUnitNames) do
-    local descriptor = findFiringUnitDescriptor(config, sideName, missileSystemType, firingUnitName)
+  for _, launcherName in ipairs(launcherNames) do
+    local descriptor = findLauncherDescriptor(config, sideName, missileSystemType, launcherName)
     if descriptor then
-      table.insert(attackingUnits, { name = firingUnitName, weaponDBID = descriptor.weaponDBID --[[@as number]] })
+      table.insert(attackingUnits, { name = launcherName, weaponDBID = descriptor.weaponDBID --[[@as number]] })
     end
   end
 
   return attackingUnits
 end
 
----Find the states of a fire task's firing units that leave their position once the task ends
+---Find the states of a fire task's launchers that leave their position once the task ends
 ---SAM stays on station to guard the airspace, so it has none.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitNames string[]|nil
----@return SBJ__FiringUnitState[]
-local function findLeavingFiringUnitStates(groundState, missileSystemType, firingUnitNames)
-  local firingUnitStates = {}
-  if not missileSystemType or not firingUnitNames or Rules.staysDeployed(missileSystemType) then
-    return firingUnitStates
+---@param launcherNames string[]|nil
+---@return SBJ__LauncherState[]
+local function findLeavingLauncherStates(groundState, missileSystemType, launcherNames)
+  local launcherStates = {}
+  if not missileSystemType or not launcherNames or Rules.staysDeployed(missileSystemType) then
+    return launcherStates
   end
 
-  for _, firingUnitName in ipairs(firingUnitNames) do
-    local firingUnitState = findFiringUnitState(groundState, missileSystemType, firingUnitName)
-    if firingUnitState then
-      table.insert(firingUnitStates, firingUnitState)
+  for _, launcherName in ipairs(launcherNames) do
+    local launcherState = findLauncherState(groundState, missileSystemType, launcherName)
+    if launcherState then
+      table.insert(launcherStates, launcherState)
     end
   end
 
-  return firingUnitStates
+  return launcherStates
 end
 
----End a fire task that fired: its firing units stow, then the reload cycle sends them back
+---End a fire task that fired: its launchers stow, then the reload cycle sends them back
 ---A countdown already running is kept.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitNames string[]|nil
-function MissileSystem.completeFireTask(groundState, missileSystemType, firingUnitNames)
-  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnitNames)) do
-    Transitions.beginStow(firingUnitState)
+---@param launcherNames string[]|nil
+function MissileSystem.completeFireTask(groundState, missileSystemType, launcherNames)
+  for _, launcherState in ipairs(findLeavingLauncherStates(groundState, missileSystemType, launcherNames)) do
+    Transitions.beginStow(launcherState)
   end
 end
 
----End a fire task that never fired: only firing units already out of their hide area stow
+---End a fire task that never fired: only launchers already out of their hide area stow
 ---A countdown already running is kept.
 ---@param groundState SBJ__GroundState
 ---@param missileSystemType string|nil Missile system name in any case (e.g., "SRBM", "srbm")
----@param firingUnitNames string[]|nil
-function MissileSystem.abortFireTask(groundState, missileSystemType, firingUnitNames)
-  for _, firingUnitState in ipairs(findLeavingFiringUnitStates(groundState, missileSystemType, firingUnitNames)) do
-    if Rules.isDeployed(firingUnitState) then
-      Transitions.beginStow(firingUnitState)
+---@param launcherNames string[]|nil
+function MissileSystem.abortFireTask(groundState, missileSystemType, launcherNames)
+  for _, launcherState in ipairs(findLeavingLauncherStates(groundState, missileSystemType, launcherNames)) do
+    if Rules.isDeployed(launcherState) then
+      Transitions.beginStow(launcherState)
     end
   end
 end
@@ -239,7 +239,7 @@ function MissileSystem.processSide(config, saveData, sideName)
   )
 end
 
----Deduct ammunition when a canister stock or resupply vehicle of any missile system is destroyed
+---Deduct ammunition when a canister stock or transloader vehicle of any missile system is destroyed
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param unit CMO__Unit
@@ -292,7 +292,7 @@ function MissileSystem.redeployFromControlPanel(config, saveData, sideName, rede
       table.insert(batteries, battery)
       table.insert(operationalAreas, battery.operationalArea)
       table.insert(operationalAreasToRemove,
-        GroundStateStore.resolveOperationalArea(groundState, battery.missileSystemType, battery.firing))
+        GroundStateStore.resolveOperationalArea(groundState, battery.missileSystemType, battery.launcher))
     end
   end
 
@@ -327,11 +327,11 @@ function MissileSystem.deploySide(config, saveData, sideName)
   GroundStateStore.resetBatteryStates(PersistentState.ground(saveData, sideName), batteries)
 end
 
----List the firing units of some missile systems as SIGINT emitters, in the order the systems are given
----A firing unit without a runtime state or a config descriptor is left out.
+---List the launchers of some missile systems as SIGINT emitters, in the order the systems are given
+---A launcher without a runtime state or a config descriptor is left out.
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
----@param sideName string Side that owns the firing units
+---@param sideName string Side that owns the launchers
 ---@param missileSystemTypes string[] Missile system type keys (constants.MISSILE_SYSTEM_TYPES)
 ---@return SBJ__SigintEmitter[]
 function MissileSystem.listSigintEmitters(config, saveData, sideName, missileSystemTypes)
@@ -340,11 +340,11 @@ function MissileSystem.listSigintEmitters(config, saveData, sideName, missileSys
   local emitters = {}
 
   for _, missileSystemType in ipairs(missileSystemTypes) do
-    local descriptorMap = missileSystemConfigMap[missileSystemType].firingUnits
-    for name, firingUnitState in pairs(groundState.missileSystemTypes[missileSystemType].firingUnits) do
+    local descriptorMap = missileSystemConfigMap[missileSystemType].launchers
+    for name, launcherState in pairs(groundState.missileSystemTypes[missileSystemType].launchers) do
       local descriptor = descriptorMap[name]
       if descriptor then
-        table.insert(emitters, { name = name, msg = descriptor.msg, operationalArea = firingUnitState.operationalArea })
+        table.insert(emitters, { name = name, msg = descriptor.msg, operationalArea = launcherState.operationalArea })
       end
     end
   end
@@ -393,7 +393,7 @@ function MissileSystem.processUnitEntersArea(config, saveData, unit, event)
     moveCtx = {
       isAuto = policy.isAuto,
       hideOnEnterHA = policy.hideOnEnterHA,
-      hideResupplyOnRLNoMeeting = policy.hideResupplyOnRLNoMeeting
+      hideTransloaderOnRLNoMeeting = policy.hideTransloaderOnRLNoMeeting
     }
   })
 end

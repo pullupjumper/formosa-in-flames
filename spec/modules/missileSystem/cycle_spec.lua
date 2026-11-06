@@ -28,18 +28,18 @@ describe("MissileSystem Cycle", function()
     local cfg = {
       reloadTime = 60,
       stowTime = 10,
-      firingUnits = {
-        ["Firing Unit Alpha"] = {
-          name = "Firing Unit Alpha",
-          resupplyUnit = "Ammo Sec, Alpha",
+      launchers = {
+        ["Launcher Alpha"] = {
+          name = "Launcher Alpha",
+          transloader = "Ammo Sec, Alpha",
           weaponDBID = 1234,
           ammoThreshold = 60,
         }
       },
-      resupplyUnits = {
+      transloaders = {
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
-          firingUnit = "Firing Unit Alpha",
+          launcher = "Launcher Alpha",
           canisterStock = "Canister Stock",
           weaponCountDefault = 20,
         }
@@ -57,9 +57,9 @@ describe("MissileSystem Cycle", function()
   local function makeSystemState(overrides)
     local ctx = {
       name = "srbm",
-      firingUnits = {
-        ["Firing Unit Alpha"] = {
-          name = "Firing Unit Alpha",
+      launchers = {
+        ["Launcher Alpha"] = {
+          name = "Launcher Alpha",
           state = constants.MISSILE_UNIT_POSTURE.RELOAD,
           operationalArea = {
             name = "OPAREA-1",
@@ -67,7 +67,7 @@ describe("MissileSystem Cycle", function()
           },
         }
       },
-      resupplyUnits = {
+      transloaders = {
         ["Ammo Sec, Alpha"] = {
           name = "Ammo Sec, Alpha",
           state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
@@ -108,12 +108,12 @@ describe("MissileSystem Cycle", function()
   -- ============================================================================
 
   describe("process", function()
-    -- Positive: reloads firing unit when reload conditions are met
-    it("should reload firing unit when reload conditions are met", function()
+    -- Positive: reloads launcher when reload conditions are met
+    it("should reload launcher when reload conditions are met", function()
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             operationalArea = {
@@ -122,7 +122,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
@@ -135,14 +135,14 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } },
         inArea = function(_, area) return area[1] == "RP-001" end
       }
-      local resupplyUnit = {
+      local transloader = {
         guid = "R1",
         side = "Taiwan",
         inArea = function(_, area) return area[1] == "RP-001" end
@@ -150,9 +150,9 @@ describe("MissileSystem Cycle", function()
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
-        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
+        if guidOrName == "Ammo Sec, Alpha" then return transloader end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
@@ -161,17 +161,17 @@ describe("MissileSystem Cycle", function()
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
-      assert.is_nil(systemState.firingUnits["Firing Unit Alpha"].reloadStartTime)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.launchers["Launcher Alpha"].state)
+      assert.is_nil(systemState.launchers["Launcher Alpha"].reloadStartTime)
       assert.are.equal(1, #results)
       assert.are.equal("missile_reload_finished", results[1].fields.action)
     end)
 
-    -- Positive: transfers ammo to resupply unit when transfer conditions are met
-    it("should transfer ammo to resupply unit when transfer conditions are met", function()
+    -- Positive: transfers ammo to transloader when transfer conditions are met
+    it("should transfer ammo to transloader when transfer conditions are met", function()
       local systemState = makeSystemState({
-        firingUnits = {},
-        resupplyUnits = {
+        launchers = {},
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.RELOAD,
@@ -192,7 +192,7 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local resupplyUnit = {
+      local transloader = {
         guid = "R1",
         name = "Ammo Sec, Alpha",
         side = "Taiwan",
@@ -206,46 +206,46 @@ describe("MissileSystem Cycle", function()
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        if guidOrName == "Ammo Sec, Alpha" then return transloader end
         if guidOrName == "Canister Stock" then return canisterStockUnit end
         return nil
       end)
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
-      assert.are.equal(20, systemState.resupplyUnits["Ammo Sec, Alpha"].weaponCountCurrent)
+      assert.are.equal(20, systemState.transloaders["Ammo Sec, Alpha"].weaponCountCurrent)
       assert.are.equal(80, systemState.canisterStocks["Canister Stock"].weaponCountCurrent)
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.transloaders["Ammo Sec, Alpha"].state)
       assert.are.equal(1, #results)
       assert.are.equal("ammo_transload_finished", results[1].fields.action)
     end)
 
-    -- Negative: skips firing unit when game unit cannot be found
-    it("should skip firing unit when unit not found in game", function()
+    -- Negative: skips launcher when game unit cannot be found
+    it("should skip launcher when unit not found in game", function()
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
           }
         },
-        resupplyUnits = {}
+        transloaders = {}
       })
 
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.launchers["Launcher Alpha"].state)
       assert.are.equal(0, #results)
     end)
 
     -- Boundary: returns empty result list when no units are present
     it("should return empty results when no reload events occurred", function()
       local systemState = makeSystemState({
-        firingUnits = {},
-        resupplyUnits = {}
+        launchers = {},
+        transloaders = {}
       })
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = false }, "Taiwan")
@@ -253,12 +253,12 @@ describe("MissileSystem Cycle", function()
       assert.are.equal(0, #results)
     end)
 
-    -- Positive: moves firing unit to reload point when stow elapsed and low ammo in auto mode
-    it("should move firing unit to reload point when stow elapsed and low ammo in auto mode", function()
+    -- Positive: moves launcher to reload point when stow elapsed and low ammo in auto mode
+    it("should move launcher to reload point when stow elapsed and low ammo in auto mode", function()
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
@@ -268,7 +268,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -277,17 +277,17 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } }
       }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
@@ -296,17 +296,17 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, firingState.state)
-      assert.is_nil(firingState.stowStartTime)
+      local launcherState = systemState.launchers["Launcher Alpha"]
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, launcherState.state)
+      assert.is_nil(launcherState.stowStartTime)
     end)
 
     -- Positive: starts stow countdown without moving when low ammo first detected in auto mode
     it("should start stow countdown without moving when low ammo first detected in auto mode", function()
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = nil,
@@ -316,7 +316,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -325,17 +325,17 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } }
       }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
@@ -343,9 +343,9 @@ describe("MissileSystem Cycle", function()
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, firingState.state)
-      assert.are.equal(2000, firingState.stowStartTime)
+      local launcherState = systemState.launchers["Launcher Alpha"]
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, launcherState.state)
+      assert.are.equal(2000, launcherState.stowStartTime)
       assert.are.equal(1, #results)
       assert.are.equal("stow_countdown_started", results[1].fields.action)
       assert.are.equal(2000, results[1].fields.startedAt)
@@ -354,9 +354,9 @@ describe("MissileSystem Cycle", function()
     -- Negative: returns a failure result when movement command cannot be built
     it("should return failure result when hide movement has no available HA", function()
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
@@ -365,7 +365,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -374,17 +374,17 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } }
       }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10, maxWeapons = 10 })
@@ -397,15 +397,15 @@ describe("MissileSystem Cycle", function()
       assert.are.equal("no_ha_defined", results[1].fields.reason)
       assert.is_nil(results[1].fields.detail)
       -- Not stuck REPOSITIONING, and the stow is not retried every cycle
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.firingUnits["Firing Unit Alpha"].state)
-      assert.is_nil(systemState.firingUnits["Firing Unit Alpha"].stowStartTime)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.launchers["Launcher Alpha"].state)
+      assert.is_nil(systemState.launchers["Launcher Alpha"].stowStartTime)
     end)
 
-    -- Negative: a resupply unit that cannot reach ATP stays STATIC so the next cycle can retry
-    it("should keep an empty resupply unit STATIC when its ATP move fails", function()
+    -- Negative: a transloader that cannot reach ATP stays STATIC so the next cycle can retry
+    it("should keep an empty transloader STATIC when its ATP move fails", function()
       local systemState = makeSystemState({
-        firingUnits = {},
-        resupplyUnits = {
+        launchers = {},
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -418,26 +418,26 @@ describe("MissileSystem Cycle", function()
           }
         }
       })
-      local resupplyUnit = { guid = "R1", name = "Ammo Sec, Alpha", side = "Taiwan", inArea = function() return true end }
+      local transloader = { guid = "R1", name = "Ammo Sec, Alpha", side = "Taiwan", inArea = function() return true end }
 
-      trackStub(GameApi, "ScenEdit_GetUnit").returns(resupplyUnit)
+      trackStub(GameApi, "ScenEdit_GetUnit").returns(transloader)
 
       local results = Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
       assert.are.equal("FAIL", results[1].tag)
       assert.are.equal("move_to_ammunition_transfer_point", results[1].fields.action)
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.resupplyUnits["Ammo Sec, Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, systemState.transloaders["Ammo Sec, Alpha"].state)
     end)
 
-    -- Positive: moves firing unit to hide area when stow elapsed and ammo sufficient in auto mode
-    it("should move firing unit to hide area when stow elapsed and ammo sufficient in auto mode", function()
+    -- Positive: moves launcher to hide area when stow elapsed and ammo sufficient in auto mode
+    it("should move launcher to hide area when stow elapsed and ammo sufficient in auto mode", function()
       local hideCourse = {
         { latitude = "N 25.10.00", longitude = "E 121.10.00" }
       }
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
@@ -447,7 +447,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -456,17 +456,17 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } }
       }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 10, maxWeapons = 10 })
@@ -475,18 +475,18 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, firingState.state)
-      assert.is_nil(firingState.stowStartTime)
+      local launcherState = systemState.launchers["Launcher Alpha"]
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, launcherState.state)
+      assert.is_nil(launcherState.stowStartTime)
       assert.are.same(hideCourse, stubSetUnit.calls[1].vals[1].course)
     end)
 
-    -- Negative: does not move firing unit while stow countdown is still in progress
-    it("should not move firing unit while stow countdown still in progress", function()
+    -- Negative: does not move launcher while stow countdown is still in progress
+    it("should not move launcher while stow countdown still in progress", function()
       local systemState = makeSystemState({
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
             reloadStartTime = nil,
             stowStartTime = 1000,
@@ -497,7 +497,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.STATIC,
@@ -506,17 +506,17 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } }
       }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 1, maxWeapons = 10 })
@@ -524,22 +524,22 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig({ stowTime = 300 }), isAuto = true }, "Taiwan")
 
-      local firingState = systemState.firingUnits["Firing Unit Alpha"]
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, firingState.state)
-      assert.are.equal(1000, firingState.stowStartTime)
+      local launcherState = systemState.launchers["Launcher Alpha"]
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.STATIC, launcherState.state)
+      assert.are.equal(1000, launcherState.stowStartTime)
       assert.stub(stubSetUnit).was_not.called()
     end)
 
-    -- Positive: moves non-SAM firing unit to hide area after reload in auto mode
-    it("should move non-SAM firing unit to hide area after reload in auto mode", function()
+    -- Positive: moves non-SAM launcher to hide area after reload in auto mode
+    it("should move non-SAM launcher to hide area after reload in auto mode", function()
       local hideCourse = {
         { latitude = "N 25.10.00", longitude = "E 121.10.00" }
       }
       local systemState = makeSystemState({
         name = "srbm",
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             operationalArea = {
@@ -549,7 +549,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
@@ -563,14 +563,14 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } },
         inArea = function(_, area) return area[1] == "RP-001" end
       }
-      local resupplyUnit = {
+      local transloader = {
         guid = "R1",
         name = "Ammo Sec, Alpha",
         side = "Taiwan",
@@ -579,9 +579,9 @@ describe("MissileSystem Cycle", function()
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
-        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
+        if guidOrName == "Ammo Sec, Alpha" then return transloader end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
@@ -592,21 +592,21 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, systemState.launchers["Launcher Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
       assert.are.same(hideCourse, stubSetUnit.calls[1].vals[1].course)
     end)
 
-    -- Positive: moves SAM firing unit to firing point after reload in auto mode
-    it("should move SAM firing unit to firing point after reload in auto mode", function()
+    -- Positive: moves SAM launcher to firing point after reload in auto mode
+    it("should move SAM launcher to firing point after reload in auto mode", function()
       local fpCourse = {
         { latitude = "N 25.20.00", longitude = "E 121.20.00" }
       }
       local systemState = makeSystemState({
         name = "sam",
-        firingUnits = {
-          ["Firing Unit Alpha"] = {
-            name = "Firing Unit Alpha",
+        launchers = {
+          ["Launcher Alpha"] = {
+            name = "Launcher Alpha",
             state = constants.MISSILE_UNIT_POSTURE.RELOAD,
             reloadStartTime = 1000,
             operationalArea = {
@@ -617,7 +617,7 @@ describe("MissileSystem Cycle", function()
             }
           }
         },
-        resupplyUnits = {
+        transloaders = {
           ["Ammo Sec, Alpha"] = {
             name = "Ammo Sec, Alpha",
             state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING,
@@ -631,14 +631,14 @@ describe("MissileSystem Cycle", function()
         }
       })
 
-      local firingUnit = {
+      local launcher = {
         guid = "F1",
-        name = "Firing Unit Alpha",
+        name = "Launcher Alpha",
         side = "Taiwan",
         group = { unitlist = { "F1" } },
         inArea = function(_, area) return area[1] == "RP-001" end
       }
-      local resupplyUnit = {
+      local transloader = {
         guid = "R1",
         name = "Ammo Sec, Alpha",
         side = "Taiwan",
@@ -647,9 +647,9 @@ describe("MissileSystem Cycle", function()
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(1100)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" then return firingUnit end
-        if guidOrName == "F1" then return firingUnit end
-        if guidOrName == "Ammo Sec, Alpha" then return resupplyUnit end
+        if guidOrName == "Launcher Alpha" then return launcher end
+        if guidOrName == "F1" then return launcher end
+        if guidOrName == "Ammo Sec, Alpha" then return transloader end
         return nil
       end)
       trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 2, maxWeapons = 10 })
@@ -660,7 +660,7 @@ describe("MissileSystem Cycle", function()
 
       Cycle.process(systemState, { systemConfig = makeSystemConfig(), isAuto = true }, "Taiwan")
 
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.REPOSITIONING, systemState.launchers["Launcher Alpha"].state)
       assert.stub(stubHideUnit).was.called(1)
       assert.are.same(fpCourse, stubSetUnit.calls[1].vals[1].course)
     end)
@@ -668,18 +668,18 @@ describe("MissileSystem Cycle", function()
     -- Positive: an old save still carries copied config values; the threshold comes from config, not the save
     it("should judge low ammo by the config threshold when the saved state carries an old one", function()
       local systemConfig = makeSystemConfig()
-      systemConfig.firingUnits["Firing Unit Alpha"].ammoThreshold = 30
+      systemConfig.launchers["Launcher Alpha"].ammoThreshold = 30
       local systemState = makeSystemState()
-      local firingUnitState = systemState.firingUnits["Firing Unit Alpha"]
-      firingUnitState.state = constants.MISSILE_UNIT_POSTURE.STATIC
-      firingUnitState.ammoThreshold = 60
-      firingUnitState.weaponDBID = 9999
-      systemState.resupplyUnits["Ammo Sec, Alpha"].state = constants.MISSILE_UNIT_POSTURE.STATIC
-      local firingUnit = { guid = "F1", name = "Firing Unit Alpha", side = "Taiwan", group = { unitlist = { "F1" } } }
+      local launcherState = systemState.launchers["Launcher Alpha"]
+      launcherState.state = constants.MISSILE_UNIT_POSTURE.STATIC
+      launcherState.ammoThreshold = 60
+      launcherState.weaponDBID = 9999
+      systemState.transloaders["Ammo Sec, Alpha"].state = constants.MISSILE_UNIT_POSTURE.STATIC
+      local launcher = { guid = "F1", name = "Launcher Alpha", side = "Taiwan", group = { unitlist = { "F1" } } }
 
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
       trackStub(GameApi, "ScenEdit_GetUnit").invokes(function(guidOrName)
-        if guidOrName == "Firing Unit Alpha" or guidOrName == "F1" then return firingUnit end
+        if guidOrName == "Launcher Alpha" or guidOrName == "F1" then return launcher end
         return nil
       end)
       local getWeaponInfoStub = trackStub(GameUtils, "getWeaponInfo").returns({ availableWeapons = 5, maxWeapons = 10 })
@@ -687,13 +687,13 @@ describe("MissileSystem Cycle", function()
       local results = Cycle.process(systemState, { systemConfig = systemConfig, isAuto = true }, "Taiwan")
 
       assert.are.same({}, results)
-      assert.is_nil(firingUnitState.stowStartTime)
-      assert.stub(getWeaponInfoStub).was.called_with(firingUnit, 1234)
+      assert.is_nil(launcherState.stowStartTime)
+      assert.stub(getWeaponInfoStub).was.called_with(launcher, 1234)
     end)
 
     -- Negative: a state whose battery config dropped is skipped with a warning, the rest of the cycle runs
     it("should skip and warn about a unit with no config descriptor", function()
-      local systemConfig = makeSystemConfig({ firingUnits = {}, resupplyUnits = {} })
+      local systemConfig = makeSystemConfig({ launchers = {}, transloaders = {} })
       local systemState = makeSystemState()
       local getUnitStub = trackStub(GameApi, "ScenEdit_GetUnit")
       trackStub(GameApi, "ScenEdit_CurrentTime").returns(2000)
@@ -701,11 +701,11 @@ describe("MissileSystem Cycle", function()
       local results = Cycle.process(systemState, { systemConfig = systemConfig, isAuto = true }, "Taiwan")
 
       assert.are.same({
-        { tag = "WARN", fields = { unit = "Firing Unit Alpha", action = "reload_cycle", reason = "descriptor_not_found" } },
+        { tag = "WARN", fields = { unit = "Launcher Alpha", action = "reload_cycle", reason = "descriptor_not_found" } },
         { tag = "WARN", fields = { unit = "Ammo Sec, Alpha", action = "reload_cycle", reason = "descriptor_not_found" } },
       }, results)
       assert.stub(getUnitStub).was_not.called()
-      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.firingUnits["Firing Unit Alpha"].state)
+      assert.are.equal(constants.MISSILE_UNIT_POSTURE.RELOAD, systemState.launchers["Launcher Alpha"].state)
     end)
   end)
 end)

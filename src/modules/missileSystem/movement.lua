@@ -81,21 +81,21 @@ Movement.ORDER = {
     wcs = constants.WCS.HOLD
   },
   RELOAD_POINT = {
-    action = "move_firing_unit_to_reload_point",
+    action = "move_launcher_to_reload_point",
     positionType = POSITION_TYPES.RELOAD_POINT,
     positionKeys = { "RL" },
     wcs = constants.WCS.HOLD
   },
-  -- Stow ended: the resupply unit leaves its shelter along SHRL; areas without SHRL take RL.
+  -- Stow ended: the transloader leaves its shelter along SHRL; areas without SHRL take RL.
   RESUPPLY_VIA_SHRL = {
-    action = "move_resupply_to_reload_point",
+    action = "move_transloader_to_reload_point",
     positionType = POSITION_TYPES.RELOAD_POINT,
     positionKeys = { "SHRL", "RL" },
     wcs = constants.WCS.HOLD
   },
-  -- Transload done: the resupply unit drives straight to the last waypoint of an RL course.
+  -- Transload done: the transloader drives straight to the last waypoint of an RL course.
   RESUPPLY_RECALL = {
-    action = "move_resupply_to_reload_point",
+    action = "move_transloader_to_reload_point",
     positionType = POSITION_TYPES.RELOAD_POINT,
     positionKeys = { "RL" },
     useLastCourse = true
@@ -154,7 +154,7 @@ local function issueMove(unit, positions, order, areaName)
 end
 
 ---Order a unit to a position of its operational area; call through Transitions.depart, which records the move
----@param unitState SBJ__FiringUnitState|SBJ__ResupplyUnitState
+---@param unitState SBJ__LauncherState|SBJ__TransloaderState
 ---@param unit CMO__Unit
 ---@param order SBJ__MoveOrder
 ---@return SBJ__LogResult # OK with unit and action; FAIL adds the reason

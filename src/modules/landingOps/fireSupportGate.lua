@@ -66,8 +66,8 @@ function FireSupportGate.evaluate(config, landingState, getAmmoInventory)
         reason = "srbm_low",
         total = report.total.percentage,
         threshold = config.red.amphibOps.fireSupport.srbmHoldAmmoPct,
-        firing = report.firing.percentage,
-        resupply = report.resupply.percentage,
+        launcher = report.launcher.percentage,
+        transloader = report.transloader.percentage,
         canisterStock = report.canisterStock.percentage
       }
     }
