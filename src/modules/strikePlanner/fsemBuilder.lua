@@ -14,7 +14,7 @@ local READINESS = constants.MISSILE_SYSTEM_READINESS
 local ASSIGNED_STATUS = "assigned"
 
 -- Single source for the counter keys and the order they appear in a log row.
-local FIRING_UNIT_STATUS_ORDER = {
+local READINESS_COUNT_ORDER = {
   READINESS.READY,
   ASSIGNED_STATUS,
   READINESS.UNIT_NOT_FOUND,
@@ -23,7 +23,7 @@ local FIRING_UNIT_STATUS_ORDER = {
   READINESS.LOW_AMMO
 }
 
-local FIRING_UNIT_STATUS_LOG_FIELD = {
+local READINESS_COUNT_LOG_FIELD = {
   [READINESS.READY] = "firingAvailable",
   [ASSIGNED_STATUS] = "firingAssigned",
   [READINESS.UNIT_NOT_FOUND] = "firingUnitNotFound",
@@ -53,41 +53,41 @@ local LOG_ACTION = "Process operations"
 local NO_FIRING_UNITS_FIELDS = { firingUnits = "none" }
 
 -- ============================================================================
--- Firing Unit Status
+-- Firing Unit Readiness Count
 -- ============================================================================
 
----Create a firing unit status counter with every status zeroed
----@return SBJ__FiringUnitStatusResult # Zeroed status counter
-local function createFiringUnitStatusCounter()
-  local firingUnitStatusCounter = {}
+---Create a readiness count with every outcome zeroed
+---@return SBJ__FiringUnitReadinessCount # Zeroed readiness count
+local function createReadinessCount()
+  local readinessCount = {}
 
-  for _, status in ipairs(FIRING_UNIT_STATUS_ORDER) do
-    firingUnitStatusCounter[status] = 0
+  for _, status in ipairs(READINESS_COUNT_ORDER) do
+    readinessCount[status] = 0
   end
 
-  return firingUnitStatusCounter
+  return readinessCount
 end
 
----Increment the count for one firing unit status
----@param firingUnitStatusCounter SBJ__FiringUnitStatusResult
+---Increment the count for one readiness outcome
+---@param readinessCount SBJ__FiringUnitReadinessCount
 ---@param status string
-local function updateFiringUnitStatus(firingUnitStatusCounter, status)
-  if firingUnitStatusCounter[status] ~= nil then
-    firingUnitStatusCounter[status] = firingUnitStatusCounter[status] + 1
+local function updateReadinessCount(readinessCount, status)
+  if readinessCount[status] ~= nil then
+    readinessCount[status] = readinessCount[status] + 1
   end
 end
 
----Format a status counter into log fields, dropping zero counts
----@param firingUnitStatusCounter SBJ__FiringUnitStatusResult
+---Format a readiness count into log fields, dropping zero counts
+---@param readinessCount SBJ__FiringUnitReadinessCount
 ---@return table<string, any> # Status log fields, firingUnits=none when nothing was counted
-local function formatFiringUnitStatusCounter(firingUnitStatusCounter)
+local function formatReadinessCount(readinessCount)
   local statusFields = {}
   local hasAnyCount = false
 
-  for _, status in ipairs(FIRING_UNIT_STATUS_ORDER) do
-    local count = firingUnitStatusCounter[status] or 0
+  for _, status in ipairs(READINESS_COUNT_ORDER) do
+    local count = readinessCount[status] or 0
     if count > 0 then
-      statusFields[FIRING_UNIT_STATUS_LOG_FIELD[status]] = count
+      statusFields[READINESS_COUNT_LOG_FIELD[status]] = count
       hasAnyCount = true
     end
   end
@@ -147,7 +147,7 @@ end
 ---@param firingUnitName string
 ---@param passCtx SBJ__FsemPassContext
 ---@return string # ASSIGNED_STATUS or a constants.MISSILE_SYSTEM_READINESS value
-local function evaluateFiringUnitStatus(plannerState, missileSystemType, firingUnitName, passCtx)
+local function evaluateFiringUnitReadiness(plannerState, missileSystemType, firingUnitName, passCtx)
   if passCtx.assignedFiringUnitNames[firingUnitName] then
     return ASSIGNED_STATUS
   end
@@ -163,18 +163,18 @@ end
 ---Select the firing units of a task template that are free and ready to fire
 ---@param plannerState SBJ__StrikePlannerState
 ---@param taskTemplate SBJ__FireSupportTaskTemplate
----@param firingUnitStatusCounter SBJ__FiringUnitStatusResult
+---@param readinessCount SBJ__FiringUnitReadinessCount
 ---@param passCtx SBJ__FsemPassContext
 ---@return SBJ__FiringUnit[] # Firing units ready for assignment
-local function filterAvailableFiringUnits(plannerState, taskTemplate, firingUnitStatusCounter, passCtx)
+local function filterAvailableFiringUnits(plannerState, taskTemplate, readinessCount, passCtx)
   local availableFiringUnits = {}
 
   for _, firingUnit in ipairs(taskTemplate.firingUnits) do
     -- A nameless entry breaks the SBJ__FiringUnit invariant, reads back a nil state and
     -- is rejected as NO_STATE, so it never reaches an assignment map.
-    local status = evaluateFiringUnitStatus(plannerState, taskTemplate.missileSystemType, firingUnit.name, passCtx)
+    local status = evaluateFiringUnitReadiness(plannerState, taskTemplate.missileSystemType, firingUnit.name, passCtx)
 
-    updateFiringUnitStatus(firingUnitStatusCounter, status)
+    updateReadinessCount(readinessCount, status)
     if status == READINESS.READY then
       table.insert(availableFiringUnits, firingUnit)
     end
@@ -211,11 +211,11 @@ end
 ---@param targetsByTaskIndex table<integer, string[]> Evaluated targets keyed by FST index
 ---@param passCtx SBJ__FsemPassContext
 ---@return SBJ__FireSupportTask[] fireSupportTasks Built executable tasks
----@return SBJ__FiringUnitStatusResult firingUnitStatusCounter Firing unit validation counts
+---@return SBJ__FiringUnitReadinessCount readinessCount Firing unit count per readiness outcome
 ---@return number firingUnitBlockedTaskCount Tasks dropped because no firing unit was available
 local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskIndex, passCtx)
   local fireSupportTasks = {}
-  local firingUnitStatusCounter = createFiringUnitStatusCounter()
+  local readinessCount = createReadinessCount()
   local firingUnitBlockedTaskCount = 0
   local slotIndex = 0
 
@@ -227,7 +227,7 @@ local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskI
       local availableFiringUnits = filterAvailableFiringUnits(
         plannerState,
         taskTemplate,
-        firingUnitStatusCounter,
+        readinessCount,
         passCtx
       )
 
@@ -245,7 +245,7 @@ local function buildExecutableTasks(plannerState, matrixTemplate, targetsByTaskI
     end
   end
 
-  return fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount
+  return fireSupportTasks, readinessCount, firingUnitBlockedTaskCount
 end
 
 -- ============================================================================
@@ -283,13 +283,13 @@ end
 local function createAndInsertMatrixFromTemplate(plannerState, params, passCtx)
   local matrixTemplate, targetsByTaskIndex = params.matrixTemplate, params.targetsByTaskIndex
   local reconType = params.reconType
-  local fireSupportTasks, firingUnitStatusCounter, firingUnitBlockedTaskCount = buildExecutableTasks(
+  local fireSupportTasks, readinessCount, firingUnitBlockedTaskCount = buildExecutableTasks(
     plannerState,
     matrixTemplate,
     targetsByTaskIndex,
     passCtx
   )
-  local statusFields = formatFiringUnitStatusCounter(firingUnitStatusCounter)
+  local statusFields = formatReadinessCount(readinessCount)
 
   if #fireSupportTasks == 0 then
     local isRetryable = firingUnitBlockedTaskCount > 0

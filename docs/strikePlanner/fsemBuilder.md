@@ -54,7 +54,7 @@ flowchart TD
 
 ### 為什麼快取只活一次 execute()
 
-`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableFiringUnits()` → `evaluateFiringUnitStatus()`，內含兩個只活一趟的快取：
+`passCtx`（`SBJ__FsemPassContext`）逐層傳進 `processGroundOperation()` → `createAndInsertMatrixFromTemplate()` → `buildExecutableTasks()` → `filterAvailableFiringUnits()` → `evaluateFiringUnitReadiness()`，內含兩個只活一趟的快取：
 
 | 欄位 | 取代的行為 |
 |---|---|
@@ -73,7 +73,7 @@ flowchart TD
 
 ### Firing unit 驗證與日誌欄位
 
-`filterAvailableFiringUnits()` 逐一驗證 `taskTemplate.firingUnits`，把結果累計進 `SBJ__FiringUnitStatusResult`，`formatFiringUnitStatusCounter()` 再把非零計數展開成 log 欄位。零值不輸出，全零時只輸出 `firingUnits=none`。
+`filterAvailableFiringUnits()` 逐一驗證 `taskTemplate.firingUnits`，把結果累計進 `SBJ__FiringUnitReadinessCount`，`formatReadinessCount()` 再把非零計數展開成 log 欄位。零值不輸出，全零時只輸出 `firingUnits=none`。
 
 看到這些欄位時的判讀方向：
 
@@ -144,7 +144,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 `no_valid_tasks` 在目前的控制流下不可達：`DynamicPlan.evaluateTargets()` 與 `buildExecutableTasks()` 走同一份 FST 陣列，任何目標達標的 FST 若組不出任務，必然是因為缺發射單元而累加 `firingUnitBlockedTaskCount`，因此會落在 `no_available_firing_units`。它作為終止性 fallback 保留，讓「有目標卻完全組不出任務」這類未來的新失敗模式有一個 FAIL 出口，而不會被誤判成可重試。也因為不可達，它沒有測試覆蓋。
 
-`NO_FIRING_UNITS_FIELDS` 是 `insufficient_targets` 與 `formatFiringUnitStatusCounter()` 共用的同一份唯讀 table。安全的前提是 `LogFormat.merge()` 回傳新 table，`fields.reason = ...` 改的是合併結果而非這份共用常數。
+`NO_FIRING_UNITS_FIELDS` 是 `insufficient_targets` 與 `formatReadinessCount()` 共用的同一份唯讀 table。安全的前提是 `LogFormat.merge()` 回傳新 table，`fields.reason = ...` 改的是合併結果而非這份共用常數。
 
 `build()` 建立單一 `LogFormat.report(constants.TAGS.DYNAMIC_OPERATIONS, "dynamicGroundOperations", "Process operations")`，退役列先進去，`OperationBatch.process()` 回傳的 entries 逐筆 `add` 後 `emit()`；格式化、info／error 分流與空輸出抑制全部由 report 負責（`src/utils/logFormat.lua`）。
 
@@ -158,7 +158,7 @@ SAM 任務依慣例排除在 stow 之外。
 
 ## 型別與寫入副作用
 
-本模組操作的型別（`SBJ__FireSupportExecutionMatrixTemplate`、`SBJ__FireSupportExecutionMatrix`、`SBJ__FireSupportTaskTemplate`、`SBJ__FireSupportTask`、`SBJ__FiringUnit`、`SBJ__FiringUnitState`、`SBJ__BatchedOperation`、`SBJ__OperationProcessResult`、`SBJ__FiringUnitStatusResult`、`SBJ__FsemPassContext`）欄位定義一律以 `src/core/schema.lua` 為準。
+本模組操作的型別（`SBJ__FireSupportExecutionMatrixTemplate`、`SBJ__FireSupportExecutionMatrix`、`SBJ__FireSupportTaskTemplate`、`SBJ__FireSupportTask`、`SBJ__FiringUnit`、`SBJ__FiringUnitState`、`SBJ__BatchedOperation`、`SBJ__OperationProcessResult`、`SBJ__FiringUnitReadinessCount`、`SBJ__FsemPassContext`）欄位定義一律以 `src/core/schema.lua` 為準。
 
 | 路徑或 API | 行為 |
 |---|---|

@@ -2299,8 +2299,8 @@ function ScenEdit_DeleteMine(params) end
 -- ============================================================================
 -- Fire support execution matrix types for fsemBuilder module
 
----Firing unit status counter tracking validation outcomes
----@alias SBJ__FiringUnitStatusResult table<string, number>
+---Firing unit count per readiness outcome, plus "assigned" for units already taken this pass
+---@alias SBJ__FiringUnitReadinessCount table<string, number>
 
 ---Pass-scoped state for one ATO insertion pass
 ---The free aircraft cache is local to the pass so a later tick never counts aircraft already committed
