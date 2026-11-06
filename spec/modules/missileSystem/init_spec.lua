@@ -908,7 +908,7 @@ describe("MissileSystem", function()
       stubUnitSpawning()
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
-        { { missileSystemType = "srbm", unitname = "FU-A" } })
+        { { missileSystemType = "srbm", name = "FU-A", placement = {} } })
 
       local newAreas, removedAreas = triggersStub.calls[1].vals[1], triggersStub.calls[1].vals[2]
       assert.are.same({ "OPAREA-NEW" }, { newAreas[1].name })
@@ -928,7 +928,7 @@ describe("MissileSystem", function()
       stubUnitSpawning()
 
       MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
-        { { missileSystemType = "srbm", unitname = "FU-A" } })
+        { { missileSystemType = "srbm", name = "FU-A", placement = {} } })
 
       assert.are.equal(firingDescriptor, srbmConfig.firingUnits["FU-A"])
       assert.are.equal(resupplyDescriptor, srbmConfig.resupplyUnits["RU-A"])
@@ -939,9 +939,12 @@ describe("MissileSystem", function()
     end)
 
     -- Positive: zones go first so their mask lands on the new area before state copies it
-    it("should rebuild triggers, then units, then state, for the batteries the entries name", function()
+    it("should rebuild triggers, then units, then state, for the batteries the redeployments name", function()
       local config, saveData = makeMovedBattery()
-      local entries = { { missileSystemType = "srbm", unitname = "FU-A" }, { missileSystemType = "srbm", unitname = "Ghost" } }
+      local redeployments = {
+        { missileSystemType = "srbm", name = "FU-A", placement = {} },
+        { missileSystemType = "srbm", name = "Ghost", placement = {} }
+      }
       local newArea = { name = "#NEW" }
       local buildAreaStub = trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
       local calls = {}
@@ -955,9 +958,9 @@ describe("MissileSystem", function()
         table.insert(calls, "resetBatteryStates")
       end)
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
 
-      assert.stub(buildAreaStub).was.called_with(entries[1])
+      assert.stub(buildAreaStub).was.called_with(redeployments[1].placement)
       assert.are.same({ "rebuild", "deployBatteries", "resetBatteryStates" }, calls)
       assert.stub(triggersStub).was.called_with({ newArea }, match._, {
         constants.POSITION_TYPES.RELOAD_POINT,
@@ -1007,9 +1010,9 @@ describe("MissileSystem", function()
       trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
       trackStub(PositionZones, "rebuild")
       stubUnitSpawning()
-      local entries = { { missileSystemType = "srbm", unitname = "FU-A" } }
+      local redeployments = { { missileSystemType = "srbm", name = "FU-A", placement = {} } }
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, entries)
+      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
 
       assert.are.same(newArea, systemState.firingUnits["FU-A"].operationalArea)
       assert.is_nil(systemState.firingUnits["FU-A"].weaponCountCurrent)

@@ -23,13 +23,13 @@ local function buildCourse(path)
   return course
 end
 
----Build the operational area one control panel entry draws, under a random 3-letter name
+---Build the operational area a control panel placement draws, under a random 3-letter name
 ---Only the first RL path is used; SHRL shares the reload zone. The inverse of buildPlacement.
----@param entry SBJ__MissileSystemResult
+---@param placement SBJ__BatteryPlacement
 ---@return SBJ__OperationalArea
-function PanelBattery.buildOperationalArea(entry)
-  local tacticalAreas = entry.tacticalAreas
-  local paths = entry.paths
+function PanelBattery.buildOperationalArea(placement)
+  local tacticalAreas = placement.tacticalAreas
+  local paths = placement.paths
   local operationalArea = {
     RL = { { course = buildCourse(paths.RL[1]), area = tacticalAreas.reloadArea } },
     FP = {},

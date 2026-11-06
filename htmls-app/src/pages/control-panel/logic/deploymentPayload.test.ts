@@ -85,7 +85,7 @@ describe('toControlPanelResult', () => {
       injectedDeployments: injected,
     });
 
-    expect(result.missileSystems).toEqual([]);
+    expect(result.batteries).toEqual([]);
   });
 
   it('keeps a unit the player redeployed', () => {
@@ -105,7 +105,7 @@ describe('toControlPanelResult', () => {
       injectedDeployments: injected,
     });
 
-    expect(result.missileSystems.map((system) => system.key)).toEqual(['k']);
+    expect(result.batteries.map((battery) => battery.name)).toEqual([UNIT_NAME]);
   });
 
   it('uses the Lua field names and the trimmed paths', () => {
@@ -134,10 +134,9 @@ describe('toControlPanelResult', () => {
       zoneName: JAMMERS_DATA[0].zoneName,
       pos: { latitude: 24, longitude: 121 },
     });
-    const system = result.missileSystems[0];
-    expect(system.key).toBe('k');
-    expect(system.unitname).toBe(UNIT_NAME);
-    expect(system.paths).toEqual(toExportPaths(generated!.paths));
-    expect(system).not.toHaveProperty('atpRadius');
+    const battery = result.batteries[0];
+    expect(battery.name).toBe(UNIT_NAME);
+    expect(battery.placement.paths).toEqual(toExportPaths(generated!.paths));
+    expect(battery.placement).not.toHaveProperty('atpRadius');
   });
 });

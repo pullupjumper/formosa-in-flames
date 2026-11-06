@@ -108,16 +108,17 @@ export function toControlPanelResult({
         radiusNm: unit.radiusNm,
       };
     }),
-    missileSystems: Array.from(deployedMissileSystems.entries())
+    batteries: Array.from(deployedMissileSystems.entries())
       .filter(([key, deployment]) => injectedDeployments.get(key) !== deployment)
-      .map(([key, deployment]) => ({
-        key,
-        unitname: deployment.unitname,
+      .map(([, deployment]) => ({
+        name: deployment.unitname,
         missileSystemType: deployment.missileSystemType,
-        center: deployment.center,
-        openingAngle: deployment.openingAngle,
-        tacticalAreas: deployment.tacticalAreas,
-        paths: toExportPaths(deployment.paths),
+        placement: {
+          center: deployment.center,
+          openingAngle: deployment.openingAngle,
+          tacticalAreas: deployment.tacticalAreas,
+          paths: toExportPaths(deployment.paths),
+        },
       })),
   };
 }

@@ -49,13 +49,11 @@ describe("MissileSystem PanelBattery", function()
     }
   end
 
-  ---Create a control panel battery entry with two fire points
+  ---Create a control panel battery placement with two fire points
   ---@param overrides? table
   ---@return table
-  local function makeEntry(overrides)
-    local entry = {
-      unitname = "FU-1",
-      missileSystemType = "srbm",
+  local function makePlacement(overrides)
+    local placement = {
       tacticalAreas = {
         uShapeVertices = { "U" },
         shelterPoints = { "S" },
@@ -73,9 +71,9 @@ describe("MissileSystem PanelBattery", function()
       }
     }
     if overrides then
-      for k, v in pairs(overrides) do entry[k] = v end
+      for k, v in pairs(overrides) do placement[k] = v end
     end
-    return entry
+    return placement
   end
 
   ---A one-waypoint course
@@ -150,7 +148,7 @@ describe("MissileSystem PanelBattery", function()
     it("should turn every path into a fast course paired with its zone", function()
       trackStub(stub(Utils, "buildRandomText").returns("ABC"))
 
-      local operationalArea = PanelBattery.buildOperationalArea(makeEntry())
+      local operationalArea = PanelBattery.buildOperationalArea(makePlacement())
 
       assert.are.same({
         FP = {
@@ -171,8 +169,8 @@ describe("MissileSystem PanelBattery", function()
     it("should name each area with a fresh random 3-letter suffix", function()
       local buildRandomTextStub = trackStub(stub(Utils, "buildRandomText").returns("AAA"))
 
-      PanelBattery.buildOperationalArea(makeEntry())
-      PanelBattery.buildOperationalArea(makeEntry({ unitname = "FU-2" }))
+      PanelBattery.buildOperationalArea(makePlacement())
+      PanelBattery.buildOperationalArea(makePlacement())
 
       assert.stub(buildRandomTextStub).was.called(2)
       assert.stub(buildRandomTextStub).was.called_with(3)
@@ -244,7 +242,7 @@ describe("MissileSystem PanelBattery", function()
         firePoints = { { point(17) } }
       }
       -- What the panel sends: HA, ATP and RL with their leading reload waypoint trimmed
-      local entry = makeEntry({
+      local submitted = makePlacement({
         tacticalAreas = tacticalAreas,
         paths = {
           FP = { { waypoints = { point(1), point(2) } } },
@@ -254,7 +252,7 @@ describe("MissileSystem PanelBattery", function()
           SHRL = { waypoints = { point(6) } }
         }
       })
-      local operationalArea = PanelBattery.buildOperationalArea(entry)
+      local operationalArea = PanelBattery.buildOperationalArea(submitted)
       operationalArea.mask = { area = tacticalAreas.uShapeVertices }
 
       local placement = PanelBattery.buildPlacement(operationalArea, "Taiwan")

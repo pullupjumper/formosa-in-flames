@@ -259,15 +259,15 @@ end
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param sideName string
----@param entries SBJ__MissileSystemResult[]
-function MissileSystem.redeployFromControlPanel(config, saveData, sideName, entries)
+---@param redeployments SBJ__PlacedBattery[]
+function MissileSystem.redeployFromControlPanel(config, saveData, sideName, redeployments)
   local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
   local groundState = PersistentState.ground(saveData, sideName)
   local batteries, operationalAreas, operationalAreasToRemove = {}, {}, {}
 
-  for _, entry in ipairs(entries) do
-    local battery = Deployment.resolveBattery(missileSystemConfigMap, entry.missileSystemType, entry.unitname,
-      PanelBattery.buildOperationalArea(entry))
+  for _, redeployment in ipairs(redeployments) do
+    local battery = Deployment.resolveBattery(missileSystemConfigMap, redeployment.missileSystemType,
+      redeployment.name, PanelBattery.buildOperationalArea(redeployment.placement))
     if battery then
       table.insert(batteries, battery)
       table.insert(operationalAreas, battery.operationalArea)

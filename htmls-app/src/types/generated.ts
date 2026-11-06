@@ -76,18 +76,22 @@ export interface BatteryPlacement {
   paths: MovementPathSet;
 }
 
-/** One battery the control panel lists: where it is placed and, once deployed, how it is doing */
-export interface PanelBattery {
-  /** Firing unit name */
+/** A battery and where it is placed; the control panel sends these back for the batteries the player moved */
+export interface PlacedBattery {
+  /** Firing unit name in the side's ground force config */
   name: string;
-  /** Missile system designation (e.g. "HF-3") */
-  missileSystem: string;
   /** Missile system type key (constants.MISSILE_SYSTEM_TYPES) */
   missileSystemType: string;
+  /** Where the battery is placed */
+  placement: BatteryPlacement;
+}
+
+/** One battery the control panel lists: where it is placed and, once deployed, how it is doing */
+export interface PanelBattery extends PlacedBattery {
+  /** Missile system designation (e.g. "HF-3") */
+  missileSystem: string;
   /** Weapon range in NM, drives the range circle on the map; 0 without a land range */
   weaponRange: number;
-  /** Where the battery is now */
-  placement: BatteryPlacement;
   /** Absent before the battery's first deploy */
   status?: BatteryStatus;
 }
@@ -244,16 +248,6 @@ export interface MovementPathSet {
   SHRL: MovementPath;
 }
 
-/** Battery placement submitted by the control panel */
-export interface MissileSystemResult extends BatteryPlacement {
-  /** Control panel row key */
-  key: string;
-  /** Firing unit name in the side's ground force config */
-  unitname: string;
-  /** Missile system type key (constants.MISSILE_SYSTEM_TYPES) */
-  missileSystemType: string;
-}
-
 /** Point budget the player spent in the control panel */
 export interface BudgetResult {
   /** Points available at the start */
@@ -272,8 +266,8 @@ export interface ControlPanelResult {
   jammers: GNSSJammerDescriptor[];
   /** Airbase deployment configurations */
   airbases: Airbase[];
-  /** TEL missile system deployment configurations with tactical areas and paths */
-  missileSystems: MissileSystemResult[];
+  /** Batteries the player moved; unmoved batteries are left out */
+  batteries: PlacedBattery[];
 }
 
 /** Add-units menu result containing the ticked action ids */

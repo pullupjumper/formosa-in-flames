@@ -2210,13 +2210,16 @@ function ScenEdit_DeleteMine(params) end
 ---@field tacticalAreas SBJ__TacticalAreaLayout Zones
 ---@field paths SBJ__MovementPathSet Movement paths
 
----One battery the control panel lists: where it is placed and, once deployed, how it is doing
----@class SBJ__PanelBattery: table
----@field name string Firing unit name
----@field missileSystem string Missile system designation (e.g. "HF-3")
+---A battery and where it is placed; the control panel sends these back for the batteries the player moved
+---@class SBJ__PlacedBattery: table
+---@field name string Firing unit name in the side's ground force config
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field placement SBJ__BatteryPlacement Where the battery is placed
+
+---One battery the control panel lists: where it is placed and, once deployed, how it is doing
+---@class SBJ__PanelBattery: SBJ__PlacedBattery
+---@field missileSystem string Missile system designation (e.g. "HF-3")
 ---@field weaponRange number Weapon range in NM, drives the range circle on the map; 0 without a land range
----@field placement SBJ__BatteryPlacement Where the battery is now
 ---@field status? SBJ__BatteryStatus Absent before the battery's first deploy
 
 ---A battery's firing unit, resupply unit and canister stock as the control panel shows them
@@ -2307,12 +2310,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field ATP SBJ__MovementPath Ammunition Transfer Point path: reload point -> ammunition transfer point
 ---@field SHRL SBJ__MovementPath Shelter Hide Reload Loop path: shelter -> reload point
 
----Battery placement submitted by the control panel
----@class SBJ__MissileSystemResult: SBJ__BatteryPlacement
----@field key string Control panel row key
----@field unitname string Firing unit name in the side's ground force config
----@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
-
 ---Point budget the player spent in the control panel
 ---@class SBJ__BudgetResult: table
 ---@field initial number Points available at the start
@@ -2324,7 +2321,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field budget SBJ__BudgetResult Point budget the player spent
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
 ---@field airbases SBJ__Airbase[] Airbase deployment configurations
----@field missileSystems SBJ__MissileSystemResult[] TEL missile system deployment configurations with tactical areas and paths
+---@field batteries SBJ__PlacedBattery[] Batteries the player moved; unmoved batteries are left out
 
 ---Add-units menu result containing the ticked action ids
 ---@class SBJ__AddUnitsMenuResult: table

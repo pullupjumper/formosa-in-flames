@@ -68,7 +68,7 @@ describe('host writes', () => {
 
   it('reports a deployment submit as failed unless both inputs exist', () => {
     addInput('summaryData');
-    const result = { budget: {}, airbases: [], jammers: [], missileSystems: [] };
+    const result = { budget: {}, airbases: [], jammers: [], batteries: [] };
 
     expect(submitDeployment(result as never, { sams: [], c2Nodes: [] } as never)).toBe(false);
 

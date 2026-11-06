@@ -248,7 +248,7 @@ local STATUS_UI_SIDES = {
 local function updateFromControlPanelResult(config, saveData, sideName, result)
   local jammerDescriptors = result.jammers
   local airbaseDeploymentDescriptors = result.airbases
-  local missileSystems = result.missileSystems
+  local batteryRedeployments = result.batteries
 
   if jammerDescriptors and #jammerDescriptors > 0 then
     GnssJamming.removeJammers(sideName, jammerDescriptors)
@@ -265,12 +265,12 @@ local function updateFromControlPanelResult(config, saveData, sideName, result)
     end
   end
 
-  if missileSystems and #missileSystems > 0 then
-    MissileSystem.redeployFromControlPanel(config, saveData, sideName, missileSystems)
+  if batteryRedeployments and #batteryRedeployments > 0 then
+    MissileSystem.redeployFromControlPanel(config, saveData, sideName, batteryRedeployments)
 
     local rebuiltNames = {}
-    for _, system in ipairs(missileSystems) do
-      table.insert(rebuiltNames, system.unitname)
+    for _, redeployment in ipairs(batteryRedeployments) do
+      table.insert(rebuiltNames, redeployment.name)
     end
     IntegratedAirDefenseSystem.relinkRebuiltUnits(PersistentState.iads(saveData, sideName), sideName, rebuiltNames)
   end
