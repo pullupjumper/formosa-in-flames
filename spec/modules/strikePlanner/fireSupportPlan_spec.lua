@@ -173,7 +173,9 @@ describe("FireSupportPlan", function()
       FireSupportPlan.process(CONFIG, plannerState)
 
       assert.stub(stubSend).was.called(1)
-      assert.stub(stubSend).was.called_with(CONFIG, plannerState.ground, constants.SIDES.RED, "SRBM", "Battery-1")
+      assert.stub(stubSend).was.called_with(CONFIG, plannerState.ground, constants.SIDES.RED, {
+        missileSystemType = "SRBM", launcherName = "Battery-1"
+      })
     end)
 
     -- Positive: all units at firing point

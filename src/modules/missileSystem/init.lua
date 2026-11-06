@@ -71,11 +71,11 @@ end
 ---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
 ---@param sideName string Side that owns the launcher
----@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param launcherName string
+---@param params SBJ__LauncherParams
 ---@return boolean inPosition Whether the unit is at its firing point
 ---@return boolean isMissing Whether the unit no longer exists in game, in config or in runtime state
-function MissileSystem.sendToFiringPoint(config, groundState, sideName, missileSystemType, launcherName)
+function MissileSystem.sendToFiringPoint(config, groundState, sideName, params)
+  local missileSystemType, launcherName = params.missileSystemType, params.launcherName
   local launcher = GameApi.ScenEdit_GetUnit(launcherName)
   local launcherState = findLauncherState(groundState, missileSystemType, launcherName)
   local launcherDescriptor = findLauncherDescriptor(config, sideName, missileSystemType, launcherName)
@@ -118,11 +118,10 @@ end
 ---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
 ---@param sideName string Side that owns the launcher
----@param missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
----@param launcherName string
----@param getUnit fun(name: string): CMO__Unit|nil Called only when the unit has a runtime state and a config descriptor
+---@param params SBJ__EvaluateReadinessParams
 ---@return missileSystemReadiness
-function MissileSystem.evaluateReadiness(config, groundState, sideName, missileSystemType, launcherName, getUnit)
+function MissileSystem.evaluateReadiness(config, groundState, sideName, params)
+  local missileSystemType, launcherName = params.missileSystemType, params.launcherName
   local readiness = constants.MISSILE_SYSTEM_READINESS
   local launcherState = findLauncherState(groundState, missileSystemType, launcherName)
   local launcherDescriptor = findLauncherDescriptor(config, sideName, missileSystemType, launcherName)
@@ -130,7 +129,7 @@ function MissileSystem.evaluateReadiness(config, groundState, sideName, missileS
     return readiness.NO_STATE
   end
 
-  local launcher = getUnit(launcherName)
+  local launcher = params.getUnit(launcherName)
   if not launcher then
     return readiness.UNIT_NOT_FOUND
   end

@@ -1490,6 +1490,15 @@ function ScenEdit_DeleteMine(params) end
 ---@field contacts? CMO__Contact[] Current side contacts used for drop-contact handling
 ---@field runCtx SBJ__ArrivalRunContext Side-specific switches for this event
 
+---Names one launcher of a missile system
+---@class SBJ__LauncherParams: table
+---@field missileSystemType string Missile system name in any case (e.g., "SRBM", "srbm")
+---@field launcherName string
+
+---Input parameters for MissileSystem.evaluateReadiness
+---@class SBJ__EvaluateReadinessParams: SBJ__LauncherParams
+---@field getUnit fun(name: string): CMO__Unit|nil Called only when the unit has a runtime state and a config descriptor
+
 ---A launcher and its transloader, both tracked and both in the game
 ---Meeting.resolveReloadPair returns nil rather than a pair with a missing member, so no field is optional.
 ---@class SBJ__ReloadPair: table

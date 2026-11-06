@@ -152,12 +152,13 @@ local function evaluateLauncherReadiness(plannerState, missileSystemType, launch
     return ASSIGNED_STATUS
   end
 
-  return MissileSystem.evaluateReadiness(
-    passCtx.config, plannerState.ground, constants.SIDES.RED, missileSystemType, launcherName,
-    function(name)
+  return MissileSystem.evaluateReadiness(passCtx.config, plannerState.ground, constants.SIDES.RED, {
+    missileSystemType = missileSystemType,
+    launcherName = launcherName,
+    getUnit = function(name)
       return getCachedLauncher(passCtx.launcherCache, name)
-    end
-  )
+    end,
+  })
 end
 
 ---Select the launchers of a task template that are free and ready to fire

@@ -32,7 +32,7 @@
 
 ### Launcher Deployment
 
-`processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 launcher 以 `MissileSystem.sendToFiringPoint(config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, launcher.name)` 交給 missileSystem：
+`processActiveMatrix()` 會遍歷 FSEM 內尚未完成且已達 `startTime` 的 FST。每個 launcher 以 `MissileSystem.sendToFiringPoint(config, plannerState.ground, constants.SIDES.RED, { missileSystemType = task.missileSystemType, launcherName = launcher.name })` 交給 missileSystem：
 
 1. missileSystem 自己取得 CMO 實體單位與 runtime context。任一不存在就回報單位不見，本模組視同陣亡、從 FST 移除。
 2. 決定是否派出（`HIDE` 且彈量足夠才出動），並回傳是否已在射擊位置（`STATIC`）。就緒條件與狀態轉換都由 missileSystem 維護。

@@ -29,7 +29,8 @@ local function deployTaskLaunchers(config, plannerState, task)
   for i = #task.launcherNames, 1, -1 do
     local launcherName = task.launcherNames[i]
     local inPosition, unitMissing = MissileSystem.sendToFiringPoint(
-      config, plannerState.ground, constants.SIDES.RED, task.missileSystemType, launcherName
+      config, plannerState.ground, constants.SIDES.RED,
+      { missileSystemType = task.missileSystemType, launcherName = launcherName }
     )
 
     if unitMissing then

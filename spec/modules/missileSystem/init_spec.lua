@@ -77,7 +77,9 @@ describe("MissileSystem", function()
       local launchers = descriptorMap or { FU1 = { name = "FU1", ammoThreshold = 40, weaponDBID = 1 } }
       local config = { red = { ground = { missileSystemTypes = { srbm = { launchers = launchers } } } } }
       local groundState = { missileSystemTypes = { srbm = { launchers = { FU1 = launcherState } } } }
-      return MissileSystem.sendToFiringPoint(config, groundState, constants.SIDES.RED, "SRBM", "FU1")
+      return MissileSystem.sendToFiringPoint(
+        config, groundState, constants.SIDES.RED, { missileSystemType = "SRBM", launcherName = "FU1" }
+      )
     end
 
     -- Negative: a tracked unit that no longer exists in game is reported missing
@@ -215,9 +217,11 @@ describe("MissileSystem", function()
     end
 
     local function evaluateReadiness(groundState, missileSystemType, getUnit, config)
-      return MissileSystem.evaluateReadiness(
-        config or buildConfig(), groundState, constants.SIDES.RED, missileSystemType, "FU1", getUnit
-      )
+      return MissileSystem.evaluateReadiness(config or buildConfig(), groundState, constants.SIDES.RED, {
+        missileSystemType = missileSystemType,
+        launcherName = "FU1",
+        getUnit = getUnit,
+      })
     end
 
     ---@param current integer
