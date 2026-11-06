@@ -93,4 +93,24 @@ describe("config ground.missileSystemTypes batteries", function()
 
     assert.are.same({}, problems)
   end)
+
+  it("should name every firing unit once per side, whatever its missile system type", function()
+    local problems = {}
+
+    for _, sideKey in ipairs({ "red", "blue", "ally" }) do
+      local ground = config[sideKey] and config[sideKey].ground
+      local owners = {}
+
+      for systemType, systemConfig in pairs(ground and ground.missileSystemTypes or {}) do
+        for _, firing in pairs(systemConfig.firingUnits) do
+          if owners[firing.name] then
+            table.insert(problems, sideKey .. " " .. firing.name .. " in " .. owners[firing.name] .. " and " .. systemType)
+          end
+          owners[firing.name] = systemType
+        end
+      end
+    end
+
+    assert.are.same({}, problems)
+  end)
 end)
