@@ -13,7 +13,7 @@ import { areAllPointsInTaiwan } from './taiwanBoundary';
  * layout → shelter plan (with gateways) → movement paths.
  */
 
-export interface GenerateDeploymentParams {
+export interface GenerateBatteryParams {
   name: string;
   missileSystemType: string;
   center: Coordinate;
@@ -51,7 +51,7 @@ export function isValidAngle(angle: number): boolean {
  * Returns null when the location fails the Taiwan boundary check or when no
  * layout with both gateways could be found.
  */
-export function generateDeploymentData({
+export function generateBattery({
   name,
   missileSystemType,
   center,
@@ -61,7 +61,7 @@ export function generateDeploymentData({
   atpCenterOverride,
   firePointsOverride,
   rng = Math.random,
-}: GenerateDeploymentParams): DeployedBattery | null {
+}: GenerateBatteryParams): DeployedBattery | null {
   try {
     const layoutOptions = { atpRadius: atpRadiusOverride, atpCenter: atpCenterOverride };
 
@@ -94,7 +94,7 @@ export function generateDeploymentData({
     }
 
     console.error(
-      `generateDeploymentData: failed to find both gateways after ${DEPLOYMENT_MAX_ATTEMPTS} outer retries`
+      `generateBattery: failed to find both gateways after ${DEPLOYMENT_MAX_ATTEMPTS} outer retries`
     );
     return null;
   } catch (error) {
@@ -103,7 +103,7 @@ export function generateDeploymentData({
   }
 }
 
-export interface RotateDeploymentParams {
+export interface RotateBatteryParams {
   deployment: DeployedBattery;
   angle: number;
   validateTaiwanBoundary: boolean;
@@ -116,14 +116,14 @@ export interface RotateDeploymentParams {
  * the kept fire points. Null when the angle is unusable (out of range, the
  * rotated boundary leaves Taiwan, or no gateway fits).
  */
-export function rotateDeployment({
+export function rotateBattery({
   deployment,
   angle,
   validateTaiwanBoundary,
   rng = Math.random,
-}: RotateDeploymentParams): DeployedBattery | null {
+}: RotateBatteryParams): DeployedBattery | null {
   if (!isValidAngle(angle)) return null;
-  return generateDeploymentData({
+  return generateBattery({
     name: deployment.name,
     missileSystemType: deployment.missileSystemType,
     center: deployment.center,

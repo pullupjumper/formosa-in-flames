@@ -5,12 +5,12 @@ import type { DeployedBattery } from '@/types/deployment';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { calculateBearing, calculateCentroid } from '@/utils/geo';
 import {
-  generateDeploymentData,
+  generateBattery,
   generateOffsetsForAngle,
   isPointInTaiwan,
   relocateArea,
   resolveOpeningAngle,
-  rotateDeployment,
+  rotateBattery,
 } from '@/utils/deploymentGeometry';
 import type { PreviewOffsets } from '@/utils/deploymentGeometry';
 import type { Battery } from '../logic/batteryGroups';
@@ -76,7 +76,7 @@ export interface UseDeploymentStateParams {
    * Returns a warning to show instead of applying the change, or null to allow it.
    */
   validateMissilePosition?: (batteryName: string, position: Coordinate) => string | null;
-  onDeploySystem: (key: string, data: DeployedBattery) => void;
+  onDeployBattery: (key: string, data: DeployedBattery) => void;
   onUndeploySystem: (key: string) => void;
   onDeployJammer: (index: number, position: Coordinate) => void;
   onUndeployJammer: (index: number) => void;
@@ -97,7 +97,7 @@ export function useDeploymentState({
   shouldValidateTaiwanBoundary,
   isLocked = false,
   validateMissilePosition,
-  onDeploySystem,
+  onDeployBattery,
   onUndeploySystem,
   onDeployJammer,
   onUndeployJammer,
@@ -137,7 +137,7 @@ export function useDeploymentState({
   /** Injects the side's boundary rule into the pure generator */
   const createDeployment = useCallback(
     (name: string, missileSystemType: string, center: Coordinate, angle: number) =>
-      generateDeploymentData({
+      generateBattery({
         name,
         missileSystemType,
         center,
@@ -170,7 +170,7 @@ export function useDeploymentState({
       const deployment = deployedBatteries.get(batteryName);
       if (!deployment) return `Warning: ${label} is not deployed`;
 
-      const rotated = rotateDeployment({
+      const rotated = rotateBattery({
         deployment,
         angle: newAngle,
         validateTaiwanBoundary: shouldValidateTaiwanBoundary,
@@ -180,10 +180,10 @@ export function useDeploymentState({
       const rejection = rejectHideAreaPosition(batteryName, rotated);
       if (rejection) return rejection;
 
-      onDeploySystem(batteryName, rotated);
+      onDeployBattery(batteryName, rotated);
       return null;
     },
-    [deployedBatteries, shouldValidateTaiwanBoundary, rng, onDeploySystem, rejectHideAreaPosition]
+    [deployedBatteries, shouldValidateTaiwanBoundary, rng, onDeployBattery, rejectHideAreaPosition]
   );
 
   // ============================================================================
@@ -253,11 +253,11 @@ export function useDeploymentState({
         return;
       }
 
-      onDeploySystem(area.batteryName, result.data);
+      onDeployBattery(area.batteryName, result.data);
       setStatus(`${formatAreaLabel(area)} relocated for ${deployment.name}`);
       dispatch({ type: 'reset' });
     },
-    [deployedBatteries, shouldValidateTaiwanBoundary, rng, onDeploySystem, rejectHideAreaPosition]
+    [deployedBatteries, shouldValidateTaiwanBoundary, rng, onDeployBattery, rejectHideAreaPosition]
   );
 
   const commitDeployment = useCallback(
@@ -289,11 +289,11 @@ export function useDeploymentState({
         return;
       }
 
-      onDeploySystem(unit.name, deployment);
+      onDeployBattery(unit.name, deployment);
       setStatus(`Done: ${unit.name} deployed at ${formatPosition(position)}, Angle: ${autoAngle}`);
       dispatch({ type: 'reset' });
     },
-    [shouldValidateTaiwanBoundary, validateMissilePosition, createDeployment, onDeploySystem]
+    [shouldValidateTaiwanBoundary, validateMissilePosition, createDeployment, onDeployBattery]
   );
 
   const handleMapClick = useCallback(

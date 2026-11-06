@@ -102,9 +102,9 @@ function toPathPositionsList(paths: MovementPath[] | undefined): (LatLngExpressi
 }
 
 // ============================================================================
-// MissileSystemMarker Component
+// BatteryMarker Component
 // ============================================================================
-interface MissileSystemMarkerProps {
+interface BatteryMarkerProps {
   batteryName: string;
   data: DeployedBattery;
   /** Weapon range of this unit's firing unit, in NM */
@@ -118,7 +118,7 @@ interface MissileSystemMarkerProps {
   isRotating?: boolean;
 }
 
-export const MissileSystemMarker = memo(function MissileSystemMarker({
+export const BatteryMarker = memo(function BatteryMarker({
   batteryName,
   data,
   rangeNm,
@@ -127,7 +127,7 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
   relocatingArea,
   isAnyRelocating = false,
   isRotating,
-}: MissileSystemMarkerProps) {
+}: BatteryMarkerProps) {
   const { name, missileSystemType, tacticalAreas, paths } = data;
 
   const isAreaRelocating = useCallback(
@@ -369,9 +369,9 @@ export const MissileSystemMarker = memo(function MissileSystemMarker({
 });
 
 // ============================================================================
-// DeployedMissileSystems Component
+// DeployedBatteries Component
 // ============================================================================
-interface DeployedMissileSystemsProps {
+interface DeployedBatteriesProps {
   deployedBatteries: Map<string, DeployedBattery>;
   /** Weapon range in NM by battery name; units without an entry draw no range circle */
   weaponRanges: ReadonlyMap<string, number>;
@@ -381,20 +381,20 @@ interface DeployedMissileSystemsProps {
   rotatingBatteryName?: string | null;
 }
 
-export function DeployedMissileSystems({
+export function DeployedBatteries({
   deployedBatteries,
   weaponRanges,
   onAreaClick,
   onRotateClick,
   relocatingArea,
   rotatingBatteryName,
-}: DeployedMissileSystemsProps) {
+}: DeployedBatteriesProps) {
   const isAnyRelocating = Boolean(relocatingArea);
 
   return (
     <>
       {Array.from(deployedBatteries.entries()).map(([batteryName, data]) => (
-        <MissileSystemMarker
+        <BatteryMarker
           key={batteryName}
           batteryName={batteryName}
           data={data}
@@ -411,9 +411,9 @@ export function DeployedMissileSystems({
 }
 
 // ============================================================================
-// MissileSystemPreview Component
+// BatteryPreview Component
 // ============================================================================
-export function MissileSystemPreview({
+export function BatteryPreview({
   uShapeVertices,
   atpArea,
   hideArea,

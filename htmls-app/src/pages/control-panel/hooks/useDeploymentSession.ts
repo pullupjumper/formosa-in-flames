@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { DeployedBattery } from '@/types/deployment';
 import { CONFIG } from '@/constants/controlPanel';
-import { buildInjectedDeployments } from '@/pages/control-panel/logic/deploymentPayload';
+import { buildInjectedBatteries } from '@/pages/control-panel/logic/deploymentPayload';
 import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import type { ControlPanelPayload } from '../logic/controlPanelPayload';
 
@@ -17,8 +17,8 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
   const [deployedJammers, setDeployedJammers] = useState<Map<number, Coordinate>>(new Map());
   // Units the scenario already placed start out deployed; the injected payload
   // is read once, so seeding state here replaces a setState-in-effect.
-  const [injectedDeployments] = useState(() => buildInjectedDeployments(payload.batteries));
-  const [deployedBatteries, setDeployedBatteries] = useState(() => new Map(injectedDeployments));
+  const [injectedBatteries] = useState(() => buildInjectedBatteries(payload.batteries));
+  const [deployedBatteries, setDeployedBatteries] = useState(() => new Map(injectedBatteries));
 
   const updateAirbase = useCallback(
     (
@@ -32,11 +32,11 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
 
   // Deployment handlers — kept stable so the Deployment tab's memoized map layers
   // are not invalidated by unrelated re-renders (e.g. budget edits)
-  const deployMissileSystem = useCallback((key: string, data: DeployedBattery) => {
+  const deployBattery = useCallback((key: string, data: DeployedBattery) => {
     setDeployedBatteries((prev) => new Map(prev).set(key, data));
   }, []);
 
-  const undeployMissileSystem = useCallback((key: string) => {
+  const undeployBattery = useCallback((key: string) => {
     setDeployedBatteries((prev) => {
       const next = new Map(prev);
       next.delete(key);
@@ -65,9 +65,9 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
     deployJammer,
     undeployJammer,
     deployedBatteries,
-    injectedDeployments,
-    deployMissileSystem,
-    undeployMissileSystem,
+    injectedBatteries,
+    deployBattery,
+    undeployBattery,
   };
 }
 

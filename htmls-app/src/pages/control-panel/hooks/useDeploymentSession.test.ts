@@ -4,7 +4,7 @@ import { act, renderHook } from '@testing-library/react';
 import { CONFIG } from '@/constants/controlPanel';
 import type { DeployedBattery } from '@/types/deployment';
 import { createBudgetState } from '../logic/budgetLedger';
-import { buildInjectedDeployments } from '../logic/deploymentPayload';
+import { buildInjectedBatteries } from '../logic/deploymentPayload';
 import { readControlPanelPayload } from '../logic/controlPanelPayload';
 import type { ControlPanelPayload } from '../logic/controlPanelPayload';
 import { useDeploymentSession } from './useDeploymentSession';
@@ -37,7 +37,7 @@ describe('useDeploymentSession', () => {
 
     const { result } = renderHook(() => useDeploymentSession(payload));
 
-    expect(result.current.deployedBatteries).toEqual(buildInjectedDeployments(payload.batteries));
+    expect(result.current.deployedBatteries).toEqual(buildInjectedBatteries(payload.batteries));
     expect(result.current.deployedJammers.size).toBe(0);
   });
 
@@ -91,16 +91,16 @@ describe('useDeploymentSession', () => {
     it('remembers a missile system deployed by the player', () => {
       const { result } = renderHook(() => useDeploymentSession(buildPayload([])));
 
-      act(() => result.current.deployMissileSystem('player-unit', DEPLOYMENT));
+      act(() => result.current.deployBattery('player-unit', DEPLOYMENT));
 
       expect(result.current.deployedBatteries.get('player-unit')).toBe(DEPLOYMENT);
     });
 
     it('forgets a missile system once it is undeployed', () => {
       const { result } = renderHook(() => useDeploymentSession(buildPayload([])));
-      act(() => result.current.deployMissileSystem('player-unit', DEPLOYMENT));
+      act(() => result.current.deployBattery('player-unit', DEPLOYMENT));
 
-      act(() => result.current.undeployMissileSystem('player-unit'));
+      act(() => result.current.undeployBattery('player-unit'));
 
       expect(result.current.deployedBatteries.has('player-unit')).toBe(false);
     });
@@ -110,8 +110,8 @@ describe('useDeploymentSession', () => {
     const { result } = renderHook(() => useDeploymentSession(buildPayload([])));
     const before = {
       updateAirbase: result.current.updateAirbase,
-      deployMissileSystem: result.current.deployMissileSystem,
-      undeployMissileSystem: result.current.undeployMissileSystem,
+      deployBattery: result.current.deployBattery,
+      undeployBattery: result.current.undeployBattery,
       deployJammer: result.current.deployJammer,
       undeployJammer: result.current.undeployJammer,
     };
@@ -119,8 +119,8 @@ describe('useDeploymentSession', () => {
     act(() => result.current.setBudget(createBudgetState(1)));
 
     expect(result.current.updateAirbase).toBe(before.updateAirbase);
-    expect(result.current.deployMissileSystem).toBe(before.deployMissileSystem);
-    expect(result.current.undeployMissileSystem).toBe(before.undeployMissileSystem);
+    expect(result.current.deployBattery).toBe(before.deployBattery);
+    expect(result.current.undeployBattery).toBe(before.undeployBattery);
     expect(result.current.deployJammer).toBe(before.deployJammer);
     expect(result.current.undeployJammer).toBe(before.undeployJammer);
   });

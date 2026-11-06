@@ -30,7 +30,7 @@ export interface BatteryGroup {
 /** Groups batteries by type, in the order each type first appears. */
 export function buildBatteryGroups(
   batteries: PanelBattery[],
-  deployments: Map<string, DeployedBattery>
+  deployedBatteries: Map<string, DeployedBattery>
 ): BatteryGroup[] {
   const groups = new Map<string, BatteryGroup>();
 
@@ -39,7 +39,7 @@ export function buildBatteryGroups(
       name,
       missileSystem,
       missileSystemType,
-      deployment: deployments.get(name) ?? null,
+      deployment: deployedBatteries.get(name) ?? null,
       status,
     };
     const group = groups.get(battery.missileSystemType) ?? {

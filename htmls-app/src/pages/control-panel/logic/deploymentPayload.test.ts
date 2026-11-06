@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildInjectedDeployments,
+  buildInjectedBatteries,
   toExportPaths,
   toControlPanelResult,
 } from '@/pages/control-panel/logic/deploymentPayload';
 import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
-import { generateDeploymentData } from '@/utils/deploymentGeometry';
+import { generateBattery } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
 import { BATTERIES_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
@@ -13,9 +13,9 @@ import { BATTERIES_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
 const BATTERY = BATTERIES_DATA[0];
 const CATEGORY = BATTERY.missileSystemType;
 const UNIT_NAME = BATTERY.name;
-const INJECTED = buildInjectedDeployments([BATTERY]).get(UNIT_NAME)!;
+const INJECTED = buildInjectedBatteries([BATTERY]).get(UNIT_NAME)!;
 
-describe('buildInjectedDeployments', () => {
+describe('buildInjectedBatteries', () => {
   it('keeps identity and the placement verbatim', () => {
     expect(INJECTED.name).toBe(UNIT_NAME);
     expect(INJECTED.missileSystemType).toBe(CATEGORY);
@@ -38,7 +38,7 @@ describe('buildInjectedDeployments', () => {
       },
     };
 
-    expect(buildInjectedDeployments([noLoop]).get(UNIT_NAME)!.paths.SHRL).toEqual([]);
+    expect(buildInjectedBatteries([noLoop]).get(UNIT_NAME)!.paths.SHRL).toEqual([]);
   });
 
   it('rebuilds each fire point way back from its own route and the reload route', () => {
@@ -51,11 +51,11 @@ describe('buildInjectedDeployments', () => {
   });
 
   it('creates one entry per battery', () => {
-    expect(buildInjectedDeployments(BATTERIES_DATA).size).toBe(BATTERIES_DATA.length);
+    expect(buildInjectedBatteries(BATTERIES_DATA).size).toBe(BATTERIES_DATA.length);
   });
 });
 
-const GENERATED = generateDeploymentData({
+const GENERATED = generateBattery({
   name: UNIT_NAME,
   missileSystemType: CATEGORY,
   center: { latitude: 23.9, longitude: 120.75 },
@@ -98,7 +98,7 @@ describe('toControlPanelResult', () => {
     const result = toControlPanelResult({
       ...baseParams,
       deployedBatteries: new Map(injected),
-      injectedDeployments: injected,
+      injectedBatteries: injected,
     });
 
     expect(result.batteries).toEqual([]);
@@ -106,7 +106,7 @@ describe('toControlPanelResult', () => {
 
   it('keeps a unit the player redeployed', () => {
     const injected = new Map([['k', INJECTED]]);
-    const moved = generateDeploymentData({
+    const moved = generateBattery({
       name: UNIT_NAME,
       missileSystemType: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
@@ -118,7 +118,7 @@ describe('toControlPanelResult', () => {
     const result = toControlPanelResult({
       ...baseParams,
       deployedBatteries: new Map([['k', moved!]]),
-      injectedDeployments: injected,
+      injectedBatteries: injected,
     });
 
     expect(result.batteries.map((battery) => battery.name)).toEqual([UNIT_NAME]);
@@ -126,7 +126,7 @@ describe('toControlPanelResult', () => {
 
   it('uses the Lua field names and the trimmed paths', () => {
     const rng = createSeededRandom(7);
-    const generated = generateDeploymentData({
+    const generated = generateBattery({
       name: UNIT_NAME,
       missileSystemType: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
@@ -142,7 +142,7 @@ describe('toControlPanelResult', () => {
       jammers: JAMMERS_DATA,
       deployedJammers: new Map([[0, { latitude: 24, longitude: 121 }]]),
       deployedBatteries: new Map([['k', generated!]]),
-      injectedDeployments: new Map(),
+      injectedBatteries: new Map(),
     });
 
     expect(result.budget).toEqual({ initial: 1000, used: 0, remaining: 1000 });

@@ -15,7 +15,7 @@ import { calculateCentroid } from '@/utils/geo';
  * Shape conversion between the Lua payload and the map-side deployment
  * (`controlPanelPayload.ts` owns the `window` reads and host writes).
  *
- * Import side: `buildInjectedDeployments`.
+ * Import side: `buildInjectedBatteries`.
  * Export side: `toControlPanelResult`.
  * Both are pure, so a round-trip test can pin the payload convention without
  * a browser.
@@ -31,7 +31,7 @@ import { calculateCentroid } from '@/utils/geo';
  * Lua stores one reload route, so each fire point's way back is that route
  * from where the fire point's own route ends.
  */
-export function buildInjectedDeployments(batteries: PanelBattery[]): Map<string, DeployedBattery> {
+export function buildInjectedBatteries(batteries: PanelBattery[]): Map<string, DeployedBattery> {
   return new Map(
     batteries.map(({ name, missileSystemType, placement }) => {
       const { tacticalAreas, paths } = placement;
@@ -91,7 +91,7 @@ export interface ToControlPanelResultParams {
   deployedJammers: Map<number, Coordinate>;
   deployedBatteries: Map<string, DeployedBattery>;
   /** The scenario's own placements; a unit still holding its entry was not moved */
-  injectedDeployments: ReadonlyMap<string, DeployedBattery>;
+  injectedBatteries: ReadonlyMap<string, DeployedBattery>;
 }
 
 export function toControlPanelResult({
@@ -100,7 +100,7 @@ export function toControlPanelResult({
   jammers,
   deployedJammers,
   deployedBatteries,
-  injectedDeployments,
+  injectedBatteries,
 }: ToControlPanelResultParams): ControlPanelResult {
   return {
     budget: { initial: budget.total, used: budget.used, remaining: budget.current },
@@ -116,7 +116,7 @@ export function toControlPanelResult({
       };
     }),
     batteries: Array.from(deployedBatteries.entries())
-      .filter(([key, deployment]) => injectedDeployments.get(key) !== deployment)
+      .filter(([key, deployment]) => injectedBatteries.get(key) !== deployment)
       .map(([, deployment]) => ({
         name: deployment.name,
         missileSystemType: deployment.missileSystemType,

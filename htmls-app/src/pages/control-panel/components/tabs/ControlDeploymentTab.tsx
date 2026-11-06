@@ -46,7 +46,7 @@ export function ControlDeploymentTab({
     airbases,
     budget,
     deployedBatteries,
-    injectedDeployments,
+    injectedBatteries,
     deployedJammers,
     setBudget: onBudgetChange,
     updateAirbase: onUpdateAirbase,
@@ -61,8 +61,8 @@ export function ControlDeploymentTab({
     shouldValidateTaiwanBoundary,
     isLocked: isDeploymentLocked,
     validateMissilePosition: c2.validateMissilePosition,
-    onDeploySystem: session.deployMissileSystem,
-    onUndeploySystem: session.undeployMissileSystem,
+    onDeployBattery: session.deployBattery,
+    onUndeploySystem: session.undeployBattery,
     onDeployJammer: session.deployJammer,
     onUndeployJammer: session.undeployJammer,
   });
@@ -88,7 +88,7 @@ export function ControlDeploymentTab({
       jammers,
       deployedJammers,
       deployedBatteries,
-      injectedDeployments,
+      injectedBatteries,
     });
     const doctrine = c2.buildEmconResult();
     console.log('Export data:', result, doctrine);

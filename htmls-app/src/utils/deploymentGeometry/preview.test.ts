@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { Coordinate } from '@/types/geo';
 import { createSeededRandom } from '@/utils/random';
 import { AREA_CONFIG, REF_CENTER } from './config';
-import { generateDeploymentData } from './deploy';
+import { generateBattery } from './deploy';
 import { generateLayout } from './layout';
 import {
   generateOffsetsForAngle,
@@ -14,7 +14,7 @@ import {
 const INLAND: Coordinate = { latitude: 23.9, longitude: 120.75 };
 
 function place(seed: number) {
-  const deployment = generateDeploymentData({
+  const deployment = generateBattery({
     name: 'u',
     missileSystemType: 'ascm',
     center: INLAND,

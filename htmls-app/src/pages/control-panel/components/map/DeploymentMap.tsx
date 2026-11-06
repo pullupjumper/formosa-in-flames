@@ -6,8 +6,8 @@ import {
   AirbaseMarkers,
   SignalMarkers,
   C2Layers,
-  DeployedMissileSystems,
-  MissileSystemPreview,
+  DeployedBatteries,
+  BatteryPreview,
   AreaRelocatePreview,
   DeployedJammers,
   JammerRelocatePreview,
@@ -87,7 +87,7 @@ export function DeploymentMap({
     >
       <C2Layers layers={c2Layers} />
       <AirbaseMarkers airbases={airbases} />
-      <DeployedMissileSystems
+      <DeployedBatteries
         deployedBatteries={deployedBatteries}
         weaponRanges={weaponRanges}
         onAreaClick={onAreaClick}
@@ -109,8 +109,8 @@ export function DeploymentMap({
       {relocatePreviewVertices && relocatingArea && (
         <AreaRelocatePreview vertices={relocatePreviewVertices} areaType={relocatingArea.type} />
       )}
-      {rotationPreview && <MissileSystemPreview {...rotationPreview} />}
-      {deployPreview && <MissileSystemPreview {...deployPreview} />}
+      {rotationPreview && <BatteryPreview {...rotationPreview} />}
+      {deployPreview && <BatteryPreview {...deployPreview} />}
     </BaseMap>
   );
 }

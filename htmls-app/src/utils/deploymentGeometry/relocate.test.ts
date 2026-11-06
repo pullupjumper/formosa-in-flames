@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Coordinate } from '@/types/geo';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
-import { generateDeploymentData } from './deploy';
+import { generateBattery } from './deploy';
 import { relocateArea } from './relocate';
 
 /** Inland point that clears the Taiwan boundary check for a whole boundary */
@@ -16,7 +16,7 @@ function shifted(base: Coordinate, latitudeDelta: number, longitudeDelta: number
 
 /** Deterministic deployment used as the "before" state of every move */
 function deployed() {
-  const data = generateDeploymentData({
+  const data = generateBattery({
     name: 'HF3 Battery 1',
     missileSystemType: 'ascm',
     center: INLAND,

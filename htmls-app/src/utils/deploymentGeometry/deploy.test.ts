@@ -3,12 +3,7 @@ import type { Coordinate } from '@/types/geo';
 import { areAllPointsInPolygon, calculateCentroid, calculateDistance } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
 import { AREA_CONFIG } from './config';
-import {
-  generateDeploymentData,
-  isValidAngle,
-  resolveOpeningAngle,
-  rotateDeployment,
-} from './deploy';
+import { generateBattery, isValidAngle, resolveOpeningAngle, rotateBattery } from './deploy';
 import { relocateArea } from './relocate';
 
 /** Inland point that clears the Taiwan boundary check for a whole boundary */
@@ -37,7 +32,7 @@ describe('isValidAngle', () => {
 // ============================================================================
 // GENERATE
 // ============================================================================
-describe('generateDeploymentData', () => {
+describe('generateBattery', () => {
   const baseParams = {
     name: 'HF3_01',
     missileSystemType: 'ascm',
@@ -46,7 +41,7 @@ describe('generateDeploymentData', () => {
   };
 
   it('produces a complete deployment inland', () => {
-    const data = generateDeploymentData({
+    const data = generateBattery({
       ...baseParams,
       center: INLAND,
       rng: createSeededRandom(42),
@@ -67,7 +62,7 @@ describe('generateDeploymentData', () => {
   });
 
   it('keeps HA, RL and shelters inside the generated boundary', () => {
-    const data = generateDeploymentData({
+    const data = generateBattery({
       ...baseParams,
       center: INLAND,
       rng: createSeededRandom(11),
@@ -80,7 +75,7 @@ describe('generateDeploymentData', () => {
   });
 
   it('rejects an offshore location when the boundary check is on', () => {
-    const data = generateDeploymentData({
+    const data = generateBattery({
       ...baseParams,
       center: OFFSHORE,
       rng: createSeededRandom(1),
@@ -89,7 +84,7 @@ describe('generateDeploymentData', () => {
   });
 
   it('accepts the same offshore location when the boundary check is off', () => {
-    const data = generateDeploymentData({
+    const data = generateBattery({
       ...baseParams,
       validateTaiwanBoundary: false,
       center: OFFSHORE,
@@ -100,7 +95,7 @@ describe('generateDeploymentData', () => {
 
   it('honours the ATP radius and center overrides', () => {
     const atpCenterOverride = shifted(INLAND, 0.05, 0.05);
-    const data = generateDeploymentData({
+    const data = generateBattery({
       ...baseParams,
       center: INLAND,
       atpRadiusOverride: 4,
@@ -117,7 +112,7 @@ describe('generateDeploymentData', () => {
 
   it('is reproducible for a given seed', () => {
     const run = () =>
-      generateDeploymentData({
+      generateBattery({
         ...baseParams,
         center: INLAND,
         rng: createSeededRandom(2024),
@@ -127,7 +122,7 @@ describe('generateDeploymentData', () => {
 
   it('returns null and reports when the layout throws', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const data = generateDeploymentData({
+    const data = generateBattery({
       ...baseParams,
       center: { latitude: NaN, longitude: INLAND.longitude },
       rng: createSeededRandom(1),
@@ -141,10 +136,10 @@ describe('generateDeploymentData', () => {
 // ============================================================================
 // ROTATE
 // ============================================================================
-describe('rotateDeployment', () => {
+describe('rotateBattery', () => {
   function place(seed: number) {
     const rng = createSeededRandom(seed);
-    const deployment = generateDeploymentData({
+    const deployment = generateBattery({
       name: 'u',
       missileSystemType: 'ascm',
       center: INLAND,
@@ -158,7 +153,7 @@ describe('rotateDeployment', () => {
 
   it('keeps the fire points and routes every FP path to them', () => {
     const { deployment, rng } = place(3);
-    const rotated = rotateDeployment({
+    const rotated = rotateBattery({
       deployment,
       angle: 270,
       validateTaiwanBoundary: false,
@@ -187,7 +182,7 @@ describe('rotateDeployment', () => {
     expect(moved.ok).toBe(true);
     if (!moved.ok) return;
 
-    const rotated = rotateDeployment({
+    const rotated = rotateBattery({
       deployment: moved.data,
       angle: 180,
       validateTaiwanBoundary: false,
@@ -202,7 +197,7 @@ describe('rotateDeployment', () => {
   it('rejects an out-of-range angle', () => {
     const { deployment, rng } = place(7);
     expect(
-      rotateDeployment({ deployment, angle: 400, validateTaiwanBoundary: false, rng })
+      rotateBattery({ deployment, angle: 400, validateTaiwanBoundary: false, rng })
     ).toBeNull();
   });
 });

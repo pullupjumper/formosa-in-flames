@@ -71,7 +71,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
 - PascalCase, no `I` prefix.
 - Suffixes carry fixed meaning:
   - `Props` — component props (`{ComponentName}Props`)
-  - `Params` — object argument of a function or hook (`Use{Hook}Params`, `GenerateDeploymentParams`)
+  - `Params` — object argument of a function or hook (`Use{Hook}Params`, `GenerateBatteryParams`)
   - `Result` — object returned by a function (`GenerateResult`, `RelocateResult`)
   - `Config` — static option object (`AreaConfig`, `GatewayConfig`)
   - `State` — reducer / `useState` shape (`BudgetState`, `DeploymentModeState`)

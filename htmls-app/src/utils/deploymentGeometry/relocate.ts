@@ -5,7 +5,7 @@ import type { RelocatingArea, SquareAreaType } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInPolygon, calculateCentroid } from '@/utils/geo';
 import { AREA_CONFIG, AREA_SQUARE_SIZE } from './config';
-import { generateDeploymentData } from './deploy';
+import { generateBattery } from './deploy';
 import { buildMovementPaths } from './paths';
 import { buildShelterPlan, resolveGateways } from './shelter';
 import type { Gateways } from './shelter';
@@ -62,7 +62,7 @@ function buildUShapeUpdate(
   validateTaiwanBoundary: boolean,
   rng: RandomSource
 ): AreaUpdateResult {
-  const regenerated = generateDeploymentData({
+  const regenerated = generateBattery({
     name: deployment.name,
     missileSystemType: deployment.missileSystemType,
     center: position,

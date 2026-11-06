@@ -9,12 +9,12 @@
  */
 
 export {
-  generateDeploymentData,
-  rotateDeployment,
+  generateBattery,
+  rotateBattery,
   isValidAngle,
   resolveOpeningAngle,
-  type GenerateDeploymentParams,
-  type RotateDeploymentParams,
+  type GenerateBatteryParams,
+  type RotateBatteryParams,
 } from './deploy';
 
 export {
