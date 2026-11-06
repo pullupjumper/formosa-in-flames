@@ -154,6 +154,10 @@ camelCase，動詞開頭。動詞先從下表挑，挑不到才用領域動詞�
 - 型別名一律單數，不用複數：用 `Layout`、`Set` 這類單數集合名詞，不寫 `Areas`、`Paths`。
 - `SBJ__LogReport` 有 `add`、`emit` 方法，是物件不是 Result，保留。
 - `SBJ__SaveData` 及各陣營 `*SaveData` 是存檔根物件，不改 `State`。
+- 控制面板的型別（`schema.lua` 的 UI contract 區塊）：
+  - 能直接用 config 型別就用，不另外定義：`SBJ__GNSSJammerDescriptor`、`SBJ__AirbaseDeploymentDescriptor`。
+  - 只有 config 沒有的資料才另外定義，面板列出的一筆加 `Panel` 前綴：`SBJ__PanelBattery`。
+  - 送出去和送回來用同一個型別。送回來的欄位比較少時，抽出共用的小型別讓大的繼承：`SBJ__PanelBattery: SBJ__PlacedBattery`，送回來用 `SBJ__PlacedBattery`。
 
 ## 7. `config.lua` 與 `constants.lua` 的 key
 

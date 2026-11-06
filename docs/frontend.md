@@ -76,7 +76,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
   - `Config` — static option object (`AreaConfig`, `GatewayConfig`)
   - `State` — reducer / `useState` shape (`BudgetState`, `DeploymentModeState`)
   - `Data` — **only** the root type of a Lua-injected payload (`SetupMenuData`, `UnitStatusData`)
-- Domain objects are bare nouns: `Airbase`, `MissileDeployment`, `Coordinate`. Generated types keep their Lua name minus `SBJ__`, suffix included (`GNSSJammerDescriptor`, `ControlPanelResult`).
+- Domain objects are bare nouns: `Battery`, `Coordinate`. Generated types keep their Lua name minus `SBJ__`, suffix included (`GNSSJammerDescriptor`, `ControlPanelResult`).
 - String literal unions are lowercase-kebab (`'signal-data'`, `'outside-boundary'`); reducer action `type`s stay camelCase (`'relocateArea'`).
 
 ### Coordinates

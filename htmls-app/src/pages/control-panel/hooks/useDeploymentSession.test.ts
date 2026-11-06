@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/generated';
+import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { CONFIG } from '@/constants/controlPanel';
@@ -12,11 +12,11 @@ import { useDeploymentSession } from './useDeploymentSession';
 // ============================================================================
 // FIXTURES
 // ============================================================================
-function buildAirbase(name: string): Airbase {
+function buildAirbase(name: string): AirbaseDeploymentDescriptor {
   return { name, longitude: 120, latitude: 23, baseGUID: `guid-${name}` };
 }
 
-function buildPayload(airbases: Airbase[]): ControlPanelPayload {
+function buildPayload(airbases: AirbaseDeploymentDescriptor[]): ControlPanelPayload {
   return { ...readControlPanelPayload(), airbases };
 }
 

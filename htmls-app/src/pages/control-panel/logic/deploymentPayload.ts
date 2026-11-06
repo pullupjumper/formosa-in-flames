@@ -1,5 +1,5 @@
 import type {
-  Airbase,
+  AirbaseDeploymentDescriptor,
   ControlPanelResult,
   GNSSJammerDescriptor,
   MovementPathSet,
@@ -79,7 +79,7 @@ export function toExportPaths(paths: MovementPathSet): MovementPathSet {
 
 export interface ToControlPanelResultParams {
   budget: BudgetState;
-  airbases: Airbase[];
+  airbases: AirbaseDeploymentDescriptor[];
   jammers: GNSSJammerDescriptor[];
   deployedJammers: Map<number, Coordinate>;
   deployedMissileSystems: Map<string, MissileDeployment>;

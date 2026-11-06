@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/generated';
+import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import { memo, useMemo } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
@@ -15,7 +15,7 @@ const AIRBASE_ICON = L.icon({
 });
 
 interface AirbaseMarkerProps {
-  airbase: Airbase;
+  airbase: AirbaseDeploymentDescriptor;
   index: number;
   onClick?: (index: number) => void;
 }
@@ -29,11 +29,17 @@ export const AirbaseMarker = memo(function AirbaseMarker({
     () => (onClick ? { click: () => onClick(index) } : undefined),
     [onClick, index]
   );
+  const { latitude, longitude } = airbase;
+  if (latitude === undefined || longitude === undefined) return null;
 
   return (
-    <Marker position={toLeafletLatLng(airbase)} icon={AIRBASE_ICON} eventHandlers={eventHandlers}>
+    <Marker
+      position={toLeafletLatLng({ latitude, longitude })}
+      icon={AIRBASE_ICON}
+      eventHandlers={eventHandlers}
+    >
       <MapPopup
-        name={airbase.name}
+        name={airbase.name ?? 'Unknown airbase'}
         subtitle="Airbase"
         // rows={[
         //   { label: 'Latitude', value: `${airbase.latitude.toFixed(6)}°` },
@@ -64,7 +70,7 @@ export const AirbaseMarker = memo(function AirbaseMarker({
 });
 
 interface AirbaseMarkersProps {
-  airbases: Airbase[];
+  airbases: AirbaseDeploymentDescriptor[];
   /** Must be referentially stable, otherwise every marker rebinds its listener */
   onAirbaseClick?: (index: number) => void;
 }

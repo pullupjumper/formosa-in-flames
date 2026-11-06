@@ -1,6 +1,6 @@
 import type {
   AddUnitOption,
-  Airbase,
+  AirbaseDeploymentDescriptor,
   AmphibiousLocation,
   GNSSJammerDescriptor,
   PanelBattery,
@@ -27,7 +27,7 @@ export const JAMMERS_DATA: GNSSJammerDescriptor[] = [
 // ============================================================================
 // AIRBASES DATA
 // ============================================================================
-export const AIRBASES_DATA: Airbase[] = [
+export const AIRBASES_DATA: AirbaseDeploymentDescriptor[] = [
   {
     name: 'Ching Chuang Kang AB',
     longitude: 120.61987074635,

@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/generated';
+import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/map';
 import { BaseEditor } from '@pages/control-panel/components/sections/BaseEditor';
@@ -7,12 +7,15 @@ import { BaseEditor } from '@pages/control-panel/components/sections/BaseEditor'
 // AircraftBasesSection — budget plus one loadout card per airbase
 // ============================================================================
 interface AircraftBasesSectionProps {
-  airbases: Airbase[];
+  airbases: AirbaseDeploymentDescriptor[];
   /** Untouched injected airbases, used as the budget floor. See BaseEditor. */
-  baselineAirbases: Airbase[];
+  baselineAirbases: AirbaseDeploymentDescriptor[];
   budget: BudgetState;
   onBudgetChange: (next: BudgetState) => void;
-  onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
+  onUpdateAirbase: (
+    index: number,
+    updater: (base: AirbaseDeploymentDescriptor) => AirbaseDeploymentDescriptor
+  ) => void;
   onError: (message: string) => void;
 }
 

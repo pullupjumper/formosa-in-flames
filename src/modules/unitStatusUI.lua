@@ -168,7 +168,7 @@ end
 local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
-  ---@type SBJ__Airbase[]
+  ---@type SBJ__AirbaseDeploymentDescriptor[]
   local rows = {}
   local descriptors = config[field].air.deployedACs
 

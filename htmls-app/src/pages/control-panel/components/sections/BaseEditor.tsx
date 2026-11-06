@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/generated';
+import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { CONFIG } from '@/constants/controlPanel';
 import { settleQuantityChange } from '@/pages/control-panel/logic/budgetLedger';
@@ -7,13 +7,16 @@ import { settleQuantityChange } from '@/pages/control-panel/logic/budgetLedger';
 // BaseEditor
 // ============================================================================
 interface BaseEditorProps {
-  base: Airbase;
+  base: AirbaseDeploymentDescriptor;
   /** Same base as injected, before any player edits */
-  baseline: Airbase | undefined;
+  baseline: AirbaseDeploymentDescriptor | undefined;
   baseIndex: number;
   budget: BudgetState;
   onBudgetChange: (next: BudgetState) => void;
-  onUpdateAirbase: (index: number, updater: (base: Airbase) => Airbase) => void;
+  onUpdateAirbase: (
+    index: number,
+    updater: (base: AirbaseDeploymentDescriptor) => AirbaseDeploymentDescriptor
+  ) => void;
   onError: (message: string) => void;
 }
 

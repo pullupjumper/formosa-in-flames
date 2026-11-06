@@ -1,7 +1,7 @@
 import type {
   AddUnitOption,
   AddUnitsMenuResult,
-  Airbase,
+  AirbaseDeploymentDescriptor,
   AmphibiousLocation,
   C2NodeSet,
   ControlPanelResult,
@@ -59,7 +59,7 @@ declare global {
 export interface ControlPanelPayload {
   sideName: string;
   mode: ControlPanelMode;
-  airbases: Airbase[];
+  airbases: AirbaseDeploymentDescriptor[];
   jammers: GNSSJammerDescriptor[];
   batteries: PanelBattery[];
   amphibiousLocations: AmphibiousLocation[];
@@ -77,7 +77,11 @@ export function readControlPanelPayload(): ControlPanelPayload {
       isEditMode: readInjectedBoolean(window.__INJECT_IS_EDIT_MODE__, true),
       isDeployLocked: readInjectedBoolean(window.__INJECT_IS_DEPLOY_LOCKED__, false),
     },
-    airbases: parseInjectedJSON<Airbase[]>(window.__INJECT_AIRBASES__, AIRBASES_DATA, 'AIRBASES'),
+    airbases: parseInjectedJSON<AirbaseDeploymentDescriptor[]>(
+      window.__INJECT_AIRBASES__,
+      AIRBASES_DATA,
+      'AIRBASES'
+    ),
     jammers: parseInjectedJSON<GNSSJammerDescriptor[]>(
       window.__INJECT_JAMMERS__,
       JAMMERS_DATA,

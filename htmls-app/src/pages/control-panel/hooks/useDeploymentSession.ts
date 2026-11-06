@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/generated';
+import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment } from '@/types/deployment';
@@ -22,9 +22,15 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
     () => new Map(injectedDeployments)
   );
 
-  const updateAirbase = useCallback((index: number, updater: (base: Airbase) => Airbase) => {
-    setAirbases((prev) => prev.map((base, i) => (i === index ? updater(base) : base)));
-  }, []);
+  const updateAirbase = useCallback(
+    (
+      index: number,
+      updater: (base: AirbaseDeploymentDescriptor) => AirbaseDeploymentDescriptor
+    ) => {
+      setAirbases((prev) => prev.map((base, i) => (i === index ? updater(base) : base)));
+    },
+    []
+  );
 
   // Deployment handlers — kept stable so the Deployment tab's memoized map layers
   // are not invalidated by unrelated re-renders (e.g. budget edits)

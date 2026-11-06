@@ -78,3 +78,40 @@
 - 舊的前端 `fromOperationalArea` 對 mock 的 3 個連算出的結果，跟新的 Lua `buildPlacement` 算出的完全一樣。
 - 真的 config（台灣 25 連、中國 19 連）經 Lua JSON 進前端後，每條路徑都是陣列，中心點都是有限數字。
 - `busted --lua=luajit spec`、`bash bin/build.sh -c -n -l -i`、`npm test`、`npm run lint` 都通過。
+
+## 第三步：面板型別對齊 config 與 Lua 作戰區
+
+### 目標
+
+面板和 Lua 對同一個東西用不同的名字和形狀。前端的部署叫 `MissileDeployment`、欄位叫 `unitname`，Lua 和 `PanelBattery` 叫 `name`。路徑和區域在前端是單一物件，Lua 作戰區每種陣地（FP、HA、ATP、RL、SHRL）都是陣列。前端的 `RL[i]` 是「第 i 個發射點回重裝點」，Lua 的 `RL[i]` 是「第 i 個重裝陣地」，而 `buildOperationalArea` 只讀 `RL[1]`。這一步把面板的命名和形狀對齊 Lua，保留以後一種陣地有多個的彈性。
+
+### 要做到的行為
+
+- 面板型別規則照 `docs/naming.md` §6：能用 config 型別就用，config 沒有的資料才另外定義；送出和送回共用型別，送回的比較小就抽出共用的小型別。
+- 前端的砲連部署改叫 battery，身分欄位用 `name`。部署 map 的 key 只用 `name`，不再加系統類型。
+- 同一陣營的發射車名字不能重複，有測試直接檢查真的 config。
+- 路徑每種陣地都是路徑陣列，區域每種陣地都是多邊形陣列，key 用陣地代號（FP、HA、ATP、RL），跟路徑和 Lua 一樣。`uShapeVertices`、`shelterPoints` 不變。
+- 目前 HA、ATP、RL、SHRL 都只有一個，前端只產生一個，Lua 照陣列逐一建立。
+- `RL[i]` 的意思改成第 i 個重裝陣地，跟 Lua 一樣。送出的 `RL[0]` 跟現在送的 `RL[0]` 是同一組點。
+- 「每個發射點回重裝點」的線只給地圖畫，不放進往返的資料：
+  - 剛畫好的砲連：照現在的算法，從發射點中心繞開 ATP、HA 到重裝點中心。
+  - 讀檔進來的砲連：照現在 Lua `buildPlacement` 的拼法，發射點路徑終點接上 `RL[0]` 路線。
+- 地圖上每一條線、送出後遊戲裡單位的路線，都跟改之前一樣。
+
+### 不做
+
+- 不改存檔形狀和 config 形狀，Lua 作戰區不動。
+- 不改單位從 FP2 以後回重裝點時走 FP1 那條路線的現況。
+- 不處理 `SBJ__AirbaseDeploymentDescriptor` 被機場和船共用的問題（naming review N9）。
+
+### 決定
+
+- 推翻第一步的「機場另外定 `SBJ__Airbase`」：面板直接用 `SBJ__AirbaseDeploymentDescriptor`，跟干擾機用 `SBJ__GNSSJammerDescriptor` 一致。沒有座標的機場地圖上不畫。
+- 送回的砲連改用 `SBJ__PlacedBattery`（名字、系統類型、`placement`），`SBJ__PanelBattery` 繼承它。`SBJ__MissileSystemResult` 刪除，`ControlPanelResult` 的欄位改叫 `batteries`，不再送 Lua 沒讀的 `key`。
+- ATP 的 `atpCenter`、`atpRadius` 維持單一，對應 ATP 的第一個區域。
+
+### 驗收
+
+- 同一份 mock 和真的 config（台灣 25 連、中國 19 連）：改前改後地圖上每條路徑的點完全一樣，送回 Lua 的 `RL[0]` 也一樣。
+- 遊戲裡：控制面板搬一個砲連、存檔再讀檔，地圖上的線跟改之前一樣，機場正常顯示。
+- `busted --lua=luajit spec`、`bash bin/build.sh -c -n -l -i`、`npm test`、`npm run lint` 都通過。

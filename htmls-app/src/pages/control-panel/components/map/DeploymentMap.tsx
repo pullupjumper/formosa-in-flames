@@ -1,4 +1,4 @@
-import type { Airbase, GNSSJammerDescriptor, Signal } from '@/types/generated';
+import type { AirbaseDeploymentDescriptor, GNSSJammerDescriptor, Signal } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
 import type { MissileDeployment } from '@/types/deployment';
 import {
@@ -21,7 +21,7 @@ import type { DeploymentPreview } from '../../hooks/useDeploymentPreviews';
 // ============================================================================
 interface DeploymentMapProps {
   sideName: string;
-  airbases: Airbase[];
+  airbases: AirbaseDeploymentDescriptor[];
   jammers: GNSSJammerDescriptor[];
   deployedMissileSystems: Map<string, MissileDeployment>;
   weaponRanges: ReadonlyMap<string, number>;

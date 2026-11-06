@@ -544,18 +544,6 @@ function ScenEdit_DeleteMine(params) end
 -- ============================================================================
 -- Airbase and embarked unit configuration
 
----Airbase deployment descriptor
----Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
----Used for scenario initialization and deployment planning
----@class SBJ__AirbaseDeploymentDescriptor: table
----@field name? string Airbase name
----@field baseGUID? string Airbase unit GUID reference
----@field dbid? number Database ID if the object is a ship
----@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft units stationed at this base
----@field loadouts? SBJ__Loadout[] Ammunition stockpile in base magazines
----@field latitude? number Airbase latitude coordinate
----@field longitude? number Airbase longitude coordinate
-
 ---Per-DBID attrition detail for an airbase
 ---@class SBJ__AirbaseAttritionEntry: table
 ---@field dbid number Aircraft DBID
@@ -2185,14 +2173,17 @@ function ScenEdit_DeleteMine(params) end
 ---@field dbid number Unit database ID
 ---@field loadouts? SBJ__Loadout[] Unit ammunition configuration
 
----An airbase the control panel lists, at its base unit's position
----@class SBJ__Airbase: SBJ__AirbaseDeploymentDescriptor
----@field name string Airbase name
----@field baseGUID string Airbase unit GUID
----@field latitude number Base unit latitude
----@field longitude number Base unit longitude
+---Airbase deployment descriptor
+---Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
+---Used for scenario initialization and deployment planning
+---@class SBJ__AirbaseDeploymentDescriptor: table
+---@field name? string Airbase name
+---@field baseGUID? string Airbase unit GUID reference
+---@field dbid? number Database ID if the object is a ship
 ---@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft units stationed at this base
 ---@field loadouts? SBJ__Loadout[] Ammunition stockpile in base magazines
+---@field latitude? number Airbase latitude; the control panel fills it from the base unit
+---@field longitude? number Airbase longitude; the control panel fills it from the base unit
 
 ---GNSS jammer deployment descriptor
 ---Serves as a blueprint for creating jammer units, related events, and jamming zones
@@ -2320,7 +2311,7 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__ControlPanelResult: table
 ---@field budget SBJ__BudgetResult Point budget the player spent
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
----@field airbases SBJ__Airbase[] Airbase deployment configurations
+---@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
 ---@field batteries SBJ__PlacedBattery[] Batteries the player moved; unmoved batteries are left out
 
 ---Add-units menu result containing the ticked action ids

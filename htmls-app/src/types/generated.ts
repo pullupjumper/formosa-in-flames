@@ -31,20 +31,26 @@ export interface EmbarkedUnit {
   loadouts?: Loadout[];
 }
 
-/** An airbase the control panel lists, at its base unit's position */
-export interface Airbase {
+/**
+ * Airbase deployment descriptor
+ * Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
+ * Used for scenario initialization and deployment planning
+ */
+export interface AirbaseDeploymentDescriptor {
   /** Airbase name */
-  name: string;
-  /** Airbase unit GUID */
-  baseGUID: string;
-  /** Base unit latitude */
-  latitude: number;
-  /** Base unit longitude */
-  longitude: number;
+  name?: string;
+  /** Airbase unit GUID reference */
+  baseGUID?: string;
+  /** Database ID if the object is a ship */
+  dbid?: number;
   /** Aircraft units stationed at this base */
   embarkedUnits?: EmbarkedUnit[];
   /** Ammunition stockpile in base magazines */
   loadouts?: Loadout[];
+  /** Airbase latitude; the control panel fills it from the base unit */
+  latitude?: number;
+  /** Airbase longitude; the control panel fills it from the base unit */
+  longitude?: number;
 }
 
 /**
@@ -265,7 +271,7 @@ export interface ControlPanelResult {
   /** GNSS jammer deployment configurations */
   jammers: GNSSJammerDescriptor[];
   /** Airbase deployment configurations */
-  airbases: Airbase[];
+  airbases: AirbaseDeploymentDescriptor[];
   /** Batteries the player moved; unmoved batteries are left out */
   batteries: PlacedBattery[];
 }
