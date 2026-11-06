@@ -1,13 +1,17 @@
 import type {
-  AddUnitAction,
+  AddUnitOption,
   AddUnitsMenuResult,
   Airbase,
   AmphibiousLocation,
-  Jammer,
-  MissileSystemTypes,
+  BatteryStatus,
+  C2NodeSet,
   ControlPanelResult,
-} from '@/types/controlPanel';
-import type { BatteryStatus, C2Nodes, LandingUnits, Signal } from '@/types/controlPanel';
+  EmconResult,
+  GNSSJammerDescriptor,
+  LandingUnitCountSet,
+  PanelMissileSystemSet,
+  Signal,
+} from '@/types/generated';
 import {
   AIRBASES_DATA,
   JAMMERS_DATA,
@@ -16,7 +20,6 @@ import {
   MOCK_ADD_UNIT_ACTIONS,
 } from '@/data/controlPanelData';
 import { LIVE_STATUS_DATA } from '@/data/liveStatusData';
-import type { C2ContextEntry, SamDoctrineEntry } from './c2Nodes';
 import {
   parseInjectedJSON,
   readInjectedBoolean,
@@ -59,14 +62,14 @@ export interface ControlPanelPayload {
   sideName: string;
   mode: ControlPanelMode;
   airbases: Airbase[];
-  jammers: Jammer[];
-  missileSystems: MissileSystemTypes;
+  jammers: GNSSJammerDescriptor[];
+  missileSystems: PanelMissileSystemSet;
   amphibiousLocations: AmphibiousLocation[];
-  c2Data: C2Nodes;
+  c2Data: C2NodeSet;
   signals: Signal[];
   batteryStatuses: BatteryStatus[];
-  landingUnits: LandingUnits;
-  addUnitActions: AddUnitAction[];
+  landingUnits: LandingUnitCountSet;
+  addUnitActions: AddUnitOption[];
 }
 
 export function readControlPanelPayload(): ControlPanelPayload {
@@ -78,8 +81,12 @@ export function readControlPanelPayload(): ControlPanelPayload {
       isDeployLocked: readInjectedBoolean(window.__INJECT_IS_DEPLOY_LOCKED__, false),
     },
     airbases: parseInjectedJSON<Airbase[]>(window.__INJECT_AIRBASES__, AIRBASES_DATA, 'AIRBASES'),
-    jammers: parseInjectedJSON<Jammer[]>(window.__INJECT_JAMMERS__, JAMMERS_DATA, 'JAMMERS'),
-    missileSystems: parseInjectedJSON<MissileSystemTypes>(
+    jammers: parseInjectedJSON<GNSSJammerDescriptor[]>(
+      window.__INJECT_JAMMERS__,
+      JAMMERS_DATA,
+      'JAMMERS'
+    ),
+    missileSystems: parseInjectedJSON<PanelMissileSystemSet>(
       window.__INJECT_MISSILE_SYSTEMS__,
       MISSILE_SYSTEMS_DATA,
       'MISSILE_SYSTEMS'
@@ -89,7 +96,7 @@ export function readControlPanelPayload(): ControlPanelPayload {
       AMPHIBIOUS_LOCATION_DATA,
       'AMPHIBIOUS_LOCATIONS'
     ),
-    c2Data: parseInjectedJSON<C2Nodes>(window.__INJECT_C2__, LIVE_STATUS_DATA.c2, 'C2'),
+    c2Data: parseInjectedJSON<C2NodeSet>(window.__INJECT_C2__, LIVE_STATUS_DATA.c2, 'C2'),
     signals: parseInjectedJSON<Signal[]>(
       window.__INJECT_SIGNALS__,
       LIVE_STATUS_DATA.signals,
@@ -100,12 +107,12 @@ export function readControlPanelPayload(): ControlPanelPayload {
       LIVE_STATUS_DATA.batteryStatuses,
       'BATTERY_STATUSES'
     ),
-    landingUnits: parseInjectedJSON<LandingUnits>(
+    landingUnits: parseInjectedJSON<LandingUnitCountSet>(
       window.__INJECT_LANDING_UNITS__,
       LIVE_STATUS_DATA.landingUnits,
       'LANDING_UNITS'
     ),
-    addUnitActions: parseInjectedJSON<AddUnitAction[]>(
+    addUnitActions: parseInjectedJSON<AddUnitOption[]>(
       window.__INJECT_ADD_UNIT_ACTIONS__,
       MOCK_ADD_UNIT_ACTIONS,
       'ADD_UNIT_ACTIONS'
@@ -116,17 +123,6 @@ export function readControlPanelPayload(): ControlPanelPayload {
 // ============================================================================
 // WRITE
 // ============================================================================
-/**
- * SAM weapons-control choice, written to `emconData`. Each entry names a live
- * SAM unit by GUID, so the host can apply it without guessing which platform a
- * menu id stood for. Units that were never switched carry the status they had.
- */
-export interface EmconResult {
-  sams: SamDoctrineEntry[];
-  /** C2 nodes whose SAM units changed after the player's redeployment */
-  c2Nodes: C2ContextEntry[];
-}
-
 /** Deployment and SAM doctrine are one submission: both inputs or neither counts. */
 export function submitDeployment(result: ControlPanelResult, doctrine: EmconResult): boolean {
   const isDeploymentWritten = writeHostInput('summaryData', result);

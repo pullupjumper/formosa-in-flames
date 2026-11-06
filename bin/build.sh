@@ -97,6 +97,7 @@ stage 2 "NPM build (htmls-app)"
 if [ "$SKIP_NPM" = true ]; then
     skip
 else
+    python3 tools/gen_ui_types.py || fail "UI type generation failed, check the UI contract block in src/core/schema.lua"
     if [ "$VERBOSE" = true ]; then
         (cd htmls-app && npm run build) || fail "NPM build failed, check htmls-app"
     else

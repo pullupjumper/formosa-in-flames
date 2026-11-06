@@ -1,7 +1,6 @@
+import type { Airbase, GNSSJammerDescriptor, Signal } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { Airbase, Jammer } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
-import type { Signal } from '@/types/controlPanel';
 import {
   BaseMap,
   AirbaseMarkers,
@@ -23,7 +22,7 @@ import type { DeploymentPreview } from '../../hooks/useDeploymentPreviews';
 interface DeploymentMapProps {
   sideName: string;
   airbases: Airbase[];
-  jammers: Jammer[];
+  jammers: GNSSJammerDescriptor[];
   deployedMissileSystems: Map<string, MissileDeployment>;
   weaponRanges: ReadonlyMap<string, number>;
   deployedJammers: Map<number, Coordinate>;
@@ -42,7 +41,7 @@ interface DeploymentMapProps {
   /** Jammer index being relocated, null while deploying a fresh one */
   relocatingJammerIndex: number | null;
   /** Jammer whose range circle follows the cursor, null outside jammer modes */
-  placingJammerUnit: Jammer | null;
+  placingJammerUnit: GNSSJammerDescriptor | null;
 
   deployPreview: DeploymentPreview | null;
   rotationPreview: DeploymentPreview | null;

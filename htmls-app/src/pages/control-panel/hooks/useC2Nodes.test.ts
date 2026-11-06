@@ -1,6 +1,6 @@
+import type { C2NodeSet, C2SamUnit } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { C2Nodes, C2Unit } from '@/types/controlPanel';
 import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 import { OUTSIDE_OPERATING_ZONE } from '../logic/c2Nodes';
 import { readControlPanelPayload } from '../logic/controlPanelPayload';
@@ -17,7 +17,7 @@ const zone = (latitude: number, longitude: number) => [
   { latitude: latitude + 1, longitude: longitude - 1 },
 ];
 
-function c2Unit(name: string): C2Unit {
+function c2Unit(name: string): C2SamUnit {
   return {
     type: 'rocc',
     name,
@@ -32,7 +32,7 @@ function c2Unit(name: string): C2Unit {
 }
 
 /** Node `a` commands the SAM, node `b` is empty and sits far away. */
-function buildC2Data(): C2Nodes {
+function buildC2Data(): C2NodeSet {
   return {
     a: {
       type: 'rocc',
@@ -65,7 +65,7 @@ function buildBattery(deployedAt?: { latitude: number; longitude: number }): Bat
   };
 }
 
-function buildPayload(c2Data: C2Nodes): ControlPanelPayload {
+function buildPayload(c2Data: C2NodeSet): ControlPanelPayload {
   return { ...readControlPanelPayload(), c2Data };
 }
 
@@ -167,7 +167,8 @@ describe('useC2Nodes', () => {
       act(() => result.current.setSamWeaponsFreeChoice(true));
 
       expect(result.current.isAllSamWeaponsFree).toBe(true);
-      expect(result.current.nodes[0].children[0].unit.weaponFree).toBe(true);
+      const [child] = result.current.nodes[0].children;
+      expect(child.type === 'sam' && child.unit.weaponFree).toBe(true);
       expect(result.current.buildEmconResult().sams).toEqual([
         { guid: 's1', name: 'SAM', weaponFree: true },
       ]);

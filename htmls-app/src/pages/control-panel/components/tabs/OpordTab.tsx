@@ -1,8 +1,8 @@
+import type { AmphibiousLocation } from '@/types/generated';
 import { useMemo } from 'react';
 import { Marker, Polyline, Circle } from 'react-leaflet';
 import type { LatLngTuple, PathOptions } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { AmphibiousLocation } from '@/types/controlPanel';
 import type { ForceImage } from '@/components/map/icons';
 import { MapShell, createImageIcon, ICON_IMAGES } from '@/components/map';
 import {

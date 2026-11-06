@@ -1,5 +1,5 @@
+import type { AddUnitsMenuResult } from '@/types/generated';
 import { useState } from 'react';
-import type { AddUnitsMenuResult } from '@/types/controlPanel';
 import { PageShell, type PageTab } from '@/components/PageShell';
 import { useActionSelection } from '@pages/control-panel/hooks/useActionSelection';
 import { MechanicsTab } from '@pages/control-panel/components/tabs/MechanicsTab';

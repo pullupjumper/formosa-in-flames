@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/controlPanel';
+import type { Airbase } from '@/types/generated';
 import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from '@/components/map';
 import { BaseEditor } from '@pages/control-panel/components/sections/BaseEditor';

@@ -60,15 +60,15 @@ function StatusView.buildBatteryStatuses(groundState, missileSystemConfigMap, cu
           table.insert(statuses, {
             name = firingUnitState.name,
             missileSystemType = missileSystemType,
-            firingUnitState = formatState(firingUnitState.state),
-            resupplyUnitState = formatState(resupplyUnitState.state),
-            missilesInAmmoVehicles = resupplyUnitState.weaponCountCurrent,
-            missilesInTransloaderDefault = resupplyUnitDescriptor.weaponCountDefault,
-            missilesInCanisterStock = canisterStockState.weaponCountCurrent,
-            missilesInCanisterStockDefault = canisterStockDescriptor.weaponCountDefault,
-            firingUnitReloadTime = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
-            resupplyUnitReloadTime = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
-            defaultReloadTime = systemConfig.reloadTime / 60
+            firingPosture = formatState(firingUnitState.state),
+            resupplyPosture = formatState(resupplyUnitState.state),
+            resupplyMissiles = resupplyUnitState.weaponCountCurrent,
+            resupplyMissilesDefault = resupplyUnitDescriptor.weaponCountDefault,
+            canisterMissiles = canisterStockState.weaponCountCurrent,
+            canisterMissilesDefault = canisterStockDescriptor.weaponCountDefault,
+            firingReloadMinutes = calculateReloadMinutes(firingUnitState.reloadStartTime, currentTime),
+            resupplyReloadMinutes = calculateReloadMinutes(resupplyUnitState.reloadStartTime, currentTime),
+            reloadMinutesDefault = systemConfig.reloadTime / 60
           })
         end
       end

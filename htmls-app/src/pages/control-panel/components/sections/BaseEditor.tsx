@@ -1,4 +1,4 @@
-import type { Airbase } from '@/types/controlPanel';
+import type { Airbase } from '@/types/generated';
 import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { CONFIG } from '@/constants/controlPanel';
 import { settleQuantityChange } from '@/pages/control-panel/logic/budgetLedger';
@@ -132,7 +132,7 @@ export function BaseEditor({
 // ============================================================================
 interface LoadoutControlProps {
   name: string;
-  subtitle: string;
+  subtitle?: string;
   quantity: number;
   onDecrease: () => void;
   onIncrease: () => void;

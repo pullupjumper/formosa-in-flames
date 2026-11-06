@@ -1,5 +1,5 @@
+import type { GNSSJammerDescriptor } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { Jammer } from '@/types/controlPanel';
 import { ICON_IMAGES } from '@/components/map';
 import { ImageIcon } from '@/components/ImageIcon';
 import { DetailsBox, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
@@ -9,7 +9,7 @@ import { DeployableUnitCard } from '@pages/control-panel/components/sections/Dep
 // JammerSection — GPS jammer cards for the control panel
 // ============================================================================
 interface JammerSectionProps {
-  jammers: Jammer[];
+  jammers: GNSSJammerDescriptor[];
   deployedJammers: Map<number, Coordinate>;
   expandedJammerIndex: number | null;
   /** Jammer index armed for a fresh deployment, null while relocating or idle */

@@ -1,14 +1,10 @@
+import type { TacticalAreaLayout } from '@/types/generated';
 import { memo, useMemo, useCallback } from 'react';
 import { CircleMarker, Polyline, Tooltip, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { Coordinate } from '@/types/geo';
-import type {
-  AreaType,
-  MissileDeployment,
-  RelocatingArea,
-  TacticalAreas,
-} from '@/types/deployment';
+import type { AreaType, MissileDeployment, RelocatingArea } from '@/types/deployment';
 import { getAreaColor } from '@/constants/deployment';
 import { CONFIG } from '@/constants/controlPanel';
 import { calculateCentroid, toLeafletLatLng, toLeafletPositions } from '@/utils/geo';
@@ -85,7 +81,7 @@ const PATH_OPTIONS_FALLBACK_MARKER = {
 // ============================================================================
 interface SingleArea {
   type: Exclude<AreaType, 'fp'>;
-  field: keyof Pick<TacticalAreas, 'uShapeVertices' | 'atpArea' | 'hideArea' | 'reloadArea'>;
+  field: keyof Pick<TacticalAreaLayout, 'uShapeVertices' | 'atpArea' | 'hideArea' | 'reloadArea'>;
   label: string;
 }
 

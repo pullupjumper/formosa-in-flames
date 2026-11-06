@@ -1,9 +1,8 @@
-import type { MissileSystemTypes } from '@/types/controlPanel';
+import type { BatteryStatus, PanelMissileSystemSet } from '@/types/generated';
 import type { MissileDeployment } from '@/types/deployment';
-import type { BatteryStatus } from '@/types/controlPanel';
 
 /**
- * Flattens the injected `MissileSystemTypes` payload into the batteries the sidebar
+ * Flattens the injected `PanelMissileSystemSet` payload into the batteries the sidebar
  * renders, each carrying its deployment and live status. Pure, so grouping,
  * deployed counters and status pairing can be tested without mounting the map.
  */
@@ -55,7 +54,7 @@ function buildStatusLookup(statuses: BatteryStatus[] | undefined): Map<string, B
 }
 
 export function buildBatteryGroups(
-  missileSystemTypes: MissileSystemTypes,
+  missileSystemTypes: PanelMissileSystemSet,
   deployments: Map<string, MissileDeployment>,
   statuses: BatteryStatus[] | undefined
 ): BatteryGroup[] {
@@ -88,7 +87,7 @@ export function buildBatteryGroups(
 }
 
 /** Weapon range in NM per unit key, for the map's range circles. */
-export function buildWeaponRanges(missileSystemTypes: MissileSystemTypes): Map<string, number> {
+export function buildWeaponRanges(missileSystemTypes: PanelMissileSystemSet): Map<string, number> {
   const ranges = new Map<string, number>();
 
   for (const [missileSystemType, config] of Object.entries(missileSystemTypes)) {

@@ -4,7 +4,8 @@
  * `constants/deployment.ts`.
  */
 
-import type { Coordinate, MovementPath } from '@/types/geo';
+import type { MovementPathSet, TacticalAreaLayout } from '@/types/generated';
+import type { Coordinate } from '@/types/geo';
 
 /** Every tactical area a deployed unit can relocate by clicking it */
 export type AreaType = 'ushape' | 'atp' | 'hide' | 'reload' | 'fp';
@@ -27,24 +28,6 @@ export interface SelectedUnit {
   missileSystemType: string;
 }
 
-export interface TacticalAreas {
-  uShapeVertices: Coordinate[];
-  atpArea?: Coordinate[];
-  hideArea?: Coordinate[];
-  reloadArea?: Coordinate[];
-  firePoints?: Coordinate[][];
-  shelterPoints?: Coordinate[];
-}
-
-/** Keys mirror the Lua `SBJ__MovementPathSet` shape and are exported verbatim. */
-export interface MovementPaths {
-  FP: MovementPath[];
-  HA: MovementPath;
-  RL: MovementPath[];
-  ATP: MovementPath;
-  SHRL: MovementPath;
-}
-
 /** One missile unit placed on the map, with everything the export needs. */
 export interface MissileDeployment {
   unitname: string;
@@ -55,6 +38,6 @@ export interface MissileDeployment {
   atpRadius?: number;
   /** Where the ATP square sits; set by hand-relocation or scenario placement. */
   atpCenter?: Coordinate;
-  tacticalAreas: TacticalAreas;
-  paths: MovementPaths;
+  tacticalAreas: TacticalAreaLayout;
+  paths: MovementPathSet;
 }

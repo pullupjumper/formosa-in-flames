@@ -138,7 +138,7 @@ function UnitDetails({ type, unit }: { type: C2Child['type']; unit: C2Child['uni
       <TextRow label="EMCON" value={unit.EMCONSetting} />
       {unit.isOutOfComms && <TextRow label="Comms" value="OUT OF COMMS" tone="danger" />}
       {unit.isDestroyed && <TextRow label="Condition" value="DESTROYED" tone="danger" />}
-      {unit.weaponFree ? (
+      {'weaponFree' in unit && unit.weaponFree ? (
         <TextRow label="Doctrine" value="WEAPON FREE" tone="danger" />
       ) : (
         <TextRow label="Doctrine" value="HOLD FIRE" tone="warning" />

@@ -30,7 +30,7 @@ React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4 + Leaflet/react-leaflet. Use
 ### Data Flow
 HTML pages use `window.__INJECT_*__` placeholders filled by `unitStatusUI.lua` with runtime JSON. During development, mock data in `src/data/` provides fallbacks.
 
-**Important**: Lua field names on injected payload types (`Airbase`, `Jammer`, `OODADetection`, etc.) are immutable. If a better name is needed, wrap at the type layer.
+**Important**: every type the page and Lua send each other (injected payloads and submitted results) is generated into `src/types/generated.ts` from the UI contract block in `src/core/schema.lua`. Never edit that file or hand-write a copy of one of its types. To change a payload, edit the block and run `python3 tools/gen_ui_types.py` from the project root; `busted` fails while the file is stale.
 
 ### Build Commands
 ```bash
@@ -76,7 +76,7 @@ Scope: `htmls-app/src/**`. One concept, one name.
   - `Config` — static option object (`AreaConfig`, `GatewayConfig`)
   - `State` — reducer / `useState` shape (`BudgetState`, `DeploymentModeState`)
   - `Data` — **only** the root type of a Lua-injected payload (`SetupMenuData`, `UnitStatusData`)
-- Domain objects are bare nouns: `Airbase`, `Jammer`, `MissileDeployment`, `Coordinate`.
+- Domain objects are bare nouns: `Airbase`, `MissileDeployment`, `Coordinate`. Generated types keep their Lua name minus `SBJ__`, suffix included (`GNSSJammerDescriptor`, `ControlPanelResult`).
 - String literal unions are lowercase-kebab (`'signal-data'`, `'outside-boundary'`); reducer action `type`s stay camelCase (`'relocateArea'`).
 
 ### Coordinates

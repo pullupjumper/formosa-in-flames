@@ -1,7 +1,7 @@
+import type { GNSSJammerDescriptor } from '@/types/generated';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { Coordinate } from '@/types/geo';
-import type { Jammer } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
 import { useDeploymentState } from '@/pages/control-panel/hooks/useDeploymentState';
 import type { UseDeploymentStateParams } from '@/pages/control-panel/hooks/useDeploymentState';
@@ -48,7 +48,7 @@ const BATTERY = batteryOf(UNIT_KEY, UNIT_NAME);
 const JAMMERS = [
   { zoneName: 'Z1', name: 'EW North', randomRadiusNm: 5, radiusNm: 50 },
   { zoneName: 'Z2', name: 'EW South', randomRadiusNm: 5, radiusNm: 50 },
-] as Jammer[];
+] as GNSSJammerDescriptor[];
 
 function makeDeployment(): MissileDeployment {
   const data = generateDeploymentData({

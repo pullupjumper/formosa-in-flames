@@ -1,4 +1,4 @@
-import type { Signal } from '@/types/controlPanel';
+import type { Signal } from '@/types/generated';
 import { DetailsBox, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
 import { InfoCard } from '@pages/control-panel/components/shared/InfoCard';
 import { ImageIcon } from '@/components/ImageIcon';

@@ -1,5 +1,6 @@
+import type { TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/deployment';
+import type { MissileDeployment } from '@/types/deployment';
 import type { RelocatingArea, SquareAreaType } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInPolygon, calculateCentroid } from '@/utils/geo';
@@ -39,7 +40,7 @@ export interface RelocateAreaParams {
 }
 
 interface AreaUpdate {
-  tacticalAreas: TacticalAreas;
+  tacticalAreas: TacticalAreaLayout;
   /** Only the fields the move actually changes, so a spread cannot blank others */
   extraFields: Partial<MissileDeployment>;
   /** Fresh gateways when the move replanned shelters; null means "look them up" */
@@ -98,7 +99,7 @@ function buildUShapeUpdate(
  * Returns null when the candidate position is acceptable.
  */
 function validateInternalSquare(
-  tacticalAreas: TacticalAreas,
+  tacticalAreas: TacticalAreaLayout,
   type: 'hide' | 'reload',
   vertices: Coordinate[],
   position: Coordinate

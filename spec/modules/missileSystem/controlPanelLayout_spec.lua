@@ -94,7 +94,7 @@ describe("MissileSystem ControlPanelLayout", function()
         reloadTime = 60,
         resupplyUnits = { rs = {} },
         canisterStocks = { atp = {} },
-        firingUnits = { fu = { name = "FU-1", operationalArea = operationalArea } }
+        firingUnits = { fu = { name = "FU-1", missileSystem = "HF-3", operationalArea = operationalArea } }
       }
     }
   end
@@ -175,12 +175,16 @@ describe("MissileSystem ControlPanelLayout", function()
     end)
 
     -- Positive: the control panel only needs firing units
-    it("should drop resupply units and canisterStocks from the copy", function()
+    it("should send only each firing unit's name, system, range and area", function()
       local rows = ControlPanelLayout.buildDeploymentSystems(makeMissileSystemConfigMap(), emptyGroundState(), "Taiwan")
+      local keys = {}
+      for key in pairs(rows.srbm) do table.insert(keys, key) end
+      local unitKeys = {}
+      for key in pairs(rows.srbm.firingUnits.fu) do table.insert(unitKeys, key) end
+      table.sort(unitKeys)
 
-      assert.is_nil(rows.srbm.resupplyUnits)
-      assert.is_nil(rows.srbm.canisterStocks)
-      assert.are.equal(60, rows.srbm.reloadTime)
+      assert.are.same({ "firingUnits" }, keys)
+      assert.are.same({ "missileSystem", "name", "operationalArea", "weaponRange" }, unitKeys)
     end)
 
     -- Positive: the map draws the weapon's range circle from this

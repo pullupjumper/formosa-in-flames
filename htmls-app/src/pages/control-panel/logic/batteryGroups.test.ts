@@ -1,7 +1,6 @@
+import type { BatteryStatus, PanelMissileSystemSet } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
-import type { MissileSystemTypes } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
-import type { BatteryStatus } from '@/types/controlPanel';
 import {
   buildBatteryGroups,
   buildUnitKey,
@@ -20,7 +19,7 @@ const MISSILE_SYSTEM_TYPES = {
   },
   // Types without firing units are injected for their ammunition data only
   empty: {},
-} as unknown as MissileSystemTypes;
+} as unknown as PanelMissileSystemSet;
 
 function deployedAt(angle: number): MissileDeployment {
   return { openingAngle: angle } as MissileDeployment;
@@ -30,15 +29,15 @@ function status(name: string, missileSystemType: string): BatteryStatus {
   return {
     name,
     missileSystemType,
-    firingUnitState: 'STATIC',
-    resupplyUnitState: 'STATIC',
-    firingUnitReloadTime: 0,
-    defaultReloadTime: 10,
-    resupplyUnitReloadTime: 0,
-    missilesInAmmoVehicles: 4,
-    missilesInTransloaderDefault: 8,
-    missilesInCanisterStock: 8,
-    missilesInCanisterStockDefault: 16,
+    firingPosture: 'STATIC',
+    resupplyPosture: 'STATIC',
+    firingReloadMinutes: 0,
+    reloadMinutesDefault: 10,
+    resupplyReloadMinutes: 0,
+    resupplyMissiles: 4,
+    resupplyMissilesDefault: 8,
+    canisterMissiles: 8,
+    canisterMissilesDefault: 16,
   };
 }
 
@@ -95,7 +94,9 @@ describe('buildBatteryGroups', () => {
   });
 
   it('keeps the type key when the weapon is unnamed', () => {
-    const unknown = { xyz: { firingUnits: { u: { name: 'U' } } } } as unknown as MissileSystemTypes;
+    const unknown = {
+      xyz: { firingUnits: { u: { name: 'U' } } },
+    } as unknown as PanelMissileSystemSet;
     expect(buildBatteryGroups(unknown, new Map(), [])[0].batteries[0].missileSystemType).toBe(
       'xyz'
     );
@@ -107,7 +108,7 @@ describe('buildWeaponRanges', () => {
     const types = {
       ascm: { firingUnits: { HF3_01: { weaponRange: 150 }, HF3_02: { weaponRange: 120 } } },
       empty: {},
-    } as unknown as MissileSystemTypes;
+    } as unknown as PanelMissileSystemSet;
 
     expect(buildWeaponRanges(types)).toEqual(
       new Map([

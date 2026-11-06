@@ -1,8 +1,8 @@
+import type { AddUnitOption } from '@/types/generated';
 import { useState, useCallback } from 'react';
-import type { AddUnitAction } from '@/types/controlPanel';
 
 export interface UseActionSelectionParams {
-  actions: AddUnitAction[];
+  actions: AddUnitOption[];
 }
 
 /** Checked action ids, always returned in the order of `actions`. */

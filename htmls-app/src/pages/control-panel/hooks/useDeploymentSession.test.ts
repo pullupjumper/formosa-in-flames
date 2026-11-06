@@ -1,7 +1,7 @@
+import type { Airbase } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { CONFIG } from '@/constants/controlPanel';
-import type { Airbase } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
 import { createBudgetState } from '../logic/budgetLedger';
 import { buildInjectedDeployments } from '../logic/deploymentPayload';

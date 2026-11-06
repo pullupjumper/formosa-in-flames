@@ -1,3 +1,4 @@
+import type { PanelOperationalArea } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import {
   buildInjectedDeployments,
@@ -10,11 +11,10 @@ import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
 import { createSeededRandom } from '@/utils/random';
 import { MISSILE_SYSTEMS_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
-import type { OperationalArea } from '@/types/controlPanel';
 
 const [CATEGORY, SYSTEM] = Object.entries(MISSILE_SYSTEMS_DATA)[0];
 const [UNIT_NAME, UNIT] = Object.entries(SYSTEM.firingUnits)[0];
-const AREA: OperationalArea = UNIT.operationalArea;
+const AREA: PanelOperationalArea = UNIT.operationalArea;
 
 describe('fromOperationalArea', () => {
   const deployment = fromOperationalArea(CATEGORY, UNIT_NAME, AREA);
@@ -163,7 +163,7 @@ describe('toControlPanelResult', () => {
 
     // Mirror what unitStatusUI.lua's transformData stores per area.
     const reloadPoint = exported.paths.RL[0].waypoints[0];
-    const area: OperationalArea = {
+    const area: PanelOperationalArea = {
       uShapeVertices: exported.tacticalAreas.uShapeVertices,
       shelterPoints: exported.tacticalAreas.shelterPoints ?? [],
       FP: exported.paths.FP.map((path, index) => ({

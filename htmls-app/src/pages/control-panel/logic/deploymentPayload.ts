@@ -1,13 +1,14 @@
-import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
-import type { Coordinate } from '@/types/geo';
 import type {
   Airbase,
-  Jammer,
-  MissileSystemTypes,
-  OperationalArea,
   ControlPanelResult,
-} from '@/types/controlPanel';
-import type { MissileDeployment, MovementPaths } from '@/types/deployment';
+  GNSSJammerDescriptor,
+  MovementPathSet,
+  PanelMissileSystemSet,
+  PanelOperationalArea,
+} from '@/types/generated';
+import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
+import type { Coordinate } from '@/types/geo';
+import type { MissileDeployment } from '@/types/deployment';
 import { buildUnitKey } from './batteryGroups';
 import { calculateCentroid } from '@/utils/geo';
 
@@ -36,19 +37,20 @@ import { calculateCentroid } from '@/utils/geo';
 export function fromOperationalArea(
   missileSystemType: string,
   unitname: string,
-  operationalArea: OperationalArea
+  operationalArea: PanelOperationalArea
 ): MissileDeployment {
   const reloadCourse = operationalArea.RL[0].course;
   const atpArea = operationalArea.ATP[0].area;
+  const uShapeVertices = operationalArea.uShapeVertices ?? [];
 
   return {
     unitname,
     missileSystemType,
-    center: calculateCentroid(operationalArea.uShapeVertices),
+    center: calculateCentroid(uShapeVertices),
     openingAngle: 0,
     atpCenter: calculateCentroid(atpArea),
     tacticalAreas: {
-      uShapeVertices: operationalArea.uShapeVertices,
+      uShapeVertices,
       atpArea,
       hideArea: operationalArea.HA[0].area,
       reloadArea: operationalArea.RL[0].area,
@@ -69,7 +71,7 @@ export function fromOperationalArea(
 
 /** Every scenario-placed firing unit, keyed the same way as player placements. */
 export function buildInjectedDeployments(
-  missileSystems: MissileSystemTypes
+  missileSystems: PanelMissileSystemSet
 ): Map<string, MissileDeployment> {
   const deployments = new Map<string, MissileDeployment>();
 
@@ -97,7 +99,7 @@ function trimLeadingWaypoint(waypoints: Coordinate[]): Coordinate[] {
  * first waypoint. FP and SHRL start at a shared gateway that every shelter must
  * pass through, so those stay intact.
  */
-export function toExportPaths(paths: MovementPaths): MovementPaths {
+export function toExportPaths(paths: MovementPathSet): MovementPathSet {
   return {
     FP: paths.FP.map((path) => ({ ...path })),
     HA: { ...paths.HA, waypoints: trimLeadingWaypoint(paths.HA.waypoints) },
@@ -110,7 +112,7 @@ export function toExportPaths(paths: MovementPaths): MovementPaths {
 export interface ToControlPanelResultParams {
   budget: BudgetState;
   airbases: Airbase[];
-  jammers: Jammer[];
+  jammers: GNSSJammerDescriptor[];
   deployedJammers: Map<number, Coordinate>;
   deployedMissileSystems: Map<string, MissileDeployment>;
   /** The scenario's own placements; a unit still holding its entry was not moved */

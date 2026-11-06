@@ -236,7 +236,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field stowTime number Stow time in seconds
 ---@field canisterStocks table<string, SBJ__CanisterStockDescriptor> Canister stock units indexed by unit name
 ---@field resupplyUnits table<string, SBJ__ResupplyUnitDescriptor> Resupply units indexed by unit name
----@field firingUnits table<string, SBJ__FiringUnitDescriptor|SBJ__FiringUnitWithWeaponRangeDescriptor> Firing units indexed by unit name
+---@field firingUnits table<string, SBJ__FiringUnitDescriptor> Firing units indexed by unit name
 
 ---Per-side ground policy; the only differences between the China and Taiwan event scripts
 ---@class SBJ__GroundPolicyConfig: table
@@ -520,13 +520,6 @@ function ScenEdit_DeleteMine(params) end
 -- ============================================================================
 -- Cargo and logistics types for amphibiousLogistics module
 
----Loadout configuration for units
----@class SBJ__Loadout: table
----@field loadoutId number Ammunition configuration ID
----@field name? string Loadout display name
----@field num number Unit count
----@field missionName? string Mission name
-
 ---Cargo descriptor defining parameters for creating cargo units on ships
 ---@class SBJ__CargoDescriptor: table
 ---@field type number Cargo type identifier
@@ -550,15 +543,6 @@ function ScenEdit_DeleteMine(params) end
 -- Airbase & Embarked Units
 -- ============================================================================
 -- Airbase and embarked unit configuration
-
----Embarked unit configuration for ships and airbases
----@class SBJ__EmbarkedUnit: table
----@field side string Side name (e.g., "China", "Taiwan", "US")
----@field type string Unit type (e.g., "Aircraft", "Helicopter")
----@field name? string Unit name; nil takes the fleet name
----@field platformName string Display name of aircraft platform
----@field dbid number Unit database ID
----@field loadouts? SBJ__Loadout[] Unit ammunition configuration
 
 ---Airbase deployment descriptor
 ---Comprehensive configuration for aircraft deployment and ammunition stockpile at an airbase
@@ -1320,20 +1304,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field unitCount integer Vehicles of the firing and the resupply unit; config keeps it on the resupply unit
 ---@field operationalArea SBJ__OperationalArea Area the firing and resupply units are built in
 
----One battery's status in the control panel (a firing unit plus its paired resupply unit), built by MissileSystem.buildBatteryStatuses
----@class SBJ__BatteryStatus: table
----@field name string Firing unit name
----@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
----@field firingUnitState string Firing unit state label
----@field resupplyUnitState string Paired resupply unit state label
----@field missilesInAmmoVehicles number Missiles carried by the resupply unit
----@field missilesInTransloaderDefault number
----@field missilesInCanisterStock number Missiles left in the paired canister stock
----@field missilesInCanisterStockDefault number
----@field firingUnitReloadTime number Minutes elapsed in the firing unit's reload, 0 when not reloading
----@field resupplyUnitReloadTime number Minutes elapsed in the resupply unit's reload, 0 when not reloading
----@field defaultReloadTime number Configured reload time in minutes
-
 ---What config builds for one canister stock
 ---@class SBJ__CanisterStockDescriptor: table
 ---@field name string Unit name
@@ -1363,9 +1333,6 @@ function ScenEdit_DeleteMine(params) end
 ---@field dbid number The firing unit database ID
 ---@field missileSystem string Missile system designation (e.g. "HF-3")
 ---@field mountDescriptors? {dbid:number, mountCount:integer}[] Mount DBIDs and counts on the firing unit
-
----@class SBJ__FiringUnitWithWeaponRangeDescriptor: SBJ__FiringUnitDescriptor
----@field weaponRange number
 
 ---What changes at runtime for one canister stock; everything else is read from its descriptor by name
 ---@class SBJ__CanisterStockState: table
@@ -2027,15 +1994,6 @@ function ScenEdit_DeleteMine(params) end
 -- ============================================================================
 -- Electronic warfare types for EW modules (SIGINT, GNSS Jamming, Comms Jamming)
 
----GNSS jammer deployment descriptor
----Serves as a blueprint for creating jammer units, related events, and jamming zones
----@class SBJ__GNSSJammerDescriptor: table
----@field name string Jammer unit identifier
----@field zoneName string Associated jamming zone name for area creation
----@field pos? CMO__Location Deployment coordinates
----@field randomRadiusNm number Position randomization radius (nautical miles)
----@field radiusNm number GNSS jamming effectiveness radius (nautical miles)
-
 ---GNSS jammer state extending descriptor with runtime state
 ---@class SBJ__GNSSJammerState: SBJ__GNSSJammerDescriptor
 
@@ -2211,9 +2169,143 @@ function ScenEdit_DeleteMine(params) end
 
 
 -- ============================================================================
--- Tactical Area Generation
+-- Control Panel Contract
 -- ============================================================================
--- Types for generating tactical area layouts (U-shaped areas, fire points, etc.)
+-- Everything the control panel page and Lua send each other. tools/gen_ui_types.py turns this block
+-- into htmls-app/src/types/generated.ts, so rerun it after any change here. A type named inside the
+-- block must be declared inside it or mapped in the tool's EXTERNAL_TYPES.
+-- UI_CONTRACT_BEGIN
+
+---Loadout configuration for units
+---@class SBJ__Loadout: table
+---@field loadoutId number Ammunition configuration ID
+---@field name? string Loadout display name
+---@field num number Unit count
+---@field missionName? string Mission name
+
+---Embarked unit configuration for ships and airbases
+---@class SBJ__EmbarkedUnit: table
+---@field side string Side name (e.g., "China", "Taiwan", "US")
+---@field type string Unit type (e.g., "Aircraft", "Helicopter")
+---@field name? string Unit name; nil takes the fleet name
+---@field platformName string Display name of aircraft platform
+---@field dbid number Unit database ID
+---@field loadouts? SBJ__Loadout[] Unit ammunition configuration
+
+---An airbase the control panel lists, at its base unit's position
+---@class SBJ__Airbase: SBJ__AirbaseDeploymentDescriptor
+---@field name string Airbase name
+---@field baseGUID string Airbase unit GUID
+---@field latitude number Base unit latitude
+---@field longitude number Base unit longitude
+---@field embarkedUnits? SBJ__EmbarkedUnit[] Aircraft units stationed at this base
+---@field loadouts? SBJ__Loadout[] Ammunition stockpile in base magazines
+
+---GNSS jammer deployment descriptor
+---Serves as a blueprint for creating jammer units, related events, and jamming zones
+---@class SBJ__GNSSJammerDescriptor: table
+---@field name string Jammer unit identifier
+---@field zoneName string Associated jamming zone name for area creation
+---@field pos? CMO__Location Deployment coordinates
+---@field randomRadiusNm number Position randomization radius (nautical miles)
+---@field radiusNm number GNSS jamming effectiveness radius (nautical miles)
+
+---The missile systems the control panel can place, keyed by system type
+---@alias SBJ__PanelMissileSystemSet table<string, SBJ__PanelMissileSystem>
+
+---One missile system's firing units for the control panel
+---@class SBJ__PanelMissileSystem: table
+---@field firingUnits table<string, SBJ__PanelFiringUnit> Firing units indexed by unit name
+
+---A firing unit drawn where its battery is now, with zone names resolved to vertices
+---@class SBJ__PanelFiringUnit: table
+---@field name string Firing unit name
+---@field missileSystem string Missile system designation (e.g. "HF-3")
+---@field weaponRange number Weapon range in NM, drives the range circle on the map; 0 without a land range
+---@field operationalArea SBJ__PanelOperationalArea
+
+---An operational area whose zones are vertices instead of reference point names
+---@class SBJ__PanelOperationalArea: table
+---@field name? string Area name
+---@field FP SBJ__PanelPosition[] Fire Points
+---@field HA SBJ__PanelPosition[] Hide Areas
+---@field ATP SBJ__PanelPosition[] Ammunition Transfer Points
+---@field RL SBJ__PanelPosition[] Reload Points
+---@field SHRL? SBJ__PanelPosition[] Shelter-hide-reload loop path
+---@field uShapeVertices? CMO__Location[] U shape vertices
+---@field shelterPoints? CMO__Location[] Shelter points
+
+---A position whose area is vertices instead of reference point names
+---@class SBJ__PanelPosition: table
+---@field course CMO__Waypoint[] Waypoints to area
+---@field area CMO__Location[] Area vertices
+
+---One battery's status in the control panel (a firing unit plus its paired resupply unit), built by MissileSystem.buildBatteryStatuses
+---@class SBJ__BatteryStatus: table
+---@field name string Firing unit name
+---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
+---@field firingPosture string Firing unit posture label (constants.MISSILE_UNIT_POSTURE key)
+---@field resupplyPosture string Paired resupply unit posture label
+---@field resupplyMissiles number Missiles carried by the resupply unit
+---@field resupplyMissilesDefault number Full missile count of the resupply unit
+---@field canisterMissiles number Missiles left in the paired canister stock
+---@field canisterMissilesDefault number Full missile count of the canister stock
+---@field firingReloadMinutes number Minutes elapsed in the firing unit's reload, 0 when not reloading
+---@field resupplyReloadMinutes number Minutes elapsed in the resupply unit's reload, 0 when not reloading
+---@field reloadMinutesDefault number Configured reload time in minutes
+
+---An amphibious operation's route on the map
+---@class SBJ__AmphibiousLocation: table
+---@field name string Amphibious zone name
+---@field waypoints CMO__Location[] Staging point, then boat zone; a point missing from the scenario is left out
+
+---C2 nodes the control panel shows, keyed by node GUID
+---@alias SBJ__C2NodeSet table<string, SBJ__C2Node>
+
+---A C2 node and the live units under it
+---@class SBJ__C2Node: table
+---@field type SBJ__C2TypeKey IADS group the node belongs to ('c2', 'rocc' or 'taaoc')
+---@field name string C2 node name
+---@field pos? CMO__Location Node position; absent when the node unit no longer exists
+---@field areas CMO__Location[][] Each coverage area's points
+---@field sam? table<string, SBJ__C2SamUnit> Live SAM units keyed by GUID
+---@field radar? table<string, SBJ__C2Unit> Live radars keyed by GUID
+
+---A live SAM or radar under a C2 node
+---@class SBJ__C2Unit: table
+---@field type SBJ__C2TypeKey IADS group of its C2 node
+---@field name string Unit name
+---@field OODADetection string Current over full detection OODA, e.g. "3/5"
+---@field OODATargeting string Current over full targeting OODA
+---@field isOutOfComms boolean Whether the unit lost its C2 link
+---@field EMCONSetting string EMCON setting
+---@field isDestroyed boolean Always false: destroyed units are left out
+---@field pos CMO__Location Unit position
+
+---A live SAM under a C2 node
+---@class SBJ__C2SamUnit: SBJ__C2Unit
+---@field weaponFree boolean False when weapons control is hold
+
+---A detected radio transmission the control panel lists
+---@class SBJ__Signal: table
+---@field name string Unit name of the transmission source
+---@field type string Type of the transmission source
+---@field autodetectable boolean Whether the transmission can be automatically detected
+---@field latitude number Latitude of the transmission source
+---@field longitude number Longitude of the transmission source
+---@field firstDetected number Timestamp of first detection
+---@field lastDetected number Timestamp of last detection
+---@field detectionCount number Number of times this transmission has been detected
+---@field confidence number Confidence level of the detection
+---@field currentDetectionLevel number Current detection level
+
+---Landed unit counts by zone name, then by unit type label
+---@alias SBJ__LandingUnitCountSet table<string, table<string, number>>
+
+---One add-units option the page lists
+---@class SBJ__AddUnitOption: table
+---@field id string Stable id sent back by the page
+---@field label string Text shown next to the checkbox
 
 ---Tactical area generation result
 ---Contains all generated vertices for U-shape, internal zones, and fire points
@@ -2225,14 +2317,9 @@ function ScenEdit_DeleteMine(params) end
 ---@field firePoints? table<integer, CMO__Location[]> Array of fire point areas, each with 4 vertices, if fire points configured
 ---@field shelterPoints? CMO__Location[] Shelter points
 
----Path waypoint for TEL movement routes
----@class SBJ__PathWaypoint: table
----@field latitude number Waypoint latitude coordinate
----@field longitude number Waypoint longitude coordinate
-
 ---Movement path between two tactical positions
 ---@class SBJ__MovementPath: table
----@field waypoints SBJ__PathWaypoint[] Array of waypoints forming the path
+---@field waypoints CMO__Location[] Array of waypoints forming the path
 
 ---Movement paths configuration for tactical area
 ---Maps path types to their waypoint arrays
@@ -2263,14 +2350,8 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__ControlPanelResult: table
 ---@field budget SBJ__BudgetResult Point budget the player spent
 ---@field jammers SBJ__GNSSJammerDescriptor[] GNSS jammer deployment configurations
----@field airbases SBJ__AirbaseDeploymentDescriptor[] Airbase deployment configurations
+---@field airbases SBJ__Airbase[] Airbase deployment configurations
 ---@field missileSystems SBJ__MissileSystemResult[] TEL missile system deployment configurations with tactical areas and paths
-
----One `addXXX` option in the add-units menu
----@class SBJ__AddUnitAction: table
----@field id string Stable id sent back by the page
----@field label string Text shown next to the checkbox
----@field run fun(config: SBJ__Config) Add the units
 
 ---Add-units menu result containing the ticked action ids
 ---@class SBJ__AddUnitsMenuResult: table
@@ -2293,6 +2374,12 @@ function ScenEdit_DeleteMine(params) end
 ---@class SBJ__EmconResult: table
 ---@field sams SBJ__SamDoctrineEntry[] SAM units with the weapons control status the player chose
 ---@field c2Nodes SBJ__C2ContextEntry[]|nil C2 nodes whose SAM units changed after redeployment
+
+-- UI_CONTRACT_END
+
+---One `addXXX` option in the add-units menu, with the action that adds its units
+---@class SBJ__AddUnitAction: SBJ__AddUnitOption
+---@field run fun(config: SBJ__Config) Add the units
 
 -- ============================================================================
 -- Ground Operations (Fire Support) - FSEM Builder

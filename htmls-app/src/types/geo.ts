@@ -14,8 +14,3 @@ export interface CoordinateOffset {
   latitudeDelta: number;
   longitudeDelta: number;
 }
-
-/** An ordered list of waypoints a vehicle drives through. */
-export interface MovementPath {
-  waypoints: Coordinate[];
-}

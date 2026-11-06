@@ -1,6 +1,6 @@
+import type { GNSSJammerDescriptor } from '@/types/generated';
 import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { Jammer } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { calculateBearing, calculateCentroid } from '@/utils/geo';
@@ -61,7 +61,7 @@ const noop = () => {};
 // TYPES
 // ============================================================================
 export interface UseDeploymentStateParams {
-  jammers: Jammer[];
+  jammers: GNSSJammerDescriptor[];
   deployedMissileSystems: Map<string, MissileDeployment>;
   deployedJammers: Map<number, Coordinate>;
   shouldValidateTaiwanBoundary: boolean;

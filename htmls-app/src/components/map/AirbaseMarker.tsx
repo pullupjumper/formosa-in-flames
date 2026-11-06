@@ -1,7 +1,7 @@
+import type { Airbase } from '@/types/generated';
 import { memo, useMemo } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
-import type { Airbase } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { AIRBASE_ICON_URL, AIRBASE_ICON_SIZE } from './icons';
 import { MapPopup, PopupSection } from './MapPopup';
@@ -53,7 +53,7 @@ export const AirbaseMarker = memo(function AirbaseMarker({
           <PopupSection
             title="Ammunition Storage"
             rows={airbase.loadouts.map((loadout) => ({
-              label: loadout.name,
+              label: loadout.name ?? `Loadout ${loadout.loadoutId}`,
               value: `x ${loadout.num}`,
             }))}
           />

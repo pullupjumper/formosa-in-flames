@@ -1,7 +1,7 @@
+import type { GNSSJammerDescriptor } from '@/types/generated';
 import { memo, useMemo, useCallback } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { Coordinate } from '@/types/geo';
-import type { Jammer } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { RangeCircle } from './primitives';
 import { createImageIcon, ICON_IMAGES } from './icons';
@@ -12,7 +12,7 @@ const EW_ICON = createImageIcon(ICON_IMAGES.ew);
 const JAMMER_RANGE_COLOR = '#ff6b6b';
 
 interface JammerMarkerProps {
-  jammer: Jammer;
+  jammer: GNSSJammerDescriptor;
   index: number;
   position: Coordinate;
   isRelocating?: boolean;
@@ -90,7 +90,7 @@ export function JammerRelocatePreview({ radius, position }: JammerRelocatePrevie
 // DeployedJammers Component
 // ============================================================================
 interface DeployedJammersProps {
-  jammers: Jammer[];
+  jammers: GNSSJammerDescriptor[];
   deployedPositions: Map<number, Coordinate>;
   relocatingIndex?: number | null;
   onRelocateClick?: (index: number) => void;

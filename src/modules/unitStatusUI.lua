@@ -20,6 +20,7 @@ local UnitStatusUI = {}
 ---@return string # JSON formatted C2 status data, flat `guid -> node` with each node's `type`
 local function createC2NodeDataString(saveData, sideName, types)
   local iads = PersistentState.iads(saveData, sideName)
+  ---@type SBJ__C2NodeSet
   local rows = {}
 
   for _, type in pairs(types) do
@@ -113,12 +114,23 @@ end
 ---@param sideName string Side name (constants.SIDES.RED or constants.SIDES.ALLY)
 ---@return string # JSON formatted signal data
 local function createSignalDataString(saveData, sideName)
+  ---@type SBJ__Signal[]
   local rows = {}
   local transmissions = PersistentState.sigint(saveData, sideName).transmissions
 
   for _, transmission in pairs(transmissions) do
-    local copy = Utils.deepCopy(transmission)
-    table.insert(rows, copy)
+    table.insert(rows, {
+      name = transmission.name,
+      type = transmission.type,
+      autodetectable = transmission.autodetectable,
+      latitude = transmission.latitude,
+      longitude = transmission.longitude,
+      firstDetected = transmission.firstDetected,
+      lastDetected = transmission.lastDetected,
+      detectionCount = transmission.detectionCount,
+      confidence = transmission.confidence,
+      currentDetectionLevel = transmission.currentDetectionLevel
+    })
   end
 
   return gKH.json.stringify(rows)
@@ -138,6 +150,7 @@ local function createGnssJammerDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
   local descriptors = config[field].gnssJamming.jammers
+  ---@type SBJ__GNSSJammerDescriptor[]
   local rows = {}
 
   for _, descriptor in pairs(descriptors) do
@@ -155,17 +168,22 @@ end
 local function createDeployedAircraftDataString(config, sideName)
   local sideConfig = GameUtils.getCachedSideConfig(sideName)
   local field = sideConfig.field
+  ---@type SBJ__Airbase[]
   local rows = {}
   local descriptors = config[field].air.deployedACs
 
   for _, descriptor in pairs(descriptors) do
-    local row = Utils.deepCopy(descriptor)
-    local base = GameApi.ScenEdit_GetUnit(row.baseGUID)
+    local base = GameApi.ScenEdit_GetUnit(descriptor.baseGUID)
 
     if base then
-      row.latitude = base.latitude
-      row.longitude = base.longitude
-      table.insert(rows, row)
+      table.insert(rows, {
+        name = descriptor.name,
+        baseGUID = descriptor.baseGUID,
+        latitude = base.latitude,
+        longitude = base.longitude,
+        embarkedUnits = Utils.deepCopy(descriptor.embarkedUnits),
+        loadouts = Utils.deepCopy(descriptor.loadouts)
+      })
     end
   end
 
@@ -176,6 +194,7 @@ end
 ---@param config SBJ__Config
 ---@return string # JSON formatted amphibious task force location data with coordinates
 local function createAmphibiousTaskForceLocationDataString(config)
+  ---@type SBJ__AmphibiousLocation[]
   local data = {}
 
   for _, zone in ipairs(config.red.amphibOps.zones) do
@@ -385,7 +404,7 @@ end
 
 ---Rows the add-units page lists for a side
 ---@param sideName string
----@return {id: string, label: string}[]
+---@return SBJ__AddUnitOption[]
 local function buildAddUnitRows(sideName)
   local rows = {}
   for _, action in ipairs(ADD_UNIT_ACTIONS[sideName] or {}) do

@@ -1,5 +1,5 @@
+import type { C2NodeSet, C2SamUnit, C2Unit } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
-import type { C2Nodes, C2Unit } from '@/types/controlPanel';
 import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 import {
   applySamWeaponsFree,
@@ -16,7 +16,7 @@ import {
 // ============================================================================
 const ORIGIN = { latitude: 23, longitude: 120 };
 
-function c2Unit(name: string, type = 'c2'): C2Unit {
+function radarUnit(name: string, type = 'c2'): C2Unit {
   return {
     type,
     name,
@@ -25,9 +25,12 @@ function c2Unit(name: string, type = 'c2'): C2Unit {
     isOutOfComms: false,
     EMCONSetting: 'Radar=Passive',
     isDestroyed: false,
-    weaponFree: false,
     pos: { latitude: 23, longitude: 120 },
   };
+}
+
+function c2Unit(name: string, type = 'c2'): C2SamUnit {
+  return { ...radarUnit(name, type), weaponFree: false };
 }
 
 function battery(unitKey: string, name: string): Battery {
@@ -46,7 +49,7 @@ function battery(unitKey: string, name: string): Battery {
 // ============================================================================
 describe('buildC2NodeViews', () => {
   it('lists radar before SAM units under each node', () => {
-    const nodes: C2Nodes = {
+    const nodes: C2NodeSet = {
       n1: {
         type: 'c2',
         name: 'C2 One',
@@ -67,7 +70,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('pairs a SAM unit with its battery by name', () => {
-    const nodes: C2Nodes = {
+    const nodes: C2NodeSet = {
       n1: { name: 'C2', type: 'c2', pos: ORIGIN, areas: [], sam: { g1: c2Unit('Same Name') } },
     };
     const batteries = [battery('sam_a', 'Same Name')];
@@ -76,7 +79,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('leaves SAM units without a battery as plain cards', () => {
-    const nodes: C2Nodes = {
+    const nodes: C2NodeSet = {
       n1: { name: 'C2', type: 'c2', pos: ORIGIN, areas: [], sam: { g1: c2Unit('Unknown') } },
     };
 
@@ -84,7 +87,7 @@ describe('buildC2NodeViews', () => {
   });
 
   it('never gives one battery to two SAM units', () => {
-    const nodes: C2Nodes = {
+    const nodes: C2NodeSet = {
       n1: {
         type: 'c2',
         name: 'C2',
@@ -112,7 +115,7 @@ describe('buildC2NodeViews', () => {
         tacticalAreas: { hideArea: zone(latitude, longitude).map((p) => ({ ...p })) },
       } as Battery['deployment'],
     });
-    const twoNodes = (): C2Nodes => ({
+    const twoNodes = (): C2NodeSet => ({
       a: {
         type: 'c2',
         name: 'A',
@@ -160,7 +163,7 @@ describe('buildC2NodeViews', () => {
 describe('collectSamUnits', () => {
   it('lists live SAM units with their GUID, name and weapons status', () => {
     const destroyed = { ...c2Unit('Dead SAM'), isDestroyed: true };
-    const nodes: C2Nodes = {
+    const nodes: C2NodeSet = {
       n1: {
         type: 'c2',
         name: 'C2',
@@ -178,13 +181,13 @@ describe('collectSamUnits', () => {
 });
 
 describe('applySamWeaponsFree', () => {
-  const nodes: C2Nodes = {
+  const nodes: C2NodeSet = {
     n1: {
       type: 'c2',
       name: 'C2',
       pos: ORIGIN,
       areas: [],
-      radar: { r1: { ...c2Unit('Radar A'), weaponFree: false } },
+      radar: { r1: radarUnit('Radar A') },
       sam: { s1: { ...c2Unit('SAM A'), weaponFree: true } },
     },
   };
@@ -192,8 +195,13 @@ describe('applySamWeaponsFree', () => {
   it('sets every SAM unit to the chosen status and leaves radars alone', () => {
     const [view] = applySamWeaponsFree(buildC2NodeViews(nodes, []), false);
 
-    expect(view.children.map((child) => [child.type, child.unit.weaponFree])).toEqual([
-      ['radar', false],
+    expect(
+      view.children.map((child) => [
+        child.type,
+        'weaponFree' in child.unit ? child.unit.weaponFree : 'none',
+      ])
+    ).toEqual([
+      ['radar', 'none'],
       ['sam', false],
     ]);
   });
@@ -213,7 +221,7 @@ describe('buildC2MapLayers', () => {
   ];
 
   it('draws a zone shared by two nodes once and marks every unit', () => {
-    const nodes: C2Nodes = {
+    const nodes: C2NodeSet = {
       n1: {
         type: 'c2',
         name: 'A',
@@ -252,7 +260,7 @@ describe('buildC2MapLayers', () => {
     ];
 
     function layersFor(hideCenter: { latitude: number; longitude: number }, zone = bigZone) {
-      const nodes: C2Nodes = {
+      const nodes: C2NodeSet = {
         far: {
           type: 'c2',
           name: 'Far',
@@ -279,7 +287,7 @@ describe('buildC2MapLayers', () => {
     });
 
     it('ignores nearer C2 nodes of another type', () => {
-      const nodes: C2Nodes = {
+      const nodes: C2NodeSet = {
         rocc: {
           type: 'rocc',
           name: 'ROCC',
@@ -307,7 +315,7 @@ describe('buildC2MapLayers', () => {
     });
 
     it('draws neither marker nor line for a cancelled deployment', () => {
-      const nodes: C2Nodes = {
+      const nodes: C2NodeSet = {
         n1: { type: 'c2', name: 'N', pos: ORIGIN, areas: [], sam: { s1: c2Unit('SAM') } },
       };
       const views = buildC2NodeViews(nodes, [battery('b1', 'SAM')]);
@@ -363,7 +371,7 @@ describe('collectC2ContextUpdates', () => {
     { latitude: latitude + 1, longitude: longitude + 1 },
     { latitude: latitude + 1, longitude: longitude - 1 },
   ];
-  const nodes = (): C2Nodes => ({
+  const nodes = (): C2NodeSet => ({
     a: {
       type: 'rocc',
       name: 'A',

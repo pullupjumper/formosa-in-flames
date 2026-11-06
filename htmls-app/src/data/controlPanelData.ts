@@ -1,15 +1,15 @@
 import type {
-  AddUnitAction,
+  AddUnitOption,
   Airbase,
-  Jammer,
-  MissileSystemTypes,
   AmphibiousLocation,
-} from '@/types/controlPanel';
+  GNSSJammerDescriptor,
+  PanelMissileSystemSet,
+} from '@/types/generated';
 
 // ============================================================================
 // JAMMERS DATA
 // ============================================================================
-export const JAMMERS_DATA: Jammer[] = [
+export const JAMMERS_DATA: GNSSJammerDescriptor[] = [
   {
     zoneName: 'JAMMING ZONE/1',
     name: 'Comm and Info Coy, 584th Mech Bde',
@@ -306,7 +306,7 @@ export const AIRBASES_DATA: Airbase[] = [
 // ============================================================================
 // MISSILE SYSTEMS DATA (Simplified - only firingUnits for UI)
 // ============================================================================
-export const MISSILE_SYSTEMS_DATA: MissileSystemTypes = {
+export const MISSILE_SYSTEMS_DATA: PanelMissileSystemSet = {
   sam: {
     firingUnits: {
       '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde': {
@@ -698,7 +698,7 @@ export const AMPHIBIOUS_LOCATION_DATA: AmphibiousLocation[] = [
 // ============================================================================
 // ADD UNITS MENU DATA
 // ============================================================================
-export const MOCK_ADD_UNIT_ACTIONS: AddUnitAction[] = [
+export const MOCK_ADD_UNIT_ACTIONS: AddUnitOption[] = [
   { id: 'addACs', label: 'Add aircraft' },
   { id: 'addSAGs', label: 'Add SAGs' },
   { id: 'addMissileSystems', label: 'Add missile systems' },

@@ -95,15 +95,15 @@ describe("MissileSystem StatusView", function()
         {
           name = "FU-1",
           missileSystemType = "srbm",
-          firingUnitState = "RELOAD",
-          resupplyUnitState = "HIDE",
-          missilesInAmmoVehicles = 4,
-          missilesInTransloaderDefault = 8,
-          missilesInCanisterStock = 12,
-          missilesInCanisterStockDefault = 24,
-          firingUnitReloadTime = 2,
-          resupplyUnitReloadTime = 0,
-          defaultReloadTime = 30
+          firingPosture = "RELOAD",
+          resupplyPosture = "HIDE",
+          resupplyMissiles = 4,
+          resupplyMissilesDefault = 8,
+          canisterMissiles = 12,
+          canisterMissilesDefault = 24,
+          firingReloadMinutes = 2,
+          resupplyReloadMinutes = 0,
+          reloadMinutesDefault = 30
         }
       }, rows)
     end)
@@ -117,8 +117,8 @@ describe("MissileSystem StatusView", function()
 
       local row = StatusView.buildBatteryStatuses(groundState, configMap, 1120)[1]
 
-      assert.are.equal(10, row.missilesInTransloaderDefault)
-      assert.are.equal(30, row.missilesInCanisterStockDefault)
+      assert.are.equal(10, row.resupplyMissilesDefault)
+      assert.are.equal(30, row.canisterMissilesDefault)
     end)
 
     -- Negative: a firing unit whose battery config dropped gets no row
@@ -148,8 +148,8 @@ describe("MissileSystem StatusView", function()
       for state, label in pairs(labels) do
         local groundState = makeGroundState(makeFiringUnitState({ state = state }), makeResupplyUnitState({ state = state }))
         local row = buildRow(groundState, 1120)
-        assert.are.equal(label, row.firingUnitState)
-        assert.are.equal(label, row.resupplyUnitState)
+        assert.are.equal(label, row.firingPosture)
+        assert.are.equal(label, row.resupplyPosture)
       end
     end)
 
@@ -167,14 +167,14 @@ describe("MissileSystem StatusView", function()
     it("should label an unknown state as UNKNOWN", function()
       local row = buildRow(makeGroundState(makeFiringUnitState({ state = -99 })), 1120)
 
-      assert.are.equal("UNKNOWN", row.firingUnitState)
+      assert.are.equal("UNKNOWN", row.firingPosture)
     end)
 
     -- Boundary: 40 s is 0.666... minutes, which must round up rather than truncate
     it("should round elapsed reload minutes to 2 decimals", function()
       local row = buildRow(makeGroundState(), 1040)
 
-      assert.are.equal(0.67, row.firingUnitReloadTime)
+      assert.are.equal(0.67, row.firingReloadMinutes)
     end)
 
     -- Boundary: a start time after now must not show a negative countdown
@@ -186,8 +186,8 @@ describe("MissileSystem StatusView", function()
 
       local row = buildRow(groundState, 1000)
 
-      assert.are.equal(0, row.firingUnitReloadTime)
-      assert.are.equal(0, row.resupplyUnitReloadTime)
+      assert.are.equal(0, row.firingReloadMinutes)
+      assert.are.equal(0, row.resupplyReloadMinutes)
     end)
   end)
 end)

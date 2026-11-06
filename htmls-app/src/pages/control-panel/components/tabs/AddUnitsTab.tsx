@@ -1,4 +1,4 @@
-import type { AddUnitAction } from '@/types/controlPanel';
+import type { AddUnitOption } from '@/types/generated';
 import { CheckboxCard } from '@pages/control-panel/components/shared/CheckboxCard';
 import { Panel } from '@pages/control-panel/components/shared/Panel';
 import { SubmitBar } from '@pages/control-panel/components/shared/SubmitBar';
@@ -7,7 +7,7 @@ import { SubmitBar } from '@pages/control-panel/components/shared/SubmitBar';
 // AddUnitsTab — pick the `addXXX` actions to run when the dialog is confirmed
 // ============================================================================
 interface AddUnitsTabProps {
-  actions: AddUnitAction[];
+  actions: AddUnitOption[];
   checked: ReadonlySet<string>;
   selectedIds: string[];
   isSubmitted: boolean;

@@ -1,4 +1,4 @@
-import type { BatteryStatus } from '@/types/controlPanel';
+import type { BatteryStatus } from '@/types/generated';
 import { BarRow, TextRow } from '@pages/control-panel/components/shared/DetailsBox';
 
 // ============================================================================
@@ -11,27 +11,27 @@ interface BatteryStatusDetailsProps {
 export function BatteryStatusDetails({ status }: BatteryStatusDetailsProps) {
   return (
     <>
-      <TextRow label="Firing Unit" value={status.firingUnitState} />
-      <TextRow label="Resupply Unit" value={status.resupplyUnitState} />
+      <TextRow label="Firing Unit" value={status.firingPosture} />
+      <TextRow label="Resupply Unit" value={status.resupplyPosture} />
       <BarRow
         label="Firing Reload (min)"
-        current={status.firingUnitReloadTime}
-        total={status.defaultReloadTime}
+        current={status.firingReloadMinutes}
+        total={status.reloadMinutesDefault}
       />
       <BarRow
         label="Resupply Reload (min)"
-        current={status.resupplyUnitReloadTime}
-        total={status.defaultReloadTime}
+        current={status.resupplyReloadMinutes}
+        total={status.reloadMinutesDefault}
       />
       <BarRow
         label="Transloader Missiles"
-        current={status.missilesInAmmoVehicles}
-        total={status.missilesInTransloaderDefault}
+        current={status.resupplyMissiles}
+        total={status.resupplyMissilesDefault}
       />
       <BarRow
         label="ATP Missiles"
-        current={status.missilesInCanisterStock}
-        total={status.missilesInCanisterStockDefault}
+        current={status.canisterMissiles}
+        total={status.canisterMissilesDefault}
       />
     </>
   );

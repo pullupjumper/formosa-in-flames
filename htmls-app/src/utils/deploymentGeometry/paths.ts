@@ -1,5 +1,5 @@
+import type { MovementPathSet, TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { MovementPaths, TacticalAreas } from '@/types/deployment';
 import { calculateBearing, calculateDistance, getPointFromBearing } from '@/utils/geo';
 import { MOVEMENT_PATH_AVOIDANCE_MARGIN } from './config';
 import { calculateSquareCenter, doesSegmentCrossSquare } from './squares';
@@ -10,7 +10,7 @@ import type { Gateways } from './shelter';
  * square they would otherwise drive through.
  */
 
-export function createEmptyMovementPaths(): MovementPaths {
+export function createEmptyMovementPaths(): MovementPathSet {
   return {
     FP: [],
     HA: { waypoints: [] },
@@ -145,9 +145,9 @@ export function generatePathWithAvoidance(
  * ATP/HA/RL is missing.
  */
 export function buildMovementPaths(
-  tacticalAreas: TacticalAreas,
+  tacticalAreas: TacticalAreaLayout,
   gateways: Gateways | null
-): MovementPaths {
+): MovementPathSet {
   const { atpArea, hideArea, reloadArea, firePoints } = tacticalAreas;
   if (!atpArea || !hideArea || !reloadArea) {
     return createEmptyMovementPaths();

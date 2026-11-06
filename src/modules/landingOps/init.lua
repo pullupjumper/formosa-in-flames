@@ -106,7 +106,7 @@ end
 
 ---Count landed China units by type in each operational zone's CAS area
 ---@param config SBJ__Config
----@return table<string, table<string, number>> # Unit counts keyed by zone name, then by unit type label
+---@return SBJ__LandingUnitCountSet # Unit counts keyed by zone name, then by unit type label
 function LandingOps.countUnitsInEachArea(config)
   return AmphibiousAssault.countUnitsInEachArea(config.red.amphibOps.zones)
 end

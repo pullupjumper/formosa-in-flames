@@ -1,6 +1,6 @@
+import type { Airbase } from '@/types/generated';
 import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { Airbase } from '@/types/controlPanel';
 import type { MissileDeployment } from '@/types/deployment';
 import { CONFIG } from '@/constants/controlPanel';
 import { buildInjectedDeployments } from '@/pages/control-panel/logic/deploymentPayload';

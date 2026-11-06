@@ -1,5 +1,6 @@
+import type { TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment, TacticalAreas } from '@/types/deployment';
+import type { MissileDeployment } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { AREA_CONFIG, DEPLOYMENT_MAX_ATTEMPTS } from './config';
 import { generateLayout } from './layout';
@@ -79,7 +80,7 @@ export function generateDeploymentData({
       const plan = buildShelterPlan(center, angle, layout.hideArea, layout.reloadArea, rng);
       if (!plan.gateways) continue;
 
-      const tacticalAreas: TacticalAreas = {
+      const tacticalAreas: TacticalAreaLayout = {
         ...layout,
         firePoints: firePointsOverride ?? layout.firePoints,
         shelterPoints: plan.shelterPoints,

@@ -90,22 +90,15 @@ end
 ---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
 ---@param groundState SBJ__GroundState
 ---@param sideName string
----@return table<string, SBJ__MissileSystemConfig> # Copies without resupply units and canisterStocks, keyed by system type
+---@return SBJ__PanelMissileSystemSet # Firing units only, keyed by system type
 function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groundState, sideName)
   local rows = {}
 
   for key, system in pairs(missileSystemConfigMap) do
-    local copy = Utils.deepCopy(system)
-    copy.resupplyUnits = nil
-    copy.canisterStocks = nil
+    local firingUnits = {}
 
-    for name, descriptor in pairs(copy.firingUnits) do
-      ---@cast descriptor SBJ__FiringUnitWithWeaponRangeDescriptor
-      local operationalArea = Utils.deepCopy(
-        GroundStateStore.resolveOperationalArea(groundState, key, system.firingUnits[name])
-      )
-      descriptor.operationalArea = operationalArea
-      descriptor.weaponRange = findWeaponRange(descriptor.weaponDBID) or 0
+    for name, descriptor in pairs(system.firingUnits) do
+      local operationalArea = Utils.deepCopy(GroundStateStore.resolveOperationalArea(groundState, key, descriptor))
 
       for _, attr in ipairs(SETUP_POSITION_TYPES) do
         local positions = operationalArea[attr]
@@ -128,9 +121,16 @@ function ControlPanelLayout.buildDeploymentSystems(missileSystemConfigMap, groun
       if #uShapeVertices > 0 then
         operationalArea.uShapeVertices = uShapeVertices
       end
+
+      firingUnits[name] = {
+        name = descriptor.name,
+        missileSystem = descriptor.missileSystem,
+        weaponRange = findWeaponRange(descriptor.weaponDBID) or 0,
+        operationalArea = operationalArea
+      }
     end
 
-    rows[key] = copy
+    rows[key] = { firingUnits = firingUnits }
   end
 
   return rows

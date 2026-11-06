@@ -1,10 +1,5 @@
-import type {
-  Signal,
-  BatteryStatus,
-  C2Nodes,
-  LandingUnits,
-  LiveStatusData,
-} from '@/types/controlPanel';
+import type { BatteryStatus, C2NodeSet, LandingUnitCountSet, Signal } from '@/types/generated';
+import type { LiveStatusData } from '@/types/controlPanel';
 
 // ===========================================================================
 // SIGNAL DATA
@@ -44,74 +39,74 @@ export const BATTERY_STATUSES_DATA: BatteryStatus[] = [
   {
     name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
     missileSystemType: 'sam',
-    firingUnitState: 'STATIC',
-    resupplyUnitState: 'RELOAD',
-    firingUnitReloadTime: 0,
-    defaultReloadTime: 10,
-    resupplyUnitReloadTime: 4,
-    missilesInAmmoVehicles: 12,
-    missilesInTransloaderDefault: 20,
-    missilesInCanisterStock: 40,
-    missilesInCanisterStockDefault: 49,
+    firingPosture: 'STATIC',
+    resupplyPosture: 'RELOAD',
+    firingReloadMinutes: 0,
+    reloadMinutesDefault: 10,
+    resupplyReloadMinutes: 4,
+    resupplyMissiles: 12,
+    resupplyMissilesDefault: 20,
+    canisterMissiles: 40,
+    canisterMissilesDefault: 49,
   },
   {
     name: 'Rocket Arty Coy, 58th Arty Command',
     missileSystemType: 'srbm',
-    firingUnitState: 'HIDE',
-    resupplyUnitState: 'STATIC',
-    firingUnitReloadTime: 6,
-    defaultReloadTime: 10,
-    resupplyUnitReloadTime: 0,
-    missilesInAmmoVehicles: 6,
-    missilesInTransloaderDefault: 20,
-    missilesInCanisterStock: 40,
-    missilesInCanisterStockDefault: 49,
+    firingPosture: 'HIDE',
+    resupplyPosture: 'STATIC',
+    firingReloadMinutes: 6,
+    reloadMinutesDefault: 10,
+    resupplyReloadMinutes: 0,
+    resupplyMissiles: 6,
+    resupplyMissilesDefault: 20,
+    canisterMissiles: 40,
+    canisterMissilesDefault: 49,
   },
   {
     name: '1st Coy, 613rd Bn, 792nd AFAD & Arty Bde',
     missileSystemType: 'sam',
-    firingUnitState: 'STATIC',
-    resupplyUnitState: 'STATIC',
-    firingUnitReloadTime: 10,
-    defaultReloadTime: 100,
-    resupplyUnitReloadTime: 20,
-    missilesInAmmoVehicles: 5,
-    missilesInTransloaderDefault: 20,
-    missilesInCanisterStock: 40,
-    missilesInCanisterStockDefault: 49,
+    firingPosture: 'STATIC',
+    resupplyPosture: 'STATIC',
+    firingReloadMinutes: 10,
+    reloadMinutesDefault: 100,
+    resupplyReloadMinutes: 20,
+    resupplyMissiles: 5,
+    resupplyMissilesDefault: 20,
+    canisterMissiles: 40,
+    canisterMissilesDefault: 49,
   },
   {
     name: 'Rocket Arty Coy, 58th Arty Command',
     missileSystemType: 'srbm',
-    firingUnitState: 'STATIC',
-    resupplyUnitState: 'STATIC',
-    firingUnitReloadTime: 10,
-    defaultReloadTime: 100,
-    resupplyUnitReloadTime: 20,
-    missilesInAmmoVehicles: 5,
-    missilesInTransloaderDefault: 20,
-    missilesInCanisterStock: 40,
-    missilesInCanisterStockDefault: 49,
+    firingPosture: 'STATIC',
+    resupplyPosture: 'STATIC',
+    firingReloadMinutes: 10,
+    reloadMinutesDefault: 100,
+    resupplyReloadMinutes: 20,
+    resupplyMissiles: 5,
+    resupplyMissilesDefault: 20,
+    canisterMissiles: 40,
+    canisterMissilesDefault: 49,
   },
   {
     name: '1st Hai Feng Shore-based ASM MOB Sqn',
     missileSystemType: 'ascm',
-    firingUnitState: 'STATIC',
-    resupplyUnitState: 'STATIC',
-    firingUnitReloadTime: 10,
-    defaultReloadTime: 100,
-    resupplyUnitReloadTime: 20,
-    missilesInAmmoVehicles: 5,
-    missilesInTransloaderDefault: 20,
-    missilesInCanisterStock: 40,
-    missilesInCanisterStockDefault: 49,
+    firingPosture: 'STATIC',
+    resupplyPosture: 'STATIC',
+    firingReloadMinutes: 10,
+    reloadMinutesDefault: 100,
+    resupplyReloadMinutes: 20,
+    resupplyMissiles: 5,
+    resupplyMissilesDefault: 20,
+    canisterMissiles: 40,
+    canisterMissilesDefault: 49,
   },
 ];
 
 // ===========================================================================
 // C2 NODES DATA
 // ===========================================================================
-export const C2_DATA: C2Nodes = {
+export const C2_DATA: C2NodeSet = {
   'IC8B0X-0HNE084PJAHI0': {
     type: 'c2',
     pos: { latitude: 24.2847165330236, longitude: 120.73412101965434 },
@@ -185,7 +180,6 @@ export const C2_DATA: C2Nodes = {
         isOutOfComms: false,
         EMCONSetting: 'Radar=Passive',
         isDestroyed: false,
-        weaponFree: false,
         pos: { latitude: 22.898030831712553, longitude: 120.50633950145831 },
       },
     },
@@ -219,7 +213,7 @@ export const C2_DATA: C2Nodes = {
 // ===========================================================================
 // LANDING UNITS DATA
 // ===========================================================================
-export const LANDING_UNITS_DATA: LandingUnits = {
+export const LANDING_UNITS_DATA: LandingUnitCountSet = {
   'Area A': {
     'ZBD-05': 0,
     'ZTD-05': 0,

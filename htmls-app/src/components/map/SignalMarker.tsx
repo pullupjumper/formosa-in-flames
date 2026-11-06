@@ -1,6 +1,6 @@
+import type { Signal } from '@/types/generated';
 import { memo } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
-import type { Signal } from '@/types/controlPanel';
 import { toLeafletLatLng } from '@/utils/geo';
 import { createImageIcon, ICON_IMAGES } from './icons';
 

@@ -1,3 +1,4 @@
+import type { EmconResult } from '@/types/generated';
 import { useCallback, useMemo, useState } from 'react';
 import type { Coordinate } from '@/types/geo';
 import type { Battery } from '@pages/control-panel/logic/batteryGroups';
@@ -10,7 +11,7 @@ import {
   collectSamUnits,
   getSamDeploymentWarning,
 } from '../logic/c2Nodes';
-import type { ControlPanelPayload, EmconResult } from '../logic/controlPanelPayload';
+import type { ControlPanelPayload } from '../logic/controlPanelPayload';
 
 const NO_PINNED_NODES: ReadonlyMap<string, string> = new Map();
 

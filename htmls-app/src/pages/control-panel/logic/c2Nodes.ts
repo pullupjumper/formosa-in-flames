@@ -1,6 +1,13 @@
+import type {
+  C2ContextEntry,
+  C2Node,
+  C2NodeSet,
+  C2SamUnit,
+  C2Unit,
+  SamDoctrineEntry,
+} from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
 import { calculateCentroid, calculateDistance, isPointInPolygon } from '@/utils/geo';
-import type { C2Nodes, C2Node, C2Unit } from '@/types/controlPanel';
 import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 
 /**
@@ -12,40 +19,22 @@ import type { Battery } from '@pages/control-panel/logic/batteryGroups';
 // ============================================================================
 // TYPES
 // ============================================================================
-export interface C2Child {
+interface C2ChildBase {
   key: string;
-  type: 'sam' | 'radar';
-  unit: C2Unit;
   /** Matching missile battery, present only for SAM units that can be deployed */
   battery: Battery | null;
 }
 
-/** One live SAM unit and its weapons control status, as written to `emconData`. */
-export interface SamDoctrineEntry {
-  guid: string;
-  name: string;
-  weaponFree: boolean;
-}
-
-/**
- * A C2 node whose SAM units changed, shaped like the Lua `SBJ__C2Context`: the
- * `sam` table is keyed by GUID and each entry carries the `SBJ__RadarContext`
- * identity fields (`guid`, `name`). The host rebuilds the node's table from it.
- */
-export interface C2ContextEntry {
-  /** GUID of the C2 node */
-  guid: string;
-  /** IADS group the node lives in: 'c2', 'rocc' or 'taaoc' */
-  type: string;
-  name: string;
-  sam: Record<string, { guid: string; name: string }>;
-}
+export type C2Child =
+  | (C2ChildBase & { type: 'sam'; unit: C2SamUnit })
+  | (C2ChildBase & { type: 'radar'; unit: C2Unit });
 
 export interface C2NodeView {
   key: string;
   type: string;
   name: string;
-  position: Coordinate;
+  /** Absent when the node unit no longer exists */
+  position?: Coordinate;
   /** Operating zones of the node, one polygon each */
   areas: Coordinate[][];
   children: C2Child[];
@@ -84,7 +73,7 @@ export interface C2MapLayers {
  * `{ ROCC: {...}, TAAOC: {...} }` and the Lua payload's wrapped groups
  * `{ rocc: { guid1: {...}, guid2: {...} } }`.
  */
-function flattenC2Nodes(data: C2Nodes): Record<string, C2Node> {
+function flattenC2Nodes(data: C2NodeSet): Record<string, C2Node> {
   const flatNodes: Record<string, C2Node> = {};
 
   for (const [key, value] of Object.entries(data)) {
@@ -105,7 +94,7 @@ function flattenC2Nodes(data: C2Nodes): Record<string, C2Node> {
  * unit so two cards never drive the same deployment.
  */
 export function buildC2NodeViews(
-  c2Data: C2Nodes,
+  c2Data: C2NodeSet,
   samBatteries: Battery[],
   pinned: ReadonlyMap<string, string> = new Map()
 ): C2NodeView[] {
@@ -183,7 +172,10 @@ export function collectDeployedPlacements(views: C2NodeView[]): Map<string, stri
 export function collectSamUnits(views: C2NodeView[]): SamDoctrineEntry[] {
   return views.flatMap((view) =>
     view.children
-      .filter((child) => child.type === 'sam' && !child.unit.isDestroyed)
+      .filter(
+        (child): child is Extract<C2Child, { type: 'sam' }> =>
+          child.type === 'sam' && !child.unit.isDestroyed
+      )
       .map((child) => ({
         guid: child.key,
         name: child.unit.name,
@@ -197,7 +189,7 @@ export function collectSamUnits(views: C2NodeView[]): SamDoctrineEntry[] {
  * they now command. Unchanged nodes are left out so the host only rewrites
  * what moved.
  */
-export function collectC2ContextUpdates(c2Data: C2Nodes, views: C2NodeView[]): C2ContextEntry[] {
+export function collectC2ContextUpdates(c2Data: C2NodeSet, views: C2NodeView[]): C2ContextEntry[] {
   const original = flattenC2Nodes(c2Data);
 
   return views
@@ -322,7 +314,7 @@ export function buildC2MapLayers(
         const hideArea = deployment.tacticalAreas.hideArea;
         const position = hideArea?.length ? calculateCentroid(hideArea) : null;
         const commander = position ? findCommandingNode(position, child.unit.type, views) : null;
-        if (position && commander) {
+        if (position && commander?.position) {
           links.push({
             key: `${commander.key}-${child.key}`,
             from: commander.position,
