@@ -7,8 +7,7 @@ import type {
 } from '@/types/generated';
 import type { BudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
-import { buildUnitKey } from './batteryGroups';
+import type { DeployedBattery } from '@/types/deployment';
 import { calculateCentroid } from '@/utils/geo';
 
 /**
@@ -29,15 +28,13 @@ import { calculateCentroid } from '@/utils/geo';
  * player placements. `atpCenter` pins the ATP to its stored square; without it
  * a later rotate would regenerate the ATP from `AREA_CONFIG` and move it.
  */
-export function buildInjectedDeployments(
-  batteries: PanelBattery[]
-): Map<string, MissileDeployment> {
+export function buildInjectedDeployments(batteries: PanelBattery[]): Map<string, DeployedBattery> {
   return new Map(
     batteries.map(({ name, missileSystemType, placement }) => [
-      buildUnitKey(missileSystemType, name),
+      name,
       {
         ...placement,
-        unitname: name,
+        name,
         missileSystemType,
         atpCenter:
           placement.tacticalAreas.atpArea && calculateCentroid(placement.tacticalAreas.atpArea),
@@ -82,9 +79,9 @@ export interface ToControlPanelResultParams {
   airbases: AirbaseDeploymentDescriptor[];
   jammers: GNSSJammerDescriptor[];
   deployedJammers: Map<number, Coordinate>;
-  deployedMissileSystems: Map<string, MissileDeployment>;
+  deployedBatteries: Map<string, DeployedBattery>;
   /** The scenario's own placements; a unit still holding its entry was not moved */
-  injectedDeployments: ReadonlyMap<string, MissileDeployment>;
+  injectedDeployments: ReadonlyMap<string, DeployedBattery>;
 }
 
 export function toControlPanelResult({
@@ -92,7 +89,7 @@ export function toControlPanelResult({
   airbases,
   jammers,
   deployedJammers,
-  deployedMissileSystems,
+  deployedBatteries,
   injectedDeployments,
 }: ToControlPanelResultParams): ControlPanelResult {
   return {
@@ -108,10 +105,10 @@ export function toControlPanelResult({
         radiusNm: unit.radiusNm,
       };
     }),
-    batteries: Array.from(deployedMissileSystems.entries())
+    batteries: Array.from(deployedBatteries.entries())
       .filter(([key, deployment]) => injectedDeployments.get(key) !== deployment)
       .map(([, deployment]) => ({
-        name: deployment.unitname,
+        name: deployment.name,
         missileSystemType: deployment.missileSystemType,
         placement: {
           center: deployment.center,

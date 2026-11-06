@@ -1,6 +1,6 @@
 import type { AirbaseDeploymentDescriptor, GNSSJammerDescriptor, Signal } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import {
   BaseMap,
   AirbaseMarkers,
@@ -23,7 +23,7 @@ interface DeploymentMapProps {
   sideName: string;
   airbases: AirbaseDeploymentDescriptor[];
   jammers: GNSSJammerDescriptor[];
-  deployedMissileSystems: Map<string, MissileDeployment>;
+  deployedBatteries: Map<string, DeployedBattery>;
   weaponRanges: ReadonlyMap<string, number>;
   deployedJammers: Map<number, Coordinate>;
   /** Detected signals shown as suspected C2 markers */
@@ -37,7 +37,7 @@ interface DeploymentMapProps {
 
   /** Area currently armed for relocation, highlighted on the map */
   relocatingArea: RelocatingArea | null;
-  rotatingUnitKey: string | null;
+  rotatingBatteryName: string | null;
   /** Jammer index being relocated, null while deploying a fresh one */
   relocatingJammerIndex: number | null;
   /** Jammer whose range circle follows the cursor, null outside jammer modes */
@@ -50,7 +50,7 @@ interface DeploymentMapProps {
   onMapClick: (position: Coordinate) => void;
   onMouseMove: (position: Coordinate) => void;
   onAreaClick: (area: RelocatingArea) => void;
-  onRotateClick: (unitKey: string) => void;
+  onRotateClick: (batteryName: string) => void;
   onJammerRelocateClick: (index: number) => void;
 }
 
@@ -58,7 +58,7 @@ export function DeploymentMap({
   sideName,
   airbases,
   jammers,
-  deployedMissileSystems,
+  deployedBatteries,
   weaponRanges,
   deployedJammers,
   signals,
@@ -66,7 +66,7 @@ export function DeploymentMap({
   isPlacementActive,
   mousePosition,
   relocatingArea,
-  rotatingUnitKey,
+  rotatingBatteryName,
   relocatingJammerIndex,
   placingJammerUnit,
   deployPreview,
@@ -88,12 +88,12 @@ export function DeploymentMap({
       <C2Layers layers={c2Layers} />
       <AirbaseMarkers airbases={airbases} />
       <DeployedMissileSystems
-        deployedMissileSystems={deployedMissileSystems}
+        deployedBatteries={deployedBatteries}
         weaponRanges={weaponRanges}
         onAreaClick={onAreaClick}
         onRotateClick={onRotateClick}
         relocatingArea={relocatingArea}
-        rotatingUnitKey={rotatingUnitKey}
+        rotatingBatteryName={rotatingBatteryName}
       />
       <SignalMarkers signals={signals} />
       <DeployedJammers

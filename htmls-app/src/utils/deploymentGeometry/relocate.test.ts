@@ -17,7 +17,7 @@ function shifted(base: Coordinate, latitudeDelta: number, longitudeDelta: number
 /** Deterministic deployment used as the "before" state of every move */
 function deployed() {
   const data = generateDeploymentData({
-    unitname: 'HF3 Battery 1',
+    name: 'HF3 Battery 1',
     missileSystemType: 'ascm',
     center: INLAND,
     angle: 90,

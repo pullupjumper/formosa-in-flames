@@ -1,19 +1,11 @@
 import type { PanelBattery } from '@/types/generated';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 
 /**
  * Groups the injected batteries the sidebar renders, each carrying its
  * deployment. Pure, so grouping and deployed counters can be tested without
  * mounting the map.
  */
-
-/**
- * Build the key identifying a firing unit inside a missile system type.
- * Deployment maps are keyed by this string throughout the control panel.
- */
-export function buildUnitKey(missileSystemType: string, unitname: string): string {
-  return `${missileSystemType}_${unitname}`;
-}
 
 // ============================================================================
 // TYPES
@@ -22,10 +14,8 @@ export interface Battery extends Pick<
   PanelBattery,
   'name' | 'missileSystem' | 'missileSystemType' | 'status'
 > {
-  /** Key shared by the deployment map and the weapon ranges: type plus name */
-  unitKey: string;
   /** Placement on the map, null until the battery is deployed */
-  deployment: MissileDeployment | null;
+  deployment: DeployedBattery | null;
 }
 
 export interface BatteryGroup {
@@ -40,18 +30,16 @@ export interface BatteryGroup {
 /** Groups batteries by type, in the order each type first appears. */
 export function buildBatteryGroups(
   batteries: PanelBattery[],
-  deployments: Map<string, MissileDeployment>
+  deployments: Map<string, DeployedBattery>
 ): BatteryGroup[] {
   const groups = new Map<string, BatteryGroup>();
 
   for (const { name, missileSystem, missileSystemType, status } of batteries) {
-    const unitKey = buildUnitKey(missileSystemType, name);
     const battery: Battery = {
-      unitKey,
       name,
       missileSystem,
       missileSystemType,
-      deployment: deployments.get(unitKey) ?? null,
+      deployment: deployments.get(name) ?? null,
       status,
     };
     const group = groups.get(battery.missileSystemType) ?? {
@@ -68,12 +56,7 @@ export function buildBatteryGroups(
   return Array.from(groups.values());
 }
 
-/** Weapon range in NM per unit key, for the map's range circles. */
+/** Weapon range in NM per battery name, for the map's range circles. */
 export function buildWeaponRanges(batteries: PanelBattery[]): Map<string, number> {
-  return new Map(
-    batteries.map((battery) => [
-      buildUnitKey(battery.missileSystemType, battery.name),
-      battery.weaponRange,
-    ])
-  );
+  return new Map(batteries.map((battery) => [battery.name, battery.weaponRange]));
 }

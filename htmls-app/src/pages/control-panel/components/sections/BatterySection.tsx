@@ -10,9 +10,9 @@ import { BatteryStatusDetails } from '@pages/control-panel/components/sections/B
 // ============================================================================
 interface BatterySectionProps {
   batteryGroups: BatteryGroup[];
-  expandedUnitKey: string | null;
+  expandedBatteryName: string | null;
   /** Missile unit armed for deployment, null when no deploy mode is live */
-  selectedUnitKey: string | null;
+  selectedBatteryName: string | null;
   onUnitSelect: (battery: Battery) => void;
   onUndeploy: (battery: Battery) => void;
   onCancelSelection: () => void;
@@ -20,8 +20,8 @@ interface BatterySectionProps {
 
 export function BatterySection({
   batteryGroups,
-  expandedUnitKey,
-  selectedUnitKey,
+  expandedBatteryName,
+  selectedBatteryName,
   onUnitSelect,
   onUndeploy,
   onCancelSelection,
@@ -37,7 +37,7 @@ export function BatterySection({
       {batteryGroups.flatMap((group) =>
         group.batteries.map((battery) => (
           <DeployableUnitCard
-            key={battery.unitKey}
+            key={battery.name}
             name={battery.name}
             icon={<ImageIcon image={getBatteryImage(group.missileSystemType)} />}
             details={
@@ -56,8 +56,8 @@ export function BatterySection({
               battery.deployment ? `Deployed | Angle: ${battery.deployment.openingAngle}°` : null
             }
             isDeployed={battery.deployment !== null}
-            isSelected={selectedUnitKey === battery.unitKey}
-            isExpanded={expandedUnitKey === battery.unitKey}
+            isSelected={selectedBatteryName === battery.name}
+            isExpanded={expandedBatteryName === battery.name}
             onSelect={() => onUnitSelect(battery)}
             onCancelDeployment={() => onUndeploy(battery)}
             onCancelSelection={onCancelSelection}

@@ -1,11 +1,7 @@
 import type { BatteryStatus, PanelBattery } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
-import type { MissileDeployment } from '@/types/deployment';
-import {
-  buildBatteryGroups,
-  buildUnitKey,
-  buildWeaponRanges,
-} from '@/pages/control-panel/logic/batteryGroups';
+import type { DeployedBattery } from '@/types/deployment';
+import { buildBatteryGroups, buildWeaponRanges } from '@/pages/control-panel/logic/batteryGroups';
 
 // ============================================================================
 // FIXTURES
@@ -43,8 +39,8 @@ const BATTERIES = [
   battery('HF3 Battery 2', 'ascm', { status: STATUS }),
 ];
 
-function deployedAt(angle: number): MissileDeployment {
-  return { openingAngle: angle } as MissileDeployment;
+function deployedAt(angle: number): DeployedBattery {
+  return { openingAngle: angle } as DeployedBattery;
 }
 
 // ============================================================================
@@ -55,9 +51,9 @@ describe('buildBatteryGroups', () => {
     const groups = buildBatteryGroups(BATTERIES, new Map());
 
     expect(groups.map((group) => group.missileSystemType)).toEqual(['ascm', 'sam']);
-    expect(groups[0].batteries.map((item) => item.unitKey)).toEqual([
-      'ascm_HF3 Battery 1',
-      'ascm_HF3 Battery 2',
+    expect(groups[0].batteries.map((item) => item.name)).toEqual([
+      'HF3 Battery 1',
+      'HF3 Battery 2',
     ]);
     expect(groups[0].batteries.map((item) => item.missileSystem)).toEqual(['HF-3', 'HF-3']);
   });
@@ -67,7 +63,7 @@ describe('buildBatteryGroups', () => {
   });
 
   it('attaches the deployment and counts deployed batteries per type', () => {
-    const deployed = new Map([['ascm_HF3 Battery 2', deployedAt(270)]]);
+    const deployed = new Map([['HF3 Battery 2', deployedAt(270)]]);
     const [group] = buildBatteryGroups(BATTERIES, deployed);
 
     expect(group.deployedCount).toBe(1);
@@ -84,7 +80,7 @@ describe('buildBatteryGroups', () => {
 });
 
 describe('buildWeaponRanges', () => {
-  it('keys each battery range by its unit key', () => {
+  it('keys each battery range by its name', () => {
     const batteries = [
       battery('HF3_01', 'ascm', { weaponRange: 150 }),
       battery('HF3_02', 'ascm', { weaponRange: 120 }),
@@ -92,15 +88,9 @@ describe('buildWeaponRanges', () => {
 
     expect(buildWeaponRanges(batteries)).toEqual(
       new Map([
-        ['ascm_HF3_01', 150],
-        ['ascm_HF3_02', 120],
+        ['HF3_01', 150],
+        ['HF3_02', 120],
       ])
     );
-  });
-});
-
-describe('unit keys', () => {
-  it('joins the type and the unit name', () => {
-    expect(buildUnitKey('ascm', 'HF3_01')).toBe('ascm_HF3_01');
   });
 });

@@ -1,7 +1,7 @@
 import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import { useState, useCallback } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import { CONFIG } from '@/constants/controlPanel';
 import { buildInjectedDeployments } from '@/pages/control-panel/logic/deploymentPayload';
 import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
@@ -18,9 +18,7 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
   // Units the scenario already placed start out deployed; the injected payload
   // is read once, so seeding state here replaces a setState-in-effect.
   const [injectedDeployments] = useState(() => buildInjectedDeployments(payload.batteries));
-  const [deployedMissileSystems, setDeployedMissileSystems] = useState(
-    () => new Map(injectedDeployments)
-  );
+  const [deployedBatteries, setDeployedBatteries] = useState(() => new Map(injectedDeployments));
 
   const updateAirbase = useCallback(
     (
@@ -34,12 +32,12 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
 
   // Deployment handlers — kept stable so the Deployment tab's memoized map layers
   // are not invalidated by unrelated re-renders (e.g. budget edits)
-  const deployMissileSystem = useCallback((key: string, data: MissileDeployment) => {
-    setDeployedMissileSystems((prev) => new Map(prev).set(key, data));
+  const deployMissileSystem = useCallback((key: string, data: DeployedBattery) => {
+    setDeployedBatteries((prev) => new Map(prev).set(key, data));
   }, []);
 
   const undeployMissileSystem = useCallback((key: string) => {
-    setDeployedMissileSystems((prev) => {
+    setDeployedBatteries((prev) => {
       const next = new Map(prev);
       next.delete(key);
       return next;
@@ -66,7 +64,7 @@ export function useDeploymentSession(payload: ControlPanelPayload) {
     deployedJammers,
     deployJammer,
     undeployJammer,
-    deployedMissileSystems,
+    deployedBatteries,
     injectedDeployments,
     deployMissileSystem,
     undeployMissileSystem,

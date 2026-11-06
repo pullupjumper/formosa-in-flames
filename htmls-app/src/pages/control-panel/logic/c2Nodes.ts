@@ -102,8 +102,8 @@ export function buildC2NodeViews(
 
   const findBattery = (name: string): Battery | null => {
     const battery =
-      samBatteries.find((unit) => unit.name === name && !claimed.has(unit.unitKey)) ?? null;
-    if (battery) claimed.add(battery.unitKey);
+      samBatteries.find((unit) => unit.name === name && !claimed.has(unit.name)) ?? null;
+    if (battery) claimed.add(battery.name);
     return battery;
   };
 
@@ -266,12 +266,12 @@ export const OUTSIDE_OPERATING_ZONE =
  */
 export function getSamDeploymentWarning(
   views: C2NodeView[],
-  unitKey: string,
+  batteryName: string,
   position: Coordinate
 ): string | null {
   const child = views
     .flatMap((view) => view.children)
-    .find((candidate) => candidate.battery?.unitKey === unitKey);
+    .find((candidate) => candidate.battery?.name === batteryName);
   if (!child) return null;
   return findCommandingNode(position, child.unit.type, views) ? null : OUTSIDE_OPERATING_ZONE;
 }

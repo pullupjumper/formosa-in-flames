@@ -43,7 +43,8 @@ export function useC2Nodes(payload: ControlPanelPayload, samBatteries: Battery[]
   }
 
   const validateMissilePosition = useCallback(
-    (unitKey: string, position: Coordinate) => getSamDeploymentWarning(c2Nodes, unitKey, position),
+    (batteryName: string, position: Coordinate) =>
+      getSamDeploymentWarning(c2Nodes, batteryName, position),
     [c2Nodes]
   );
 

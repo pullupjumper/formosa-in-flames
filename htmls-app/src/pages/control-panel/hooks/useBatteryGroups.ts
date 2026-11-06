@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import { buildBatteryGroups, buildWeaponRanges } from '../logic/batteryGroups';
 import type { ControlPanelPayload } from '../logic/controlPanelPayload';
 
@@ -13,13 +13,13 @@ const SAM_TYPE = 'sam';
  */
 export function useBatteryGroups(
   payload: ControlPanelPayload,
-  deployedMissileSystems: Map<string, MissileDeployment>
+  deployedBatteries: Map<string, DeployedBattery>
 ) {
   const { batteries } = payload;
 
   const allGroups = useMemo(
-    () => buildBatteryGroups(batteries, deployedMissileSystems),
-    [batteries, deployedMissileSystems]
+    () => buildBatteryGroups(batteries, deployedBatteries),
+    [batteries, deployedBatteries]
   );
   const samBatteries = useMemo(
     () => allGroups.find((group) => group.missileSystemType === SAM_TYPE)?.batteries ?? [],

@@ -16,8 +16,8 @@ interface C2NodesSectionProps {
   nodes: C2NodeView[];
   isSamWeaponsFree: boolean;
   onSamWeaponsFreeChange: (isWeaponsFree: boolean) => void;
-  expandedUnitKey: string | null;
-  selectedUnitKey: string | null;
+  expandedBatteryName: string | null;
+  selectedBatteryName: string | null;
   onUnitSelect: (battery: Battery) => void;
   onUndeploy: (battery: Battery) => void;
   onCancelSelection: () => void;
@@ -27,8 +27,8 @@ export function C2NodesSection({
   nodes,
   isSamWeaponsFree,
   onSamWeaponsFreeChange,
-  expandedUnitKey,
-  selectedUnitKey,
+  expandedBatteryName,
+  selectedBatteryName,
   onUnitSelect,
   onUndeploy,
   onCancelSelection,
@@ -55,8 +55,8 @@ export function C2NodesSection({
               node: (
                 <ChildCard
                   child={child}
-                  expandedUnitKey={expandedUnitKey}
-                  selectedUnitKey={selectedUnitKey}
+                  expandedBatteryName={expandedBatteryName}
+                  selectedBatteryName={selectedBatteryName}
                   onUnitSelect={onUnitSelect}
                   onUndeploy={onUndeploy}
                   onCancelSelection={onCancelSelection}
@@ -83,8 +83,8 @@ interface ChildCardProps extends Omit<
 
 function ChildCard({
   child,
-  expandedUnitKey,
-  selectedUnitKey,
+  expandedBatteryName,
+  selectedBatteryName,
   onUnitSelect,
   onUndeploy,
   onCancelSelection,
@@ -120,8 +120,8 @@ function ChildCard({
         battery.deployment ? `Deployed | Angle: ${battery.deployment.openingAngle}°` : null
       }
       isDeployed={battery.deployment !== null}
-      isSelected={selectedUnitKey === battery.unitKey}
-      isExpanded={expandedUnitKey === battery.unitKey}
+      isSelected={selectedBatteryName === battery.name}
+      isExpanded={expandedBatteryName === battery.name}
       onSelect={() => onUnitSelect(battery)}
       onCancelDeployment={() => onUndeploy(battery)}
       onCancelSelection={onCancelSelection}

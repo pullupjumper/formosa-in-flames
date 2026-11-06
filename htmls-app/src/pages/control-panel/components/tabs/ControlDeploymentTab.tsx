@@ -45,18 +45,18 @@ export function ControlDeploymentTab({
   const {
     airbases,
     budget,
-    deployedMissileSystems,
+    deployedBatteries,
     injectedDeployments,
     deployedJammers,
     setBudget: onBudgetChange,
     updateAirbase: onUpdateAirbase,
   } = session;
   const shouldValidateTaiwanBoundary = sideName === 'Taiwan';
-  const batteries = useBatteryGroups(payload, deployedMissileSystems);
+  const batteries = useBatteryGroups(payload, deployedBatteries);
   const c2 = useC2Nodes(payload, batteries.samBatteries);
   const deployment = useDeploymentState({
     jammers,
-    deployedMissileSystems,
+    deployedBatteries,
     deployedJammers,
     shouldValidateTaiwanBoundary,
     isLocked: isDeploymentLocked,
@@ -74,7 +74,7 @@ export function ControlDeploymentTab({
     budget,
     airbases,
     deployedJammers,
-    deployedMissileSystems,
+    deployedBatteries,
     c2.samWeaponsFreeChoice,
   ];
   const [submittedInputs, setSubmittedInputs] = useState<unknown[] | null>(null);
@@ -87,7 +87,7 @@ export function ControlDeploymentTab({
       airbases,
       jammers,
       deployedJammers,
-      deployedMissileSystems,
+      deployedBatteries,
       injectedDeployments,
     });
     const doctrine = c2.buildEmconResult();
@@ -125,8 +125,8 @@ export function ControlDeploymentTab({
             nodes={c2.nodes}
             isSamWeaponsFree={c2.isAllSamWeaponsFree}
             onSamWeaponsFreeChange={c2.setSamWeaponsFreeChoice}
-            expandedUnitKey={deployment.expandedUnitKey}
-            selectedUnitKey={deployment.selectedUnitKey}
+            expandedBatteryName={deployment.expandedBatteryName}
+            selectedBatteryName={deployment.selectedBatteryName}
             onUnitSelect={deployment.handleUnitSelect}
             onUndeploy={deployment.handleUndeploy}
             onCancelSelection={deployment.handleCancelSelect}
@@ -150,8 +150,8 @@ export function ControlDeploymentTab({
         >
           <BatterySection
             batteryGroups={batteries.batteryGroups}
-            expandedUnitKey={deployment.expandedUnitKey}
-            selectedUnitKey={deployment.selectedUnitKey}
+            expandedBatteryName={deployment.expandedBatteryName}
+            selectedBatteryName={deployment.selectedBatteryName}
             onUnitSelect={deployment.handleUnitSelect}
             onUndeploy={deployment.handleUndeploy}
             onCancelSelection={deployment.handleCancelSelect}
@@ -190,7 +190,7 @@ export function ControlDeploymentTab({
           sideName={sideName}
           airbases={airbases}
           jammers={jammers}
-          deployedMissileSystems={deployedMissileSystems}
+          deployedBatteries={deployedBatteries}
           weaponRanges={batteries.weaponRanges}
           deployedJammers={deployedJammers}
           signals={signals}
@@ -198,7 +198,7 @@ export function ControlDeploymentTab({
           isPlacementActive={isPlacementActive}
           mousePosition={deployment.mousePosition}
           relocatingArea={deployment.relocatingArea}
-          rotatingUnitKey={deployment.rotatingUnitKey}
+          rotatingBatteryName={deployment.rotatingBatteryName}
           relocatingJammerIndex={deployment.relocatingJammerIndex}
           placingJammerUnit={deployment.placingJammerUnit}
           deployPreview={deployment.previewData}

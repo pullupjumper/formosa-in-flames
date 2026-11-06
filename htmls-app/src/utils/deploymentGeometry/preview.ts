@@ -1,5 +1,5 @@
 import type { Coordinate, CoordinateOffset } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { translateCoordinate } from '@/utils/geo';
 import { areAllPointsInTaiwan } from './taiwanBoundary';
@@ -90,7 +90,7 @@ export function previewDeployment(
 // ============================================================================
 /** Area relocation: the boundary translates as a whole, a single square re-squares at the cursor */
 export function previewRelocation(
-  deployment: MissileDeployment,
+  deployment: DeployedBattery,
   target: RelocateTarget,
   cursor: Coordinate
 ): Coordinate[] {
@@ -112,7 +112,7 @@ export function previewRelocation(
 // ============================================================================
 /** Rotation: regenerate the layout at the swept angle, fire points kept */
 export function previewRotation(
-  deployment: MissileDeployment,
+  deployment: DeployedBattery,
   angle: number,
   validateTaiwanBoundary: boolean,
   rng: RandomSource = Math.random

@@ -15,7 +15,7 @@ export type SquareAreaType = Exclude<AreaType, 'ushape'>;
 
 /** One clickable area of one deployed unit */
 export interface RelocatingArea {
-  unitKey: string;
+  batteryName: string;
   type: AreaType;
   /** Which fire point, only meaningful when `type` is `'fp'` */
   fpIndex?: number;
@@ -23,14 +23,13 @@ export interface RelocatingArea {
 
 /** Unit armed from the sidebar, waiting for a map click */
 export interface SelectedUnit {
-  key: string;
   name: string;
   missileSystemType: string;
 }
 
-/** One missile unit placed on the map, with everything the export needs. */
-export interface MissileDeployment extends BatteryPlacement {
-  unitname: string;
+/** One battery placed on the map, with everything the export needs. */
+export interface DeployedBattery extends BatteryPlacement {
+  name: string;
   missileSystemType: string;
   /** Absent on scenario-placed units; the generator then uses AREA_CONFIG. */
   atpRadius?: number;

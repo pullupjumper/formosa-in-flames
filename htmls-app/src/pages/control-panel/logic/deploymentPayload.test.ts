@@ -4,7 +4,6 @@ import {
   toExportPaths,
   toControlPanelResult,
 } from '@/pages/control-panel/logic/deploymentPayload';
-import { buildUnitKey } from '@/pages/control-panel/logic/batteryGroups';
 import { createBudgetState } from '@/pages/control-panel/logic/budgetLedger';
 import { generateDeploymentData } from '@/utils/deploymentGeometry';
 import { calculateCentroid } from '@/utils/geo';
@@ -14,12 +13,11 @@ import { BATTERIES_DATA, JAMMERS_DATA } from '@/data/controlPanelData';
 const BATTERY = BATTERIES_DATA[0];
 const CATEGORY = BATTERY.missileSystemType;
 const UNIT_NAME = BATTERY.name;
-const UNIT_KEY = buildUnitKey(CATEGORY, UNIT_NAME);
-const INJECTED = buildInjectedDeployments([BATTERY]).get(UNIT_KEY)!;
+const INJECTED = buildInjectedDeployments([BATTERY]).get(UNIT_NAME)!;
 
 describe('buildInjectedDeployments', () => {
   it('keeps identity and the placement verbatim', () => {
-    expect(INJECTED.unitname).toBe(UNIT_NAME);
+    expect(INJECTED.name).toBe(UNIT_NAME);
     expect(INJECTED.missileSystemType).toBe(CATEGORY);
     expect(INJECTED.center).toBe(BATTERY.placement.center);
     expect(INJECTED.tacticalAreas).toBe(BATTERY.placement.tacticalAreas);
@@ -40,7 +38,7 @@ describe('buildInjectedDeployments', () => {
       },
     };
 
-    expect(buildInjectedDeployments([noLoop]).get(UNIT_KEY)!.paths.SHRL.waypoints).toEqual([]);
+    expect(buildInjectedDeployments([noLoop]).get(UNIT_NAME)!.paths.SHRL.waypoints).toEqual([]);
   });
 
   it('creates one entry per battery', () => {
@@ -81,7 +79,7 @@ describe('toControlPanelResult', () => {
 
     const result = toControlPanelResult({
       ...baseParams,
-      deployedMissileSystems: new Map(injected),
+      deployedBatteries: new Map(injected),
       injectedDeployments: injected,
     });
 
@@ -91,7 +89,7 @@ describe('toControlPanelResult', () => {
   it('keeps a unit the player redeployed', () => {
     const injected = new Map([['k', INJECTED]]);
     const moved = generateDeploymentData({
-      unitname: UNIT_NAME,
+      name: UNIT_NAME,
       missileSystemType: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
       angle: 90,
@@ -101,7 +99,7 @@ describe('toControlPanelResult', () => {
 
     const result = toControlPanelResult({
       ...baseParams,
-      deployedMissileSystems: new Map([['k', moved!]]),
+      deployedBatteries: new Map([['k', moved!]]),
       injectedDeployments: injected,
     });
 
@@ -111,7 +109,7 @@ describe('toControlPanelResult', () => {
   it('uses the Lua field names and the trimmed paths', () => {
     const rng = createSeededRandom(7);
     const generated = generateDeploymentData({
-      unitname: UNIT_NAME,
+      name: UNIT_NAME,
       missileSystemType: CATEGORY,
       center: { latitude: 23.9, longitude: 120.75 },
       angle: 90,
@@ -125,7 +123,7 @@ describe('toControlPanelResult', () => {
       airbases: [],
       jammers: JAMMERS_DATA,
       deployedJammers: new Map([[0, { latitude: 24, longitude: 121 }]]),
-      deployedMissileSystems: new Map([['k', generated!]]),
+      deployedBatteries: new Map([['k', generated!]]),
       injectedDeployments: new Map(),
     });
 

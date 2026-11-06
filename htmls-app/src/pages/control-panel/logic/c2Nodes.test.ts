@@ -33,9 +33,8 @@ function c2Unit(name: string, type = 'c2'): C2SamUnit {
   return { ...radarUnit(name, type), weaponFree: false };
 }
 
-function battery(unitKey: string, name: string): Battery {
+function battery(name: string): Battery {
   return {
-    unitKey,
     name,
     missileSystem: 'PAC-3',
     missileSystemType: 'sam',
@@ -73,9 +72,9 @@ describe('buildC2NodeViews', () => {
     const nodes: C2NodeSet = {
       n1: { name: 'C2', type: 'c2', pos: ORIGIN, areas: [], sam: { g1: c2Unit('Same Name') } },
     };
-    const batteries = [battery('sam_a', 'Same Name')];
+    const batteries = [battery('Same Name')];
 
-    expect(buildC2NodeViews(nodes, batteries)[0].children[0].battery?.unitKey).toBe('sam_a');
+    expect(buildC2NodeViews(nodes, batteries)[0].children[0].battery?.name).toBe('Same Name');
   });
 
   it('leaves SAM units without a battery as plain cards', () => {
@@ -83,7 +82,7 @@ describe('buildC2NodeViews', () => {
       n1: { name: 'C2', type: 'c2', pos: ORIGIN, areas: [], sam: { g1: c2Unit('Unknown') } },
     };
 
-    expect(buildC2NodeViews(nodes, [battery('sam_a', 'Other')])[0].children[0].battery).toBe(null);
+    expect(buildC2NodeViews(nodes, [battery('Other')])[0].children[0].battery).toBe(null);
   });
 
   it('never gives one battery to two SAM units', () => {
@@ -97,9 +96,9 @@ describe('buildC2NodeViews', () => {
       },
     };
 
-    const children = buildC2NodeViews(nodes, [battery('sam_a', 'Twin')])[0].children;
+    const children = buildC2NodeViews(nodes, [battery('Twin')])[0].children;
 
-    expect(children.map((child) => child.battery?.unitKey ?? null)).toEqual(['sam_a', null]);
+    expect(children.map((child) => child.battery?.name ?? null)).toEqual(['Twin', null]);
   });
 
   describe('redeployed SAM', () => {
@@ -110,7 +109,7 @@ describe('buildC2NodeViews', () => {
       { latitude: latitude + 1, longitude: longitude - 1 },
     ];
     const deployedAt = (latitude: number, longitude: number): Battery => ({
-      ...battery('b1', 'SAM'),
+      ...battery('SAM'),
       deployment: {
         tacticalAreas: { hideArea: zone(latitude, longitude).map((p) => ({ ...p })) },
       } as Battery['deployment'],
@@ -147,7 +146,7 @@ describe('buildC2NodeViews', () => {
 
     it('keeps the pinned node after the deployment is cancelled', () => {
       const pinned = new Map([['s1', 'b']]);
-      const views = buildC2NodeViews(twoNodes(), [battery('b1', 'SAM')], pinned);
+      const views = buildC2NodeViews(twoNodes(), [battery('SAM')], pinned);
 
       expect(childNames(views)).toEqual({ a: [], b: ['s1'] });
     });
@@ -271,7 +270,7 @@ describe('buildC2MapLayers', () => {
         near: { type: 'c2', name: 'Near', pos: { latitude: 23, longitude: 120 }, areas: [zone] },
       };
       const deployed = {
-        ...battery('b1', 'SAM'),
+        ...battery('SAM'),
         deployment: {
           tacticalAreas: { hideArea: square(hideCenter.latitude, hideCenter.longitude) },
         } as Battery['deployment'],
@@ -303,7 +302,7 @@ describe('buildC2MapLayers', () => {
         },
       };
       const deployed = {
-        ...battery('b1', 'SAM'),
+        ...battery('SAM'),
         deployment: {
           tacticalAreas: { hideArea: square(23, 120) },
         } as Battery['deployment'],
@@ -318,7 +317,7 @@ describe('buildC2MapLayers', () => {
       const nodes: C2NodeSet = {
         n1: { type: 'c2', name: 'N', pos: ORIGIN, areas: [], sam: { s1: c2Unit('SAM') } },
       };
-      const views = buildC2NodeViews(nodes, [battery('b1', 'SAM')]);
+      const views = buildC2NodeViews(nodes, [battery('SAM')]);
 
       const layers = buildC2MapLayers(views, new Map([['s1', 'n1']]));
 
@@ -346,7 +345,7 @@ describe('getSamDeploymentWarning', () => {
       {
         n1: { type: 'c2', name: 'N', pos: ORIGIN, areas: [zone], sam: { s1: c2Unit('SAM') } },
       },
-      [battery('b1', 'SAM')]
+      [battery('SAM')]
     );
 
   it('lets a SAM deploy inside the zone of a node of its type', () => {
@@ -354,7 +353,7 @@ describe('getSamDeploymentWarning', () => {
   });
 
   it('warns when the position is outside every zone', () => {
-    expect(getSamDeploymentWarning(views(), 'b1', { latitude: 30, longitude: 130 })).toBe(
+    expect(getSamDeploymentWarning(views(), 'SAM', { latitude: 30, longitude: 130 })).toBe(
       OUTSIDE_OPERATING_ZONE
     );
   });
@@ -388,7 +387,7 @@ describe('collectC2ContextUpdates', () => {
     },
   });
   const deployedAt = (latitude: number, longitude: number): Battery => ({
-    ...battery('b1', 'SAM'),
+    ...battery('SAM'),
     deployment: {
       tacticalAreas: { hideArea: zone(latitude, longitude) },
     } as Battery['deployment'],

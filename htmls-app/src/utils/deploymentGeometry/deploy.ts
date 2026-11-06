@@ -1,6 +1,6 @@
 import type { TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { AREA_CONFIG, DEPLOYMENT_MAX_ATTEMPTS } from './config';
 import { generateLayout } from './layout';
@@ -15,7 +15,7 @@ import { areAllPointsInTaiwan } from './taiwanBoundary';
  */
 
 export interface GenerateDeploymentParams {
-  unitname: string;
+  name: string;
   missileSystemType: string;
   center: Coordinate;
   angle: number;
@@ -53,7 +53,7 @@ export function isValidAngle(angle: number): boolean {
  * layout with both gateways could be found.
  */
 export function generateDeploymentData({
-  unitname,
+  name,
   missileSystemType,
   center,
   angle,
@@ -62,7 +62,7 @@ export function generateDeploymentData({
   atpCenterOverride,
   firePointsOverride,
   rng = Math.random,
-}: GenerateDeploymentParams): MissileDeployment | null {
+}: GenerateDeploymentParams): DeployedBattery | null {
   try {
     const layoutOptions = { atpRadius: atpRadiusOverride, atpCenter: atpCenterOverride };
 
@@ -87,7 +87,7 @@ export function generateDeploymentData({
       };
 
       return {
-        unitname,
+        name,
         missileSystemType,
         center,
         openingAngle: angle,
@@ -109,7 +109,7 @@ export function generateDeploymentData({
 }
 
 export interface RotateDeploymentParams {
-  deployment: MissileDeployment;
+  deployment: DeployedBattery;
   angle: number;
   validateTaiwanBoundary: boolean;
   rng?: RandomSource;
@@ -126,10 +126,10 @@ export function rotateDeployment({
   angle,
   validateTaiwanBoundary,
   rng = Math.random,
-}: RotateDeploymentParams): MissileDeployment | null {
+}: RotateDeploymentParams): DeployedBattery | null {
   if (!isValidAngle(angle)) return null;
   return generateDeploymentData({
-    unitname: deployment.unitname,
+    name: deployment.name,
     missileSystemType: deployment.missileSystemType,
     center: deployment.center,
     angle,

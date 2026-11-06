@@ -2,7 +2,7 @@ import type { GNSSJammerDescriptor } from '@/types/generated';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import { useDeploymentState } from '@/pages/control-panel/hooks/useDeploymentState';
 import type { UseDeploymentStateParams } from '@/pages/control-panel/hooks/useDeploymentState';
 import {
@@ -30,12 +30,10 @@ const OFFSHORE: Coordinate = { latitude: 23.9, longitude: 118.5 };
 /** Fixed so the rejection-sampled layouts are identical on every run. */
 const SEED = 42;
 
-const UNIT_KEY = 'ascm_HF3_01';
 const UNIT_NAME = 'HF3 Battery 1';
 
-function batteryOf(unitKey: string, name: string): Battery {
+function batteryOf(name: string): Battery {
   return {
-    unitKey,
     name,
     missileSystem: 'HF-3',
     missileSystemType: 'ascm',
@@ -43,16 +41,16 @@ function batteryOf(unitKey: string, name: string): Battery {
     status: undefined,
   };
 }
-const BATTERY = batteryOf(UNIT_KEY, UNIT_NAME);
+const BATTERY = batteryOf(UNIT_NAME);
 
 const JAMMERS = [
   { zoneName: 'Z1', name: 'EW North', randomRadiusNm: 5, radiusNm: 50 },
   { zoneName: 'Z2', name: 'EW South', randomRadiusNm: 5, radiusNm: 50 },
 ] as GNSSJammerDescriptor[];
 
-function makeDeployment(): MissileDeployment {
+function makeDeployment(): DeployedBattery {
   const data = generateDeploymentData({
-    unitname: UNIT_NAME,
+    name: UNIT_NAME,
     missileSystemType: 'ascm',
     center: INLAND,
     angle: 90,
@@ -89,7 +87,7 @@ function setup(overrides: Partial<UseDeploymentStateParams> = {}) {
   return renderHook(() =>
     useDeploymentState({
       jammers: JAMMERS,
-      deployedMissileSystems: new Map(),
+      deployedBatteries: new Map(),
       deployedJammers: new Map(),
       shouldValidateTaiwanBoundary: true,
       rng,
@@ -123,16 +121,20 @@ function pressEscape() {
 // ============================================================================
 describe('formatAreaLabel', () => {
   it.each(['ushape', 'atp', 'hide', 'reload'] as const)('uses the plain label for %s', (type) => {
-    expect(formatAreaLabel({ unitKey: UNIT_KEY, type })).toBe(getAreaLabel(type));
+    expect(formatAreaLabel({ batteryName: UNIT_NAME, type })).toBe(getAreaLabel(type));
   });
 
   it('numbers fire points from 1', () => {
-    expect(formatAreaLabel({ unitKey: UNIT_KEY, type: 'fp', fpIndex: 0 })).toBe('Fire Point 1');
-    expect(formatAreaLabel({ unitKey: UNIT_KEY, type: 'fp', fpIndex: 1 })).toBe('Fire Point 2');
+    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp', fpIndex: 0 })).toBe(
+      'Fire Point 1'
+    );
+    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp', fpIndex: 1 })).toBe(
+      'Fire Point 2'
+    );
   });
 
   it('defaults a missing fire point index to the first', () => {
-    expect(formatAreaLabel({ unitKey: UNIT_KEY, type: 'fp' })).toBe('Fire Point 1');
+    expect(formatAreaLabel({ batteryName: UNIT_NAME, type: 'fp' })).toBe('Fire Point 1');
   });
 });
 
@@ -159,17 +161,17 @@ describe('formatRelocateFailure', () => {
 // MODE REDUCER
 // ============================================================================
 describe('deploymentModeReducer', () => {
-  const AREA = { unitKey: UNIT_KEY, type: 'hide' as const };
+  const AREA = { batteryName: UNIT_NAME, type: 'hide' as const };
 
   it('drops the previous mode on every transition', () => {
     const deploying = deploymentModeReducer(IDLE_STATE, {
       type: 'selectUnit',
-      unit: { key: UNIT_KEY, name: UNIT_NAME, missileSystemType: 'ascm' },
+      unit: { name: UNIT_NAME, missileSystemType: 'ascm' },
       offsets: {},
     });
     const rotating = deploymentModeReducer(deploying, {
       type: 'rotate',
-      unitKey: UNIT_KEY,
+      batteryName: UNIT_NAME,
       center: INLAND,
     });
 
@@ -195,7 +197,7 @@ describe('deploymentModeReducer', () => {
   it('records the swept angle only while rotating', () => {
     const rotating = deploymentModeReducer(IDLE_STATE, {
       type: 'rotate',
-      unitKey: UNIT_KEY,
+      batteryName: UNIT_NAME,
       center: INLAND,
     });
     const swept = deploymentModeReducer(rotating, {
@@ -217,7 +219,7 @@ describe('deploymentModeReducer', () => {
   it('classifies which modes block a jammer click', () => {
     expect(isMissileMode({ kind: 'relocateArea', area: AREA })).toBe(true);
     expect(
-      isMissileMode({ kind: 'rotate', unitKey: UNIT_KEY, center: INLAND, previewAngle: null })
+      isMissileMode({ kind: 'rotate', batteryName: UNIT_NAME, center: INLAND, previewAngle: null })
     ).toBe(true);
     expect(isMissileMode({ kind: 'placeJammer', index: 0, isRelocate: false })).toBe(false);
     expect(isMissileMode({ kind: 'idle' })).toBe(false);
@@ -226,7 +228,7 @@ describe('deploymentModeReducer', () => {
   it('compares areas by unit, type and fire point index', () => {
     expect(isSameArea(AREA, { ...AREA })).toBe(true);
     expect(isSameArea(AREA, { ...AREA, type: 'reload' })).toBe(false);
-    const fp = { unitKey: UNIT_KEY, type: 'fp' as const, fpIndex: 0 };
+    const fp = { batteryName: UNIT_NAME, type: 'fp' as const, fpIndex: 0 };
     expect(isSameArea(fp, { ...fp, fpIndex: 1 })).toBe(false);
   });
 
@@ -234,7 +236,7 @@ describe('deploymentModeReducer', () => {
     expect(
       formatCancellationMessage({
         kind: 'rotate',
-        unitKey: UNIT_KEY,
+        batteryName: UNIT_NAME,
         center: INLAND,
         previewAngle: null,
       })
@@ -269,18 +271,18 @@ describe('useDeploymentState initial state', () => {
 // ============================================================================
 describe('isLocked', () => {
   it('ignores every handler that edits a deployment', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
     const { result } = setup({
       isLocked: true,
-      deployedMissileSystems,
+      deployedBatteries,
       deployedJammers: new Map([[0, INLAND]]),
     });
 
     act(() => {
-      result.current.handleUnitSelect(batteryOf('ascm_other', 'Other'));
+      result.current.handleUnitSelect(batteryOf('Other'));
       result.current.handleJammerSelect(1);
-      result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' });
-      result.current.handleRotateClick(UNIT_KEY);
+      result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' });
+      result.current.handleRotateClick(UNIT_NAME);
       result.current.handleJammerRelocateClick(0);
       result.current.handleUndeploy(BATTERY);
       result.current.handleUndeployJammer(0);
@@ -304,7 +306,6 @@ describe('mode arbitration', () => {
     act(() => result.current.handleUnitSelect(BATTERY));
 
     expect(expectMode(result.current.mode, 'deploy').unit).toEqual({
-      key: UNIT_KEY,
       name: UNIT_NAME,
       missileSystemType: 'ascm',
     });
@@ -313,15 +314,15 @@ describe('mode arbitration', () => {
   });
 
   it('expands an already deployed unit instead of arming a placement', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
 
     act(() => result.current.handleUnitSelect(BATTERY));
     expectIdle(result.current.mode);
-    expect(result.current.expandedUnitKey).toBe(UNIT_KEY);
+    expect(result.current.expandedBatteryName).toBe(UNIT_NAME);
 
     act(() => result.current.handleUnitSelect(BATTERY));
-    expect(result.current.expandedUnitKey).toBeNull();
+    expect(result.current.expandedBatteryName).toBeNull();
   });
 
   it('drops a pending unit selection when a jammer is selected', () => {
@@ -345,21 +346,21 @@ describe('mode arbitration', () => {
   });
 
   it('drops a pending unit selection when an area relocation starts', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleUnitSelect(batteryOf('ascm_OTHER', 'Other')));
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleUnitSelect(batteryOf('Other')));
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
 
     expect(expectMode(result.current.mode, 'relocateArea').area).toEqual({
-      unitKey: UNIT_KEY,
+      batteryName: UNIT_NAME,
       type: 'hide',
     });
   });
 
   it('toggles area relocation off when the same area is clicked again', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    const area = { unitKey: UNIT_KEY, type: 'fp' as const, fpIndex: 1 };
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    const area = { batteryName: UNIT_NAME, type: 'fp' as const, fpIndex: 1 };
 
     act(() => result.current.handleAreaClick(area));
     expect(expectMode(result.current.mode, 'relocateArea').area).toEqual(area);
@@ -369,19 +370,19 @@ describe('mode arbitration', () => {
   });
 
   it('ignores an area click while a jammer is being placed', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
     act(() => result.current.handleJammerSelect(0));
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
 
     expectMode(result.current.mode, 'placeJammer');
   });
 
   it('ignores a rotate click while a jammer is being placed', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
     act(() => result.current.handleJammerSelect(0));
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    act(() => result.current.handleRotateClick(UNIT_NAME));
 
     expectMode(result.current.mode, 'placeJammer');
   });
@@ -395,20 +396,20 @@ describe('mode arbitration', () => {
   });
 
   it('replaces area relocation with rotation', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
+    act(() => result.current.handleRotateClick(UNIT_NAME));
 
     const rotating = expectMode(result.current.mode, 'rotate');
-    expect(rotating.unitKey).toBe(UNIT_KEY);
+    expect(rotating.batteryName).toBe(UNIT_NAME);
     expect(rotating.center).toEqual(INLAND);
     expect(rotating.previewAngle).toBeNull();
   });
 
   it('ignores rotation of an undeployed unit', () => {
     const { result } = setup();
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    act(() => result.current.handleRotateClick(UNIT_NAME));
     expectIdle(result.current.mode);
   });
 });
@@ -427,9 +428,9 @@ describe('ESC cancellation', () => {
   });
 
   it('cancels area relocation', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'reload' }));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'reload' }));
     pressEscape();
 
     expectIdle(result.current.mode);
@@ -437,9 +438,9 @@ describe('ESC cancellation', () => {
   });
 
   it('cancels rotation', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleRotateClick(UNIT_NAME));
     pressEscape();
 
     expectIdle(result.current.mode);
@@ -457,12 +458,12 @@ describe('ESC cancellation', () => {
   });
 
   it('reads the mode at key-press time, not at listener registration', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
     // The listener is keyed on "a mode is live", so this switch does not
     // re-register it — the message still has to follow the current mode.
-    act(() => result.current.handleUnitSelect(batteryOf('ascm_OTHER', 'Other')));
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    act(() => result.current.handleUnitSelect(batteryOf('Other')));
+    act(() => result.current.handleRotateClick(UNIT_NAME));
     pressEscape();
 
     expect(result.current.status).toBe('Rotation cancelled');
@@ -495,7 +496,7 @@ describe('handleMapClick', () => {
 
     expect(handlers.onDeploySystem).toHaveBeenCalledOnce();
     const [key, data] = handlers.onDeploySystem.mock.calls[0];
-    expect(key).toBe(UNIT_KEY);
+    expect(key).toBe(UNIT_NAME);
     expect(data.center).toEqual(INLAND);
     expectIdle(result.current.mode);
     expect(result.current.status).toContain('Done:');
@@ -559,9 +560,9 @@ describe('handleMapClick', () => {
   });
 
   it('ignores a rotation click before an angle has been swept', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleRotateClick(UNIT_NAME));
     act(() => result.current.handleMapClick(INLAND));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
@@ -569,9 +570,9 @@ describe('handleMapClick', () => {
   });
 
   it('commits a rotation once an angle has been previewed', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleRotateClick(UNIT_NAME));
     act(() => result.current.handleMouseMove({ ...INLAND, longitude: INLAND.longitude - 0.2 }));
     expect(result.current.rotationPreviewData).not.toBeNull();
 
@@ -584,11 +585,11 @@ describe('handleMapClick', () => {
 
   it('relocates a hide area and reports the move', () => {
     const deployment = makeDeployment();
-    const deployedMissileSystems = new Map([[UNIT_KEY, deployment]]);
-    const { result } = setup({ deployedMissileSystems });
+    const deployedBatteries = new Map([[UNIT_NAME, deployment]]);
+    const { result } = setup({ deployedBatteries });
     const target = deployment.tacticalAreas.hideArea![0];
 
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
     act(() => result.current.handleMapClick(target));
 
     // Either the move lands (deployment pushed, mode cleared) or the position is
@@ -603,15 +604,15 @@ describe('handleMapClick', () => {
   });
 
   it('rejects a rotation that the position check refuses', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
     const validateMissilePosition = vi.fn(() => 'Warning: outside zone');
-    const { result } = setup({ deployedMissileSystems, validateMissilePosition });
+    const { result } = setup({ deployedBatteries, validateMissilePosition });
     const target = { ...INLAND, longitude: INLAND.longitude - 0.2 };
-    act(() => result.current.handleRotateClick(UNIT_KEY));
+    act(() => result.current.handleRotateClick(UNIT_NAME));
     act(() => result.current.handleMouseMove(target));
     act(() => result.current.handleMapClick(target));
 
-    expect(validateMissilePosition).toHaveBeenCalledWith(UNIT_KEY, expect.anything());
+    expect(validateMissilePosition).toHaveBeenCalledWith(UNIT_NAME, expect.anything());
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
     expect(result.current.status).toBe('Warning: outside zone');
     expectMode(result.current.mode, 'rotate');
@@ -619,11 +620,11 @@ describe('handleMapClick', () => {
 
   it('rejects a hide-area relocation that the position check refuses', () => {
     const deployment = makeDeployment();
-    const deployedMissileSystems = new Map([[UNIT_KEY, deployment]]);
+    const deployedBatteries = new Map([[UNIT_NAME, deployment]]);
     const validateMissilePosition = vi.fn(() => 'Warning: outside zone');
-    const { result } = setup({ deployedMissileSystems, validateMissilePosition });
+    const { result } = setup({ deployedBatteries, validateMissilePosition });
 
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
     act(() => result.current.handleMapClick(deployment.tacticalAreas.hideArea![0]));
 
     expect(handlers.onDeploySystem).not.toHaveBeenCalled();
@@ -631,11 +632,11 @@ describe('handleMapClick', () => {
   });
 
   it('leaves relocation mode when the unit disappeared underneath it', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result, rerender } = setup({ deployedMissileSystems });
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result, rerender } = setup({ deployedBatteries });
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
 
-    deployedMissileSystems.delete(UNIT_KEY);
+    deployedBatteries.delete(UNIT_NAME);
     rerender();
     act(() => result.current.handleMapClick(INLAND));
 
@@ -677,9 +678,9 @@ describe('preview data', () => {
   });
 
   it('follows the cursor while relocating an area', () => {
-    const deployedMissileSystems = new Map([[UNIT_KEY, makeDeployment()]]);
-    const { result } = setup({ deployedMissileSystems });
-    act(() => result.current.handleAreaClick({ unitKey: UNIT_KEY, type: 'hide' }));
+    const deployedBatteries = new Map([[UNIT_NAME, makeDeployment()]]);
+    const { result } = setup({ deployedBatteries });
+    act(() => result.current.handleAreaClick({ batteryName: UNIT_NAME, type: 'hide' }));
     act(() => result.current.handleMouseMove({ ...INLAND, latitude: INLAND.latitude + 0.01 }));
 
     const vertices = result.current.relocatePreviewVertices!;
@@ -715,7 +716,7 @@ describe('undeploy', () => {
     const { result } = setup();
     act(() => result.current.handleUndeploy(BATTERY));
 
-    expect(handlers.onUndeploySystem).toHaveBeenCalledWith(UNIT_KEY);
+    expect(handlers.onUndeploySystem).toHaveBeenCalledWith(UNIT_NAME);
     expect(result.current.status).toContain(UNIT_NAME);
   });
 

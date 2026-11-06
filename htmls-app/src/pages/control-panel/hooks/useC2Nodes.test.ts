@@ -52,7 +52,6 @@ function buildC2Data(): C2NodeSet {
 
 function buildBattery(deployedAt?: { latitude: number; longitude: number }): Battery {
   return {
-    unitKey: 'b1',
     name: 'SAM',
     missileSystem: 'PAC-3',
     missileSystemType: 'sam',
@@ -80,7 +79,7 @@ describe('useC2Nodes', () => {
     const { result } = renderHook(() => useC2Nodes(buildPayload(buildC2Data()), [buildBattery()]));
 
     expect(childKeys(result.current.nodes)).toEqual({ a: ['s1'], b: [] });
-    expect(result.current.nodes[0].children[0].battery?.unitKey).toBe('b1');
+    expect(result.current.nodes[0].children[0].battery?.name).toBe('SAM');
   });
 
   describe('a redeployed SAM', () => {
@@ -191,7 +190,7 @@ describe('useC2Nodes', () => {
       );
 
       expect(
-        result.current.validateMissilePosition('b1', { latitude: 23, longitude: 120 })
+        result.current.validateMissilePosition('SAM', { latitude: 23, longitude: 120 })
       ).toBeNull();
     });
 
@@ -200,7 +199,7 @@ describe('useC2Nodes', () => {
         useC2Nodes(buildPayload(buildC2Data()), [buildBattery()])
       );
 
-      expect(result.current.validateMissilePosition('b1', { latitude: 10, longitude: 100 })).toBe(
+      expect(result.current.validateMissilePosition('SAM', { latitude: 10, longitude: 100 })).toBe(
         OUTSIDE_OPERATING_ZONE
       );
     });

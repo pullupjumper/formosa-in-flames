@@ -4,21 +4,21 @@ import {
   deploymentModeReducer,
   formatAreaLabel,
   selectRelocatingArea,
-  selectRotatingUnitKey,
-  selectSelectedUnitKey,
+  selectRotatingBatteryName,
+  selectSelectedBatteryName,
   selectSelectedJammerIndex,
   selectRelocatingJammerIndex,
 } from './deploymentMode';
 import type { DeploymentMode } from './deploymentMode';
 
-const UNIT = { key: 'ascm_HF3_01', name: 'HF3_01', missileSystemType: 'ascm' };
+const UNIT = { name: 'HF3_01', missileSystemType: 'ascm' };
 const CENTER = { latitude: 24, longitude: 121 };
 
 const MODES: Record<string, DeploymentMode> = {
   idle: { kind: 'idle' },
   deploy: { kind: 'deploy', unit: UNIT, offsets: {} },
-  relocateArea: { kind: 'relocateArea', area: { unitKey: UNIT.key, type: 'fp', fpIndex: 1 } },
-  rotate: { kind: 'rotate', unitKey: UNIT.key, center: CENTER, previewAngle: null },
+  relocateArea: { kind: 'relocateArea', area: { batteryName: UNIT.name, type: 'fp', fpIndex: 1 } },
+  rotate: { kind: 'rotate', batteryName: UNIT.name, center: CENTER, previewAngle: null },
   placeJammer: { kind: 'placeJammer', index: 2, isRelocate: false },
   relocateJammer: { kind: 'placeJammer', index: 3, isRelocate: true },
 };
@@ -27,8 +27,8 @@ describe('selectors', () => {
   it.each(Object.entries(MODES))('%s answers every selector without throwing', (_, mode) => {
     expect(() => {
       selectRelocatingArea(mode);
-      selectRotatingUnitKey(mode);
-      selectSelectedUnitKey(mode);
+      selectRotatingBatteryName(mode);
+      selectSelectedBatteryName(mode);
       selectSelectedJammerIndex(mode);
       selectRelocatingJammerIndex(mode);
     }).not.toThrow();
@@ -36,17 +36,17 @@ describe('selectors', () => {
 
   it('only the owning mode is non-null', () => {
     expect(selectRelocatingArea(MODES.relocateArea)).toEqual({
-      unitKey: UNIT.key,
+      batteryName: UNIT.name,
       type: 'fp',
       fpIndex: 1,
     });
     expect(selectRelocatingArea(MODES.rotate)).toBeNull();
 
-    expect(selectRotatingUnitKey(MODES.rotate)).toBe(UNIT.key);
-    expect(selectRotatingUnitKey(MODES.deploy)).toBeNull();
+    expect(selectRotatingBatteryName(MODES.rotate)).toBe(UNIT.name);
+    expect(selectRotatingBatteryName(MODES.deploy)).toBeNull();
 
-    expect(selectSelectedUnitKey(MODES.deploy)).toBe(UNIT.key);
-    expect(selectSelectedUnitKey(MODES.idle)).toBeNull();
+    expect(selectSelectedBatteryName(MODES.deploy)).toBe(UNIT.name);
+    expect(selectSelectedBatteryName(MODES.idle)).toBeNull();
 
     expect(selectSelectedJammerIndex(MODES.placeJammer)).toBe(2);
     expect(selectSelectedJammerIndex(MODES.relocateJammer)).toBeNull();
@@ -58,8 +58,8 @@ describe('selectors', () => {
 
 describe('formatAreaLabel', () => {
   it('numbers fire points from 1 and labels the rest by type', () => {
-    expect(formatAreaLabel({ unitKey: 'k', type: 'fp', fpIndex: 1 })).toBe('Fire Point 2');
-    expect(formatAreaLabel({ unitKey: 'k', type: 'atp' })).toBe('ATP');
+    expect(formatAreaLabel({ batteryName: 'k', type: 'fp', fpIndex: 1 })).toBe('Fire Point 2');
+    expect(formatAreaLabel({ batteryName: 'k', type: 'atp' })).toBe('ATP');
   });
 });
 
@@ -67,7 +67,7 @@ describe('reducer', () => {
   it('hover only carries the angle while rotating', () => {
     const rotating = deploymentModeReducer(IDLE_STATE, {
       type: 'rotate',
-      unitKey: UNIT.key,
+      batteryName: UNIT.name,
       center: CENTER,
     });
     const swept = deploymentModeReducer(rotating, {
@@ -75,7 +75,7 @@ describe('reducer', () => {
       position: CENTER,
       rotationAngle: 45,
     });
-    expect(selectRotatingUnitKey(swept.mode)).toBe(UNIT.key);
+    expect(selectRotatingBatteryName(swept.mode)).toBe(UNIT.name);
     expect(swept.mode.kind === 'rotate' && swept.mode.previewAngle).toBe(45);
 
     const idleHover = deploymentModeReducer(IDLE_STATE, {

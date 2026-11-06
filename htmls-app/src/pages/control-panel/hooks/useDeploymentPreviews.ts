@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import {
   previewDeployment,
   previewRelocation,
@@ -21,7 +21,7 @@ export type { DeploymentPreview } from '@/utils/deploymentGeometry';
 export interface UseDeploymentPreviewsParams {
   mode: DeploymentMode;
   mousePosition: Coordinate | null;
-  deployedMissileSystems: Map<string, MissileDeployment>;
+  deployedBatteries: Map<string, DeployedBattery>;
   shouldValidateTaiwanBoundary: boolean;
   rng: RandomSource;
 }
@@ -29,7 +29,7 @@ export interface UseDeploymentPreviewsParams {
 export function useDeploymentPreviews({
   mode,
   mousePosition,
-  deployedMissileSystems,
+  deployedBatteries,
   shouldValidateTaiwanBoundary,
   rng,
 }: UseDeploymentPreviewsParams) {
@@ -42,17 +42,17 @@ export function useDeploymentPreviews({
 
   const relocatePreviewVertices = useMemo<Coordinate[] | null>(() => {
     if (mode.kind !== 'relocateArea' || !mousePosition) return null;
-    const deployment = deployedMissileSystems.get(mode.area.unitKey);
+    const deployment = deployedBatteries.get(mode.area.batteryName);
     if (!deployment) return null;
     return previewRelocation(deployment, mode.area, mousePosition);
-  }, [mode, mousePosition, deployedMissileSystems]);
+  }, [mode, mousePosition, deployedBatteries]);
 
   const rotationPreviewData = useMemo<DeploymentPreview | null>(() => {
     if (mode.kind !== 'rotate' || mode.previewAngle === null) return null;
-    const deployment = deployedMissileSystems.get(mode.unitKey);
+    const deployment = deployedBatteries.get(mode.batteryName);
     if (!deployment) return null;
     return previewRotation(deployment, mode.previewAngle, shouldValidateTaiwanBoundary, rng);
-  }, [mode, deployedMissileSystems, shouldValidateTaiwanBoundary, rng]);
+  }, [mode, deployedBatteries, shouldValidateTaiwanBoundary, rng]);
 
   return { previewData, relocatePreviewVertices, rotationPreviewData };
 }

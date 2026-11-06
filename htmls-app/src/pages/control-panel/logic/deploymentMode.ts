@@ -17,7 +17,7 @@ export type DeploymentMode =
   /** A sidebar unit is armed; `offsets` drives the hover preview */
   | { kind: 'deploy'; unit: SelectedUnit; offsets: Record<number, PreviewOffsets> }
   | { kind: 'relocateArea'; area: RelocatingArea }
-  | { kind: 'rotate'; unitKey: string; center: Coordinate; previewAngle: number | null }
+  | { kind: 'rotate'; batteryName: string; center: Coordinate; previewAngle: number | null }
   /** Deploy and relocate share the same commit path, so they are one mode */
   | { kind: 'placeJammer'; index: number; isRelocate: boolean };
 
@@ -31,7 +31,7 @@ export type DeploymentAction =
   | { type: 'reset' }
   | { type: 'selectUnit'; unit: SelectedUnit; offsets: Record<number, PreviewOffsets> }
   | { type: 'relocateArea'; area: RelocatingArea }
-  | { type: 'rotate'; unitKey: string; center: Coordinate }
+  | { type: 'rotate'; batteryName: string; center: Coordinate }
   | { type: 'placeJammer'; index: number; isRelocate: boolean }
   /** `rotationAngle` is ignored unless the rotate mode is active */
   | { type: 'hover'; position: Coordinate; rotationAngle?: number };
@@ -62,7 +62,7 @@ export function deploymentModeReducer(
       return {
         mode: {
           kind: 'rotate',
-          unitKey: action.unitKey,
+          batteryName: action.batteryName,
           center: action.center,
           previewAngle: null,
         },
@@ -100,7 +100,7 @@ export function isPlacementMode(mode: DeploymentMode): boolean {
 }
 
 export function isSameArea(a: RelocatingArea, b: RelocatingArea): boolean {
-  return a.unitKey === b.unitKey && a.type === b.type && a.fpIndex === b.fpIndex;
+  return a.batteryName === b.batteryName && a.type === b.type && a.fpIndex === b.fpIndex;
 }
 
 // ============================================================================
@@ -110,13 +110,13 @@ export function selectRelocatingArea(mode: DeploymentMode): RelocatingArea | nul
   return mode.kind === 'relocateArea' ? mode.area : null;
 }
 
-export function selectRotatingUnitKey(mode: DeploymentMode): string | null {
-  return mode.kind === 'rotate' ? mode.unitKey : null;
+export function selectRotatingBatteryName(mode: DeploymentMode): string | null {
+  return mode.kind === 'rotate' ? mode.batteryName : null;
 }
 
 /** Sidebar unit armed for a fresh deployment */
-export function selectSelectedUnitKey(mode: DeploymentMode): string | null {
-  return mode.kind === 'deploy' ? mode.unit.key : null;
+export function selectSelectedBatteryName(mode: DeploymentMode): string | null {
+  return mode.kind === 'deploy' ? mode.unit.name : null;
 }
 
 /** Jammer armed for a fresh deployment (not a relocation) */

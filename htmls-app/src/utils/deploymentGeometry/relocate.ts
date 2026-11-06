@@ -1,6 +1,6 @@
 import type { TacticalAreaLayout } from '@/types/generated';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import type { RelocatingArea, SquareAreaType } from '@/types/deployment';
 import type { RandomSource } from '@/utils/random';
 import { areAllPointsInPolygon, calculateCentroid } from '@/utils/geo';
@@ -18,7 +18,7 @@ import { doSquaresOverlap, generateSquareFacing, isSquare } from './squares';
  */
 
 /** Which area to move; the unit is already known from `deployment`. */
-export type RelocateTarget = Omit<RelocatingArea, 'unitKey'>;
+export type RelocateTarget = Omit<RelocatingArea, 'batteryName'>;
 
 /** Machine-readable rejection; callers own the user-facing wording. */
 export type RelocateFailure =
@@ -27,11 +27,11 @@ export type RelocateFailure =
   | { code: 'overlaps-other-area'; other: 'hide' | 'reload' };
 
 export type RelocateResult =
-  | { ok: true; data: MissileDeployment }
+  | { ok: true; data: DeployedBattery }
   | { ok: false; failure: RelocateFailure };
 
 export interface RelocateAreaParams {
-  deployment: MissileDeployment;
+  deployment: DeployedBattery;
   target: RelocateTarget;
   position: Coordinate;
   validateTaiwanBoundary: boolean;
@@ -42,7 +42,7 @@ export interface RelocateAreaParams {
 interface AreaUpdate {
   tacticalAreas: TacticalAreaLayout;
   /** Only the fields the move actually changes, so a spread cannot blank others */
-  extraFields: Partial<MissileDeployment>;
+  extraFields: Partial<DeployedBattery>;
   /** Fresh gateways when the move replanned shelters; null means "look them up" */
   gateways: Gateways | null;
 }
@@ -57,13 +57,13 @@ type AreaUpdateResult = { ok: true; update: AreaUpdate } | { ok: false; failure:
  * the new center. ATP and fire points are user-placed and stay where they are.
  */
 function buildUShapeUpdate(
-  deployment: MissileDeployment,
+  deployment: DeployedBattery,
   position: Coordinate,
   validateTaiwanBoundary: boolean,
   rng: RandomSource
 ): AreaUpdateResult {
   const regenerated = generateDeploymentData({
-    unitname: deployment.unitname,
+    name: deployment.name,
     missileSystemType: deployment.missileSystemType,
     center: position,
     angle: deployment.openingAngle,
@@ -127,7 +127,7 @@ function validateInternalSquare(
 
 /** Move one square, leaving every other tactical area untouched */
 function buildSquareUpdate(
-  deployment: MissileDeployment,
+  deployment: DeployedBattery,
   type: SquareAreaType,
   fpIndex: number,
   position: Coordinate,
@@ -143,7 +143,7 @@ function buildSquareUpdate(
   }
 
   const next = { ...tacticalAreas };
-  const extraFields: Partial<MissileDeployment> = {};
+  const extraFields: Partial<DeployedBattery> = {};
 
   switch (type) {
     case 'atp':

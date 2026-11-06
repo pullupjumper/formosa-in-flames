@@ -2,7 +2,7 @@ import type { AirbaseDeploymentDescriptor } from '@/types/generated';
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { CONFIG } from '@/constants/controlPanel';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import { createBudgetState } from '../logic/budgetLedger';
 import { buildInjectedDeployments } from '../logic/deploymentPayload';
 import { readControlPanelPayload } from '../logic/controlPanelPayload';
@@ -20,7 +20,7 @@ function buildPayload(airbases: AirbaseDeploymentDescriptor[]): ControlPanelPayl
   return { ...readControlPanelPayload(), airbases };
 }
 
-const DEPLOYMENT = {} as MissileDeployment;
+const DEPLOYMENT = {} as DeployedBattery;
 
 // ============================================================================
 // TESTS
@@ -37,9 +37,7 @@ describe('useDeploymentSession', () => {
 
     const { result } = renderHook(() => useDeploymentSession(payload));
 
-    expect(result.current.deployedMissileSystems).toEqual(
-      buildInjectedDeployments(payload.batteries)
-    );
+    expect(result.current.deployedBatteries).toEqual(buildInjectedDeployments(payload.batteries));
     expect(result.current.deployedJammers.size).toBe(0);
   });
 
@@ -95,7 +93,7 @@ describe('useDeploymentSession', () => {
 
       act(() => result.current.deployMissileSystem('player-unit', DEPLOYMENT));
 
-      expect(result.current.deployedMissileSystems.get('player-unit')).toBe(DEPLOYMENT);
+      expect(result.current.deployedBatteries.get('player-unit')).toBe(DEPLOYMENT);
     });
 
     it('forgets a missile system once it is undeployed', () => {
@@ -104,7 +102,7 @@ describe('useDeploymentSession', () => {
 
       act(() => result.current.undeployMissileSystem('player-unit'));
 
-      expect(result.current.deployedMissileSystems.has('player-unit')).toBe(false);
+      expect(result.current.deployedBatteries.has('player-unit')).toBe(false);
     });
   });
 

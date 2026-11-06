@@ -1,7 +1,7 @@
 import type { GNSSJammerDescriptor } from '@/types/generated';
 import { useState, useCallback, useRef, useReducer, useEffect } from 'react';
 import type { Coordinate } from '@/types/geo';
-import type { MissileDeployment } from '@/types/deployment';
+import type { DeployedBattery } from '@/types/deployment';
 import type { RelocatingArea, SelectedUnit } from '@/types/deployment';
 import { calculateBearing, calculateCentroid } from '@/utils/geo';
 import {
@@ -28,8 +28,8 @@ import {
   isPlacementMode,
   isSameArea,
   selectRelocatingArea,
-  selectRotatingUnitKey,
-  selectSelectedUnitKey,
+  selectRotatingBatteryName,
+  selectSelectedBatteryName,
   selectSelectedJammerIndex,
   selectRelocatingJammerIndex,
 } from '../logic/deploymentMode';
@@ -62,7 +62,7 @@ const noop = () => {};
 // ============================================================================
 export interface UseDeploymentStateParams {
   jammers: GNSSJammerDescriptor[];
-  deployedMissileSystems: Map<string, MissileDeployment>;
+  deployedBatteries: Map<string, DeployedBattery>;
   deployedJammers: Map<number, Coordinate>;
   shouldValidateTaiwanBoundary: boolean;
   /**
@@ -75,8 +75,8 @@ export interface UseDeploymentStateParams {
    * its hide area after a relocation or rotation), run after the boundary check.
    * Returns a warning to show instead of applying the change, or null to allow it.
    */
-  validateMissilePosition?: (unitKey: string, position: Coordinate) => string | null;
-  onDeploySystem: (key: string, data: MissileDeployment) => void;
+  validateMissilePosition?: (batteryName: string, position: Coordinate) => string | null;
+  onDeploySystem: (key: string, data: DeployedBattery) => void;
   onUndeploySystem: (key: string) => void;
   onDeployJammer: (index: number, position: Coordinate) => void;
   onUndeployJammer: (index: number) => void;
@@ -92,7 +92,7 @@ export interface UseDeploymentStateParams {
 // ============================================================================
 export function useDeploymentState({
   jammers,
-  deployedMissileSystems,
+  deployedBatteries,
   deployedJammers,
   shouldValidateTaiwanBoundary,
   isLocked = false,
@@ -108,7 +108,7 @@ export function useDeploymentState({
   const [coordinates, setCoordinates] = useState<Coordinate | null>(null);
 
   // Sidebar presentation state, independent of the mode machine
-  const [expandedUnitKey, setExpandedUnitKey] = useState<string | null>(null);
+  const [expandedBatteryName, setExpandedBatteryName] = useState<string | null>(null);
   const [expandedJammerIndex, setExpandedJammerIndex] = useState<number | null>(null);
 
   const lastMouseMoveRef = useRef(0);
@@ -125,10 +125,10 @@ export function useDeploymentState({
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
-  const deployedSystemsRef = useRef(deployedMissileSystems);
+  const deployedBatteriesRef = useRef(deployedBatteries);
   useEffect(() => {
-    deployedSystemsRef.current = deployedMissileSystems;
-  }, [deployedMissileSystems]);
+    deployedBatteriesRef.current = deployedBatteries;
+  }, [deployedBatteries]);
   const jammersRef = useRef(jammers);
   useEffect(() => {
     jammersRef.current = jammers;
@@ -136,9 +136,9 @@ export function useDeploymentState({
 
   /** Injects the side's boundary rule into the pure generator */
   const createDeployment = useCallback(
-    (unitname: string, missileSystemType: string, center: Coordinate, angle: number) =>
+    (name: string, missileSystemType: string, center: Coordinate, angle: number) =>
       generateDeploymentData({
-        unitname,
+        name,
         missileSystemType,
         center,
         angle,
@@ -148,12 +148,12 @@ export function useDeploymentState({
     [shouldValidateTaiwanBoundary, rng]
   );
 
-  /** Warning when the hide area of `deployment` sits where `unitKey` may not go */
+  /** Warning when the hide area of `deployment` sits where `batteryName` may not go */
   const rejectHideAreaPosition = useCallback(
-    (unitKey: string, deployment: MissileDeployment): string | null => {
+    (batteryName: string, deployment: DeployedBattery): string | null => {
       const hideArea = deployment.tacticalAreas.hideArea;
       if (!validateMissilePosition || !hideArea?.length) return null;
-      return validateMissilePosition(unitKey, calculateCentroid(hideArea));
+      return validateMissilePosition(batteryName, calculateCentroid(hideArea));
     },
     [validateMissilePosition]
   );
@@ -165,9 +165,9 @@ export function useDeploymentState({
    * failure carries the warning to show.
    */
   const applyAngleChange = useCallback(
-    (unitKey: string, newAngle: number): string | null => {
-      const label = deployedMissileSystems.get(unitKey)?.unitname ?? unitKey;
-      const deployment = deployedMissileSystems.get(unitKey);
+    (batteryName: string, newAngle: number): string | null => {
+      const label = deployedBatteries.get(batteryName)?.name ?? batteryName;
+      const deployment = deployedBatteries.get(batteryName);
       if (!deployment) return `Warning: ${label} is not deployed`;
 
       const rotated = rotateDeployment({
@@ -177,19 +177,13 @@ export function useDeploymentState({
         rng,
       });
       if (!rotated) return `Warning: ${newAngle}° leaves no valid layout for ${label}`;
-      const rejection = rejectHideAreaPosition(unitKey, rotated);
+      const rejection = rejectHideAreaPosition(batteryName, rotated);
       if (rejection) return rejection;
 
-      onDeploySystem(unitKey, rotated);
+      onDeploySystem(batteryName, rotated);
       return null;
     },
-    [
-      deployedMissileSystems,
-      shouldValidateTaiwanBoundary,
-      rng,
-      onDeploySystem,
-      rejectHideAreaPosition,
-    ]
+    [deployedBatteries, shouldValidateTaiwanBoundary, rng, onDeploySystem, rejectHideAreaPosition]
   );
 
   // ============================================================================
@@ -218,9 +212,9 @@ export function useDeploymentState({
   );
 
   const commitRotation = useCallback(
-    (unitKey: string, angle: number) => {
-      const label = deployedMissileSystems.get(unitKey)?.unitname ?? unitKey;
-      const failure = applyAngleChange(unitKey, angle);
+    (batteryName: string, angle: number) => {
+      const label = deployedBatteries.get(batteryName)?.name ?? batteryName;
+      const failure = applyAngleChange(batteryName, angle);
       if (failure) {
         // Stay in rotation mode: the unit keeps its old angle and the user can
         // sweep to another one without restarting.
@@ -230,12 +224,12 @@ export function useDeploymentState({
       setStatus(`Angle set to ${angle}° for ${label}`);
       dispatch({ type: 'reset' });
     },
-    [deployedMissileSystems, applyAngleChange]
+    [deployedBatteries, applyAngleChange]
   );
 
   const commitAreaRelocation = useCallback(
     (area: RelocatingArea, position: Coordinate) => {
-      const deployment = deployedMissileSystems.get(area.unitKey);
+      const deployment = deployedBatteries.get(area.batteryName);
       if (!deployment) {
         dispatch({ type: 'reset' });
         return;
@@ -253,23 +247,17 @@ export function useDeploymentState({
         return;
       }
 
-      const rejection = rejectHideAreaPosition(area.unitKey, result.data);
+      const rejection = rejectHideAreaPosition(area.batteryName, result.data);
       if (rejection) {
         setStatus(rejection);
         return;
       }
 
-      onDeploySystem(area.unitKey, result.data);
-      setStatus(`${formatAreaLabel(area)} relocated for ${deployment.unitname}`);
+      onDeploySystem(area.batteryName, result.data);
+      setStatus(`${formatAreaLabel(area)} relocated for ${deployment.name}`);
       dispatch({ type: 'reset' });
     },
-    [
-      deployedMissileSystems,
-      shouldValidateTaiwanBoundary,
-      rng,
-      onDeploySystem,
-      rejectHideAreaPosition,
-    ]
+    [deployedBatteries, shouldValidateTaiwanBoundary, rng, onDeploySystem, rejectHideAreaPosition]
   );
 
   const commitDeployment = useCallback(
@@ -278,7 +266,7 @@ export function useDeploymentState({
         setStatus(OUT_OF_BOUNDS_MISSILE);
         return;
       }
-      const rejection = validateMissilePosition?.(unit.key, position);
+      const rejection = validateMissilePosition?.(unit.name, position);
       if (rejection) {
         setStatus(rejection);
         return;
@@ -301,7 +289,7 @@ export function useDeploymentState({
         return;
       }
 
-      onDeploySystem(unit.key, deployment);
+      onDeploySystem(unit.name, deployment);
       setStatus(`Done: ${unit.name} deployed at ${formatPosition(position)}, Angle: ${autoAngle}`);
       dispatch({ type: 'reset' });
     },
@@ -311,7 +299,7 @@ export function useDeploymentState({
   const handleMapClick = useCallback(
     (position: Coordinate) => {
       setCoordinates(position);
-      setExpandedUnitKey(null);
+      setExpandedBatteryName(null);
       setExpandedJammerIndex(null);
 
       switch (mode.kind) {
@@ -322,7 +310,7 @@ export function useDeploymentState({
         case 'rotate':
           // No angle swept yet, so there is nothing to commit
           if (mode.previewAngle === null) return;
-          return commitRotation(mode.unitKey, mode.previewAngle);
+          return commitRotation(mode.batteryName, mode.previewAngle);
         case 'relocateArea':
           return commitAreaRelocation(mode.area, position);
         case 'deploy':
@@ -359,9 +347,9 @@ export function useDeploymentState({
    */
   const handleUnitSelect = useCallback(
     (battery: Battery) => {
-      const { unitKey } = battery;
-      if (deployedMissileSystems.has(unitKey)) {
-        setExpandedUnitKey((current) => (current === unitKey ? null : unitKey));
+      const { name } = battery;
+      if (deployedBatteries.has(name)) {
+        setExpandedBatteryName((current) => (current === name ? null : name));
         return;
       }
 
@@ -372,14 +360,13 @@ export function useDeploymentState({
       if (offsetsAt270) offsets[270] = offsetsAt270;
 
       const unit: SelectedUnit = {
-        key: unitKey,
-        name: battery.name,
+        name,
         missileSystemType: battery.missileSystemType,
       };
       dispatch({ type: 'selectUnit', unit, offsets });
       setStatus(`${battery.name} selected - Click map to deploy`);
     },
-    [deployedMissileSystems, rng]
+    [deployedBatteries, rng]
   );
 
   const handleCancelSelect = useCallback(() => {
@@ -409,13 +396,13 @@ export function useDeploymentState({
     );
   }, []);
 
-  const handleRotateClick = useCallback((unitKey: string) => {
+  const handleRotateClick = useCallback((batteryName: string) => {
     if (modeRef.current.kind === 'placeJammer') return;
 
-    const deployment = deployedSystemsRef.current.get(unitKey);
+    const deployment = deployedBatteriesRef.current.get(batteryName);
     if (!deployment) return;
 
-    dispatch({ type: 'rotate', unitKey, center: deployment.center });
+    dispatch({ type: 'rotate', batteryName, center: deployment.center });
     setStatus(
       `Rotating: ${deployment.openingAngle}° — Move mouse to set angle, click to confirm. ESC to cancel`
     );
@@ -470,7 +457,7 @@ export function useDeploymentState({
 
   const handleUndeploy = useCallback(
     (battery: Battery) => {
-      onUndeploySystem(battery.unitKey);
+      onUndeploySystem(battery.name);
       setStatus(`${battery.name} deployment cancelled`);
     },
     [onUndeploySystem]
@@ -500,7 +487,7 @@ export function useDeploymentState({
   const { previewData, relocatePreviewVertices, rotationPreviewData } = useDeploymentPreviews({
     mode,
     mousePosition,
-    deployedMissileSystems,
+    deployedBatteries,
     shouldValidateTaiwanBoundary,
     rng,
   });
@@ -509,8 +496,8 @@ export function useDeploymentState({
 
   // View model: components read these instead of pattern-matching `mode`
   const relocatingArea = selectRelocatingArea(mode);
-  const rotatingUnitKey = selectRotatingUnitKey(mode);
-  const selectedUnitKey = selectSelectedUnitKey(mode);
+  const rotatingBatteryName = selectRotatingBatteryName(mode);
+  const selectedBatteryName = selectSelectedBatteryName(mode);
   const selectedJammerIndex = selectSelectedJammerIndex(mode);
   const relocatingJammerIndex = selectRelocatingJammerIndex(mode);
 
@@ -523,13 +510,13 @@ export function useDeploymentState({
     status,
 
     // Sidebar
-    expandedUnitKey,
+    expandedBatteryName,
     expandedJammerIndex,
 
     // Derived
     relocatingArea,
-    rotatingUnitKey,
-    selectedUnitKey,
+    rotatingBatteryName,
+    selectedBatteryName,
     selectedJammerIndex,
     relocatingJammerIndex,
     placingJammerUnit,
