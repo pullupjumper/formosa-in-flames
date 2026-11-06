@@ -651,4 +651,18 @@ function GameUtils.getWeaponInfo(unit, weaponDBID)
   }
 end
 
+---@param weaponDBID number | number[]
+---@return number|nil # Max land range in nautical miles; nil if the weapon has no land range
+function GameUtils.findWeaponRange(weaponDBID)
+  local id = weaponDBID
+  local dbid
+  if type(id) == "table" then
+    dbid = id[1]
+  else
+    dbid = id
+  end
+  local weaponInfo = GameApi.ScenEdit_QueryDB("weapon", dbid)
+  return tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges.land.max)
+end
+
 return GameUtils

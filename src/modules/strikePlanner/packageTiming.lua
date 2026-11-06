@@ -2,6 +2,7 @@ local GameApi = require("src.utils.gameApi")
 local Utils = require("src.utils.utils")
 local TankerMission = require("src.modules.strikePlanner.tankerMission")
 local constants = require("src.core.constants")
+local GameUtils = require("src.utils.gameUtils")
 
 local PackageTiming = {}
 
@@ -117,9 +118,7 @@ local function calculateStrikerFlightTime(packageData, timingConfig)
     return nil
   end
 
-  local weaponInfo = GameApi.ScenEdit_QueryDB("weapon", packageData.striker.weaponDBID)
-  local weaponRange = tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges.land
-    .max)
+  local weaponRange = GameUtils.findWeaponRange(packageData.striker.weaponDBID)
 
   if not weaponRange then
     return nil

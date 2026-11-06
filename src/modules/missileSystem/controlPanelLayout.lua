@@ -1,4 +1,3 @@
-local GameApi = require("src.utils.gameApi")
 local constants = require("src.core.constants")
 local Utils = require("src.utils.utils")
 local GameUtils = require("src.utils.gameUtils")
@@ -70,20 +69,6 @@ function ControlPanelLayout.buildLayouts(entries)
   return layouts
 end
 
----@param weaponDBID number | number[]
----@return number|nil # Max land range in nautical miles; nil if the weapon has no land range
-local function findWeaponRange(weaponDBID)
-  local id = weaponDBID
-  local dbid
-  if type(id) == "table" then
-    dbid = id[1]
-  else
-    dbid = id
-  end
-  local weaponInfo = GameApi.ScenEdit_QueryDB("weapon", dbid)
-  return tonumber(weaponInfo and weaponInfo.ranges and weaponInfo.ranges.land and weaponInfo.ranges.land.max)
-end
-
 ---Build the control panel's missile system rows, with zone names resolved to vertices
 ---Each firing unit is drawn where its battery is now (GroundStateStore.resolveOperationalArea):
 ---its saved state's area, or its config area before its first deploy.
@@ -125,7 +110,7 @@ function ControlPanelLayout.buildPanelMissileSystems(missileSystemConfigMap, gro
       firingUnits[name] = {
         name = descriptor.name,
         missileSystem = descriptor.missileSystem,
-        weaponRange = findWeaponRange(descriptor.weaponDBID) or 0,
+        weaponRange = GameUtils.findWeaponRange(descriptor.weaponDBID) or 0,
         operationalArea = operationalArea
       }
     end
