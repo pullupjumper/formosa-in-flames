@@ -109,6 +109,7 @@
 - 推翻第一步的「機場另外定 `SBJ__Airbase`」：面板直接用 `SBJ__AirbaseDeploymentDescriptor`，跟干擾機用 `SBJ__GNSSJammerDescriptor` 一致。沒有座標的機場地圖上不畫。
 - 送回的砲連改用 `SBJ__PlacedBattery`（名字、系統類型、`placement`），`SBJ__PanelBattery` 繼承它。`SBJ__MissileSystemResult` 刪除，`ControlPanelResult` 的欄位改叫 `batteries`，不再送 Lua 沒讀的 `key`。
 - ATP 的 `atpCenter`、`atpRadius` 維持單一，對應 ATP 的第一個區域。
+- 送回的砲連沒有 SHRL 時，Lua 作戰區就不放 SHRL，補給車離開掩體改走 RL。以前會放一條空路線，補給車停在原地。只有搬動區域後找不到掩體出口的砲連會碰到。
 
 ### 驗收
 
