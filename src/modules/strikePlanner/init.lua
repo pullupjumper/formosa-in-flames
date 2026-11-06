@@ -82,7 +82,7 @@ local function launchLACMSalvo(config, plannerState)
   for _, guid in ipairs(GameApi.ScenEdit_GetUnit(LACM_GROUP_NAME).group.unitlist) do
     local unit = GameApi.ScenEdit_GetUnit(guid)
     if unit and unit.dbid == constants.PLATFORMS.TYPE_055 then
-      table.insert(ships, { guid = guid, weaponDBID = config.red.surface.lacm.weaponDBID })
+      table.insert(ships, { name = unit.name })
     end
   end
 
@@ -105,10 +105,14 @@ local function launchSLCMSalvo(config, plannerState)
     return
   end
 
+  local submarines = {}
+
   for _, submarine in pairs(config.red.subSurface.slcm.submarines) do
     local actualUnit = GameApi.ScenEdit_GetUnit(submarine.name)
 
     if actualUnit then
+      table.insert(submarines, { name = submarine.name })
+
       local course = { { latitude = actualUnit.latitude, longitude = actualUnit.longitude, presetDepth = 2 } }
       for _, waypoint in ipairs(actualUnit.course) do
         table.insert(course, { latitude = waypoint.latitude, longitude = waypoint.longitude, presetDepth = 2 })
@@ -121,7 +125,7 @@ local function launchSLCMSalvo(config, plannerState)
   AttackManager.attackContacts({
     contacts = config.red.subSurface.slcm.targetlist,
     qty = SLCM_SALVO_QTY,
-    firingUnits = config.red.subSurface.slcm.submarines,
+    firingUnits = submarines,
     weaponDBID = config.red.subSurface.slcm.weaponDBID
   })
 

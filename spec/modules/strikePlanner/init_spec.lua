@@ -60,7 +60,7 @@ describe("StrikePlanner", function()
           slcm = {
             weaponDBID = 202,
             targetlist = { "SLCM-TGT" },
-            submarines = { { name = "SUB-1" } },
+            submarines = { ["SUB-1"] = { name = "SUB-1" } },
           },
         },
       },
@@ -123,7 +123,7 @@ describe("StrikePlanner", function()
   local function stubCsg()
     stubGetUnit({
       CSG = { group = { unitlist = { "SHIP-055", "SHIP-OTHER" } } },
-      ["SHIP-055"] = { guid = "SHIP-055", dbid = constants.PLATFORMS.TYPE_055 },
+      ["SHIP-055"] = { guid = "SHIP-055", name = "Nanchang", dbid = constants.PLATFORMS.TYPE_055 },
       ["SHIP-OTHER"] = { guid = "SHIP-OTHER", dbid = -1 },
     })
   end
@@ -336,7 +336,7 @@ describe("StrikePlanner", function()
         assert.stub(attackContactsStub).was.called_with({
           contacts = config.red.surface.lacm.targetlist,
           qty = 5,
-          firingUnits = { { guid = "SHIP-055", weaponDBID = 101 } },
+          firingUnits = { { name = "Nanchang" } },
           weaponDBID = 101,
         })
       end)
@@ -377,14 +377,14 @@ describe("StrikePlanner", function()
       it("should skip CSG members that no longer exist", function()
         stubGetUnit({
           CSG = { group = { unitlist = { "SHIP-GONE", "SHIP-055" } } },
-          ["SHIP-055"] = { guid = "SHIP-055", dbid = constants.PLATFORMS.TYPE_055 },
+          ["SHIP-055"] = { guid = "SHIP-055", name = "Nanchang", dbid = constants.PLATFORMS.TYPE_055 },
         })
         stubStartTimesPassed({ LACM_START = true })
 
         runProcess(makeConfig(), makePlannerState({ lacm = true }), {})
 
         local firingUnits = attackContactsStub.calls[1].vals[1].firingUnits
-        assert.are.same({ { guid = "SHIP-055", weaponDBID = 101 } }, firingUnits)
+        assert.are.same({ { name = "Nanchang" } }, firingUnits)
       end)
     end)
 
@@ -425,7 +425,7 @@ describe("StrikePlanner", function()
         assert.stub(attackContactsStub).was.called_with({
           contacts = config.red.subSurface.slcm.targetlist,
           qty = 8,
-          firingUnits = config.red.subSurface.slcm.submarines,
+          firingUnits = { { name = "SUB-1" } },
           weaponDBID = 202,
         })
       end)
@@ -450,14 +450,16 @@ describe("StrikePlanner", function()
         assert.stub(attackContactsStub).was_not.called()
       end)
 
-      -- Boundary: a missing submarine does not block the salvo order.
-      it("should still fire when a configured submarine no longer exists", function()
-        stubGetUnit({})
+      -- Boundary: a sunk submarine is left out so the rest still fire.
+      it("should fire from the remaining submarines when one no longer exists", function()
+        local config = makeConfig()
+        config.red.subSurface.slcm.submarines["SUB-GONE"] = { name = "SUB-GONE" }
+        stubGetUnit({ ["SUB-1"] = makeSubmarine() })
         stubStartTimesPassed({ SLCM_START = true })
 
-        runProcess(makeConfig(), makePlannerState({ slcm = true }), {})
+        runProcess(config, makePlannerState({ slcm = true }), {})
 
-        assert.stub(attackContactsStub).was.called(1)
+        assert.are.same({ { name = "SUB-1" } }, attackContactsStub.calls[1].vals[1].firingUnits)
       end)
     end)
 
