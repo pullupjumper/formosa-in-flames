@@ -67,7 +67,7 @@ end
 
 local POSITION_TYPES = constants.POSITION_TYPES
 
----Every path that sends a battery unit somewhere; Transitions.depart is the only caller of moveTo
+---Every path that sends a battery unit somewhere; Transitions.startMove is the only caller of moveTo
 ---@type table<string, SBJ__MoveOrder>
 Movement.ORDER = {
   FIRING_POINT = {
@@ -87,14 +87,14 @@ Movement.ORDER = {
     wcs = constants.WCS.HOLD
   },
   -- Stow ended: the transloader leaves its shelter along SHRL; areas without SHRL take RL.
-  RESUPPLY_VIA_SHRL = {
+  TRANSLOADER_VIA_SHRL = {
     action = "move_transloader_to_reload_point",
     positionType = POSITION_TYPES.RELOAD_POINT,
     positionKeys = { "SHRL", "RL" },
     wcs = constants.WCS.HOLD
   },
   -- Transload done: the transloader drives straight to the last waypoint of an RL course.
-  RESUPPLY_RECALL = {
+  TRANSLOADER_RECALL = {
     action = "move_transloader_to_reload_point",
     positionType = POSITION_TYPES.RELOAD_POINT,
     positionKeys = { "RL" },
@@ -124,7 +124,7 @@ end
 ---@param order SBJ__MoveOrder
 ---@param areaName string
 ---@return table<string, any>|nil errorFields Log fields describing the failure; nil when the order went out
-local function issueMove(unit, positions, order, areaName)
+local function moveToRandomPosition(unit, positions, order, areaName)
   local posCount = Utils.getCount(positions)
   if posCount == 0 then
     return { reason = "no_positions_available", position = order.positionType, area = areaName }
@@ -153,7 +153,7 @@ local function issueMove(unit, positions, order, areaName)
   return nil
 end
 
----Order a unit to a position of its operational area; call through Transitions.depart, which records the move
+---Order a unit to a position of its operational area; call through Transitions.startMove, which records the move
 ---@param unitState SBJ__LauncherState|SBJ__TransloaderState
 ---@param unit CMO__Unit
 ---@param order SBJ__MoveOrder
@@ -167,7 +167,7 @@ function Movement.moveTo(unitState, unit, order)
   if not positions and order.absentReason then
     errorFields = { reason = order.absentReason, area = operationalArea.name }
   else
-    errorFields = issueMove(unit, positions or {}, order, operationalArea.name)
+    errorFields = moveToRandomPosition(unit, positions or {}, order, operationalArea.name)
   end
 
   if errorFields then
@@ -180,7 +180,7 @@ end
 ---@param unit CMO__Unit
 ---@param isAuto boolean
 ---@param wcs integer
-function Movement.applyMode(unit, isAuto, wcs)
+function Movement.setMode(unit, isAuto, wcs)
   setGroupUnitProperties(unit, {
     holdPosition = isAuto,
     throttle = isAuto and "Stop" or "OFF",

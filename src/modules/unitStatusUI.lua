@@ -266,7 +266,7 @@ local function updateFromControlPanelResult(config, saveData, sideName, result)
   end
 
   if batteryRedeployments and #batteryRedeployments > 0 then
-    MissileSystem.redeployFromControlPanel(config, saveData, sideName, batteryRedeployments)
+    MissileSystem.deployFromControlPanel(config, saveData, sideName, batteryRedeployments)
 
     local rebuiltNames = {}
     for _, redeployment in ipairs(batteryRedeployments) do

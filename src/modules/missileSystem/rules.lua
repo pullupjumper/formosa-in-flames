@@ -14,19 +14,19 @@ Rules.STEP = {
   -- Arrival at a position zone
   ARRIVE_AT_FIRING_POINT = "arriveAtFiringPoint",
   HIDE_LAUNCHER = "hideLauncher",
-  BEGIN_RELOAD = "beginReload",
+  START_RELOAD = "startReload",
   STOP_IN_MANUAL_MODE = "stopInManualMode",
   HIDE_UNMET_TRANSLOADER = "hideUnmetTransloader",
-  BEGIN_TRANSLOAD = "beginTransload",
+  START_TRANSLOAD = "startTransload",
   STOP = "stop",
   -- Launcher reload cycle
-  BEGIN_STOW = "beginStow",
-  END_STOW = "endStow",
+  START_STOW = "startStow",
+  COMPLETE_STOW = "completeStow",
   MOVE_TO_HIDE_AREA = "moveToHideArea",
   UNHIDE_TRANSLOADER = "unhideTransloader",
   MOVE_TRANSLOADER_TO_RELOAD_POINT = "moveTransloaderToReloadPoint",
   WARN_TRANSLOADER_NOT_FOUND = "warnTransloaderNotFound",
-  WARN_RESUPPLY_STATE_NOT_FOUND = "warnTransloaderStateNotFound",
+  WARN_TRANSLOADER_STATE_NOT_FOUND = "warnTransloaderStateNotFound",
   MOVE_TO_RELOAD_POINT = "moveToReloadPoint",
   ENSURE_RELOAD_CLOCK = "ensureReloadClock",
   COMPLETE_RELOAD = "completeReload",
@@ -37,8 +37,6 @@ Rules.STEP = {
   COMPLETE_TRANSLOAD = "completeTransload",
   FAIL_CANISTER_STOCK_STATE_NOT_FOUND = "failCanisterStockStateNotFound",
   RECALL_TO_RELOAD_POINT = "recallToReloadPoint",
-  -- Fire support plan dispatch
-  UNHIDE = "unhide",
 }
 
 local STEP = Rules.STEP
@@ -53,7 +51,7 @@ local DEPLOYED_STATES = {
 ---SAM guards the airspace, so it leaves its position only when low on ammo and returns to its firing point after a reload.
 ---@param missileSystemType string Missile system name in any case (e.g., "SAM", "sam")
 ---@return boolean # Whether the system stays deployed
-function Rules.staysDeployed(missileSystemType)
+function Rules.shouldStayDeployed(missileSystemType)
   return string.lower(missileSystemType) == constants.MISSILE_SYSTEM_TYPES.SAM
 end
 
@@ -108,25 +106,21 @@ function Rules.evaluateReadiness(launcherState, isLowAmmo)
   return readiness.READY
 end
 
----Evaluate the steps for a fire support plan sending a launcher to its firing point
+---Whether a fire support plan may send a launcher to its firing point
 ---Only a hiding unit with enough ammunition leaves; units already out are left alone.
 ---@param launcherState SBJ__LauncherState
 ---@param isLowAmmo fun(): boolean Called only for a hiding unit, as in evaluateReadiness
----@return string[] steps
-function Rules.evaluateSendToFiringPoint(launcherState, isLowAmmo)
-  if launcherState.state == STATE.HIDE and not isLowAmmo() then
-    return { STEP.UNHIDE, STEP.MOVE_TO_FIRING_POINT }
-  end
-
-  return {}
+---@return boolean # True if the unit leaves its hide area
+function Rules.canSendToFiringPoint(launcherState, isLowAmmo)
+  return launcherState.state == STATE.HIDE and not isLowAmmo()
 end
 
 ---Seconds since a clock started, or nil when it has not started
 ---@param startTime number|nil
----@param now number
+---@param currentTime number
 ---@return number|nil
-local function calculateElapsedSec(startTime, now)
-  return startTime and now - startTime
+local function calculateElapsedSec(startTime, currentTime)
+  return startTime and currentTime - startTime
 end
 
 ---Whether a unit's state lets it count as meeting its partner
@@ -159,17 +153,17 @@ end
 ---Whether an empty transloader met its canister stock at ATP
 ---@param transloaderState SBJ__TransloaderState
 ---@param isAuto boolean
----@param isAtCanisterStock fun(): boolean
+---@param isInSameAmmunitionTransferPoint fun(): boolean
 ---@return boolean # True if the transload may start or finish
-local function hasMetCanisterStock(transloaderState, isAuto, isAtCanisterStock)
+local function hasMetCanisterStock(transloaderState, isAuto, isInSameAmmunitionTransferPoint)
   return canMeet(transloaderState.state, isAuto)
       and transloaderState.weaponCountCurrent == 0
-      and isAtCanisterStock()
+      and isInSameAmmunitionTransferPoint()
 end
 
 ---Evaluate the steps for a unit entering its firing point
 ---@param runCtx SBJ__ArrivalRunContext
----@param launcherState SBJ__LauncherState|nil Nil when the unit is not a launcher of this system
+---@param launcherState SBJ__LauncherState|nil Nil when the unit is a transloader
 ---@return string[] steps
 function Rules.evaluateFiringPointArrival(runCtx, launcherState)
   if Rules.isRepositioning(launcherState, runCtx.isAuto) then
@@ -182,7 +176,7 @@ end
 ---Evaluate the steps for a unit entering its hide area
 ---Low-ammo units stay out so the reload cycle can send them on to RL.
 ---@param runCtx SBJ__ArrivalRunContext
----@param observation SBJ__HideAreaObservation|nil Nil when the unit is not a launcher of this system
+---@param observation SBJ__HideAreaObservation|nil Nil when the unit is a transloader
 ---@return string[] steps
 function Rules.evaluateHideAreaArrival(runCtx, observation)
   if observation and runCtx.hideOnEnterHA and not observation.isLowAmmo() then
@@ -204,7 +198,7 @@ function Rules.evaluateReloadPointArrival(runCtx, pair)
   end
 
   if hasMetTransloader(pair, runCtx.isAuto) then
-    return { STEP.BEGIN_RELOAD }
+    return { STEP.START_RELOAD }
   end
 
   local steps = { STEP.STOP_IN_MANUAL_MODE }
@@ -217,11 +211,11 @@ end
 
 ---Evaluate the steps for a unit entering its ammunition transfer point
 ---@param runCtx SBJ__ArrivalRunContext
----@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is not a transloader of this system
+---@param observation SBJ__AmmunitionTransferPointObservation|nil Nil when the unit is a launcher
 ---@return string[] steps
 function Rules.evaluateAmmunitionTransferPointArrival(runCtx, observation)
-  if observation and hasMetCanisterStock(observation.transloaderState, runCtx.isAuto, observation.isAtCanisterStock) then
-    return { STEP.BEGIN_TRANSLOAD }
+  if observation and hasMetCanisterStock(observation.transloaderState, runCtx.isAuto, observation.isInSameAmmunitionTransferPoint) then
+    return { STEP.START_TRANSLOAD }
   end
 
   return { STEP.STOP }
@@ -229,81 +223,81 @@ end
 
 ---A static auto-mode launcher that fired or ran low waits out the stow time, then leaves:
 ---to its hide area with enough ammo, otherwise to the reload point together with its transloader
----@param tick SBJ__LauncherTick
+---@param tickCtx SBJ__LauncherTickContext
 ---@param pair SBJ__ReloadPair|nil
 ---@return string[] steps
-local function evaluateStaticLauncher(tick, pair)
-  if not tick.isAuto then
+local function evaluateStaticLauncher(tickCtx, pair)
+  if not tickCtx.isAuto then
     return {}
   end
 
-  local stowElapsedSec = calculateElapsedSec(tick.launcherState.stowStartTime, tick.now)
+  local stowElapsedSec = calculateElapsedSec(tickCtx.launcherState.stowStartTime, tickCtx.currentTime)
   if stowElapsedSec == nil then
-    return tick.isLowAmmo() and { STEP.BEGIN_STOW } or {}
+    return tickCtx.isLowAmmo() and { STEP.START_STOW } or {}
   end
 
-  if stowElapsedSec < tick.stowTimeSec then
+  if stowElapsedSec < tickCtx.stowTimeSec then
     return {}
   end
 
-  if not tick.isLowAmmo() then
-    return { STEP.MOVE_TO_HIDE_AREA, STEP.END_STOW }
+  if not tickCtx.isLowAmmo() then
+    return { STEP.MOVE_TO_HIDE_AREA, STEP.COMPLETE_STOW }
   end
 
   local steps = {}
   if pair then
     table.insert(steps, STEP.UNHIDE_TRANSLOADER)
     table.insert(steps, STEP.MOVE_TRANSLOADER_TO_RELOAD_POINT)
-  elseif tick.hasTransloaderState then
+  elseif tickCtx.hasTransloaderState then
     table.insert(steps, STEP.WARN_TRANSLOADER_NOT_FOUND)
   else
-    table.insert(steps, STEP.WARN_RESUPPLY_STATE_NOT_FOUND)
+    table.insert(steps, STEP.WARN_TRANSLOADER_STATE_NOT_FOUND)
   end
 
   table.insert(steps, STEP.MOVE_TO_RELOAD_POINT)
-  table.insert(steps, STEP.END_STOW)
+  table.insert(steps, STEP.COMPLETE_STOW)
   return steps
 end
 
 ---A reloading launcher finishes once the reload time passed and it still meets its transloader.
 ---In auto mode the transloader hides when the reload leaves it missiles, and the launcher leaves:
 ---SAM back to its firing point, others to their hide area.
----@param tick SBJ__LauncherTick
+---@param tickCtx SBJ__LauncherTickContext
 ---@param pair SBJ__ReloadPair|nil
 ---@return string[] steps
-local function evaluateReloadingLauncher(tick, pair)
+local function evaluateReloadingLauncher(tickCtx, pair)
   local steps = { STEP.ENSURE_RELOAD_CLOCK }
 
   -- A clock that has not started counts as 0 seconds, so a reload time of 0 finishes in the tick that starts it
-  local reloadElapsedSec = calculateElapsedSec(tick.launcherState.reloadStartTime, tick.now) or 0
-  if reloadElapsedSec < tick.reloadTimeSec or not pair or not hasMetTransloader(pair, tick.isAuto) then
+  local reloadElapsedSec = calculateElapsedSec(tickCtx.launcherState.reloadStartTime, tickCtx.currentTime) or 0
+  if reloadElapsedSec < tickCtx.reloadTimeSec or not pair or not hasMetTransloader(pair, tickCtx.isAuto) then
     return steps
   end
 
   table.insert(steps, STEP.COMPLETE_RELOAD)
-  if tick.isAuto then
+  if tickCtx.isAuto then
     if pair.transloaderState.weaponCountCurrent > pair.buildReload().count then
       table.insert(steps, STEP.HIDE_TRANSLOADER_AFTER_RELOAD)
     end
-    table.insert(steps, tick.staysDeployed and STEP.MOVE_TO_FIRING_POINT or STEP.MOVE_TO_HIDE_AREA)
+    table.insert(steps, tickCtx.shouldStayDeployed and STEP.MOVE_TO_FIRING_POINT or STEP.MOVE_TO_HIDE_AREA)
   end
 
   return steps
 end
 
 ---Evaluate the steps for one launcher in a reload cycle
----@param tick SBJ__LauncherTick
+---@param tickCtx SBJ__LauncherTickContext
 ---@param pair SBJ__ReloadPair|nil Nil unless its transloader is tracked and in the game
 ---@return string[] steps
-function Rules.evaluateLauncherTick(tick, pair)
-  local state = tick.launcherState.state
+function Rules.evaluateLauncherTick(tickCtx, pair)
+  local state = tickCtx.launcherState.state
 
   if state == STATE.STATIC then
-    return evaluateStaticLauncher(tick, pair)
+    return evaluateStaticLauncher(tickCtx, pair)
   end
 
   if state == STATE.RELOAD then
-    return evaluateReloadingLauncher(tick, pair)
+    return evaluateReloadingLauncher(tickCtx, pair)
   end
 
   return {}
@@ -312,14 +306,14 @@ end
 ---Evaluate the steps for one transloader in a reload cycle
 ---An empty auto-mode transloader standing in an RL zone goes to the ammunition transfer point;
 ---a transloading one finishes once the reload time passed and it still meets its canister stock.
----@param tick SBJ__TransloaderTick
+---@param tickCtx SBJ__TransloaderTickContext
 ---@param canisterStockState SBJ__CanisterStockState|nil Nil when its canister stock is not tracked
 ---@return string[] steps
-function Rules.evaluateTransloaderTick(tick, canisterStockState)
-  local transloaderState = tick.transloaderState
+function Rules.evaluateTransloaderTick(tickCtx, canisterStockState)
+  local transloaderState = tickCtx.transloaderState
 
   if transloaderState.state == STATE.STATIC then
-    if tick.isAuto and transloaderState.weaponCountCurrent == 0 and tick.isInReloadArea() then
+    if tickCtx.isAuto and transloaderState.weaponCountCurrent == 0 and tickCtx.isInReloadArea() then
       return { STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT }
     end
 
@@ -331,8 +325,8 @@ function Rules.evaluateTransloaderTick(tick, canisterStockState)
   end
 
   local steps = { STEP.ENSURE_RELOAD_CLOCK }
-  local reloadElapsedSec = calculateElapsedSec(transloaderState.reloadStartTime, tick.now) or 0
-  if reloadElapsedSec < tick.reloadTimeSec or not hasMetCanisterStock(transloaderState, tick.isAuto, tick.isAtCanisterStock) then
+  local reloadElapsedSec = calculateElapsedSec(transloaderState.reloadStartTime, tickCtx.currentTime) or 0
+  if reloadElapsedSec < tickCtx.reloadTimeSec or not hasMetCanisterStock(transloaderState, tickCtx.isAuto, tickCtx.isInSameAmmunitionTransferPoint) then
     return steps
   end
 
@@ -342,7 +336,7 @@ function Rules.evaluateTransloaderTick(tick, canisterStockState)
   end
 
   table.insert(steps, STEP.COMPLETE_TRANSLOAD)
-  if tick.isAuto then
+  if tickCtx.isAuto then
     table.insert(steps, STEP.RECALL_TO_RELOAD_POINT)
   end
 

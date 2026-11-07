@@ -64,7 +64,7 @@ describe("Sigint", function()
     return unit
   end
 
-  ---Create a launcher emitter, as MissileSystem.listSigintEmitters lists it, with sensible defaults
+  ---Create a launcher emitter, as MissileSystem.buildSigintEmitters lists it, with sensible defaults
   ---@param overrides? table
   ---@return table
   local function makeLauncherEmitter(overrides)
@@ -259,7 +259,7 @@ describe("Sigint", function()
         end
       end
       saveData.blue = { iads = { rocc = roccStates, taaoc = {} } }
-      local emittersStub = trackStub(stub(MissileSystem, "listSigintEmitters")).returns(launcherEmitters)
+      local emittersStub = trackStub(stub(MissileSystem, "buildSigintEmitters")).returns(launcherEmitters)
       Sigint.processSide(cfg, saveData, "China")
       return emittersStub
     end
@@ -289,7 +289,7 @@ describe("Sigint", function()
       it("should collect Taiwan's launchers and C2 nodes for the China collector", function()
         local getUnitStub = stubUnits({})
         saveData.blue = { iads = { rocc = { R = makeC2State({ guid = "R" }) }, taaoc = { T = makeC2State({ guid = "T" }) } } }
-        local emittersStub = trackStub(stub(MissileSystem, "listSigintEmitters")).returns({ makeLauncherEmitter() })
+        local emittersStub = trackStub(stub(MissileSystem, "buildSigintEmitters")).returns({ makeLauncherEmitter() })
 
         Sigint.processSide(cfg, saveData, "China")
 
@@ -308,7 +308,7 @@ describe("Sigint", function()
         saveData.ally = { sigint = usSigint }
         saveData.red.iads = { c2 = { C = makeC2State({ guid = "C" }) } }
         local getUnitStub = stubUnits({})
-        local emittersStub = trackStub(stub(MissileSystem, "listSigintEmitters")).returns({})
+        local emittersStub = trackStub(stub(MissileSystem, "buildSigintEmitters")).returns({})
 
         Sigint.processSide(cfg, saveData, "US")
 

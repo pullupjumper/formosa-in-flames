@@ -1278,7 +1278,7 @@ function ScenEdit_DeleteMine(params) end
 
 ---One battery: a launcher, its transloader and its canister stock, joined by config links
 ---The descriptors are config tables and are never written to. `operationalArea` is where the battery
----is built: the config area for deploySide, the drawn area for a control panel deploy.
+---is built: the saved (or, before the first deploy, config) area for deploySide, the drawn area for a control panel deploy.
 ---@class SBJ__Battery: table
 ---@field missileSystemType string Missile system type key (constants.MISSILE_SYSTEM_TYPES)
 ---@field launcher SBJ__LauncherDescriptor
@@ -1512,10 +1512,10 @@ function ScenEdit_DeleteMine(params) end
 ---@field isInSameReloadArea fun(): boolean Reads CMO: whether both stand in one RL zone of the launcher's operational area
 ---@field buildReload fun(): SBJ__ReloadPlan Reads CMO once: the reload the launcher's group would take from the transloader's stock
 
----What every step of one missile system in a missileSystem UnitEntersArea event may read; steps never write it
+---What every step of a missileSystem UnitEntersArea event may read; steps never write it
 ---@class SBJ__ArrivalContext: table
----@field systemConfig SBJ__MissileSystemConfig Config of the missile system being processed
----@field systemState SBJ__MissileSystemState Missile system being processed
+---@field systemConfig SBJ__MissileSystemConfig Config of the missile system that tracks the unit
+---@field systemState SBJ__MissileSystemState Missile system that tracks the unit
 ---@field unit CMO__Unit Unit that entered the zone
 ---@field runCtx SBJ__ArrivalRunContext Side-specific switches for this event
 
@@ -1528,7 +1528,7 @@ function ScenEdit_DeleteMine(params) end
 ---A transloader entering its ammunition transfer point
 ---@class SBJ__AmmunitionTransferPointObservation: table
 ---@field transloaderState SBJ__TransloaderState
----@field isAtCanisterStock fun(): boolean Reads CMO: whether it and its canister stock stand in one ATP zone
+---@field isInSameAmmunitionTransferPoint fun(): boolean Reads CMO: whether it and its canister stock stand in one ATP zone
 
 ---How arrival observes, decides and carries out one position type
 ---@class SBJ__ArrivalPosition: table
@@ -1537,28 +1537,28 @@ function ScenEdit_DeleteMine(params) end
 ---@field steps table<string, fun(ctx: SBJ__ArrivalContext, observation: any): SBJ__LogResult|nil> Handlers keyed by Rules.STEP
 
 ---What every step of one launcher in a missileSystem reload cycle may read; steps never write it
----@class SBJ__LauncherTick: table
+---@class SBJ__LauncherTickContext: table
 ---@field launcherState SBJ__LauncherState
 ---@field launcherDescriptor SBJ__LauncherDescriptor
 ---@field launcher CMO__Unit
 ---@field isAuto boolean Whether the side runs in auto mode
----@field now number Scenario time of this cycle
+---@field currentTime number Scenario time of this cycle
 ---@field stowTimeSec number Stow countdown length in seconds
 ---@field reloadTimeSec number Reload length in seconds
----@field staysDeployed boolean Whether the system returns to FP instead of HA after a reload (SAM)
+---@field shouldStayDeployed boolean Whether the system returns to FP instead of HA after a reload (SAM)
 ---@field hasTransloaderState boolean Whether the paired transloader has a runtime state
 ---@field isLowAmmo fun(): boolean Reads CMO: whether the launcher is at or below its ammo threshold
 
 ---What every step of one transloader in a missileSystem reload cycle may read; steps never write it
----@class SBJ__TransloaderTick: table
+---@class SBJ__TransloaderTickContext: table
 ---@field transloaderState SBJ__TransloaderState
 ---@field transloaderDescriptor SBJ__TransloaderDescriptor
 ---@field transloader CMO__Unit
 ---@field isAuto boolean Whether the side runs in auto mode
----@field now number Scenario time of this cycle
+---@field currentTime number Scenario time of this cycle
 ---@field reloadTimeSec number Transload length in seconds
 ---@field isInReloadArea fun(): boolean Reads CMO: whether the transloader stands in an RL zone of its operational area
----@field isAtCanisterStock fun(): boolean Reads CMO: whether it and its canister stock stand in one ATP zone
+---@field isInSameAmmunitionTransferPoint fun(): boolean Reads CMO: whether it and its canister stock stand in one ATP zone
 
 ---Parameters for adding a unit-enters-area trigger to an event
 ---@class SBJ__AddTriggerParams: table
@@ -1573,7 +1573,7 @@ function ScenEdit_DeleteMine(params) end
 ---@field tag string Result tag (e.g. "OK")
 ---@field system string Missile system name
 ---@field unitName string Destroyed unit name
----@field contextName string Context unit name whose ammunition changed
+---@field unitStateName string Context unit name whose ammunition changed
 ---@field role string Supply asset role
 ---@field ammoBefore number Ammunition count before adjustment
 ---@field ammoAfter number Ammunition count after adjustment

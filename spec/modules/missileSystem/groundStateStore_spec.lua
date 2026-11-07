@@ -22,10 +22,10 @@ describe("MissileSystem GroundStateStore", function()
   end)
 
   -- ============================================================================
-  -- processSupplyAssetDestruction
+  -- updateSupplyAssetAmmo
   -- ============================================================================
 
-  describe("processSupplyAssetDestruction", function()
+  describe("updateSupplyAssetAmmo", function()
     local mockSystemConfig, mockSystemState
 
     before_each(function()
@@ -63,7 +63,7 @@ describe("MissileSystem GroundStateStore", function()
     it("should set weaponCountCurrent to 0 when canister stock with ammo is destroyed", function()
       local unit = { name = "Canister Stock Alpha" }
 
-      local result, detail = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      local result, detail = GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemState.canisterStocks["Canister Stock Alpha"].weaponCountCurrent)
@@ -80,12 +80,12 @@ describe("MissileSystem GroundStateStore", function()
         group = { name = "Resupply Group Alpha" }
       }
 
-      local result, detail = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      local result, detail = GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.is_true(result)
       assert.are.equal(15, mockSystemState.transloaders["Resupply Group Alpha"].weaponCountCurrent)
       assert.are.equal("transloader", detail.role)
-      assert.are.equal("Resupply Group Alpha", detail.contextName)
+      assert.are.equal("Resupply Group Alpha", detail.unitStateName)
       assert.are.equal(20, detail.ammoBefore)
       assert.are.equal(15, detail.ammoAfter)
       assert.are.equal(-5, detail.delta)
@@ -98,7 +98,7 @@ describe("MissileSystem GroundStateStore", function()
         group = { name = "Resupply Group Beta" }
       }
 
-      local result = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      local result = GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemState.transloaders["Resupply Group Beta"].weaponCountCurrent)
@@ -111,7 +111,7 @@ describe("MissileSystem GroundStateStore", function()
         group = { name = "Resupply Group Empty" }
       }
 
-      local result, detail = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      local result, detail = GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.is_false(result)
       assert.is_nil(detail)
@@ -125,7 +125,7 @@ describe("MissileSystem GroundStateStore", function()
         group = { name = "Unknown Group" }
       }
 
-      local result = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      local result = GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.is_false(result)
     end)
@@ -141,8 +141,8 @@ describe("MissileSystem GroundStateStore", function()
         group = { name = "Resupply Group Alpha" }
       }
 
-      GroundStateStore.processSupplyAssetDestruction(unit1, mockSystemConfig, mockSystemState)
-      GroundStateStore.processSupplyAssetDestruction(unit2, mockSystemConfig, mockSystemState)
+      GroundStateStore.updateSupplyAssetAmmo(unit1, mockSystemConfig, mockSystemState)
+      GroundStateStore.updateSupplyAssetAmmo(unit2, mockSystemConfig, mockSystemState)
 
       assert.are.equal(10, mockSystemState.transloaders["Resupply Group Alpha"].weaponCountCurrent)
     end)
@@ -158,7 +158,7 @@ describe("MissileSystem GroundStateStore", function()
 
       local unit = { name = "Canister Stock Alpha" }
 
-      local result = GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      local result = GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.is_true(result)
       assert.are.equal(0, mockSystemState.canisterStocks["Canister Stock Alpha"].weaponCountCurrent)
@@ -170,7 +170,7 @@ describe("MissileSystem GroundStateStore", function()
       mockSystemConfig.transloaders["Resupply Group Alpha"].weaponCountDefault = 40
       local unit = { name = "Resupply Vehicle 1", group = { name = "Resupply Group Alpha" } }
 
-      GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState)
+      GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState)
 
       assert.are.equal(10, mockSystemState.transloaders["Resupply Group Alpha"].weaponCountCurrent)
     end)
@@ -180,8 +180,83 @@ describe("MissileSystem GroundStateStore", function()
       mockSystemConfig.transloaders["Resupply Group Alpha"] = nil
       local unit = { name = "Resupply Vehicle 1", group = { name = "Resupply Group Alpha" } }
 
-      assert.is_false(GroundStateStore.processSupplyAssetDestruction(unit, mockSystemConfig, mockSystemState))
+      assert.is_false(GroundStateStore.updateSupplyAssetAmmo(unit, mockSystemConfig, mockSystemState))
       assert.are.equal(20, mockSystemState.transloaders["Resupply Group Alpha"].weaponCountCurrent)
+    end)
+  end)
+
+  -- ============================================================================
+  -- resolveDescriptors
+  -- ============================================================================
+
+  describe("resolveDescriptors", function()
+    local systemConfig = {
+      launchers = { FU1 = { name = "FU1", transloader = "RU1" } },
+      transloaders = { RU1 = { name = "RU1", launcher = "FU1", canisterStock = "AD1" } },
+      canisterStocks = { AD1 = { name = "AD1" } },
+    }
+
+    -- Positive: either end of the battery resolves all three descriptors
+    for _, unitName in ipairs({ "FU1", "RU1" }) do
+      it("should resolve the battery from " .. unitName, function()
+        local launcher, transloader, canisterStock = GroundStateStore.resolveDescriptors(systemConfig, unitName)
+
+        assert.are.equal(systemConfig.launchers.FU1, launcher)
+        assert.are.equal(systemConfig.transloaders.RU1, transloader)
+        assert.are.equal(systemConfig.canisterStocks.AD1, canisterStock)
+      end)
+    end
+
+    -- Negative: a name config does not know resolves nothing
+    it("should resolve nothing for an unknown name", function()
+      assert.is_nil(GroundStateStore.resolveDescriptors(systemConfig, "nobody"))
+    end)
+  end)
+
+  -- ============================================================================
+  -- findUnitSystem
+  -- ============================================================================
+
+  describe("findUnitSystem", function()
+    local groundState, configMap
+
+    before_each(function()
+      groundState = { missileSystemTypes = {
+        srbm = { enabled = true, launchers = { FU1 = {} }, transloaders = { RU1 = {} }, canisterStocks = {} },
+        sam = { enabled = true, launchers = { SAM1 = {} }, transloaders = {}, canisterStocks = {} },
+      } }
+      configMap = { srbm = {}, sam = {} }
+    end)
+
+    -- Positive: launcher and transloader both find their own system
+    it("should find the system that tracks a launcher", function()
+      local systemState, missileSystemType = GroundStateStore.findUnitSystem(groundState, configMap, "FU1")
+
+      assert.are.equal(groundState.missileSystemTypes.srbm, systemState)
+      assert.are.equal("srbm", missileSystemType)
+    end)
+
+    it("should find the system that tracks a transloader", function()
+      local _, missileSystemType = GroundStateStore.findUnitSystem(groundState, configMap, "RU1")
+
+      assert.are.equal("srbm", missileSystemType)
+    end)
+
+    -- Negative: untracked, disabled, or config-less systems are not found
+    it("should find nothing for an untracked unit", function()
+      assert.is_nil(GroundStateStore.findUnitSystem(groundState, configMap, "nobody"))
+    end)
+
+    it("should skip a disabled system", function()
+      groundState.missileSystemTypes.sam.enabled = false
+
+      assert.is_nil(GroundStateStore.findUnitSystem(groundState, configMap, "SAM1"))
+    end)
+
+    it("should skip a system with no config entry", function()
+      configMap.sam = nil
+
+      assert.is_nil(GroundStateStore.findUnitSystem(groundState, configMap, "SAM1"))
     end)
   end)
 

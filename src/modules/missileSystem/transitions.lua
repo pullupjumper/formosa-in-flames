@@ -11,7 +11,7 @@ local Transitions = {}
 ---@param unit CMO__Unit
 ---@param order SBJ__MoveOrder One of Movement.ORDER
 ---@return SBJ__LogResult # The order's row, for the caller to keep or log
-function Transitions.depart(unitState, unit, order)
+function Transitions.startMove(unitState, unit, order)
   local result = Movement.moveTo(unitState, unit, order)
   if result.tag == "OK" then
     unitState.state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING
@@ -26,7 +26,7 @@ end
 ---@param isAuto boolean
 function Transitions.arriveAtFiringPoint(launcherState, launcher, isAuto)
   launcherState.state = constants.MISSILE_UNIT_POSTURE.STATIC
-  Movement.applyMode(launcher, isAuto, constants.WCS.FREE)
+  Movement.setMode(launcher, isAuto, constants.WCS.FREE)
 end
 
 ---Launcher reached its hide area and goes into hiding
@@ -35,17 +35,17 @@ end
 ---@param isAuto boolean
 function Transitions.hide(launcherState, launcher, isAuto)
   launcherState.state = constants.MISSILE_UNIT_POSTURE.HIDE
-  Movement.applyMode(launcher, isAuto, constants.WCS.HOLD)
+  Movement.setMode(launcher, isAuto, constants.WCS.HOLD)
 end
 
 ---Unit met its partner (transloader at RL, canister stock at ATP): start the reload clock
 ---@param unitState SBJ__LauncherState|SBJ__TransloaderState
 ---@param unit CMO__Unit
 ---@param isAuto boolean
-function Transitions.beginReload(unitState, unit, isAuto)
+function Transitions.startReload(unitState, unit, isAuto)
   unitState.state = constants.MISSILE_UNIT_POSTURE.RELOAD
   unitState.reloadStartTime = GameApi.ScenEdit_CurrentTime()
-  Movement.applyMode(unit, isAuto, constants.WCS.HOLD)
+  Movement.setMode(unit, isAuto, constants.WCS.HOLD)
 end
 
 ---Start the reload clock of a reloading unit that has none yet
@@ -67,19 +67,19 @@ end
 ---@param systemState SBJ__MissileSystemState
 ---@param unit CMO__Unit
 ---@param isAuto boolean
-function Transitions.settle(systemState, unit, isAuto)
+function Transitions.completeArrival(systemState, unit, isAuto)
   local unitState = systemState.launchers[unit.name] or systemState.transloaders[unit.name]
 
   if unitState then
     Transitions.completeReload(unitState)
-    Movement.applyMode(unit, isAuto, constants.WCS.HOLD)
+    Movement.setMode(unit, isAuto, constants.WCS.HOLD)
   end
 end
 
 ---Start the stow countdown unless one is already running
 ---@param launcherState SBJ__LauncherState
 ---@return boolean # Whether a new countdown started
-function Transitions.beginStow(launcherState)
+function Transitions.startStow(launcherState)
   if launcherState.stowStartTime then
     return false
   end
@@ -90,7 +90,7 @@ end
 
 ---Stop the stow countdown once the unit has been sent on
 ---@param launcherState SBJ__LauncherState
-function Transitions.endStow(launcherState)
+function Transitions.completeStow(launcherState)
   launcherState.stowStartTime = nil
 end
 

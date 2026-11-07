@@ -17,19 +17,19 @@ local ORDER = Movement.ORDER
 
 ---Step that sends the launcher on a move order
 ---@param order SBJ__MoveOrder
----@return fun(tick: SBJ__LauncherTick): SBJ__LogResult
+---@return fun(tickCtx: SBJ__LauncherTickContext): SBJ__LogResult
 local function departLauncher(order)
-  return function(tick)
-    return Transitions.depart(tick.launcherState, tick.launcher, order)
+  return function(tickCtx)
+    return Transitions.startMove(tickCtx.launcherState, tickCtx.launcher, order)
   end
 end
 
 ---Launcher steps keyed by Rules.STEP; each one acts on CMO, records the transition and returns its log row
----@type table<string, fun(tick: SBJ__LauncherTick, pair: SBJ__ReloadPair): SBJ__LogResult|nil>
+---@type table<string, fun(tickCtx: SBJ__LauncherTickContext, pair: SBJ__ReloadPair): SBJ__LogResult|nil>
 local LAUNCHER_STEPS = {
-  [STEP.BEGIN_STOW] = function(tick)
-    local launcherState = tick.launcherState
-    Transitions.beginStow(launcherState)
+  [STEP.START_STOW] = function(tickCtx)
+    local launcherState = tickCtx.launcherState
+    Transitions.startStow(launcherState)
     return {
       tag = "OK",
       fields = {
@@ -40,8 +40,8 @@ local LAUNCHER_STEPS = {
     }
   end,
 
-  [STEP.END_STOW] = function(tick)
-    Transitions.endStow(tick.launcherState)
+  [STEP.COMPLETE_STOW] = function(tickCtx)
+    Transitions.completeStow(tickCtx.launcherState)
   end,
 
   [STEP.MOVE_TO_HIDE_AREA] = departLauncher(ORDER.HIDE_AREA),
@@ -60,44 +60,44 @@ local LAUNCHER_STEPS = {
   end,
 
   [STEP.MOVE_TRANSLOADER_TO_RELOAD_POINT] = function(_, pair)
-    return Transitions.depart(pair.transloaderState, pair.transloader, ORDER.RESUPPLY_VIA_SHRL)
+    return Transitions.startMove(pair.transloaderState, pair.transloader, ORDER.TRANSLOADER_VIA_SHRL)
   end,
 
-  [STEP.WARN_TRANSLOADER_NOT_FOUND] = function(tick)
+  [STEP.WARN_TRANSLOADER_NOT_FOUND] = function(tickCtx)
     return {
       tag = "WARN",
       fields = {
-        unit = tick.launcherDescriptor.transloader,
-        action = ORDER.RESUPPLY_VIA_SHRL.action,
+        unit = tickCtx.launcherDescriptor.transloader,
+        action = ORDER.TRANSLOADER_VIA_SHRL.action,
         reason = "unit_not_found"
       }
     }
   end,
 
-  [STEP.WARN_RESUPPLY_STATE_NOT_FOUND] = function(tick)
+  [STEP.WARN_TRANSLOADER_STATE_NOT_FOUND] = function(tickCtx)
     return {
       tag = "WARN",
       fields = {
-        unit = tick.launcherDescriptor.transloader,
-        action = ORDER.RESUPPLY_VIA_SHRL.action,
-        reason = "context_not_found"
+        unit = tickCtx.launcherDescriptor.transloader,
+        action = ORDER.TRANSLOADER_VIA_SHRL.action,
+        reason = "transloader_state_not_found"
       }
     }
   end,
 
   [STEP.MOVE_TO_RELOAD_POINT] = departLauncher(ORDER.RELOAD_POINT),
 
-  [STEP.ENSURE_RELOAD_CLOCK] = function(tick)
-    Transitions.ensureReloadClock(tick.launcherState)
+  [STEP.ENSURE_RELOAD_CLOCK] = function(tickCtx)
+    Transitions.ensureReloadClock(tickCtx.launcherState)
   end,
 
-  [STEP.COMPLETE_RELOAD] = function(tick, pair)
+  [STEP.COMPLETE_RELOAD] = function(tickCtx, pair)
     local loaded = Ammo.reloadLauncher(pair.transloaderState, pair.buildReload())
-    Transitions.completeReload(tick.launcherState)
+    Transitions.completeReload(tickCtx.launcherState)
     return {
       tag = "OK",
       fields = {
-        unit = tick.launcherState.name,
+        unit = tickCtx.launcherState.name,
         action = "missile_reload_finished",
         loaded = loaded
       }
@@ -121,68 +121,68 @@ local LAUNCHER_STEPS = {
 }
 
 ---Transloader steps keyed by Rules.STEP
----@type table<string, fun(tick: SBJ__TransloaderTick, canisterStockState: SBJ__CanisterStockState): SBJ__LogResult|nil>
+---@type table<string, fun(tickCtx: SBJ__TransloaderTickContext, canisterStockState: SBJ__CanisterStockState): SBJ__LogResult|nil>
 local TRANSLOADER_STEPS = {
-  [STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT] = function(tick)
-    return Transitions.depart(tick.transloaderState, tick.transloader, ORDER.AMMUNITION_TRANSFER_POINT)
+  [STEP.MOVE_TO_AMMUNITION_TRANSFER_POINT] = function(tickCtx)
+    return Transitions.startMove(tickCtx.transloaderState, tickCtx.transloader, ORDER.AMMUNITION_TRANSFER_POINT)
   end,
 
-  [STEP.ENSURE_RELOAD_CLOCK] = function(tick)
-    Transitions.ensureReloadClock(tick.transloaderState)
+  [STEP.ENSURE_RELOAD_CLOCK] = function(tickCtx)
+    Transitions.ensureReloadClock(tickCtx.transloaderState)
   end,
 
-  [STEP.FAIL_CANISTER_STOCK_STATE_NOT_FOUND] = function(tick)
+  [STEP.FAIL_CANISTER_STOCK_STATE_NOT_FOUND] = function(tickCtx)
     return {
       tag = "FAIL",
       fields = {
-        unit = tick.transloaderState.name,
+        unit = tickCtx.transloaderState.name,
         action = "ammo_transload_finished",
         reason = "canister_stock_state_not_found"
       }
     }
   end,
 
-  [STEP.COMPLETE_TRANSLOAD] = function(tick, canisterStockState)
-    local transloaderState = tick.transloaderState
-    local beforeResupply = transloaderState.weaponCountCurrent
+  [STEP.COMPLETE_TRANSLOAD] = function(tickCtx, canisterStockState)
+    local transloaderState = tickCtx.transloaderState
+    local weaponCountBefore = transloaderState.weaponCountCurrent
     local beforeCanisterStock = canisterStockState.weaponCountCurrent
-    Ammo.transferCanisters(transloaderState, canisterStockState, tick.transloaderDescriptor.weaponCountDefault)
+    Ammo.transferCanisters(transloaderState, canisterStockState, tickCtx.transloaderDescriptor.weaponCountDefault)
     Transitions.completeReload(transloaderState)
     return {
       tag = "OK",
       fields = {
         unit = transloaderState.name,
         action = "ammo_transload_finished",
-        transferred = transloaderState.weaponCountCurrent - beforeResupply,
+        transferred = transloaderState.weaponCountCurrent - weaponCountBefore,
         canisterStockBefore = beforeCanisterStock,
         canisterStockAfter = canisterStockState.weaponCountCurrent
       }
     }
   end,
 
-  [STEP.RECALL_TO_RELOAD_POINT] = function(tick)
-    return Transitions.depart(tick.transloaderState, tick.transloader, ORDER.RESUPPLY_RECALL)
+  [STEP.RECALL_TO_RELOAD_POINT] = function(tickCtx)
+    return Transitions.startMove(tickCtx.transloaderState, tickCtx.transloader, ORDER.TRANSLOADER_RECALL)
   end,
 }
 
 ---Run one reload cycle step for a launcher
 ---@param systemState SBJ__MissileSystemState
 ---@param runCtx SBJ__CycleRunContext
----@param launcherState SBJ__LauncherState
----@param launcherDescriptor SBJ__LauncherDescriptor
+---@param launcherState SBJ__LauncherState Its config descriptor must exist
 ---@param launcher CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
-local function processLauncher(systemState, runCtx, launcherState, launcherDescriptor, launcher)
-  ---@type SBJ__LauncherTick
-  local tick = {
+local function processLauncher(systemState, runCtx, launcherState, launcher)
+  local launcherDescriptor = runCtx.systemConfig.launchers[launcherState.name]
+  ---@type SBJ__LauncherTickContext
+  local tickCtx = {
     launcherState = launcherState,
     launcherDescriptor = launcherDescriptor,
     launcher = launcher,
     isAuto = runCtx.isAuto,
-    now = GameApi.ScenEdit_CurrentTime(),
+    currentTime = GameApi.ScenEdit_CurrentTime(),
     stowTimeSec = runCtx.systemConfig.stowTime,
     reloadTimeSec = runCtx.systemConfig.reloadTime,
-    staysDeployed = Rules.staysDeployed(systemState.name),
+    shouldStayDeployed = Rules.shouldStayDeployed(systemState.name),
     hasTransloaderState = systemState.transloaders[launcherDescriptor.transloader] ~= nil,
     isLowAmmo = function()
       return Ammo.isLowAmmo(launcher, launcherDescriptor.ammoThreshold, launcherDescriptor.weaponDBID)
@@ -190,35 +190,35 @@ local function processLauncher(systemState, runCtx, launcherState, launcherDescr
   }
   local pair = Meeting.resolveReloadPair(runCtx.systemConfig, systemState, launcher)
 
-  return Shared.processSteps(Rules.evaluateLauncherTick(tick, pair), LAUNCHER_STEPS, tick, pair)
+  return Shared.executeSteps(Rules.evaluateLauncherTick(tickCtx, pair), LAUNCHER_STEPS, tickCtx, pair)
 end
 
 ---Run one reload cycle step for a transloader
 ---@param systemState SBJ__MissileSystemState
 ---@param runCtx SBJ__CycleRunContext
----@param transloaderState SBJ__TransloaderState
----@param transloaderDescriptor SBJ__TransloaderDescriptor
+---@param transloaderState SBJ__TransloaderState Its config descriptor must exist
 ---@param transloader CMO__Unit
 ---@return SBJ__LogResult[] results Collected structured results
-local function processTransloader(systemState, runCtx, transloaderState, transloaderDescriptor, transloader)
-  ---@type SBJ__TransloaderTick
-  local tick = {
+local function processTransloader(systemState, runCtx, transloaderState, transloader)
+  local transloaderDescriptor = runCtx.systemConfig.transloaders[transloaderState.name]
+  ---@type SBJ__TransloaderTickContext
+  local tickCtx = {
     transloaderState = transloaderState,
     transloaderDescriptor = transloaderDescriptor,
     transloader = transloader,
     isAuto = runCtx.isAuto,
-    now = GameApi.ScenEdit_CurrentTime(),
+    currentTime = GameApi.ScenEdit_CurrentTime(),
     reloadTimeSec = runCtx.systemConfig.reloadTime,
     isInReloadArea = function()
       return Meeting.findReloadArea(transloader, transloaderState.operationalArea) ~= nil
     end,
-    isAtCanisterStock = function()
-      return Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader)
+    isInSameAmmunitionTransferPoint = function()
+      return Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, transloader)
     end,
   }
   local canisterStockState = systemState.canisterStocks[transloaderDescriptor.canisterStock]
 
-  return Shared.processSteps(Rules.evaluateTransloaderTick(tick, canisterStockState), TRANSLOADER_STEPS, tick,
+  return Shared.executeSteps(Rules.evaluateTransloaderTick(tickCtx, canisterStockState), TRANSLOADER_STEPS, tickCtx,
     canisterStockState)
 end
 
@@ -243,7 +243,7 @@ function Cycle.process(systemState, runCtx, sideName)
     if not descriptor then
       table.insert(results, buildDescriptorNotFound(name))
     elseif launcher then
-      Utils.addAll(results, processLauncher(systemState, runCtx, launcherState, descriptor, launcher))
+      Utils.addAll(results, processLauncher(systemState, runCtx, launcherState, launcher))
     end
   end
 
@@ -253,7 +253,7 @@ function Cycle.process(systemState, runCtx, sideName)
     if not descriptor then
       table.insert(results, buildDescriptorNotFound(name))
     elseif transloader then
-      Utils.addAll(results, processTransloader(systemState, runCtx, transloaderState, descriptor, transloader))
+      Utils.addAll(results, processTransloader(systemState, runCtx, transloaderState, transloader))
     end
   end
 

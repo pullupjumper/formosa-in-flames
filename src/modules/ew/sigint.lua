@@ -385,7 +385,7 @@ end
 ---@return SBJ__SigintEmitter[]
 local function collectEmitters(config, saveData, collectorSide)
   local targets = SIGINT_TARGETS[collectorSide]
-  local emitters = MissileSystem.listSigintEmitters(config, saveData, targets.side, targets.systems)
+  local emitters = MissileSystem.buildSigintEmitters(config, saveData, targets.side, targets.systems)
   local iadsState = PersistentState.iads(saveData, targets.side)
 
   for _, node in ipairs(targets.iadsNodes) do

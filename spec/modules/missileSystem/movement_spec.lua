@@ -276,8 +276,8 @@ describe("MissileSystem Movement", function()
       { "FIRING_POINT", "move_to_firing_point", course("FP"), nil },
       { "HIDE_AREA", "move_to_hide_area", course("HA"), hold },
       { "RELOAD_POINT", "move_launcher_to_reload_point", course("RL"), hold },
-      { "RESUPPLY_VIA_SHRL", "move_transloader_to_reload_point", course("SHRL"), hold },
-      { "RESUPPLY_RECALL", "move_transloader_to_reload_point", { course("RL")[2] }, nil },
+      { "TRANSLOADER_VIA_SHRL", "move_transloader_to_reload_point", course("SHRL"), hold },
+      { "TRANSLOADER_RECALL", "move_transloader_to_reload_point", { course("RL")[2] }, nil },
       { "AMMUNITION_TRANSFER_POINT", "move_to_ammunition_transfer_point", course("ATP"), nil },
     }) do
       it("should send " .. case[1] .. " along its own course with its own weapon control", function()
@@ -301,7 +301,7 @@ describe("MissileSystem Movement", function()
 
     -- Boundary: a transloader leaving its shelter takes RL when the area has no SHRL
     it("should fall back to RL when the area has no SHRL", function()
-      local result, sentCourse = send(Movement.ORDER.RESUPPLY_VIA_SHRL, { SHRL = false })
+      local result, sentCourse = send(Movement.ORDER.TRANSLOADER_VIA_SHRL, { SHRL = false })
 
       assert.are.equal("OK", result.tag)
       assert.are.same(course("RL"), sentCourse)
@@ -309,7 +309,7 @@ describe("MissileSystem Movement", function()
 
     -- Boundary: an empty SHRL list is defined, so it fails instead of falling back
     it("should fail rather than fall back when SHRL is empty", function()
-      local result, sentCourse = send(Movement.ORDER.RESUPPLY_VIA_SHRL, { SHRL = {} })
+      local result, sentCourse = send(Movement.ORDER.TRANSLOADER_VIA_SHRL, { SHRL = {} })
 
       assert.are.equal("no_positions_available", result.fields.reason)
       assert.is_nil(sentCourse)
@@ -317,10 +317,10 @@ describe("MissileSystem Movement", function()
   end)
 
   -- ============================================================================
-  -- applyMode
+  -- setMode
   -- ============================================================================
 
-  describe("applyMode", function()
+  describe("setMode", function()
     -- Positive: handles a single unit without group
     it("should set a single unit without group", function()
       local unit = { guid = "SINGLE-001", side = "Taiwan" }
@@ -332,7 +332,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.applyMode(unit, true, constants.WCS.HOLD)
+      Movement.setMode(unit, true, constants.WCS.HOLD)
 
       assert.stub(stubSetUnit).was.called(1)
       assert.are.equal("SINGLE-001", stubSetUnit.calls[1].vals[1].guid)
@@ -355,7 +355,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.applyMode(unit, true, constants.WCS.HOLD)
+      Movement.setMode(unit, true, constants.WCS.HOLD)
 
       assert.stub(stubSetUnit).was.called(2)
       assert.are.equal("U1", stubSetUnit.calls[1].vals[1].guid)
@@ -370,7 +370,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.applyMode(unit, true, constants.WCS.HOLD)
+      Movement.setMode(unit, true, constants.WCS.HOLD)
 
       assert.is_true(stubSetUnit.calls[1].vals[1].holdposition)
     end)
@@ -383,7 +383,7 @@ describe("MissileSystem Movement", function()
       local stubSetUnit = trackStub(GameApi, "ScenEdit_SetUnit")
       trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.applyMode(unit, false, constants.WCS.HOLD)
+      Movement.setMode(unit, false, constants.WCS.HOLD)
 
       assert.is_false(stubSetUnit.calls[1].vals[1].holdposition)
     end)
@@ -396,7 +396,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_SetUnit")
       local stubSetDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.applyMode(unit, true, constants.WCS.FREE)
+      Movement.setMode(unit, true, constants.WCS.FREE)
 
       assert.stub(stubSetDoctrine).was.called(1)
       assert.are.equal(constants.WCS.FREE, stubSetDoctrine.calls[1].vals[2].weapon_control_status_land)
@@ -410,7 +410,7 @@ describe("MissileSystem Movement", function()
       trackStub(GameApi, "ScenEdit_SetUnit")
       local stubSetDoctrine = trackStub(GameApi, "ScenEdit_SetDoctrine")
 
-      Movement.applyMode(unit, true, constants.WCS.FREE)
+      Movement.setMode(unit, true, constants.WCS.FREE)
 
       assert.stub(stubSetDoctrine).was.called(1)
       assert.are.equal(constants.WCS.FREE, stubSetDoctrine.calls[1].vals[2].weapon_control_status_air)

@@ -77,7 +77,7 @@ end
 
 ---@param ... CMO__Location[]
 ---@return CMO__Location[]
-local function joinWaypoints(...)
+local function buildWaypoints(...)
   local waypoints = {}
 
   for _, part in ipairs({ ... }) do
@@ -106,10 +106,10 @@ end
 ---Draw an operational area the way the control panel map draws a placement
 ---An area stores one course per zone that already includes the reload leg, so the HA and ATP paths are
 ---stitched back from the first RL course. The inverse of buildOperationalArea.
----@param operationalArea SBJ__OperationalArea
 ---@param sideName string
+---@param operationalArea SBJ__OperationalArea
 ---@return SBJ__BatteryPlacement
-function PanelBattery.buildPlacement(operationalArea, sideName)
+function PanelBattery.buildPlacement(sideName, operationalArea)
   local reloadCourse = operationalArea.RL[1].course
   local uShapeVertices = GameUtils.findAreaLocations(sideName, operationalArea.mask.area)
   if #uShapeVertices == 0 then
@@ -121,10 +121,10 @@ function PanelBattery.buildPlacement(operationalArea, sideName)
     paths.FP[index] = { waypoints = position.course or {} }
   end
   for index, position in ipairs(operationalArea.HA) do
-    paths.HA[index] = { waypoints = joinWaypoints(reloadCourse, position.course) }
+    paths.HA[index] = { waypoints = buildWaypoints(reloadCourse, position.course) }
   end
   for index, position in ipairs(operationalArea.ATP) do
-    paths.ATP[index] = { waypoints = joinWaypoints(reloadCourse, position.course) }
+    paths.ATP[index] = { waypoints = buildWaypoints(reloadCourse, position.course) }
   end
   for index, position in ipairs(operationalArea.RL) do
     paths.RL[index] = { waypoints = position.course }
@@ -194,8 +194,11 @@ local function buildBatteryStatus(systemConfig, systemState, launcherDescriptor,
     return nil
   end
 
-  local transloaderDescriptor = systemConfig.transloaders[launcherDescriptor.transloader]
-  local canisterStockDescriptor = systemConfig.canisterStocks[transloaderDescriptor.canisterStock]
+  local _, transloaderDescriptor, canisterStockDescriptor = GroundStateStore.resolveDescriptors(
+    systemConfig, launcherDescriptor.name
+  )
+  ---@cast transloaderDescriptor SBJ__TransloaderDescriptor
+  ---@cast canisterStockDescriptor SBJ__CanisterStockDescriptor
   local transloaderState = systemState.transloaders[transloaderDescriptor.name]
   local canisterStockState = systemState.canisterStocks[canisterStockDescriptor.name]
 
@@ -234,7 +237,7 @@ function PanelBattery.buildPanelBatteries(missileSystemConfigMap, groundState, s
         missileSystem = descriptor.missileSystem,
         missileSystemType = missileSystemType,
         weaponRange = GameUtils.findWeaponRange(descriptor.weaponDBID) or 0,
-        placement = PanelBattery.buildPlacement(operationalArea, sideName),
+        placement = PanelBattery.buildPlacement(sideName, operationalArea),
         status = systemState and buildBatteryStatus(systemConfig, systemState, descriptor, currentTime)
       })
     end

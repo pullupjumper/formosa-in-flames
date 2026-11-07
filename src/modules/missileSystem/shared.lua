@@ -25,7 +25,7 @@ end
 ---@param ctx C What every step may read; steps never write it
 ---@param obs? O What the executor observed; nil only when Rules took its no-observation branch, whose steps read ctx only
 ---@return SBJ__LogResult[] rows Rows of the steps that produced one, in step order
-function Shared.processSteps(steps, handlers, ctx, obs)
+function Shared.executeSteps(steps, handlers, ctx, obs)
   local rows = {}
   for _, step in ipairs(steps) do
     local row = handlers[step](ctx, obs)

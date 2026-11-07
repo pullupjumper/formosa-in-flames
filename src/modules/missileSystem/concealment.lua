@@ -51,7 +51,7 @@ end
 ---Select a random unoccupied building from the list
 ---@param buildings CMO__SideUnit[]
 ---@return CMO__Unit|nil # Random building from the list that is not occupied by a hide site
-local function getRandomBuilding(buildings)
+local function selectRandomBuilding(buildings)
   local buildingsWithoutOccupied = {}
 
   for _, item in ipairs(buildings) do
@@ -110,7 +110,7 @@ function Concealment.hideUnit(unitState, unit, weaponDBID)
     return false, { reason = "no_buildings_in_mask", area = unitState.operationalArea.name }
   end
 
-  local building = getRandomBuilding(buildings)
+  local building = selectRandomBuilding(buildings)
 
   if not building then
     return false, { reason = "no_available_building", area = unitState.operationalArea.name }
@@ -121,10 +121,10 @@ function Concealment.hideUnit(unitState, unit, weaponDBID)
 end
 
 ---Add a bunker at each shelter point of an operational area
----@param operationalArea SBJ__OperationalArea
 ---@param sideName string
+---@param operationalArea SBJ__OperationalArea
 ---@return boolean # Whether every bunker was added; false when the area has no shelter points
-function Concealment.addBunkers(operationalArea, sideName)
+function Concealment.addBunkers(sideName, operationalArea)
   if not operationalArea.shelterPoints then return false end
 
   for idx, point in ipairs(operationalArea.shelterPoints) do

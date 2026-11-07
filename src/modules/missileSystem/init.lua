@@ -10,7 +10,6 @@ local Movement = require("src.modules.missileSystem.movement")
 local Concealment = require("src.modules.missileSystem.concealment")
 local Cycle = require("src.modules.missileSystem.cycle")
 local Rules = require("src.modules.missileSystem.rules")
-local Shared = require("src.modules.missileSystem.shared")
 local Transitions = require("src.modules.missileSystem.transitions")
 local PositionZones = require("src.modules.missileSystem.positionZones")
 local Deployment = require("src.modules.missileSystem.deployment")
@@ -25,17 +24,6 @@ local REDEPLOY_POSITION_TYPES = {
   constants.POSITION_TYPES.FIRING_POINT,
   constants.POSITION_TYPES.HIDE_AREA,
   constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT
-}
-
----Steps of a fire support plan dispatch keyed by Rules.STEP
----@type table<string, fun(launcherState: SBJ__LauncherState, launcher: CMO__Unit): SBJ__LogResult|nil>
-local SEND_TO_FIRING_POINT_STEPS = {
-  [Rules.STEP.UNHIDE] = function(launcherState, launcher)
-    Concealment.moveFromHideArea(launcherState, launcher)
-  end,
-  [Rules.STEP.MOVE_TO_FIRING_POINT] = function(launcherState, launcher)
-    return Transitions.depart(launcherState, launcher, Movement.ORDER.FIRING_POINT)
-  end,
 }
 
 ---@param config SBJ__Config
@@ -87,11 +75,17 @@ function MissileSystem.sendToFiringPoint(config, groundState, sideName, params)
     return Ammo.isLowAmmo(launcher, launcherDescriptor.ammoThreshold, launcherDescriptor.weaponDBID)
   end
 
-  local steps = Rules.evaluateSendToFiringPoint(launcherState, isLowAmmo)
-  for _, row in ipairs(Shared.processSteps(steps, SEND_TO_FIRING_POINT_STEPS, launcherState, launcher)) do
-    -- A single dispatch, not a report, so only a failure is written.
-    if row.tag == "FAIL" then
-      Logger.error(LogFormat.line("FAIL", LogFormat.merge({ module = constants.TAGS.MISSILE_SYSTEM }, row.fields)))
+  if Rules.canSendToFiringPoint(launcherState, isLowAmmo) then
+    -- A single dispatch, not a report, so each failure is written on its own line.
+    local isUnhidden, errorFields = Concealment.moveFromHideArea(launcherState, launcher)
+    if not isUnhidden then
+      Logger.warn(LogFormat.line("WARN", LogFormat.merge(
+        { module = constants.TAGS.MISSILE_SYSTEM, unit = launcherName, action = "unload_from_hide_area" }, errorFields)))
+    end
+
+    local departure = Transitions.startMove(launcherState, launcher, Movement.ORDER.FIRING_POINT)
+    if departure.tag == "FAIL" then
+      Logger.error(LogFormat.line("FAIL", LogFormat.merge({ module = constants.TAGS.MISSILE_SYSTEM }, departure.fields)))
     end
   end
 
@@ -101,10 +95,10 @@ end
 ---Calculate ammunition inventory across launcher/transloader/canister stock for a missile system
 ---@param config SBJ__Config
 ---@param groundState SBJ__GroundState
----@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@param sideName string
+---@param missileSystemType string Missile system type (constants.MISSILE_SYSTEM_TYPES)
 ---@return SBJ__AmmoInventoryResult|nil # Inventory report with subtotals and percentages, nil when the system is absent
-function MissileSystem.getAmmoInventory(config, groundState, missileSystemType, sideName)
+function MissileSystem.getAmmoInventory(config, groundState, sideName, missileSystemType)
   local systemState = groundState.missileSystemTypes[missileSystemType]
   local systemConfig = getMissileSystemTypes(config, sideName)[missileSystemType]
   if not systemState or not systemConfig then
@@ -167,7 +161,7 @@ end
 ---@return SBJ__LauncherState[]
 local function findLeavingLauncherStates(groundState, missileSystemType, launcherNames)
   local launcherStates = {}
-  if not missileSystemType or not launcherNames or Rules.staysDeployed(missileSystemType) then
+  if not missileSystemType or not launcherNames or Rules.shouldStayDeployed(missileSystemType) then
     return launcherStates
   end
 
@@ -188,7 +182,7 @@ end
 ---@param launcherNames string[]|nil
 function MissileSystem.completeFireTask(groundState, missileSystemType, launcherNames)
   for _, launcherState in ipairs(findLeavingLauncherStates(groundState, missileSystemType, launcherNames)) do
-    Transitions.beginStow(launcherState)
+    Transitions.startStow(launcherState)
   end
 end
 
@@ -200,7 +194,7 @@ end
 function MissileSystem.abortFireTask(groundState, missileSystemType, launcherNames)
   for _, launcherState in ipairs(findLeavingLauncherStates(groundState, missileSystemType, launcherNames)) do
     if Rules.isDeployed(launcherState) then
-      Transitions.beginStow(launcherState)
+      Transitions.startStow(launcherState)
     end
   end
 end
@@ -248,7 +242,7 @@ function MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
   local missileSystemConfigMap = getMissileSystemTypes(config, unit.side)
 
   for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
-    local success, result = GroundStateStore.processSupplyAssetDestruction(
+    local success, result = GroundStateStore.updateSupplyAssetAmmo(
       unit, missileSystemConfigMap[missileSystemType], systemState
     )
 
@@ -259,7 +253,7 @@ function MissileSystem.processSupplyAssetDestruction(config, saveData, unit)
         action = "supply_asset_destroyed",
         role = result.role,
         unit = result.unitName,
-        context = result.contextName,
+        unitState = result.unitStateName,
         ammoBefore = result.ammoBefore,
         ammoAfter = result.ammoAfter,
         delta = result.delta
@@ -279,7 +273,7 @@ end
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 ---@param redeployments SBJ__PlacedBattery[]
-function MissileSystem.redeployFromControlPanel(config, saveData, sideName, redeployments)
+function MissileSystem.deployFromControlPanel(config, saveData, sideName, redeployments)
   local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
   local groundState = PersistentState.ground(saveData, sideName)
   local batteries, operationalAreas, operationalAreasToRemove = {}, {}, {}
@@ -296,7 +290,7 @@ function MissileSystem.redeployFromControlPanel(config, saveData, sideName, rede
   end
 
   -- PositionZones writes the mask onto the new areas, which resetBatteryStates then copies into state
-  PositionZones.rebuild(operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES, sideName)
+  PositionZones.update(sideName, operationalAreas, operationalAreasToRemove, REDEPLOY_POSITION_TYPES)
   Deployment.deployBatteries(sideName, batteries)
   GroundStateStore.resetBatteryStates(groundState, batteries)
 end
@@ -316,14 +310,23 @@ function MissileSystem.buildPanelBatteries(config, saveData, sideName)
 end
 
 ---Add a side's missile system units and build their runtime states from config
+---Each battery goes where it stands now: a battery the control panel moved has no zones left at its config
+---area, so it is added at its saved area and only a never-deployed battery uses its config area.
 ---@param config SBJ__Config
 ---@param saveData SBJ__SaveData
 ---@param sideName string
 function MissileSystem.deploySide(config, saveData, sideName)
+  local groundState = PersistentState.ground(saveData, sideName)
   local batteries = Deployment.resolveBatteries(getMissileSystemTypes(config, sideName))
 
+  for _, battery in ipairs(batteries) do
+    battery.operationalArea = GroundStateStore.resolveOperationalArea(
+      groundState, battery.missileSystemType, battery.launcher
+    )
+  end
+
   Deployment.deployBatteries(sideName, batteries)
-  GroundStateStore.resetBatteryStates(PersistentState.ground(saveData, sideName), batteries)
+  GroundStateStore.resetBatteryStates(groundState, batteries)
 end
 
 ---List the launchers of some missile systems as SIGINT emitters, in the order the systems are given
@@ -333,7 +336,7 @@ end
 ---@param sideName string Side that owns the launchers
 ---@param missileSystemTypes string[] Missile system type keys (constants.MISSILE_SYSTEM_TYPES)
 ---@return SBJ__SigintEmitter[]
-function MissileSystem.listSigintEmitters(config, saveData, sideName, missileSystemTypes)
+function MissileSystem.buildSigintEmitters(config, saveData, sideName, missileSystemTypes)
   local missileSystemConfigMap = getMissileSystemTypes(config, sideName)
   local groundState = PersistentState.ground(saveData, sideName)
   local emitters = {}

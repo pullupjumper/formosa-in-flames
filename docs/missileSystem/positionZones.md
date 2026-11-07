@@ -8,7 +8,7 @@
 
 ## 概觀
 
-`rebuild` 先清掉電池離開的作戰區，再替新的作戰區建立 zone 與 trigger。
+`update` 先清掉電池離開的作戰區，再替新的作戰區建立 zone 與 trigger。
 
 清除用名字找目標：依 [triggers](triggers.md) 的名稱協定，從舊作戰區的名字與各陣地數量算出 zone 與 trigger 名字，只刪掉存在的。bunker 由 `Concealment.removeBunkers` 清除，條件是舊 mask 區內的建築物。
 
@@ -16,7 +16,7 @@
 
 ```mermaid
 flowchart TD
-    A[rebuild] --> B[collectNames 舊作戰區]
+    A[update] --> B[buildNames 舊作戰區]
     A --> C[Concealment.removeBunkers]
     B --> D[removeEventTriggers]
     B --> E[removeZones]
@@ -33,7 +33,7 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
-| `rebuild` | `operationalAreas, operationalAreasToRemove, positionTypes, sideName` | `nil` | 清除舊作戰區，建立新作戰區 |
+| `update` | `sideName, operationalAreas, operationalAreasToRemove, positionTypes` | `nil` | 清除舊作戰區，建立新作戰區 |
 
 ---
 

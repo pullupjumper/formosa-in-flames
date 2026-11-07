@@ -66,7 +66,7 @@ end
 ---@param weaponDBID number|number[]
 ---@return integer current Weapons loaded
 ---@return integer max Weapon capacity
-local function tallyWeapons(launcher, weaponDBID)
+local function countWeapons(launcher, weaponDBID)
   local weaponDBIDs = Shared.normalizeWeaponDBIDs(weaponDBID)
   local current, max = 0, 0
 
@@ -95,7 +95,7 @@ function Ammo.isLowAmmo(launcher, percentage, weaponDBID)
     return false
   end
 
-  local totalCurrent, totalMax = tallyWeapons(launcher, weaponDBID)
+  local totalCurrent, totalMax = countWeapons(launcher, weaponDBID)
   if totalMax == 0 then return false end
   return (totalCurrent / totalMax * 100) <= percentage
 end
@@ -121,7 +121,7 @@ local function countLaunchers(launcherMap, descriptorMap, sideName)
     local descriptor = descriptorMap[name]
     local launcher = descriptor and GameApi.ScenEdit_GetUnit(name, sideName)
     if launcher then
-      local current, max = tallyWeapons(launcher, descriptor.weaponDBID)
+      local current, max = countWeapons(launcher, descriptor.weaponDBID)
       subtotal.current = subtotal.current + current
       subtotal.max = subtotal.max + max
     end

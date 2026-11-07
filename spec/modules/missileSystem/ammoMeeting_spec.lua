@@ -527,10 +527,10 @@ describe("MissileSystem Ammo And Meeting", function()
   end)
 
   -- ============================================================================
-  -- isAtCanisterStock
+  -- isInSameAmmunitionTransferPoint
   -- ============================================================================
 
-  describe("isAtCanisterStock", function()
+  describe("isInSameAmmunitionTransferPoint", function()
     local transloaderDescriptor = { name = "Ammo Sec, Alpha", canisterStock = "Ammo Revetment, Alpha" }
     local transloaderState
     local transloader
@@ -563,26 +563,26 @@ describe("MissileSystem Ammo And Meeting", function()
 
     -- Positive: both in one ATP zone
     it("should return true when transloader meets canister stock in same ATP", function()
-      assert.is_true(Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader))
+      assert.is_true(Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, transloader))
       assert.stub(GameApi.ScenEdit_GetUnit).was.called_with("Ammo Revetment, Alpha", "China")
     end)
 
     -- Boundary: the transloader in no ATP zone
     it("should return false when the transloader is in no ATP zone", function()
       transloader.inArea = function() return false end
-      assert.is_false(Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader))
+      assert.is_false(Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, transloader))
     end)
 
     -- Negative: the canister stock elsewhere
     it("should return false when transloader and canister stock are in different areas", function()
       canisterStock.inArea = function() return false end
-      assert.is_false(Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader))
+      assert.is_false(Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, transloader))
     end)
 
     -- Negative: the canister stock gone
     it("should return false when canister stock does not exist", function()
       canisterStock = nil
-      assert.is_false(Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader))
+      assert.is_false(Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, transloader))
     end)
   end)
 end)

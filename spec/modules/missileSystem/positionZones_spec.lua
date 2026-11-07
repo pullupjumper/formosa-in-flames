@@ -77,11 +77,11 @@ describe("MissileSystem PositionZones", function()
         return zone
       end)
 
-      PositionZones.rebuild(
+      PositionZones.update(
+        constants.SIDES.RED,
         operationalAreas,
         {},
-        { constants.POSITION_TYPES.RELOAD_POINT },
-        constants.SIDES.RED
+        { constants.POSITION_TYPES.RELOAD_POINT }
       )
 
       assert.are.equal(2, #createdZones)
@@ -121,11 +121,11 @@ describe("MissileSystem PositionZones", function()
         return zone
       end)
 
-      PositionZones.rebuild(
+      PositionZones.update(
+        constants.SIDES.BLUE,
         { operationalArea },
         {},
-        { constants.POSITION_TYPES.RELOAD_POINT },
-        constants.SIDES.BLUE
+        { constants.POSITION_TYPES.RELOAD_POINT }
       )
 
       assert.are.equal(constants.ZONE_TYPES.STANDARD, maskZoneType)
@@ -165,11 +165,11 @@ describe("MissileSystem PositionZones", function()
         }
       end)
 
-      PositionZones.rebuild(
+      PositionZones.update(
+        constants.SIDES.BLUE,
         { operationalArea },
         {},
-        { constants.POSITION_TYPES.RELOAD_POINT },
-        constants.SIDES.BLUE
+        { constants.POSITION_TYPES.RELOAD_POINT }
       )
 
       assert.stub(errorStub).was.called(1)
@@ -217,7 +217,7 @@ describe("MissileSystem PositionZones", function()
       local deleteRPStub = trackStub(GameApi, "ScenEdit_DeleteReferencePoint").returns(true)
       local deleteUnitStub = trackStub(GameApi, "ScenEdit_DeleteUnit").returns(true)
 
-      PositionZones.rebuild({}, { leftArea }, { POS.RELOAD_POINT }, side)
+      PositionZones.update(side, {}, { leftArea }, { POS.RELOAD_POINT })
 
       local removedZones = {}
       for _, call in ipairs(removeZoneStub.calls) do

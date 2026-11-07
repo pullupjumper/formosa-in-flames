@@ -212,7 +212,7 @@ describe("MissileSystem PanelBattery", function()
   describe("buildPlacement", function()
     -- Positive: each stored course is drawn as the map path it came from
     it("should stitch the HA and ATP paths onto the reload course and keep the RL course as it is", function()
-      local placement = PanelBattery.buildPlacement(makeOperationalArea(), "Taiwan")
+      local placement = PanelBattery.buildPlacement("Taiwan", makeOperationalArea())
 
       assert.are.same({
         FP = { { waypoints = course(1) }, { waypoints = course(2) } },
@@ -225,7 +225,7 @@ describe("MissileSystem PanelBattery", function()
 
     -- Positive: zone and mask names become the vertices the map draws, centered on the U-shape
     it("should resolve zones to vertices and center the placement on the U-shape", function()
-      local placement = PanelBattery.buildPlacement(makeOperationalArea(), "Taiwan")
+      local placement = PanelBattery.buildPlacement("Taiwan", makeOperationalArea())
 
       assert.are.same({
         uShapeVertices = { VERTICES["rp-mask"] },
@@ -242,7 +242,7 @@ describe("MissileSystem PanelBattery", function()
     -- Positive: a shelter loop is drawn from its own course
     it("should draw the shelter loop course when the area has one", function()
       local placement = PanelBattery.buildPlacement(
-        makeOperationalArea({ SHRL = { { course = course(6), area = { "rp-rl" } } } }), "Taiwan")
+        "Taiwan", makeOperationalArea({ SHRL = { { course = course(6), area = { "rp-rl" } } } }))
 
       assert.are.same({ { waypoints = course(6) } }, placement.paths.SHRL)
     end)
@@ -251,7 +251,7 @@ describe("MissileSystem PanelBattery", function()
     it("should fall back to the stored U-shape when the mask does not resolve", function()
       local stored = { { latitude = 1, longitude = 2 }, { latitude = 3, longitude = 4 } }
       local placement = PanelBattery.buildPlacement(
-        makeOperationalArea({ mask = { area = { "rp-missing" } }, uShapeVertices = stored }), "Taiwan")
+        "Taiwan", makeOperationalArea({ mask = { area = { "rp-missing" } }, uShapeVertices = stored }))
 
       assert.are.same(stored, placement.tacticalAreas.uShapeVertices)
       assert.are.same({ latitude = 2, longitude = 3 }, placement.center)
@@ -283,7 +283,7 @@ describe("MissileSystem PanelBattery", function()
       local operationalArea = PanelBattery.buildOperationalArea(submitted)
       operationalArea.mask = { area = tacticalAreas.uShapeVertices }
 
-      local placement = PanelBattery.buildPlacement(operationalArea, "Taiwan")
+      local placement = PanelBattery.buildPlacement("Taiwan", operationalArea)
 
       ---@param waypoints CMO__Location[]
       ---@return number[]
@@ -342,11 +342,11 @@ describe("MissileSystem PanelBattery", function()
 
     ---FU-1's status at a game time
     ---@param groundState table
-    ---@param now number
+    ---@param currentTime number
     ---@param configMap? table Defaults to makeMissileSystemConfigMap()
     ---@return table
-    local function statusAt(groundState, now, configMap)
-      return PanelBattery.buildPanelBatteries(configMap or makeMissileSystemConfigMap(), groundState, "Taiwan", now)[1]
+    local function statusAt(groundState, currentTime, configMap)
+      return PanelBattery.buildPanelBatteries(configMap or makeMissileSystemConfigMap(), groundState, "Taiwan", currentTime)[1]
           .status
     end
 

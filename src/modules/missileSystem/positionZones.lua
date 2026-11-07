@@ -21,7 +21,7 @@ local DEFAULT_ZONE_COLOR = "4d8b5cf6"
 ---@param sideName string
 ---@return table<string, true> zoneNames
 ---@return table<string, table<string, true>> triggerNamesByEvent Trigger names keyed by event name
-local function collectNames(operationalAreas, positionTypes, sideName)
+local function buildNames(operationalAreas, positionTypes, sideName)
   local zoneNames, triggerNamesByEvent = {}, {}
 
   for _, positionType in ipairs(positionTypes) do
@@ -156,10 +156,10 @@ local function addPositionTrigger(params)
 end
 
 ---Add the mask zone built from the area's U-shape and store its reference points as the area's mask
----@param operationalArea SBJ__OperationalArea
 ---@param sideName string
+---@param operationalArea SBJ__OperationalArea
 ---@return boolean # Whether the zone was created
-local function addMaskZone(operationalArea, sideName)
+local function addMaskZone(sideName, operationalArea)
   local zone = GameApi.ScenEdit_AddZone(sideName, constants.ZONE_TYPES.STANDARD, {
     description = Triggers.formatMaskZoneName(operationalArea.name),
     area = operationalArea.uShapeVertices,
@@ -221,12 +221,12 @@ local AREA_PARTS = {
 }
 
 ---Remove the zones, triggers and bunkers of the areas being left, then build them for the new areas
+---@param sideName string
 ---@param operationalAreas SBJ__OperationalArea[]
 ---@param operationalAreasToRemove SBJ__OperationalArea[]
 ---@param positionTypes string[]
----@param sideName string
-function PositionZones.rebuild(operationalAreas, operationalAreasToRemove, positionTypes, sideName)
-  local zoneNames, triggerNamesByEvent = collectNames(operationalAreasToRemove, positionTypes, sideName)
+function PositionZones.update(sideName, operationalAreas, operationalAreasToRemove, positionTypes)
+  local zoneNames, triggerNamesByEvent = buildNames(operationalAreasToRemove, positionTypes, sideName)
   Concealment.removeBunkers(operationalAreasToRemove, sideName)
   local removedTriggerCount, triggerCleanupSuccessful = removeEventTriggers(triggerNamesByEvent)
   local removedZoneCount, zoneCleanupSuccessful = removeZones(zoneNames, sideName)
@@ -251,7 +251,7 @@ function PositionZones.rebuild(operationalAreas, operationalAreasToRemove, posit
 
     for _, part in ipairs(AREA_PARTS) do
       local count = tally[part.kind]
-      if part.build(operationalArea, sideName) then
+      if part.build(sideName, operationalArea) then
         count.created = count.created + 1
         table.insert(initLogEntries, {
           tag = "OK",

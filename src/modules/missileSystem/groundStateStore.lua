@@ -2,6 +2,25 @@ local Utils = require("src.utils.utils")
 
 local GroundStateStore = {}
 
+---Join a unit to its battery's config descriptors by config links
+---Config pairs every launcher with one transloader and its canister stock, so either end finds the others.
+---@param systemConfig SBJ__MissileSystemConfig
+---@param unitName string Launcher or transloader name
+---@return SBJ__LauncherDescriptor|nil launcher
+---@return SBJ__TransloaderDescriptor|nil transloader Nil, with the others, when config has no launcher or transloader of that name
+---@return SBJ__CanisterStockDescriptor|nil canisterStock
+function GroundStateStore.resolveDescriptors(systemConfig, unitName)
+  local launcher = systemConfig.launchers[unitName]
+  local transloader = systemConfig.transloaders[launcher and launcher.transloader or unitName]
+  if not transloader then
+    return nil, nil, nil
+  end
+
+  return launcher or systemConfig.launchers[transloader.launcher],
+      transloader,
+      systemConfig.canisterStocks[transloader.canisterStock]
+end
+
 ---Find the launcher, transloader and canister stock states paired with either end's unit name
 ---The pairing comes from config links. Each state is nil when it is not tracked; all are nil when config
 ---has no launcher or transloader of that name.
@@ -12,20 +31,14 @@ local GroundStateStore = {}
 ---@return SBJ__TransloaderState|nil transloaderState Transloader state of the pair
 ---@return SBJ__CanisterStockState|nil canisterStockState canister stock state of the transloader
 function GroundStateStore.resolvePair(systemConfig, systemState, unitName)
-  local transloaderName = unitName
-  local launcherDescriptor = systemConfig.launchers[unitName]
-  if launcherDescriptor then
-    transloaderName = launcherDescriptor.transloader
-  end
-
-  local transloaderDescriptor = systemConfig.transloaders[transloaderName]
-  if not transloaderDescriptor then
+  local _, transloader = GroundStateStore.resolveDescriptors(systemConfig, unitName)
+  if not transloader then
     return nil, nil, nil
   end
 
-  return systemState.launchers[transloaderDescriptor.launcher],
-      systemState.transloaders[transloaderDescriptor.name],
-      systemState.canisterStocks[transloaderDescriptor.canisterStock]
+  return systemState.launchers[transloader.launcher],
+      systemState.transloaders[transloader.name],
+      systemState.canisterStocks[transloader.canisterStock]
 end
 
 ---Call back once for every enabled missile system
@@ -39,13 +52,31 @@ function GroundStateStore.forEachEnabledSystem(groundState, callback)
   end
 end
 
+---Find the enabled missile system that tracks a unit as one of its launchers or transloaders
+---A system with no config entry is skipped, so callers can read its config without a nil check.
+---@param groundState SBJ__GroundState
+---@param missileSystemConfigMap table<string, SBJ__MissileSystemConfig>
+---@param unitName string
+---@return SBJ__MissileSystemState|nil systemState Nil when no enabled system tracks the unit
+---@return string|nil missileSystemType
+function GroundStateStore.findUnitSystem(groundState, missileSystemConfigMap, unitName)
+  for missileSystemType, systemState in pairs(groundState.missileSystemTypes) do
+    if systemState.enabled and missileSystemConfigMap[missileSystemType]
+        and (systemState.launchers[unitName] or systemState.transloaders[unitName]) then
+      return systemState, missileSystemType
+    end
+  end
+
+  return nil, nil
+end
+
 ---Handle logic when transloader is destroyed
 ---@param unit CMO__Unit
 ---@param systemConfig SBJ__MissileSystemConfig
 ---@param systemState SBJ__MissileSystemState
 ---@return boolean success Whether unit was found and processed
 ---@return SBJ__SupplyAssetDestructionResult|nil result Structured result when ammo was adjusted
-function GroundStateStore.processSupplyAssetDestruction(unit, systemConfig, systemState)
+function GroundStateStore.updateSupplyAssetAmmo(unit, systemConfig, systemState)
   local canisterStockState = systemState.canisterStocks[unit.name]
 
   if canisterStockState and unit.group == nil and canisterStockState.weaponCountCurrent > 0 then
@@ -55,7 +86,7 @@ function GroundStateStore.processSupplyAssetDestruction(unit, systemConfig, syst
       tag = "OK",
       system = systemState.name or "unknown",
       unitName = unit.name,
-      contextName = canisterStockState.name,
+      unitStateName = canisterStockState.name,
       role = "canister_stock",
       ammoBefore = ammoBefore,
       ammoAfter = canisterStockState.weaponCountCurrent,
@@ -84,7 +115,7 @@ function GroundStateStore.processSupplyAssetDestruction(unit, systemConfig, syst
       tag = "OK",
       system = systemState.name or "unknown",
       unitName = unit.name,
-      contextName = transloaderState.name,
+      unitStateName = transloaderState.name,
       role = "transloader",
       ammoBefore = ammoBefore,
       ammoAfter = transloaderState.weaponCountCurrent,
@@ -116,7 +147,7 @@ end
 
 ---Set each battery's runtime state fresh from its config descriptors' starting values, at the battery's operational area
 ---Only the given batteries change; every other battery keeps its runtime state. Copies the area, so run it
----after PositionZones.rebuild has written the mask onto a new area.
+---after PositionZones.update has written the mask onto a new area.
 ---@param groundState SBJ__GroundState
 ---@param batteries SBJ__Battery[]
 function GroundStateStore.resetBatteryStates(groundState, batteries)

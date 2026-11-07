@@ -37,6 +37,8 @@ flowchart TD
 
 | 函式 | 參數 | 回傳 | 說明 |
 |---|---|---|---|
+| `resolveDescriptors` | `systemConfig, unitName` | `launcher?, transloader?, canisterStock?` | 用發射車或補給車名稱照 config 連結找出整連的 descriptor；`Deployment.resolveBattery`、`resolvePair`、控制面板狀態都靠它，連結只在這裡走一次 |
+| `findUnitSystem` | `groundState, missileSystemConfigMap, unitName` | `systemState?, missileSystemType?` | 找出把這個單位當發射車或補給車追蹤的啟用系統；沒有 config 的系統略過 |
 | `resolvePair` | `systemConfig, systemState, unitName` | `launcherState?, transloaderState?, canisterStockState?` | 用任一端名稱照 config 連結找出整組配對；沒有 state 的一端為 nil |
 | `processSupplyAssetDestruction` | `unit, systemConfig, systemState` | `boolean` | 補給資產戰損後同步修正庫存；每台車的份量用 config 的 `weaponCountDefault / unitCount` |
 | `resetBatteryStates` | `groundState, batteries` | `nil` | 把這幾連的 runtime state 重設成 config 初值，放在該連的陣地 |

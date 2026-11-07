@@ -182,6 +182,22 @@ describe("MissileSystem", function()
         " reason=no_positions_available")
     end)
 
+    -- Negative: an unhide failure is logged, and the move order still goes out
+    it("should warn when unloading from the hide area fails", function()
+      local launcherState = { name = "FU1", state = STATE.HIDE }
+      local launcher = { name = "FU1" }
+
+      trackStub(Ammo, "isLowAmmo").returns(false)
+      moveFromHideAreaStub.returns(false, { reason = "no_buildings_in_mask", area = "OPAREA-1" })
+      local moveStub = trackStub(Movement, "moveTo").returns({ tag = "OK", fields = {} })
+
+      sendToFiringPoint(launcherState, launcher)
+
+      assert.stub(warnStub).was.called_with(
+        "[WARN] module=missileSystem area=OPAREA-1 unit=FU1 action=unload_from_hide_area reason=no_buildings_in_mask")
+      assert.stub(moveStub).was.called(1)
+    end)
+
     -- Negative: a failed move leaves the unit HIDE instead of stuck REPOSITIONING
     it("should keep a hiding unit HIDE when movement fails", function()
       local launcherState = { name = "FU1", state = STATE.HIDE }
@@ -555,7 +571,8 @@ describe("MissileSystem", function()
     -- Positive: units and states are built from the side's ground config into the side's slice
     it("should deploy every battery and set its state from the side's ground config", function()
       local config, saveData = makeSides()
-      local batteries = { { id = "battery" } }
+      local configArea = { name = "OPAREA-CFG" }
+      local batteries = { { missileSystemType = "srbm", launcher = { name = "FU-A", operationalArea = configArea } } }
       local resolveStub = trackStub(Deployment, "resolveBatteries").returns(batteries)
       local deployStub = trackStub(Deployment, "deployBatteries")
       local stateStub = trackStub(GroundStateStore, "resetBatteryStates")
@@ -565,6 +582,45 @@ describe("MissileSystem", function()
       assert.stub(resolveStub).was.called_with(config.blue.ground.missileSystemTypes)
       assert.stub(deployStub).was.called_with(constants.SIDES.BLUE, batteries)
       assert.stub(stateStub).was.called_with(saveData.blue.ground, batteries)
+    end)
+  end)
+
+  describe("deploySide placement", function()
+    ---Config battery FU-A whose config area is OPAREA-CFG; the saved state area, if any, is given
+    ---@param savedArea table|nil
+    ---@return table batteryBuiltAt The battery deploySide handed to Deployment.deployBatteries
+    local function deployWithSavedArea(savedArea)
+      local configArea = { name = "OPAREA-CFG" }
+      local launcher = { name = "FU-A", transloader = "RU-A", operationalArea = configArea }
+      local config = { blue = { ground = { missileSystemTypes = { srbm = {
+        launchers = { ["FU-A"] = launcher },
+        transloaders = { ["RU-A"] = { name = "RU-A", launcher = "FU-A", canisterStock = "AMMO-A" } },
+        canisterStocks = { ["AMMO-A"] = { name = "AMMO-A" } },
+      } } } } }
+      local saveData = { blue = { ground = { missileSystemTypes = { srbm = {
+        launchers = savedArea and { ["FU-A"] = { name = "FU-A", operationalArea = savedArea } } or {},
+      } } } } }
+      local deployStub = trackStub(Deployment, "deployBatteries")
+      trackStub(GroundStateStore, "resetBatteryStates")
+
+      MissileSystem.deploySide(config, saveData, constants.SIDES.BLUE)
+
+      return deployStub.calls[1].vals[2][1]
+    end
+
+    -- Positive: a battery the control panel moved is added back where the player put it,
+    -- because the zones of its config area were deleted by that move
+    it("should place a moved battery at its saved area", function()
+      local battery = deployWithSavedArea({ name = "#MOVED" })
+
+      assert.are.equal("#MOVED", battery.operationalArea.name)
+    end)
+
+    -- Positive: a battery never deployed has no saved area, so config says where it goes
+    it("should place a battery without a saved area at its config area", function()
+      local battery = deployWithSavedArea(nil)
+
+      assert.are.equal("OPAREA-CFG", battery.operationalArea.name)
     end)
   end)
 
@@ -648,8 +704,8 @@ describe("MissileSystem", function()
       }
       saveData.blue.ground = { missileSystemTypes = { [constants.MISSILE_SYSTEM_TYPES.SRBM] = systemState } }
       trackStub(GameApi, "ScenEdit_GetContacts").returns(nil)
-      trackStub(Meeting, "isAtCanisterStock").returns(false)
-      local settleStub = trackStub(Transitions, "settle")
+      trackStub(Meeting, "isInSameAmmunitionTransferPoint").returns(false)
+      local settleStub = trackStub(Transitions, "completeArrival")
 
       MissileSystem.processArrival(config, saveData, unit, event)
 
@@ -815,7 +871,7 @@ describe("MissileSystem", function()
 
       local inventoryStub = trackStub(Ammo, "getInventory").returns({ total = { percentage = 80 } })
 
-      local report = MissileSystem.getAmmoInventory(config, groundState, "srbm", constants.SIDES.RED)
+      local report = MissileSystem.getAmmoInventory(config, groundState, constants.SIDES.RED, "srbm")
 
       assert.are.equal(80, report.total.percentage)
       assert.stub(inventoryStub).was.called_with(match.is_ref(srbmConfig), match.is_ref(srbmState), constants.SIDES.RED)
@@ -825,15 +881,15 @@ describe("MissileSystem", function()
     it("should return nil when the system is absent", function()
       local groundState = { missileSystemTypes = {} }
       local config = { red = { ground = { missileSystemTypes = {} } } }
-      assert.is_nil(MissileSystem.getAmmoInventory(config, groundState, "srbm", constants.SIDES.RED))
+      assert.is_nil(MissileSystem.getAmmoInventory(config, groundState, constants.SIDES.RED, "srbm"))
     end)
   end)
 
   -- ============================================================================
-  -- listSigintEmitters
+  -- buildSigintEmitters
   -- ============================================================================
 
-  describe("listSigintEmitters", function()
+  describe("buildSigintEmitters", function()
     -- Positive: message comes from config, area from state, systems in the order asked
     it("should list each tracked launcher with its config message and saved area", function()
       local srbmArea, glcmArea = { name = "#SRBM" }, { name = "#GLCM" }
@@ -846,7 +902,7 @@ describe("MissileSystem", function()
         glcm = { launchers = { FU2 = { name = "FU2", operationalArea = glcmArea } } },
       } } } }
 
-      local emitters = MissileSystem.listSigintEmitters(config, saveData, constants.SIDES.BLUE, { "glcm", "srbm" })
+      local emitters = MissileSystem.buildSigintEmitters(config, saveData, constants.SIDES.BLUE, { "glcm", "srbm" })
 
       assert.are.same({
         { name = "FU2", msg = "GLCM radio", operationalArea = glcmArea },
@@ -861,15 +917,15 @@ describe("MissileSystem", function()
         srbm = { launchers = { FU1 = { name = "FU1", operationalArea = {} } } },
       } } } }
 
-      assert.are.same({}, MissileSystem.listSigintEmitters(config, saveData, constants.SIDES.BLUE, { "srbm" }))
+      assert.are.same({}, MissileSystem.buildSigintEmitters(config, saveData, constants.SIDES.BLUE, { "srbm" }))
     end)
   end)
 
   -- ============================================================================
-  -- redeployFromControlPanel
+  -- deployFromControlPanel
   -- ============================================================================
 
-  describe("redeployFromControlPanel", function()
+  describe("deployFromControlPanel", function()
     ---Let deployment run against an empty map: no old units, every add succeeds
     local function stubUnitSpawning()
       trackStub(GameApi, "ScenEdit_GetUnit").returns(nil)
@@ -908,13 +964,13 @@ describe("MissileSystem", function()
       local newArea = { name = "OPAREA-NEW", HA = { { course = { { latitude = 4, longitude = 4 } } } },
         RL = { { course = { { latitude = 5, longitude = 5 } } } }, ATP = { { course = { { latitude = 6, longitude = 6 } } } } }
       trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
-      local triggersStub = trackStub(PositionZones, "rebuild")
+      local triggersStub = trackStub(PositionZones, "update")
       stubUnitSpawning()
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
+      MissileSystem.deployFromControlPanel(config, saveData, constants.SIDES.BLUE,
         { { missileSystemType = "srbm", name = "FU-A", placement = {} } })
 
-      local newAreas, removedAreas = triggersStub.calls[1].vals[1], triggersStub.calls[1].vals[2]
+      local newAreas, removedAreas = triggersStub.calls[1].vals[2], triggersStub.calls[1].vals[3]
       assert.are.same({ "OPAREA-NEW" }, { newAreas[1].name })
       assert.are.same({ "OPAREA-SAVED" }, { removedAreas[1].name })
     end)
@@ -928,10 +984,10 @@ describe("MissileSystem", function()
       local canisterStockDescriptor = srbmConfig.canisterStocks["AMMO-A"]
       local configArea = launcherDescriptor.operationalArea
       trackStub(PanelBattery, "buildOperationalArea").returns({ name = "OPAREA-NEW" })
-      trackStub(PositionZones, "rebuild")
+      trackStub(PositionZones, "update")
       stubUnitSpawning()
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE,
+      MissileSystem.deployFromControlPanel(config, saveData, constants.SIDES.BLUE,
         { { missileSystemType = "srbm", name = "FU-A", placement = {} } })
 
       assert.are.equal(launcherDescriptor, srbmConfig.launchers["FU-A"])
@@ -952,7 +1008,7 @@ describe("MissileSystem", function()
       local newArea = { name = "#NEW" }
       local buildAreaStub = trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
       local calls = {}
-      local triggersStub = trackStub(PositionZones, "rebuild").invokes(function()
+      local triggersStub = trackStub(PositionZones, "update").invokes(function()
         table.insert(calls, "rebuild")
       end)
       local deployStub = trackStub(Deployment, "deployBatteries").invokes(function()
@@ -962,16 +1018,16 @@ describe("MissileSystem", function()
         table.insert(calls, "resetBatteryStates")
       end)
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
+      MissileSystem.deployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
 
       assert.stub(buildAreaStub).was.called_with(redeployments[1].placement)
       assert.are.same({ "rebuild", "deployBatteries", "resetBatteryStates" }, calls)
-      assert.stub(triggersStub).was.called_with({ newArea }, match._, {
+      assert.stub(triggersStub).was.called_with("Taiwan", { newArea }, match._, {
         constants.POSITION_TYPES.RELOAD_POINT,
         constants.POSITION_TYPES.FIRING_POINT,
         constants.POSITION_TYPES.HIDE_AREA,
         constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT
-      }, "Taiwan")
+      })
       local batteries = deployStub.calls[1].vals[2]
       assert.are.equal(1, #batteries)
       assert.are.equal("FU-A", batteries[1].launcher.name)
@@ -1012,11 +1068,11 @@ describe("MissileSystem", function()
 
       local newArea = { name = "#NEW" }
       trackStub(PanelBattery, "buildOperationalArea").returns(newArea)
-      trackStub(PositionZones, "rebuild")
+      trackStub(PositionZones, "update")
       stubUnitSpawning()
       local redeployments = { { missileSystemType = "srbm", name = "FU-A", placement = {} } }
 
-      MissileSystem.redeployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
+      MissileSystem.deployFromControlPanel(config, saveData, constants.SIDES.BLUE, redeployments)
 
       assert.are.same(newArea, systemState.launchers["FU-A"].operationalArea)
       assert.is_nil(systemState.launchers["FU-A"].weaponCountCurrent)

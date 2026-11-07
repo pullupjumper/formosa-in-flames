@@ -83,9 +83,9 @@ local HIDE_AREA_STEPS = {
 ---Reload point steps keyed by Rules.STEP
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, pair: SBJ__ReloadPair): SBJ__LogResult|nil>
 local RELOAD_POINT_STEPS = {
-  [STEP.BEGIN_RELOAD] = function(ctx, pair)
+  [STEP.START_RELOAD] = function(ctx, pair)
     local launcherState = pair.launcherState
-    Transitions.beginReload(launcherState, pair.launcher, ctx.runCtx.isAuto)
+    Transitions.startReload(launcherState, pair.launcher, ctx.runCtx.isAuto)
     return {
       tag = "OK",
       fields = {
@@ -100,7 +100,7 @@ local RELOAD_POINT_STEPS = {
 
   -- Manual mode keeps a launcher drifting through RL during repositioning from being halted.
   [STEP.STOP_IN_MANUAL_MODE] = function(ctx)
-    Transitions.settle(ctx.systemState, ctx.unit, false)
+    Transitions.completeArrival(ctx.systemState, ctx.unit, false)
   end,
 
   [STEP.HIDE_UNMET_TRANSLOADER] = function(ctx, pair)
@@ -133,9 +133,9 @@ local RELOAD_POINT_STEPS = {
 ---Ammunition transfer point steps keyed by Rules.STEP
 ---@type table<string, fun(ctx: SBJ__ArrivalContext, observation: SBJ__AmmunitionTransferPointObservation): SBJ__LogResult|nil>
 local AMMUNITION_TRANSFER_POINT_STEPS = {
-  [STEP.BEGIN_TRANSLOAD] = function(ctx, observation)
+  [STEP.START_TRANSLOAD] = function(ctx, observation)
     local transloaderState = observation.transloaderState
-    Transitions.beginReload(transloaderState, ctx.unit, ctx.runCtx.isAuto)
+    Transitions.startReload(transloaderState, ctx.unit, ctx.runCtx.isAuto)
     return {
       tag = "OK",
       fields = {
@@ -148,14 +148,14 @@ local AMMUNITION_TRANSFER_POINT_STEPS = {
   end,
 
   [STEP.STOP] = function(ctx)
-    Transitions.settle(ctx.systemState, ctx.unit, ctx.runCtx.isAuto)
+    Transitions.completeArrival(ctx.systemState, ctx.unit, ctx.runCtx.isAuto)
   end,
 }
 
 ---Observe a unit entering its hide area
 ---@param ctx SBJ__ArrivalContext
----@return SBJ__HideAreaObservation|nil # Nil when the unit is not a launcher of this system
-local function observeHideArea(ctx)
+---@return SBJ__HideAreaObservation|nil # Nil when the unit is a transloader
+local function buildHideAreaObservation(ctx)
   local unit = ctx.unit
   local launcherState = ctx.systemState.launchers[unit.name]
   local launcherDescriptor = ctx.systemConfig.launchers[unit.name]
@@ -174,8 +174,8 @@ end
 
 ---Observe a unit entering its ammunition transfer point
 ---@param ctx SBJ__ArrivalContext
----@return SBJ__AmmunitionTransferPointObservation|nil # Nil when the unit is not a transloader of this system
-local function observeAmmunitionTransferPoint(ctx)
+---@return SBJ__AmmunitionTransferPointObservation|nil # Nil when the unit is a launcher
+local function buildAmmunitionTransferPointObservation(ctx)
   local unit = ctx.unit
   local transloaderState = ctx.systemState.transloaders[unit.name]
   local transloaderDescriptor = ctx.systemConfig.transloaders[unit.name]
@@ -185,8 +185,8 @@ local function observeAmmunitionTransferPoint(ctx)
 
   return {
     transloaderState = transloaderState,
-    isAtCanisterStock = function()
-      return Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, unit)
+    isInSameAmmunitionTransferPoint = function()
+      return Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, unit)
     end,
   }
 end
@@ -200,7 +200,7 @@ local POSITIONS = {
     steps = FIRING_POINT_STEPS,
   },
   [constants.POSITION_TYPES.HIDE_AREA] = {
-    observe = observeHideArea,
+    observe = buildHideAreaObservation,
     evaluate = Rules.evaluateHideAreaArrival,
     steps = HIDE_AREA_STEPS,
   },
@@ -210,7 +210,7 @@ local POSITIONS = {
     steps = RELOAD_POINT_STEPS,
   },
   [constants.POSITION_TYPES.AMMUNITION_TRANSFER_POINT] = {
-    observe = observeAmmunitionTransferPoint,
+    observe = buildAmmunitionTransferPointObservation,
     evaluate = Rules.evaluateAmmunitionTransferPointArrival,
     steps = AMMUNITION_TRANSFER_POINT_STEPS,
   },
@@ -233,7 +233,10 @@ function Arrival.process(params)
 
   local report = LogFormat.report(constants.TAGS.MISSILE_SYSTEM, "side=" .. unit.side, "Position event")
 
-  GroundStateStore.forEachEnabledSystem(params.groundState, function(systemState, missileSystemType)
+  local systemState, missileSystemType = GroundStateStore.findUnitSystem(
+    params.groundState, params.missileSystemConfigMap, unit.name
+  )
+  if systemState and missileSystemType then
     ---@type SBJ__ArrivalContext
     local ctx = {
       systemConfig = params.missileSystemConfigMap[missileSystemType],
@@ -243,11 +246,11 @@ function Arrival.process(params)
     }
     local observation = position.observe(ctx)
     local steps = position.evaluate(runCtx, observation)
-    for _, row in ipairs(Shared.processSteps(steps, position.steps, ctx, observation)) do
+    for _, row in ipairs(Shared.executeSteps(steps, position.steps, ctx, observation)) do
       row.fields.system = missileSystemType
       report.add(row.tag, row.fields)
     end
-  end)
+  end
 
   -- position is derived from the event trigger, so it describes the whole batch
   -- rather than any single row.

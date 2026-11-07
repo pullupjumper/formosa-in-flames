@@ -4,6 +4,7 @@ local constants = require("src.core.constants")
 local GameUtils = require("src.utils.gameUtils")
 local Shared = require("src.modules.missileSystem.shared")
 local Rules = require("src.modules.missileSystem.rules")
+local GroundStateStore = require("src.modules.missileSystem.groundStateStore")
 
 local Deployment = {}
 
@@ -237,7 +238,7 @@ end
 local function deployRole(battery, batteryRole, sideName)
   local descriptor = batteryRole.resolveDescriptor(battery)
   local area = battery.operationalArea
-  local isDeployed = Rules.staysDeployed(battery.missileSystemType)
+  local isDeployed = Rules.shouldStayDeployed(battery.missileSystemType)
   local expected = batteryRole.isGroup and battery.transloader.unitCount or 1
   local context = {
     system = battery.missileSystemType,
@@ -294,17 +295,20 @@ end
 ---@return SBJ__Battery|nil # nil for an unknown system or launcher
 function Deployment.resolveBattery(missileSystemConfigMap, missileSystemType, launcherName, operationalArea)
   local systemConfig = missileSystemConfigMap[missileSystemType]
-  local launcher = systemConfig and systemConfig.launchers[launcherName]
-  if not launcher then
+  if not systemConfig then
     return nil
   end
 
-  local transloader = systemConfig.transloaders[launcher.transloader]
+  local launcher, transloader, canisterStock = GroundStateStore.resolveDescriptors(systemConfig, launcherName)
+  if not launcher or launcher.name ~= launcherName then
+    return nil
+  end
+
   return {
     missileSystemType = missileSystemType,
     launcher = launcher,
     transloader = transloader,
-    canisterStock = systemConfig.canisterStocks[transloader.canisterStock],
+    canisterStock = canisterStock,
     operationalArea = operationalArea
   }
 end

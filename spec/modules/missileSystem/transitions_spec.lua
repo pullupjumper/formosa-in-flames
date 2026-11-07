@@ -27,7 +27,7 @@ describe("MissileSystem Transitions", function()
 
   before_each(function()
     activeStubs = {}
-    applyModeStub = trackStub(Movement, "applyMode")
+    applyModeStub = trackStub(Movement, "setMode")
     trackStub(GameApi, "ScenEdit_CurrentTime").returns(9000)
   end)
 
@@ -38,7 +38,7 @@ describe("MissileSystem Transitions", function()
     activeStubs = {}
   end)
 
-  describe("depart", function()
+  describe("startMove", function()
     -- Positive: a move order that went out marks the unit repositioning
     it("should mark the unit REPOSITIONING when the move succeeded", function()
       local unitState = { state = STATE.STATIC }
@@ -47,7 +47,7 @@ describe("MissileSystem Transitions", function()
       local row = { tag = "OK", fields = { unit = "U1", action = "move_to_hide_area" } }
       local moveStub = trackStub(Movement, "moveTo").returns(row)
 
-      local result = Transitions.depart(unitState, unit, Movement.ORDER.HIDE_AREA)
+      local result = Transitions.startMove(unitState, unit, Movement.ORDER.HIDE_AREA)
 
       assert.are.equal(row, result)
       assert.stub(moveStub).was.called_with(match.is_ref(unitState), match.is_ref(unit), match.is_ref(Movement.ORDER.HIDE_AREA))
@@ -60,7 +60,7 @@ describe("MissileSystem Transitions", function()
       local row = { tag = "FAIL", fields = { reason = "no_positions_available" } }
       trackStub(Movement, "moveTo").returns(row)
 
-      local result = Transitions.depart(unitState, { guid = "U1" }, Movement.ORDER.HIDE_AREA)
+      local result = Transitions.startMove(unitState, { guid = "U1" }, Movement.ORDER.HIDE_AREA)
 
       assert.are.equal(row, result)
       assert.are.equal(STATE.HIDE, unitState.state)
@@ -93,13 +93,13 @@ describe("MissileSystem Transitions", function()
     end)
   end)
 
-  describe("beginReload", function()
+  describe("startReload", function()
     -- Positive: the reload clock starts now and weapons are held
     it("should set RELOAD, start the clock and hold weapons", function()
       local unitState = { state = STATE.REPOSITIONING }
       local unit = { guid = "F1" }
 
-      Transitions.beginReload(unitState, unit, true)
+      Transitions.startReload(unitState, unit, true)
 
       assert.are.equal(STATE.RELOAD, unitState.state)
       assert.are.equal(9000, unitState.reloadStartTime)
@@ -139,7 +139,7 @@ describe("MissileSystem Transitions", function()
     end)
   end)
 
-  describe("settle", function()
+  describe("completeArrival", function()
     local systemState
 
     before_each(function()
@@ -153,7 +153,7 @@ describe("MissileSystem Transitions", function()
     it("should settle a launcher", function()
       local unit = { name = "FU1" }
 
-      Transitions.settle(systemState, unit, false)
+      Transitions.completeArrival(systemState, unit, false)
 
       assert.are.equal(STATE.STATIC, systemState.launchers["FU1"].state)
       assert.is_nil(systemState.launchers["FU1"].reloadStartTime)
@@ -162,7 +162,7 @@ describe("MissileSystem Transitions", function()
 
     -- Positive: a transloader is settled the same way
     it("should settle a transloader", function()
-      Transitions.settle(systemState, { name = "RU1" }, true)
+      Transitions.completeArrival(systemState, { name = "RU1" }, true)
 
       assert.are.equal(STATE.STATIC, systemState.transloaders["RU1"].state)
       assert.is_nil(systemState.transloaders["RU1"].reloadStartTime)
@@ -172,7 +172,7 @@ describe("MissileSystem Transitions", function()
     it("should prefer the launcher when the name is in both maps", function()
       systemState.transloaders["FU1"] = { name = "FU1", state = STATE.REPOSITIONING }
 
-      Transitions.settle(systemState, { name = "FU1" }, true)
+      Transitions.completeArrival(systemState, { name = "FU1" }, true)
 
       assert.are.equal(STATE.STATIC, systemState.launchers["FU1"].state)
       assert.are.equal(STATE.REPOSITIONING, systemState.transloaders["FU1"].state)
@@ -180,18 +180,18 @@ describe("MissileSystem Transitions", function()
 
     -- Negative: an unknown unit is left alone
     it("should do nothing for an unknown unit", function()
-      Transitions.settle(systemState, { name = "Unknown" }, true)
+      Transitions.completeArrival(systemState, { name = "Unknown" }, true)
 
       assert.stub(applyModeStub).was_not.called()
     end)
   end)
 
-  describe("beginStow / endStow", function()
+  describe("startStow / completeStow", function()
     -- Positive: a new countdown starts now
     it("should start a countdown and report it", function()
       local launcherState = {}
 
-      assert.is_true(Transitions.beginStow(launcherState))
+      assert.is_true(Transitions.startStow(launcherState))
       assert.are.equal(9000, launcherState.stowStartTime)
     end)
 
@@ -199,7 +199,7 @@ describe("MissileSystem Transitions", function()
     it("should keep a running countdown", function()
       local launcherState = { stowStartTime = 500 }
 
-      assert.is_false(Transitions.beginStow(launcherState))
+      assert.is_false(Transitions.startStow(launcherState))
       assert.are.equal(500, launcherState.stowStartTime)
     end)
 
@@ -207,7 +207,7 @@ describe("MissileSystem Transitions", function()
     it("should clear the countdown on end", function()
       local launcherState = { stowStartTime = 500 }
 
-      Transitions.endStow(launcherState)
+      Transitions.completeStow(launcherState)
 
       assert.is_nil(launcherState.stowStartTime)
     end)

@@ -46,14 +46,14 @@ local function runRows(rows, evaluate)
 end
 
 describe("MissileSystem Rules", function()
-  describe("staysDeployed", function()
+  describe("shouldStayDeployed", function()
     it("should be true for SAM in any case", function()
-      assert.is_true(Rules.staysDeployed("sam"))
-      assert.is_true(Rules.staysDeployed("SAM"))
+      assert.is_true(Rules.shouldStayDeployed("sam"))
+      assert.is_true(Rules.shouldStayDeployed("SAM"))
     end)
 
     it("should be false for other systems", function()
-      assert.is_false(Rules.staysDeployed("srbm"))
+      assert.is_false(Rules.shouldStayDeployed("srbm"))
     end)
   end)
 
@@ -108,15 +108,18 @@ describe("MissileSystem Rules", function()
     end)
   end)
 
-  describe("evaluateSendToFiringPoint", function()
-    runRows({
-      { name = "should unhide and move a hiding unit with enough ammo", params = { state = STATE.HIDE, isLowAmmo = false }, steps = { STEP.UNHIDE, STEP.MOVE_TO_FIRING_POINT } },
-      { name = "should keep a hiding unit with low ammo", params = { state = STATE.HIDE, isLowAmmo = true }, steps = {} },
-      { name = "should leave a STATIC unit alone", params = { state = STATE.STATIC }, steps = {} },
-      { name = "should leave a REPOSITIONING unit alone", params = { state = STATE.REPOSITIONING }, steps = {} },
-    }, function(params)
-      return Rules.evaluateSendToFiringPoint({ state = params.state }, answer(params.isLowAmmo))
-    end)
+  describe("canSendToFiringPoint", function()
+    local cases = {
+      { name = "should send a hiding unit with enough ammo", state = STATE.HIDE, isLowAmmo = false, expected = true },
+      { name = "should keep a hiding unit with low ammo", state = STATE.HIDE, isLowAmmo = true, expected = false },
+      { name = "should leave a STATIC unit alone", state = STATE.STATIC, expected = false },
+      { name = "should leave a REPOSITIONING unit alone", state = STATE.REPOSITIONING, expected = false },
+    }
+    for _, case in ipairs(cases) do
+      it(case.name, function()
+        assert.are.equal(case.expected, Rules.canSendToFiringPoint({ state = case.state }, answer(case.isLowAmmo)))
+      end)
+    end
   end)
 
   ---Pair with a met launcher FU1 and transloader RS1; overrides are plain values, wrapped into observation functions
@@ -172,9 +175,9 @@ describe("MissileSystem Rules", function()
     describe("RL", function()
       local alone = { isTriggeredByLauncher = false, isLow = false }
       runRows({
-        { name = "should begin the reload after a meeting", params = {}, steps = { STEP.BEGIN_RELOAD } },
-        { name = "should begin the reload when the transloader arrives to meet", params = { isTriggeredByLauncher = false }, steps = { STEP.BEGIN_RELOAD } },
-        { name = "should begin the reload in manual mode whatever the state", params = { isAuto = false, launcherState = STATE.HIDE }, steps = { STEP.BEGIN_RELOAD } },
+        { name = "should begin the reload after a meeting", params = {}, steps = { STEP.START_RELOAD } },
+        { name = "should begin the reload when the transloader arrives to meet", params = { isTriggeredByLauncher = false }, steps = { STEP.START_RELOAD } },
+        { name = "should begin the reload in manual mode whatever the state", params = { isAuto = false, launcherState = STATE.HIDE }, steps = { STEP.START_RELOAD } },
         { name = "should stop in manual mode when the pair is incomplete", params = { noPair = true }, steps = { STEP.STOP_IN_MANUAL_MODE } },
         { name = "should not meet in auto mode when the arriving unit is not on its way", params = { launcherState = STATE.STATIC, isLow = false }, steps = { STEP.STOP_IN_MANUAL_MODE } },
         { name = "should not meet when the launcher has enough ammo", params = { isLow = false }, steps = { STEP.STOP_IN_MANUAL_MODE } },
@@ -195,8 +198,8 @@ describe("MissileSystem Rules", function()
 
     describe("ATP", function()
       runRows({
-        { name = "should begin the transload after meeting its canister stock", params = { isAtCanisterStock = true }, steps = { STEP.BEGIN_TRANSLOAD } },
-        { name = "should stop when not at its canister stock", params = { isAtCanisterStock = false }, steps = { STEP.STOP } },
+        { name = "should begin the transload after meeting its canister stock", params = { isInSameAmmunitionTransferPoint = true }, steps = { STEP.START_TRANSLOAD } },
+        { name = "should stop when not at its canister stock", params = { isInSameAmmunitionTransferPoint = false }, steps = { STEP.STOP } },
         { name = "should stop when it still carries missiles", params = { stock = 2 }, steps = { STEP.STOP } },
         { name = "should stop in auto mode when not on its way", params = { state = STATE.STATIC }, steps = { STEP.STOP } },
         { name = "should stop for a unit that is not a transloader", params = { isTransloader = false }, steps = { STEP.STOP } },
@@ -204,7 +207,7 @@ describe("MissileSystem Rules", function()
         local o = buildParams({ state = STATE.REPOSITIONING, stock = 0, isTransloader = true }, params)
         local observation = o.isTransloader and {
           transloaderState = { state = o.state, weaponCountCurrent = o.stock },
-          isAtCanisterStock = answer(o.isAtCanisterStock),
+          isInSameAmmunitionTransferPoint = answer(o.isInSameAmmunitionTransferPoint),
         } or nil
         return Rules.evaluateAmmunitionTransferPointArrival(runCtx, observation)
       end)
@@ -212,24 +215,24 @@ describe("MissileSystem Rules", function()
   end)
 
   describe("evaluateLauncherTick", function()
-    ---Launcher tick, plus its pair unless params.pair is false
-    ---@param params table state, isAuto, isLow, stowStartTime, reloadStartTime, staysDeployed, hasTransloaderState, pair (overrides or false)
-    local function tick(params)
+    ---Launcher tick context, plus its pair unless params.pair is false
+    ---@param params table state, isAuto, isLow, stowStartTime, reloadStartTime, shouldStayDeployed, hasTransloaderState, pair (overrides or false)
+    local function buildTickCtx(params)
       local o = buildParams({
         state = STATE.STATIC,
         isAuto = true,
-        now = 10000,
-        staysDeployed = false,
+        currentTime = 10000,
+        shouldStayDeployed = false,
         hasTransloaderState = true,
       }, params)
       local pair = params.pair ~= false and buildPair(buildParams({ launcherState = o.state }, params.pair)) or nil
       return Rules.evaluateLauncherTick({
         launcherState = { state = o.state, stowStartTime = o.stowStartTime, reloadStartTime = o.reloadStartTime },
         isAuto = o.isAuto,
-        now = o.now,
+        currentTime = o.currentTime,
         stowTimeSec = 600,
         reloadTimeSec = 1800,
-        staysDeployed = o.staysDeployed,
+        shouldStayDeployed = o.shouldStayDeployed,
         hasTransloaderState = o.hasTransloaderState,
         isLowAmmo = answer(o.isLow),
       }, pair)
@@ -240,22 +243,22 @@ describe("MissileSystem Rules", function()
         STEP.UNHIDE_TRANSLOADER,
         STEP.MOVE_TRANSLOADER_TO_RELOAD_POINT,
         STEP.MOVE_TO_RELOAD_POINT,
-        STEP.END_STOW,
+        STEP.COMPLETE_STOW,
       }
       local stowed = 10000 - 600
       runRows({
         { name = "should do nothing with enough ammo and no countdown", params = { isLow = false }, steps = {} },
-        { name = "should begin the stow countdown when low", params = { isLow = true }, steps = { STEP.BEGIN_STOW } },
+        { name = "should begin the stow countdown when low", params = { isLow = true }, steps = { STEP.START_STOW } },
         { name = "should wait without reading ammo while the countdown runs", params = { stowStartTime = stowed + 1 }, steps = {} },
-        { name = "should move to HA with enough ammo once stowed", params = { isLow = false, stowStartTime = stowed }, steps = { STEP.MOVE_TO_HIDE_AREA, STEP.END_STOW } },
+        { name = "should move to HA with enough ammo once stowed", params = { isLow = false, stowStartTime = stowed }, steps = { STEP.MOVE_TO_HIDE_AREA, STEP.COMPLETE_STOW } },
         { name = "should move with its transloader to RL when low once stowed", params = { isLow = true, stowStartTime = stowed }, steps = sendToReloadPoint },
-        { name = "should warn and still move to RL when the transloader is gone", params = { isLow = true, stowStartTime = stowed, pair = false }, steps = { STEP.WARN_TRANSLOADER_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
-        { name = "should warn and still move to RL when the transloader has no state", params = { isLow = true, stowStartTime = stowed, pair = false, hasTransloaderState = false }, steps = { STEP.WARN_RESUPPLY_STATE_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.END_STOW } },
-        { name = "should begin the stow countdown for SAM when low", params = { isLow = true, staysDeployed = true }, steps = { STEP.BEGIN_STOW } },
-        { name = "should wait out the stow time for SAM before RL", params = { isLow = true, staysDeployed = true, stowStartTime = stowed + 1 }, steps = {} },
-        { name = "should move SAM with its transloader to RL when low once stowed", params = { isLow = true, staysDeployed = true, stowStartTime = stowed }, steps = sendToReloadPoint },
+        { name = "should warn and still move to RL when the transloader is gone", params = { isLow = true, stowStartTime = stowed, pair = false }, steps = { STEP.WARN_TRANSLOADER_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.COMPLETE_STOW } },
+        { name = "should warn and still move to RL when the transloader has no state", params = { isLow = true, stowStartTime = stowed, pair = false, hasTransloaderState = false }, steps = { STEP.WARN_TRANSLOADER_STATE_NOT_FOUND, STEP.MOVE_TO_RELOAD_POINT, STEP.COMPLETE_STOW } },
+        { name = "should begin the stow countdown for SAM when low", params = { isLow = true, shouldStayDeployed = true }, steps = { STEP.START_STOW } },
+        { name = "should wait out the stow time for SAM before RL", params = { isLow = true, shouldStayDeployed = true, stowStartTime = stowed + 1 }, steps = {} },
+        { name = "should move SAM with its transloader to RL when low once stowed", params = { isLow = true, shouldStayDeployed = true, stowStartTime = stowed }, steps = sendToReloadPoint },
         { name = "should do nothing in manual mode", params = { isAuto = false, stowStartTime = stowed }, steps = {} },
-      }, tick)
+      }, buildTickCtx)
     end)
 
     describe("RELOAD", function()
@@ -269,29 +272,29 @@ describe("MissileSystem Rules", function()
         { name = "should finish, hide the transloader and move to HA", params = ready, steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_TRANSLOADER_AFTER_RELOAD, STEP.MOVE_TO_HIDE_AREA } },
         { name = "should not hide a transloader the reload empties exactly", params = buildParams(ready, { pair = { stock = 6, reloadCount = 6 } }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.MOVE_TO_HIDE_AREA } },
         { name = "should hide a transloader one missile left after the reload", params = buildParams(ready, { pair = { stock = 7, reloadCount = 6 } }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_TRANSLOADER_AFTER_RELOAD, STEP.MOVE_TO_HIDE_AREA } },
-        { name = "should move SAM back to FP", params = buildParams(ready, { staysDeployed = true }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_TRANSLOADER_AFTER_RELOAD, STEP.MOVE_TO_FIRING_POINT } },
+        { name = "should move SAM back to FP", params = buildParams(ready, { shouldStayDeployed = true }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD, STEP.HIDE_TRANSLOADER_AFTER_RELOAD, STEP.MOVE_TO_FIRING_POINT } },
         { name = "should only finish in manual mode", params = buildParams(ready, { isAuto = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_RELOAD } },
-      }, tick)
+      }, buildTickCtx)
     end)
 
     runRows({
       { name = "should do nothing while repositioning", params = { state = STATE.REPOSITIONING, stowStartTime = 0 }, steps = {} },
       { name = "should do nothing while hiding", params = { state = STATE.HIDE }, steps = {} },
-    }, tick)
+    }, buildTickCtx)
   end)
 
   describe("evaluateTransloaderTick", function()
-    ---Transloader tick with its canister stock state unless params.hasCanisterStockState is false
-    ---@param params table state, isAuto, stock, reloadStartTime, isInReloadArea, isAtCanisterStock, hasCanisterStockState
-    local function tick(params)
+    ---Transloader tick context with its canister stock state unless params.hasCanisterStockState is false
+    ---@param params table state, isAuto, stock, reloadStartTime, isInReloadArea, isInSameAmmunitionTransferPoint, hasCanisterStockState
+    local function buildTickCtx(params)
       local o = buildParams({ state = STATE.STATIC, isAuto = true, stock = 0, hasCanisterStockState = true }, params)
       return Rules.evaluateTransloaderTick({
         transloaderState = { state = o.state, weaponCountCurrent = o.stock, reloadStartTime = o.reloadStartTime },
         isAuto = o.isAuto,
-        now = 10000,
+        currentTime = 10000,
         reloadTimeSec = 1800,
         isInReloadArea = answer(o.isInReloadArea),
-        isAtCanisterStock = answer(o.isAtCanisterStock),
+        isInSameAmmunitionTransferPoint = answer(o.isInSameAmmunitionTransferPoint),
       }, o.hasCanisterStockState and { name = "AD1" } or nil)
     end
 
@@ -301,23 +304,23 @@ describe("MissileSystem Rules", function()
         { name = "should keep a unit that still carries missiles", params = { stock = 4 }, steps = {} },
         { name = "should keep a unit outside its RL zones", params = { isInReloadArea = false }, steps = {} },
         { name = "should do nothing in manual mode", params = { isAuto = false }, steps = {} },
-      }, tick)
+      }, buildTickCtx)
     end)
 
     describe("RELOAD", function()
-      local ready = { state = STATE.RELOAD, reloadStartTime = 10000 - 1800, isAtCanisterStock = true }
+      local ready = { state = STATE.RELOAD, reloadStartTime = 10000 - 1800, isInSameAmmunitionTransferPoint = true }
       runRows({
         { name = "should only keep the clock running before the reload time", params = buildParams(ready, { reloadStartTime = 10000 - 1799 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
-        { name = "should not finish without a meeting", params = buildParams(ready, { isAtCanisterStock = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
+        { name = "should not finish without a meeting", params = buildParams(ready, { isInSameAmmunitionTransferPoint = false }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
         { name = "should not finish when it carries missiles", params = buildParams(ready, { stock = 2 }), steps = { STEP.ENSURE_RELOAD_CLOCK } },
         { name = "should fail when the canister stock has no state", params = buildParams(ready, { hasCanisterStockState = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.FAIL_CANISTER_STOCK_STATE_NOT_FOUND } },
         { name = "should finish and recall to RL", params = ready, steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_TRANSLOAD, STEP.RECALL_TO_RELOAD_POINT } },
         { name = "should only finish in manual mode", params = buildParams(ready, { isAuto = false }), steps = { STEP.ENSURE_RELOAD_CLOCK, STEP.COMPLETE_TRANSLOAD } },
-      }, tick)
+      }, buildTickCtx)
     end)
 
     it("should do nothing while repositioning", function()
-      assert.are.same({}, tick({ state = STATE.REPOSITIONING }))
+      assert.are.same({}, buildTickCtx({ state = STATE.REPOSITIONING }))
     end)
   end)
 end)

@@ -52,7 +52,7 @@ end
 ---Clear all magazines and remove all mounts from a cargo proxy unit
 ---@param cargo CMO__Unit
 ---@param sideName string
-local function stripCargoProxyMounts(cargo, sideName)
+local function removeCargoProxyMounts(cargo, sideName)
   GameApi.ScenEdit_ClearAllMagazines({ side = sideName, guid = cargo.guid })
 
   for _, mount in ipairs(cargo.mounts) do
@@ -144,7 +144,7 @@ local function normalizeGroupMember(base, sourceUnit, idx, loadCtx)
     }
   end
 
-  stripCargoProxyMounts(cargo, sideName)
+  removeCargoProxyMounts(cargo, sideName)
   local weaponCountMap = countWeaponsAndCloneMounts(sourceUnit, cargo, weaponDBIDSet)
   updateWeaponReloads(cargo, sideName, weaponCountMap)
 

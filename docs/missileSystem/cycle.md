@@ -14,9 +14,9 @@
 
 每個單位走同一個模式：
 
-1. **觀察**：`process` 依 state 名字找 config descriptor，找不到就記一列 `WARN reason=descriptor_not_found` 並略過該單位。`processLauncher` 建 `SBJ__LauncherTick`（state、descriptor、計時、`isLowAmmo` 函式），配對用 `Meeting.resolveReloadPair`；`processTransloader` 建 `SBJ__TransloaderTick`（`isInReloadArea`、`isAtCanisterStock` 函式），觀察是彈箱庫存 state。讀 CMO 的部分都是函式，HIDE / REPOSITIONING 的單位不會讀。
+1. **觀察**：`process` 依 state 名字找 config descriptor，找不到就記一列 `WARN reason=descriptor_not_found` 並略過該單位。`processLauncher` 建 `SBJ__LauncherTickContext`（state、descriptor、計時、`isLowAmmo` 函式），配對用 `Meeting.resolveReloadPair`；`processTransloader` 建 `SBJ__TransloaderTickContext`（`isInReloadArea`、`isInSameAmmunitionTransferPoint` 函式），觀察是彈箱庫存 state。讀 CMO 的部分都是函式，HIDE / REPOSITIONING 的單位不會讀。
 2. **判斷**：交給 [rules](rules.md) 的 `evaluateLauncherTick(tick, pair)` / `evaluateTransloaderTick(tick, canisterStockState)`，拿回有順序的步驟清單。所有條件（stow 等待、reload 完成、裝填後藏補給車、SAM 回 FP、補給車去 ATP）都寫在 rules。
-3. **執行**：`Shared.processSteps` 依步驟呼叫 `LAUNCHER_STEPS` / `TRANSLOADER_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，回傳一列 log 或 nil。
+3. **執行**：`Shared.executeSteps` 依步驟呼叫 `LAUNCHER_STEPS` / `TRANSLOADER_STEPS` 的 handler。handler 對 CMO 下指令（`Movement`、`Concealment`、`Ammo`）、經 [transitions](transitions.md) 記錄狀態，回傳一列 log 或 nil。
 
 `isAuto` 只影響判斷：自動模式才會啟動 stow 倒數與後續機動，「完成再裝填」在兩種模式都會執行。
 
@@ -31,8 +31,8 @@
 
 ```mermaid
 flowchart TD
-    A[Cycle.process] --> B1[processLauncher<br/>tick + pair]
-    A --> C1[processTransloader<br/>tick + canisterStockState]
+    A[Cycle.process] --> B1[processLauncher<br/>tickCtx + pair]
+    A --> C1[processTransloader<br/>tickCtx + canisterStockState]
     B1 --> R1[Rules.evaluateLauncherTick]
     C1 --> R2[Rules.evaluateTransloaderTick]
     R1 --> S1[LAUNCHER_STEPS]
@@ -45,7 +45,7 @@ flowchart TD
 
 ## 狀態寫入
 
-本檔的狀態與計時器寫入都經 [transitions](transitions.md)：移動用 `Transitions.depart(unitState, unit, Movement.ORDER.X)`，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態，留給下一輪或下一次事件。
+本檔的狀態與計時器寫入都經 [transitions](transitions.md)：移動用 `Transitions.startMove(unitState, unit, Movement.ORDER.X)`，指令成功才記成 `REPOSITIONING`；失敗時保持原狀態，留給下一輪或下一次事件。
 
 ## Public API
 

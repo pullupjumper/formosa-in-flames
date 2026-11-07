@@ -1,4 +1,4 @@
----@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field
+---@diagnostic disable: need-check-nil, assign-type-mismatch, cast-local-type, param-type-mismatch, inject-field, missing-fields
 -- MissileSystem Arrival Unit Tests
 local stub = require("luassert.stub")
 local Arrival = require("src.modules.missileSystem.arrival")
@@ -106,6 +106,29 @@ describe("MissileSystem Arrival", function()
     local function enterEventRaw(description)
       return { triggers = { { UnitEntersArea = { Description = description } } } }
     end
+
+    -- Boundary: only the system that tracks the unit handles its arrival
+    it("should leave other systems alone when a unit enters FP", function()
+      local unit = makeUnit()
+      local ownState = makeSystemState({
+        launchers = { FU1 = { name = "FU1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING } }
+      })
+      local otherState = makeSystemState({
+        launchers = { OTHER = { name = "OTHER", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING } }
+      })
+      local arriveStub = trackStub(Transitions, "arriveAtFiringPoint")
+
+      Arrival.process({
+        missileSystemConfigMap = { [SYSTEM_KEY] = SYSTEM_CONFIG, other = SYSTEM_CONFIG },
+        groundState = { missileSystemTypes = { [SYSTEM_KEY] = ownState, other = otherState } },
+        unit = unit,
+        event = enterEvent("FP"),
+        runCtx = buildRunCtx(),
+      })
+
+      assert.stub(arriveStub).was.called(1)
+      assert.stub(arriveStub).was.called_with(match.is_ref(ownState.launchers.FU1), unit, true)
+    end)
 
     -- --- FP --------------------------------------------------------------
 
@@ -276,11 +299,11 @@ describe("MissileSystem Arrival", function()
     it("should set reload start time on RL when launcher has met transloader", function()
       local pair = buildPair()
       local unit = pair.launcher
-      local systemState = makeSystemState()
+      local systemState = makeSystemState({ launchers = { [unit.name] = pair.launcherState } })
 
       local resolvePairStub = trackStub(Meeting, "resolveReloadPair").returns(pair)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      local settleStub = trackStub(Transitions, "settle")
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -302,11 +325,11 @@ describe("MissileSystem Arrival", function()
     -- Negative: a unit without a complete pair stops in manual mode and hides nothing
     it("should stop in manual mode on RL when the unit has no complete pair", function()
       local unit = makeUnit({ name = "RS1", guid = "guid-rs1" })
-      local systemState = makeSystemState()
+      local systemState = makeSystemState({ transloaders = { [unit.name] = { name = "RS1" } } })
 
       trackStub(Meeting, "resolveReloadPair").returns(nil)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      local settleStub = trackStub(Transitions, "settle")
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
@@ -328,11 +351,11 @@ describe("MissileSystem Arrival", function()
     it("should fall back to no-meeting path on RL when launcher exists but no meeting", function()
       local pair = buildPair({ isInSameReloadArea = function() return false end })
       local unit = pair.launcher
-      local systemState = makeSystemState()
+      local systemState = makeSystemState({ launchers = { [unit.name] = pair.launcherState } })
 
       trackStub(Meeting, "resolveReloadPair").returns(pair)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      local settleStub = trackStub(Transitions, "settle")
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -353,8 +376,8 @@ describe("MissileSystem Arrival", function()
       local systemState = makeSystemState()
 
       trackStub(Meeting, "resolveReloadPair").returns(pair)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      trackStub(Transitions, "settle")
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      trackStub(Transitions, "completeArrival")
 
       enterArea({ groundState = groundStateWith(systemState), unit = pair.launcher, event = enterEvent("RL") })
 
@@ -365,10 +388,10 @@ describe("MissileSystem Arrival", function()
     it("should hide transloader on RL no-meeting when launcher ammo is sufficient", function()
       local pair = buildPair({ isTriggeredByLauncher = false, isLauncherLowAmmo = function() return false end })
       local unit = pair.transloader
-      local systemState = makeSystemState()
+      local systemState = makeSystemState({ transloaders = { [unit.name] = pair.transloaderState } })
 
       trackStub(Meeting, "resolveReloadPair").returns(pair)
-      local settleStub = trackStub(Transitions, "settle")
+      local settleStub = trackStub(Transitions, "completeArrival")
       local hideUnitStub = trackStub(Concealment, "hideUnit").returns(true)
 
       enterArea({
@@ -395,10 +418,10 @@ describe("MissileSystem Arrival", function()
     -- Negative: RL no-meeting + low ammo must not hide the transloader
     it("should not hide transloader on RL no-meeting when launcher ammo is low", function()
       local pair = buildPair({ isTriggeredByLauncher = false, isInSameReloadArea = function() return false end })
-      local systemState = makeSystemState()
+      local systemState = makeSystemState({ transloaders = { [pair.transloader.name] = pair.transloaderState } })
 
       trackStub(Meeting, "resolveReloadPair").returns(pair)
-      local settleStub = trackStub(Transitions, "settle")
+      local settleStub = trackStub(Transitions, "completeArrival")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
@@ -422,7 +445,7 @@ describe("MissileSystem Arrival", function()
       local systemState = makeSystemState()
 
       trackStub(Meeting, "resolveReloadPair").returns(pair)
-      trackStub(Transitions, "settle")
+      trackStub(Transitions, "completeArrival")
       local hideUnitStub = trackStub(Concealment, "hideUnit")
 
       enterArea({
@@ -443,9 +466,9 @@ describe("MissileSystem Arrival", function()
       local transloaderState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ transloaders = { [unit.name] = transloaderState } })
 
-      local isAtCanisterStockStub = trackStub(Meeting, "isAtCanisterStock").returns(true)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      local settleStub = trackStub(Transitions, "settle")
+      local isAtCanisterStockStub = trackStub(Meeting, "isInSameAmmunitionTransferPoint").returns(true)
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -469,9 +492,9 @@ describe("MissileSystem Arrival", function()
       local transloaderState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 0 }
       local systemState = makeSystemState({ transloaders = { [unit.name] = transloaderState } })
 
-      trackStub(Meeting, "isAtCanisterStock").returns(false)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      local settleStub = trackStub(Transitions, "settle")
+      trackStub(Meeting, "isInSameAmmunitionTransferPoint").returns(false)
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -491,9 +514,9 @@ describe("MissileSystem Arrival", function()
       local transloaderState = { name = "RS1", state = constants.MISSILE_UNIT_POSTURE.REPOSITIONING, weaponCountCurrent = 3 }
       local systemState = makeSystemState({ transloaders = { [unit.name] = transloaderState } })
 
-      local isAtCanisterStockStub = trackStub(Meeting, "isAtCanisterStock").returns(true)
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      trackStub(Transitions, "settle")
+      local isAtCanisterStockStub = trackStub(Meeting, "isInSameAmmunitionTransferPoint").returns(true)
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      trackStub(Transitions, "completeArrival")
 
       enterArea({ groundState = groundStateWith(systemState), unit = unit, event = enterEvent("ATP") })
 
@@ -512,8 +535,8 @@ describe("MissileSystem Arrival", function()
       local dropContactStub = trackStub(contact, "DropContact")
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
       local hideStub = trackStub(Transitions, "hide")
-      local beginReloadStub = trackStub(Transitions, "beginReload")
-      local settleStub = trackStub(Transitions, "settle")
+      local beginReloadStub = trackStub(Transitions, "startReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
 
       enterArea({
         groundState = groundStateWith(systemState),
@@ -536,8 +559,8 @@ describe("MissileSystem Arrival", function()
 
       local arriveAtFiringPointStub = trackStub(Transitions, "arriveAtFiringPoint")
       local hideStub = trackStub(Transitions, "hide")
-      local settleStub = trackStub(Transitions, "settle")
-      local beginReloadStub = trackStub(Transitions, "beginReload")
+      local settleStub = trackStub(Transitions, "completeArrival")
+      local beginReloadStub = trackStub(Transitions, "startReload")
 
       local bogus = {
         "(China) Leaving HA - 1 - AreaA",     -- wrong verb

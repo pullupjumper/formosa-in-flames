@@ -654,7 +654,7 @@ describe("LandingOps Coordinator", function()
 
         assert.is_true(landingState.amphibOps.fireSupportOnHold)
         assert.stub(inventoryStub).was.called_with(
-          config, landingState.ground, constants.MISSILE_SYSTEM_TYPES.SRBM, constants.SIDES.RED
+          config, landingState.ground, constants.SIDES.RED, constants.MISSILE_SYSTEM_TYPES.SRBM
         )
       end)
     end)

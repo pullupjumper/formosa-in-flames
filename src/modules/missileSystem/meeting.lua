@@ -74,7 +74,7 @@ end
 ---@param transloaderState SBJ__TransloaderState
 ---@param transloader CMO__Unit
 ---@return boolean # False also when the canister stock is not in the game
-function Meeting.isAtCanisterStock(transloaderDescriptor, transloaderState, transloader)
+function Meeting.isInSameAmmunitionTransferPoint(transloaderDescriptor, transloaderState, transloader)
   local canisterStock = GameApi.ScenEdit_GetUnit(transloaderDescriptor.canisterStock, transloader.side)
   if not canisterStock then
     return false
