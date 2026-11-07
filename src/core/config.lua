@@ -3,7 +3,7 @@ local constants = require("src.core.constants")
 ---@class SBJ__Config
 local config = {}
 
-config.version = "1.0.0"
+config.version = "1.1.0"
 config.isEditMode = true
 config.difficulty = "normal"
 
